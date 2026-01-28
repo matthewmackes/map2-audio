@@ -2,10 +2,14 @@
 
 **Professional Real-Time Audio Processing System**
 
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Matthew%20Mackes-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/matthewmackes/)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)](https://python.org)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com)
+
+**Created by [Matthew Mackes](https://www.linkedin.com/in/matthewmackes/)**
 
 MAP2 Audio Platform is an enterprise-grade, real-time audio processing system designed for guitarists and audio professionals. It combines powerful LV2 plugin hosting, AI-powered amp modeling, and professional impulse response processing with a modern dual-interface architecture.
 
@@ -187,7 +191,7 @@ Dual hardware LCD monitoring for dedicated audio hardware:
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/map2-audio.git
+git clone https://github.com/matthewmackes/map2-audio.git
 cd map2-audio
 
 # Install Python dependencies
@@ -430,5 +434,10 @@ See [LICENSE](LICENSE) for details.
 <p align="center">
   <strong>MAP2 Audio Platform</strong><br>
   Professional Real-Time Audio Processing<br>
+  <br>
+  <a href="https://www.linkedin.com/in/matthewmackes/">
+    <img src="https://img.shields.io/badge/Created%20by-Matthew%20Mackes-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Matthew Mackes LinkedIn">
+  </a>
+  <br><br>
   <em>Built on PiPedal by Robin Davies</em>
 </p>
