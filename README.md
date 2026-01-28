@@ -11,6 +11,38 @@ MAP2 Audio Platform is an enterprise-grade, real-time audio processing system de
 
 ---
 
+## Screenshots
+
+### System Overview & Dashboard
+![Overview Dashboard](Screenshot%202026-01-28%20at%2014-01-47%20MAP2%20Audio%20Platform.png)
+*Complete system dashboard with status monitoring, platform capabilities, CPU core management, and audio interface controls*
+
+### Chain Management
+![Chains](Screenshot%202026-01-28%20at%2014-02-06%20MAP2%20Audio%20Platform.png)
+*Manage multiple effect chains with real-time status indicators and quick actions*
+
+### Visual Chain Flow Editor
+![Chain Flow](Screenshot%202026-01-28%20at%2014-02-24%20MAP2%20Audio%20Platform.png)
+*Node-based visual signal routing with A/B comparison, native plugins, and real-time spectrum analyzer*
+
+### LV2 Plugin Pack Manager
+![LV2 Plugins](Screenshot%202026-01-28%20at%2014-02-50%20MAP2%20Audio%20Platform.png)
+*Browse and install LV2 plugin packs with one-click installation*
+
+### VST3 Plugin Manager
+![VST3 Plugins](Screenshot%202026-01-28%20at%2014-03-11%20MAP2%20Audio%20Platform.png)
+*Access free VST3 plugin packages from the community*
+
+### Library Manager (IRs & NAM Models)
+![Library Manager](Screenshot%202026-01-28%20at%2014-03-24%20MAP2%20Audio%20Platform.png)
+*Download and manage impulse responses, cabinet IRs, and Neural Amp Models from multiple sources*
+
+### About & Project Partners
+![About](Screenshot%202026-01-28%20at%2014-03-38%20MAP2%20Audio%20Platform.png)
+*JUCE Audio Engine integration, project partners, and system architecture overview*
+
+---
+
 ## Vision & Goals
 
 ### Mission Statement
