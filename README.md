@@ -1,6 +1,6 @@
 # MAP2 Audio Platform
 
-**Professional Real-Time Audio Processing System**
+**Professional Real-Time Audio Processing System** (BETA Feb 2025)
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Matthew%20Mackes-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/matthewmackes/)
 
