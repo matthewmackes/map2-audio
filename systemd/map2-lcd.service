@@ -1,0 +1,35 @@
+[Unit]
+Description=MAP2 Audio LCD Display Service
+Documentation=https://github.com/yourusername/map2-audio
+After=network.target map2-backend.service
+Wants=map2-backend.service
+
+[Service]
+Type=simple
+User=%u
+Group=%g
+WorkingDirectory=/home/%u/map2-audio
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=MAP2_LCD_SIMULATION=false
+
+# Start command
+ExecStart=/usr/bin/python3 -m lcd.service
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Resource limits
+Nice=-10
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-lcd
+
+[Install]
+WantedBy=multi-user.target

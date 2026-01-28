@@ -1,0 +1,248 @@
+"""
+WebSocket Manager - Real-time communication for MAP2 Audio
+Handles WebSocket connections, message broadcasting, and subscription management
+"""
+
+import asyncio
+import json
+import logging
+from typing import Dict, Set, Any, Optional, List
+from fastapi import WebSocket
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+
+class WebSocketManager:
+    """
+    Manages WebSocket connections and broadcasts real-time updates
+    
+    Features:
+    - Connection pooling
+    - Topic-based subscriptions
+    - Selective broadcasting
+    - Connection lifecycle management
+    """
+    
+    def __init__(self):
+        # Active connections: client_id -> WebSocket
+        self.active_connections: Dict[str, WebSocket] = {}
+
+        # Subscriptions: topic -> set of client_ids
+        self.subscriptions: Dict[str, Set[str]] = {}
+
+        # Connection metadata
+        self.connection_info: Dict[str, Dict[str, Any]] = {}
+
+        # Event history: topic -> list of recent events
+        self.event_history: Dict[str, List[Dict[str, Any]]] = {}
+        self.history_limit = 10  # Keep last 10 events per topic
+
+        # Lock for thread-safe operations
+        self._lock = asyncio.Lock()
+        
+    async def connect(self, websocket: WebSocket, client_id: str) -> None:
+        """
+        Accept and register a new WebSocket connection
+        
+        Args:
+            websocket: FastAPI WebSocket instance
+            client_id: Unique identifier for this client
+        """
+        await websocket.accept()
+        
+        async with self._lock:
+            self.active_connections[client_id] = websocket
+            self.connection_info[client_id] = {
+                "connected_at": datetime.now().isoformat(),
+                "subscriptions": set()
+            }
+        
+        logger.info(f"WebSocket client connected: {client_id}")
+        
+    def disconnect(self, client_id: str) -> None:
+        """
+        Remove a client connection and clean up subscriptions
+        
+        Args:
+            client_id: Client to disconnect
+        """
+        # Remove from active connections
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
+        
+        # Remove from all topic subscriptions
+        for topic in list(self.subscriptions.keys()):
+            if client_id in self.subscriptions[topic]:
+                self.subscriptions[topic].discard(client_id)
+                if not self.subscriptions[topic]:
+                    del self.subscriptions[topic]
+        
+        # Remove metadata
+        if client_id in self.connection_info:
+            del self.connection_info[client_id]
+        
+        logger.info(f"WebSocket client disconnected: {client_id}")
+        
+    async def subscribe(self, client_id: str, topic: str) -> None:
+        """
+        Subscribe a client to a specific topic
+        
+        Args:
+            client_id: Client to subscribe
+            topic: Topic name (e.g., "meters", "automation", "chain_updates")
+        """
+        async with self._lock:
+            if topic not in self.subscriptions:
+                self.subscriptions[topic] = set()
+            
+            self.subscriptions[topic].add(client_id)
+            
+            if client_id in self.connection_info:
+                self.connection_info[client_id]["subscriptions"].add(topic)
+        
+        logger.debug(f"Client {client_id} subscribed to topic: {topic}")
+        
+    async def unsubscribe(self, client_id: str, topic: str) -> None:
+        """
+        Unsubscribe a client from a topic
+        
+        Args:
+            client_id: Client to unsubscribe
+            topic: Topic name
+        """
+        async with self._lock:
+            if topic in self.subscriptions:
+                self.subscriptions[topic].discard(client_id)
+                if not self.subscriptions[topic]:
+                    del self.subscriptions[topic]
+            
+            if client_id in self.connection_info:
+                self.connection_info[client_id]["subscriptions"].discard(topic)
+        
+        logger.debug(f"Client {client_id} unsubscribed from topic: {topic}")
+        
+    async def send_personal_message(self, message: str, client_id: str) -> None:
+        """
+        Send a message to a specific client
+        
+        Args:
+            message: JSON string or plain text
+            client_id: Target client
+        """
+        if client_id in self.active_connections:
+            try:
+                await self.active_connections[client_id].send_text(message)
+            except Exception as e:
+                logger.error(f"Error sending message to {client_id}: {e}")
+                self.disconnect(client_id)
+                
+    async def broadcast(self, message: str, topic: Optional[str] = None) -> None:
+        """
+        Broadcast a message to all clients or topic subscribers
+        
+        Args:
+            message: JSON string or plain text
+            topic: If specified, only send to subscribers of this topic
+        """
+        # Determine target clients
+        if topic and topic in self.subscriptions:
+            target_clients = self.subscriptions[topic]
+        else:
+            target_clients = set(self.active_connections.keys())
+        
+        # Send to all targets
+        disconnected_clients = []
+        for client_id in target_clients:
+            if client_id in self.active_connections:
+                try:
+                    await self.active_connections[client_id].send_text(message)
+                except Exception as e:
+                    logger.error(f"Error broadcasting to {client_id}: {e}")
+                    disconnected_clients.append(client_id)
+        
+        # Clean up disconnected clients
+        for client_id in disconnected_clients:
+            self.disconnect(client_id)
+            
+    async def broadcast_json(self, data: Dict[str, Any], topic: Optional[str] = None) -> None:
+        """
+        Broadcast a JSON message
+
+        Args:
+            data: Dictionary to serialize as JSON
+            topic: Optional topic filter
+        """
+        # Store in event history if topic is specified
+        if topic:
+            async with self._lock:
+                if topic not in self.event_history:
+                    self.event_history[topic] = []
+
+                self.event_history[topic].append(data)
+
+                # Limit history size
+                if len(self.event_history[topic]) > self.history_limit:
+                    self.event_history[topic].pop(0)
+
+        message = json.dumps(data)
+        await self.broadcast(message, topic)
+        
+    def get_subscribers(self, topic: str) -> List[str]:
+        """
+        Get list of client IDs subscribed to a topic
+        
+        Args:
+            topic: Topic name
+            
+        Returns:
+            List of client IDs
+        """
+        return list(self.subscriptions.get(topic, set()))
+        
+    def get_connection_count(self) -> int:
+        """Get number of active connections"""
+        return len(self.active_connections)
+        
+    def get_event_history(self, topic: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get recent event history
+
+        Args:
+            topic: If specified, get history for this topic only
+
+        Returns:
+            Dictionary with event history
+        """
+        if topic:
+            return {
+                "topic": topic,
+                "events": self.event_history.get(topic, [])
+            }
+        else:
+            return {
+                "all_topics": {
+                    topic: events
+                    for topic, events in self.event_history.items()
+                }
+            }
+
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Get WebSocket statistics
+
+        Returns:
+            Dictionary with connection and subscription stats
+        """
+        return {
+            "active_connections": len(self.active_connections),
+            "topics": list(self.subscriptions.keys()),
+            "subscriptions_per_topic": {
+                topic: len(clients)
+                for topic, clients in self.subscriptions.items()
+            }
+        }
+
+
+# Global WebSocket manager instance
+ws_manager = WebSocketManager()

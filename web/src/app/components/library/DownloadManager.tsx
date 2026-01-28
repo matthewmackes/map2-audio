@@ -1,0 +1,221 @@
+import { useState } from 'react'
+import { Download, X, Check, AlertCircle, Loader2, ChevronDown, ChevronUp, RotateCcw, RefreshCw, Search } from 'lucide-react'
+import { useDownloadProgress } from '../../hooks/useDownloadProgress'
+import type { SourceProgress } from '../../types/library'
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)}s`
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.round(seconds % 60)
+  return `${mins}m ${secs}s`
+}
+
+function getStateColor(state: SourceProgress['state']): string {
+  switch (state) {
+    case 'completed': return 'var(--success)'
+    case 'failed': return 'var(--danger)'
+    case 'downloading': return 'var(--primary)'
+    case 'discovering': return 'var(--warning)'
+    default: return 'var(--muted)'
+  }
+}
+
+function getStateIcon(state: SourceProgress['state']) {
+  switch (state) {
+    case 'completed': return <Check size={12} />
+    case 'failed': return <AlertCircle size={12} />
+    case 'downloading': return <Loader2 size={12} className="spin" />
+    case 'discovering': return <Search size={12} />
+    default: return null
+  }
+}
+
+export function DownloadManager() {
+  const [showSources, setShowSources] = useState(false)
+  const { status, isDownloading, cancelDownload, isCancelling, resetDownload, retrySource } = useDownloadProgress()
+
+  if (!status) return null
+
+  const stats = status.stats
+  const progress = status.progress_percent
+  const sources = status.sources
+
+  // Calculate speed and ETA
+  let speed = 0
+  let eta = 0
+  let remaining = 0
+
+  if (stats && stats.duration_seconds > 0) {
+    speed = stats.downloaded / stats.duration_seconds
+    remaining = stats.total_files - stats.downloaded - stats.failed - stats.skipped
+    eta = remaining / Math.max(0.1, speed)
+  }
+
+  const hasFailedSources = sources?.some(s => s.state === 'failed' || s.failed > 0)
+  const isComplete = !isDownloading && stats && stats.total_files > 0
+
+  return (
+    <div className="card" style={{ padding: 16 }}>
+      {/* Header */}
+      <div className="flex-between" style={{ marginBottom: 12 }}>
+        <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
+          {isDownloading ? (
+            <Loader2 size={20} className="spin" style={{ color: 'var(--primary)' }} />
+          ) : hasFailedSources ? (
+            <AlertCircle size={20} style={{ color: 'var(--warning)' }} />
+          ) : (
+            <Download size={20} style={{ color: 'var(--success)' }} />
+          )}
+          <span style={{ fontWeight: 600 }}>
+            {isDownloading ? 'Downloading IRs...' : hasFailedSources ? 'Download Complete (with errors)' : 'Download Complete'}
+          </span>
+        </div>
+        <div className="flex" style={{ gap: 8 }}>
+          {isComplete && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => resetDownload()}
+              title="Clear status"
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+          {isDownloading && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => cancelDownload()}
+              disabled={isCancelling}
+              style={{ color: 'var(--danger)' }}
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 size={14} className="spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <X size={14} />
+                  Cancel
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="stack" style={{ gap: 8 }}>
+        <div className="flex-between" style={{ fontSize: 13 }}>
+          <span>
+            {stats ? `${stats.downloaded} / ${stats.total_files} files` : 'Discovering files...'}
+          </span>
+          {isDownloading && speed > 0 && (
+            <span className="muted">
+              {speed.toFixed(1)} files/s • ETA: {formatDuration(eta)}
+            </span>
+          )}
+          {!isDownloading && stats && (
+            <span className="muted">
+              Completed in {formatDuration(stats.duration_seconds)}
+            </span>
+          )}
+        </div>
+
+        <div className="upload-progress">
+          <div
+            className="upload-progress-bar"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {/* Stats row */}
+        {stats && (
+          <div className="flex" style={{ gap: 16, fontSize: 12 }}>
+            <span style={{ color: 'var(--success)' }}>
+              <Check size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+              {stats.downloaded} downloaded
+            </span>
+            <span className="muted">
+              {stats.skipped} skipped
+            </span>
+            {stats.failed > 0 && (
+              <span style={{ color: 'var(--danger)' }}>
+                <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                {stats.failed} failed
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Per-source details toggle */}
+      {sources && sources.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowSources(!showSources)}
+            style={{ width: '100%', justifyContent: 'space-between' }}
+          >
+            <span>Source Details ({sources.length} sources)</span>
+            {showSources ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+
+          {showSources && (
+            <div style={{ marginTop: 8 }}>
+              {sources.map(source => (
+                <div
+                  key={source.name}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    background: 'var(--bg-secondary)',
+                    marginBottom: 4,
+                  }}
+                >
+                  <div className="flex" style={{ gap: 8, alignItems: 'center', flex: 1 }}>
+                    <span style={{ color: getStateColor(source.state) }}>
+                      {getStateIcon(source.state)}
+                    </span>
+                    <span style={{ fontWeight: 500, fontSize: 13 }}>{source.name}</span>
+                    <span className="muted" style={{ fontSize: 11 }}>
+                      {source.state === 'discovering' && 'Discovering...'}
+                      {source.state === 'downloading' && source.current_file && (
+                        <span title={source.current_file}>
+                          {source.current_file.length > 20
+                            ? source.current_file.slice(0, 20) + '...'
+                            : source.current_file}
+                        </span>
+                      )}
+                      {source.state === 'completed' && `${source.downloaded} files`}
+                      {source.state === 'failed' && `${source.failed} failed`}
+                    </span>
+                  </div>
+                  <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
+                    {source.total_files > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                        {source.downloaded}/{source.total_files}
+                      </span>
+                    )}
+                    {(source.state === 'failed' || source.failed > 0) && !isDownloading && (
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => retrySource(source.name)}
+                        title={`Retry ${source.name}`}
+                        style={{ padding: 4 }}
+                      >
+                        <RefreshCw size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

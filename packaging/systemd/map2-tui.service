@@ -1,0 +1,15 @@
+[Unit]
+Description=MAP2 Audio TUI
+After=network.target map2-backend.service
+Requires=map2-backend.service
+
+[Service]
+Type=simple
+User=map2
+WorkingDirectory=/usr/lib/map2
+ExecStart=/usr/bin/python3 -m tui.app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

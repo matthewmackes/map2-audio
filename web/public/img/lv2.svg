@@ -1,0 +1,12 @@
+<svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lv2BgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded rectangle background -->
+  <rect x="2" y="2" width="116" height="56" rx="8" fill="url(#lv2BgGradient)"/>
+  <!-- LV2 text -->
+  <text x="60" y="40" font-family="monospace" font-size="28" font-weight="bold" fill="white" text-anchor="middle">LV2</text>
+</svg>

@@ -1,0 +1,1056 @@
+{
+  "description": "Default LV2 effects based on PiPedal's ToobAmp collection",
+  "version": "1.0.0",
+  "source": "https://github.com/rerdavies/ToobAmp",
+  "plugins": [
+    {
+      "name": "TooB Neural Amp Modeler",
+      "uri": "http://two-play.com/plugins/toob-nam",
+      "category": "Simulator",
+      "description": "Neural Amp Modeler using Steven Atkinson's Neural Amp Model library",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 10,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB ML Amplifier",
+      "uri": "http://two-play.com/plugins/toob-ml",
+      "category": "Amplifier",
+      "description": "Neural net amp modeler based on Jatin Chowdhury's ML library",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 10,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Cab IR",
+      "uri": "http://two-play.com/plugins/toob-cab-ir",
+      "category": "Simulator",
+      "description": "Cabinet impulse response simulator",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB CabSim",
+      "uri": "http://two-play.com/plugins/toob-cabsim",
+      "category": "Simulator",
+      "description": "Cabinet simulator",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Convolution Reverb",
+      "uri": "http://two-play.com/plugins/toob-convolution-reverb",
+      "category": "Reverb",
+      "description": "Convolution reverb effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 7,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Freeverb",
+      "uri": "http://two-play.com/plugins/toob-freeverb",
+      "category": "Reverb",
+      "description": "Freeverb algorithm reverb",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 7,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Parametric EQ",
+      "uri": "http://two-play.com/plugins/toob-peq",
+      "category": "Equaliser",
+      "description": "Parametric equalizer",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB 3 Band EQ",
+      "uri": "http://two-play.com/plugins/toob-3band-eq",
+      "category": "Equaliser",
+      "description": "3-band equalizer (Low, Mid, High)",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Tone Stack",
+      "uri": "http://two-play.com/plugins/toob-tone-stack",
+      "category": "Filter",
+      "description": "Classic guitar amp tone stack",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Input Stage",
+      "uri": "http://two-play.com/plugins/toob-input-stage",
+      "category": "Amplifier",
+      "description": "Input stage amplifier",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Tremolo",
+      "uri": "http://two-play.com/plugins/toob-tremolo",
+      "category": "Modulator",
+      "description": "Tremolo effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 6,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Phaser",
+      "uri": "http://two-play.com/plugins/toob-phaser",
+      "category": "Phaser",
+      "description": "Phaser effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 6,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB CE-2 Chorus",
+      "uri": "http://two-play.com/plugins/toob-ce2-chorus",
+      "category": "Chorus",
+      "description": "CE-2 style chorus effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 6,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB BF-2 Flanger",
+      "uri": "http://two-play.com/plugins/toob-bf2-flanger",
+      "category": "Flanger",
+      "description": "BF-2 style flanger effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 6,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Delay",
+      "uri": "http://two-play.com/plugins/toob-delay",
+      "category": "Delay",
+      "description": "Delay effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 7,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Tuner",
+      "uri": "http://two-play.com/plugins/toob-tuner",
+      "category": "Utility",
+      "description": "Guitar tuner",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 5,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Noise Gate",
+      "uri": "http://two-play.com/plugins/toob-noise-gate",
+      "category": "Gate",
+      "description": "Noise gate",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB 4Looper",
+      "uri": "http://two-play.com/plugins/toob-4looper",
+      "category": "Utility",
+      "description": "4-track looper",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 5,
+      "is_hard_rt_capable": false
+    },
+    {
+      "name": "TooB One-Button Looper",
+      "uri": "http://two-play.com/plugins/toob-one-button-looper",
+      "category": "Utility",
+      "description": "Simple one-button looper",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 5,
+      "is_hard_rt_capable": false
+    },
+    {
+      "name": "TooB Spectrum Analyzer",
+      "uri": "http://two-play.com/plugins/toob-spectrum-analyzer",
+      "category": "Analyser",
+      "description": "Spectrum analyzer",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 3,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Input Recorder",
+      "uri": "http://two-play.com/plugins/toob-input-recorder",
+      "category": "Utility",
+      "description": "Input recorder",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 4,
+      "is_hard_rt_capable": false
+    },
+    {
+      "name": "TooB Volume",
+      "uri": "http://two-play.com/plugins/toob-volume",
+      "category": "Utility",
+      "description": "Volume control",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Mix",
+      "uri": "http://two-play.com/plugins/toob-mix",
+      "category": "Mixer",
+      "description": "Audio mixer",
+      "audio_ports": {
+        "inputs": 4,
+        "outputs": 2
+      },
+      "priority": 7,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Player",
+      "uri": "http://two-play.com/plugins/toob-player",
+      "category": "Utility",
+      "description": "Audio file player",
+      "audio_ports": {
+        "inputs": 0,
+        "outputs": 2
+      },
+      "priority": 4,
+      "is_hard_rt_capable": false
+    },
+    {
+      "name": "TooB GE-7 Graphics Equalizer",
+      "uri": "http://two-play.com/plugins/toob-ge7-eq",
+      "category": "Equaliser",
+      "description": "7-band graphic equalizer",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Room Reverb",
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#room",
+      "category": "Reverb",
+      "description": "Small to medium room reverb with natural sound",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Hall Reverb",
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#hall",
+      "category": "Reverb",
+      "description": "Medium to large concert hall reverb",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Plate Reverb",
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#plate",
+      "category": "Reverb",
+      "description": "Classic plate reverb sound",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "Dragonfly Early Reflections",
+      "uri": "https://michaelwillis.github.io/dragonfly-reverb#early",
+      "category": "Reverb",
+      "description": "Early reflections only, no reverb tail",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 7,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "MAP2 NAM Loader",
+      "uri": "http://map2-audio.local/nam-loader",
+      "category": "Simulator",
+      "description": "Native Neural Amp Modeler - Load and process .nam model files for amp/pedal simulation",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 10,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "Model",
+          "symbol": "model",
+          "type": "string",
+          "description": "Selected NAM model file"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Dry/wet mix (0.0 = dry, 1.0 = wet)"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass NAM processing"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 Cabinet IR Loader",
+      "uri": "http://map2-audio.local/ir-cabinet-loader",
+      "category": "Simulator",
+      "description": "Native Cabinet IR Loader - Load and apply cabinet impulse responses",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "IR File",
+          "symbol": "ir_file",
+          "type": "string",
+          "description": "Selected cabinet IR file"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Dry/wet mix (0.0 = dry, 1.0 = wet)"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass cabinet IR"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 Reverb IR Loader",
+      "uri": "http://map2-audio.local/ir-reverb-loader",
+      "category": "Reverb",
+      "description": "Native Reverb IR Loader - Load and apply reverb impulse responses",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "IR File",
+          "symbol": "ir_file",
+          "type": "string",
+          "description": "Selected reverb IR file"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.3,
+          "description": "Dry/wet mix (0.0 = dry, 1.0 = wet)"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass reverb IR"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 ReevR Convolution Reverb",
+      "uri": "http://map2-audio.local/reevr-engine",
+      "category": "Reverb",
+      "description": "Native advanced convolution reverb with partitioned FFT, pre-delay, and resampling",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "IR File",
+          "symbol": "ir_file",
+          "type": "string",
+          "description": "Impulse response file to load"
+        },
+        {
+          "name": "Dry/Wet Mix",
+          "symbol": "dry_wet_mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Balance between dry and wet signal"
+        },
+        {
+          "name": "Pre-delay",
+          "symbol": "predelay_ms",
+          "type": "float",
+          "min": 0.0,
+          "max": 500.0,
+          "default": 0.0,
+          "unit": "ms",
+          "description": "Pre-delay before reverb (0-500ms)"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass reverb processing"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 Cocoa Delay",
+      "uri": "http://map2-audio.local/cocoa-delay",
+      "category": "Delay",
+      "description": "Native delay effect with drift, ducking, pan modes, and drive section",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 7,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "Delay Time",
+          "symbol": "delay_time",
+          "type": "float",
+          "min": 1.0,
+          "max": 2000.0,
+          "default": 375.0,
+          "unit": "ms",
+          "description": "Delay time in milliseconds"
+        },
+        {
+          "name": "Feedback",
+          "symbol": "feedback",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.4,
+          "description": "Amount of delayed signal fed back"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Dry/wet mix"
+        },
+        {
+          "name": "Drift",
+          "symbol": "drift",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Delay time modulation amount"
+        },
+        {
+          "name": "Ducking",
+          "symbol": "ducking",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Wet level ducking based on input"
+        },
+        {
+          "name": "Pan Mode",
+          "symbol": "pan_mode",
+          "type": "enum",
+          "values": ["static", "pingpong", "circular"],
+          "default": "static",
+          "description": "Stereo pan behavior"
+        },
+        {
+          "name": "Pan",
+          "symbol": "pan",
+          "type": "float",
+          "min": -1.0,
+          "max": 1.0,
+          "default": 0.0,
+          "description": "Stereo pan position"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass delay processing"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 Zita AT1 Auto-Tune",
+      "uri": "http://map2-audio.local/zita-at1",
+      "category": "Pitch",
+      "description": "Native auto-tuner with pitch correction, note selection, and MIDI control",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "Tuning",
+          "symbol": "tuning",
+          "type": "float",
+          "min": 430.0,
+          "max": 450.0,
+          "default": 440.0,
+          "unit": "Hz",
+          "description": "Reference tuning frequency"
+        },
+        {
+          "name": "Bias",
+          "symbol": "bias",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Preference for current note"
+        },
+        {
+          "name": "Filter",
+          "symbol": "filter",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Smoothing amount"
+        },
+        {
+          "name": "Correction",
+          "symbol": "correction",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Pitch correction amount"
+        },
+        {
+          "name": "Offset",
+          "symbol": "offset",
+          "type": "int",
+          "min": -200,
+          "max": 200,
+          "default": 0,
+          "unit": "cents",
+          "description": "Pitch offset"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass auto-tune processing"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 TripleSpread",
+      "uri": "http://map2-audio.local/triplespread",
+      "category": "Modulator",
+      "description": "Native stereo width effect that spreads frequencies across the stereo field",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 6,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "Spread",
+          "symbol": "spread",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Stereo spread amount"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Dry/wet mix"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass stereo spread"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 Valentine",
+      "uri": "http://map2-audio.local/valentine",
+      "category": "Dynamics",
+      "description": "Native compressor/saturator with aggressive character",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "Crush",
+          "symbol": "crush",
+          "type": "boolean",
+          "default": false,
+          "description": "Enable bit crushing"
+        },
+        {
+          "name": "Compress",
+          "symbol": "compress",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Gain before compression"
+        },
+        {
+          "name": "Saturate",
+          "symbol": "saturate",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.3,
+          "description": "Pre-waveshaper gain"
+        },
+        {
+          "name": "Ratio",
+          "symbol": "ratio",
+          "type": "float",
+          "min": 1.0,
+          "max": 1000.0,
+          "default": 4.0,
+          "description": "Compression ratio"
+        },
+        {
+          "name": "Attack",
+          "symbol": "attack",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.2,
+          "description": "Attack time"
+        },
+        {
+          "name": "Release",
+          "symbol": "release",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.5,
+          "description": "Release time"
+        },
+        {
+          "name": "Output",
+          "symbol": "output",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 0.7,
+          "description": "Output gain"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Dry/wet mix"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass compressor"
+        }
+      ]
+    },
+    {
+      "name": "MAP2 ZL Equalizer",
+      "uri": "http://map2-audio.local/zlequalizer",
+      "category": "Equaliser",
+      "description": "Native 24-band dynamic parametric equalizer with multiple filter types and stereo modes",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 9,
+      "is_hard_rt_capable": true,
+      "is_native": true,
+      "parameters": [
+        {
+          "name": "Output Gain",
+          "symbol": "output_gain",
+          "type": "float",
+          "min": -24.0,
+          "max": 24.0,
+          "default": 0.0,
+          "unit": "dB",
+          "description": "Output level adjustment"
+        },
+        {
+          "name": "Scale",
+          "symbol": "scale",
+          "type": "float",
+          "min": 0.0,
+          "max": 2.0,
+          "default": 1.0,
+          "description": "Multiplier for all band gains"
+        },
+        {
+          "name": "Lookahead",
+          "symbol": "lookahead",
+          "type": "float",
+          "min": 0.0,
+          "max": 20.0,
+          "default": 0.0,
+          "unit": "ms",
+          "description": "Side-chain signal lookahead"
+        },
+        {
+          "name": "Phase Flip",
+          "symbol": "phase_flip",
+          "type": "boolean",
+          "default": false,
+          "description": "Invert output phase"
+        },
+        {
+          "name": "Auto Gain",
+          "symbol": "auto_gain",
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automatic gain compensation"
+        },
+        {
+          "name": "Static Gain Comp",
+          "symbol": "static_gain_comp",
+          "type": "boolean",
+          "default": false,
+          "description": "Enable static gain compensation"
+        },
+        {
+          "name": "Mix",
+          "symbol": "mix",
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "default": 1.0,
+          "description": "Dry/wet mix"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "boolean",
+          "default": false,
+          "description": "Bypass EQ processing"
+        }
+      ],
+      "band_parameters": {
+        "num_bands": 24,
+        "parameters_per_band": [
+          {
+            "name": "Enabled",
+            "symbol": "enabled",
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "Frequency",
+            "symbol": "freq",
+            "type": "float",
+            "min": 20.0,
+            "max": 20000.0,
+            "default": 1000.0,
+            "unit": "Hz"
+          },
+          {
+            "name": "Gain",
+            "symbol": "gain",
+            "type": "float",
+            "min": -30.0,
+            "max": 30.0,
+            "default": 0.0,
+            "unit": "dB"
+          },
+          {
+            "name": "Q",
+            "symbol": "q",
+            "type": "float",
+            "min": 0.1,
+            "max": 20.0,
+            "default": 0.707
+          },
+          {
+            "name": "Filter Type",
+            "symbol": "filter_type",
+            "type": "enum",
+            "values": ["peak", "low_shelf", "low_pass", "high_shelf", "high_pass", "notch", "band_pass", "tilt_shelf"],
+            "default": "peak"
+          },
+          {
+            "name": "Slope",
+            "symbol": "slope",
+            "type": "enum",
+            "values": [6, 12, 24, 36, 48, 72, 96],
+            "default": 12,
+            "unit": "dB/oct"
+          },
+          {
+            "name": "Stereo Mode",
+            "symbol": "stereo_mode",
+            "type": "enum",
+            "values": ["stereo", "left", "right", "mid", "side"],
+            "default": "stereo"
+          },
+          {
+            "name": "Dynamic Enabled",
+            "symbol": "dynamic_enabled",
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "Target Gain",
+            "symbol": "target_gain",
+            "type": "float",
+            "min": -30.0,
+            "max": 30.0,
+            "default": 0.0,
+            "unit": "dB"
+          },
+          {
+            "name": "Threshold",
+            "symbol": "threshold",
+            "type": "float",
+            "min": -60.0,
+            "max": 0.0,
+            "default": -20.0,
+            "unit": "dB"
+          },
+          {
+            "name": "Knee",
+            "symbol": "knee",
+            "type": "float",
+            "min": 0.0,
+            "max": 30.0,
+            "default": 6.0,
+            "unit": "dB"
+          },
+          {
+            "name": "Attack",
+            "symbol": "attack",
+            "type": "float",
+            "min": 0.0,
+            "max": 500.0,
+            "default": 20.0,
+            "unit": "ms"
+          },
+          {
+            "name": "Release",
+            "symbol": "release",
+            "type": "float",
+            "min": 0.0,
+            "max": 5000.0,
+            "default": 200.0,
+            "unit": "ms"
+          }
+        ]
+      }
+    }
+  ],
+  "default_chains": [
+    {
+      "name": "Clean Tone",
+      "description": "Clean guitar tone with subtle effects",
+      "plugins": [
+        "http://two-play.com/plugins/toob-noise-gate",
+        "http://two-play.com/plugins/toob-3band-eq",
+        "http://two-play.com/plugins/toob-ce2-chorus",
+        "http://two-play.com/plugins/toob-delay",
+        "http://two-play.com/plugins/toob-freeverb"
+      ]
+    },
+    {
+      "name": "Rock Distortion",
+      "description": "Classic rock amp tone",
+      "plugins": [
+        "http://two-play.com/plugins/toob-noise-gate",
+        "http://two-play.com/plugins/toob-ml",
+        "http://two-play.com/plugins/toob-tone-stack",
+        "http://two-play.com/plugins/toob-cabsim",
+        "http://two-play.com/plugins/toob-delay"
+      ]
+    },
+    {
+      "name": "Lead Guitar",
+      "description": "High-gain lead tone",
+      "plugins": [
+        "http://two-play.com/plugins/toob-noise-gate",
+        "http://two-play.com/plugins/toob-nam",
+        "http://two-play.com/plugins/toob-peq",
+        "http://two-play.com/plugins/toob-delay",
+        "http://two-play.com/plugins/toob-convolution-reverb"
+      ]
+    },
+    {
+      "name": "Practice Setup",
+      "description": "Practice chain with tuner and basic tone",
+      "plugins": [
+        "http://two-play.com/plugins/toob-tuner",
+        "http://two-play.com/plugins/toob-3band-eq",
+        "http://two-play.com/plugins/toob-volume"
+      ]
+    },
+    {
+      "name": "Ambient Soundscape",
+      "description": "Spacious ambient sound with Dragonfly Reverb",
+      "plugins": [
+        "http://two-play.com/plugins/toob-3band-eq",
+        "http://two-play.com/plugins/toob-delay",
+        "https://michaelwillis.github.io/dragonfly-reverb#hall",
+        "http://two-play.com/plugins/toob-volume"
+      ]
+    },
+    {
+      "name": "Native Processing Chain",
+      "description": "Full native MAP2 processing with NAM, Cabinet IR, and ReevR Reverb",
+      "plugins": [
+        "http://two-play.com/plugins/toob-noise-gate",
+        "http://map2-audio.local/nam-loader",
+        "http://map2-audio.local/ir-cabinet-loader",
+        "http://two-play.com/plugins/toob-3band-eq",
+        "http://map2-audio.local/reevr-engine",
+        "http://two-play.com/plugins/toob-volume"
+      ]
+    }
+  ]
+}

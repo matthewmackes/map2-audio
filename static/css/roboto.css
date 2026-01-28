@@ -1,0 +1,6 @@
+/* Roboto font - fallback to system fonts */
+/* PiPedal expects this file to exist */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}

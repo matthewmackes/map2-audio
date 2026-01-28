@@ -1,0 +1,27 @@
+[Unit]
+Description=MAP2 PipeDAL Engine Boot Test
+After=network.target map2-backend.service
+Wants=map2-backend.service
+Documentation=https://github.com/map2-audio
+
+[Service]
+Type=oneshot
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio
+Environment=PYTHONPATH=/home/mm/map2-audio
+ExecStart=/home/mm/map2-audio/run_pipedal_boot_test.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=120
+RemainAfterExit=yes
+
+# Ensure logs directory exists
+ExecStartPre=/bin/mkdir -p /home/mm/map2-audio/logs
+ExecStartPre=/bin/mkdir -p /home/mm/map2-audio/web/public
+
+# Set proper permissions
+ExecStartPre=/bin/chown -R mm:mm /home/mm/map2-audio/logs
+
+[Install]
+WantedBy=multi-user.target

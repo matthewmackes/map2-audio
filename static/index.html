@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
+    <meta name="theme-color" content="#000000">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="PiPedal">
+    <title>PiPedal</title>
+    <link rel="icon" href="/img/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/css/app.css">
+    <script>
+    // PiPedal Android App Compatibility Layer
+    (function() {
+        'use strict';
+        window.PIPEDAL_VERSION = "1.3.57";
+        window.PIPEDAL_READY = false;
+
+        function getThemePreference() {
+            if (window.AndroidHost && typeof window.AndroidHost.getThemePreference === 'function') {
+                return window.AndroidHost.getThemePreference();
+            }
+            return 2;
+        }
+
+        function isDarkTheme() {
+            if (window.AndroidHost && typeof window.AndroidHost.isDarkTheme === 'function') {
+                return window.AndroidHost.isDarkTheme();
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
+        var themePreference = getThemePreference();
+        var darkMode = (themePreference === 1) || (themePreference === 2 && isDarkTheme());
+        if (!darkMode) {
+            document.documentElement.classList.add('light-mode');
+        }
+
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+
+        window.notifyPiPedalReady = function() {
+            window.PIPEDAL_READY = true;
+            if (window.AndroidHost && typeof window.AndroidHost.onPiPedalReady === 'function') {
+                window.AndroidHost.onPiPedalReady();
+            }
+        };
+    })();
+    </script>
+</head>
+<body>
+    <div id="root">
+        <div id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Connecting...</p>
+        </div>
+    </div>
+
+    <script>
+    // MAP2 Audio Platform - PiPedal Compatible Client
+    // Surfaces all PiPedal WebSocket commands in the mobile interface
+    (function() {
+        'use strict';
+
+        // Configuration
+        const CONFIG = {
+            wsPath: '/pipedal',
+            configPath: '/var/config.json',
+            reconnectDelay: 2000,
+            maxReconnectAttempts: 10,
+            apiBase: '/api'
+        };
+
+        // API base URL constant for fetch calls
+        const API_BASE = CONFIG.apiBase;
+
+        // State
+        let socket = null;
+        let clientId = -1;
+        let reconnectAttempts = 0;
+        let requestId = 0;
+        let pendingRequests = new Map();
+
+        // Data state
+        let chains = [];
+        let activeChain = null;
+        let availablePlugins = [];
+        let pluginClasses = [];
+        let presets = [];
+        let banks = [];
+        let currentBankIndex = 0;
+        let favorites = [];
+        let jackStatus = null;
+        let jackSettings = null;
+        let jackConfiguration = null;
+        let serverVersion = '';
+        let selectedEffectIndex = null;
+        let inputVolume = 0;
+        let outputVolume = 0;
+        let snapshots = [];
+        let currentSnapshot = 0;
+
+        const androidHost = window.AndroidHost || null;
+        const root = document.getElementById('root');
+        const loading = document.getElementById('loading');
+
+        function log(msg) {
+            console.log('[MAP2]', msg);
+        }
+
+        function nextRequestId() {
+            return ++requestId;
+        }
+
+        // REST API helpers
+        async function apiGet(path) {
+            const resp = await fetch(CONFIG.apiBase + path);
+            if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+            return resp.json();
+        }
+
+        async function apiPost(path, body = null) {
+            const resp = await fetch(CONFIG.apiBase + path, {
+                method: 'POST',
+                headers: body ? { 'Content-Type': 'application/json' } : {},
+                body: body ? JSON.stringify(body) : null
+            });
+            if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+            return resp.json();
+        }
+
+        async function apiPut(path, body) {
+            const resp = await fetch(CONFIG.apiBase + path, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+            return resp.json();
+        }
+
+        async function apiDelete(path) {
+            const resp = await fetch(CONFIG.apiBase + path, {
+                method: 'DELETE'
+            });
+            if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+            return resp.json();
+        }
+
+        // WebSocket Protocol
+        function sendMessage(message, payload) {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log('Socket not ready');
+                return null;
+            }
+            const msg = payload !== undefined
+                ? [{ message: message }, payload]
+                : [{ message: message }];
+            socket.send(JSON.stringify(msg));
+        }
+
+        function sendRequest(message, payload) {
+            return new Promise((resolve, reject) => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    reject(new Error('Socket not connected'));
+                    return;
+                }
+                const replyTo = nextRequestId();
+                pendingRequests.set(replyTo, { resolve, reject });
+
+                const msg = payload !== undefined
+                    ? [{ message: message, replyTo: replyTo }, payload]
+                    : [{ message: message, replyTo: replyTo }];
+                socket.send(JSON.stringify(msg));
+
+                setTimeout(() => {
+                    if (pendingRequests.has(replyTo)) {
+                        pendingRequests.delete(replyTo);
+                        reject(new Error('Request timeout'));
+                    }
+                }, 10000);
+            });
+        }
+
+        function handleMessage(event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (!Array.isArray(data) || data.length < 1) return;
+
+                const header = data[0];
+                const body = data.length > 1 ? data[1] : null;
+
+                if (header.reply !== undefined) {
+                    const pending = pendingRequests.get(header.reply);
+                    if (pending) {
+                        pendingRequests.delete(header.reply);
+                        if (header.message === 'error') {
+                            pending.reject(new Error(body));
+                        } else {
+                            pending.resolve(body);
+                        }
+                    }
+                    return;
+                }
+
+                // Handle async notifications
+                switch (header.message) {
+                    case 'onPedalboardChanged':
+                        loadActiveChain();
+                        break;
+                    case 'onPresetsChanged':
+                        loadPresets();
+                        break;
+                    case 'onBanksChanged':
+                        loadBanks();
+                        break;
+                    case 'onControlChanged':
+                        updateControl(body);
+                        break;
+                    case 'onVuUpdate':
+                        updateVuMeter(body);
+                        break;
+                    case 'onJackStatusChanged':
+                    case 'onJackConfigurationChanged':
+                        loadJackStatus();
+                        break;
+                    case 'onSnapshotModified':
+                    case 'onSelectedSnapshotChanged':
+                        if (body && body.snapshot !== undefined) {
+                            currentSnapshot = body.snapshot;
+                        }
+                        break;
+                    case 'onErrorMessage':
+                        showToast(body.message || 'Error', 'error');
+                        break;
+                }
+            } catch (e) {
+                log('Message parse error: ' + e);
+            }
+        }
+
+        // Connection
+        async function connect() {
+            try {
+                log('Fetching config from ' + CONFIG.configPath);
+                const configResp = await fetch(CONFIG.configPath);
+                if (!configResp.ok) {
+                    throw new Error('Failed to fetch config: HTTP ' + configResp.status);
+                }
+                const config = await configResp.json();
+                log('Config loaded: ' + JSON.stringify(config));
+
+                const host = config.socket_server_address === '*'
+                    ? window.location.hostname
+                    : config.socket_server_address;
+                const port = config.socket_server_port || 8080;
+                const wsUrl = 'ws://' + host + ':' + port + CONFIG.wsPath;
+
+                log('Connecting to ' + wsUrl + ' (host: ' + window.location.hostname + ')');
+                showLoading('Connecting to ' + host + ':' + port + '...');
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = async function() {
+                    log('Connected');
+                    reconnectAttempts = 0;
+
+                    try {
+                        // PiPedal handshake
+                        clientId = await sendRequest('hello');
+                        log('Client ID: ' + clientId);
+
+                        serverVersion = await sendRequest('version');
+                        log('Server version: ' + serverVersion);
+
+                        // Load all data
+                        await loadAllData();
+
+                        // Subscribe to VU meters (all instances)
+                        await sendRequest('addVuSubscription', [-1]);
+
+                        if (androidHost) {
+                            androidHost.setDisconnected(false);
+                        }
+
+                        hideLoading();
+                    } catch (e) {
+                        log('Init error: ' + e);
+                        showError('Failed to initialize: ' + e.message);
+                    }
+                };
+
+                socket.onmessage = handleMessage;
+
+                socket.onclose = function() {
+                    log('Disconnected');
+                    updateConnectionStatus(false);
+                    if (androidHost) {
+                        androidHost.setDisconnected(true);
+                    }
+                    scheduleReconnect();
+                };
+
+                socket.onerror = function(e) {
+                    log('Socket error: ' + JSON.stringify(e));
+                    showError('WebSocket connection error - check server address');
+                };
+
+            } catch (e) {
+                log('Connection error: ' + e);
+                showError('Connection failed: ' + e.message);
+                scheduleReconnect();
+            }
+        }
+
+        function scheduleReconnect() {
+            if (reconnectAttempts < CONFIG.maxReconnectAttempts) {
+                reconnectAttempts++;
+                log('Reconnecting in ' + CONFIG.reconnectDelay + 'ms (attempt ' + reconnectAttempts + ')');
+                showLoading('Reconnecting... (attempt ' + reconnectAttempts + '/' + CONFIG.maxReconnectAttempts + ')');
+                setTimeout(connect, CONFIG.reconnectDelay);
+            } else {
+                showError('Unable to connect to server after ' + CONFIG.maxReconnectAttempts + ' attempts. Check that the server is running and accessible.');
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.className = 'connection-status ' + (connected ? 'connected' : 'disconnected');
+                statusEl.textContent = connected ? 'Connected' : 'Disconnected';
+            }
+        }
+
+        // Data Loading - All PiPedal data sources
+        async function loadAllData() {
+            await Promise.all([
+                loadPlugins(),
+                loadPluginClasses(),
+                loadChains(),
+                loadPresets(),
+                loadBanks(),
+                loadFavorites(),
+                loadJackStatus(),
+                loadJackSettings(),
+                loadJackConfiguration()
+            ]);
+            renderUI();
+            updateConnectionStatus(true);
+        }
+
+        async function loadPlugins() {
+            try {
+                // Try REST API first (more reliable)
+                const data = await apiGet('/plugins/discover');
+                availablePlugins = data.plugins || [];
+                log('Loaded ' + availablePlugins.length + ' plugins via REST');
+            } catch (e) {
+                // Fallback to WebSocket
+                try {
+                    availablePlugins = await sendRequest('plugins') || [];
+                    log('Loaded ' + availablePlugins.length + ' plugins via WS');
+                } catch (e2) {
+                    log('Could not load plugins: ' + e);
+                    availablePlugins = [];
+                }
+            }
+        }
+
+        async function loadPluginClasses() {
+            try {
+                pluginClasses = await sendRequest('pluginClasses') || [];
+            } catch (e) {
+                pluginClasses = [];
+            }
+        }
+
+        async function loadChains() {
+            try {
+                const data = await apiGet('/chains/');
+                chains = data.chains || [];
+                log('Loaded ' + chains.length + ' chains');
+
+                // Find active chain
+                activeChain = chains.find(c => c.is_active) || null;
+
+                renderChains();
+                renderPedalboard();
+            } catch (e) {
+                log('Could not load chains: ' + e);
+                chains = [];
+            }
+        }
+
+        async function loadActiveChain() {
+            try {
+                const data = await apiGet('/chains/');
+                chains = data.chains || [];
+                activeChain = chains.find(c => c.is_active) || null;
+                renderPedalboard();
+                renderChains();
+            } catch (e) {
+                log('Could not refresh chain: ' + e);
+            }
+        }
+
+        async function loadPresets() {
+            try {
+                const data = await apiGet('/chains/presets');
+                presets = data.presets || [];
+            } catch (e) {
+                try {
+                    presets = await sendRequest('getPresets') || [];
+                } catch (e2) {
+                    presets = [];
+                }
+            }
+        }
+
+        async function loadBanks() {
+            try {
+                const bankIndex = await sendRequest('getBankIndex');
+                if (bankIndex !== null && bankIndex !== undefined) {
+                    currentBankIndex = bankIndex;
+                }
+            } catch (e) {
+                currentBankIndex = 0;
+            }
+        }
+
+        async function loadFavorites() {
+            try {
+                favorites = await sendRequest('getFavorites') || [];
+            } catch (e) {
+                favorites = [];
+            }
+        }
+
+        async function loadJackStatus() {
+            try {
+                jackStatus = await sendRequest('getJackStatus');
+            } catch (e) {
+                try {
+                    const data = await apiGet('/audio/status');
+                    jackStatus = {
+                        sampleRate: data.sample_rate || 48000,
+                        bufferSize: data.buffer_size || 256,
+                        cpuLoad: data.cpu_load || 0,
+                        xruns: data.xruns || 0
+                    };
+                } catch (e2) {
+                    jackStatus = { sampleRate: 48000, bufferSize: 256, cpuLoad: 0, xruns: 0 };
+                }
+            }
+        }
+
+        async function loadJackSettings() {
+            try {
+                jackSettings = await sendRequest('getJackSettings');
+            } catch (e) {
+                jackSettings = null;
+            }
+        }
+
+        async function loadJackConfiguration() {
+            try {
+                jackConfiguration = await sendRequest('getJackConfiguration');
+            } catch (e) {
+                jackConfiguration = null;
+            }
+        }
+
+        // UI Rendering
+        function showLoading(msg) {
+            if (loading) {
+                loading.style.display = 'flex';
+                const textEl = loading.querySelector('.loading-text');
+                if (textEl && msg) textEl.textContent = msg;
+            }
+        }
+
+        function hideLoading() {
+            if (loading) loading.style.display = 'none';
+        }
+
+        function showError(msg) {
+            root.innerHTML = `
+                <div class="error-screen">
+                    <div class="error-icon">!</div>
+                    <h2>Connection Error</h2>
+                    <p>${msg}</p>
+                    <button class="btn btn-primary" onclick="location.reload()">Retry</button>
+                </div>
+            `;
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function renderUI() {
+            root.innerHTML = `
+                <div class="app">
+                    <header class="header">
+                        <div class="header-left">
+                            <h1>MAP2 Audio</h1>
+                        </div>
+                        <div class="header-right">
+                            <span id="connection-status" class="connection-status connected">Connected</span>
+                        </div>
+                    </header>
+
+                    <nav class="tabs">
+                        <button class="tab active" data-tab="pedalboard">
+                            <span class="tab-icon">&#9835;</span>
+                            <span class="tab-label">Effects</span>
+                        </button>
+                        <button class="tab" data-tab="chains">
+                            <span class="tab-icon">&#9776;</span>
+                            <span class="tab-label">Chains</span>
+                        </button>
+                        <button class="tab" data-tab="presets">
+                            <span class="tab-icon">&#9733;</span>
+                            <span class="tab-label">Presets</span>
+                        </button>
+                        <button class="tab" data-tab="settings">
+                            <span class="tab-icon">&#9881;</span>
+                            <span class="tab-label">Settings</span>
+                        </button>
+                    </nav>
+
+                    <main class="content">
+                        <section id="pedalboard-tab" class="tab-content active">
+                            <div class="pedalboard-toolbar">
+                                <button class="btn btn-small btn-primary" onclick="showAddEffectModal()">+ Add</button>
+                                <span class="pedalboard-name">${activeChain?.name || 'No Active Chain'}</span>
+                                <button class="btn btn-small" onclick="showSnapshotsModal()">Snap</button>
+                            </div>
+                            <div id="pedalboard" class="pedalboard"></div>
+                            <div class="volume-controls">
+                                <div class="volume-control">
+                                    <label>Input</label>
+                                    <input type="range" min="-60" max="12" value="${inputVolume}"
+                                           oninput="setInputVolume(this.value)" class="volume-slider">
+                                    <span id="input-vol-display">${inputVolume} dB</span>
+                                </div>
+                                <div class="volume-control">
+                                    <label>Output</label>
+                                    <input type="range" min="-60" max="12" value="${outputVolume}"
+                                           oninput="setOutputVolume(this.value)" class="volume-slider">
+                                    <span id="output-vol-display">${outputVolume} dB</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="chains-tab" class="tab-content">
+                            <div class="chains-toolbar">
+                                <button class="btn btn-small btn-primary" onclick="showCreateChainModal()">+ New</button>
+                                <button class="btn btn-small" onclick="showTemplatesModal()">Templates</button>
+                            </div>
+                            <div id="chains-list" class="chains-list"></div>
+                        </section>
+
+                        <section id="presets-tab" class="tab-content">
+                            <div class="presets-toolbar">
+                                <button class="btn btn-small btn-primary" onclick="saveCurrentPreset()">Save</button>
+                                <button class="btn btn-small" onclick="showSavePresetAsModal()">Save As</button>
+                                <button class="btn btn-small" onclick="showNewPresetModal()">New</button>
+                            </div>
+                            <div class="preset-navigation">
+                                <button class="btn btn-small" onclick="previousPreset()">&#9664; Prev</button>
+                                <span class="preset-info">Bank ${currentBankIndex + 1}</span>
+                                <button class="btn btn-small" onclick="nextPreset()">Next &#9654;</button>
+                            </div>
+                            <div id="presets-list" class="presets-list"></div>
+                            <div class="bank-navigation">
+                                <button class="btn btn-small" onclick="previousBank()">&#9664; Bank</button>
+                                <button class="btn btn-small" onclick="nextBank()">Bank &#9654;</button>
+                            </div>
+                        </section>
+
+                        <section id="settings-tab" class="tab-content">
+                            <div id="settings" class="settings"></div>
+                        </section>
+                    </main>
+
+                    <footer class="footer">
+                        <div class="vu-container">
+                            <div class="vu-label">L</div>
+                            <div class="vu-meter">
+                                <div class="vu-bar" id="vu-left"></div>
+                            </div>
+                            <div class="vu-label">R</div>
+                            <div class="vu-meter">
+                                <div class="vu-bar" id="vu-right"></div>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+
+                <div id="modal-overlay" class="modal-overlay" onclick="closeModal()"></div>
+                <div id="modal" class="modal"></div>
+            `;
+
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab + '-tab').classList.add('active');
+                });
+            });
+
+            renderPedalboard();
+            renderChains();
+            renderPresets();
+            renderSettings();
+        }
+
+        // Effects Tab (Pedalboard)
+        function renderPedalboard() {
+            const container = document.getElementById('pedalboard');
+            if (!container) return;
+
+            const nameEl = document.querySelector('.pedalboard-name');
+            if (nameEl) nameEl.textContent = activeChain?.name || 'No Active Chain';
+
+            if (!activeChain) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">&#9835;</div>
+                        <p>No active chain selected</p>
+                        <button class="btn btn-primary" onclick="document.querySelector('[data-tab=chains]').click()">Select a Chain</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const plugins = activeChain.plugins || [];
+
+            if (plugins.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">&#9835;</div>
+                        <p>No effects in "${activeChain.name}"</p>
+                        <button class="btn btn-primary" onclick="showAddEffectModal()">Add Your First Effect</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = plugins.map((plugin, idx) => {
+                const pluginInfo = availablePlugins.find(p => p.uri === plugin.uri) || {};
+                const name = pluginInfo.name || plugin.uri.split('/').pop() || 'Effect';
+                const isFavorite = favorites.includes(plugin.uri);
+
+                return `
+                <div class="effect-card ${plugin.bypass ? 'bypassed' : ''} ${selectedEffectIndex === idx ? 'selected' : ''}"
+                     data-index="${idx}" data-uri="${plugin.uri}"
+                     onclick="selectEffect(${idx})">
+                    <div class="effect-header">
+                        <div class="effect-info">
+                            <span class="effect-index">${idx + 1}</span>
+                            <span class="effect-name">${name}</span>
+                        </div>
+                        <div class="effect-actions">
+                            <button class="btn-icon ${isFavorite ? 'favorite' : ''}"
+                                    onclick="event.stopPropagation(); toggleFavorite('${plugin.uri}')"
+                                    title="Favorite">&#9733;</button>
+                            <button class="btn-icon ${!plugin.bypass ? 'active' : ''}"
+                                    onclick="event.stopPropagation(); togglePluginBypass(${idx}, ${plugin.bypass})"
+                                    title="${plugin.bypass ? 'Enable' : 'Bypass'}">
+                                ${plugin.bypass ? 'OFF' : 'ON'}
+                            </button>
+                            <button class="btn-icon btn-danger"
+                                    onclick="event.stopPropagation(); removePlugin(${idx})"
+                                    title="Remove">&#10005;</button>
+                        </div>
+                    </div>
+                    <div class="effect-controls">
+                        <p class="plugin-uri">${pluginInfo.category || 'Plugin'}</p>
+                        <button class="btn btn-small" onclick="event.stopPropagation(); showPluginControls(${idx})">Controls</button>
+                    </div>
+                    <div class="effect-footer">
+                        <button class="btn-icon" onclick="event.stopPropagation(); movePlugin(${idx}, -1)"
+                                ${idx === 0 ? 'disabled' : ''} title="Move Up">&#9650;</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); movePlugin(${idx}, 1)"
+                                ${idx === plugins.length - 1 ? 'disabled' : ''} title="Move Down">&#9660;</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // Chains Tab
+        function renderChains() {
+            const container = document.getElementById('chains-list');
+            if (!container) return;
+
+            if (chains.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">&#9776;</div>
+                        <p>No chains created</p>
+                        <button class="btn btn-primary" onclick="showCreateChainModal()">Create Your First Chain</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = chains.map((chain) => `
+                <div class="chain-item ${chain.is_active ? 'active' : ''}" data-id="${chain.id}">
+                    <div class="chain-info" onclick="activateChain(${chain.id})">
+                        <div class="chain-status ${chain.is_active ? 'active' : ''}"></div>
+                        <div class="chain-details">
+                            <span class="chain-name">${chain.name}</span>
+                            <span class="chain-plugins-count">${(chain.plugins || []).length} effects</span>
+                        </div>
+                    </div>
+                    <div class="chain-actions">
+                        <button class="btn-icon" onclick="renameChain(${chain.id}, '${chain.name.replace(/'/g, "\\'")}')" title="Rename">&#9998;</button>
+                        <button class="btn-icon" onclick="duplicateChain(${chain.id})" title="Duplicate">&#10697;</button>
+                        <button class="btn-icon" onclick="saveChainAsPreset(${chain.id})" title="Save as Preset">&#9733;</button>
+                        <button class="btn-icon btn-danger" onclick="deleteChain(${chain.id})" title="Delete">&#10005;</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Presets Tab
+        function renderPresets() {
+            const container = document.getElementById('presets-list');
+            if (!container) return;
+
+            if (presets.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">&#9733;</div>
+                        <p>No presets saved</p>
+                        <p class="text-muted">Save your current chain as a preset</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = presets.map((preset) => `
+                <div class="preset-item" data-id="${preset.id}">
+                    <div class="preset-info" onclick="loadPreset(${preset.id})">
+                        <span class="preset-name">${preset.name}</span>
+                        <span class="preset-details">${preset.chain_name || ''} - ${preset.plugin_count || 0} effects</span>
+                    </div>
+                    <div class="preset-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation(); renamePreset(${preset.id}, '${preset.name.replace(/'/g, "\\'")}')" title="Rename">&#9998;</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); copyPreset(${preset.id})" title="Copy">&#10697;</button>
+                        <button class="btn-icon btn-danger" onclick="event.stopPropagation(); deletePreset(${preset.id})" title="Delete">&#10005;</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Settings Tab
+        function renderSettings() {
+            const container = document.getElementById('settings');
+            if (!container) return;
+
+            const status = jackStatus || {};
+            const settings = jackSettings || {};
+            const config = jackConfiguration || {};
+            const cpuPercent = (status.cpuLoad || 0).toFixed(1);
+
+            container.innerHTML = `
+                <div class="settings-section">
+                    <h3 class="settings-title">Audio Engine</h3>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <span class="setting-label">Sample Rate</span>
+                            <span class="setting-value">${config.sampleRate || status.sampleRate || 48000} Hz</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Buffer Size</span>
+                            <span class="setting-value">${config.blockLength || status.bufferSize || 256} samples</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Latency</span>
+                            <span class="setting-value">${(((config.blockLength || status.bufferSize || 256) / (config.sampleRate || status.sampleRate || 48000)) * 1000).toFixed(1)} ms</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">CPU Load</span>
+                            <div class="cpu-meter">
+                                <div class="cpu-bar" style="width: ${cpuPercent}%"></div>
+                                <span class="cpu-value">${cpuPercent}%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">XRuns</span>
+                            <span class="setting-value ${(status.xruns || 0) > 0 ? 'text-warning' : ''}">${status.xruns || 0}</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-block" onclick="showAudioSettingsModal()">Audio Settings</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="settings-title">System</h3>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <span class="setting-label">Server Version</span>
+                            <span class="setting-value">${serverVersion || '1.0.0'}</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Client ID</span>
+                            <span class="setting-value">${clientId}</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Available Plugins</span>
+                            <span class="setting-value">${availablePlugins.length}</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Chains</span>
+                            <span class="setting-value">${chains.length}</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Presets</span>
+                            <span class="setting-value">${presets.length}</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Favorites</span>
+                            <span class="setting-value">${favorites.length}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="settings-title">Actions</h3>
+                    <button class="btn btn-block" onclick="refreshStatus()">Refresh Status</button>
+                    <button class="btn btn-block" onclick="rescanPlugins()">Rescan Plugins</button>
+                    <button class="btn btn-block" onclick="showFavoritesModal()">Manage Favorites</button>
+                    <button class="btn btn-block btn-warning" onclick="restartAudio()">Restart Audio</button>
+                    <button class="btn btn-block btn-danger" onclick="shutdownServer()">Shutdown Server</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3 class="settings-title">About</h3>
+                    <button class="btn btn-block btn-primary" onclick="showCreditsModal()">&#10084; Thank You &amp; Credits</button>
+                    <div class="about-info">
+                        <p><strong>MAP2 Audio Platform</strong></p>
+                        <p>PiPedal Compatible Interface</p>
+                        <p class="text-muted">LV2 Plugin Host</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Modal System
+        function showModal(content, title = '') {
+            const modal = document.getElementById('modal');
+            const overlay = document.getElementById('modal-overlay');
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <h3>${title}</h3>
+                    <button class="btn-icon" onclick="closeModal()">&#10005;</button>
+                </div>
+                <div class="modal-body">
+                    ${content}
+                </div>
+            `;
+            modal.classList.add('show');
+            overlay.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+            document.getElementById('modal-overlay').classList.remove('show');
+        }
+
+        // Plugin Browser Modal
+        function showAddEffectModal() {
+            if (!activeChain) {
+                showToast('Please select a chain first', 'error');
+                return;
+            }
+
+            const categories = {};
+            availablePlugins.forEach(p => {
+                const cat = p.category || 'Other';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(p);
+            });
+
+            // Show favorites first
+            let content = '<div class="plugin-browser">';
+            content += '<input type="text" class="search-input" placeholder="Search plugins..." oninput="filterPlugins(this.value)">';
+            content += '<div class="plugin-list" id="plugin-list">';
+
+            // Favorites section
+            if (favorites.length > 0) {
+                const favPlugins = favorites.map(uri => availablePlugins.find(p => p.uri === uri)).filter(p => p);
+                if (favPlugins.length > 0) {
+                    content += '<div class="plugin-category" data-category="Favorites">';
+                    content += '<h4 class="category-header">&#9733; Favorites (${favPlugins.length})</h4>';
+                    favPlugins.forEach(p => {
+                        content += `
+                            <div class="plugin-item favorite" data-name="${(p.name || '').toLowerCase()}" data-uri="${p.uri}" onclick="addPluginToChain('${p.uri}')">
+                                <span class="plugin-name">${p.name || p.uri}</span>
+                                <span class="plugin-author">${p.author || ''}</span>
+                            </div>
+                        `;
+                    });
+                    content += '</div>';
+                }
+            }
+
+            if (Object.keys(categories).length === 0) {
+                content += '<p class="empty-state-small">No plugins available. Try rescanning.</p>';
+            } else {
+                Object.keys(categories).sort().forEach(cat => {
+                    content += `<div class="plugin-category" data-category="${cat}">`;
+                    content += `<h4 class="category-header">${cat} (${categories[cat].length})</h4>`;
+                    categories[cat].forEach(p => {
+                        const isFav = favorites.includes(p.uri);
+                        content += `
+                            <div class="plugin-item ${isFav ? 'favorite' : ''}" data-name="${(p.name || '').toLowerCase()}" data-uri="${p.uri}" onclick="addPluginToChain('${p.uri}')">
+                                <span class="plugin-name">${isFav ? '&#9733; ' : ''}${p.name || p.uri}</span>
+                                <span class="plugin-author">${p.author || ''}</span>
+                            </div>
+                        `;
+                    });
+                    content += '</div>';
+                });
+            }
+
+            content += '</div></div>';
+            showModal(content, 'Add Effect');
+        }
+
+        // Plugin Controls Modal
+        function showPluginControls(idx) {
+            if (!activeChain) return;
+            const plugin = activeChain.plugins[idx];
+            if (!plugin) return;
+
+            const pluginInfo = availablePlugins.find(p => p.uri === plugin.uri) || {};
+            const name = pluginInfo.name || plugin.uri.split('/').pop();
+            const params = pluginInfo.parameters || [];
+
+            let content = `
+                <div class="plugin-controls">
+                    <div class="plugin-controls-header">
+                        <h4>${name}</h4>
+                        <span class="text-muted">${plugin.bypass ? 'BYPASSED' : 'ACTIVE'}</span>
+                    </div>
+            `;
+
+            if (params.length > 0) {
+                content += '<div class="plugin-params-list">';
+                params.forEach(param => {
+                    const range = param.max - param.min;
+                    const value = param.default || param.min;
+                    const percent = range > 0 ? ((value - param.min) / range) * 100 : 0;
+
+                    if (param.is_toggled) {
+                        // Toggle switch for boolean parameters
+                        const isOn = value > 0.5;
+                        content += `
+                            <div class="control control-toggle">
+                                <label>${param.name}</label>
+                                <button class="toggle-btn ${isOn ? 'on' : ''}"
+                                        onclick="setPluginParam('${plugin.uri}', ${param.index}, ${isOn ? 0 : 1})"
+                                        data-param="${param.index}">
+                                    ${isOn ? 'ON' : 'OFF'}
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        // Slider for continuous parameters
+                        content += `
+                            <div class="control">
+                                <div class="control-header">
+                                    <label>${param.name}</label>
+                                    <span class="control-value" id="param-val-${param.index}">${value.toFixed(2)}</span>
+                                </div>
+                                <div class="slider-container">
+                                    <input type="range" class="slider"
+                                           min="${param.min}" max="${param.max}"
+                                           step="${range > 100 ? 1 : range / 100}"
+                                           value="${value}"
+                                           data-param="${param.index}"
+                                           data-uri="${plugin.uri}"
+                                           style="--percent: ${percent}%"
+                                           oninput="updateParamSlider(this, '${plugin.uri}', ${param.index})"
+                                           onchange="setPluginParam('${plugin.uri}', ${param.index}, this.value)">
+                                </div>
+                                <div class="control-range">
+                                    <span>${param.min.toFixed(1)}</span>
+                                    <span>${param.max.toFixed(1)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                content += '</div>';
+            } else {
+                content += '<p class="no-controls">No adjustable parameters</p>';
+            }
+
+            content += `
+                    <div class="plugin-preset-actions">
+                        <button class="btn btn-small" onclick="showPluginPresetsModal('${plugin.uri}')">Load Preset</button>
+                        <button class="btn btn-small" onclick="showSavePluginPresetModal('${plugin.uri}')">Save Preset</button>
+                    </div>
+                </div>
+            `;
+            showModal(content, 'Plugin Controls');
+        }
+
+        // Update slider visually while dragging
+        function updateParamSlider(slider, uri, paramIdx) {
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            const value = parseFloat(slider.value);
+            const percent = ((value - min) / (max - min)) * 100;
+            slider.style.setProperty('--percent', percent + '%');
+            const valueEl = document.getElementById('param-val-' + paramIdx);
+            if (valueEl) valueEl.textContent = value.toFixed(2);
+        }
+
+        // Set plugin parameter via API
+        window.setPluginParam = async function(uri, paramIdx, value) {
+            try {
+                const encodedUri = encodeURIComponent(uri);
+                await fetch(`${API_BASE}/plugins/${encodedUri}/parameters/${paramIdx}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: parseFloat(value) })
+                });
+            } catch (e) {
+                console.error('Failed to set parameter:', e);
+            }
+        };
+
+        async function showPluginPresetsModal(pluginUri) {
+            try {
+                const presets = await sendRequest('getPluginPresets', pluginUri);
+                let content = '<div class="plugin-presets-list">';
+                if (!presets || presets.length === 0) {
+                    content += '<p class="empty-state-small">No plugin presets available.</p>';
+                } else {
+                    presets.forEach((p, i) => {
+                        content += `<div class="preset-item" onclick="loadPluginPreset('${pluginUri}', ${i})">${p.name || 'Preset ' + (i+1)}</div>`;
+                    });
+                }
+                content += '</div>';
+                showModal(content, 'Plugin Presets');
+            } catch (e) {
+                showToast('Could not load plugin presets', 'error');
+            }
+        }
+
+        function showSavePluginPresetModal(pluginUri) {
+            const content = `
+                <div class="form-group">
+                    <label>Preset Name</label>
+                    <input type="text" id="plugin-preset-name" class="input" placeholder="My Preset">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="savePluginPresetAs('${pluginUri}')">Save</button>
+                </div>
+            `;
+            showModal(content, 'Save Plugin Preset');
+        }
+
+        // Chain Modals
+        function showCreateChainModal() {
+            const content = `
+                <div class="form-group">
+                    <label>Chain Name</label>
+                    <input type="text" id="chain-name-input" class="input" placeholder="My Chain" autofocus>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="createChain()">Create</button>
+                </div>
+            `;
+            showModal(content, 'Create New Chain');
+            setTimeout(() => document.getElementById('chain-name-input')?.focus(), 100);
+        }
+
+        async function showTemplatesModal() {
+            try {
+                const data = await apiGet('/chains/templates/list');
+                const templates = data.templates || [];
+
+                let content = '<div class="templates-list">';
+                if (templates.length === 0) {
+                    content += '<p class="empty-state-small">No templates available.</p>';
+                } else {
+                    templates.forEach(t => {
+                        content += `
+                            <div class="template-item" onclick="loadTemplate('${t.name}')">
+                                <span class="template-name">${t.name}</span>
+                                <span class="template-desc">${t.description || t.plugin_count + ' plugins'}</span>
+                            </div>
+                        `;
+                    });
+                }
+                content += '</div>';
+                showModal(content, 'Chain Templates');
+            } catch (e) {
+                showToast('Could not load templates', 'error');
+            }
+        }
+
+        // Preset Modals
+        function showSavePresetAsModal() {
+            const content = `
+                <div class="form-group">
+                    <label>Preset Name</label>
+                    <input type="text" id="preset-name-input" class="input" placeholder="My Preset" autofocus>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="savePresetAs()">Save</button>
+                </div>
+            `;
+            showModal(content, 'Save Preset As');
+            setTimeout(() => document.getElementById('preset-name-input')?.focus(), 100);
+        }
+
+        function showNewPresetModal() {
+            const content = `
+                <div class="form-group">
+                    <label>New Preset Name</label>
+                    <input type="text" id="new-preset-name" class="input" placeholder="New Preset" autofocus>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="createNewPreset()">Create</button>
+                </div>
+            `;
+            showModal(content, 'New Preset');
+        }
+
+        // Snapshots Modal
+        function showSnapshotsModal() {
+            let content = '<div class="snapshots-list">';
+            for (let i = 0; i < 8; i++) {
+                content += `
+                    <div class="snapshot-item ${currentSnapshot === i ? 'active' : ''}" onclick="setSnapshot(${i})">
+                        <span class="snapshot-number">${i + 1}</span>
+                        <span class="snapshot-name">Snapshot ${i + 1}</span>
+                    </div>
+                `;
+            }
+            content += '</div>';
+            showModal(content, 'Snapshots');
+        }
+
+        // Favorites Modal
+        function showFavoritesModal() {
+            let content = '<div class="favorites-list">';
+            if (favorites.length === 0) {
+                content += '<p class="empty-state-small">No favorites yet. Tap the star on a plugin to add it.</p>';
+            } else {
+                favorites.forEach(uri => {
+                    const plugin = availablePlugins.find(p => p.uri === uri);
+                    content += `
+                        <div class="favorite-item">
+                            <span>${plugin?.name || uri}</span>
+                            <button class="btn-icon btn-danger" onclick="removeFavorite('${uri}')">&#10005;</button>
+                        </div>
+                    `;
+                });
+            }
+            content += '</div>';
+            showModal(content, 'Favorites');
+        }
+
+        // Audio Settings Modal
+        function showAudioSettingsModal() {
+            const settings = jackSettings || {};
+            const content = `
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label>Sample Rate</label>
+                        <select id="sample-rate-select" class="input">
+                            <option value="44100" ${settings.sample_rate === 44100 ? 'selected' : ''}>44100 Hz</option>
+                            <option value="48000" ${settings.sample_rate === 48000 || !settings.sample_rate ? 'selected' : ''}>48000 Hz</option>
+                            <option value="96000" ${settings.sample_rate === 96000 ? 'selected' : ''}>96000 Hz</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Buffer Size</label>
+                        <select id="buffer-size-select" class="input">
+                            <option value="64" ${settings.buffer_size === 64 ? 'selected' : ''}>64 (ultra low latency)</option>
+                            <option value="128" ${settings.buffer_size === 128 ? 'selected' : ''}>128 (low latency)</option>
+                            <option value="256" ${settings.buffer_size === 256 || !settings.buffer_size ? 'selected' : ''}>256 (standard)</option>
+                            <option value="512" ${settings.buffer_size === 512 ? 'selected' : ''}>512 (safe)</option>
+                            <option value="1024" ${settings.buffer_size === 1024 ? 'selected' : ''}>1024 (high latency)</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn" onclick="closeModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="applyAudioSettings()">Apply</button>
+                    </div>
+                </div>
+            `;
+            showModal(content, 'Audio Settings');
+        }
+
+        // Control Updates
+        function updateControl(data) {
+            // Handle real-time control updates from WebSocket
+            if (data && data.instanceId !== undefined) {
+                log('Control changed: ' + data.symbol + ' = ' + data.value);
+            }
+        }
+
+        function updateVuMeter(data) {
+            const values = data.values || [];
+            const left = document.getElementById('vu-left');
+            const right = document.getElementById('vu-right');
+
+            if (left && values[0] !== undefined) {
+                const pct = Math.min(100, Math.max(0, (values[0] + 60) * 1.67));
+                left.style.width = pct + '%';
+                left.className = 'vu-bar' + (pct > 90 ? ' clip' : pct > 70 ? ' hot' : '');
+            }
+            if (right && values[1] !== undefined) {
+                const pct = Math.min(100, Math.max(0, (values[1] + 60) * 1.67));
+                right.style.width = pct + '%';
+                right.className = 'vu-bar' + (pct > 90 ? ' clip' : pct > 70 ? ' hot' : '');
+            }
+        }
+
+        // ==================== Global Functions ====================
+
+        // Effects
+        window.selectEffect = function(idx) {
+            selectedEffectIndex = selectedEffectIndex === idx ? null : idx;
+            renderPedalboard();
+        };
+
+        window.addPluginToChain = async function(uri) {
+            if (!activeChain) return;
+            try {
+                await apiPost(`/chains/${activeChain.id}/plugins?plugin_uri=${encodeURIComponent(uri)}`);
+                closeModal();
+                showToast('Effect added');
+                await loadActiveChain();
+            } catch (e) {
+                log('Add plugin error: ' + e);
+                showToast('Failed to add effect', 'error');
+            }
+        };
+
+        window.removePlugin = async function(idx) {
+            if (!activeChain || !confirm('Remove this effect?')) return;
+            const plugin = activeChain.plugins[idx];
+            if (!plugin) return;
+            try {
+                // Double-encode the URI since it contains slashes
+                const encodedUri = encodeURIComponent(plugin.uri);
+                const response = await fetch(`${API_BASE}/chains/${activeChain.id}/plugins/${encodedUri}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) throw new Error('Delete failed');
+                showToast('Effect removed');
+                await loadActiveChain();
+            } catch (e) {
+                console.error('Remove plugin error:', e);
+                showToast('Failed to remove effect', 'error');
+            }
+        };
+
+        window.togglePluginBypass = async function(idx, currentBypass) {
+            if (!activeChain) return;
+            const plugin = activeChain.plugins[idx];
+            if (!plugin) return;
+
+            const newBypass = !currentBypass;
+            try {
+                // Use WebSocket for real-time bypass toggle
+                await sendRequest('setPedalboardItemEnable', {
+                    instanceId: idx,
+                    enabled: !newBypass  // enabled is opposite of bypass
+                });
+            } catch (wsError) {
+                console.log('WebSocket bypass failed, trying REST:', wsError);
+            }
+
+            // Also update via REST for persistence
+            try {
+                const encodedUri = encodeURIComponent(plugin.uri);
+                const response = await fetch(`${API_BASE}/chains/${activeChain.id}/plugins/${encodedUri}/bypass?bypass=${newBypass}`, {
+                    method: 'POST'
+                });
+                if (!response.ok) throw new Error('Bypass update failed');
+                await loadActiveChain();
+            } catch (e) {
+                console.error('Toggle bypass error:', e);
+                showToast('Failed to toggle bypass', 'error');
+            }
+        };
+
+        window.movePlugin = async function(idx, direction) {
+            if (!activeChain) return;
+            const plugins = activeChain.plugins;
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= plugins.length) return;
+
+            const newOrder = plugins.map(p => p.uri);
+            [newOrder[idx], newOrder[newIdx]] = [newOrder[newIdx], newOrder[idx]];
+
+            try {
+                await apiPost(`/chains/${activeChain.id}/reorder`, { plugin_uris: newOrder });
+                await loadActiveChain();
+            } catch (e) {
+                showToast('Failed to reorder', 'error');
+            }
+        };
+
+        window.showPluginControls = showPluginControls;
+
+        // Volume Controls
+        window.setInputVolume = async function(value) {
+            inputVolume = parseFloat(value);
+            document.getElementById('input-vol-display').textContent = inputVolume + ' dB';
+            try {
+                await sendRequest('setInputVolume', inputVolume);
+            } catch (e) {
+                log('Set input volume error: ' + e);
+            }
+        };
+
+        window.setOutputVolume = async function(value) {
+            outputVolume = parseFloat(value);
+            document.getElementById('output-vol-display').textContent = outputVolume + ' dB';
+            try {
+                await sendRequest('setOutputVolume', outputVolume);
+            } catch (e) {
+                log('Set output volume error: ' + e);
+            }
+        };
+
+        // Chains
+        window.createChain = async function() {
+            const name = document.getElementById('chain-name-input')?.value?.trim();
+            if (!name) {
+                showToast('Please enter a name', 'error');
+                return;
+            }
+            try {
+                await apiPost('/chains/', { name: name });
+                closeModal();
+                showToast('Chain created');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to create chain', 'error');
+            }
+        };
+
+        window.activateChain = async function(chainId) {
+            try {
+                await apiPost(`/chains/${chainId}/activate`);
+                showToast('Chain activated');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to activate chain', 'error');
+            }
+        };
+
+        window.renameChain = async function(chainId, currentName) {
+            const newName = prompt('New name:', currentName);
+            if (!newName || newName === currentName) return;
+            try {
+                await apiPut(`/chains/${chainId}/rename?new_name=${encodeURIComponent(newName)}`, {});
+                showToast('Chain renamed');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to rename chain', 'error');
+            }
+        };
+
+        window.duplicateChain = async function(chainId) {
+            const chain = chains.find(c => c.id === chainId);
+            if (!chain) return;
+            try {
+                const newChain = await apiPost('/chains/', { name: chain.name + ' (copy)' });
+                for (const plugin of (chain.plugins || [])) {
+                    await apiPost(`/chains/${newChain.id}/plugins?plugin_uri=${encodeURIComponent(plugin.uri)}`);
+                }
+                showToast('Chain duplicated');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to duplicate chain', 'error');
+            }
+        };
+
+        window.deleteChain = async function(chainId) {
+            if (!confirm('Delete this chain?')) return;
+            try {
+                await apiDelete(`/chains/${chainId}`);
+                showToast('Chain deleted');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to delete chain', 'error');
+            }
+        };
+
+        window.saveChainAsPreset = async function(chainId) {
+            const name = prompt('Preset name:');
+            if (!name) return;
+            try {
+                await apiPost(`/chains/${chainId}/preset/save?preset_name=${encodeURIComponent(name)}`);
+                showToast('Preset saved');
+                await loadPresets();
+            } catch (e) {
+                showToast('Failed to save preset', 'error');
+            }
+        };
+
+        window.loadTemplate = async function(templateName) {
+            try {
+                await apiPost(`/chains/templates/load?template_name=${encodeURIComponent(templateName)}`);
+                closeModal();
+                showToast('Template loaded');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to load template', 'error');
+            }
+        };
+
+        // Presets
+        window.saveCurrentPreset = async function() {
+            try {
+                await sendRequest('saveCurrentPreset');
+                showToast('Preset saved');
+            } catch (e) {
+                showToast('Failed to save preset', 'error');
+            }
+        };
+
+        window.savePresetAs = async function() {
+            const name = document.getElementById('preset-name-input')?.value?.trim();
+            if (!name) {
+                showToast('Please enter a name', 'error');
+                return;
+            }
+            try {
+                await sendRequest('saveCurrentPresetAs', name);
+                closeModal();
+                showToast('Preset saved');
+                await loadPresets();
+            } catch (e) {
+                showToast('Failed to save preset', 'error');
+            }
+        };
+
+        window.createNewPreset = async function() {
+            const name = document.getElementById('new-preset-name')?.value?.trim();
+            if (!name) return;
+            try {
+                await sendRequest('newPreset', name);
+                closeModal();
+                showToast('New preset created');
+                await loadPresets();
+            } catch (e) {
+                showToast('Failed to create preset', 'error');
+            }
+        };
+
+        window.loadPreset = async function(presetId) {
+            try {
+                await apiPost(`/chains/preset/${presetId}/load`);
+                showToast('Preset loaded');
+                await loadChains();
+            } catch (e) {
+                try {
+                    await sendRequest('loadPreset', presetId);
+                    showToast('Preset loaded');
+                    await loadChains();
+                } catch (e2) {
+                    showToast('Failed to load preset', 'error');
+                }
+            }
+        };
+
+        window.renamePreset = async function(presetId, currentName) {
+            const newName = prompt('New name:', currentName);
+            if (!newName || newName === currentName) return;
+            try {
+                await sendRequest('renamePresetItem', { id: presetId, name: newName });
+                showToast('Preset renamed');
+                await loadPresets();
+            } catch (e) {
+                showToast('Failed to rename preset', 'error');
+            }
+        };
+
+        window.copyPreset = async function(presetId) {
+            try {
+                await sendRequest('copyPreset', presetId);
+                showToast('Preset copied');
+                await loadPresets();
+            } catch (e) {
+                showToast('Failed to copy preset', 'error');
+            }
+        };
+
+        window.deletePreset = async function(presetId) {
+            if (!confirm('Delete this preset?')) return;
+            try {
+                await apiDelete(`/chains/preset/${presetId}`);
+                showToast('Preset deleted');
+                await loadPresets();
+            } catch (e) {
+                try {
+                    await sendRequest('deletePresetItems', [presetId]);
+                    showToast('Preset deleted');
+                    await loadPresets();
+                } catch (e2) {
+                    showToast('Failed to delete preset', 'error');
+                }
+            }
+        };
+
+        window.nextPreset = async function() {
+            try {
+                await sendRequest('nextPreset');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to load next preset', 'error');
+            }
+        };
+
+        window.previousPreset = async function() {
+            try {
+                await sendRequest('previousPreset');
+                await loadChains();
+            } catch (e) {
+                showToast('Failed to load previous preset', 'error');
+            }
+        };
+
+        // Banks
+        window.nextBank = async function() {
+            try {
+                await sendRequest('nextBank');
+                await loadBanks();
+                renderPresets();
+            } catch (e) {
+                showToast('Failed to switch bank', 'error');
+            }
+        };
+
+        window.previousBank = async function() {
+            try {
+                await sendRequest('previousBank');
+                await loadBanks();
+                renderPresets();
+            } catch (e) {
+                showToast('Failed to switch bank', 'error');
+            }
+        };
+
+        // Snapshots
+        window.setSnapshot = async function(snapshotId) {
+            try {
+                await sendRequest('setSnapshot', snapshotId);
+                currentSnapshot = snapshotId;
+                closeModal();
+                showToast('Snapshot ' + (snapshotId + 1) + ' selected');
+            } catch (e) {
+                showToast('Failed to set snapshot', 'error');
+            }
+        };
+
+        // Favorites
+        window.toggleFavorite = async function(uri) {
+            const idx = favorites.indexOf(uri);
+            if (idx >= 0) {
+                favorites.splice(idx, 1);
+            } else {
+                favorites.push(uri);
+            }
+            try {
+                await sendRequest('setFavorites', favorites);
+                renderPedalboard();
+            } catch (e) {
+                showToast('Failed to update favorites', 'error');
+            }
+        };
+
+        window.removeFavorite = async function(uri) {
+            const idx = favorites.indexOf(uri);
+            if (idx >= 0) {
+                favorites.splice(idx, 1);
+                try {
+                    await sendRequest('setFavorites', favorites);
+                    showFavoritesModal();
+                    renderSettings();
+                } catch (e) {
+                    showToast('Failed to remove favorite', 'error');
+                }
+            }
+        };
+
+        // Plugin Presets
+        window.loadPluginPreset = async function(pluginUri, presetIndex) {
+            try {
+                await sendRequest('loadPluginPreset', { uri: pluginUri, preset: presetIndex });
+                closeModal();
+                showToast('Plugin preset loaded');
+            } catch (e) {
+                showToast('Failed to load plugin preset', 'error');
+            }
+        };
+
+        window.savePluginPresetAs = async function(pluginUri) {
+            const name = document.getElementById('plugin-preset-name')?.value?.trim();
+            if (!name) return;
+            try {
+                await sendRequest('savePluginPresetAs', { uri: pluginUri, name: name });
+                closeModal();
+                showToast('Plugin preset saved');
+            } catch (e) {
+                showToast('Failed to save plugin preset', 'error');
+            }
+        };
+
+        // Settings Actions
+        window.refreshStatus = async function() {
+            await Promise.all([loadJackStatus(), loadJackSettings(), loadJackConfiguration()]);
+            renderSettings();
+            showToast('Status refreshed');
+        };
+
+        window.rescanPlugins = async function() {
+            showToast('Scanning plugins...');
+            await loadPlugins();
+            renderSettings();
+            showToast('Found ' + availablePlugins.length + ' plugins');
+        };
+
+        window.applyAudioSettings = async function() {
+            const sampleRate = parseInt(document.getElementById('sample-rate-select').value);
+            const bufferSize = parseInt(document.getElementById('buffer-size-select').value);
+            try {
+                await sendRequest('setJackSettings', {
+                    sample_rate: sampleRate,
+                    buffer_size: bufferSize
+                });
+                closeModal();
+                showToast('Audio settings applied. Restart may be required.');
+                await loadJackSettings();
+                renderSettings();
+            } catch (e) {
+                showToast('Failed to apply settings', 'error');
+            }
+        };
+
+        window.restartAudio = async function() {
+            if (!confirm('Restart audio engine?')) return;
+            try {
+                await sendRequest('restart');
+                showToast('Audio restarting...');
+            } catch (e) {
+                try {
+                    await apiPost('/audio/restart');
+                    showToast('Audio restarting...');
+                } catch (e2) {
+                    showToast('Failed to restart', 'error');
+                }
+            }
+        };
+
+        window.shutdownServer = async function() {
+            if (!confirm('Shutdown the server?')) return;
+            try {
+                await sendRequest('shutdown');
+                showToast('Server shutting down...');
+            } catch (e) {
+                showToast('Failed to shutdown', 'error');
+            }
+        };
+
+        window.filterPlugins = function(query) {
+            query = query.toLowerCase();
+            document.querySelectorAll('.plugin-item').forEach(item => {
+                const name = item.dataset.name || '';
+                item.style.display = name.includes(query) ? '' : 'none';
+            });
+            document.querySelectorAll('.plugin-category').forEach(cat => {
+                const hasVisible = Array.from(cat.querySelectorAll('.plugin-item'))
+                    .some(item => item.style.display !== 'none');
+                cat.style.display = hasVisible ? '' : 'none';
+            });
+        };
+
+        // Credits Modal
+        function showCreditsModal() {
+            const credits = [
+                {
+                    project: 'PiPedal',
+                    author: 'Robin Davies',
+                    description: 'Guitar Effects Pedal for Raspberry Pi with web interface',
+                    url: 'https://github.com/rerdavies/pipedal'
+                },
+                {
+                    project: 'ToobAmp',
+                    author: 'Robin Davies',
+                    description: 'High-quality LV2 guitar effects plugins',
+                    url: 'https://github.com/rerdavies/ToobAmp'
+                },
+                {
+                    project: 'Neural Amp Modeler (NAM)',
+                    author: 'Steven Atkinson',
+                    description: 'Open-source AI-based amp modeling using deep learning',
+                    url: 'https://github.com/sdatkinson/neural-amp-modeler'
+                },
+                {
+                    project: 'GuitarML / NeuralPi',
+                    author: 'Keith Bloemer',
+                    description: 'Neural network guitar plugins for Raspberry Pi',
+                    url: 'https://github.com/GuitarML'
+                },
+                {
+                    project: 'LV2 Audio Plugin Standard',
+                    author: 'David Robillard',
+                    description: 'Open standard for audio plugins',
+                    url: 'https://lv2plug.in/'
+                },
+                {
+                    project: 'JACK Audio Connection Kit',
+                    author: 'Paul Davis & Team',
+                    description: 'Professional low-latency audio server',
+                    url: 'https://jackaudio.org/'
+                },
+                {
+                    project: 'ALSA Project',
+                    author: 'Jaroslav Kysela, Takashi Iwai & Team',
+                    description: 'Advanced Linux Sound Architecture',
+                    url: 'https://alsa-project.org/'
+                },
+                {
+                    project: 'Calf Studio Gear',
+                    author: 'Krzysztof Foltman, Markus Schmidt & Team',
+                    description: 'Professional LV2 audio plugin pack',
+                    url: 'https://calf-studio-gear.org/'
+                },
+                {
+                    project: 'Linux Studio Plugins (LSP)',
+                    author: 'Vladimir Sadovnikov',
+                    description: 'Collection of open-source DSP plugins',
+                    url: 'https://lsp-plug.in/'
+                },
+                {
+                    project: 'MOD Audio',
+                    author: 'Gianfranco Ceccolini, Filipe Coelho & Team',
+                    description: 'LV2 plugin ecosystem and audio platform',
+                    url: 'https://mod.audio/'
+                },
+                {
+                    project: 'FastAPI',
+                    author: 'Sebastián Ramírez',
+                    description: 'Modern Python web framework for APIs',
+                    url: 'https://fastapi.tiangolo.com/'
+                },
+                {
+                    project: 'Ardour DAW',
+                    author: 'Paul Davis & Team',
+                    description: 'Professional digital audio workstation',
+                    url: 'https://ardour.org/'
+                }
+            ];
+
+            const html = \`
+                <div class="credits-content">
+                    <p class="credits-intro">
+                        MAP2 Audio Platform is built on the shoulders of giants.
+                        We are deeply grateful to these open-source projects and their creators.
+                    </p>
+                    <div class="credits-list">
+                        \${credits.map(c => \`
+                            <div class="credit-item">
+                                <div class="credit-header">
+                                    <span class="credit-project">\${c.project}</span>
+                                    <a href="\${c.url}" target="_blank" rel="noopener" class="credit-link">&#8599;</a>
+                                </div>
+                                <div class="credit-author">by \${c.author}</div>
+                                <div class="credit-desc">\${c.description}</div>
+                            </div>
+                        \`).join('')}
+                    </div>
+                    <div class="credits-footer">
+                        <p>And to all contributors to the Linux audio ecosystem!</p>
+                        <p class="text-muted">Open Source makes this possible.</p>
+                    </div>
+                </div>
+            \`;
+            showModal(html, '&#10084; Thank You');
+        }
+
+        // Modal shortcuts
+        window.showAddEffectModal = showAddEffectModal;
+        window.showCreateChainModal = showCreateChainModal;
+        window.showTemplatesModal = showTemplatesModal;
+        window.showFavoritesModal = showFavoritesModal;
+        window.showAudioSettingsModal = showAudioSettingsModal;
+        window.showSnapshotsModal = showSnapshotsModal;
+        window.showSavePresetAsModal = showSavePresetAsModal;
+        window.showNewPresetModal = showNewPresetModal;
+        window.showCreditsModal = showCreditsModal;
+        window.closeModal = closeModal;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            connect();
+            if (window.notifyPiPedalReady) {
+                window.notifyPiPedalReady();
+            }
+        });
+
+    })();
+    </script>
+</body>
+</html>

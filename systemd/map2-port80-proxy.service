@@ -1,0 +1,22 @@
+[Unit]
+Description=MAP2 Audio Port 80 Proxy (PiPedal Android compatibility)
+Documentation=https://github.com/rerdavies/pipedal
+After=network.target map2-audio.service
+Requires=map2-audio.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/mm/map2-audio
+ExecStart=/usr/bin/python3 -m app.services.port80_proxy
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=false
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/mm/map2-audio
+
+[Install]
+WantedBy=multi-user.target

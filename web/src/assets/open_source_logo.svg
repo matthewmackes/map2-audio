@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
+  <circle cx="50" cy="50" r="48" fill="#3DA639" stroke="#fff" stroke-width="4"/>
+  <path d="M50 18c-17.67 0-32 14.33-32 32s14.33 32 32 32 32-14.33 32-32-14.33-32-32-32zm0 58c-14.36 0-26-11.64-26-26S35.64 22 50 22s26 11.64 26 26-11.64 26-26 26zm0-44a18 18 0 1 0 0 36 18 18 0 0 0 0-36zm0 32a14 14 0 1 1 0-28 14 14 0 0 1 0 28z" fill="#fff"/>
+  <text x="50" y="56" text-anchor="middle" font-size="16" fill="#3DA639" font-family="Arial, Helvetica, sans-serif" font-weight="bold">OS</text>
+</svg>

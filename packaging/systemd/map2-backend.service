@@ -1,0 +1,14 @@
+[Unit]
+Description=MAP2 Audio Backend
+After=network.target
+
+[Service]
+Type=simple
+User=map2
+WorkingDirectory=/usr/lib/map2
+ExecStart=/usr/bin/python3 -m uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8080
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

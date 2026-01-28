@@ -1,0 +1,224 @@
+"""
+JUCE Audio Engine Tests
+Tests for the MAP2 JUCE-based audio engine
+"""
+
+import pytest
+import asyncio
+from unittest.mock import MagicMock, patch
+
+# Try to import the JUCE engine service
+try:
+    from app.services.juce_engine_service import (
+        JuceEngineService,
+        AudioEngineConfig,
+        get_audio_engine,
+        JUCE_AVAILABLE
+    )
+    JUCE_ENGINE_INSTALLED = JUCE_AVAILABLE
+except ImportError:
+    JUCE_ENGINE_INSTALLED = False
+
+
+@pytest.mark.skipif(not JUCE_ENGINE_INSTALLED, reason="JUCE engine not installed")
+class TestJuceEngine:
+    """Test JUCE Audio Engine."""
+
+    @pytest.fixture
+    def engine(self):
+        """Create a fresh engine instance for testing."""
+        config = AudioEngineConfig(
+            sample_rate=48000,
+            buffer_size=256,
+            audio_device="default",
+            enable_midi=False
+        )
+        return JuceEngineService(config)
+
+    @pytest.mark.asyncio
+    async def test_engine_initializes(self, engine):
+        """Test that engine can initialize."""
+        result = await engine.initialize()
+        assert result is True
+        assert engine.is_running is True
+        await engine.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_list_plugins(self, engine):
+        """Test plugin discovery."""
+        await engine.initialize()
+        
+        plugins = await engine.list_plugins()
+        
+        # Should find some LV2 plugins if installed
+        assert isinstance(plugins, list)
+        
+        if len(plugins) > 0:
+            plugin = plugins[0]
+            assert "uri" in plugin
+            assert "name" in plugin
+        
+        await engine.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_load_unload_plugin(self, engine):
+        """Test loading and unloading a plugin."""
+        await engine.initialize()
+        
+        plugins = await engine.list_plugins()
+        
+        if len(plugins) == 0:
+            pytest.skip("No plugins available for testing")
+        
+        test_plugin = plugins[0]["uri"]
+        
+        # Load plugin
+        instance_id = await engine.load_plugin(test_plugin)
+        assert instance_id > 0
+        
+        # Unload plugin
+        result = await engine.unload_plugin(instance_id)
+        assert result is True
+        
+        await engine.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_vu_levels(self, engine):
+        """Test VU level retrieval."""
+        await engine.initialize()
+        
+        levels = await engine.get_vu_levels()
+        
+        assert "input_left" in levels
+        assert "input_right" in levels
+        assert "output_left" in levels
+        assert "output_right" in levels
+        
+        await engine.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_system_info(self, engine):
+        """Test system info retrieval."""
+        await engine.initialize()
+        
+        info = engine.get_system_info()
+        
+        assert "version" in info
+        assert "sample_rate" in info
+        assert "buffer_size" in info
+        assert "available" in info
+        
+        await engine.shutdown()
+
+
+class TestJuceEngineService:
+    """Test JUCE Engine Service without actual engine."""
+
+    def test_singleton(self):
+        """Test that get_audio_engine returns singleton."""
+        from app.services.juce_engine_service import get_audio_engine
+        
+        service1 = get_audio_engine()
+        service2 = get_audio_engine()
+        
+        assert service1 is service2
+
+    def test_default_config(self):
+        """Test default configuration."""
+        config = AudioEngineConfig()
+        
+        assert config.sample_rate == 48000
+        assert config.buffer_size == 256
+        assert config.enable_midi is True
+
+    def test_properties_when_not_initialized(self):
+        """Test properties when engine not initialized."""
+        service = JuceEngineService()
+        
+        assert service.is_running is False
+        
+        info = service.get_system_info()
+        assert info["available"] is False or info["running"] is False
+
+
+class TestJuceEngineMocked:
+    """Test JUCE Engine with mocked C++ module."""
+
+    @pytest.fixture
+    def mock_engine(self):
+        """Create a mocked engine module."""
+        mock = MagicMock()
+        mock.get_version.return_value = "1.0.0-test"
+        mock.is_available.return_value = True
+        mock.create_engine.return_value = mock
+        mock.initialize.return_value = True
+        mock.start_audio.return_value = True
+        mock.stop_audio.return_value = True
+        mock.is_running.return_value = True
+        mock.is_audio_running.return_value = True
+        mock.get_system_info.return_value = {
+            "version": "1.0.0-test",
+            "sample_rate": 48000,
+            "buffer_size": 256,
+            "audio_device": "default",
+            "running": True,
+            "audio_running": True
+        }
+        mock.list_plugins.return_value = [
+            {"uri": "http://test.plugin/1", "name": "Test Plugin 1"},
+            {"uri": "http://test.plugin/2", "name": "Test Plugin 2"}
+        ]
+        mock.load_plugin.return_value = 1
+        mock.unload_plugin.return_value = True
+        mock.get_vu_levels.return_value = {
+            "input_left": 0.5,
+            "input_right": 0.5,
+            "output_left": 0.4,
+            "output_right": 0.4
+        }
+        return mock
+
+    @pytest.mark.asyncio
+    async def test_initialize_with_mock(self, mock_engine):
+        """Test initialization with mocked engine."""
+        with patch.dict('sys.modules', {'map2_audio_engine': mock_engine}):
+            with patch('app.services.juce_engine_service.juce_engine', mock_engine):
+                with patch('app.services.juce_engine_service.JUCE_AVAILABLE', True):
+                    service = JuceEngineService()
+                    
+                    # This would test the actual initialization flow
+                    # Note: The import happens at module load, so this is tricky to test
+
+    def test_version_string(self):
+        """Test version string format."""
+        service = JuceEngineService()
+        version = service.get_version()
+        assert isinstance(version, str)
+
+
+class TestPiPedalCompatibility:
+    """Test backward compatibility with PiPedal API."""
+
+    def test_pipedal_aliases_exist(self):
+        """Test that PiPedal compatibility aliases exist."""
+        from app.services.juce_engine_service import (
+            get_pipedal_service,
+            PIPEDAL_AVAILABLE,
+            PiPedalEngineService,
+            PiPedalConfig
+        )
+        
+        # These should exist for backward compatibility
+        assert get_pipedal_service is not None
+        assert PiPedalEngineService is not None
+        assert PiPedalConfig is not None
+
+    def test_get_pipedal_service_returns_juce(self):
+        """Test that get_pipedal_service returns JUCE engine."""
+        from app.services.juce_engine_service import get_pipedal_service, get_audio_engine
+        
+        pipedal = get_pipedal_service()
+        juce = get_audio_engine()
+        
+        # Should be the same object
+        assert pipedal is juce

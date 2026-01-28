@@ -1,0 +1,556 @@
+"""
+Real-Time Parameter Bridge
+Ultra-low latency parameter routing for MIDI, automation, and UI control.
+
+This service provides a dedicated fast path for parameter updates with <10ms latency,
+bypassing the normal REST API and event history mechanisms.
+"""
+
+import asyncio
+import logging
+import time
+import struct
+from typing import Dict, Set, Optional, Callable, Any, List, Tuple
+from dataclasses import dataclass, field
+from collections import defaultdict
+from enum import IntEnum
+from fastapi import WebSocket
+import json
+
+logger = logging.getLogger(__name__)
+
+
+class ParameterSource(IntEnum):
+    """Source of parameter update for priority handling."""
+    UI = 0           # User interface (knobs, sliders)
+    MIDI = 1         # MIDI controller
+    AUTOMATION = 2   # LFO, envelope follower
+    PRESET = 3       # Preset load
+    INTERNAL = 4     # Internal engine
+
+
+class BinaryMessageType(IntEnum):
+    """Binary message types for ultra-low latency protocol."""
+    PARAM_UPDATE = 0x01      # Single parameter update
+    PARAM_BATCH = 0x02       # Batch parameter updates
+    PING = 0x03              # Keepalive ping
+    PONG = 0x04              # Keepalive pong
+    SUBSCRIBE = 0x05         # Subscribe to parameter
+    UNSUBSCRIBE = 0x06       # Unsubscribe from parameter
+    ACK = 0x07               # Acknowledgment
+
+
+@dataclass
+class ParameterUpdate:
+    """Single parameter update."""
+    plugin_uri: str
+    param_index: int
+    value: float
+    source: ParameterSource = ParameterSource.UI
+    timestamp: float = field(default_factory=time.time)
+
+    def to_binary(self) -> bytes:
+        """
+        Encode to binary format for minimal overhead.
+        Format: [type:1][uri_len:2][uri:N][param_idx:2][value:4]
+        """
+        uri_bytes = self.plugin_uri.encode('utf-8')
+        return struct.pack(
+            f'>BH{len(uri_bytes)}sHf',
+            BinaryMessageType.PARAM_UPDATE,
+            len(uri_bytes),
+            uri_bytes,
+            self.param_index,
+            self.value
+        )
+
+    @classmethod
+    def from_binary(cls, data: bytes) -> 'ParameterUpdate':
+        """Decode from binary format."""
+        msg_type = data[0]
+        if msg_type != BinaryMessageType.PARAM_UPDATE:
+            raise ValueError(f"Invalid message type: {msg_type}")
+
+        uri_len = struct.unpack('>H', data[1:3])[0]
+        uri = data[3:3+uri_len].decode('utf-8')
+        param_idx, value = struct.unpack('>Hf', data[3+uri_len:3+uri_len+6])
+
+        return cls(
+            plugin_uri=uri,
+            param_index=param_idx,
+            value=value
+        )
+
+    def to_json(self) -> dict:
+        """Convert to JSON-serializable dict."""
+        return {
+            'plugin_uri': self.plugin_uri,
+            'param_index': self.param_index,
+            'value': self.value,
+            'source': self.source.name.lower(),
+            'timestamp': self.timestamp
+        }
+
+
+@dataclass
+class RTClient:
+    """Real-time WebSocket client state."""
+    client_id: str
+    websocket: WebSocket
+    connected_at: float = field(default_factory=time.time)
+    last_activity: float = field(default_factory=time.time)
+    subscribed_params: Set[Tuple[str, int]] = field(default_factory=set)
+    use_binary: bool = False
+    pending_updates: List[ParameterUpdate] = field(default_factory=list)
+
+
+class RealTimeParameterBridge:
+    """
+    Ultra-low latency parameter routing bridge.
+
+    Features:
+    - Direct WebSocket parameter updates (bidirectional)
+    - Binary protocol option for minimal parsing overhead
+    - Update coalescing for network efficiency
+    - Priority-based update handling
+    - Direct integration with audio engine
+    - Broadcast to subscribed clients
+    """
+
+    def __init__(self):
+        # Connected real-time clients
+        self._clients: Dict[str, RTClient] = {}
+
+        # Parameter value cache for instant reads
+        self._param_cache: Dict[Tuple[str, int], float] = {}
+
+        # Subscriptions: (plugin_uri, param_index) -> set of client_ids
+        self._subscriptions: Dict[Tuple[str, int], Set[str]] = defaultdict(set)
+
+        # Callback to audio engine for parameter changes
+        self._engine_callback: Optional[Callable[[str, int, float], None]] = None
+
+        # Lock-free update queue for engine integration
+        self._update_queue: asyncio.Queue[ParameterUpdate] = asyncio.Queue(maxsize=10000)
+
+        # Coalescing settings
+        self._coalesce_interval_ms: float = 2.0  # 2ms coalesce window
+        self._max_batch_size: int = 100
+
+        # Stats
+        self._stats = {
+            'updates_received': 0,
+            'updates_broadcast': 0,
+            'updates_to_engine': 0,
+            'binary_messages': 0,
+            'json_messages': 0,
+            'coalesced_updates': 0,
+            'avg_latency_us': 0.0,
+        }
+
+        # Processing task
+        self._processor_task: Optional[asyncio.Task] = None
+        self._running = False
+
+        # Latency tracking
+        self._latency_samples: List[float] = []
+        self._max_latency_samples = 1000
+
+    def set_engine_callback(self, callback: Callable[[str, int, float], None]):
+        """
+        Set callback for routing parameters to audio engine.
+
+        The callback should be non-blocking and thread-safe.
+        Signature: callback(plugin_uri: str, param_index: int, value: float)
+        """
+        self._engine_callback = callback
+        logger.info("Audio engine callback registered")
+
+    async def start(self):
+        """Start the parameter bridge processing loop."""
+        if self._running:
+            return
+
+        self._running = True
+        self._processor_task = asyncio.create_task(self._process_loop())
+        logger.info("RealTimeParameterBridge started")
+
+    async def stop(self):
+        """Stop the parameter bridge."""
+        self._running = False
+        if self._processor_task:
+            self._processor_task.cancel()
+            try:
+                await self._processor_task
+            except asyncio.CancelledError:
+                pass
+        logger.info("RealTimeParameterBridge stopped")
+
+    async def connect_client(self, websocket: WebSocket, client_id: str, use_binary: bool = False):
+        """
+        Register a new real-time client.
+
+        Args:
+            websocket: WebSocket connection
+            client_id: Unique client identifier
+            use_binary: Use binary protocol for minimal latency
+        """
+        await websocket.accept()
+
+        client = RTClient(
+            client_id=client_id,
+            websocket=websocket,
+            use_binary=use_binary
+        )
+        self._clients[client_id] = client
+
+        # Send welcome with protocol info
+        welcome = {
+            'type': 'rt_welcome',
+            'client_id': client_id,
+            'protocol': 'binary' if use_binary else 'json',
+            'coalesce_ms': self._coalesce_interval_ms,
+            'features': ['param_update', 'subscribe', 'batch']
+        }
+        await websocket.send_text(json.dumps(welcome))
+
+        logger.info(f"RT client connected: {client_id} (binary={use_binary})")
+
+    def disconnect_client(self, client_id: str):
+        """Remove a client and clean up subscriptions."""
+        if client_id not in self._clients:
+            return
+
+        # Remove from all subscriptions
+        for param_key in list(self._subscriptions.keys()):
+            self._subscriptions[param_key].discard(client_id)
+            if not self._subscriptions[param_key]:
+                del self._subscriptions[param_key]
+
+        del self._clients[client_id]
+        logger.info(f"RT client disconnected: {client_id}")
+
+    async def handle_message(self, client_id: str, data: bytes | str):
+        """
+        Handle incoming message from client.
+
+        Supports both binary and JSON protocols.
+        """
+        if client_id not in self._clients:
+            return
+
+        client = self._clients[client_id]
+        client.last_activity = time.time()
+
+        try:
+            if isinstance(data, bytes):
+                await self._handle_binary_message(client, data)
+            else:
+                await self._handle_json_message(client, data)
+        except Exception as e:
+            logger.error(f"Error handling RT message from {client_id}: {e}")
+
+    async def _handle_binary_message(self, client: RTClient, data: bytes):
+        """Handle binary protocol message."""
+        self._stats['binary_messages'] += 1
+
+        if len(data) < 1:
+            return
+
+        msg_type = data[0]
+
+        if msg_type == BinaryMessageType.PARAM_UPDATE:
+            update = ParameterUpdate.from_binary(data)
+            await self._process_update(update, client.client_id)
+
+        elif msg_type == BinaryMessageType.PARAM_BATCH:
+            # Batch format: [type:1][count:2][updates...]
+            count = struct.unpack('>H', data[1:3])[0]
+            offset = 3
+            for _ in range(count):
+                uri_len = struct.unpack('>H', data[offset:offset+2])[0]
+                update_end = offset + 2 + uri_len + 6
+                update_data = bytes([BinaryMessageType.PARAM_UPDATE]) + data[offset:update_end]
+                update = ParameterUpdate.from_binary(update_data)
+                await self._process_update(update, client.client_id)
+                offset = update_end
+
+        elif msg_type == BinaryMessageType.PING:
+            # Fast pong response
+            await client.websocket.send_bytes(bytes([BinaryMessageType.PONG]))
+
+        elif msg_type == BinaryMessageType.SUBSCRIBE:
+            # Subscribe format: [type:1][uri_len:2][uri:N][param_idx:2]
+            uri_len = struct.unpack('>H', data[1:3])[0]
+            uri = data[3:3+uri_len].decode('utf-8')
+            param_idx = struct.unpack('>H', data[3+uri_len:5+uri_len])[0]
+            await self._subscribe_param(client.client_id, uri, param_idx)
+
+        elif msg_type == BinaryMessageType.UNSUBSCRIBE:
+            uri_len = struct.unpack('>H', data[1:3])[0]
+            uri = data[3:3+uri_len].decode('utf-8')
+            param_idx = struct.unpack('>H', data[3+uri_len:5+uri_len])[0]
+            await self._unsubscribe_param(client.client_id, uri, param_idx)
+
+    async def _handle_json_message(self, client: RTClient, data: str):
+        """Handle JSON protocol message."""
+        self._stats['json_messages'] += 1
+
+        try:
+            msg = json.loads(data)
+        except json.JSONDecodeError:
+            return
+
+        action = msg.get('action')
+
+        if action == 'param_update':
+            update = ParameterUpdate(
+                plugin_uri=msg['plugin_uri'],
+                param_index=msg['param_index'],
+                value=msg['value'],
+                source=ParameterSource.UI
+            )
+            await self._process_update(update, client.client_id)
+
+        elif action == 'param_batch':
+            updates = msg.get('updates', [])
+            for u in updates:
+                update = ParameterUpdate(
+                    plugin_uri=u['plugin_uri'],
+                    param_index=u['param_index'],
+                    value=u['value'],
+                    source=ParameterSource.UI
+                )
+                await self._process_update(update, client.client_id)
+
+        elif action == 'subscribe':
+            await self._subscribe_param(
+                client.client_id,
+                msg['plugin_uri'],
+                msg['param_index']
+            )
+
+        elif action == 'unsubscribe':
+            await self._unsubscribe_param(
+                client.client_id,
+                msg['plugin_uri'],
+                msg['param_index']
+            )
+
+        elif action == 'subscribe_all':
+            # Subscribe to all params for a plugin
+            plugin_uri = msg['plugin_uri']
+            param_count = msg.get('param_count', 0)
+            for idx in range(param_count):
+                await self._subscribe_param(client.client_id, plugin_uri, idx)
+
+        elif action == 'ping':
+            await client.websocket.send_text(json.dumps({'type': 'pong'}))
+
+        elif action == 'get_value':
+            # Instant value read from cache
+            key = (msg['plugin_uri'], msg['param_index'])
+            value = self._param_cache.get(key)
+            await client.websocket.send_text(json.dumps({
+                'type': 'value',
+                'plugin_uri': msg['plugin_uri'],
+                'param_index': msg['param_index'],
+                'value': value
+            }))
+
+    async def _subscribe_param(self, client_id: str, plugin_uri: str, param_index: int):
+        """Subscribe client to parameter updates."""
+        key = (plugin_uri, param_index)
+        self._subscriptions[key].add(client_id)
+
+        if client_id in self._clients:
+            self._clients[client_id].subscribed_params.add(key)
+
+        # Send current value if cached
+        if key in self._param_cache:
+            await self._send_to_client(client_id, ParameterUpdate(
+                plugin_uri=plugin_uri,
+                param_index=param_index,
+                value=self._param_cache[key]
+            ))
+
+    async def _unsubscribe_param(self, client_id: str, plugin_uri: str, param_index: int):
+        """Unsubscribe client from parameter updates."""
+        key = (plugin_uri, param_index)
+        self._subscriptions[key].discard(client_id)
+
+        if client_id in self._clients:
+            self._clients[client_id].subscribed_params.discard(key)
+
+    async def _process_update(self, update: ParameterUpdate, source_client: Optional[str] = None):
+        """
+        Process a parameter update with minimal latency.
+
+        1. Update cache immediately
+        2. Queue for engine (non-blocking)
+        3. Broadcast to subscribers
+        """
+        start_time = time.perf_counter()
+
+        self._stats['updates_received'] += 1
+
+        # Update cache
+        key = (update.plugin_uri, update.param_index)
+        self._param_cache[key] = update.value
+
+        # Queue for engine (non-blocking)
+        try:
+            self._update_queue.put_nowait(update)
+        except asyncio.QueueFull:
+            # Drop oldest update if queue is full (shouldn't happen normally)
+            try:
+                self._update_queue.get_nowait()
+                self._update_queue.put_nowait(update)
+            except:
+                pass
+
+        # Broadcast to subscribers (except source)
+        subscribers = self._subscriptions.get(key, set())
+        for client_id in subscribers:
+            if client_id != source_client:
+                await self._send_to_client(client_id, update)
+
+        # Track latency
+        latency_us = (time.perf_counter() - start_time) * 1_000_000
+        self._latency_samples.append(latency_us)
+        if len(self._latency_samples) > self._max_latency_samples:
+            self._latency_samples.pop(0)
+        self._stats['avg_latency_us'] = sum(self._latency_samples) / len(self._latency_samples)
+
+    async def _send_to_client(self, client_id: str, update: ParameterUpdate):
+        """Send update to a specific client."""
+        if client_id not in self._clients:
+            return
+
+        client = self._clients[client_id]
+        self._stats['updates_broadcast'] += 1
+
+        try:
+            if client.use_binary:
+                await client.websocket.send_bytes(update.to_binary())
+            else:
+                await client.websocket.send_text(json.dumps({
+                    'type': 'param_update',
+                    **update.to_json()
+                }))
+        except Exception as e:
+            logger.warning(f"Failed to send to client {client_id}: {e}")
+            self.disconnect_client(client_id)
+
+    async def _process_loop(self):
+        """
+        Main processing loop for engine updates.
+
+        Coalesces updates to reduce engine calls while maintaining low latency.
+        """
+        pending: Dict[Tuple[str, int], ParameterUpdate] = {}
+        last_flush = time.time()
+
+        while self._running:
+            try:
+                # Try to get updates with short timeout
+                try:
+                    update = await asyncio.wait_for(
+                        self._update_queue.get(),
+                        timeout=self._coalesce_interval_ms / 1000
+                    )
+                    # Coalesce: keep only latest value per parameter
+                    key = (update.plugin_uri, update.param_index)
+                    if key in pending:
+                        self._stats['coalesced_updates'] += 1
+                    pending[key] = update
+
+                except asyncio.TimeoutError:
+                    pass
+
+                # Flush to engine if interval passed or batch full
+                now = time.time()
+                should_flush = (
+                    (now - last_flush) * 1000 >= self._coalesce_interval_ms or
+                    len(pending) >= self._max_batch_size
+                )
+
+                if should_flush and pending and self._engine_callback:
+                    for (plugin_uri, param_idx), update in pending.items():
+                        try:
+                            self._engine_callback(plugin_uri, param_idx, update.value)
+                            self._stats['updates_to_engine'] += 1
+                        except Exception as e:
+                            logger.error(f"Engine callback error: {e}")
+                    pending.clear()
+                    last_flush = now
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in RT parameter processing loop: {e}")
+                await asyncio.sleep(0.001)
+
+    async def update_from_engine(self, plugin_uri: str, param_index: int, value: float):
+        """
+        Called by engine when parameter changes internally.
+
+        Used for automation, MIDI, preset loading - broadcasts to all subscribed clients.
+        """
+        update = ParameterUpdate(
+            plugin_uri=plugin_uri,
+            param_index=param_index,
+            value=value,
+            source=ParameterSource.INTERNAL
+        )
+
+        # Update cache
+        key = (plugin_uri, param_index)
+        self._param_cache[key] = value
+
+        # Broadcast to all subscribers
+        subscribers = self._subscriptions.get(key, set())
+        for client_id in subscribers:
+            await self._send_to_client(client_id, update)
+
+    async def update_from_midi(self, plugin_uri: str, param_index: int, value: float):
+        """Called when MIDI controller changes a parameter."""
+        update = ParameterUpdate(
+            plugin_uri=plugin_uri,
+            param_index=param_index,
+            value=value,
+            source=ParameterSource.MIDI
+        )
+        await self._process_update(update, source_client=None)
+
+    async def update_from_automation(self, plugin_uri: str, param_index: int, value: float):
+        """Called when automation (LFO, envelope) changes a parameter."""
+        update = ParameterUpdate(
+            plugin_uri=plugin_uri,
+            param_index=param_index,
+            value=value,
+            source=ParameterSource.AUTOMATION
+        )
+        await self._process_update(update, source_client=None)
+
+    def get_cached_value(self, plugin_uri: str, param_index: int) -> Optional[float]:
+        """Get current cached value for a parameter."""
+        return self._param_cache.get((plugin_uri, param_index))
+
+    def set_cached_value(self, plugin_uri: str, param_index: int, value: float):
+        """Set cached value without triggering updates (for initialization)."""
+        self._param_cache[(plugin_uri, param_index)] = value
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get bridge statistics."""
+        return {
+            **self._stats,
+            'connected_clients': len(self._clients),
+            'cached_params': len(self._param_cache),
+            'active_subscriptions': sum(len(s) for s in self._subscriptions.values()),
+            'queue_size': self._update_queue.qsize(),
+        }
+
+
+# Global singleton instance
+rt_parameter_bridge = RealTimeParameterBridge()

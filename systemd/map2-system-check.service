@@ -1,0 +1,23 @@
+[Unit]
+Description=MAP2 Audio Platform System Check and Auto-Start
+After=network.target sound.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+User=%u
+Group=%g
+WorkingDirectory=/home/%u/map2-audio
+Environment="PYTHONPATH=/home/%u/map2-audio"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/%u/.local/bin"
+ExecStart=/bin/bash /home/%u/map2-audio/map2-system-check.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+# Restart on failure
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

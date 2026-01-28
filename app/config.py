@@ -1,0 +1,751 @@
+"""
+Centralized Configuration System for MAP2 Audio Platform
+
+Features:
+- JSON file persistence with automatic backup
+- Environment variable overrides (MAP2_* prefix)
+- Type-safe accessors with validation
+- Observer pattern for change notifications
+- Schema definition with defaults and descriptions
+- Multiple config sections with dot notation access
+- Singleton pattern for global access
+- Database integration for session-specific settings
+"""
+
+import json
+import logging
+import os
+import copy
+from pathlib import Path
+from typing import Any, Dict, Optional, List, Callable, TypeVar, Generic, Set
+from dataclasses import dataclass, field
+from enum import Enum
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+
+
+# ============================================================================
+# Configuration Schema Definition
+# ============================================================================
+
+@dataclass
+class ConfigOption:
+    """Definition of a single configuration option."""
+    key: str
+    default: Any
+    description: str
+    value_type: type
+    env_var: Optional[str] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    choices: Optional[List[Any]] = None
+    sensitive: bool = False  # Don't log sensitive values
+    restart_required: bool = False  # Requires restart to apply
+
+
+class ConfigSection(Enum):
+    """Configuration sections."""
+    APP = "app"
+    AUDIO = "audio"
+    MIDI = "midi"
+    LCD = "lcd"
+    BACKEND = "backend"
+    DATABASE = "database"
+    AUTOMATION = "automation"
+    PLUGINS = "plugins"
+    WEBSOCKET = "websocket"
+    MONITORING = "monitoring"
+    BACKUP = "backup"
+    STORAGE = "storage"
+
+
+# Configuration schema with all options
+CONFIG_SCHEMA: Dict[str, ConfigOption] = {
+    # Application settings
+    "app.name": ConfigOption(
+        key="app.name",
+        default="Mackes Audio Platform V2",
+        description="Application display name",
+        value_type=str,
+    ),
+    "app.version": ConfigOption(
+        key="app.version",
+        default="1.0.0-beta",
+        description="Application version",
+        value_type=str,
+    ),
+    "app.debug": ConfigOption(
+        key="app.debug",
+        default=False,
+        description="Enable debug mode",
+        value_type=bool,
+        env_var="MAP2_DEBUG",
+    ),
+    "app.log_level": ConfigOption(
+        key="app.log_level",
+        default="INFO",
+        description="Logging level",
+        value_type=str,
+        env_var="MAP2_LOG_LEVEL",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    ),
+
+    # Audio settings
+    "audio.sample_rate": ConfigOption(
+        key="audio.sample_rate",
+        default=48000,
+        description="Audio sample rate in Hz",
+        value_type=int,
+        env_var="MAP2_SAMPLE_RATE",
+        choices=[44100, 48000, 88200, 96000, 192000],
+        restart_required=True,
+    ),
+    "audio.buffer_size": ConfigOption(
+        key="audio.buffer_size",
+        default=256,
+        description="Audio buffer size in samples",
+        value_type=int,
+        env_var="MAP2_BUFFER_SIZE",
+        choices=[64, 128, 256, 512, 1024, 2048],
+        restart_required=True,
+    ),
+    "audio.channels": ConfigOption(
+        key="audio.channels",
+        default=2,
+        description="Number of audio channels",
+        value_type=int,
+        min_value=1,
+        max_value=32,
+        restart_required=True,
+    ),
+    "audio.device": ConfigOption(
+        key="audio.device",
+        default=None,
+        description="Audio device name (None for default)",
+        value_type=str,
+        env_var="MAP2_AUDIO_DEVICE",
+        restart_required=True,
+    ),
+    "audio.latency_compensation": ConfigOption(
+        key="audio.latency_compensation",
+        default=0.0,
+        description="Additional latency compensation in ms",
+        value_type=float,
+        min_value=-100.0,
+        max_value=100.0,
+    ),
+
+    # MIDI settings
+    "midi.enabled": ConfigOption(
+        key="midi.enabled",
+        default=True,
+        description="Enable MIDI functionality",
+        value_type=bool,
+        env_var="MAP2_MIDI_ENABLED",
+    ),
+    "midi.learn_timeout": ConfigOption(
+        key="midi.learn_timeout",
+        default=10.0,
+        description="MIDI learn mode timeout in seconds",
+        value_type=float,
+        min_value=1.0,
+        max_value=60.0,
+    ),
+    "midi.cc14_enabled": ConfigOption(
+        key="midi.cc14_enabled",
+        default=True,
+        description="Enable 14-bit CC (high resolution) support",
+        value_type=bool,
+    ),
+    "midi.default_curve": ConfigOption(
+        key="midi.default_curve",
+        default="linear",
+        description="Default MIDI response curve",
+        value_type=str,
+        choices=["linear", "logarithmic", "exponential", "s_curve"],
+    ),
+
+    # LCD settings
+    "lcd.enabled": ConfigOption(
+        key="lcd.enabled",
+        default=False,
+        description="Enable LCD display support",
+        value_type=bool,
+        env_var="MAP2_ENABLE_LCD",
+    ),
+    "lcd.addresses": ConfigOption(
+        key="lcd.addresses",
+        default=[0x27, 0x3F],
+        description="I2C addresses for LCD displays",
+        value_type=list,
+    ),
+    "lcd.simulation": ConfigOption(
+        key="lcd.simulation",
+        default=False,
+        description="Use LCD simulation mode",
+        value_type=bool,
+        env_var="MAP2_LCD_SIMULATION",
+    ),
+
+    # Backend settings
+    "backend.host": ConfigOption(
+        key="backend.host",
+        default="0.0.0.0",
+        description="Backend API host address",
+        value_type=str,
+        env_var="MAP2_HOST",
+    ),
+    "backend.port": ConfigOption(
+        key="backend.port",
+        default=8080,
+        description="Backend API port",
+        value_type=int,
+        env_var="MAP2_PORT",
+        min_value=1,
+        max_value=65535,
+    ),
+    "backend.workers": ConfigOption(
+        key="backend.workers",
+        default=2,
+        description="Number of worker processes",
+        value_type=int,
+        min_value=1,
+        max_value=16,
+    ),
+    "backend.cors_origins": ConfigOption(
+        key="backend.cors_origins",
+        default=["*"],
+        description="Allowed CORS origins",
+        value_type=list,
+    ),
+
+    # Database settings
+    "database.path": ConfigOption(
+        key="database.path",
+        default="~/.map2/map2.db",
+        description="Database file path",
+        value_type=str,
+        env_var="MAP2_DATABASE_PATH",
+    ),
+    "database.wal_mode": ConfigOption(
+        key="database.wal_mode",
+        default=True,
+        description="Enable SQLite WAL mode for reliability",
+        value_type=bool,
+    ),
+    "database.checkpoint_interval": ConfigOption(
+        key="database.checkpoint_interval",
+        default=300,
+        description="WAL checkpoint interval in seconds",
+        value_type=int,
+        min_value=60,
+        max_value=3600,
+    ),
+
+    # Automation settings
+    "automation.lfo_resolution_ms": ConfigOption(
+        key="automation.lfo_resolution_ms",
+        default=10.0,
+        description="LFO update resolution in milliseconds",
+        value_type=float,
+        min_value=1.0,
+        max_value=100.0,
+    ),
+    "automation.envelope_attack_default": ConfigOption(
+        key="automation.envelope_attack_default",
+        default=10.0,
+        description="Default envelope follower attack time in ms",
+        value_type=float,
+        min_value=0.1,
+        max_value=1000.0,
+    ),
+    "automation.envelope_release_default": ConfigOption(
+        key="automation.envelope_release_default",
+        default=100.0,
+        description="Default envelope follower release time in ms",
+        value_type=float,
+        min_value=1.0,
+        max_value=5000.0,
+    ),
+
+    # Plugin settings
+    "plugins.cache_ttl": ConfigOption(
+        key="plugins.cache_ttl",
+        default=300,
+        description="Plugin cache TTL in seconds",
+        value_type=int,
+        min_value=60,
+        max_value=3600,
+    ),
+    "plugins.scan_on_startup": ConfigOption(
+        key="plugins.scan_on_startup",
+        default=True,
+        description="Scan for plugins on application startup",
+        value_type=bool,
+    ),
+    "plugins.extra_lv2_paths": ConfigOption(
+        key="plugins.extra_lv2_paths",
+        default=[],
+        description="Additional LV2 plugin paths to scan",
+        value_type=list,
+    ),
+
+    # WebSocket settings
+    "websocket.ping_interval": ConfigOption(
+        key="websocket.ping_interval",
+        default=30000,
+        description="WebSocket ping interval in milliseconds",
+        value_type=int,
+        min_value=5000,
+        max_value=120000,
+    ),
+    "websocket.rt_coalesce_ms": ConfigOption(
+        key="websocket.rt_coalesce_ms",
+        default=2.0,
+        description="Real-time parameter coalesce window in ms",
+        value_type=float,
+        min_value=0.5,
+        max_value=50.0,
+    ),
+
+    # Monitoring settings
+    "monitoring.enabled": ConfigOption(
+        key="monitoring.enabled",
+        default=True,
+        description="Enable system monitoring",
+        value_type=bool,
+    ),
+    "monitoring.metrics_interval": ConfigOption(
+        key="monitoring.metrics_interval",
+        default=10,
+        description="Metrics collection interval in seconds",
+        value_type=int,
+        min_value=1,
+        max_value=60,
+    ),
+    "monitoring.health_check_interval": ConfigOption(
+        key="monitoring.health_check_interval",
+        default=5,
+        description="Health check interval in seconds",
+        value_type=int,
+        min_value=1,
+        max_value=60,
+    ),
+
+    # Backup settings
+    "backup.auto_backup_enabled": ConfigOption(
+        key="backup.auto_backup_enabled",
+        default=True,
+        description="Enable automatic session backups",
+        value_type=bool,
+    ),
+    "backup.auto_backup_interval": ConfigOption(
+        key="backup.auto_backup_interval",
+        default=300,
+        description="Auto-backup interval in seconds",
+        value_type=int,
+        min_value=60,
+        max_value=3600,
+    ),
+    "backup.max_backups": ConfigOption(
+        key="backup.max_backups",
+        default=50,
+        description="Maximum number of backup versions to keep",
+        value_type=int,
+        min_value=5,
+        max_value=500,
+    ),
+    "backup.backup_dir": ConfigOption(
+        key="backup.backup_dir",
+        default="~/.map2/backups",
+        description="Backup directory path",
+        value_type=str,
+    ),
+
+    # Storage settings - unified NAM and IR file locations
+    "storage.nam_user_dir": ConfigOption(
+        key="storage.nam_user_dir",
+        default="~/.local/share/map2/nam",
+        description="User NAM models directory",
+        value_type=str,
+        env_var="MAP2_NAM_DIR",
+    ),
+    "storage.ir_user_dir": ConfigOption(
+        key="storage.ir_user_dir",
+        default="~/.local/share/map2/ir",
+        description="User IR files directory",
+        value_type=str,
+        env_var="MAP2_IR_DIR",
+    ),
+    "storage.nam_system_dir": ConfigOption(
+        key="storage.nam_system_dir",
+        default="/var/lib/map2/nam",
+        description="System NAM models directory",
+        value_type=str,
+    ),
+    "storage.ir_system_dir": ConfigOption(
+        key="storage.ir_system_dir",
+        default="/var/lib/map2/ir",
+        description="System IR files directory",
+        value_type=str,
+    ),
+    "storage.extra_nam_paths": ConfigOption(
+        key="storage.extra_nam_paths",
+        default=["~/NAM", "~/NAM/models", "~/nam", "~/.local/share/NAM", "/usr/share/map2/nam", "~/Documents/NAM", "~/Downloads/NAM"],
+        description="Additional NAM discovery paths",
+        value_type=list,
+    ),
+    "storage.extra_ir_paths": ConfigOption(
+        key="storage.extra_ir_paths",
+        default=["~/Impulses", "~/IRs", "/usr/share/map2/ir", "/usr/share/impulses"],
+        description="Additional IR discovery paths",
+        value_type=list,
+    ),
+}
+
+
+# ============================================================================
+# Configuration Manager
+# ============================================================================
+
+class ConfigManager:
+    """
+    Centralized configuration management with file, environment, and database support.
+
+    Features:
+    - JSON file persistence with automatic backup
+    - Environment variable overrides (MAP2_* prefix)
+    - Type-safe accessors with validation
+    - Observer pattern for change notifications
+    - Schema definition with defaults and descriptions
+    """
+
+    _instance: Optional['ConfigManager'] = None
+    CONFIG_DIR = Path.home() / ".map2"
+    CONFIG_FILE = Path.home() / ".map2" / "config.json"
+    CONFIG_BACKUP = Path.home() / ".map2" / "config.backup.json"
+
+    def __init__(self, config_path: Optional[Path] = None):
+        """Initialize configuration manager.
+
+        Args:
+            config_path: Custom config file path (default: ~/.map2/config.json)
+        """
+        self.config_path = config_path or self.CONFIG_FILE
+        self.config_backup_path = self.CONFIG_BACKUP
+        self._config: Dict[str, Any] = {}
+        self._observers: Dict[str, Set[Callable[[str, Any, Any], None]]] = {}
+        self._dirty = False
+
+        # Ensure config directory exists
+        self.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+        # Load configuration
+        self._load()
+
+    @classmethod
+    def get_instance(cls) -> 'ConfigManager':
+        """Get singleton instance."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def _load(self) -> None:
+        """Load configuration from file, environment, and defaults."""
+        # Start with schema defaults
+        self._config = self._build_defaults()
+
+        # Load from file
+        if self.config_path.exists():
+            try:
+                with open(self.config_path, 'r') as f:
+                    file_config = json.load(f)
+                self._merge_config(file_config)
+                logger.info(f"Loaded config from {self.config_path}")
+            except Exception as e:
+                logger.warning(f"Failed to load config file: {e}")
+
+        # Apply environment variable overrides
+        self._apply_env_overrides()
+
+    def _build_defaults(self) -> Dict[str, Any]:
+        """Build default configuration from schema."""
+        config = {}
+        for key, option in CONFIG_SCHEMA.items():
+            self._set_nested(config, key, option.default)
+        return config
+
+    def _set_nested(self, d: Dict, key: str, value: Any) -> None:
+        """Set a nested value using dot notation."""
+        keys = key.split(".")
+        current = d
+        for k in keys[:-1]:
+            if k not in current:
+                current[k] = {}
+            current = current[k]
+        current[keys[-1]] = value
+
+    def _get_nested(self, d: Dict, key: str, default: Any = None) -> Any:
+        """Get a nested value using dot notation."""
+        keys = key.split(".")
+        current = d
+        for k in keys:
+            if isinstance(current, dict) and k in current:
+                current = current[k]
+            else:
+                return default
+        return current
+
+    def _merge_config(self, source: Dict[str, Any], prefix: str = "") -> None:
+        """Recursively merge source config into current config."""
+        for key, value in source.items():
+            full_key = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, dict):
+                self._merge_config(value, full_key)
+            else:
+                self._set_nested(self._config, full_key, value)
+
+    def _apply_env_overrides(self) -> None:
+        """Apply environment variable overrides."""
+        for key, option in CONFIG_SCHEMA.items():
+            if option.env_var:
+                env_value = os.environ.get(option.env_var)
+                if env_value is not None:
+                    try:
+                        converted = self._convert_type(env_value, option.value_type)
+                        self._set_nested(self._config, key, converted)
+                        if not option.sensitive:
+                            logger.debug(f"Config override from env: {key}={converted}")
+                    except Exception as e:
+                        logger.warning(f"Failed to convert env var {option.env_var}: {e}")
+
+    def _convert_type(self, value: str, target_type: type) -> Any:
+        """Convert string value to target type."""
+        if target_type == bool:
+            return value.lower() in ('true', '1', 'yes', 'on')
+        elif target_type == int:
+            return int(value)
+        elif target_type == float:
+            return float(value)
+        elif target_type == list:
+            return json.loads(value) if value.startswith('[') else value.split(',')
+        else:
+            return value
+
+    def _validate_value(self, key: str, value: Any) -> bool:
+        """Validate a configuration value against its schema."""
+        option = CONFIG_SCHEMA.get(key)
+        if not option:
+            return True  # Unknown keys are allowed
+
+        # Type check
+        if value is not None and not isinstance(value, option.value_type):
+            if option.value_type in (int, float) and isinstance(value, (int, float)):
+                pass  # Allow int/float conversion
+            else:
+                logger.warning(f"Config type mismatch: {key} expected {option.value_type}, got {type(value)}")
+                return False
+
+        # Range check
+        if option.min_value is not None and value < option.min_value:
+            logger.warning(f"Config value below minimum: {key}={value} (min={option.min_value})")
+            return False
+        if option.max_value is not None and value > option.max_value:
+            logger.warning(f"Config value above maximum: {key}={value} (max={option.max_value})")
+            return False
+
+        # Choice check
+        if option.choices is not None and value not in option.choices:
+            logger.warning(f"Config value not in choices: {key}={value} (choices={option.choices})")
+            return False
+
+        return True
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get configuration value using dot notation.
+
+        Args:
+            key: Configuration key (e.g., 'audio.sample_rate')
+            default: Default value if key not found
+
+        Returns:
+            Configuration value
+        """
+        return self._get_nested(self._config, key, default)
+
+    def get_int(self, key: str, default: int = 0) -> int:
+        """Get configuration value as integer."""
+        value = self.get(key, default)
+        return int(value) if value is not None else default
+
+    def get_float(self, key: str, default: float = 0.0) -> float:
+        """Get configuration value as float."""
+        value = self.get(key, default)
+        return float(value) if value is not None else default
+
+    def get_bool(self, key: str, default: bool = False) -> bool:
+        """Get configuration value as boolean."""
+        value = self.get(key, default)
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.lower() in ('true', '1', 'yes', 'on')
+        return bool(value) if value is not None else default
+
+    def get_str(self, key: str, default: str = "") -> str:
+        """Get configuration value as string."""
+        value = self.get(key, default)
+        return str(value) if value is not None else default
+
+    def get_list(self, key: str, default: Optional[List] = None) -> List:
+        """Get configuration value as list."""
+        value = self.get(key, default or [])
+        return list(value) if value is not None else (default or [])
+
+    def set(self, key: str, value: Any, save: bool = True) -> bool:
+        """
+        Set configuration value.
+
+        Args:
+            key: Configuration key
+            value: New value
+            save: Whether to persist to file
+
+        Returns:
+            True if value was set successfully
+        """
+        if not self._validate_value(key, value):
+            return False
+
+        old_value = self.get(key)
+        self._set_nested(self._config, key, value)
+        self._dirty = True
+
+        # Notify observers
+        self._notify_observers(key, old_value, value)
+
+        if save:
+            self.save()
+
+        return True
+
+    def save(self) -> bool:
+        """Save configuration to file."""
+        if not self._dirty:
+            return True
+
+        try:
+            # Backup existing config
+            if self.config_path.exists():
+                import shutil
+                shutil.copy2(self.config_path, self.config_backup_path)
+
+            # Write new config
+            with open(self.config_path, 'w') as f:
+                json.dump(self._config, f, indent=2)
+
+            self._dirty = False
+            logger.info(f"Configuration saved to {self.config_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to save config: {e}")
+            return False
+
+    def reload(self) -> None:
+        """Reload configuration from file."""
+        self._load()
+        logger.info("Configuration reloaded")
+
+    def reset_to_defaults(self) -> None:
+        """Reset all configuration to defaults."""
+        self._config = self._build_defaults()
+        self._dirty = True
+        self.save()
+        logger.info("Configuration reset to defaults")
+
+    def add_observer(self, key_pattern: str, callback: Callable[[str, Any, Any], None]) -> None:
+        """
+        Add observer for configuration changes.
+
+        Args:
+            key_pattern: Key pattern to observe (e.g., 'audio.*' or 'audio.sample_rate')
+            callback: Callback(key, old_value, new_value)
+        """
+        if key_pattern not in self._observers:
+            self._observers[key_pattern] = set()
+        self._observers[key_pattern].add(callback)
+
+    def remove_observer(self, key_pattern: str, callback: Callable) -> None:
+        """Remove observer for configuration changes."""
+        if key_pattern in self._observers:
+            self._observers[key_pattern].discard(callback)
+
+    def _notify_observers(self, key: str, old_value: Any, new_value: Any) -> None:
+        """Notify all matching observers of a config change."""
+        for pattern, callbacks in self._observers.items():
+            if pattern == key or (pattern.endswith('.*') and key.startswith(pattern[:-2])):
+                for callback in callbacks:
+                    try:
+                        callback(key, old_value, new_value)
+                    except Exception as e:
+                        logger.error(f"Observer callback error: {e}")
+
+    def get_section(self, section: str) -> Dict[str, Any]:
+        """Get all values in a configuration section."""
+        return self._get_nested(self._config, section, {})
+
+    def get_all(self) -> Dict[str, Any]:
+        """Get entire configuration."""
+        return copy.deepcopy(self._config)
+
+    def get_schema(self) -> Dict[str, Dict[str, Any]]:
+        """Get configuration schema for documentation/UI."""
+        schema = {}
+        for key, option in CONFIG_SCHEMA.items():
+            schema[key] = {
+                "default": option.default,
+                "description": option.description,
+                "type": option.value_type.__name__,
+                "env_var": option.env_var,
+                "min": option.min_value,
+                "max": option.max_value,
+                "choices": option.choices,
+                "restart_required": option.restart_required,
+            }
+        return schema
+
+    def get_option_info(self, key: str) -> Optional[Dict[str, Any]]:
+        """Get schema information for a specific option."""
+        option = CONFIG_SCHEMA.get(key)
+        if option:
+            return {
+                "key": option.key,
+                "default": option.default,
+                "description": option.description,
+                "type": option.value_type.__name__,
+                "current": self.get(key),
+            }
+        return None
+
+
+# ============================================================================
+# Global Access Functions
+# ============================================================================
+
+def get_config() -> ConfigManager:
+    """Get the global configuration manager instance."""
+    return ConfigManager.get_instance()
+
+
+def config_get(key: str, default: Any = None) -> Any:
+    """Convenience function to get config value."""
+    return get_config().get(key, default)
+
+
+def config_set(key: str, value: Any) -> bool:
+    """Convenience function to set config value."""
+    return get_config().set(key, value)

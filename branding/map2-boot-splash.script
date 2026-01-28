@@ -1,0 +1,166 @@
+/* MAP2 Audio Platform - Plymouth Boot Splash
+ * Professional VSCode Dark Theme
+ * Shows audio components loading
+ */
+
+// VSCode Dark color palette
+Window.GetMaxWidth = fun () { return Window.GetWidth(); };
+Window.GetMaxHeight = fun () { return Window.GetHeight(); };
+
+// Colors (VSCode Dark theme)
+COLOR_BG = [];
+COLOR_BG[0] = 0.11;  // #1E1E1E
+COLOR_BG[1] = 0.11;
+COLOR_BG[2] = 0.11;
+
+COLOR_PRIMARY = [];
+COLOR_PRIMARY[0] = 0.20;  // #007ACC (VSCode Blue)
+COLOR_PRIMARY[1] = 0.48;
+COLOR_PRIMARY[2] = 0.80;
+
+COLOR_SUCCESS = [];
+COLOR_SUCCESS[0] = 0.31;  // #4EC9B0 (Greenish)
+COLOR_SUCCESS[1] = 0.79;
+COLOR_SUCCESS[2] = 0.69;
+
+COLOR_TEXT = [];
+COLOR_TEXT[0] = 0.83;  // #D4D4D4
+COLOR_TEXT[1] = 0.83;
+COLOR_TEXT[2] = 0.83;
+
+COLOR_ACCENT = [];
+COLOR_ACCENT[0] = 0.86;  // #DCDCAA (Yellow)
+COLOR_ACCENT[1] = 0.86;
+COLOR_ACCENT[2] = 0.67;
+
+// Set background
+Window.SetBackgroundTopColor(COLOR_BG[0], COLOR_BG[1], COLOR_BG[2]);
+Window.SetBackgroundBottomColor(COLOR_BG[0], COLOR_BG[1], COLOR_BG[2]);
+
+// Logo/Title
+title_image = Image.Text("MAP2 Audio Platform", COLOR_PRIMARY[0], COLOR_PRIMARY[1], COLOR_PRIMARY[2], 1.2);
+title_sprite = Sprite(title_image);
+title_sprite.SetX(Window.GetWidth() / 2 - title_image.GetWidth() / 2);
+title_sprite.SetY(Window.GetHeight() / 6);
+
+subtitle_image = Image.Text("Professional Real-Time Audio Processing", COLOR_TEXT[0], COLOR_TEXT[1], COLOR_TEXT[2], 0.8);
+subtitle_sprite = Sprite(subtitle_image);
+subtitle_sprite.SetX(Window.GetWidth() / 2 - subtitle_image.GetWidth() / 2);
+subtitle_sprite.SetY(Window.GetHeight() / 6 + 40);
+
+// Audio components being loaded
+components = [];
+components[0] = "LV2 Plugin System";
+components[1] = "MIDI Engine";
+components[2] = "Audio Processor";
+components[3] = "Signal Chains";
+components[4] = "REST API Backend";
+components[5] = "LCD Display Driver";
+components[6] = "Real-Time Scheduler";
+components[7] = "USB Audio Interface";
+
+component_sprites = [];
+component_status_sprites = [];
+loaded_count = 0;
+
+base_y = Window.GetHeight() / 2 - 80;
+line_height = 25;
+
+// Create component lines
+for (i = 0; i < 8; i++) {
+    component_text = Image.Text(components[i], COLOR_TEXT[0], COLOR_TEXT[1], COLOR_TEXT[2], 0.7);
+    component_sprites[i] = Sprite(component_text);
+    component_sprites[i].SetX(Window.GetWidth() / 2 - 150);
+    component_sprites[i].SetY(base_y + i * line_height);
+    
+    // Status indicator (initially empty)
+    status_text = Image.Text("[ ]", COLOR_TEXT[0], COLOR_TEXT[1], COLOR_TEXT[2], 0.7);
+    component_status_sprites[i] = Sprite(status_text);
+    component_status_sprites[i].SetX(Window.GetWidth() / 2 + 100);
+    component_status_sprites[i].SetY(base_y + i * line_height);
+}
+
+// Progress bar
+progress_bar_width = 300;
+progress_bar_height = 8;
+progress_bar_x = Window.GetWidth() / 2 - progress_bar_width / 2;
+progress_bar_y = Window.GetHeight() - 100;
+
+// Progress bar background
+progress_bg = Image("fsimage://");
+progress_bg = progress_bg.Scale(progress_bar_width, progress_bar_height);
+progress_bg_sprite = Sprite();
+progress_bg_sprite.SetImage(Image.Color(COLOR_TEXT[0] * 0.3, COLOR_TEXT[1] * 0.3, COLOR_TEXT[2] * 0.3, progress_bar_width, progress_bar_height));
+progress_bg_sprite.SetX(progress_bar_x);
+progress_bg_sprite.SetY(progress_bar_y);
+
+// Progress bar foreground
+progress_fg_sprite = Sprite();
+progress_fg_sprite.SetX(progress_bar_x);
+progress_fg_sprite.SetY(progress_bar_y);
+
+// Status message
+status_image = Image.Text("Initializing...", COLOR_ACCENT[0], COLOR_ACCENT[1], COLOR_ACCENT[2], 0.8);
+status_sprite = Sprite(status_image);
+status_sprite.SetX(Window.GetWidth() / 2 - status_image.GetWidth() / 2);
+status_sprite.SetY(progress_bar_y + 25);
+
+// Update function
+fun refresh_callback() {
+    // Simulate component loading based on progress
+    progress = Plymouth.GetBootProgress();
+    
+    // Update progress bar
+    progress_width = Math.Int(progress * progress_bar_width);
+    if (progress_width > 0) {
+        progress_fg_sprite.SetImage(Image.Color(COLOR_SUCCESS[0], COLOR_SUCCESS[1], COLOR_SUCCESS[2], progress_width, progress_bar_height));
+    }
+    
+    // Update component status
+    components_to_load = Math.Int(progress * 9);  // 0-8 components
+    for (i = 0; i < 8; i++) {
+        if (i < components_to_load) {
+            check_text = Image.Text("[✓]", COLOR_SUCCESS[0], COLOR_SUCCESS[1], COLOR_SUCCESS[2], 0.7);
+            component_status_sprites[i].SetImage(check_text);
+        } else if (i == components_to_load) {
+            loading_text = Image.Text("[...]", COLOR_ACCENT[0], COLOR_ACCENT[1], COLOR_ACCENT[2], 0.7);
+            component_status_sprites[i].SetImage(loading_text);
+        }
+    }
+    
+    // Update status message
+    if (progress < 0.3) {
+        msg = "Initializing audio subsystem...";
+    } else if (progress < 0.6) {
+        msg = "Loading audio components...";
+    } else if (progress < 0.9) {
+        msg = "Starting services...";
+    } else if (progress < 1.0) {
+        msg = "Finalizing configuration...";
+    } else {
+        msg = "System ready for audio processing!";
+    }
+    
+    status_image = Image.Text(msg, COLOR_ACCENT[0], COLOR_ACCENT[1], COLOR_ACCENT[2], 0.8);
+    status_sprite.SetImage(status_image);
+    status_sprite.SetX(Window.GetWidth() / 2 - status_image.GetWidth() / 2);
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+// Boot progress callback
+Plymouth.SetBootProgressFunction(refresh_callback);
+
+// Display normal/verbose mode (just use normal view for both)
+Plymouth.SetDisplayNormalFunction(refresh_callback);
+Plymouth.SetDisplayPasswordFunction(refresh_callback);
+
+// Message handler
+fun message_callback (text) {
+    // Update status with any system messages
+    status_image = Image.Text(text, COLOR_TEXT[0], COLOR_TEXT[1], COLOR_TEXT[2], 0.7);
+    status_sprite.SetImage(status_image);
+    status_sprite.SetX(Window.GetWidth() / 2 - status_image.GetWidth() / 2);
+}
+
+Plymouth.SetMessageFunction(message_callback);

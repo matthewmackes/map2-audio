@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'map2-audio'
+
+scrape_configs:
+  - job_name: 'map2-backend'
+    static_configs:
+      - targets: ['backend:8080']
+    metrics_path: '/api/metrics/prometheus'
+    scrape_interval: 5s

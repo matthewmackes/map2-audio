@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=MAP2 Audio Platform
+Description=Professional boot splash for MAP2 Audio Platform with VSCode Dark theme
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/map2
+ScriptFile=/usr/share/plymouth/themes/map2/map2-boot-splash.script

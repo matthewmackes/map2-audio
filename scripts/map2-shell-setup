@@ -1,0 +1,260 @@
+#!/bin/bash
+# MAP2 Audio Platform - Shell Customization Setup
+# Interactive installer for popular bash shell enhancements
+
+# Colors
+COLOR_RESET="\033[0m"
+COLOR_PRIMARY="\033[38;2;0;122;204m"
+COLOR_SUCCESS="\033[38;2;78;201;176m"
+COLOR_WARNING="\033[38;2;255;204;0m"
+COLOR_ERROR="\033[38;2;255;85;85m"
+COLOR_TEXT="\033[38;2;212;212;212m"
+COLOR_DIM="\033[38;2;128;128;128m"
+
+echo -e "${COLOR_PRIMARY}"
+cat << 'EOF'
+╔════════════════════════════════════════════════════════════════════╗
+║           MAP2 Shell Customization Setup                           ║
+╚════════════════════════════════════════════════════════════════════╝
+EOF
+echo -e "${COLOR_RESET}"
+
+echo -e "${COLOR_TEXT}Choose a shell enhancement to install:${COLOR_RESET}"
+echo ""
+echo -e "  ${COLOR_PRIMARY}1)${COLOR_RESET} Starship        ${COLOR_DIM}Rust-powered, cross-shell, blazing fast${COLOR_RESET}"
+echo -e "                     ${COLOR_DIM}Best for: Speed and simplicity${COLOR_RESET}"
+echo ""
+echo -e "  ${COLOR_PRIMARY}2)${COLOR_RESET} Oh-My-Bash      ${COLOR_DIM}100+ themes, extensive plugin system${COLOR_RESET}"
+echo -e "                     ${COLOR_DIM}Best for: Customization and features${COLOR_RESET}"
+echo ""
+echo -e "  ${COLOR_PRIMARY}3)${COLOR_RESET} Powerline-Shell ${COLOR_DIM}Git-aware, colored segments${COLOR_RESET}"
+echo -e "                     ${COLOR_DIM}Best for: Git workflow visibility${COLOR_RESET}"
+echo ""
+echo -e "  ${COLOR_PRIMARY}4)${COLOR_RESET} Liquid Prompt   ${COLOR_DIM}Adaptive, shows info only when needed${COLOR_RESET}"
+echo -e "                     ${COLOR_DIM}Best for: Minimal overhead${COLOR_RESET}"
+echo ""
+echo -e "  ${COLOR_PRIMARY}5)${COLOR_RESET} Bash-it         ${COLOR_DIM}Modular framework with aliases${COLOR_RESET}"
+echo -e "                     ${COLOR_DIM}Best for: Bash power users${COLOR_RESET}"
+echo ""
+echo -e "  ${COLOR_PRIMARY}0)${COLOR_RESET} Exit            ${COLOR_DIM}Cancel installation${COLOR_RESET}"
+echo ""
+
+read -p "Enter your choice [0-5]: " choice
+
+install_starship() {
+    echo -e "\n${COLOR_PRIMARY}Installing Starship...${COLOR_RESET}"
+
+    # Check for Nerd Font warning
+    echo -e "${COLOR_WARNING}Note: Starship works best with a Nerd Font installed.${COLOR_RESET}"
+    echo -e "${COLOR_DIM}Recommended: FiraCode Nerd Font - https://www.nerdfonts.com/${COLOR_RESET}"
+    echo ""
+
+    # Install starship
+    curl -sS https://starship.rs/install.sh | sh
+
+    if command -v starship &>/dev/null; then
+        # Add to bashrc if not already present
+        if ! grep -q 'eval "$(starship init bash)"' ~/.bashrc; then
+            echo '' >> ~/.bashrc
+            echo '# Starship prompt' >> ~/.bashrc
+            echo 'eval "$(starship init bash)"' >> ~/.bashrc
+            echo -e "${COLOR_SUCCESS}Starship added to ~/.bashrc${COLOR_RESET}"
+        fi
+
+        # Create default config
+        mkdir -p ~/.config
+        if [ ! -f ~/.config/starship.toml ]; then
+            cat > ~/.config/starship.toml << 'TOML'
+# MAP2 Audio - Starship Configuration
+# Documentation: https://starship.rs/config/
+
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[✗](bold red)"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+
+[git_status]
+conflicted = "="
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+untracked = "?"
+stashed = "$"
+modified = "!"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+
+[python]
+symbol = " "
+
+[nodejs]
+symbol = " "
+
+[rust]
+symbol = " "
+TOML
+            echo -e "${COLOR_SUCCESS}Created ~/.config/starship.toml${COLOR_RESET}"
+        fi
+
+        echo -e "${COLOR_SUCCESS}Starship installed successfully!${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Restart your terminal or run: source ~/.bashrc${COLOR_RESET}"
+    else
+        echo -e "${COLOR_ERROR}Starship installation failed${COLOR_RESET}"
+    fi
+}
+
+install_ohmybash() {
+    echo -e "\n${COLOR_PRIMARY}Installing Oh-My-Bash...${COLOR_RESET}"
+
+    if [ -d "$HOME/.oh-my-bash" ]; then
+        echo -e "${COLOR_WARNING}Oh-My-Bash is already installed at ~/.oh-my-bash${COLOR_RESET}"
+        return
+    fi
+
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" --unattended
+
+    if [ -d "$HOME/.oh-my-bash" ]; then
+        # Set a nice theme
+        sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/' ~/.bashrc 2>/dev/null || true
+
+        echo -e "${COLOR_SUCCESS}Oh-My-Bash installed successfully!${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Theme set to: powerline-multiline${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Edit ~/.bashrc to change OSH_THEME${COLOR_RESET}"
+    else
+        echo -e "${COLOR_ERROR}Oh-My-Bash installation failed${COLOR_RESET}"
+    fi
+}
+
+install_powerline() {
+    echo -e "\n${COLOR_PRIMARY}Installing Powerline-Shell...${COLOR_RESET}"
+
+    # Check for pip
+    if ! command -v pip &>/dev/null && ! command -v pip3 &>/dev/null; then
+        echo -e "${COLOR_ERROR}pip is required. Install with: sudo dnf install python3-pip${COLOR_RESET}"
+        return
+    fi
+
+    PIP_CMD="pip3"
+    command -v pip3 &>/dev/null || PIP_CMD="pip"
+
+    $PIP_CMD install --user powerline-shell
+
+    if command -v powerline-shell &>/dev/null || [ -f "$HOME/.local/bin/powerline-shell" ]; then
+        # Add to bashrc if not already present
+        if ! grep -q 'powerline-shell' ~/.bashrc; then
+            cat >> ~/.bashrc << 'BASH'
+
+# Powerline-Shell prompt
+function _update_ps1() {
+    PS1=$(powerline-shell $?)
+}
+
+if [[ $TERM != linux && ! $PROMPT_COMMAND =~ _update_ps1 ]]; then
+    PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
+fi
+BASH
+            echo -e "${COLOR_SUCCESS}Powerline-Shell added to ~/.bashrc${COLOR_RESET}"
+        fi
+
+        # Create config
+        mkdir -p ~/.config/powerline-shell
+        if [ ! -f ~/.config/powerline-shell/config.json ]; then
+            cat > ~/.config/powerline-shell/config.json << 'JSON'
+{
+  "segments": [
+    "virtual_env",
+    "username",
+    "hostname",
+    "ssh",
+    "cwd",
+    "git",
+    "hg",
+    "jobs",
+    "root"
+  ],
+  "cwd": {
+    "max_depth": 3
+  },
+  "theme": "default"
+}
+JSON
+            echo -e "${COLOR_SUCCESS}Created ~/.config/powerline-shell/config.json${COLOR_RESET}"
+        fi
+
+        echo -e "${COLOR_SUCCESS}Powerline-Shell installed successfully!${COLOR_RESET}"
+        echo -e "${COLOR_WARNING}Note: Install a Powerline font for best results${COLOR_RESET}"
+    else
+        echo -e "${COLOR_ERROR}Powerline-Shell installation failed${COLOR_RESET}"
+    fi
+}
+
+install_liquidprompt() {
+    echo -e "\n${COLOR_PRIMARY}Installing Liquid Prompt...${COLOR_RESET}"
+
+    if [ -d "$HOME/liquidprompt" ]; then
+        echo -e "${COLOR_WARNING}Liquid Prompt already exists at ~/liquidprompt${COLOR_RESET}"
+        return
+    fi
+
+    git clone --depth=1 https://github.com/nojhan/liquidprompt.git ~/liquidprompt
+
+    if [ -d "$HOME/liquidprompt" ]; then
+        # Add to bashrc if not already present
+        if ! grep -q 'liquidprompt' ~/.bashrc; then
+            echo '' >> ~/.bashrc
+            echo '# Liquid Prompt' >> ~/.bashrc
+            echo '[[ $- = *i* ]] && source ~/liquidprompt/liquidprompt' >> ~/.bashrc
+            echo -e "${COLOR_SUCCESS}Liquid Prompt added to ~/.bashrc${COLOR_RESET}"
+        fi
+
+        echo -e "${COLOR_SUCCESS}Liquid Prompt installed successfully!${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Config: ~/.liquidpromptrc (copy from ~/liquidprompt/liquidpromptrc-dist)${COLOR_RESET}"
+    else
+        echo -e "${COLOR_ERROR}Liquid Prompt installation failed${COLOR_RESET}"
+    fi
+}
+
+install_bashit() {
+    echo -e "\n${COLOR_PRIMARY}Installing Bash-it...${COLOR_RESET}"
+
+    if [ -d "$HOME/.bash_it" ]; then
+        echo -e "${COLOR_WARNING}Bash-it already exists at ~/.bash_it${COLOR_RESET}"
+        return
+    fi
+
+    git clone --depth=1 https://github.com/Bash-it/bash-it.git ~/.bash_it
+
+    if [ -d "$HOME/.bash_it" ]; then
+        ~/.bash_it/install.sh --silent
+
+        echo -e "${COLOR_SUCCESS}Bash-it installed successfully!${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Enable plugins: bash-it enable plugin <name>${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Enable aliases: bash-it enable alias <name>${COLOR_RESET}"
+        echo -e "${COLOR_DIM}Change theme:   bash-it theme <name>${COLOR_RESET}"
+    else
+        echo -e "${COLOR_ERROR}Bash-it installation failed${COLOR_RESET}"
+    fi
+}
+
+case $choice in
+    1) install_starship ;;
+    2) install_ohmybash ;;
+    3) install_powerline ;;
+    4) install_liquidprompt ;;
+    5) install_bashit ;;
+    0) echo -e "${COLOR_DIM}Installation cancelled.${COLOR_RESET}"; exit 0 ;;
+    *) echo -e "${COLOR_ERROR}Invalid choice${COLOR_RESET}"; exit 1 ;;
+esac
+
+echo ""
+echo -e "${COLOR_PRIMARY}════════════════════════════════════════════════════════════════════${COLOR_RESET}"
+echo -e "${COLOR_TEXT}Restart your terminal or run: ${COLOR_SUCCESS}source ~/.bashrc${COLOR_RESET}"
+echo -e "${COLOR_PRIMARY}════════════════════════════════════════════════════════════════════${COLOR_RESET}"

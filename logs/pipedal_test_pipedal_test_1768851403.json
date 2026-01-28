@@ -1,0 +1,343 @@
+{
+  "test_id": "pipedal_test_1768851403",
+  "timestamp": "2026-01-19T14:36:43.110790",
+  "hostname": "MAP2-TESTBED",
+  "total_tests": 22,
+  "passed_tests": 16,
+  "failed_tests": 6,
+  "overall_status": "fair",
+  "score": 63,
+  "duration_seconds": 2.83,
+  "categories": {
+    "Engine Core": {
+      "name": "Engine Core",
+      "status": "failed",
+      "total_tests": 3,
+      "passed_tests": 0,
+      "failed_tests": 3,
+      "duration_seconds": 0.01,
+      "tests": [
+        {
+          "name": "Engine Status Check",
+          "passed": false,
+          "details": "Engine not available or not responding",
+          "duration_ms": 5.62,
+          "timestamp": "2026-01-19T14:36:43.116860",
+          "data": {
+            "detail": "Not Found"
+          }
+        },
+        {
+          "name": "Engine Initialization",
+          "passed": false,
+          "details": "Failed to initialize engine",
+          "duration_ms": 2.39,
+          "timestamp": "2026-01-19T14:36:43.119276",
+          "data": {
+            "detail": "Not Found"
+          }
+        },
+        {
+          "name": "System Information",
+          "passed": false,
+          "details": "Could not retrieve system information",
+          "duration_ms": 2.02,
+          "timestamp": "2026-01-19T14:36:43.121312",
+          "data": {
+            "detail": "Not Found"
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Plugin Discovery": {
+      "name": "Plugin Discovery",
+      "status": "failed",
+      "total_tests": 2,
+      "passed_tests": 0,
+      "failed_tests": 2,
+      "duration_seconds": 0.0,
+      "tests": [
+        {
+          "name": "Plugin Discovery",
+          "passed": false,
+          "details": "Failed to discover plugins",
+          "duration_ms": 1.97,
+          "timestamp": "2026-01-19T14:36:43.125007",
+          "data": {
+            "detail": "Not Found"
+          }
+        },
+        {
+          "name": "Plugin Detail Info",
+          "passed": false,
+          "details": "No plugins available for detail test",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:43.125019"
+        }
+      ],
+      "summary": ""
+    },
+    "Audio Engine": {
+      "name": "Audio Engine",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 0.01,
+      "tests": [
+        {
+          "name": "Audio Status",
+          "passed": true,
+          "details": "Engine: pipedal",
+          "duration_ms": 1.65,
+          "timestamp": "2026-01-19T14:36:43.126752",
+          "data": {
+            "running": false,
+            "sample_rate": 48000,
+            "buffer_size": 128,
+            "cpu_load": 0.0,
+            "engine": "pipedal",
+            "version": "unavailable",
+            "plugin_count": 0,
+            "active_pedalboard": null,
+            "available": true
+          }
+        },
+        {
+          "name": "Audio Levels",
+          "passed": true,
+          "details": "Input: 0.000, Output: 0.000",
+          "duration_ms": 1.67,
+          "timestamp": "2026-01-19T14:36:43.128438",
+          "data": {
+            "input_left": 0.0,
+            "input_right": 0.0,
+            "output_left": 0.0,
+            "output_right": 0.0
+          }
+        },
+        {
+          "name": "Audio Configuration",
+          "passed": true,
+          "details": "Audio configuration accessible",
+          "duration_ms": 1.64,
+          "timestamp": "2026-01-19T14:36:43.130095",
+          "data": {
+            "available": true,
+            "running": false,
+            "version": "unavailable",
+            "sample_rate": null,
+            "buffer_size": null,
+            "alsa_device": null,
+            "plugin_count": null,
+            "loaded_plugins": 0,
+            "active_pedalboard": "none",
+            "current_snapshot": null,
+            "cpu_load": 0.0,
+            "underruns": 0,
+            "midi_enabled": false
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Chain Management": {
+      "name": "Chain Management",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 1.06,
+      "tests": [
+        {
+          "name": "Chain List",
+          "passed": true,
+          "details": "Found 1 chains",
+          "duration_ms": 1000.23,
+          "timestamp": "2026-01-19T14:36:44.130418",
+          "data": {
+            "count": 1
+          }
+        },
+        {
+          "name": "Chain Creation",
+          "passed": true,
+          "details": "Created chain 'boot_test_1768851404' with ID 3",
+          "duration_ms": 30.49,
+          "timestamp": "2026-01-19T14:36:44.160934",
+          "data": {
+            "chain_id": 3,
+            "name": "boot_test_1768851404"
+          }
+        },
+        {
+          "name": "Chain Activation",
+          "passed": true,
+          "details": "Chain activated successfully",
+          "duration_ms": 17.75,
+          "timestamp": "2026-01-19T14:36:44.178702",
+          "data": {
+            "status": "activated",
+            "chain_id": 3
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Real-time Performance": {
+      "name": "Real-time Performance",
+      "status": "partial",
+      "total_tests": 4,
+      "passed_tests": 3,
+      "failed_tests": 1,
+      "duration_seconds": 0.0,
+      "tests": [
+        {
+          "name": "Metrics Collection",
+          "passed": true,
+          "details": "CPU: 0.0%, Memory: 0.0%, XRuns: 0",
+          "duration_ms": 2.11,
+          "timestamp": "2026-01-19T14:36:44.194757",
+          "data": {
+            "detail": "Not Found"
+          }
+        },
+        {
+          "name": "CPU Performance",
+          "passed": true,
+          "details": "CPU usage is healthy at 0.0%",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:44.194768"
+        },
+        {
+          "name": "XRun Analysis",
+          "passed": true,
+          "details": "No XRuns detected - excellent real-time performance",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:44.194771"
+        },
+        {
+          "name": "Latency Analysis",
+          "passed": false,
+          "details": "Could not determine latency - buffer size unknown",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:44.194776"
+        }
+      ],
+      "summary": ""
+    },
+    "Memory & Resources": {
+      "name": "Memory & Resources",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 1.0,
+      "tests": [
+        {
+          "name": "System Memory",
+          "passed": true,
+          "details": "Memory usage: 46.8% - healthy",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:44.194989"
+        },
+        {
+          "name": "CPU Load",
+          "passed": true,
+          "details": "CPU usage: 5.0% - healthy",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:45.195281"
+        },
+        {
+          "name": "Process Count",
+          "passed": true,
+          "details": "Running processes: 246",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T14:36:45.195662"
+        }
+      ],
+      "summary": ""
+    },
+    "Integration Endpoints": {
+      "name": "Integration Endpoints",
+      "status": "passed",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "failed_tests": 0,
+      "duration_seconds": 0.11,
+      "tests": [
+        {
+          "name": "Health Endpoint",
+          "passed": true,
+          "details": "API health check passed",
+          "duration_ms": 102.46,
+          "timestamp": "2026-01-19T14:36:45.298230",
+          "data": {
+            "status": "healthy",
+            "uptime_seconds": 1763.807009935379,
+            "cpu_percent": 0.0,
+            "memory_mb": 866.87109375,
+            "audio_running": false,
+            "plugins_loaded": 0
+          }
+        },
+        {
+          "name": "MIDI Integration",
+          "passed": true,
+          "details": "MIDI endpoints accessible",
+          "duration_ms": 5.47,
+          "timestamp": "2026-01-19T14:36:45.303710"
+        }
+      ],
+      "summary": ""
+    },
+    "Stability & Recovery": {
+      "name": "Stability & Recovery",
+      "status": "passed",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "failed_tests": 0,
+      "duration_seconds": 0.64,
+      "tests": [
+        {
+          "name": "Rapid Request Handling",
+          "passed": true,
+          "details": "Handled 5/5 rapid requests",
+          "duration_ms": 527.75,
+          "timestamp": "2026-01-19T14:36:45.831554"
+        },
+        {
+          "name": "Error Recovery",
+          "passed": true,
+          "details": "System recovered from invalid request",
+          "duration_ms": 108.24,
+          "timestamp": "2026-01-19T14:36:45.939808"
+        }
+      ],
+      "summary": ""
+    }
+  },
+  "recommendations": [
+    {
+      "type": "error",
+      "title": "Failed Tests Detected",
+      "description": "6 tests failed. Check individual test details.",
+      "priority": "high"
+    }
+  ],
+  "system_info": {
+    "hostname": "MAP2-TESTBED",
+    "platform": "Linux",
+    "cpu_count": 6,
+    "memory_gb": 15.42,
+    "python_version": "3.14.2",
+    "load_average": [
+      0.9833984375,
+      0.66455078125,
+      0.53955078125
+    ],
+    "uptime_hours": 12.8
+  },
+  "engine_info": {}
+}

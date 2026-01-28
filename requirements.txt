@@ -1,0 +1,4 @@
+torch==2.1.2
+scipy==1.11.4
+sounddevice==0.4.6
+neural-amp-modeler==0.7.5

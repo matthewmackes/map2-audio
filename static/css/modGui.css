@@ -1,0 +1,6 @@
+/* MOD GUI compatibility styles */
+/* PiPedal expects this file to exist */
+
+.mod-gui {
+    display: block;
+}

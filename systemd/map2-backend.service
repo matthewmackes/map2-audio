@@ -1,0 +1,51 @@
+[Unit]
+Description=MAP2 Audio Platform - Unified Service Orchestrator
+Documentation=https://github.com/map2-audio/map2-audio
+After=network.target sound.target
+Wants=sound.target
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio
+Environment="PYTHONPATH=/home/mm/map2-audio"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+Environment="MAP2_ENABLE_LCD=false"
+Environment="MAP2_LCD_SIMULATION=false"
+
+# Start the unified orchestrator via FastAPI
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+# Graceful shutdown - orchestrator handles service shutdown sequence
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+TimeoutStartSec=120
+
+# Readiness validation using HTTP health checks
+ExecStartPost=/bin/bash -c 'for i in {1..60}; do curl -sf http://localhost:8080/api/ready && exit 0; sleep 2; done; exit 1'
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-orchestrator
+
+# Watchdog - systemd will restart if no response within interval
+WatchdogSec=30
+
+# Real-time audio optimizations
+Nice=-10
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /tmp
+
+[Install]
+WantedBy=multi-user.target

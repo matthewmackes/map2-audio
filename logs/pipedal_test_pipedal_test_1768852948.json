@@ -1,0 +1,387 @@
+{
+  "test_id": "pipedal_test_1768852948",
+  "timestamp": "2026-01-19T15:02:28.294078",
+  "hostname": "MAP2-TESTBED",
+  "total_tests": 23,
+  "passed_tests": 23,
+  "failed_tests": 0,
+  "overall_status": "excellent",
+  "score": 93,
+  "duration_seconds": 3.45,
+  "categories": {
+    "Engine Core": {
+      "name": "Engine Core",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 0.31,
+      "tests": [
+        {
+          "name": "Engine Status Check",
+          "passed": true,
+          "details": "Engine detected, version unavailable",
+          "duration_ms": 7.1,
+          "timestamp": "2026-01-19T15:02:28.301634",
+          "data": {
+            "version": "unavailable",
+            "running": false,
+            "available": false
+          }
+        },
+        {
+          "name": "Engine Initialization",
+          "passed": true,
+          "details": "Engine initialized successfully",
+          "duration_ms": 296.24,
+          "timestamp": "2026-01-19T15:02:28.597893",
+          "data": {
+            "status": "initialized",
+            "version": "1.5.95-full-embedded",
+            "config": {
+              "version": "1.5.95-full-embedded",
+              "sample_rate": 48000.0,
+              "buffer_size": 256,
+              "alsa_device": "default",
+              "lv2_path": "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2",
+              "running": true,
+              "audio_running": false,
+              "plugin_count": 112,
+              "available": true,
+              "initialized": true
+            }
+          }
+        },
+        {
+          "name": "System Information",
+          "passed": true,
+          "details": "Sample rate: 48000Hz, Buffer: 256",
+          "duration_ms": 2.47,
+          "timestamp": "2026-01-19T15:02:28.600381",
+          "data": {
+            "running": false,
+            "sample_rate": 48000,
+            "buffer_size": 256
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Plugin Discovery": {
+      "name": "Plugin Discovery",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 0.08,
+      "tests": [
+        {
+          "name": "Plugin Discovery",
+          "passed": true,
+          "details": "Discovered 112 plugins",
+          "duration_ms": 75.65,
+          "timestamp": "2026-01-19T15:02:28.676157",
+          "data": {
+            "count": 112,
+            "engine": "pipedal"
+          }
+        },
+        {
+          "name": "Plugin Categories",
+          "passed": true,
+          "details": "Found 1 categories: Unknown",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:28.676190",
+          "data": {
+            "categories": [
+              "Unknown"
+            ],
+            "amp_count": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "name": "Plugin Detail Info",
+          "passed": true,
+          "details": "Plugin list available (112 plugins)",
+          "duration_ms": 2.88,
+          "timestamp": "2026-01-19T15:02:28.679081",
+          "data": {
+            "uri": "http://calf.sourceforge.net/plugins/Analyzer"
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Audio Engine": {
+      "name": "Audio Engine",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 0.01,
+      "tests": [
+        {
+          "name": "Audio Status",
+          "passed": true,
+          "details": "Engine: pipedal",
+          "duration_ms": 2.15,
+          "timestamp": "2026-01-19T15:02:28.681713",
+          "data": {
+            "running": false,
+            "sample_rate": 48000.0,
+            "buffer_size": 256,
+            "cpu_load": 0.0,
+            "engine": "pipedal",
+            "version": "1.5.95-full-embedded",
+            "plugin_count": 112,
+            "active_pedalboard": null,
+            "available": true
+          }
+        },
+        {
+          "name": "Audio Levels",
+          "passed": true,
+          "details": "Input: 0.000, Output: 0.000",
+          "duration_ms": 1.9,
+          "timestamp": "2026-01-19T15:02:28.683632",
+          "data": {
+            "input_left": 0.0,
+            "input_right": 0.0,
+            "output_left": 0.0,
+            "output_right": 0.0
+          }
+        },
+        {
+          "name": "Audio Configuration",
+          "passed": true,
+          "details": "Audio configuration accessible",
+          "duration_ms": 2.16,
+          "timestamp": "2026-01-19T15:02:28.685809",
+          "data": {
+            "available": true,
+            "running": false,
+            "version": "1.5.95-full-embedded",
+            "sample_rate": 48000.0,
+            "buffer_size": 256,
+            "alsa_device": "default",
+            "plugin_count": 112,
+            "loaded_plugins": 1,
+            "active_pedalboard": "Default Pedalboard",
+            "current_snapshot": null,
+            "cpu_load": 0.0,
+            "underruns": 0,
+            "midi_enabled": false
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Chain Management": {
+      "name": "Chain Management",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 1.33,
+      "tests": [
+        {
+          "name": "Chain List",
+          "passed": true,
+          "details": "Found 1 chains",
+          "duration_ms": 1265.63,
+          "timestamp": "2026-01-19T15:02:29.951546",
+          "data": {
+            "count": 1
+          }
+        },
+        {
+          "name": "Chain Creation",
+          "passed": true,
+          "details": "Created chain 'boot_test_1768852949' with ID 3",
+          "duration_ms": 34.0,
+          "timestamp": "2026-01-19T15:02:29.985571",
+          "data": {
+            "chain_id": 3,
+            "name": "boot_test_1768852949"
+          }
+        },
+        {
+          "name": "Chain Activation",
+          "passed": true,
+          "details": "Chain activated successfully",
+          "duration_ms": 15.15,
+          "timestamp": "2026-01-19T15:02:30.000746",
+          "data": {
+            "status": "activated",
+            "chain_id": 3
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Real-time Performance": {
+      "name": "Real-time Performance",
+      "status": "passed",
+      "total_tests": 4,
+      "passed_tests": 4,
+      "failed_tests": 0,
+      "duration_seconds": 0.0,
+      "tests": [
+        {
+          "name": "Metrics Collection",
+          "passed": true,
+          "details": "CPU: 0.0%, Memory: 0.0%, XRuns: 0",
+          "duration_ms": 2.33,
+          "timestamp": "2026-01-19T15:02:30.021978",
+          "data": {
+            "detail": "Not Found"
+          }
+        },
+        {
+          "name": "CPU Performance",
+          "passed": true,
+          "details": "CPU usage is healthy at 0.0%",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:30.021990"
+        },
+        {
+          "name": "XRun Analysis",
+          "passed": true,
+          "details": "No XRuns detected - excellent real-time performance",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:30.021994"
+        },
+        {
+          "name": "Latency Analysis",
+          "passed": true,
+          "details": "Low latency: 5.33ms (theoretical)",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:30.022002",
+          "data": {
+            "latency_ms": 5.333333333333333
+          }
+        }
+      ],
+      "summary": ""
+    },
+    "Memory & Resources": {
+      "name": "Memory & Resources",
+      "status": "passed",
+      "total_tests": 3,
+      "passed_tests": 3,
+      "failed_tests": 0,
+      "duration_seconds": 1.0,
+      "tests": [
+        {
+          "name": "System Memory",
+          "passed": true,
+          "details": "Memory usage: 49.8% - healthy",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:30.022212"
+        },
+        {
+          "name": "CPU Load",
+          "passed": true,
+          "details": "CPU usage: 1.2% - healthy",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:31.022578"
+        },
+        {
+          "name": "Process Count",
+          "passed": true,
+          "details": "Running processes: 253",
+          "duration_ms": 0,
+          "timestamp": "2026-01-19T15:02:31.022976"
+        }
+      ],
+      "summary": ""
+    },
+    "Integration Endpoints": {
+      "name": "Integration Endpoints",
+      "status": "passed",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "failed_tests": 0,
+      "duration_seconds": 0.1,
+      "tests": [
+        {
+          "name": "Health Endpoint",
+          "passed": true,
+          "details": "API health check passed",
+          "duration_ms": 102.57,
+          "timestamp": "2026-01-19T15:02:31.125664",
+          "data": {
+            "status": "healthy",
+            "uptime_seconds": 16.97728204727173,
+            "cpu_percent": 0.0,
+            "memory_mb": 881.96875,
+            "audio_running": false,
+            "plugins_loaded": 0
+          }
+        },
+        {
+          "name": "MIDI Integration",
+          "passed": true,
+          "details": "MIDI endpoints accessible",
+          "duration_ms": 1.97,
+          "timestamp": "2026-01-19T15:02:31.127646"
+        }
+      ],
+      "summary": ""
+    },
+    "Stability & Recovery": {
+      "name": "Stability & Recovery",
+      "status": "passed",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "failed_tests": 0,
+      "duration_seconds": 0.62,
+      "tests": [
+        {
+          "name": "Rapid Request Handling",
+          "passed": true,
+          "details": "Handled 5/5 rapid requests",
+          "duration_ms": 511.68,
+          "timestamp": "2026-01-19T15:02:31.639425"
+        },
+        {
+          "name": "Error Recovery",
+          "passed": true,
+          "details": "System recovered from invalid request",
+          "duration_ms": 104.55,
+          "timestamp": "2026-01-19T15:02:31.743990"
+        }
+      ],
+      "summary": ""
+    }
+  },
+  "recommendations": [
+    {
+      "type": "success",
+      "title": "Excellent Performance",
+      "description": "System is performing optimally for professional audio work",
+      "priority": "info"
+    }
+  ],
+  "system_info": {
+    "hostname": "MAP2-TESTBED",
+    "platform": "Linux",
+    "cpu_count": 6,
+    "memory_gb": 15.42,
+    "python_version": "3.14.2",
+    "load_average": [
+      0.44873046875,
+      0.5322265625,
+      0.51806640625
+    ],
+    "uptime_hours": 13.2
+  },
+  "engine_info": {
+    "version": "unavailable",
+    "status": "detected",
+    "sample_rate": 48000,
+    "buffer_size": 256,
+    "plugin_count": 112
+  }
+}
