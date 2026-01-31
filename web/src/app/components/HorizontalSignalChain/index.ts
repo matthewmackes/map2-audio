@@ -12,6 +12,7 @@
 export { HorizontalSignalChain } from './HorizontalSignalChain'
 export { HorizontalPluginNode } from './HorizontalPluginNode'
 export { HorizontalConnector } from './HorizontalConnector'
+export { SidechainConnector } from './SidechainConnector'
 export { PluginTooltipContent } from './PluginTooltip'
 export { getIconForCategory, getIconNameForCategory, FX_ICONS, CATEGORY_ICON_MAP } from './icons'
 export type {
@@ -20,4 +21,5 @@ export type {
   HorizontalConnectorProps,
   PluginTooltipProps,
   FxIconName,
+  SidechainSource,
 } from './types'

@@ -8,6 +8,18 @@
 
 import type { ChainPlugin, Plugin } from '../../../map2/types'
 
+/** Sidechain source options for a plugin */
+export interface SidechainSource {
+  /** Unique identifier for the source */
+  id: string
+  /** Display name */
+  name: string
+  /** Chain label (A, B, C, etc.) */
+  chainLabel?: string
+  /** Type of source */
+  type: 'chain' | 'plugin' | 'external'
+}
+
 export interface HorizontalSignalChainProps {
   /** Array of plugins in the chain */
   plugins: ChainPlugin[]
@@ -21,6 +33,14 @@ export interface HorizontalSignalChainProps {
   onPluginReorder: (pluginUris: string[]) => void
   /** Callback to toggle plugin bypass state */
   onToggleBypass: (uri: string, bypassed: boolean) => void
+  /** Callback to delete a plugin */
+  onDeletePlugin?: (uri: string) => void
+  /** Callback when sidechain config is requested for a plugin */
+  onSidechainConfig?: (uri: string) => void
+  /** Available sidechain sources */
+  sidechainSources?: SidechainSource[]
+  /** Chain label for this signal chain (A, B, C, etc.) */
+  chainLabel?: string
   /** Whether the chain is active (processing audio) */
   isActive?: boolean
 }
@@ -36,6 +56,10 @@ export interface HorizontalPluginNodeProps {
   onSelect: () => void
   /** Callback to toggle bypass */
   onToggleBypass: () => void
+  /** Callback to delete plugin */
+  onDelete?: () => void
+  /** Callback when sidechain button is clicked */
+  onSidechainClick?: () => void
   /** Drag event handlers */
   onDragStart?: (e: React.DragEvent) => void
   onDragOver?: (e: React.DragEvent) => void

@@ -77,6 +77,253 @@ img {
   transition: background var(--transition-speed) ease, border-color var(--transition-speed) ease;
 }
 
+/* ============================================
+   Professional Audio Appliance Navigation
+   Inspired by high-end hardware: UA, Neve, API
+   ============================================ */
+
+.topbar-pro {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  background: linear-gradient(180deg,
+    #2a2a2a 0%,
+    #1e1e1e 50%,
+    #1a1a1a 100%
+  );
+  border-bottom: 1px solid #3a3a3a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Brushed metal texture overlay */
+.topbar-pro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgba(255, 255, 255, 0.01) 1px,
+      rgba(255, 255, 255, 0.01) 2px
+    );
+  pointer-events: none;
+}
+
+/* Left: Inactive navigation tabs */
+.nav-tabs-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: start;
+}
+
+.nav-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #888;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nav-tab-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+.nav-tab-item:hover .nav-tab-icon {
+  color: var(--tab-color);
+  text-shadow: 0 0 8px var(--tab-color);
+}
+
+.nav-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #666;
+  transition: all 0.15s ease;
+}
+
+.nav-tab-label {
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.nav-tab-chevron {
+  color: #555;
+  margin-left: -2px;
+}
+
+/* Center: Active tab title */
+.nav-active-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+}
+
+.nav-active-display,
+.nav-active-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 24px;
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-active-btn {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav-active-btn:hover {
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  border-color: #4a4a4a;
+}
+
+/* LED-style active indicator */
+.nav-active-display::before,
+.nav-active-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--active-color);
+  box-shadow: 0 0 12px var(--active-color), 0 0 24px var(--active-color);
+  opacity: 0.9;
+}
+
+.nav-active-icon {
+  color: var(--active-color);
+  filter: drop-shadow(0 0 6px var(--active-color));
+  transition: all 0.2s ease;
+}
+
+.nav-active-text {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.nav-active-chevron {
+  color: var(--active-color);
+  opacity: 0.8;
+}
+
+/* Right: Balance spacer */
+.nav-spacer {
+  justify-self: end;
+}
+
+/* Menu item enhancements */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.menu-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-item-label {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.menu-item-desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Responsive: Mobile adjustments */
+@media (max-width: 768px) {
+  .topbar-pro {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .nav-tabs-left {
+    order: 2;
+    justify-self: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-active-title {
+    order: 1;
+    justify-self: center;
+  }
+
+  .nav-spacer {
+    display: none;
+  }
+
+  .nav-tab-label {
+    display: none;
+  }
+
+  .nav-tab-item {
+    padding: 8px;
+  }
+
+  .nav-active-text {
+    font-size: 14px;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -1237,14 +1484,15 @@ input[type="range"]:focus::-webkit-slider-thumb {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-start;
   gap: 4px;
-  padding: 16px 20px;
+  padding: 28px 32px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   background: var(--surface);
   border-radius: var(--border-radius-lg);
   border: 1px solid var(--border);
-  min-height: 100px;
+  min-height: 225px;
 }
 
 .horizontal-chain::-webkit-scrollbar {
@@ -1273,12 +1521,11 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 
 .h-plugin-node {
-  width: 56px;
-  height: 56px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 2px solid var(--border);
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
   border-radius: var(--border-radius-md);
   background: var(--surface-2);
   cursor: pointer;
@@ -1290,35 +1537,45 @@ input[type="range"]:focus::-webkit-slider-thumb {
 
 .h-plugin-node:hover {
   border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .h-plugin-node:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
 }
 
 .h-plugin-node.selected {
   border-color: var(--primary);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
   background: var(--surface-3);
 }
 
 .h-plugin-node.bypassed {
-  opacity: 0.5;
+  opacity: 0.6;
   border-style: dashed;
 }
 
 .h-plugin-node.dragging {
   opacity: 0.5;
-  transform: scale(0.95);
+  transform: scale(0.98);
+}
+
+/* Icon wrapper */
+.h-plugin-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
 }
 
 .h-plugin-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   fill: var(--muted);
   transition: fill 0.15s ease;
 }
@@ -1332,16 +1589,76 @@ input[type="range"]:focus::-webkit-slider-thumb {
   fill: var(--muted-2);
 }
 
+/* Plugin name */
+.h-plugin-name {
+  width: 150px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.h-plugin-node.bypassed .h-plugin-name {
+  color: var(--muted);
+}
+
+/* Action buttons */
+.h-plugin-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.h-plugin-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.h-plugin-action-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.h-plugin-action-btn.active {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.h-plugin-action-btn.bypassed {
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.h-plugin-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
 /* Status indicator dot */
 .h-plugin-status-dot {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
+  bottom: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--success);
-  box-shadow: 0 0 4px var(--success);
+  box-shadow: 0 0 3px var(--success);
 }
 
 /* Drop indicator for drag-and-drop */
@@ -1363,82 +1680,310 @@ input[type="range"]:focus::-webkit-slider-thumb {
   box-shadow: 0 0 8px var(--primary);
 }
 
-/* Horizontal Connector */
-.h-connector {
-  width: 20px;
-  height: 2px;
-  background: var(--muted-2);
+/* Signal Endpoints - Compact with technical info */
+.h-signal-endpoint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
   flex-shrink: 0;
+  width: 32px;
+}
+
+.h-signal-endpoint.input {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.h-signal-endpoint.output {
+  border-color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.h-signal-endpoint-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.h-signal-endpoint.input .h-signal-endpoint-label {
+  color: var(--success);
+}
+
+.h-signal-endpoint.output .h-signal-endpoint-label {
+  color: var(--warning);
+}
+
+.h-signal-endpoint-info {
+  display: flex;
+  gap: 2px;
+  font-size: 7px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.h-signal-endpoint-info span {
+  padding: 0;
+  background: none;
+}
+
+/* Signal Arrow - Expandable with technical info */
+.h-signal-arrow {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 40px;
+  max-width: 120px;
+  height: 24px;
   position: relative;
 }
 
-.h-connector.active {
-  background: linear-gradient(90deg, var(--muted) 0%, var(--primary) 50%, var(--muted) 100%);
+.h-signal-arrow-line {
+  flex: 1;
+  height: 3px;
+  background: var(--muted-2);
+  position: relative;
+  border-radius: 1px;
+}
+
+/* Active signal - animated flowing gradient */
+.h-signal-arrow.active .h-signal-arrow-line {
+  background: linear-gradient(90deg,
+    var(--success) 0%,
+    #4ade80 25%,
+    var(--primary) 50%,
+    #4ade80 75%,
+    var(--success) 100%
+  );
   background-size: 200% 100%;
-  animation: signalFlowHorizontal 1.5s ease-in-out infinite;
+  animation: signal-flow 1.5s linear infinite;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6), 0 0 2px rgba(34, 197, 94, 0.8);
 }
 
-.h-connector::after {
-  content: '';
-  position: absolute;
-  right: -3px;
-  top: -3px;
-  border-left: 5px solid var(--muted-2);
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-}
-
-.h-connector.active::after {
-  border-left-color: var(--primary);
-}
-
-@keyframes signalFlowHorizontal {
+@keyframes signal-flow {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
 }
 
-/* Chain Endpoints */
-.h-endpoint {
+/* Bypassed signal - dashed gray line */
+.h-signal-arrow.bypassed .h-signal-arrow-line {
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--muted-2) 0,
+    var(--muted-2) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.6;
+}
+
+.h-signal-arrow-info {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px;
-  flex-shrink: 0;
+  gap: 1px;
+  pointer-events: none;
 }
 
-.h-endpoint-icon {
-  width: 24px;
-  height: 24px;
-  fill: var(--muted);
-}
-
-.h-endpoint.input .h-endpoint-icon {
-  fill: var(--success);
-}
-
-.h-endpoint.output .h-endpoint-icon {
-  fill: var(--warning);
-}
-
-.h-endpoint-label {
-  font-size: 10px;
+.h-signal-arrow-channels {
+  font-size: 8px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
+  white-space: nowrap;
+  padding: 1px 4px;
+  background: var(--surface);
+  border-radius: 2px;
+}
+
+.h-signal-arrow.active .h-signal-arrow-channels {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-channels {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.h-signal-arrow-flow {
+  font-size: 7px;
+  color: var(--muted-2);
+  text-transform: uppercase;
+}
+
+.h-signal-arrow.active .h-signal-arrow-flow {
+  color: var(--success);
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-flow {
+  color: var(--warning);
+}
+
+/* Arrow head - more visible */
+.h-signal-arrow-head {
+  width: 0;
+  height: 0;
+  border-left: 8px solid var(--muted-2);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  flex-shrink: 0;
+  margin-left: -1px;
+}
+
+.h-signal-arrow.active .h-signal-arrow-head {
+  border-left-color: var(--success);
+  filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.6));
+}
+
+.h-signal-arrow.bypassed .h-signal-arrow-head {
+  border-left-color: var(--warning);
+  opacity: 0.5;
+}
+
+/* ============================================
+   Sidechain UI Components
+   ============================================ */
+
+/* Plugin wrapper with sidechain support */
+.h-plugin-wrapper.has-sidechain {
+  position: relative;
+  padding-top: 24px;
+}
+
+/* Sidechain input indicator on plugin node */
+.h-plugin-sidechain-input {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: var(--surface-2);
+  border: 1px dashed var(--muted-2);
+  border-radius: 8px;
+  font-size: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.h-plugin-sidechain-input:hover {
+  background: var(--surface-3);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.h-plugin-sidechain-input.connected {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--primary);
+  border-style: solid;
+  color: var(--primary);
+}
+
+.h-plugin-sidechain-input.connected:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.h-sidechain-label {
+  font-weight: 600;
   letter-spacing: 0.5px;
+}
+
+/* Sidechain Connector Component */
+.h-sidechain-connector {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 24px;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.h-sidechain-line-vertical {
+  width: 2px;
+  flex: 1;
+  background: var(--muted-2);
+  border-radius: 1px;
+}
+
+.h-sidechain-connector.connected .h-sidechain-line-vertical {
+  background: var(--primary);
+}
+
+.h-sidechain-connector.active .h-sidechain-line-vertical {
+  background: linear-gradient(180deg, var(--primary) 0%, #a78bfa 50%, var(--primary) 100%);
+  background-size: 100% 200%;
+  animation: sidechain-flow 1s linear infinite;
+  box-shadow: 0 0 4px rgba(139, 92, 246, 0.5);
+}
+
+@keyframes sidechain-flow {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 200%; }
+}
+
+.h-sidechain-source {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--muted-2);
+  border-radius: 4px;
+  font-size: 8px;
+  color: var(--muted);
+}
+
+.h-sidechain-connector.connected .h-sidechain-source {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.h-sidechain-source-label {
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.h-sidechain-arrow-down {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted-2);
+}
+
+.h-sidechain-connector.connected .h-sidechain-arrow-down {
+  border-top-color: var(--primary);
+}
+
+.h-sidechain-connector.active .h-sidechain-arrow-down {
+  border-top-color: var(--primary);
+  filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.6));
 }
 
 /* Empty State */
 .h-empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-width: 200px;
-  color: var(--muted);
-  font-size: 13px;
-  font-style: italic;
+  display: none;
 }
 
 /* Plugin Tooltip */
@@ -1668,5 +2213,259 @@ input[type="range"]:focus::-webkit-slider-thumb {
     border-bottom: 6px solid transparent;
     border-right: 6px solid var(--primary);
     border-left: none;
+  }
+}
+
+/* ============================================================================
+   Chain Panel Component
+   Full-width horizontal panel for each signal chain
+   ============================================================================ */
+
+.chain-panels-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 16px 0;
+}
+
+.chain-panel {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chain-panel:hover {
+  border-color: var(--slot-color, var(--primary));
+}
+
+.chain-panel.active {
+  border-color: var(--slot-color, var(--primary));
+  box-shadow: 0 0 0 1px var(--slot-color, var(--primary)), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.chain-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--slot-color, var(--primary)) 10%, transparent), transparent);
+  border-bottom: 2px solid var(--slot-color, var(--primary));
+}
+
+.chain-panel-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--slot-color, var(--primary));
+  color: var(--bg);
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chain-panel-label:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--slot-color, var(--primary)) 40%, transparent);
+}
+
+.chain-panel-select {
+  min-width: 180px;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chain-panel-select:focus {
+  outline: none;
+  border-color: var(--slot-color, var(--primary));
+}
+
+.chain-panel-count {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border-radius: var(--border-radius-sm);
+}
+
+.chain-panel-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chain-panel-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chain-panel-btn.active.muted {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.chain-panel-btn.active.solo {
+  background: rgba(234, 179, 8, 0.2);
+  border-color: #eab308;
+  color: #eab308;
+}
+
+.chain-panel-body {
+  padding: 16px 20px;
+  min-height: 180px;
+}
+
+.chain-panel-body .horizontal-chain {
+  background: transparent;
+  border: none;
+  padding: 16px 20px;
+  min-height: 144px;
+  justify-content: flex-start;
+}
+
+.chain-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ============================================================================
+   Bottom Routing Panel
+   Sticky panel for chain routing controls
+   ============================================================================ */
+
+.bottom-routing-panel {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--primary) 5%, var(--surface)));
+  border-top: 1px solid var(--surface-border);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  z-index: 10;
+}
+
+.routing-chain-management {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.routing-chain-count {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border-radius: var(--border-radius-sm);
+}
+
+.routing-mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: var(--border-radius-md);
+}
+
+.routing-mode-selector .btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.routing-chain-diagram {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.routing-chain-node-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.routing-chain-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.routing-chain-node:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.routing-chain-node.active {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 30%, transparent);
+}
+
+.routing-chain-arrow {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Responsive adjustments for routing panel */
+@media (max-width: 768px) {
+  .bottom-routing-panel {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .routing-mode-selector {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .routing-chain-diagram {
+    order: 2;
+  }
+
+  .routing-chain-management {
+    order: 1;
   }
 }

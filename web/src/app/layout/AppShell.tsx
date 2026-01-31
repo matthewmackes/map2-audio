@@ -112,80 +112,44 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
-      <header className="topbar" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '0 16px',
-        gap: 0,
-      }}>
-        {/* Inactive tabs - icons only, left-aligned */}
-        <nav
-          className="nav-links"
-          aria-label="Main navigation"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            flex: '0 0 auto',
-          }}
-        >
+      <header className="topbar-pro">
+        {/* Left: Inactive navigation tabs with icon + label */}
+        <nav className="nav-tabs-left" aria-label="Main navigation">
           {allNavItems.map((item) => {
             const isActive = item.to === 'library-dropdown'
               ? activeNav.type === 'library'
               : (location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/')))
 
-            // Skip rendering the active item here - it goes in the center
+            // Skip active item - it goes in center
             if (isActive) return null
 
             const Icon = item.icon
 
-            // Render dropdown for library section
+            // Dropdown for library section
             if (item.to === 'library-dropdown') {
               return (
                 <MenuProvider key="library">
                   <MenuButton
-                    className="nav-link"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 36,
-                      height: 36,
-                      padding: 0,
-                      cursor: 'pointer',
-                      border: 'none',
-                      borderRadius: 8,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      transition: 'all 0.2s ease',
-                    }}
-                    title={item.label}
+                    className="nav-tab-item"
+                    title={item.description}
                   >
-                    <Icon size={18} style={{ color: item.color }} aria-hidden />
+                    <span className="nav-tab-icon" style={{ '--tab-color': item.color } as React.CSSProperties}>
+                      <Icon size={16} aria-hidden />
+                    </span>
+                    <span className="nav-tab-label">{item.label}</span>
+                    <ChevronDown size={12} className="nav-tab-chevron" aria-hidden />
                   </MenuButton>
-                  <Menu
-                    className="menu"
-                    gutter={8}
-                    style={{ minWidth: 220 }}
-                  >
+                  <Menu className="menu" gutter={8} style={{ minWidth: 240 }}>
                     {libraryPluginsItems.map((subItem) => (
                       <MenuItem
                         key={subItem.to}
                         className="menu-item"
                         render={<NavLink to={subItem.to} />}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '12px 16px',
-                          textDecoration: 'none',
-                          color: 'inherit',
-                        }}
                       >
-                        <subItem.icon size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <span style={{ fontWeight: 500 }}>{subItem.label}</span>
-                          <span style={{ fontSize: 11, color: 'var(--muted)' }}>{subItem.description}</span>
+                        <subItem.icon size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                        <div className="menu-item-content">
+                          <span className="menu-item-label">{subItem.label}</span>
+                          <span className="menu-item-desc">{subItem.description}</span>
                         </div>
                       </MenuItem>
                     ))}
@@ -194,99 +158,46 @@ export function AppShell({ children }: { children: ReactNode }) {
               )
             }
 
-            // Regular nav link - icon only when inactive
+            // Regular nav link
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className="nav-link"
-                title={`${item.label} - ${item.description}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 36,
-                  height: 36,
-                  padding: 0,
-                  borderRadius: 8,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  transition: 'all 0.2s ease',
-                }}
+                className="nav-tab-item"
+                title={item.description}
               >
-                <Icon size={18} style={{ color: item.color }} aria-hidden />
+                <span className="nav-tab-icon" style={{ '--tab-color': item.color } as React.CSSProperties}>
+                  <Icon size={16} aria-hidden />
+                </span>
+                <span className="nav-tab-label">{item.label}</span>
               </NavLink>
             )
           })}
         </nav>
 
-        {/* Active tab - expanded, centered */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
+        {/* Center: Active tab title - prominent display */}
+        <div className="nav-active-title">
           {activeNav.type === 'library' ? (
             <MenuProvider>
               <MenuButton
-                className="nav-link active"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '10px 24px',
-                  cursor: 'pointer',
-                  border: 'none',
-                  borderRadius: 12,
-                  background: `linear-gradient(135deg, ${libraryPluginsNav.color}20, ${libraryPluginsNav.color}10)`,
-                  borderBottom: `2px solid ${libraryPluginsNav.color}`,
-                  boxShadow: `0 4px 20px ${libraryPluginsNav.color}30`,
-                  transition: 'all 0.3s ease',
-                }}
+                className="nav-active-btn"
+                style={{ '--active-color': libraryPluginsNav.color } as React.CSSProperties}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Library size={20} style={{ color: libraryPluginsNav.color }} aria-hidden />
-                  <span style={{
-                    fontWeight: 700,
-                    fontSize: 16,
-                    color: libraryPluginsNav.color,
-                  }}>
-                    {libraryPluginsNav.label}
-                  </span>
-                  <ChevronDown size={14} style={{ color: libraryPluginsNav.color }} aria-hidden />
-                </div>
-                <span style={{
-                  fontSize: 11,
-                  color: 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {libraryPluginsNav.description}
-                </span>
+                <Library size={22} className="nav-active-icon" aria-hidden />
+                <span className="nav-active-text">{libraryPluginsNav.label}</span>
+                <ChevronDown size={14} className="nav-active-chevron" aria-hidden />
               </MenuButton>
-              <Menu
-                className="menu"
-                gutter={8}
-                style={{ minWidth: 220 }}
-              >
+              <Menu className="menu" gutter={8} style={{ minWidth: 240 }}>
                 {libraryPluginsItems.map((subItem) => (
                   <MenuItem
                     key={subItem.to}
                     className="menu-item"
                     render={<NavLink to={subItem.to} />}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '12px 16px',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                    }}
                   >
-                    <subItem.icon size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontWeight: 500 }}>{subItem.label}</span>
-                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>{subItem.description}</span>
+                    <subItem.icon size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                    <div className="menu-item-content">
+                      <span className="menu-item-label">{subItem.label}</span>
+                      <span className="menu-item-desc">{subItem.description}</span>
                     </div>
                   </MenuItem>
                 ))}
@@ -294,48 +205,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             </MenuProvider>
           ) : (
             <div
-              className="nav-link active"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                padding: '10px 24px',
-                borderRadius: 12,
-                background: `linear-gradient(135deg, ${activeNav.item.color}20, ${activeNav.item.color}10)`,
-                borderBottom: `2px solid ${activeNav.item.color}`,
-                boxShadow: `0 4px 20px ${activeNav.item.color}30`,
-                transition: 'all 0.3s ease',
-              }}
+              className="nav-active-display"
+              style={{ '--active-color': activeNav.item.color } as React.CSSProperties}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <activeNav.item.icon size={20} style={{ color: activeNav.item.color }} aria-hidden />
-                <span style={{
-                  fontWeight: 700,
-                  fontSize: 16,
-                  color: activeNav.item.color,
-                }}>
-                  {activeNav.item.label}
-                </span>
-              </div>
-              <span style={{
-                fontSize: 11,
-                color: 'var(--text-muted)',
-                whiteSpace: 'nowrap',
-              }}>
-                {activeNav.item.description}
-              </span>
+              <activeNav.item.icon size={22} className="nav-active-icon" aria-hidden />
+              <span className="nav-active-text">{activeNav.item.label}</span>
             </div>
           )}
         </div>
 
-        {/* Spacer to balance the layout */}
-        <div style={{ flex: '0 0 auto', width: allNavItems.filter(item => {
-          const isActive = item.to === 'library-dropdown'
-            ? activeNav.type === 'library'
-            : (location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/')))
-          return !isActive
-        }).length * 40 }} />
+        {/* Right: Balance spacer */}
+        <div className="nav-spacer" />
       </header>
       <main className="app-content">{children}</main>
     </div>

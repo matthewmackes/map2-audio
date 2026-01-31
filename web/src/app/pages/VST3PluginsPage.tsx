@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
-import { Package, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight, FolderOpen, HardDrive, Download, ExternalLink, Play, Square, AlertTriangle } from 'lucide-react'
+import { Package, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight, FolderOpen, HardDrive, Download, ExternalLink, Play, Square, AlertTriangle, Plus } from 'lucide-react'
 import { vst3Api, vst3PackagesApi } from '../../map2/api'
 import type { VST3Plugin, VST3Package, VST3DownloadProgress } from '../../map2/api'
-import { VST3PluginParameterEditor } from '../components/VST3PluginParameterEditor'
 
 // Category configuration for plugin display
 type IconComponent = React.ComponentType<{ size?: number; style?: React.CSSProperties }>
@@ -46,6 +46,7 @@ interface VST3DiscoverResponse {
 }
 
 export function VST3PluginsPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [expanded, setExpanded] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -289,10 +290,8 @@ export function VST3PluginsPage() {
         </div>
       </div>
 
-      {/* Plugin Browser + Parameters Grid - Side by Side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', gap: 16 }}>
-        {/* Plugin Browser Card */}
-        <div className="card">
+      {/* Plugin Browser */}
+      <div className="card">
           <div className="section-heading">
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>VST3 Plugin Browser</h2>
@@ -404,7 +403,7 @@ export function VST3PluginsPage() {
                                 <span style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</span>
                               </div>
                               <div style={{ fontSize: 11, color: '#888' }}>{p.author || 'Unknown author'}</div>
-                              <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                                 <span className="pill muted" style={{ fontSize: 9 }}>{p.in_ports}→{p.out_ports}</span>
                                 <span className="pill info" style={{ fontSize: 9, background: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }}>VST3</span>
                                 {p.has_ui && <span className="pill info" style={{ fontSize: 9 }}>GUI</span>}
@@ -413,6 +412,43 @@ export function VST3PluginsPage() {
                                     <AlertTriangle size={10} />
                                     {p.platform === 'windows' ? 'Windows' : p.platform === 'macos' ? 'macOS' : 'Incompatible'}
                                   </span>
+                                )}
+                                {p.compatible !== false && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigate(`/chains/flow?addPlugin=${encodeURIComponent(p.uri)}`)
+                                    }}
+                                    style={{
+                                      marginLeft: 'auto',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      padding: '3px 8px',
+                                      background: `linear-gradient(135deg, ${catConfig.color}30, ${catConfig.color}15)`,
+                                      border: `1px solid ${catConfig.color}50`,
+                                      borderRadius: 6,
+                                      fontSize: 10,
+                                      fontWeight: 600,
+                                      color: catConfig.color,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = `linear-gradient(135deg, ${catConfig.color}50, ${catConfig.color}30)`
+                                      e.currentTarget.style.transform = 'translateY(-1px)'
+                                      e.currentTarget.style.boxShadow = `0 2px 8px ${catConfig.color}40`
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = `linear-gradient(135deg, ${catConfig.color}30, ${catConfig.color}15)`
+                                      e.currentTarget.style.transform = 'none'
+                                      e.currentTarget.style.boxShadow = 'none'
+                                    }}
+                                    title="Add this plugin to the Flow editor"
+                                  >
+                                    <Plus size={10} />
+                                    Add to Flow
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -427,39 +463,6 @@ export function VST3PluginsPage() {
             </div>
           )}
         </div>
-
-        {/* Parameters Card - Full Editor */}
-        <div className="card" style={{ maxHeight: 800, overflow: 'auto' }}>
-          {!selectedPlugin ? (
-            <div style={{
-              padding: 32,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(0,0,0,0.2) 100%)',
-              border: '1px solid rgba(139, 92, 246, 0.3)',
-              textAlign: 'center',
-            }}>
-              <div style={{
-                fontSize: 48,
-                marginBottom: 16,
-                filter: 'grayscale(0.3)',
-              }}>
-                🎛️
-              </div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#8b5cf6', marginBottom: 8 }}>
-                Select a VST3 Plugin
-              </div>
-              <div style={{ fontSize: 12, color: '#888', maxWidth: 240, margin: '0 auto', lineHeight: 1.5 }}>
-                Click on any plugin in the browser to view and edit its parameters, save presets, and add it to your chain.
-              </div>
-            </div>
-          ) : (
-            <VST3PluginParameterEditor
-              plugin={selectedPlugin}
-              showAddToChain={true}
-            />
-          )}
-        </div>
-      </div>
 
       {/* VST3 Plugin Packages - Download Grid */}
       <div className="card">

@@ -1,19 +1,72 @@
 /**
  * Horizontal Signal Chain Component
  *
- * Displays a signal chain as a horizontal row of monochrome icons
- * with hover tooltips showing technical details.
- *
- * Audio effect icons from PiPedal project
- * https://github.com/rerdavies/pipedal
- * MIT License - Robin E. R. Davies
+ * Displays a signal chain as a horizontal row of plugins
+ * with expandable signal flow arrows showing technical details.
  */
 
 import { useState, useCallback, useRef } from 'react'
 import type { HorizontalSignalChainProps } from './types'
 import { HorizontalPluginNode } from './HorizontalPluginNode'
-import { HorizontalConnector } from './HorizontalConnector'
-import { FxTerminal } from './icons'
+import { SidechainConnector } from './SidechainConnector'
+
+interface SignalInfo {
+  channels: number
+  sampleRate?: number
+  bitDepth?: number
+  format?: string
+}
+
+function SignalEndpoint({
+  type,
+  channels = 2,
+  sampleRate = 48000,
+}: {
+  type: 'input' | 'output'
+  channels?: number
+  sampleRate?: number
+}) {
+  return (
+    <div className={`h-signal-endpoint ${type}`}>
+      <div className="h-signal-endpoint-label">{type === 'input' ? 'IN' : 'OUT'}</div>
+      <div className="h-signal-endpoint-info">
+        <span>{channels}ch</span>
+        <span>{sampleRate / 1000}k</span>
+      </div>
+    </div>
+  )
+}
+
+function SignalArrow({
+  isActive = true,
+  fromPlugin,
+  toPlugin,
+  channels = 2,
+  isFirst = false,
+  isLast = false,
+}: {
+  isActive?: boolean
+  fromPlugin?: string
+  toPlugin?: string
+  channels?: number
+  isFirst?: boolean
+  isLast?: boolean
+}) {
+  const label = isFirst ? 'Input' : isLast ? 'Output' : `${channels}ch`
+
+  return (
+    <div className={`h-signal-arrow ${isActive ? 'active' : 'bypassed'}`}>
+      <div className="h-signal-arrow-line" />
+      <div className="h-signal-arrow-info">
+        <span className="h-signal-arrow-channels">{label}</span>
+        {!isFirst && !isLast && fromPlugin && (
+          <span className="h-signal-arrow-flow">{isActive ? 'Signal' : 'Bypass'}</span>
+        )}
+      </div>
+      <div className="h-signal-arrow-head" />
+    </div>
+  )
+}
 
 export function HorizontalSignalChain({
   plugins,
@@ -22,6 +75,10 @@ export function HorizontalSignalChain({
   onPluginSelect,
   onPluginReorder,
   onToggleBypass,
+  onDeletePlugin,
+  onSidechainConfig,
+  sidechainSources,
+  chainLabel,
   isActive = true,
 }: HorizontalSignalChainProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
@@ -91,6 +148,10 @@ export function HorizontalSignalChain({
     }
   }, [selectedPluginUri, plugins, onPluginSelect])
 
+  // Get channel count from first plugin or default
+  const inputChannels = plugins[0]?.in_ports ?? 2
+  const outputChannels = plugins[plugins.length - 1]?.out_ports ?? 2
+
   return (
     <div
       ref={containerRef}
@@ -100,53 +161,82 @@ export function HorizontalSignalChain({
       onKeyDown={handleKeyDown}
     >
       {/* Input Endpoint */}
-      <div className="h-endpoint input" title="Audio Input">
-        <FxTerminal className="h-endpoint-icon" />
-        <span className="h-endpoint-label">IN</span>
-      </div>
+      <SignalEndpoint type="input" channels={inputChannels} />
 
-      {plugins.length > 0 && <HorizontalConnector isActive={isActive} />}
+      {/* Input Arrow */}
+      <SignalArrow
+        isActive={isActive}
+        isFirst={true}
+        channels={inputChannels}
+      />
 
       {/* Plugin Nodes */}
       {plugins.map((plugin, index) => {
         const meta = pluginMeta[plugin.uri]
         const isSelected = plugin.uri === selectedPluginUri
         const isDragTarget = dragOverIndex === index && draggedIndex !== index
+        const pluginActive = isActive && !plugin.bypassed
+        const nextPlugin = plugins[index + 1]
+        const outChannels = plugin.out_ports ?? meta?.out_ports ?? 2
+
+        // Check sidechain support and connection
+        const hasSidechain = (meta?.sidechain_buses ?? 0) > 0
+        const sidechainSource = plugin.sidechain_source
+        const sidechainSourceInfo = sidechainSources?.find(s => s.id === sidechainSource)
 
         return (
-          <div key={plugin.uri} className="h-plugin-wrapper">
+          <div key={plugin.uri} className={`h-plugin-wrapper ${hasSidechain ? 'has-sidechain' : ''}`}>
             <div className={`h-drop-indicator ${isDragTarget ? 'visible' : ''}`} />
+            {/* Sidechain connector above plugin */}
+            {hasSidechain && (
+              <SidechainConnector
+                source={sidechainSource}
+                sourceChainLabel={sidechainSourceInfo?.chainLabel}
+                isConnected={!!sidechainSource}
+                isActive={isActive && !!sidechainSource}
+                onClick={onSidechainConfig ? () => onSidechainConfig(plugin.uri) : undefined}
+              />
+            )}
             <HorizontalPluginNode
               plugin={plugin}
               meta={meta}
               isSelected={isSelected}
               onSelect={() => onPluginSelect(plugin.uri)}
               onToggleBypass={() => onToggleBypass(plugin.uri, !plugin.bypassed)}
+              onDelete={onDeletePlugin ? () => onDeletePlugin(plugin.uri) : undefined}
+              onSidechainClick={onSidechainConfig ? () => onSidechainConfig(plugin.uri) : undefined}
               onDragStart={handleDragStart(index)}
               onDragOver={handleDragOver(index)}
               onDrop={handleDrop(index)}
               onDragEnd={handleDragEnd}
             />
             {index < plugins.length - 1 && (
-              <HorizontalConnector isActive={isActive && !plugin.bypassed} />
+              <SignalArrow
+                isActive={pluginActive}
+                fromPlugin={meta?.name || plugin.name}
+                toPlugin={pluginMeta[nextPlugin?.uri]?.name || nextPlugin?.name}
+                channels={outChannels}
+              />
             )}
           </div>
         )
       })}
 
-      {plugins.length > 0 && <HorizontalConnector isActive={isActive} />}
+      {/* Output Arrow */}
+      {plugins.length > 0 && (
+        <SignalArrow
+          isActive={isActive && !plugins[plugins.length - 1]?.bypassed}
+          isLast={true}
+          channels={outputChannels}
+        />
+      )}
 
       {/* Output Endpoint */}
-      <div className="h-endpoint output" title="Audio Output">
-        <FxTerminal className="h-endpoint-icon" />
-        <span className="h-endpoint-label">OUT</span>
-      </div>
+      <SignalEndpoint type="output" channels={outputChannels} />
 
       {/* Empty state */}
       {plugins.length === 0 && (
-        <div className="h-empty-state">
-          <span>No plugins in chain</span>
-        </div>
+        <SignalArrow isActive={isActive} isFirst={true} isLast={true} channels={2} />
       )}
     </div>
   )

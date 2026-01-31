@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
-import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight } from 'lucide-react'
+import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight, Plus } from 'lucide-react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
-import { LV2PluginParameterEditor } from '../components/LV2PluginParameterEditor'
 import { getPluginDescription } from '../data/pluginDescriptions'
 
 // Category configuration for plugin display
@@ -49,6 +49,7 @@ interface PluginDiscoverResponse {
 }
 
 export function LV2PluginsPage() {
+  const navigate = useNavigate()
   const [pluginPacks, setPluginPacks] = useState<PluginPack[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(true)
@@ -341,10 +342,8 @@ export function LV2PluginsPage() {
         </div>
       </div>
 
-      {/* Plugin Browser + Parameters Grid - Side by Side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', gap: 16 }}>
-        {/* Plugin Browser Card */}
-        <div className="card">
+      {/* Plugin Browser */}
+      <div className="card">
           <div className="section-heading">
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Plugin Browser</h2>
@@ -505,13 +504,48 @@ export function LV2PluginsPage() {
                                     {getPluginDescription(p.name)}
                                   </div>
                                 )}
-                                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                                   <span className="pill muted" style={{ fontSize: 9 }}>{p.in_ports}→{p.out_ports}</span>
                                   {p.parameters && p.parameters.length > 0 && (
                                     <span className="pill muted" style={{ fontSize: 9 }}>{p.parameters.length} params</span>
                                   )}
                                   {p.has_ui && <span className="pill info" style={{ fontSize: 9 }}>GUI</span>}
                                   {isHidden && <span className="pill" style={{ fontSize: 9, color: '#6b7280', borderColor: 'rgba(107, 114, 128, 0.3)' }}>Hidden</span>}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigate(`/chains/flow?addPlugin=${encodeURIComponent(p.uri)}`)
+                                    }}
+                                    style={{
+                                      marginLeft: 'auto',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      padding: '3px 8px',
+                                      background: `linear-gradient(135deg, ${catConfig.color}30, ${catConfig.color}15)`,
+                                      border: `1px solid ${catConfig.color}50`,
+                                      borderRadius: 6,
+                                      fontSize: 10,
+                                      fontWeight: 600,
+                                      color: catConfig.color,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.15s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = `linear-gradient(135deg, ${catConfig.color}50, ${catConfig.color}30)`
+                                      e.currentTarget.style.transform = 'translateY(-1px)'
+                                      e.currentTarget.style.boxShadow = `0 2px 8px ${catConfig.color}40`
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = `linear-gradient(135deg, ${catConfig.color}30, ${catConfig.color}15)`
+                                      e.currentTarget.style.transform = 'none'
+                                      e.currentTarget.style.boxShadow = 'none'
+                                    }}
+                                    title="Add this plugin to the Flow editor"
+                                  >
+                                    <Plus size={10} />
+                                    Add to Flow
+                                  </button>
                                 </div>
                               </div>
                             )
@@ -525,39 +559,6 @@ export function LV2PluginsPage() {
             </div>
           )}
         </div>
-
-        {/* Parameters Card - Full Editor */}
-        <div className="card" style={{ maxHeight: 800, overflow: 'auto' }}>
-          {!selectedPlugin ? (
-            <div style={{
-              padding: 32,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, rgba(55, 214, 201, 0.1) 0%, rgba(0,0,0,0.2) 100%)',
-              border: '1px solid rgba(55, 214, 201, 0.3)',
-              textAlign: 'center',
-            }}>
-              <div style={{
-                fontSize: 48,
-                marginBottom: 16,
-                filter: 'grayscale(0.3)',
-              }}>
-                🎛️
-              </div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#37d6c9', marginBottom: 8 }}>
-                Select a Plugin
-              </div>
-              <div style={{ fontSize: 12, color: '#888', maxWidth: 240, margin: '0 auto', lineHeight: 1.5 }}>
-                Click on any plugin in the browser to view and edit its parameters, save presets, and add it to your chain.
-              </div>
-            </div>
-          ) : (
-            <LV2PluginParameterEditor
-              plugin={selectedPlugin}
-              showAddToChain={true}
-            />
-          )}
-        </div>
-      </div>
 
       {/* Quick Status Row */}
       <div className="card" style={{ padding: 12 }}>
