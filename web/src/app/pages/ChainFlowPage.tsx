@@ -2767,20 +2767,22 @@ export function ChainFlowPage() {
               </button>
             </div>
             {/* View Mode Toggle */}
-            <div className="flex" style={{ gap: 4, borderRight: '1px solid var(--surface-border)', paddingRight: 8 }}>
+            <div className="flex" style={{ gap: 4, borderRight: '1px solid var(--surface-border)', paddingRight: 8, marginLeft: 8 }}>
               <button
-                className={`view-toggle-btn ${viewMode === 'detailed' ? 'active' : ''}`}
+                className={`btn ${viewMode === 'detailed' ? 'btn-primary' : 'btn-ghost'} btn-sm`}
                 onClick={() => setViewMode('detailed')}
                 title="Detailed view (vertical)"
+                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                <LayoutList size={16} />
+                <LayoutList size={14} /> Detail
               </button>
               <button
-                className={`view-toggle-btn ${viewMode === 'compact' ? 'active' : ''}`}
+                className={`btn ${viewMode === 'compact' ? 'btn-primary' : 'btn-ghost'} btn-sm`}
                 onClick={() => setViewMode('compact')}
                 title="Compact view (horizontal)"
+                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                <LayoutGrid size={16} />
+                <LayoutGrid size={14} /> Compact
               </button>
             </div>
             <button className="btn btn-ghost" onClick={handleRefresh}>
