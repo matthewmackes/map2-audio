@@ -4,7 +4,7 @@ import { StatusBadge } from '../Visualizations/StatusBadge'
 interface PluginCardProps {
   title: string
   icon: ReactNode
-  color: 'nam' | 'cabinet' | 'reverb' | 'delay' | 'autotune' | 'airwindows' | 'valentine' | 'eq' | 'freeverb3'
+  color: 'nam' | 'cabinet' | 'reverb' | 'delay' | 'autotune' | 'airwindows' | 'valentine' | 'eq' | 'freeverb3' | 'whammy' | 'dragonfly'
   status: 'active' | 'inactive' | 'error'
   children: ReactNode
   onStatusClick?: () => void
@@ -56,6 +56,14 @@ export function PluginCard({
     freeverb3: {
       gradient: 'linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(79, 70, 229, 0.3))',
       accent: '#6366f1'
+    },
+    whammy: {
+      gradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(219, 39, 119, 0.3))',
+      accent: '#ec4899'
+    },
+    dragonfly: {
+      gradient: 'linear-gradient(135deg, rgba(79, 70, 229, 0.3), rgba(139, 92, 246, 0.3))',
+      accent: '#8b5cf6'
     }
   }
 

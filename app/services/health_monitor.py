@@ -18,7 +18,10 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 import json
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class HealthStatus(Enum):
@@ -81,7 +84,7 @@ class Alert:
     message: str = ""
 
 
-class HealthMonitor:
+class HealthMonitor(Singleton):
     """
     Centralized health monitoring system.
     
@@ -100,6 +103,7 @@ class HealthMonitor:
             check_interval_seconds: How often to collect metrics
             max_history_points: Max data points per service (~1 day at 1-min intervals)
         """
+        super().__init__()
         self.services: Dict[str, ServiceMetrics] = {}
         self.service_history: Dict[str, List[ServiceMetrics]] = {}
         self.active_alerts: Dict[str, List[Alert]] = {}
@@ -426,13 +430,6 @@ class HealthMonitor:
         return graph
 
 
-# Global health monitor instance
-_health_monitor: Optional[HealthMonitor] = None
-
-
 def get_health_monitor() -> HealthMonitor:
     """Get global health monitor instance (singleton)."""
-    global _health_monitor
-    if _health_monitor is None:
-        _health_monitor = HealthMonitor()
-    return _health_monitor
+    return HealthMonitor.get_instance()

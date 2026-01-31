@@ -16,7 +16,10 @@ from typing import Dict, List, Optional, Tuple
 from enum import Enum
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class QualityMode(Enum):
@@ -36,7 +39,7 @@ class PluginPriority:
     quality_level: int = 3  # 1-5, affects oversampling, IR length, etc.
 
 
-class DSPManager:
+class DSPManager(Singleton):
     """Dynamic DSP resource allocation manager."""
     
     def __init__(self, sample_rate: int = 48000, buffer_size: int = 256, target_cpu_percent: float = 70.0):
@@ -47,6 +50,7 @@ class DSPManager:
             buffer_size: Audio buffer size
             target_cpu_percent: Target CPU utilization (0-100)
         """
+        super().__init__()
         self.sample_rate = sample_rate
         self.buffer_size = buffer_size
         self.target_cpu_percent = target_cpu_percent
@@ -375,13 +379,12 @@ class DSPManager:
         return priorities
 
 
-# Global instance
-_dsp_manager: Optional[DSPManager] = None
-
-
 def get_dsp_manager(sample_rate: int = 48000, buffer_size: int = 256) -> DSPManager:
     """Get or create DSP manager instance."""
-    global _dsp_manager
-    if _dsp_manager is None:
-        _dsp_manager = DSPManager(sample_rate, buffer_size)
-    return _dsp_manager
+    manager = DSPManager.get_instance()
+    # Update configuration if needed
+    if manager.sample_rate != sample_rate or manager.buffer_size != buffer_size:
+        manager.sample_rate = sample_rate
+        manager.buffer_size = buffer_size
+        manager._calculate_cpu_budget()
+    return manager

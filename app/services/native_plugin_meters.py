@@ -56,6 +56,8 @@ class NativePluginMeterService:
         "valentine": "http://map2-audio.local/valentine",
         "zlequalizer": "http://map2-audio.local/zlequalizer",
         "freeverb3": "http://map2-audio.local/freeverb3",
+        "whammy": "http://github.com/davemollen/dm-Whammy",
+        "dragonfly": "https://github.com/michaelwillis/dragonfly-reverb",
     }
 
     def __init__(self):

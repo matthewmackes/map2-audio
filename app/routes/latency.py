@@ -97,12 +97,10 @@ async def measure_plugin_latency(request: LatencyMeasureRequest) -> Dict:
         analyzer = get_latency_analyzer()
 
         if request.method == "impulse":
-            # Try to get plugin process function from service manager
-            from app.services.service_manager import get_service_manager
+            # Try to get plugin process function from JUCE engine
             from app.services.juce_engine_service import get_audio_engine
 
             latency_samples = 0
-            service_manager = get_service_manager()
             engine = get_audio_engine()
 
             # Try JUCE audio engine

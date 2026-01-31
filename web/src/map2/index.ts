@@ -45,6 +45,10 @@ export { default as BackupStatusWidget } from './components/BackupStatusWidget';
 export { default as ABQuickToggle, ABModeIndicator } from './components/ABQuickToggle';
 export { default as FeaturesPanel, FeatureStatusBar } from './components/FeaturesPanel';
 
+// VST3 Plugin Management
+export { default as VST3PluginLoader } from './components/VST3PluginLoader';
+export { default as VST3Demo } from './VST3Demo';
+
 // ============================================================================
 // Chain Flow Redesign Components (JUCE Integration)
 // ============================================================================

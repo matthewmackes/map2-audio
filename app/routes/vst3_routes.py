@@ -109,12 +109,13 @@ async def list_vst3_plugins() -> Dict[str, Any]:
 
 
 @router.get("/plugin")
-async def get_vst3_plugin(uri: str) -> Dict[str, Any]:
+async def get_vst3_plugin(uri: str, load_parameters: bool = False) -> Dict[str, Any]:
     """
     Get VST3 plugin metadata by URI.
 
     Query parameters:
     - uri: Plugin URI
+    - load_parameters: If true, instantiate plugin to load real parameters (slower)
 
     Returns:
         Plugin metadata
@@ -128,6 +129,17 @@ async def get_vst3_plugin(uri: str) -> Dict[str, Any]:
     if not plugin:
         raise HTTPException(status_code=404, detail=f"VST3 plugin not found: {uri}")
 
+    parameters = plugin.get("parameters", [])
+    
+    # If requested and parameters are empty, try to load from JUCE
+    if load_parameters and len(parameters) == 0:
+        try:
+            # TODO: Implement JUCE engine parameter loading
+            # For now, return with a flag indicating parameters need loading
+            logger.info(f"Parameters requested for {uri} but not yet implemented via JUCE")
+        except Exception as e:
+            logger.error(f"Failed to load parameters for {uri}: {e}")
+
     return {
         "uri": plugin.get("uri", ""),
         "name": plugin.get("name", "Unknown"),
@@ -140,7 +152,8 @@ async def get_vst3_plugin(uri: str) -> Dict[str, Any]:
         "in_ports": plugin.get("audio_inputs", 2),
         "out_ports": plugin.get("audio_outputs", 2),
         "has_ui": plugin.get("has_ui", True),
-        "parameters": plugin.get("parameters", []),
+        "parameters": parameters,
+        "parameters_available": len(parameters) > 0,
     }
 
 
@@ -373,3 +386,40 @@ async def unload_vst3_plugin(instance_id: str) -> Dict[str, Any]:
         "status": "success",
         "message": f"Unloaded plugin instance: {instance_id}"
     }
+
+
+@router.get("/parameters")
+async def get_vst3_plugin_parameters(uri: str) -> Dict[str, Any]:
+    """
+    Get VST3 plugin parameters by loading through JUCE engine (when implemented).
+    
+    Query parameters:
+    - uri: Plugin URI
+    
+    Returns:
+        Plugin parameters with metadata
+    """
+    if not VST3_AVAILABLE:
+        raise HTTPException(status_code=503, detail="VST3 discovery service not available")
+    
+    try:
+        from app.services.vst3_parameter_loader import get_vst3_parameter_info
+        
+        # Get parameter information
+        param_info = get_vst3_parameter_info(uri)
+        
+        return param_info
+        
+    except ImportError as e:
+        logger.error(f"Failed to import parameter loader: {e}")
+        return {
+            "uri": uri,
+            "parameters": [],
+            "parameter_count": 0,
+            "requires_instantiation": True,
+            "message": "Parameter loading module not available",
+            "error": str(e)
+        }
+    except Exception as e:
+        logger.error(f"Error getting parameters for {uri}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

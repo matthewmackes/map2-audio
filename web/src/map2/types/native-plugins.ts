@@ -209,6 +209,22 @@ export interface ZLEqualizerStatus {
   sideSpectrum: Array<{ freq: number; magnitude: number }>
 }
 
+// dm-Whammy - Pitch shifting effect inspired by DigiTech Whammy
+// Mono pitch shifter with ±24 semitone range
+export interface WhammyStatus {
+  available: boolean
+  bypass: boolean
+  inputLevel: number
+  outputLevel: number
+  peakInput: number
+  peakOutput: number
+  latency: number
+  // Whammy parameters
+  pitch: number                 // Pitch shift in semitones (-24 to +24, default 12)
+  dry: number                   // Dry level in dB (-70 to 6, default -70)
+  wet: number                   // Wet level in dB (-70 to 6, default 0)
+}
+
 // Freeverb3 - GNU algorithmic reverb library
 // High-quality reverb algorithms with SIMD optimization
 export type Freeverb3ReverbType = 'freeverb' | 'strev' | 'nrev' | 'progenitor' | 'zrev' | 'earlyref'
@@ -246,4 +262,70 @@ export interface Freeverb3Status {
   // Spin/wander (for certain algorithms)
   spin: number                // Spin amount (0-100)
   wander: number              // Wander amount (0-100)
+}
+
+// Dragonfly Reverb - Michael Willis' algorithmic reverb suite
+// 4 variants: Hall, Room, Plate, and Early Reflections
+export type DragonflyReverbVariant = 'hall' | 'room' | 'plate' | 'early'
+export type DragonflyPlateAlgorithm = 'simple' | 'nested' | 'tank'
+
+export interface DragonflyPreset {
+  name: string
+  bank: string
+  variant: DragonflyReverbVariant
+}
+
+export interface DragonflyStatus {
+  available: boolean
+  bypass: boolean
+  inputLevel: number
+  outputLevel: number
+  peakInput: number
+  peakOutput: number
+  latency: number
+
+  // Variant selection
+  variant: DragonflyReverbVariant
+
+  // Common parameters (all variants)
+  dryLevel: number            // dB (-80 to 0)
+  wetLevel: number            // dB (-80 to 0)
+  width: number               // % (50-150)
+  predelay: number            // ms (0-100)
+  decay: number               // seconds (0.1-10)
+  lowCut: number              // Hz (0-200)
+  highCut: number             // Hz (1000-16000)
+
+  // Hall-specific parameters
+  size: number                // meters (10-60 Hall, 8-32 Room, 10-60 Early)
+  diffuse: number             // % (0-100)
+  earlyLevel: number          // dB (-80 to 0)
+  earlySend: number           // % (0-100)
+  lateLevel: number           // dB (-80 to 0)
+  lowXover: number            // Hz (50-1000)
+  highXover: number           // Hz (1000-16000)
+  lowMult: number             // multiplier (0.5-2.5)
+  highMult: number            // multiplier (0.2-1.2)
+  spin: number                // Hz (0-5 Room, 0-10 Hall)
+  wander: number              // % (0-100)
+  modulation: number          // % (0-100) - Hall only
+
+  // Plate-specific parameters
+  algorithm: DragonflyPlateAlgorithm
+  dampen: number              // % (0-100)
+
+  // Room-specific parameters
+  bassBoost: number           // % (0-100)
+  boostFreq: number           // Hz (50-1050)
+  earlyDamp: number           // Hz (1000-16000)
+  lateDamp: number            // Hz (1000-16000)
+
+  // Early Reflections-specific
+  program: number             // Program index (0-7)
+
+  // Preset info
+  currentPreset: string | null
+  currentBank: string | null
+  availablePresets: DragonflyPreset[]
+  earlyPrograms: string[]
 }

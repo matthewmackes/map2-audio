@@ -193,7 +193,7 @@ start_lcd() {
     print_service "Starting LCD Display Service..."
     
     # Check if LCD hardware/simulation is available
-                logger.info(f'System monitor: Backend={status["services"]["backend"]}, Frontend={status["services"]["frontend"]}')
+    # System monitor logging removed - Python code in bash script
     
     cd "$PROJECT_ROOT"
     python3 -m lcd.service > "$LOG_DIR/lcd.log" 2>&1 &

@@ -2,11 +2,32 @@
 Neural Amp Modeler Integration
 Provides high-quality guitar amp and pedal simulation using trained neural networks.
 
+⚠️  CRITICAL: NOT REAL-TIME SAFE IN PYTHON ⚠️
+
+This Python-based NAM processor should NOT be used in real-time audio callbacks.
+
+PROBLEMS:
+- PyTorch inference has variable latency (5-15ms CPU, 2-5ms GPU)
+- Python GIL causes non-deterministic delays
+- Memory allocations during inference
+- NOT suitable for live guitar processing
+
+RECOMMENDED ALTERNATIVES:
+1. Use JUCE C++ with libtorch (real-time safe)
+2. Use this module for offline processing only
+3. Pre-render NAM models to IRs for convolution
+
 Features:
 - GPU/CUDA acceleration detection and optimization
 - CPU inference fallback with thread optimization
-- RT-safe buffer management with pre-allocation
+- RT-safe buffer management with pre-allocation (but Python GIL still causes issues!)
 - Latency reporting for compensation
+
+USE CASES:
+- Offline audio file processing
+- Testing and development
+- Non-real-time applications
+- NOT for live performance
 """
 
 import json
@@ -17,14 +38,15 @@ from pathlib import Path
 import threading
 
 from app.paths import StoragePaths
+from app.utils.dependencies import DependencyChecker
+from app.utils.logging_utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
-# Try to import PyTorch and NAM
-try:
-    import torch
-    TORCH_AVAILABLE = True
-    
+# Check PyTorch availability
+TORCH_AVAILABLE, torch = DependencyChecker.check('torch')
+
+if TORCH_AVAILABLE and torch:
     # Detect CUDA/GPU availability
     CUDA_AVAILABLE = torch.cuda.is_available()
     if CUDA_AVAILABLE:
@@ -40,26 +62,21 @@ try:
     MPS_AVAILABLE = hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
     if MPS_AVAILABLE:
         logger.info("Apple MPS (Metal) available for GPU acceleration")
-        
-except ImportError:
-    TORCH_AVAILABLE = False
+else:
     CUDA_AVAILABLE = False
     MPS_AVAILABLE = False
     GPU_NAME = None
     GPU_MEMORY = 0
-    torch = None
     logger.warning("PyTorch not available - NAM models will not load")
 
-# Try to import NAM
-try:
-    from nam.models import init_from_nam
-    NAM_AVAILABLE = TORCH_AVAILABLE  # NAM requires PyTorch
-    if NAM_AVAILABLE:
-        logger.info("NAM (Neural Amp Modeler) loaded successfully")
-except ImportError as e:
-    NAM_AVAILABLE = False
-    init_from_nam = None
-    logger.warning(f"NAM not available - install with: pip install neural-amp-modeler ({e})")
+# Check NAM availability
+NAM_AVAILABLE, nam_module = DependencyChecker.check('nam.models')
+init_from_nam = nam_module.init_from_nam if NAM_AVAILABLE and nam_module else None
+
+if NAM_AVAILABLE:
+    logger.info("NAM (Neural Amp Modeler) loaded successfully")
+else:
+    logger.warning("NAM not available - install with: pip install neural-amp-modeler")
 
 
 class NAMModel:
@@ -88,6 +105,12 @@ class NAMModel:
             name: Model display name
             device: Target device ('cuda', 'mps', 'cpu', or None for auto)
         """
+        # ⚠️  WARNING: NOT REAL-TIME SAFE ⚠️
+        logger.warning(
+            f"NAM Model '{name}': Python PyTorch inference is NOT real-time safe. "
+            "Use JUCE C++ engine with libtorch for live performance."
+        )
+        
         self.model_path = model_path
         self.name = name
         self.model = None

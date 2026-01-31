@@ -197,16 +197,10 @@ class RTCallbackTimer:
         return False
 
 
-# Global singleton instance
-_rt_monitor: Optional[RTPerformanceMonitor] = None
-
-
+# Singleton accessor
 def get_rt_monitor() -> RTPerformanceMonitor:
     """Get or create global RT performance monitor instance."""
-    global _rt_monitor
-    if _rt_monitor is None:
-        _rt_monitor = RTPerformanceMonitor()
-    return _rt_monitor
+    return RTPerformanceMonitor.get_instance()
 
 
 def init_rt_monitor(sample_rate: int = 48000, block_size: int = 256) -> RTPerformanceMonitor:

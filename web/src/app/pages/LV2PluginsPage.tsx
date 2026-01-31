@@ -5,6 +5,7 @@ import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, Ch
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 import { LV2PluginParameterEditor } from '../components/LV2PluginParameterEditor'
+import { getPluginDescription } from '../data/pluginDescriptions'
 
 // Category configuration for plugin display
 type IconComponent = React.ComponentType<{ size?: number; style?: React.CSSProperties }>
@@ -72,6 +73,15 @@ export function LV2PluginsPage() {
     } catch { return new Set(); }
   })
 
+  // Hidden plugins state - persisted to localStorage
+  const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(() => {
+    try {
+      const val = localStorage.getItem('map2_lv2_hidden_plugins');
+      return val ? new Set(JSON.parse(val)) : new Set();
+    } catch { return new Set(); }
+  })
+  const [showHidden, setShowHidden] = useState(false)
+
   // Plugin discovery query
   const pluginsQuery = useQuery<PluginDiscoverResponse>({
     queryKey: ['plugins', 'discover'],
@@ -94,9 +104,12 @@ export function LV2PluginsPage() {
       const matchText = p.name.toLowerCase().includes(term) ||
                        p.category.toLowerCase().includes(term) ||
                        p.author?.toLowerCase().includes(term)
-      return matchCategory && matchText
+      const matchHidden = showHidden || !hiddenPlugins.has(p.uri)
+      return matchCategory && matchText && matchHidden
     })
-  }, [pluginsQuery.data, searchQuery, selectedCategory])
+  }, [pluginsQuery.data, searchQuery, selectedCategory, showHidden, hiddenPlugins])
+
+  const hiddenCount = hiddenPlugins.size
 
   const groupedPlugins = useMemo(() => {
     const groups: Record<string, Plugin[]> = {}
@@ -160,6 +173,22 @@ export function LV2PluginsPage() {
       localStorage.setItem('map2_lv2_collapsed_categories', JSON.stringify([...collapsedCategories]));
     } catch { /* Ignore localStorage errors */ }
   }, [collapsedCategories])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_lv2_hidden_plugins', JSON.stringify([...hiddenPlugins]));
+    } catch { /* Ignore localStorage errors */ }
+  }, [hiddenPlugins])
+
+  const toggleHidePlugin = (uri: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setHiddenPlugins(prev => {
+      const next = new Set(prev)
+      if (next.has(uri)) next.delete(uri)
+      else next.add(uri)
+      return next
+    })
+  }
 
   const handleInstall = async (packId: string) => {
     try {
@@ -323,6 +352,22 @@ export function LV2PluginsPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span className="pill">{filteredPlugins.length} shown</span>
+              {hiddenCount > 0 && (
+                <button
+                  className={`btn btn-sm ${showHidden ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setShowHidden(!showHidden)}
+                  style={{
+                    fontSize: 11,
+                    padding: '6px 10px',
+                    color: showHidden ? undefined : '#6b7280',
+                    borderColor: showHidden ? undefined : 'rgba(107, 114, 128, 0.3)',
+                  }}
+                  title={showHidden ? 'Hide hidden plugins' : `Show ${hiddenCount} hidden plugin${hiddenCount > 1 ? 's' : ''}`}
+                >
+                  {showHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                  {showHidden ? 'Showing All' : `${hiddenCount} Hidden`}
+                </button>
+              )}
               <div style={{ display: 'flex', gap: 8 }}>
                 <div style={{ position: 'relative' }}>
                   <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
@@ -399,38 +444,78 @@ export function LV2PluginsPage() {
                       </div>
 
                       {!isCollapsed && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, padding: '0 8px' }}>
-                          {plugins.map((p: Plugin) => (
-                            <div
-                              key={p.uri}
-                              className="list-item"
-                              style={{
-                                padding: '10px 12px',
-                                cursor: 'pointer',
-                                borderLeft: `3px solid ${catConfig.color}`,
-                                background: selectedPlugin?.uri === p.uri
-                                  ? `linear-gradient(135deg, ${catConfig.bg} 0%, rgba(0,0,0,0.3) 100%)`
-                                  : undefined,
-                                boxShadow: selectedPlugin?.uri === p.uri
-                                  ? `0 0 10px ${catConfig.color}30`
-                                  : undefined,
-                              }}
-                              onClick={() => setSelectedPlugin(p)}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                <CategoryIcon size={14} style={{ color: catConfig.color }} />
-                                <span style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</span>
-                              </div>
-                              <div style={{ fontSize: 11, color: '#888' }}>{p.author || 'Unknown author'}</div>
-                              <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                                <span className="pill muted" style={{ fontSize: 9 }}>{p.in_ports}→{p.out_ports}</span>
-                                {p.parameters && p.parameters.length > 0 && (
-                                  <span className="pill muted" style={{ fontSize: 9 }}>{p.parameters.length} params</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 8px' }}>
+                          {plugins.map((p: Plugin) => {
+                            const isHidden = hiddenPlugins.has(p.uri)
+                            return (
+                              <div
+                                key={p.uri}
+                                className="list-item"
+                                style={{
+                                  padding: '10px 12px',
+                                  cursor: 'pointer',
+                                  borderLeft: `3px solid ${catConfig.color}`,
+                                  background: selectedPlugin?.uri === p.uri
+                                    ? `linear-gradient(135deg, ${catConfig.bg} 0%, rgba(0,0,0,0.3) 100%)`
+                                    : isHidden
+                                      ? 'rgba(107, 114, 128, 0.1)'
+                                      : undefined,
+                                  boxShadow: selectedPlugin?.uri === p.uri
+                                    ? `0 0 10px ${catConfig.color}30`
+                                    : undefined,
+                                  opacity: isHidden ? 0.6 : 1,
+                                  position: 'relative',
+                                }}
+                                onClick={() => setSelectedPlugin(p)}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                  <CategoryIcon size={14} style={{ color: catConfig.color }} />
+                                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{p.name}</span>
+                                  <button
+                                    onClick={(e) => toggleHidePlugin(p.uri, e)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      padding: 4,
+                                      borderRadius: 4,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: isHidden ? '#6b7280' : '#666',
+                                      opacity: 0.6,
+                                      transition: 'opacity 0.15s, color 0.15s',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.opacity = '1'
+                                      e.currentTarget.style.color = isHidden ? '#4ade80' : '#ef4444'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.opacity = '0.6'
+                                      e.currentTarget.style.color = isHidden ? '#6b7280' : '#666'
+                                    }}
+                                    title={isHidden ? 'Show plugin' : 'Hide plugin'}
+                                  >
+                                    {isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                                  </button>
+                                </div>
+                                <div style={{ fontSize: 11, color: '#888' }}>{p.author || 'Unknown author'}</div>
+                                {getPluginDescription(p.name) && (
+                                  <div style={{ fontSize: 10, color: '#666', marginTop: 4, lineHeight: 1.4 }}>
+                                    {getPluginDescription(p.name)}
+                                  </div>
                                 )}
-                                {p.has_ui && <span className="pill info" style={{ fontSize: 9 }}>GUI</span>}
+                                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                                  <span className="pill muted" style={{ fontSize: 9 }}>{p.in_ports}→{p.out_ports}</span>
+                                  {p.parameters && p.parameters.length > 0 && (
+                                    <span className="pill muted" style={{ fontSize: 9 }}>{p.parameters.length} params</span>
+                                  )}
+                                  {p.has_ui && <span className="pill info" style={{ fontSize: 9 }}>GUI</span>}
+                                  {isHidden && <span className="pill" style={{ fontSize: 9, color: '#6b7280', borderColor: 'rgba(107, 114, 128, 0.3)' }}>Hidden</span>}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
                     </div>

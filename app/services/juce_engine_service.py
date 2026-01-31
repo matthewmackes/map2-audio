@@ -10,20 +10,20 @@ import sys
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.dependencies import DependencyChecker
+from app.utils.logging_utils import get_logger
 
-# Try to import JUCE C++ module
-JUCE_AVAILABLE = False
-juce_engine = None
+logger = get_logger(__name__)
 
-try:
-    sys.path.insert(0, '/home/mm/map2-audio/juce-engine/build')
-    import map2_audio_engine as je
-    JUCE_AVAILABLE = True
-    juce_engine = je
-    logger.info(f"JUCE Audio Engine loaded: {je.get_version()}")
-except ImportError as e:
-    logger.warning(f"JUCE Audio Engine not available: {e}")
+# Check JUCE availability using dependency checker
+sys.path.insert(0, '/home/mm/map2-audio/juce-engine/build')
+JUCE_AVAILABLE, juce_engine = DependencyChecker.check('map2_audio_engine')
+
+if JUCE_AVAILABLE and juce_engine:
+    logger.info(f"JUCE Audio Engine loaded: {juce_engine.get_version()}")
+else:
+    logger.warning("JUCE Audio Engine not available")
 
 
 # Hotone Jogg USB Audio Interface constants
@@ -53,10 +53,11 @@ class AudioEngineConfig:
     config_file: str = ""
 
 
-class JuceEngineService:
+class JuceEngineService(Singleton):
     """JUCE Audio Engine Service - MAP2 audio processing engine"""
 
     def __init__(self, config: Optional[AudioEngineConfig] = None) -> None:
+        super().__init__()
         self.config = config or AudioEngineConfig()
         self._engine = None
         self._initialized = False
@@ -748,13 +749,7 @@ class JuceEngineService:
         return "unavailable"
 
 
-# Singleton
-_juce_service: Optional[JuceEngineService] = None
-
-
+# Singleton accessor using base class
 def get_audio_engine() -> JuceEngineService:
-    """Get singleton instance of JUCE Audio Engine"""
-    global _juce_service
-    if _juce_service is None:
-        _juce_service = JuceEngineService()
-    return _juce_service
+    """Get or create JUCE audio engine service instance."""
+    return JuceEngineService.get_instance()

@@ -70,17 +70,24 @@ To provide musicians and audio engineers with a **professional-grade, accessible
 
 ### Audio Processing Engine
 
+**Primary Engine: JUCE C++ Audio Framework** ✅
+
+- **JUCE Audio I/O** - Professional cross-platform audio with ALSA/JACK support
+- **Real-Time Safe** - Compiled C++ for deterministic low-latency processing (~12ms total)
 - **LV2 Plugin Host** - Full support for the industry-standard Linux audio plugin format
-- **Real-Time Audio I/O** - JACK and ALSA integration with minimal latency
+- **VST3 Support** - Native VST3 plugin hosting
+- **Automatic PDC** - Plugin delay compensation handled by JUCE AudioProcessorGraph
 - **Effect Chains** - Visual node-based signal flow with unlimited routing flexibility
 - **MIDI Routing** - Complete keyboard and controller input mapping with MIDI learn
-- **Latency Compensation** - Automatic plugin delay compensation throughout the chain
+- **Hotone Jogg Integration** - Optimized for Hotone Jogg USB Audio Interface
+
+> **Note:** The system includes a Python audio I/O module (`audio_io_v2.py`) which is **DEPRECATED** and should not be used for production. Always use the JUCE C++ engine for live performance.
 
 ### AI-Powered Features
 
 - **Neural Amp Modeler (NAM)** - AI-trained amplifier and pedal models that capture the exact character of real gear
 - **Community Model Library** - Access to thousands of community-created NAM models via GitHub integration
-- **Real-Time Inference** - PyTorch-powered neural network processing at audio rates
+- **Real-Time Inference** - Optimized neural network processing (⚠️ Python NAM is deprecated, use JUCE C++ implementation)
 
 ### Impulse Response Processing
 

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { NAMStatus, CabinetStatus, ReverbStatus, CocoaDelayStatus, ZitaAT1Status, TripleSpreadStatus, ValentineStatus, ZLEqualizerStatus, ZLEqualizerBandStatus, Freeverb3Status, Freeverb3ReverbType } from '../../map2/types/native-plugins'
+import { NAMStatus, CabinetStatus, ReverbStatus, CocoaDelayStatus, ZitaAT1Status, TripleSpreadStatus, ValentineStatus, ZLEqualizerStatus, ZLEqualizerBandStatus, Freeverb3Status, Freeverb3ReverbType, WhammyStatus, DragonflyStatus, DragonflyReverbVariant, DragonflyPlateAlgorithm } from '../../map2/types/native-plugins'
 
 const DEFAULT_NAM: NAMStatus = {
   available: false,
@@ -204,6 +204,60 @@ const DEFAULT_FREEVERB3: Freeverb3Status = {
   wander: 50
 }
 
+const DEFAULT_WHAMMY: WhammyStatus = {
+  available: false,
+  bypass: false,
+  inputLevel: -60,
+  outputLevel: -60,
+  peakInput: -60,
+  peakOutput: -60,
+  latency: 0,
+  pitch: 12,
+  dry: -70,
+  wet: 0
+}
+
+const DEFAULT_DRAGONFLY: DragonflyStatus = {
+  available: false,
+  bypass: false,
+  inputLevel: -60,
+  outputLevel: -60,
+  peakInput: -60,
+  peakOutput: -60,
+  latency: 0,
+  variant: 'hall',
+  dryLevel: 0,
+  wetLevel: -12,
+  width: 100,
+  predelay: 0,
+  decay: 1.5,
+  lowCut: 0,
+  highCut: 16000,
+  size: 32,
+  diffuse: 100,
+  earlyLevel: -22,
+  earlySend: 20,
+  lateLevel: 0,
+  lowXover: 200,
+  highXover: 6000,
+  lowMult: 1.0,
+  highMult: 0.4,
+  spin: 0.5,
+  wander: 40,
+  modulation: 0,
+  algorithm: 'tank',
+  dampen: 50,
+  bassBoost: 0,
+  boostFreq: 150,
+  earlyDamp: 8000,
+  lateDamp: 8000,
+  program: 0,
+  currentPreset: null,
+  currentBank: null,
+  availablePresets: [],
+  earlyPrograms: []
+}
+
 export function useNativePlugins() {
   const queryClient = useQueryClient()
 
@@ -345,6 +399,38 @@ export function useNativePlugins() {
       } catch (e) {
         console.error('Freeverb3 fetch error:', e)
         return DEFAULT_FREEVERB3
+      }
+    },
+    refetchInterval: 100,
+    staleTime: 0
+  })
+
+  const whammyQuery = useQuery<WhammyStatus>({
+    queryKey: ['native-plugins', 'whammy'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/whammy/status')
+        if (!res.ok) throw new Error('Failed to fetch Whammy status')
+        return res.json()
+      } catch (e) {
+        console.error('Whammy fetch error:', e)
+        return DEFAULT_WHAMMY
+      }
+    },
+    refetchInterval: 100,
+    staleTime: 0
+  })
+
+  const dragonflyQuery = useQuery<DragonflyStatus>({
+    queryKey: ['native-plugins', 'dragonfly'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/dragonfly/status')
+        if (!res.ok) throw new Error('Failed to fetch Dragonfly status')
+        return res.json()
+      } catch (e) {
+        console.error('Dragonfly fetch error:', e)
+        return DEFAULT_DRAGONFLY
       }
     },
     refetchInterval: 100,
@@ -928,6 +1014,284 @@ export function useNativePlugins() {
     }
   })
 
+  // Whammy mutations
+  const updateWhammyPitchMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/whammy/set-pitch/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set pitch')
+      return res.json()
+    }
+  })
+
+  const updateWhammyDryMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/whammy/set-dry/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set dry level')
+      return res.json()
+    }
+  })
+
+  const updateWhammyWetMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/whammy/set-wet/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set wet level')
+      return res.json()
+    }
+  })
+
+  const updateWhammyBypassMutation = useMutation({
+    mutationFn: async (bypass: boolean) => {
+      const res = await fetch(`/api/whammy/set-bypass/${bypass}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set bypass')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['native-plugins', 'whammy'] })
+    }
+  })
+
+  // Dragonfly Reverb mutations
+  const updateDragonflyVariantMutation = useMutation({
+    mutationFn: async (variant: DragonflyReverbVariant) => {
+      const res = await fetch(`/api/dragonfly/set-variant/${variant}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set variant')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['native-plugins', 'dragonfly'] })
+    }
+  })
+
+  const updateDragonflyDryLevelMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-dry-level/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set dry level')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyWetLevelMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-wet-level/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set wet level')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyWidthMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-width/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set width')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyPredelayMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-predelay/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set predelay')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyDecayMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-decay/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set decay')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyLowCutMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-low-cut/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set low cut')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyHighCutMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-high-cut/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set high cut')
+      return res.json()
+    }
+  })
+
+  const updateDragonflySizeMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-size/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set size')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyDiffuseMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-diffuse/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set diffuse')
+      return res.json()
+    }
+  })
+
+  const updateDragonflySpinMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-spin/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set spin')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyWanderMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-wander/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set wander')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyEarlyLevelMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-early-level/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set early level')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyEarlySendMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-early-send/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set early send')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyLateLevelMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-late-level/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set late level')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyLowXoverMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-low-xover/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set low xover')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyHighXoverMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-high-xover/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set high xover')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyLowMultMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-low-mult/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set low mult')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyHighMultMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-high-mult/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set high mult')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyModulationMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-modulation/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set modulation')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyAlgorithmMutation = useMutation({
+    mutationFn: async (algorithm: DragonflyPlateAlgorithm) => {
+      const res = await fetch(`/api/dragonfly/set-algorithm/${algorithm}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set algorithm')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyDampenMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-dampen/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set dampen')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyBassBoostMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-bass-boost/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set bass boost')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyBoostFreqMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-boost-freq/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set boost freq')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyEarlyDampMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-early-damp/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set early damp')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyLateDampMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-late-damp/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set late damp')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyProgramMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await fetch(`/api/dragonfly/set-program/${value}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set program')
+      return res.json()
+    }
+  })
+
+  const updateDragonflyBypassMutation = useMutation({
+    mutationFn: async (bypass: boolean) => {
+      const res = await fetch(`/api/dragonfly/set-bypass/${bypass}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to set bypass')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['native-plugins', 'dragonfly'] })
+    }
+  })
+
+  const loadDragonflyPresetMutation = useMutation({
+    mutationFn: async (presetName: string) => {
+      const res = await fetch(`/api/dragonfly/load-preset/${encodeURIComponent(presetName)}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to load preset')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['native-plugins', 'dragonfly'] })
+    }
+  })
+
   return {
     nam: namQuery.data || DEFAULT_NAM,
     cabinet: cabinetQuery.data || DEFAULT_CABINET,
@@ -938,8 +1302,10 @@ export function useNativePlugins() {
     valentine: valentineQuery.data || DEFAULT_VALENTINE,
     zlEqualizer: zlEqualizerQuery.data || DEFAULT_ZLEQUALIZER,
     freeverb3: freeverb3Query.data || DEFAULT_FREEVERB3,
-    isLoading: namQuery.isLoading || cabinetQuery.isLoading || reverbQuery.isLoading || cocoaDelayQuery.isLoading || zitaAT1Query.isLoading || tripleSpreadQuery.isLoading || valentineQuery.isLoading || zlEqualizerQuery.isLoading || freeverb3Query.isLoading,
-    isError: namQuery.isError || cabinetQuery.isError || reverbQuery.isError || cocoaDelayQuery.isError || zitaAT1Query.isError || tripleSpreadQuery.isError || valentineQuery.isError || zlEqualizerQuery.isError || freeverb3Query.isError,
+    whammy: whammyQuery.data || DEFAULT_WHAMMY,
+    dragonfly: dragonflyQuery.data || DEFAULT_DRAGONFLY,
+    isLoading: namQuery.isLoading || cabinetQuery.isLoading || reverbQuery.isLoading || cocoaDelayQuery.isLoading || zitaAT1Query.isLoading || tripleSpreadQuery.isLoading || valentineQuery.isLoading || zlEqualizerQuery.isLoading || freeverb3Query.isLoading || whammyQuery.isLoading || dragonflyQuery.isLoading,
+    isError: namQuery.isError || cabinetQuery.isError || reverbQuery.isError || cocoaDelayQuery.isError || zitaAT1Query.isError || tripleSpreadQuery.isError || valentineQuery.isError || zlEqualizerQuery.isError || freeverb3Query.isError || whammyQuery.isError || dragonflyQuery.isError,
     updateNAMModel: updateNAMModelMutation.mutateAsync,
     updateNAMMix: updateNAMMixMutation.mutateAsync,
     updateCabinetIR: updateCabinetIRMutation.mutateAsync,
@@ -1009,6 +1375,41 @@ export function useNativePlugins() {
     updateFreeverb3Diffusion: updateFreeverb3DiffusionMutation.mutateAsync,
     updateFreeverb3Spin: updateFreeverb3SpinMutation.mutateAsync,
     updateFreeverb3Wander: updateFreeverb3WanderMutation.mutateAsync,
-    updateFreeverb3Bypass: updateFreeverb3BypassMutation.mutateAsync
+    updateFreeverb3Bypass: updateFreeverb3BypassMutation.mutateAsync,
+    // Whammy
+    updateWhammyPitch: updateWhammyPitchMutation.mutateAsync,
+    updateWhammyDry: updateWhammyDryMutation.mutateAsync,
+    updateWhammyWet: updateWhammyWetMutation.mutateAsync,
+    updateWhammyBypass: updateWhammyBypassMutation.mutateAsync,
+    // Dragonfly Reverb
+    updateDragonflyVariant: updateDragonflyVariantMutation.mutateAsync,
+    updateDragonflyDryLevel: updateDragonflyDryLevelMutation.mutateAsync,
+    updateDragonflyWetLevel: updateDragonflyWetLevelMutation.mutateAsync,
+    updateDragonflyWidth: updateDragonflyWidthMutation.mutateAsync,
+    updateDragonflyPredelay: updateDragonflyPredelayMutation.mutateAsync,
+    updateDragonflyDecay: updateDragonflyDecayMutation.mutateAsync,
+    updateDragonflyLowCut: updateDragonflyLowCutMutation.mutateAsync,
+    updateDragonflyHighCut: updateDragonflyHighCutMutation.mutateAsync,
+    updateDragonflySize: updateDragonflySizeMutation.mutateAsync,
+    updateDragonflyDiffuse: updateDragonflyDiffuseMutation.mutateAsync,
+    updateDragonflySpin: updateDragonflySpinMutation.mutateAsync,
+    updateDragonflyWander: updateDragonflyWanderMutation.mutateAsync,
+    updateDragonflyEarlyLevel: updateDragonflyEarlyLevelMutation.mutateAsync,
+    updateDragonflyEarlySend: updateDragonflyEarlySendMutation.mutateAsync,
+    updateDragonflyLateLevel: updateDragonflyLateLevelMutation.mutateAsync,
+    updateDragonflyLowXover: updateDragonflyLowXoverMutation.mutateAsync,
+    updateDragonflyHighXover: updateDragonflyHighXoverMutation.mutateAsync,
+    updateDragonflyLowMult: updateDragonflyLowMultMutation.mutateAsync,
+    updateDragonflyHighMult: updateDragonflyHighMultMutation.mutateAsync,
+    updateDragonflyModulation: updateDragonflyModulationMutation.mutateAsync,
+    updateDragonflyAlgorithm: updateDragonflyAlgorithmMutation.mutateAsync,
+    updateDragonflyDampen: updateDragonflyDampenMutation.mutateAsync,
+    updateDragonflyBassBoost: updateDragonflyBassBoostMutation.mutateAsync,
+    updateDragonflyBoostFreq: updateDragonflyBoostFreqMutation.mutateAsync,
+    updateDragonflyEarlyDamp: updateDragonflyEarlyDampMutation.mutateAsync,
+    updateDragonflyLateDamp: updateDragonflyLateDampMutation.mutateAsync,
+    updateDragonflyProgram: updateDragonflyProgramMutation.mutateAsync,
+    updateDragonflyBypass: updateDragonflyBypassMutation.mutateAsync,
+    loadDragonflyPreset: loadDragonflyPresetMutation.mutateAsync
   }
 }

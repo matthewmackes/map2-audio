@@ -502,10 +502,15 @@ export function LV2PluginParameterEditor({
   const [copiedParams, setCopiedParams] = useState<Record<number, number> | null>(null)
   const [alerts, setAlerts] = useState<Array<{ id: string; type: 'success' | 'error' | 'warning'; message: string }>>([])
 
-  // Initialize parameter values from plugin
+  // Ensure plugin parameters are properly initialized
   useEffect(() => {
+    if (!plugin.parameters || plugin.parameters.length === 0) {
+      addAlert('error', 'Plugin parameters could not be loaded. Ensure the LV2 plugin is compatible.');
+      return;
+    }
+
     const values: Record<number, number> = {}
-    plugin.parameters?.forEach(param => {
+    plugin.parameters.forEach(param => {
       values[param.index] = param.value ?? param.default
     })
     setParameterValues(values)
@@ -535,6 +540,10 @@ export function LV2PluginParameterEditor({
   // Save preset mutation
   const savePresetMutation = useMutation({
     mutationFn: async (name: string) => {
+      if (!plugin.parameters || plugin.parameters.length === 0) {
+        throw new Error('Cannot save preset: Plugin parameters are missing.')
+      }
+
       const parameters: Record<string, number> = {}
       Object.entries(parameterValues).forEach(([idx, val]) => {
         const param = plugin.parameters?.find(p => p.index === parseInt(idx))
@@ -555,8 +564,8 @@ export function LV2PluginParameterEditor({
       setSavePresetName('')
       addAlert('success', 'Preset saved successfully!')
     },
-    onError: () => {
-      addAlert('error', 'Failed to save preset')
+    onError: (error) => {
+      addAlert('error', `Failed to save preset: ${error.message}`)
     },
   })
 

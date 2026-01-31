@@ -31,7 +31,10 @@ import time
 import queue
 import numpy as np
 
-logger = logging.getLogger(__name__)
+from app.utils.dependencies import DependencyChecker
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 # Hotone Jogg USB Audio Interface - Primary device
@@ -385,6 +388,21 @@ class RealAudioIOManager:
         enable_auto_mute: bool = True,
         rt_priority: int = 80,
     ):
+        # ⚠️  DEPRECATION WARNING ⚠️
+        logger.warning(
+            "\n" + "="*80 + "\n"
+            "⚠️  DEPRECATED: Python audio I/O is NOT recommended for production!\n"
+            "\n"
+            "This module has CRITICAL issues:\n"
+            "  - Python GIL causes latency spikes\n"
+            "  - NOT real-time safe for live performance\n"
+            "  - Resource conflicts with JUCE engine\n"
+            "\n"
+            "RECOMMENDED: Use JUCE C++ Audio Engine instead.\n"
+            "See: app/services/juce_engine_service.py\n"
+            + "="*80
+        )
+        
         self.sample_rate = sample_rate
         self.block_size = block_size
         self.channels = channels
@@ -977,15 +995,7 @@ def get_audio_status() -> Dict[str, Any]:
     """
     global _audio_manager
 
-    # Try to get from ServiceManager if not set locally
-    if _audio_manager is None:
-        try:
-            from app.services.service_manager import get_service_manager
-            sm = get_service_manager()
-            _audio_manager = sm.audio_manager
-        except Exception:
-            pass
-
+    # Direct access without ServiceManager (deprecated)
     if _audio_manager is None:
         return {
             "running": False,

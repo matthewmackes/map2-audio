@@ -9,6 +9,8 @@ import { TripleSpreadCard } from '../NativePlugins/TripleSpreadCard'
 import { ValentineCard } from '../NativePlugins/ValentineCard'
 import { ZLEqualizerCard } from '../NativePlugins/ZLEqualizerCard'
 import { Freeverb3Card } from '../NativePlugins/Freeverb3Card'
+import { WhammyCard } from '../NativePlugins/WhammyCard'
+import { DragonflyReverbCard } from '../NativePlugins/DragonflyReverbCard'
 import { Loader2, ChevronRight, Power, Activity, BarChart3, Clock, Radio } from 'lucide-react'
 
 // Import visualization components
@@ -127,6 +129,30 @@ const PLUGINS = {
     color: '#6366f1',
     colorRgb: '99, 102, 241',
     description: 'SIMD-optimized algorithmic reverb'
+  },
+  whammy: {
+    id: 'whammy',
+    name: 'dm-Whammy',
+    shortName: 'Whammy',
+    icon: '🎵',
+    creator: 'Dave Mollen',
+    logo: 'https://raw.githubusercontent.com/davemollen/dm-Whammy/main/nih-plug/resources/icon.png',
+    url: 'https://github.com/davemollen/dm-Whammy',
+    color: '#ec4899',
+    colorRgb: '236, 72, 153',
+    description: 'Pitch shifter ±2 octaves'
+  },
+  dragonfly: {
+    id: 'dragonfly',
+    name: 'Dragonfly Reverb',
+    shortName: 'Dragonfly',
+    icon: '🐉',
+    creator: 'Michael Willis',
+    logo: 'https://raw.githubusercontent.com/michaelwillis/dragonfly-reverb/master/common/artwork/dragonfly.png',
+    url: 'https://michaelwillis.github.io/dragonfly-reverb/',
+    color: '#8b5cf6',
+    colorRgb: '139, 92, 246',
+    description: 'Hall, Room, Plate & Early reverbs'
   }
 } as const
 
@@ -259,6 +285,7 @@ function CollapsiblePluginRow({
   chainName,
   onAddToChain,
   children,
+  isHiddenByFullscreen,
 }: {
   plugin: PluginConfig
   isExpanded: boolean
@@ -271,28 +298,38 @@ function CollapsiblePluginRow({
   chainName?: string
   onAddToChain?: () => void
   children: React.ReactNode
+  isHiddenByFullscreen?: boolean
 }) {
   const [isHovered, setIsHovered] = useState(false)
+
+  // Hide this row if another plugin is expanded (fullscreen mode)
+  if (isHiddenByFullscreen) {
+    return null
+  }
 
   return (
     <div
       style={{
-        marginBottom: 6,
-        borderRadius: isExpanded ? 12 : 8,
+        marginBottom: isExpanded ? 0 : 6,
+        borderRadius: isExpanded ? 16 : 8,
         overflow: 'hidden',
         background: isExpanded
-          ? `linear-gradient(135deg, rgba(${plugin.colorRgb}, 0.12), rgba(0,0,0,0.4))`
+          ? `linear-gradient(135deg, rgba(${plugin.colorRgb}, 0.15), rgba(0,0,0,0.5))`
           : `linear-gradient(135deg, rgba(20, 30, 50, 0.95), rgba(14, 22, 37, 0.98))`,
         borderLeft: `4px solid ${plugin.color}`,
-        border: `1px solid rgba(${plugin.colorRgb}, ${isExpanded ? 0.3 : isHovered ? 0.25 : 0.15})`,
+        border: `1px solid rgba(${plugin.colorRgb}, ${isExpanded ? 0.4 : isHovered ? 0.25 : 0.15})`,
         borderLeftWidth: 4,
         boxShadow: isExpanded
-          ? `0 0 30px rgba(${plugin.colorRgb}, 0.15), 0 8px 32px rgba(0,0,0,0.4)`
+          ? `0 0 50px rgba(${plugin.colorRgb}, 0.25), 0 12px 48px rgba(0,0,0,0.5)`
           : isHovered
             ? `0 0 20px rgba(${plugin.colorRgb}, 0.1), 0 4px 16px rgba(0,0,0,0.3)`
             : '0 2px 8px rgba(0,0,0,0.2)',
-        transition: 'all 0.25s ease-out',
+        transition: 'all 0.3s ease-out',
         transform: isHovered && !isExpanded ? 'translateX(2px)' : 'none',
+        // Fullscreen-like styling when expanded
+        minHeight: isExpanded ? 'calc(100vh - 300px)' : 'auto',
+        display: 'flex',
+        flexDirection: 'column' as const,
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -383,13 +420,14 @@ function CollapsiblePluginRow({
       {/* Expandable content */}
       <div
         style={{
+          flex: isExpanded ? 1 : 0,
           display: 'grid',
           gridTemplateRows: isExpanded ? '1fr' : '0fr',
-          transition: 'grid-template-rows 0.25s ease-out',
+          transition: 'grid-template-rows 0.3s ease-out, flex 0.3s ease-out',
         }}
       >
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ padding: '0 16px 16px 16px' }}>
+        <div style={{ overflow: isExpanded ? 'auto' : 'hidden' }}>
+          <div style={{ padding: '0 16px 16px 16px', height: isExpanded ? '100%' : 'auto' }}>
             {/* Divider */}
             <div style={{
               height: 1,
@@ -453,6 +491,7 @@ interface NativePluginsSectionProps {
   onLoadReverbIR?: (path: string) => void
   chainName?: string
   onAddToChain?: (type: string) => void
+  hideMetering?: boolean  // Set to true when metering is shown elsewhere (e.g., top of page)
 }
 
 // Metering panel tab type
@@ -461,6 +500,7 @@ type MeteringTab = 'spectrum' | 'loudness' | 'cpu' | 'latency' | 'phase'
 export function NativePluginsSection({
   chainName,
   onAddToChain,
+  hideMetering = false,
 }: NativePluginsSectionProps) {
   const [expandedPlugin, setExpandedPlugin] = useState<PluginId | null>(null)
   const [showMetering, setShowMetering] = useState(true)
@@ -540,6 +580,41 @@ export function NativePluginsSection({
     updateFreeverb3Spin,
     updateFreeverb3Wander,
     updateFreeverb3Bypass,
+    whammy,
+    updateWhammyPitch,
+    updateWhammyDry,
+    updateWhammyWet,
+    updateWhammyBypass,
+    dragonfly,
+    updateDragonflyVariant,
+    updateDragonflyDryLevel,
+    updateDragonflyWetLevel,
+    updateDragonflyWidth,
+    updateDragonflyPredelay,
+    updateDragonflyDecay,
+    updateDragonflyLowCut,
+    updateDragonflyHighCut,
+    updateDragonflySize,
+    updateDragonflyDiffuse,
+    updateDragonflySpin,
+    updateDragonflyWander,
+    updateDragonflyEarlyLevel,
+    updateDragonflyEarlySend,
+    updateDragonflyLateLevel,
+    updateDragonflyLowXover,
+    updateDragonflyHighXover,
+    updateDragonflyLowMult,
+    updateDragonflyHighMult,
+    updateDragonflyModulation,
+    updateDragonflyAlgorithm,
+    updateDragonflyDampen,
+    updateDragonflyBassBoost,
+    updateDragonflyBoostFreq,
+    updateDragonflyEarlyDamp,
+    updateDragonflyLateDamp,
+    updateDragonflyProgram,
+    updateDragonflyBypass,
+    loadDragonflyPreset,
   } = useNativePlugins()
 
   const togglePlugin = (id: PluginId) => {
@@ -575,7 +650,7 @@ export function NativePluginsSection({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 20,
+        marginBottom: expandedPlugin ? 12 : 20,
       }}>
         <div>
           <h2 style={{
@@ -594,54 +669,66 @@ export function NativePluginsSection({
             }}>
               Native Plugins
             </span>
-            <span style={{
-              fontSize: 11,
-              fontWeight: 500,
-              padding: '3px 8px',
-              background: 'rgba(55, 214, 201, 0.15)',
-              border: '1px solid rgba(55, 214, 201, 0.3)',
-              borderRadius: 12,
-              color: '#37d6c9',
-            }}>
-              9 processors
-            </span>
+            {!expandedPlugin && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 500,
+                padding: '3px 8px',
+                background: 'rgba(55, 214, 201, 0.15)',
+                border: '1px solid rgba(55, 214, 201, 0.3)',
+                borderRadius: 12,
+                color: '#37d6c9',
+              }}>
+                11 processors
+              </span>
+            )}
           </h2>
-          <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
-            Purpose-built audio processors compiled directly into the application
-          </p>
+          {!expandedPlugin && (
+            <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
+              Purpose-built audio processors compiled directly into the application
+            </p>
+          )}
         </div>
 
-        {/* Collapse all button */}
+        {/* Exit fullscreen / Collapse button */}
         {expandedPlugin && (
           <button
             onClick={() => setExpandedPlugin(null)}
             style={{
-              padding: '6px 12px',
-              fontSize: 11,
+              padding: '8px 16px',
+              fontSize: 12,
               fontWeight: 600,
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 6,
-              color: '#888',
+              background: 'rgba(55, 214, 201, 0.15)',
+              border: '1px solid rgba(55, 214, 201, 0.3)',
+              borderRadius: 8,
+              color: '#37d6c9',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-              e.currentTarget.style.color = '#fff'
+              e.currentTarget.style.background = 'rgba(55, 214, 201, 0.25)'
+              e.currentTarget.style.borderColor = 'rgba(55, 214, 201, 0.5)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-              e.currentTarget.style.color = '#888'
+              e.currentTarget.style.background = 'rgba(55, 214, 201, 0.15)'
+              e.currentTarget.style.borderColor = 'rgba(55, 214, 201, 0.3)'
             }}
           >
-            Collapse All
+            <ChevronRight size={14} style={{ transform: 'rotate(-90deg)' }} />
+            Exit Fullscreen
           </button>
         )}
       </div>
 
-      {/* Metering Panel */}
-      <div style={{ marginBottom: 20 }}>
+      {/* Metering Panel - Hidden when a plugin is expanded or when hideMetering is true */}
+      {!hideMetering && (
+      <div style={{
+        marginBottom: 20,
+        display: expandedPlugin ? 'none' : 'block',
+      }}>
         {/* Metering Header */}
         <div
           onClick={() => setShowMetering(!showMetering)}
@@ -776,6 +863,7 @@ export function NativePluginsSection({
           </div>
         </div>
       </div>
+      )}
 
       {/* Plugin rows */}
       <div>
@@ -791,6 +879,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateNAMBypass(!nam.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('nam')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'nam'}
         >
           <NAMCard
             status={nam}
@@ -811,6 +900,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateCabinetBypass(!cabinet.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('cabinet')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'cabinet'}
         >
           <GraphicalCabinetIRCard
             status={cabinet}
@@ -835,6 +925,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateReverbBypass(!reverb.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('reverb')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'reverb'}
         >
           <ReverbIRCard
             status={reverb}
@@ -855,6 +946,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateCocoaDelayBypass(!cocoaDelay.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('delay')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'delay'}
         >
           <CocoaDelayCard
             status={cocoaDelay}
@@ -881,6 +973,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateZitaAT1Bypass(!zitaAT1.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('autotune')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'autotune'}
         >
           <ZitaAT1Card
             status={zitaAT1}
@@ -908,6 +1001,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateTripleSpreadBypass(!tripleSpread.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('triplespread')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'triplespread'}
         >
           <TripleSpreadCard
             status={tripleSpread}
@@ -929,6 +1023,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateValentineBypass(!valentine.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('valentine')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'valentine'}
         >
           <ValentineCard
             status={valentine}
@@ -957,6 +1052,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateZLEqualizerBypass(!zlEqualizer.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('zlequalizer')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'zlequalizer'}
         >
           <ZLEqualizerCard
             status={zlEqualizer}
@@ -981,6 +1077,7 @@ export function NativePluginsSection({
           onBypassChange={() => updateFreeverb3Bypass(!freeverb3.bypass)}
           chainName={chainName}
           onAddToChain={() => onAddToChain?.('freeverb3')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'freeverb3'}
         >
           <Freeverb3Card
             status={freeverb3}
@@ -1002,6 +1099,77 @@ export function NativePluginsSection({
             onSpinChange={updateFreeverb3Spin}
             onWanderChange={updateFreeverb3Wander}
             onBypassChange={updateFreeverb3Bypass}
+          />
+        </CollapsiblePluginRow>
+
+        {/* dm-Whammy */}
+        <CollapsiblePluginRow
+          plugin={PLUGINS.whammy}
+          isExpanded={expandedPlugin === 'whammy'}
+          onToggle={() => togglePlugin('whammy')}
+          isActive={whammy.available}
+          isBypassed={whammy.bypass}
+          mixValue={Math.round(((whammy.wet + 70) / 76) * 100)}
+          onMixChange={(v) => updateWhammyWet(v / 100 * 76 - 70)}
+          onBypassChange={() => updateWhammyBypass(!whammy.bypass)}
+          chainName={chainName}
+          onAddToChain={() => onAddToChain?.('whammy')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'whammy'}
+        >
+          <WhammyCard
+            status={whammy}
+            onPitchChange={updateWhammyPitch}
+            onDryChange={updateWhammyDry}
+            onWetChange={updateWhammyWet}
+            onBypassChange={updateWhammyBypass}
+          />
+        </CollapsiblePluginRow>
+
+        {/* Dragonfly Reverb */}
+        <CollapsiblePluginRow
+          plugin={PLUGINS.dragonfly}
+          isExpanded={expandedPlugin === 'dragonfly'}
+          onToggle={() => togglePlugin('dragonfly')}
+          isActive={dragonfly.available}
+          isBypassed={dragonfly.bypass}
+          mixValue={Math.round(((dragonfly.wetLevel + 80) / 80) * 100)}
+          onMixChange={(v) => updateDragonflyWetLevel(v / 100 * 80 - 80)}
+          onBypassChange={() => updateDragonflyBypass(!dragonfly.bypass)}
+          chainName={chainName}
+          onAddToChain={() => onAddToChain?.('dragonfly')}
+          isHiddenByFullscreen={expandedPlugin !== null && expandedPlugin !== 'dragonfly'}
+        >
+          <DragonflyReverbCard
+            status={dragonfly}
+            onVariantChange={updateDragonflyVariant}
+            onDryLevelChange={updateDragonflyDryLevel}
+            onWetLevelChange={updateDragonflyWetLevel}
+            onWidthChange={updateDragonflyWidth}
+            onPredelayChange={updateDragonflyPredelay}
+            onDecayChange={updateDragonflyDecay}
+            onLowCutChange={updateDragonflyLowCut}
+            onHighCutChange={updateDragonflyHighCut}
+            onSizeChange={updateDragonflySize}
+            onDiffuseChange={updateDragonflyDiffuse}
+            onSpinChange={updateDragonflySpin}
+            onWanderChange={updateDragonflyWander}
+            onEarlyLevelChange={updateDragonflyEarlyLevel}
+            onEarlySendChange={updateDragonflyEarlySend}
+            onLateLevelChange={updateDragonflyLateLevel}
+            onLowXoverChange={updateDragonflyLowXover}
+            onHighXoverChange={updateDragonflyHighXover}
+            onLowMultChange={updateDragonflyLowMult}
+            onHighMultChange={updateDragonflyHighMult}
+            onModulationChange={updateDragonflyModulation}
+            onAlgorithmChange={updateDragonflyAlgorithm}
+            onDampenChange={updateDragonflyDampen}
+            onBassBoostChange={updateDragonflyBassBoost}
+            onBoostFreqChange={updateDragonflyBoostFreq}
+            onEarlyDampChange={updateDragonflyEarlyDamp}
+            onLateDampChange={updateDragonflyLateDamp}
+            onProgramChange={updateDragonflyProgram}
+            onBypassChange={updateDragonflyBypass}
+            onLoadPreset={loadDragonflyPreset}
           />
         </CollapsiblePluginRow>
       </div>

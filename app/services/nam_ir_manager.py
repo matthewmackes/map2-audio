@@ -13,8 +13,10 @@ import threading
 import io
 
 from app.paths import StoragePaths
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -230,7 +232,7 @@ class StreamingIRLoader:
             logger.error(f"Error streaming IR file {file_path}: {e}")
 
 
-class NAMIRManager:
+class NAMIRManager(Singleton):
     """
     Manage NAM and IR files efficiently.
     - Never loads entire files into memory
@@ -239,6 +241,7 @@ class NAMIRManager:
     """
 
     def __init__(self, nam_dir: Optional[str] = None, ir_dir: Optional[str] = None):
+        super().__init__()
         # Use centralized paths from StoragePaths
         self.nam_dir = Path(nam_dir) if nam_dir else StoragePaths.get_nam_user_dir()
         self.ir_dir = Path(ir_dir) if ir_dir else StoragePaths.get_ir_user_dir()
@@ -335,13 +338,7 @@ class NAMIRManager:
         return info.path if info else None
 
 
-# Singleton instance
-_nam_ir_manager: Optional[NAMIRManager] = None
-
-
+# Singleton accessor
 def get_nam_ir_manager() -> NAMIRManager:
     """Get or create the global NAM/IR manager."""
-    global _nam_ir_manager
-    if _nam_ir_manager is None:
-        _nam_ir_manager = NAMIRManager()
-    return _nam_ir_manager
+    return NAMIRManager.get_instance()

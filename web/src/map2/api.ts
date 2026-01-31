@@ -1394,6 +1394,29 @@ export const vst3Api = {
       `${API_BASE}/vst3/unload?instance_id=${encodeURIComponent(instanceId)}`,
       { method: 'POST' }
     ),
+
+  getParameters: (uri: string) =>
+    fetchJson<{
+      uri: string;
+      parameters: Array<{
+        index: number;
+        name: string;
+        symbol: string;
+        min: number;
+        max: number;
+        default: number;
+        value: number;
+        unit?: string;
+        label?: string;
+        is_toggled?: boolean;
+        is_log?: boolean;
+      }>;
+      parameter_count: number;
+      requires_instantiation: boolean;
+      message: string;
+      plugin_path?: string;
+      error?: string;
+    }>(`${API_BASE}/vst3/parameters?uri=${encodeURIComponent(uri)}`),
 };
 
 // ==================== VST3 Packages API ====================

@@ -1,7 +1,18 @@
 """
 Global Service Manager for MAP2 Audio
 Provides singleton access to all core services with proper initialization and comprehensive monitoring.
-"""
+⚠️  DEPRECATED - Use ServiceOrchestrator instead ⚠️
+
+This module is deprecated in favor of ServiceOrchestrator which provides:
+- Better dependency management
+- Health monitoring
+- Async initialization
+- More comprehensive service management
+
+For new code, use:
+    from app.services.service_orchestrator import get_orchestrator
+
+This module remains for backwards compatibility only."""
 
 import logging
 import time

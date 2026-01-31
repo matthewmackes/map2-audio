@@ -63,17 +63,21 @@ async def connect_parameter_routing():
 
     # Connect RT Bridge -> Audio Engine
     try:
-        from app.services.service_manager import ServiceManager
+        from app.services.service_orchestrator import get_orchestrator
+        from app.services.juce_engine_service import get_audio_engine
 
-        sm = ServiceManager.get_instance()
-        if sm and hasattr(sm, 'set_plugin_parameter'):
+        orchestrator = get_orchestrator()
+        engine = get_audio_engine()
+        
+        if engine and engine.is_available:
             def rt_to_engine(plugin_uri: str, param_index: int, value: float):
                 """
                 Non-blocking callback to audio engine.
                 This is called from the RT bridge's processing loop.
                 """
                 try:
-                    sm.set_plugin_parameter(plugin_uri, param_index, value)
+                    # Use JUCE engine directly
+                    engine.set_parameter(plugin_uri, param_index, value)
                 except Exception as e:
                     logger.debug(f"Engine parameter set error: {e}")
 

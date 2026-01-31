@@ -590,7 +590,9 @@ _plugin_health_tracker: Optional[PluginHealthTracker] = None
 def get_plugin_health_tracker(buffer_size: int = 256,
                               sample_rate: int = 48000) -> PluginHealthTracker:
     """Get or create global plugin health tracker."""
-    global _plugin_health_tracker
-    if _plugin_health_tracker is None:
-        _plugin_health_tracker = PluginHealthTracker(buffer_size, sample_rate)
-    return _plugin_health_tracker
+    tracker = PluginHealthTracker.get_instance()
+    # Update settings if needed
+    if tracker.buffer_size != buffer_size or tracker.sample_rate != sample_rate:
+        tracker.buffer_size = buffer_size
+        tracker.sample_rate = sample_rate
+    return tracker

@@ -93,6 +93,23 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
     ),
 
     # Audio settings
+    "audio.engine": ConfigOption(
+        key="audio.engine",
+        default="juce",
+        description="Audio engine to use: 'juce' (recommended) or 'python' (deprecated)",
+        value_type=str,
+        env_var="MAP2_AUDIO_ENGINE",
+        choices=["juce", "python"],
+        restart_required=True,
+    ),
+    "audio.allow_python_io": ConfigOption(
+        key="audio.allow_python_io",
+        default=False,
+        description="Allow deprecated Python audio I/O (NOT recommended for production)",
+        value_type=bool,
+        env_var="MAP2_ALLOW_PYTHON_IO",
+        restart_required=True,
+    ),
     "audio.sample_rate": ConfigOption(
         key="audio.sample_rate",
         default=48000,

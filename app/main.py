@@ -31,6 +31,13 @@ async def safe_stop_service(logger, name, stop_coro):
 
 import logging
 from contextlib import asynccontextmanager
+from fastapi.responses import JSONResponse
+
+from app.exceptions import MAP2Exception
+from app.response_models import ErrorResponse
+from app.middleware.request_logging import RequestLoggingMiddleware
+from app.middleware.rate_limiting import RateLimitingMiddleware, ENDPOINT_RATE_LIMITS
+from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +52,26 @@ async def lifespan(app):
     try:
         # ===== STARTUP =====
         logger.info("Starting MAP2 Audio Platform services...")
+        
+        # Initialize database connection pool
+        logger.info("Initializing database connection pool...")
+        pool_manager = get_pool_manager()
+        pool_manager.initialize(
+            "sqlite+aiosqlite:///data/map2.db",
+            ConnectionPoolConfig(pool_size=10, max_overflow=20)
+        )
+        
+        # Validate audio engine configuration BEFORE starting services
+        logger.info("Validating audio engine configuration...")
+        from app.services.audio_engine_validator import validate_audio_engine
+        if not validate_audio_engine():
+            log_and_raise_critical(
+                logger, 
+                "Audio engine configuration validation failed! "
+                "Fix configuration errors before starting. "
+                "See logs above for details."
+            )
+        
         from app.services.metrics_daemon import start_metrics_daemon, stop_metrics_daemon
         from app.services.service_orchestrator import get_orchestrator
         from app.services.websocket_manager import ws_manager
@@ -81,6 +108,10 @@ async def lifespan(app):
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
+        
+        # Close database pool
+        pool_manager = get_pool_manager()
+        await safe_stop_service(logger, "Database connection pool", pool_manager.close)
         await safe_stop_service(logger, "Plugin preset lifecycle manager", preset_lifecycle.shutdown)
         await safe_stop_service(logger, "Parameter routing", disconnect_parameter_routing)
         await safe_stop_service(logger, "Real-time parameter bridge", rt_parameter_bridge.stop)
@@ -116,7 +147,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'delay', 'autotune', 'triplespread', 'plugin_packages', 'valentine', 'zlequalizer', 'snapshots', 'freeverb3', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'vst3_routes', 'vst3_packages']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'delay', 'autotune', 'triplespread', 'plugin_packages', 'valentine', 'zlequalizer', 'snapshots', 'freeverb3', 'whammy', 'dragonfly', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'vst3_routes', 'vst3_packages']
 
         for route_name in route_modules:
             try:
@@ -142,6 +173,15 @@ def create_app():
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
         from fastapi.staticfiles import StaticFiles
         import os
+        
+        # Register new monitoring routes
+        try:
+            from app.routes import monitoring
+            if monitoring.router:
+                app.include_router(monitoring.router)
+                logger.info("Monitoring routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load monitoring routes: {e}")
 
         # Static files directory - check for web/dist first (Vite build), then static
         project_root = os.path.dirname(os.path.dirname(__file__))

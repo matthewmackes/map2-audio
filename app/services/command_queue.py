@@ -23,7 +23,10 @@ import json
 from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class CommandType(Enum):
@@ -83,7 +86,7 @@ class CommandResult:
     undo_data: Optional[Dict[str, Any]] = None
 
 
-class CommandQueue:
+class CommandQueue(Singleton):
     """
     Thread-safe command queue for database operations.
 
@@ -104,6 +107,7 @@ class CommandQueue:
         Args:
             max_size: Maximum queue size
         """
+        super().__init__()
         self.command_queue = queue.PriorityQueue(maxsize=max_size)
         self.is_processing = False
         self.processor_task: Optional[asyncio.Task] = None
@@ -922,15 +926,9 @@ class CommandQueue:
 
 
 # Global singleton instance
-_command_queue: Optional[CommandQueue] = None
-
-
 def get_command_queue() -> CommandQueue:
     """Get or create global command queue instance."""
-    global _command_queue
-    if _command_queue is None:
-        _command_queue = CommandQueue()
-    return _command_queue
+    return CommandQueue.get_instance()
 
 
 async def init_command_queue() -> CommandQueue:
@@ -942,9 +940,9 @@ async def init_command_queue() -> CommandQueue:
 
 async def shutdown_command_queue() -> None:
     """Stop the global command queue."""
-    global _command_queue
-    if _command_queue is not None:
-        await _command_queue.stop()
+    queue = get_command_queue()
+    if queue.has_instance():
+        await queue.stop()
 
 
 def get_queue_stats() -> Dict[str, Any]:

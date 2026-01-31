@@ -12,8 +12,10 @@ import os
 from app.services.reevr_engine import get_reevr_engine
 from app.services.ir_loader import get_ir_loader
 from app.paths import StoragePaths
+from app.routes.base import api_route, StandardResponses
+from app.utils.logging_utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 router = APIRouter(prefix="/api/reverb", tags=["reverb"])
 
 

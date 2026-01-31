@@ -177,14 +177,15 @@ class ServiceOrchestrator:
         self._register_service(ServiceDefinition(
             name="juce_engine",
             display_name="JUCE Audio Engine",
-            description="JUCE-based C++ audio processing engine with LV2 support",
+            description="JUCE-based C++ audio processing engine with LV2 support (RECOMMENDED)",
             priority=ServicePriority.HIGH,
             dependencies=["database"],
             start_func=self._start_juce_engine,
             stop_func=self._stop_juce_engine,
             health_check=self._check_juce_health,
             is_async=True,
-            is_optional=True,
+            is_optional=False,  # Make JUCE engine the primary audio engine
+            is_critical_for_ready=True,
         ))
 
         self._register_service(ServiceDefinition(
@@ -1010,19 +1011,18 @@ class ServiceOrchestrator:
             return ServiceHealth(healthy=False, message=str(e))
 
     async def _start_audio_engine(self):
-        """Start audio engine service."""
-        from app.services.service_manager import ServiceManager
-        sm = ServiceManager.get_instance()
-        if sm.audio_manager:
-            # Audio manager is initialized in ServiceManager
-            pass
+        """Start audio engine service (deprecated - use juce_engine)."""
+        # Legacy audio_io_v2 is deprecated, JUCE engine is primary
+        # This is kept for backwards compatibility only
+        logger.warning("Legacy audio_engine service is deprecated. Use juce_engine instead.")
+        pass
 
     async def _stop_audio_engine(self):
-        """Stop audio engine service."""
-        from app.services.service_manager import ServiceManager
-        sm = ServiceManager.get_instance()
-        if sm.audio_manager:
-            sm.audio_manager.stop()
+        """Stop audio engine service (deprecated - use juce_engine)."""
+        # Legacy audio_io_v2 is deprecated, JUCE engine is primary
+        # This is kept for backwards compatibility only
+        logger.warning("Legacy audio_engine service is deprecated. Use juce_engine instead.")
+        pass
 
     async def _check_audio_engine_health(self) -> ServiceHealth:
         """Check audio engine health."""
@@ -1044,11 +1044,37 @@ class ServiceOrchestrator:
     async def _start_juce_engine(self):
         """Start JUCE audio engine service."""
         try:
+            # Safety check: Verify Python audio I/O is not running
+            from app.config import get_config
+            config = get_config()
+            
+            if not config.get("audio.allow_python_io", False):
+                logger.info("Python audio I/O is disabled (recommended for production)")
+            
+            # Check if audio.engine is set to juce
+            audio_engine = config.get("audio.engine", "juce")
+            if audio_engine != "juce":
+                logger.warning(
+                    f"audio.engine is set to '{audio_engine}' but starting JUCE engine. "
+                    "This may cause resource conflicts!"
+                )
+            
             from app.services.juce_engine_service import get_audio_engine
             service = get_audio_engine()
-            await service.initialize()
+            success = await service.initialize()
+            
+            if success:
+                logger.info("✅ JUCE Audio Engine initialized successfully")
+            else:
+                logger.error("❌ JUCE Audio Engine initialization failed")
+                raise RuntimeError("JUCE engine failed to initialize")
+                
         except ImportError:
-            logger.info("JUCE audio engine not available")
+            logger.error(
+                "❌ JUCE audio engine not available! Install JUCE dependencies.\n"
+                "The system requires JUCE for production audio processing."
+            )
+            raise
 
     async def _stop_juce_engine(self):
         """Stop JUCE audio engine service."""
@@ -1064,16 +1090,26 @@ class ServiceOrchestrator:
         try:
             from app.services.juce_engine_service import get_audio_engine, JUCE_AVAILABLE
             if not JUCE_AVAILABLE:
-                return ServiceHealth(healthy=True, message="JUCE engine not installed (optional)")
+                return ServiceHealth(
+                    healthy=False, 
+                    message="❌ JUCE engine not installed - REQUIRED for production audio!"
+                )
             service = get_audio_engine()
             info = service.get_system_info()
+            
+            is_running = info.get('running', False)
+            version = info.get('version', 'unknown')
+            
             return ServiceHealth(
-                healthy=True,
-                message=f"JUCE Audio Engine v{info.get('version', 'unknown')}",
+                healthy=is_running,
+                message=f"✅ JUCE Audio Engine v{version}" if is_running else f"⚠️ JUCE Engine v{version} not running",
                 metrics=info
             )
         except Exception as e:
-            return ServiceHealth(healthy=False, message=str(e))
+            return ServiceHealth(
+                healthy=False, 
+                message=f"❌ JUCE engine error: {str(e)}"
+            )
 
     async def _start_midi_engine(self):
         """Start MIDI engine service."""

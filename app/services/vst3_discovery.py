@@ -16,7 +16,10 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 import os
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 # Cache configuration
 CACHE_DIR = Path.home() / ".cache" / "map2"
@@ -24,7 +27,7 @@ CACHE_FILE = CACHE_DIR / "vst3_plugins.json"
 CACHE_VERSION = "1.0"
 
 
-class VST3PluginDiscovery:
+class VST3PluginDiscovery(Singleton):
     """Discover and manage VST3 plugins with caching."""
 
     # Class-level cache shared across all instances
@@ -38,6 +41,7 @@ class VST3PluginDiscovery:
         Args:
             use_cache: Whether to use persistent file cache (default True)
         """
+        super().__init__()
         self.plugins: Dict[str, Dict[str, Any]] = {}
         self.loaded_plugins: Dict[str, Any] = {}
         self._use_cache = use_cache
@@ -590,13 +594,7 @@ class VST3PluginDiscovery:
         return False
 
 
-# Global instance for easy access
-_vst3_discovery: Optional[VST3PluginDiscovery] = None
-
-
+# Singleton accessor
 def get_vst3_discovery() -> VST3PluginDiscovery:
     """Get or create the global VST3 discovery instance."""
-    global _vst3_discovery
-    if _vst3_discovery is None:
-        _vst3_discovery = VST3PluginDiscovery()
-    return _vst3_discovery
+    return VST3PluginDiscovery.get_instance()

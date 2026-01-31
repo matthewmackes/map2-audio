@@ -14,12 +14,14 @@ import asyncio
 from app.services.ir_loader import get_ir_loader
 from app.database import get_session, ImpulseResponse, NAMModel, Plugin
 from app.paths import StoragePaths
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
 from sqlalchemy import delete
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-class FolderScanner:
+class FolderScanner(Singleton):
     """Scan folders for audio files and plugins."""
 
     # Supported file extensions
@@ -29,6 +31,7 @@ class FolderScanner:
 
     def __init__(self):
         """Initialize folder scanner."""
+        super().__init__()
         # Use centralized paths from StoragePaths
         self.base_paths = {
             'nams': str(StoragePaths.get_nam_system_dir()),
@@ -453,13 +456,7 @@ class FolderScanner:
         return stats
 
 
-# Global instance
-_folder_scanner: Optional[FolderScanner] = None
-
-
+# Singleton accessor
 def get_folder_scanner() -> FolderScanner:
     """Get or create global folder scanner instance."""
-    global _folder_scanner
-    if _folder_scanner is None:
-        _folder_scanner = FolderScanner()
-    return _folder_scanner
+    return FolderScanner.get_instance()

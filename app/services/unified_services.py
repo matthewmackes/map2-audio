@@ -1,6 +1,9 @@
 """
 Unified Services Facade for MAP2 Audio Platform
+⚠️  DEPRECATED - Use ServiceOrchestrator directly ⚠️
 
+This facade is deprecated. Use ServiceOrchestrator directly:
+    from app.services.service_orchestrator import get_orchestrator
 This module provides a single, unified API for accessing all MAP2 services,
 consolidating the ServiceManager and ServiceOrchestrator patterns.
 

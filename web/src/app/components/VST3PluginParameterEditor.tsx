@@ -428,28 +428,42 @@ export function VST3PluginParameterEditor({
 
   // Convert VST3 plugin parameters to internal format
   const pluginParameters: PluginParameter[] = useMemo(() => {
-    if (!plugin.parameters || !Array.isArray(plugin.parameters)) return []
+    if (!plugin.parameters || !Array.isArray(plugin.parameters)) {
+      console.warn(`No parameters found for VST3 plugin: ${plugin.name}`, plugin)
+      return []
+    }
+    
+    if (plugin.parameters.length === 0) {
+      console.warn(`Empty parameters array for VST3 plugin: ${plugin.name}`)
+      return []
+    }
+    
     return plugin.parameters.map((p: any, index: number) => ({
       index: p.index ?? index,
       name: p.name ?? `Parameter ${index}`,
       symbol: p.symbol ?? `param_${index}`,
-      min: p.min ?? 0,
-      max: p.max ?? 1,
-      default: p.default ?? 0.5,
-      value: p.value,
-      is_toggled: p.is_toggled ?? false,
-      is_log: p.is_log ?? false,
+      min: p.min ?? p.minValue ?? 0,
+      max: p.max ?? p.maxValue ?? 1,
+      default: p.default ?? p.defaultValue ?? 0.5,
+      value: p.value ?? p.currentValue ?? p.default ?? p.defaultValue ?? 0.5,
+      is_toggled: p.is_toggled ?? p.isToggled ?? false,
+      is_log: p.is_log ?? p.isLog ?? false,
     }))
-  }, [plugin.parameters])
+  }, [plugin.parameters, plugin.name])
 
   // Initialize parameter values from plugin
   useEffect(() => {
+    if (pluginParameters.length === 0) {
+      addAlert('warning', `Plugin "${plugin.name}" has no parameters or parameters could not be loaded. Try reloading the plugin.`)
+      return
+    }
+    
     const values: Record<number, number> = {}
     pluginParameters.forEach(param => {
       values[param.index] = param.value ?? param.default
     })
     setParameterValues(values)
-  }, [pluginParameters])
+  }, [pluginParameters, plugin.name])
 
   // Fetch presets for this plugin
   const presetsQuery = useQuery({
@@ -1053,14 +1067,68 @@ export function VST3PluginParameterEditor({
       {/* Parameters */}
       {pluginParameters.length === 0 ? (
         <div style={{
-          padding: 24,
+          padding: 32,
           textAlign: 'center',
-          color: '#888',
-          fontSize: 13,
-          background: 'rgba(0,0,0,0.2)',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(0,0,0,0.2) 100%)',
           borderRadius: 12,
+          border: '1px solid rgba(245, 158, 11, 0.3)',
         }}>
-          This plugin has no adjustable parameters (parameters will be loaded when plugin is instantiated)
+          <AlertTriangle size={32} style={{ color: '#f59e0b', marginBottom: 12 }} />
+          <div style={{
+            fontSize: 15,
+            fontWeight: 600,
+            color: '#f59e0b',
+            marginBottom: 8,
+          }}>
+            No Parameters Available
+          </div>
+          <div style={{
+            fontSize: 13,
+            color: '#aaa',
+            marginBottom: 16,
+            lineHeight: 1.5,
+          }}>
+            VST3 plugin parameters are loaded when the plugin is instantiated by the JUCE engine.<br />
+            This plugin either has no adjustable parameters, or the parameters haven't been loaded yet.
+          </div>
+          <div style={{
+            fontSize: 12,
+            color: '#888',
+            marginBottom: 16,
+          }}>
+            <strong>Possible solutions:</strong>
+            <ul style={{ 
+              textAlign: 'left', 
+              display: 'inline-block', 
+              marginTop: 8,
+              paddingLeft: 20,
+            }}>
+              <li>Try loading the plugin in an effects chain</li>
+              <li>Check if the plugin supports parameter automation</li>
+              <li>Ensure the JUCE engine is running</li>
+              <li>Some plugins only expose parameters when their UI is open</li>
+            </ul>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 20px',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: '#000',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+            }}
+          >
+            <RotateCcw size={14} />
+            Reload Plugin
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

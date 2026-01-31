@@ -292,7 +292,9 @@ function ChainRow({
           {chain.is_active ? 'Active' : 'Idle'}
         </span>
       </td>
-      <td>{new Date(chain.updated_at).toLocaleString()}</td>
+      <td>{chain.updated_at && !isNaN(new Date(chain.updated_at).getTime())
+        ? new Date(chain.updated_at).toLocaleString()
+        : '—'}</td>
       <td style={{ textAlign: 'right' }}>
         <MenuProvider store={menu}>
           <MenuButton store={menu} className="btn btn-ghost btn-sm">Actions</MenuButton>

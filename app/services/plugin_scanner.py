@@ -14,7 +14,10 @@ from pathlib import Path
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -35,7 +38,7 @@ class PluginMetadata:
     last_scanned: str
 
 
-class PluginScanner:
+class PluginScanner(Singleton):
     """
     Full LV2 plugin scanner with caching and search capabilities.
 
@@ -575,16 +578,10 @@ class PluginScanner:
         }
 
 
-# Global singleton instance
-_plugin_scanner: Optional[PluginScanner] = None
-
-
+# Singleton accessor
 def get_plugin_scanner() -> PluginScanner:
     """Get or create global plugin scanner instance."""
-    global _plugin_scanner
-    if _plugin_scanner is None:
-        _plugin_scanner = PluginScanner()
-    return _plugin_scanner
+    return PluginScanner.get_instance()
 
 
 # Backwards compatibility wrapper matching the old stub API

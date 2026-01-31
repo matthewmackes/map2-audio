@@ -14,7 +14,10 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class LV2PortType(Enum):
@@ -136,11 +139,12 @@ class LV2PluginInfo:
     micro_version: int = 0
 
 
-class LV2PluginService:
-    """Enhanced LV2 plugin service with full spec compliance."""
+class LV2PluginService(Singleton):
+    \"\"\"Enhanced LV2 plugin service with full spec compliance.\"\"\"
     
     def __init__(self):
-        """Initialize enhanced LV2 service."""
+        \"\"\"Initialize enhanced LV2 service.\"\"\"
+        super().__init__()
         self.plugins: Dict[str, LV2PluginInfo] = {}
         self.loaded_instances: Dict[str, Any] = {}
         self.world = None
@@ -517,13 +521,6 @@ class LV2PluginService:
         return (inputs, outputs)
 
 
-# Global service instance
-_lv2_service: Optional[LV2PluginService] = None
-
-
 def get_lv2_service() -> LV2PluginService:
     """Get or create global LV2 service instance."""
-    global _lv2_service
-    if _lv2_service is None:
-        _lv2_service = LV2PluginService()
-    return _lv2_service
+    return LV2PluginService.get_instance()

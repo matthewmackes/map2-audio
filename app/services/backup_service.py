@@ -24,7 +24,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-logger = logging.getLogger(__name__)
+from app.utils.singleton import Singleton
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def _safe_tar_extract(tar: tarfile.TarFile, dest_path: Path) -> None:
@@ -1615,7 +1618,7 @@ class BackupSettings:
             self.backup_location = str(Path.home() / ".local" / "share" / "map2" / "backups")
 
 
-class BackupService:
+class BackupService(Singleton):
     """Service for managing MAP2 platform backups."""
 
     # Default paths to backup
@@ -3822,40 +3825,11 @@ MAP2 Audio Platform - MIT License
 
 
 # Thread-safe singleton implementation
-_backup_service: Optional[BackupService] = None
-_backup_service_lock = threading.Lock()
-
-
 def get_backup_service() -> BackupService:
-    """
-    Get or create the backup service singleton in a thread-safe manner.
-
-    Uses double-checked locking pattern for efficiency.
-    """
-    global _backup_service
-
-    # First check without lock (fast path)
-    if _backup_service is not None:
-        return _backup_service
-
-    # Acquire lock for thread-safe initialization
-    with _backup_service_lock:
-        # Double-check after acquiring lock
-        if _backup_service is None:
-            _backup_service = BackupService()
-            logger.info("BackupService singleton initialized")
-
-    return _backup_service
+    """Get or create the backup service singleton."""
+    return BackupService.get_instance()
 
 
 def reset_backup_service() -> None:
-    """
-    Reset the backup service singleton (primarily for testing).
-
-    This should only be called in test scenarios.
-    """
-    global _backup_service
-
-    with _backup_service_lock:
-        _backup_service = None
-        logger.debug("BackupService singleton reset")
+    """Reset the backup service singleton (primarily for testing)."""
+    BackupService.reset_instance()

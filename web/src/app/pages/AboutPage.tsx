@@ -1,7 +1,7 @@
-
 import { Code2, Github, Heart, Cpu, CheckCircle2, Settings2 } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { useEffect, useState } from 'react'
+import { themes, darkThemes, lightThemes, applyTheme, getSavedThemeId } from '../theme'
 
 interface Partner {
   name: string
@@ -144,6 +144,21 @@ export function AboutPage() {
               <CheckCircle2 size={16} style={{ color: '#4caf50' }} />
               Status: <b>{engineStatus?.running ? 'Running' : 'Stopped'}</b>
             </div>
+            {/* Footer Links */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', paddingTop: 12, fontSize: 10, borderTop: '1px solid rgba(100,181,246,0.1)' }}>
+              <a href="https://github.com" target="_blank" rel="noreferrer" style={{ color: '#64b5f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, transition: 'color 150ms ease' }} onMouseEnter={(e) => e.currentTarget.style.color = '#fff'} onMouseLeave={(e) => e.currentTarget.style.color = '#64b5f6'}>
+                <Github size={12} /> GitHub
+              </a>
+              <div style={{ color: '#666' }}>•</div>
+              {/* <a href="https://github.com/rerdavies/pipedal" target="_blank" rel="noreferrer" style={{ color: '#64b5f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, transition: 'color 150ms ease' }} onMouseEnter={(e) => e.currentTarget.style.color = '#fff'} onMouseLeave={(e) => e.currentTarget.style.color = '#64b5f6'}>
+                <Code2 size={12} /> PiPedal
+              </a> */}
+              <div style={{ color: '#666' }}>•</div>
+              <div style={{ color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Heart size={12} style={{ color: '#ef5350' }} /> Made with passion
+              </div>
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#ffa726' }}>
               <Cpu size={16} style={{ color: '#ffa726' }} />
               Sample Rate: <b>{engineStatus?.sample_rate || '—'}</b>
@@ -390,6 +405,44 @@ export function AboutPage() {
           <div style={{ color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
             <Heart size={12} style={{ color: '#ef5350' }} /> Made with passion
           </div>
+        </div>
+      </div>
+
+      {/* Theme Selection */}
+      <div className="card" style={{ marginTop: 8, padding: 20, textAlign: 'center' }}>
+        <h4 style={{ marginBottom: 16, fontSize: 17, fontWeight: 700, color: 'var(--primary)' }}>Theme Selection</h4>
+        <select
+          id="theme-selector"
+          style={{
+            padding: '10px 20px',
+            borderRadius: 'var(--border-radius-md)',
+            fontSize: 14,
+            background: 'var(--surface)',
+            color: 'var(--muted)',
+            border: '2px solid var(--primary)',
+            outline: 'none',
+            marginBottom: 12,
+            cursor: 'pointer',
+            minWidth: 200
+          }}
+          onChange={e => {
+            applyTheme(e.target.value);
+          }}
+          defaultValue={getSavedThemeId()}
+        >
+          <optgroup label="Dark Themes">
+            {darkThemes.map(id => (
+              <option key={id} value={id}>{themes[id].name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Light Themes">
+            {lightThemes.map(id => (
+              <option key={id} value={id}>{themes[id].name}</option>
+            ))}
+          </optgroup>
+        </select>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
+          {themes[getSavedThemeId()]?.description || 'Select a theme for the interface.'}
         </div>
       </div>
     </div>
