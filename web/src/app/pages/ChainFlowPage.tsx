@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Combobox,
@@ -40,7 +41,6 @@ import {
   Speaker,
   Radio,         // Tuner/Analyser
   BarChart2,     // Spectrum/Meter
-  FolderOpen,    // File storage reference
   Star,          // Favorites
   // JUCE feature icons
   Cpu,           // Per-plugin CPU
@@ -59,11 +59,9 @@ import {
   Circle,        // Signal indicator
   Signal,        // Signal strength
   Minus,         // Level indicator
-  // View mode icons
-  LayoutList,    // Detailed view
-  LayoutGrid,    // Compact/horizontal view
 } from 'lucide-react'
-import { HorizontalSignalChain } from '../components/HorizontalSignalChain'
+import { ChainPanel } from '../components/ChainPanel'
+import { BottomRoutingPanel } from '../components/BottomRoutingPanel'
 import type { Chain, ChainPlugin, ChainsResponse, HistoryStatus, Plugin, PluginParameter, PluginUIInfo, PluginFormat } from '../../map2/types'
 
 // ============================================================================
@@ -815,6 +813,8 @@ const TRIPLESPREAD_PLUGIN_URI = 'http://map2-audio.local/triplespread'
 const VALENTINE_PLUGIN_URI = 'http://map2-audio.local/valentine'
 const ZLEQUALIZER_PLUGIN_URI = 'http://map2-audio.local/zl-equalizer'
 const FREEVERB3_PLUGIN_URI = 'http://map2-audio.local/freeverb3'
+const WHAMMY_PLUGIN_URI = 'http://map2-audio.local/whammy'
+const DRAGONFLY_PLUGIN_URI = 'http://map2-audio.local/dragonfly'
 
 // Desired signal chain order: NAM → Cabinet IR → Reverb IR → other plugins
 const NATIVE_PLUGIN_ORDER = [NAM_PLUGIN_URI, CABINET_IR_PLUGIN_URI, REVERB_IR_PLUGIN_URI]
@@ -1677,6 +1677,7 @@ function PluginFlowItem({
 }
 
 export function ChainFlowPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
 
@@ -1962,13 +1963,6 @@ export function ChainFlowPage() {
   const [automationCurrentTime, setAutomationCurrentTime] = useState(0)
   const [automationDuration, setAutomationDuration] = useState(60)
 
-  // View mode for signal chain (detailed vertical vs compact horizontal)
-  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>(() => {
-    try {
-      return (localStorage.getItem('map2_flow_view_mode') as 'detailed' | 'compact') || 'detailed'
-    } catch { return 'detailed' }
-  })
-
   // History query
   const historyQuery = useQuery({
     queryKey: ['history', 'status'],
@@ -2030,12 +2024,6 @@ export function ChainFlowPage() {
       localStorage.setItem('map2_flow_collapsed_categories', JSON.stringify([...collapsedCategories]));
     } catch { /* Ignore localStorage errors */ }
   }, [collapsedCategories])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_flow_view_mode', viewMode);
-    } catch { /* Ignore localStorage errors */ }
-  }, [viewMode])
 
   // Inject CSS for animations (once on mount)
   useEffect(() => {
@@ -2212,6 +2200,17 @@ export function ChainFlowPage() {
     },
     onError: () => pushToast('Failed to add plugin', 'error'),
   })
+
+  // Handle addPlugin query parameter from plugin browser pages
+  useEffect(() => {
+    const pluginUri = searchParams.get('addPlugin')
+    if (pluginUri && activeChainId) {
+      // Clear the query parameter immediately to prevent re-adding on refresh
+      setSearchParams({}, { replace: true })
+      // Add the plugin to the active chain
+      addPlugin.mutate(pluginUri)
+    }
+  }, [searchParams, activeChainId, addPlugin, setSearchParams])
 
   const removePlugin = useMutation({
     mutationFn: ({ chainId, uri }: { chainId: number; uri: string }) => chainsApi.removePlugin(chainId, uri),
@@ -2719,6 +2718,14 @@ export function ChainFlowPage() {
         pluginUri = FREEVERB3_PLUGIN_URI
         pluginName = 'Freeverb3'
         break
+      case 'whammy':
+        pluginUri = WHAMMY_PLUGIN_URI
+        pluginName = 'dm-Whammy'
+        break
+      case 'dragonfly':
+        pluginUri = DRAGONFLY_PLUGIN_URI
+        pluginName = 'Dragonfly Reverb'
+        break
       default:
         pushToast(`Unknown plugin type: ${pluginType}`, 'error')
         return
@@ -2764,25 +2771,6 @@ export function ChainFlowPage() {
                 title={historyStatus?.next_redo ? `Redo: ${historyStatus.next_redo} (Ctrl+Y)` : 'Redo (Ctrl+Y)'}
               >
                 <Redo2 size={16} />
-              </button>
-            </div>
-            {/* View Mode Toggle */}
-            <div className="flex" style={{ gap: 4, borderRight: '1px solid var(--surface-border)', paddingRight: 8, marginLeft: 8 }}>
-              <button
-                className={`btn ${viewMode === 'detailed' ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-                onClick={() => setViewMode('detailed')}
-                title="Detailed view (vertical)"
-                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                <LayoutList size={14} /> Detail
-              </button>
-              <button
-                className={`btn ${viewMode === 'compact' ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-                onClick={() => setViewMode('compact')}
-                title="Compact view (horizontal)"
-                style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-              >
-                <LayoutGrid size={14} /> Compact
               </button>
             </div>
             <button className="btn btn-ghost" onClick={handleRefresh}>
@@ -2884,1355 +2872,71 @@ export function ChainFlowPage() {
       {/* Audio Metering Card - At top above Signal Chain */}
       <AudioMeteringCard defaultExpanded={true} />
 
-      {/* Signal Chain Cards - Dynamic N chains with routing card */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : `repeat(${chainSlots.length}, 1fr) auto`,
-        gap: 16,
-        alignItems: 'stretch'
-      }}>
-        {/* Add Chain Button - Header */}
-        <div style={{
-          gridColumn: isMobile ? '1' : `1 / -1`,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: -8,
-        }}>
-          {chainSlots.length < MAX_CHAINS && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={addChainSlot}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 11,
-                color: 'var(--text-muted)',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
-                <path d="M7 4v6M4 7h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              Add Chain ({chainSlots.length}/{MAX_CHAINS})
-            </button>
-          )}
-        </div>
-
-        {/* Chain A Card */}
-        <div className="card" style={{
-          minHeight: isMobile ? 'auto' : 480,
-          position: 'relative',
-          overflow: 'hidden',
-          borderColor: activeSlotIndex === 0 ? `${chainSlots[0]?.color}66` : undefined,
-          boxShadow: activeSlotIndex === 0 ? `0 0 20px ${chainSlots[0]?.color}26` : undefined,
-        }}>
-          {/* Chain A Header Banner */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            padding: '12px 20px',
-            marginBottom: 16,
-            marginLeft: -20,
-            marginRight: -20,
-            marginTop: -20,
-            background: `linear-gradient(135deg, ${chainSlots[0]?.color}1f, ${chainSlots[0]?.color}14)`,
-            borderBottom: `2px solid ${chainSlots[0]?.color}66`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' }}>
-              <Zap size={18} style={{
-                color: chainSlots[0]?.color,
-                filter: `drop-shadow(0 0 4px ${chainSlots[0]?.color}80)`
-              }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  color: chainSlots[0]?.color,
-                  textTransform: 'uppercase',
-                  marginBottom: 1,
-                }}>
-                  PATH {chainSlots[0]?.label}
-                </div>
-                <div style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#fff',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                }}>
-                  {selectedChain?.name || 'Select Chain'}
-                </div>
-              </div>
-            </div>
-            {chainSlots.length > MIN_CHAINS && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => removeChainSlot(chainSlots[0]?.id)}
-                title="Remove this chain slot"
-                style={{ color: '#ef4444', padding: 4 }}
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <button
-                  className={`btn btn-sm ${activeSlotIndex === 0 ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{
-                    padding: '6px 14px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    backgroundColor: activeSlotIndex === 0 ? chainSlots[0]?.color : undefined,
-                    boxShadow: activeSlotIndex === 0 ? `0 0 15px ${chainSlots[0]?.color}80, inset 0 0 10px rgba(255,255,255,0.1)` : 'none',
-                    border: activeSlotIndex === 0 ? `1px solid ${chainSlots[0]?.color}80` : '1px solid transparent',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onClick={() => setActiveSlotIndex(0)}
-                >
-                  {activeSlotIndex === 0 && (
-                    <span style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                      animation: 'shimmer 2s ease-in-out infinite',
-                    }} />
-                  )}
-                  <span style={{ position: 'relative', zIndex: 1 }}>{chainSlots[0]?.label}</span>
-                </button>
-                <select
-                  className="input"
-                  style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
-                  value={chainSlots[0]?.chainId ?? ''}
-                  onChange={(e) => updateChainSlot(chainSlots[0]?.id, { chainId: e.target.value ? Number(e.target.value) : null })}
-                  disabled={chainsQuery.isLoading}
-                  title={`Chain ${chainSlots[0]?.label} - signal path`}
-                >
-                  <option value="">Select chain...</option>
-                  {chainsQuery.data?.chains.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.is_active ? '●' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                {chainsQuery.isLoading ? (
-                  <div className="flex" style={{ padding: '12px 4px' }}>
-                    <Loader2 className="spin" size={18} /> Loading...
-                  </div>
-                ) : !selectedChain ? (
-                  <div className="pill warn" style={{ fontSize: 11 }}>No chain</div>
-                ) : selectedChain.plugins.length === 0 ? (
-                  <div className="muted" style={{ fontSize: 11, padding: 8 }}>Empty chain</div>
-                ) : viewMode === 'compact' ? (
-                  /* Compact horizontal view */
-                  <HorizontalSignalChain
-                    plugins={selectedChain.plugins}
-                    pluginMeta={pluginMetaByUri}
-                    selectedPluginUri={selectedPluginUri}
-                    onPluginSelect={(uri) => { setActiveChainSlot(1); setSelectedPluginUri(uri); }}
-                    onPluginReorder={(uris) => reorder.mutate({ chainId: selectedChain.id, order: uris })}
-                    onToggleBypass={(uri, bypass) => toggleBypass.mutate({ chainId: selectedChain.id, uri, bypass })}
-                    isActive={selectedChain.is_active}
-                  />
-                ) : (
-                  /* Detailed vertical view */
-                  <div className="stack" style={{ gap: 0 }}>
-                    <ChainEndpoint type="input" label="AUDIO INPUT" audioStatus={audioInterfaceStatus} />
-                    {selectedChain.plugins.map((plugin, idx) => (
-                      <React.Fragment key={plugin.uri}>
-                        <SignalCable
-                          isActive={!plugin.bypassed}
-                          color={getCategoryConfig(pluginMetaByUri[plugin.uri]?.category || 'Effect').color}
-                        />
-                        {/* Special rendering for Cabinet IR plugin with GraphicalIRLoader-style card */}
-                        {plugin.uri === CABINET_IR_PLUGIN_URI ? (
-                          <CabinetIRFlowCard
-                            status={cabinetStatus}
-                            onIRChange={updateCabinetIR}
-                            onMixChange={updateCabinetMix}
-                            onBypassChange={updateCabinetBypass}
-                            isSelected={activeChainSlot === 1 && selectedPluginUri === plugin.uri}
-                            isDragging={draggedPluginUri === plugin.uri}
-                          />
-                        ) : (
-                          <PluginFlowItem
-                            plugin={plugin}
-                            pluginMeta={pluginMetaByUri[plugin.uri]}
-                            idx={idx}
-                            totalPlugins={selectedChain.plugins.length}
-                            isSelected={activeChainSlot === 1 && selectedPluginUri === plugin.uri}
-                            chainId={selectedChain.id}
-                            onSelect={(uri) => { setActiveChainSlot(1); setSelectedPluginUri(uri); }}
-                            onMove={movePlugin}
-                            onToggleBypass={toggleBypass}
-                            onRemove={removePlugin}
-                            reorderPending={reorder.isPending}
-                            onDragStart={handleDragStart}
-                            onDragOver={handleDragOver}
-                            onDragEnd={handleDragEnd}
-                            onDrop={handleDrop}
-                            isDragging={draggedPluginUri === plugin.uri}
-                            isDragOver={dragOverPluginUri === plugin.uri}
-                            levelIn={pluginLevels[plugin.uri]?.in ?? 0}
-                            levelOut={pluginLevels[plugin.uri]?.out ?? 0}
-                            wetDryMix={wetDryMixes[plugin.uri] ?? 100}
-                            onWetDryChange={handleWetDryChange}
-                            onSavePreset={handleSavePreset}
-                          />
-                        )}
-                      </React.Fragment>
-                    ))}
-                    <SignalCable isActive={selectedChain.plugins.some(p => !p.bypassed)} />
-                    <ChainEndpoint type="output" label="AUDIO OUTPUT" audioStatus={audioInterfaceStatus} />
-                  </div>
-                )}
-              </div>
-              {/* Plugin count indicator with glow */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                marginTop: 12,
-                padding: '6px 12px',
-                background: `linear-gradient(135deg, ${chainSlots[0]?.color}1a 0%, ${chainSlots[0]?.color}1a 100%)`,
-                borderRadius: 20,
-                border: `1px solid ${chainSlots[0]?.color}4d`,
-                boxShadow: `0 0 10px ${chainSlots[0]?.color}33`,
-              }}>
-                <svg width="16" height="16" viewBox="0 0 16 16">
-                  <circle cx="8" cy="8" r="6" fill="none" stroke={chainSlots[0]?.color} strokeWidth="1.5" opacity="0.5" />
-                  <circle cx="8" cy="8" r="3" fill={chainSlots[0]?.color}>
-                    <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
-                  </circle>
-                </svg>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: chainSlots[0]?.color,
-                  textShadow: `0 0 8px ${chainSlots[0]?.color}80`,
-                }}>
-                  {selectedChain?.plugins.length ?? 0} plugins
-                </span>
-              </div>
-          </div>
-        </div>
-
-        {/* Signal Routing Card - Hidden on mobile - All JUCE Routing Options */}
-        {!isMobile && (
-          <div className="card" style={{
-            minWidth: 220,
-            maxWidth: 280,
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            background: 'linear-gradient(180deg, rgba(0, 212, 255, 0.02) 0%, rgba(0, 212, 255, 0.08) 50%, rgba(0, 212, 255, 0.02) 100%)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-              {/* Ripple effect background */}
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.15) 0%, transparent 50%)',
-                backgroundSize: '200% 200%',
-                animation: 'cardRipple 8s ease-in-out infinite',
-                pointerEvents: 'none',
-              }} />
-              <div style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                width: 100,
-                height: 100,
-                marginLeft: -50,
-                marginTop: -50,
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(0, 212, 255, 0.2) 0%, transparent 70%)',
-                animation: 'pulseRing 3s ease-out infinite',
-                pointerEvents: 'none',
-              }} />
-
-              {/* Routing Mode Header */}
-              <div style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                letterSpacing: '1.5px',
-                marginBottom: 12,
-                textTransform: 'uppercase',
-              }}>JUCE SIGNAL ROUTING</div>
-
-              {/* Active Chains Indicator */}
-              <div style={{
-                display: 'flex',
-                gap: 4,
-                marginBottom: 12,
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-              }}>
-                {chainSlots.map((slot) => (
-                  <span key={slot.id} style={{
-                    padding: '2px 8px',
-                    fontSize: 10,
-                    fontWeight: 600,
-                    background: `${slot.color}20`,
-                    color: slot.color,
-                    borderRadius: 4,
-                    border: `1px solid ${slot.color}40`,
-                  }}>{slot.label}</span>
-                ))}
-              </div>
-
-              {/* Routing Mode Selector - All 5 JUCE Modes */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 5,
-                width: '100%',
-                marginBottom: 16,
-              }}>
-                {/* 1. Parallel Blend Mode */}
-                <button
-                  onClick={() => setRoutingMode('parallel_blend')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '7px 10px',
-                    background: routing.mode === 'parallel_blend'
-                      ? 'linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(0, 150, 200, 0.15) 100%)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: routing.mode === 'parallel_blend'
-                      ? '1px solid rgba(0, 212, 255, 0.5)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: routing.mode === 'parallel_blend'
-                      ? '0 0 12px rgba(0, 212, 255, 0.3)'
-                      : 'none',
-                  }}
-                >
-                  {/* Dynamic Parallel diagram - adapts to N chains */}
-                  <svg width="36" height="24" viewBox="0 0 36 24">
-                    {chainSlots.slice(0, 3).map((slot, i) => {
-                      const yPos = 4 + i * 8
-                      const isActive = routing.mode === 'parallel_blend'
-                      return (
-                        <React.Fragment key={slot.id}>
-                          <line x1="0" y1={yPos} x2="6" y2={yPos} stroke={isActive ? slot.color : '#666'} strokeWidth="1.5" />
-                          <rect x="6" y={yPos - 3} width="14" height="6" rx="1" fill="none" stroke={isActive ? slot.color : '#666'} strokeWidth="1" />
-                          <text x="13" y={yPos + 2} textAnchor="middle" fontSize="5" fill={isActive ? slot.color : '#666'}>{slot.label}</text>
-                          <line x1="20" y1={yPos} x2="26" y2="12" stroke={isActive ? slot.color : '#666'} strokeWidth="1.5" />
-                        </React.Fragment>
-                      )
-                    })}
-                    <circle cx="26" cy="12" r="2" fill={routing.mode === 'parallel_blend' ? 'var(--primary)' : '#666'} />
-                    <line x1="26" y1="12" x2="34" y2="12" stroke={routing.mode === 'parallel_blend' ? 'var(--primary)' : '#666'} strokeWidth="2" />
-                  </svg>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: routing.mode === 'parallel_blend' ? 'var(--primary)' : 'var(--text)',
-                    }}>Parallel Blend</div>
-                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Mix {chainSlots.length} chains</div>
-                  </div>
-                </button>
-
-                {/* 2. Chain Switch Mode */}
-                <button
-                  onClick={() => setRoutingMode('ab_switch')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '7px 10px',
-                    background: routing.mode === 'ab_switch'
-                      ? 'linear-gradient(135deg, rgba(255, 170, 0, 0.25) 0%, rgba(200, 120, 0, 0.15) 100%)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: routing.mode === 'ab_switch'
-                      ? '1px solid rgba(255, 170, 0, 0.5)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: routing.mode === 'ab_switch'
-                      ? '0 0 12px rgba(255, 170, 0, 0.3)'
-                      : 'none',
-                  }}
-                >
-                  {/* Dynamic Switch diagram */}
-                  <svg width="36" height="24" viewBox="0 0 36 24">
-                    <line x1="0" y1="12" x2="6" y2="12" stroke={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="2" />
-                    {chainSlots.slice(0, 3).map((slot, i) => {
-                      const yPos = 4 + i * 8
-                      const isSelected = activeSlotIndex === i
-                      const isActive = routing.mode === 'ab_switch'
-                      return (
-                        <React.Fragment key={slot.id}>
-                          <rect x="10" y={yPos - 3} width="12" height="6" rx="1" fill="none"
-                            stroke={isActive ? slot.color : '#666'} strokeWidth="1"
-                            opacity={isSelected ? 1 : 0.4} />
-                          <text x="16" y={yPos + 2} textAnchor="middle" fontSize="5"
-                            fill={isActive ? slot.color : '#666'}
-                            opacity={isSelected ? 1 : 0.4}>{slot.label}</text>
-                        </React.Fragment>
-                      )
-                    })}
-                    {/* Switch arm pointing to active chain */}
-                    <line x1="6" y1="12" x2="10" y2={4 + activeSlotIndex * 8}
-                      stroke={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="1.5" />
-                    <line x1="22" y1={4 + activeSlotIndex * 8} x2="28" y2="12"
-                      stroke={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="1.5" />
-                    <circle cx="28" cy="12" r="2" fill={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} />
-                  </svg>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: routing.mode === 'ab_switch' ? '#ffaa00' : 'var(--text)',
-                    }}>Chain Switch</div>
-                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Toggle {chainSlots.map(s => s.label).join('/')}</div>
-                  </div>
-                </button>
-
-                {/* 3. Series Mode */}
-                <button
-                  onClick={() => setRoutingMode('series')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '7px 10px',
-                    background: routing.mode === 'series'
-                      ? 'linear-gradient(135deg, rgba(170, 0, 255, 0.25) 0%, rgba(120, 0, 200, 0.15) 100%)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: routing.mode === 'series'
-                      ? '1px solid rgba(170, 0, 255, 0.5)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: routing.mode === 'series'
-                      ? '0 0 12px rgba(170, 0, 255, 0.3)'
-                      : 'none',
-                  }}
-                >
-                  {/* Dynamic Series diagram */}
-                  <svg width="36" height="24" viewBox="0 0 36 24">
-                    <line x1="0" y1="12" x2="3" y2="12" stroke={routing.mode === 'series' ? '#aa00ff' : '#666'} strokeWidth="1.5" />
-                    {chainSlots.slice(0, Math.min(3, chainSlots.length)).map((slot, i) => {
-                      const xOffset = 3 + i * 10
-                      const isActive = routing.mode === 'series'
-                      return (
-                        <React.Fragment key={slot.id}>
-                          <rect x={xOffset} y="8" width="8" height="8" rx="1" fill="none" stroke={isActive ? slot.color : '#666'} strokeWidth="1" />
-                          <text x={xOffset + 4} y="14" textAnchor="middle" fontSize="5" fill={isActive ? slot.color : '#666'}>{slot.label}</text>
-                          {i < Math.min(2, chainSlots.length - 1) && (
-                            <line x1={xOffset + 8} y1="12" x2={xOffset + 10} y2="12" stroke={isActive ? '#aa00ff' : '#666'} strokeWidth="1.5" />
-                          )}
-                        </React.Fragment>
-                      )
-                    })}
-                    <line x1={3 + Math.min(3, chainSlots.length) * 10 - 2} y1="12" x2="36" y2="12"
-                      stroke={routing.mode === 'series' ? '#aa00ff' : '#666'} strokeWidth="1.5" />
-                  </svg>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: routing.mode === 'series' ? '#aa00ff' : 'var(--text)',
-                    }}>Series</div>
-                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>{chainSlots.map(s => s.label).join(' → ')}</div>
-                  </div>
-                </button>
-
-                {/* 4. Parameter Morph Mode */}
-                <button
-                  onClick={() => setRoutingMode('parameter_morph')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '7px 10px',
-                    background: routing.mode === 'parameter_morph'
-                      ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(180, 40, 120, 0.15) 100%)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: routing.mode === 'parameter_morph'
-                      ? '1px solid rgba(236, 72, 153, 0.5)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: routing.mode === 'parameter_morph'
-                      ? '0 0 12px rgba(236, 72, 153, 0.3)'
-                      : 'none',
-                  }}
-                >
-                  {/* Morph diagram - interpolation arc between two chains */}
-                  <svg width="36" height="24" viewBox="0 0 36 24">
-                    <rect x="4" y="6" width="10" height="8" rx="2" fill="none"
-                      stroke={routing.mode === 'parameter_morph' ? chainSlots[0]?.color || '#ec4899' : '#666'} strokeWidth="1" />
-                    <text x="9" y="12" textAnchor="middle" fontSize="5"
-                      fill={routing.mode === 'parameter_morph' ? chainSlots[0]?.color || '#ec4899' : '#666'}>
-                      {chainSlots[0]?.label || 'A'}
-                    </text>
-                    <rect x="22" y="6" width="10" height="8" rx="2" fill="none"
-                      stroke={routing.mode === 'parameter_morph' ? chainSlots[1]?.color || '#ec4899' : '#666'} strokeWidth="1" />
-                    <text x="27" y="12" textAnchor="middle" fontSize="5"
-                      fill={routing.mode === 'parameter_morph' ? chainSlots[1]?.color || '#ec4899' : '#666'}>
-                      {chainSlots[1]?.label || 'B'}
-                    </text>
-                    {/* Interpolation arc */}
-                    <path d="M 14 10 Q 18 2 22 10" fill="none"
-                      stroke={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'}
-                      strokeWidth="1.5" strokeDasharray="2,2" />
-                    {/* Morph indicator dot */}
-                    <circle cx={14 + (routing.morphProgress * 8)} cy={10 - Math.sin(routing.morphProgress * Math.PI) * 8}
-                      r="2" fill={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'} />
-                    {/* Output line */}
-                    <line x1="18" y1="18" x2="18" y2="22"
-                      stroke={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'} strokeWidth="1.5" />
-                    <circle cx="18" cy="22" r="1.5" fill={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'} />
-                  </svg>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: routing.mode === 'parameter_morph' ? '#ec4899' : 'var(--text)',
-                    }}>Parameter Morph</div>
-                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Interpolate settings</div>
-                  </div>
-                </button>
-
-                {/* 5. Sidechain Mode */}
-                <button
-                  onClick={() => setRoutingMode('sidechain')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '7px 10px',
-                    background: routing.mode === 'sidechain'
-                      ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(4, 140, 165, 0.15) 100%)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: routing.mode === 'sidechain'
-                      ? '1px solid rgba(6, 182, 212, 0.5)'
-                      : '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: routing.mode === 'sidechain'
-                      ? '0 0 12px rgba(6, 182, 212, 0.3)'
-                      : 'none',
-                  }}
-                >
-                  {/* Sidechain diagram */}
-                  <svg width="36" height="24" viewBox="0 0 36 24">
-                    {/* Main signal path */}
-                    <line x1="0" y1="16" x2="8" y2="16" stroke={routing.mode === 'sidechain' ? '#06b6d4' : '#666'} strokeWidth="2" />
-                    <rect x="8" y="12" width="12" height="8" rx="2" fill="none"
-                      stroke={routing.mode === 'sidechain' ? '#06b6d4' : '#666'} strokeWidth="1.5" />
-                    <text x="14" y="18" textAnchor="middle" fontSize="5"
-                      fill={routing.mode === 'sidechain' ? '#06b6d4' : '#666'}>COMP</text>
-                    <line x1="20" y1="16" x2="36" y2="16" stroke={routing.mode === 'sidechain' ? '#06b6d4' : '#666'} strokeWidth="2" />
-                    {/* Sidechain input */}
-                    <line x1="14" y1="4" x2="14" y2="12" stroke={routing.mode === 'sidechain' ? '#f59e0b' : '#666'}
-                      strokeWidth="1.5" strokeDasharray="3,2" />
-                    <text x="14" y="3" textAnchor="middle" fontSize="4"
-                      fill={routing.mode === 'sidechain' ? '#f59e0b' : '#666'}>SC</text>
-                    {/* Key indicator */}
-                    <circle cx="14" cy="8" r="1.5" fill={routing.mode === 'sidechain' ? '#f59e0b' : '#666'} />
-                  </svg>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: routing.mode === 'sidechain' ? '#06b6d4' : 'var(--text)',
-                    }}>Sidechain</div>
-                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Plugin key inputs</div>
-                  </div>
-                </button>
-              </div>
-
-              {/* Mode-Specific Controls */}
-
-              {/* Parallel Blend - Per-chain level sliders */}
-              {routing.mode === 'parallel_blend' && (
-                <div style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: 'rgba(0, 212, 255, 0.08)',
-                  borderRadius: 8,
-                  border: '1px solid rgba(0, 212, 255, 0.2)',
-                  marginBottom: 12,
-                }}>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'center' }}>
-                    PER-CHAIN LEVELS
-                  </div>
-                  {chainSlots.map((slot) => (
-                    <div key={slot.id} style={{ marginBottom: 6 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: slot.color }}>{slot.label}</span>
-                        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
-                          {routing.blendPositions[slot.id] ?? 100}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={routing.blendPositions[slot.id] ?? 100}
-                        onChange={(e) => setSlotBlendLevel(slot.id, Number(e.target.value))}
-                        style={{
-                          width: '100%',
-                          height: 4,
-                          appearance: 'none',
-                          background: `linear-gradient(90deg, ${slot.color} ${routing.blendPositions[slot.id] ?? 100}%, rgba(255,255,255,0.15) ${routing.blendPositions[slot.id] ?? 100}%)`,
-                          borderRadius: 2,
-                          cursor: 'pointer',
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Chain Switch - Dynamic selector buttons */}
-              {routing.mode === 'ab_switch' && (
-                <div style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: 'rgba(255, 170, 0, 0.08)',
-                  borderRadius: 8,
-                  border: '1px solid rgba(255, 170, 0, 0.2)',
-                  marginBottom: 12,
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8 }}>ACTIVE CHAIN</div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: 6,
-                    flexWrap: 'wrap',
-                  }}>
-                    {chainSlots.map((slot, index) => (
-                      <button
-                        key={slot.id}
-                        onClick={() => setActiveSlotIndex(index)}
-                        style={{
-                          padding: '5px 12px',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          background: activeSlotIndex === index ? slot.color : 'transparent',
-                          color: activeSlotIndex === index ? '#000' : slot.color,
-                          border: `1px solid ${slot.color}`,
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                      >{slot.label}</button>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 6 }}>
-                    Click to switch chains
-                  </div>
-                </div>
-              )}
-
-              {/* Series - Dynamic flow indicator */}
-              {routing.mode === 'series' && (
-                <div style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: 'rgba(170, 0, 255, 0.08)',
-                  borderRadius: 8,
-                  border: '1px solid rgba(170, 0, 255, 0.2)',
-                  marginBottom: 12,
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8 }}>SIGNAL FLOW</div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 4,
-                    flexWrap: 'wrap',
-                  }}>
-                    <span style={{
-                      padding: '3px 8px',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      background: 'rgba(170, 0, 255, 0.2)',
-                      color: '#aa00ff',
-                      borderRadius: 4,
-                    }}>IN</span>
-                    {chainSlots.map((slot, index) => (
-                      <React.Fragment key={slot.id}>
-                        <ArrowRight size={12} style={{ color: '#aa00ff' }} />
-                        <span style={{
-                          padding: '3px 8px',
-                          fontSize: 9,
-                          fontWeight: 700,
-                          background: `${slot.color}30`,
-                          color: slot.color,
-                          borderRadius: 4,
-                        }}>{slot.label}</span>
-                      </React.Fragment>
-                    ))}
-                    <ArrowRight size={12} style={{ color: '#aa00ff' }} />
-                    <span style={{
-                      padding: '3px 8px',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      background: 'rgba(170, 0, 255, 0.2)',
-                      color: '#aa00ff',
-                      borderRadius: 4,
-                    }}>OUT</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Parameter Morph - Source/Target selector + Morph slider */}
-              {routing.mode === 'parameter_morph' && (
-                <div style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: 'rgba(236, 72, 153, 0.08)',
-                  borderRadius: 8,
-                  border: '1px solid rgba(236, 72, 153, 0.2)',
-                  marginBottom: 12,
-                }}>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'center' }}>
-                    MORPH BETWEEN CHAINS
-                  </div>
-
-                  {/* Source/Target selectors */}
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 8, color: 'var(--text-muted)', marginBottom: 4 }}>SOURCE</div>
-                      <select
-                        value={routing.morphSourceSlotId || chainSlots[0]?.id || ''}
-                        onChange={(e) => setMorphSource(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '4px 6px',
-                          fontSize: 10,
-                          background: 'rgba(236, 72, 153, 0.15)',
-                          border: '1px solid rgba(236, 72, 153, 0.3)',
-                          borderRadius: 4,
-                          color: 'var(--text)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {chainSlots.map((slot) => (
-                          <option key={slot.id} value={slot.id}>Chain {slot.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 8, color: 'var(--text-muted)', marginBottom: 4 }}>TARGET</div>
-                      <select
-                        value={routing.morphTargetSlotId || chainSlots[1]?.id || ''}
-                        onChange={(e) => setMorphTarget(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '4px 6px',
-                          fontSize: 10,
-                          background: 'rgba(236, 72, 153, 0.15)',
-                          border: '1px solid rgba(236, 72, 153, 0.3)',
-                          borderRadius: 4,
-                          color: 'var(--text)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {chainSlots.map((slot) => (
-                          <option key={slot.id} value={slot.id}>Chain {slot.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Morph slider */}
-                  <div style={{ marginBottom: 4 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9 }}>
-                      <span style={{ color: chainSlots.find(s => s.id === (routing.morphSourceSlotId || chainSlots[0]?.id))?.color }}>
-                        {chainSlots.find(s => s.id === (routing.morphSourceSlotId || chainSlots[0]?.id))?.label || 'A'}
-                      </span>
-                      <span style={{ color: 'var(--text-muted)' }}>{Math.round(routing.morphProgress * 100)}%</span>
-                      <span style={{ color: chainSlots.find(s => s.id === (routing.morphTargetSlotId || chainSlots[1]?.id))?.color }}>
-                        {chainSlots.find(s => s.id === (routing.morphTargetSlotId || chainSlots[1]?.id))?.label || 'B'}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={routing.morphProgress * 100}
-                      onChange={(e) => setMorphProgress(Number(e.target.value) / 100)}
-                      style={{
-                        width: '100%',
-                        height: 6,
-                        appearance: 'none',
-                        background: `linear-gradient(90deg,
-                          ${chainSlots.find(s => s.id === (routing.morphSourceSlotId || chainSlots[0]?.id))?.color || '#ec4899'} 0%,
-                          ${chainSlots.find(s => s.id === (routing.morphTargetSlotId || chainSlots[1]?.id))?.color || '#ec4899'} 100%)`,
-                        borderRadius: 3,
-                        cursor: 'pointer',
-                      }}
-                    />
-                  </div>
-                  <div style={{ fontSize: 8, color: 'var(--text-muted)', textAlign: 'center' }}>
-                    Smoothly interpolate plugin parameters
-                  </div>
-                </div>
-              )}
-
-              {/* Sidechain - Connection list + info */}
-              {routing.mode === 'sidechain' && (
-                <div style={{
-                  width: '100%',
-                  padding: '10px',
-                  background: 'rgba(6, 182, 212, 0.08)',
-                  borderRadius: 8,
-                  border: '1px solid rgba(6, 182, 212, 0.2)',
-                  marginBottom: 12,
-                }}>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'center' }}>
-                    SIDECHAIN ROUTING
-                  </div>
-
-                  {/* Sidechain info */}
-                  <div style={{
-                    padding: '8px',
-                    background: 'rgba(6, 182, 212, 0.1)',
-                    borderRadius: 6,
-                    marginBottom: 8,
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <Link2 size={12} style={{ color: '#06b6d4' }} />
-                      <span style={{ fontSize: 9, fontWeight: 600, color: '#06b6d4' }}>Plugin Key Inputs</span>
-                    </div>
-                    <div style={{ fontSize: 8, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                      Route audio from one chain to the sidechain input of compressors,
-                      gates, and other dynamics plugins.
-                    </div>
-                  </div>
-
-                  {/* Connection status */}
-                  <div style={{
-                    padding: '6px 8px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: 4,
-                    fontSize: 9,
-                    color: 'var(--text-muted)',
-                    textAlign: 'center',
-                  }}>
-                    <span style={{ color: '#f59e0b' }}>SC Key:</span> Select plugin with sidechain support
-                  </div>
-                </div>
-              )}
-
-              {/* Mode Explanation */}
-              <div style={{
-                width: '100%',
-                padding: '8px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: 6,
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  marginBottom: 4
-                }}>
-                  <Info size={10} style={{ color: 'var(--text-muted)' }} />
-                  <span style={{ fontSize: 8, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    {routing.mode === 'parallel_blend' ? 'Parallel Mode' :
-                     routing.mode === 'ab_switch' ? 'Switch Mode' :
-                     routing.mode === 'series' ? 'Series Mode' :
-                     routing.mode === 'parameter_morph' ? 'Morph Mode' : 'Sidechain Mode'}
-                  </span>
-                </div>
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  {routing.mode === 'parallel_blend' && (
-                    <>Audio splits to all {chainSlots.length} chains simultaneously. Adjust individual levels to blend between them.</>
-                  )}
-                  {routing.mode === 'ab_switch' && (
-                    <>Only one chain is active at a time. Switch instantly between {chainSlots.map(s => s.label).join('/')} for comparing tones.</>
-                  )}
-                  {routing.mode === 'series' && (
-                    <>Chains process in sequence: {chainSlots.map(s => s.label).join(' → ')}. Use for stacked processing stages.</>
-                  )}
-                  {routing.mode === 'parameter_morph' && (
-                    <>Smoothly interpolate plugin parameters between two chains. Great for transitions and expression pedal control.</>
-                  )}
-                  {routing.mode === 'sidechain' && (
-                    <>Configure sidechain routing between plugins. Route audio to the key input of compressors and gates.</>
-                  )}
-                </div>
-              </div>
-
-              {/* Output Indicator */}
-              <div style={{
-                marginTop: 'auto',
-                paddingTop: 12,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '6px 10px',
-                  background: 'rgba(34, 197, 94, 0.15)',
-                  borderRadius: 6,
-                  border: '1px solid var(--success)',
-                  boxShadow: '0 0 10px rgba(34, 197, 94, 0.3)',
-                }}>
-                  <Speaker size={16} style={{
-                    color: 'var(--success)',
-                    filter: 'drop-shadow(0 0 4px rgba(34, 197, 94, 0.8))',
-                  }} />
-                </div>
-                <span style={{
-                  fontSize: 8,
-                  fontWeight: 600,
-                  color: 'var(--success)',
-                  letterSpacing: '1px',
-                }}>OUTPUT</span>
-              </div>
-          </div>
-        )}
-
-        {/* Chain B Card */}
-        {chainSlots.length >= 2 && (
-        <div className="card" style={{
-          minHeight: isMobile ? 'auto' : 480,
-          position: 'relative',
-          overflow: 'hidden',
-          borderColor: activeSlotIndex === 1 ? `${chainSlots[1]?.color}66` : undefined,
-          boxShadow: activeSlotIndex === 1 ? `0 0 20px ${chainSlots[1]?.color}26` : undefined,
-        }}>
-          {/* Chain B Header Banner */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            padding: '12px 20px',
-            marginBottom: 16,
-            marginLeft: -20,
-            marginRight: -20,
-            marginTop: -20,
-            background: `linear-gradient(135deg, ${chainSlots[1]?.color}1f, ${chainSlots[1]?.color}14)`,
-            borderBottom: `2px solid ${chainSlots[1]?.color}66`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' }}>
-              <Zap size={18} style={{
-                color: chainSlots[1]?.color,
-                filter: `drop-shadow(0 0 4px ${chainSlots[1]?.color}80)`
-              }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  color: chainSlots[1]?.color,
-                  textTransform: 'uppercase',
-                  marginBottom: 1,
-                }}>
-                  PATH {chainSlots[1]?.label}
-                </div>
-                <div style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#fff',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                }}>
-                  {secondChain?.name || 'Select Chain'}
-                </div>
-              </div>
-            </div>
-            {chainSlots.length > MIN_CHAINS && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => removeChainSlot(chainSlots[1]?.id)}
-                title="Remove this chain slot"
-                style={{ color: '#ef4444', padding: 4 }}
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <button
-                className={`btn btn-sm ${activeSlotIndex === 1 ? 'btn-primary' : 'btn-ghost'}`}
-                style={{
-                  padding: '6px 14px',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  letterSpacing: '1px',
-                  backgroundColor: activeSlotIndex === 1 ? chainSlots[1]?.color : undefined,
-                  boxShadow: activeSlotIndex === 1 ? `0 0 15px ${chainSlots[1]?.color}80, inset 0 0 10px rgba(255,255,255,0.1)` : 'none',
-                  border: activeSlotIndex === 1 ? `1px solid ${chainSlots[1]?.color}80` : '1px solid transparent',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-                onClick={() => setActiveSlotIndex(1)}
-              >
-                {activeSlotIndex === 1 && (
-                  <span style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                    animation: 'shimmer 2s ease-in-out infinite',
-                  }} />
-                )}
-                <span style={{ position: 'relative', zIndex: 1 }}>{chainSlots[1]?.label}</span>
-              </button>
-              <select
-                className="input"
-                style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
-                value={chainSlots[1]?.chainId ?? ''}
-                onChange={(e) => updateChainSlot(chainSlots[1]?.id, { chainId: e.target.value ? Number(e.target.value) : null })}
-                disabled={chainsQuery.isLoading}
-                title={`Chain ${chainSlots[1]?.label} - signal path`}
-              >
-                <option value="">Select chain...</option>
-                {chainsQuery.data?.chains.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.is_active ? '●' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                {!secondChainId ? (
-                  <div className="muted" style={{ fontSize: 11, padding: 8, textAlign: 'center' }}>
-                    Select a chain to compare
-                  </div>
-                ) : chainsQuery.isLoading ? (
-                  <div className="flex" style={{ padding: '12px 4px' }}>
-                    <Loader2 className="spin" size={18} /> Loading...
-                  </div>
-                ) : !secondChain ? (
-                  <div className="pill warn" style={{ fontSize: 11 }}>No chain</div>
-                ) : secondChain.plugins.length === 0 ? (
-                  <div className="muted" style={{ fontSize: 11, padding: 8 }}>Empty chain</div>
-                ) : (
-                  <div className="stack" style={{ gap: 0 }}>
-                    <ChainEndpoint type="input" label="AUDIO INPUT" audioStatus={audioInterfaceStatus} />
-                    {secondChain.plugins.map((plugin, idx) => (
-                      <React.Fragment key={plugin.uri}>
-                        <SignalCable
-                          isActive={!plugin.bypassed}
-                          color={getCategoryConfig(pluginMetaByUri[plugin.uri]?.category || 'Effect').color}
-                        />
-                        {/* Special rendering for Cabinet IR plugin with GraphicalIRLoader-style card */}
-                        {plugin.uri === CABINET_IR_PLUGIN_URI ? (
-                          <CabinetIRFlowCard
-                            status={cabinetStatus}
-                            onIRChange={updateCabinetIR}
-                            onMixChange={updateCabinetMix}
-                            onBypassChange={updateCabinetBypass}
-                            isSelected={activeChainSlot === 2 && selectedPluginUri === plugin.uri}
-                            isDragging={draggedPluginUri === plugin.uri}
-                          />
-                        ) : (
-                          <PluginFlowItem
-                            plugin={plugin}
-                            pluginMeta={pluginMetaByUri[plugin.uri]}
-                            idx={idx}
-                            totalPlugins={secondChain.plugins.length}
-                            isSelected={activeChainSlot === 2 && selectedPluginUri === plugin.uri}
-                            chainId={secondChain.id}
-                            onSelect={(uri) => { setActiveChainSlot(2); setSelectedPluginUri(uri); }}
-                            onMove={movePlugin}
-                            onToggleBypass={toggleBypass}
-                            onRemove={removePlugin}
-                            reorderPending={reorder.isPending}
-                            onDragStart={handleDragStart}
-                            onDragOver={handleDragOver}
-                            onDragEnd={handleDragEnd}
-                            onDrop={handleDrop}
-                            isDragging={draggedPluginUri === plugin.uri}
-                            isDragOver={dragOverPluginUri === plugin.uri}
-                            levelIn={pluginLevels[plugin.uri]?.in ?? 0}
-                            levelOut={pluginLevels[plugin.uri]?.out ?? 0}
-                            wetDryMix={wetDryMixes[plugin.uri] ?? 100}
-                            onWetDryChange={handleWetDryChange}
-                            onSavePreset={handleSavePreset}
-                          />
-                        )}
-                      </React.Fragment>
-                    ))}
-                    <SignalCable isActive={secondChain.plugins.some(p => !p.bypassed)} />
-                    <ChainEndpoint type="output" label="AUDIO OUTPUT" audioStatus={audioInterfaceStatus} />
-                  </div>
-                )}
-              </div>
-            {/* Plugin count indicator with glow */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              marginTop: 12,
-              padding: '6px 12px',
-              background: `linear-gradient(135deg, ${chainSlots[1]?.color}1a 0%, ${chainSlots[1]?.color}1a 100%)`,
-              borderRadius: 20,
-              border: `1px solid ${chainSlots[1]?.color}4d`,
-              boxShadow: `0 0 10px ${chainSlots[1]?.color}33`,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="6" fill="none" stroke={chainSlots[1]?.color} strokeWidth="1.5" opacity="0.5" />
-                <circle cx="8" cy="8" r="3" fill={chainSlots[1]?.color}>
-                  <animate attributeName="r" values="2;4;2" dur="2s" begin="0.5s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin="0.5s" repeatCount="indefinite" />
-                </circle>
-              </svg>
-              <span style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: chainSlots[1]?.color,
-                textShadow: `0 0 8px ${chainSlots[1]?.color}80`,
-              }}>
-                {secondChain?.plugins.length ?? 0} plugins
-              </span>
-            </div>
-          </div>
-        </div>
-        )}
-
-        {/* Additional Chain Cards (C, D, E, F) */}
-        {chainSlots.slice(2).map((slot, idx) => {
-          const slotIndex = idx + 2
-          const chain = chainsQuery.data?.chains.find(c => c.id === slot.chainId)
-
+      {/* Signal Chain Panels - Full-width horizontal layout */}
+      <div className="chain-panels-container">
+        {chainSlots.map((slot, index) => {
+          const chain = getChainForSlot(slot)
           return (
-            <div key={slot.id} className="card" style={{
-              minHeight: isMobile ? 'auto' : 480,
-              position: 'relative',
-              overflow: 'hidden',
-              borderColor: activeSlotIndex === slotIndex ? `${slot.color}66` : undefined,
-              boxShadow: activeSlotIndex === slotIndex ? `0 0 20px ${slot.color}26` : undefined,
-            }}>
-              {/* Header Banner */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                padding: '12px 20px',
-                marginBottom: 16,
-                marginLeft: -20,
-                marginRight: -20,
-                marginTop: -20,
-                background: `linear-gradient(135deg, ${slot.color}1f, ${slot.color}14)`,
-                borderBottom: `2px solid ${slot.color}66`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' }}>
-                  <Zap size={18} style={{
-                    color: slot.color,
-                    filter: `drop-shadow(0 0 4px ${slot.color}80)`
-                  }} />
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      letterSpacing: 2,
-                      color: slot.color,
-                      textTransform: 'uppercase',
-                      marginBottom: 1,
-                    }}>
-                      PATH {slot.label}
-                    </div>
-                    <div style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: '#fff',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                    }}>
-                      {chain?.name || 'Select Chain'}
-                    </div>
-                  </div>
-                </div>
-                {chainSlots.length > MIN_CHAINS && (
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => removeChainSlot(slot.id)}
-                    title="Remove this chain slot"
-                    style={{ color: '#ef4444', padding: 4 }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <button
-                    className={`btn btn-sm ${activeSlotIndex === slotIndex ? 'btn-primary' : 'btn-ghost'}`}
-                    style={{
-                      padding: '6px 14px',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      letterSpacing: '1px',
-                      backgroundColor: activeSlotIndex === slotIndex ? slot.color : undefined,
-                      boxShadow: activeSlotIndex === slotIndex ? `0 0 15px ${slot.color}80, inset 0 0 10px rgba(255,255,255,0.1)` : 'none',
-                      border: activeSlotIndex === slotIndex ? `1px solid ${slot.color}80` : '1px solid transparent',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                    onClick={() => setActiveSlotIndex(slotIndex)}
-                  >
-                    {activeSlotIndex === slotIndex && (
-                      <span style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                        animation: 'shimmer 2s ease-in-out infinite',
-                      }} />
-                    )}
-                    <span style={{ position: 'relative', zIndex: 1 }}>{slot.label}</span>
-                  </button>
-                  <select
-                    className="input"
-                    style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
-                    value={slot.chainId ?? ''}
-                    onChange={(e) => updateChainSlot(slot.id, { chainId: e.target.value ? Number(e.target.value) : null })}
-                    disabled={chainsQuery.isLoading}
-                    title={`Chain ${slot.label} - signal path`}
-                  >
-                    <option value="">Select chain...</option>
-                    {chainsQuery.data?.chains.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} {c.is_active ? '●' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ flex: 1, overflowY: 'auto' }}>
-                  {!slot.chainId ? (
-                    <div className="muted" style={{ fontSize: 11, padding: 8, textAlign: 'center' }}>
-                      Select a chain
-                    </div>
-                  ) : chainsQuery.isLoading ? (
-                    <div className="flex" style={{ padding: '12px 4px' }}>
-                      <Loader2 className="spin" size={18} /> Loading...
-                    </div>
-                  ) : !chain ? (
-                    <div className="pill warn" style={{ fontSize: 11 }}>No chain</div>
-                  ) : chain.plugins.length === 0 ? (
-                    <div className="muted" style={{ fontSize: 11, padding: 8 }}>Empty chain</div>
-                  ) : (
-                    <div className="stack" style={{ gap: 0 }}>
-                      <ChainEndpoint type="input" label="AUDIO INPUT" audioStatus={audioInterfaceStatus} />
-                      {chain.plugins.map((plugin, pluginIdx) => (
-                        <React.Fragment key={plugin.uri}>
-                          <SignalCable
-                            isActive={!plugin.bypassed}
-                            color={getCategoryConfig(pluginMetaByUri[plugin.uri]?.category || 'Effect').color}
-                          />
-                          {plugin.uri === CABINET_IR_PLUGIN_URI ? (
-                            <CabinetIRFlowCard
-                              status={cabinetStatus}
-                              onIRChange={updateCabinetIR}
-                              onMixChange={updateCabinetMix}
-                              onBypassChange={updateCabinetBypass}
-                              isSelected={activeSlotIndex === slotIndex && selectedPluginUri === plugin.uri}
-                              isDragging={draggedPluginUri === plugin.uri}
-                            />
-                          ) : (
-                            <PluginFlowItem
-                              plugin={plugin}
-                              pluginMeta={pluginMetaByUri[plugin.uri]}
-                              idx={pluginIdx}
-                              totalPlugins={chain.plugins.length}
-                              isSelected={activeSlotIndex === slotIndex && selectedPluginUri === plugin.uri}
-                              chainId={chain.id}
-                              onSelect={(uri) => { setActiveSlotIndex(slotIndex); setSelectedPluginUri(uri); }}
-                              onMove={movePlugin}
-                              onToggleBypass={toggleBypass}
-                              onRemove={removePlugin}
-                              reorderPending={reorder.isPending}
-                              onDragStart={handleDragStart}
-                              onDragOver={handleDragOver}
-                              onDragEnd={handleDragEnd}
-                              onDrop={handleDrop}
-                              isDragging={draggedPluginUri === plugin.uri}
-                              isDragOver={dragOverPluginUri === plugin.uri}
-                              levelIn={pluginLevels[plugin.uri]?.in ?? 0}
-                              levelOut={pluginLevels[plugin.uri]?.out ?? 0}
-                              wetDryMix={wetDryMixes[plugin.uri] ?? 100}
-                              onWetDryChange={handleWetDryChange}
-                              onSavePreset={handleSavePreset}
-                            />
-                          )}
-                        </React.Fragment>
-                      ))}
-                      <SignalCable isActive={chain.plugins.some(p => !p.bypassed)} />
-                      <ChainEndpoint type="output" label="AUDIO OUTPUT" audioStatus={audioInterfaceStatus} />
-                    </div>
-                  )}
-                </div>
-
-                {/* Plugin count indicator */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  marginTop: 12,
-                  padding: '6px 12px',
-                  background: `linear-gradient(135deg, ${slot.color}1a 0%, ${slot.color}1a 100%)`,
-                  borderRadius: 20,
-                  border: `1px solid ${slot.color}4d`,
-                  boxShadow: `0 0 10px ${slot.color}33`,
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16">
-                    <circle cx="8" cy="8" r="6" fill="none" stroke={slot.color} strokeWidth="1.5" opacity="0.5" />
-                    <circle cx="8" cy="8" r="3" fill={slot.color}>
-                      <animate attributeName="r" values="2;4;2" dur="2s" begin={`${idx * 0.3}s`} repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin={`${idx * 0.3}s`} repeatCount="indefinite" />
-                    </circle>
-                  </svg>
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: slot.color,
-                    textShadow: `0 0 8px ${slot.color}80`,
-                  }}>
-                    {chain?.plugins.length ?? 0} plugins
-                  </span>
-                </div>
-              </div>
-            </div>
+            <ChainPanel
+              key={slot.id}
+              slot={slot}
+              slotIndex={index}
+              chain={chain}
+              isActive={activeSlotIndex === index}
+              onSlotSelect={() => setActiveSlotIndex(index)}
+              onChainSelect={(chainId) => updateChainSlot(slot.id, { chainId })}
+              availableChains={chainsQuery.data?.chains || []}
+              pluginMeta={pluginMetaByUri}
+              selectedPluginUri={activeSlotIndex === index ? selectedPluginUri : null}
+              onPluginSelect={(uri) => {
+                setActiveSlotIndex(index)
+                setSelectedPluginUri(uri)
+                // Scroll to parameter panel
+                setTimeout(() => {
+                  document.getElementById('plugin-parameters')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }, 50)
+              }}
+              onPluginReorder={(uris) => chain && reorder.mutate({ chainId: chain.id, order: uris })}
+              onToggleBypass={(uri, bypass) => chain && toggleBypass.mutate({ chainId: chain.id, uri, bypass })}
+              onDeletePlugin={(uri) => chain && removePlugin.mutate({ chainId: chain.id, uri })}
+              onMuteToggle={() => updateChainSlot(slot.id, { muted: !slot.muted })}
+              onSoloToggle={() => updateChainSlot(slot.id, { solo: !slot.solo })}
+            />
           )
         })}
-
-        {/* Signal Routing Card - Last column */}
       </div>
+
+      {/* Bottom Routing Panel */}
+      <BottomRoutingPanel
+        chainSlots={chainSlots}
+        routing={routing}
+        activeSlotIndex={activeSlotIndex}
+        onAddChain={addChainSlot}
+        onRemoveChain={removeChainSlot}
+        onSetRoutingMode={setRoutingMode}
+        onSetActiveSlot={setActiveSlotIndex}
+        canAddChain={chainSlots.length < MAX_CHAINS}
+        canRemoveChain={chainSlots.length > MIN_CHAINS}
+      />
+
+      {/* Selected Plugin Parameters - Bottom of page */}
+      {selectedPluginUri && activeChain && (() => {
+        const selectedPlugin = activeChain.plugins.find(p => p.uri === selectedPluginUri)
+        const selectedMeta = pluginMetaByUri[selectedPluginUri]
+        if (!selectedPlugin) return null
+        return (
+          <div className="card" style={{ marginTop: 16 }} id="plugin-parameters">
+            <ParameterPanel
+              plugin={selectedPlugin}
+              meta={selectedMeta}
+              onChange={(paramIndex, value) => {
+                setParameter.mutate({ uri: selectedPluginUri, paramIndex, value })
+              }}
+              onSavePreset={() => handleSavePreset(selectedPluginUri)}
+            />
+          </div>
+        )
+      })()}
 
       {/* Latency Overlay - Temporarily disabled
       {activeChain && (
@@ -4305,93 +3009,6 @@ export function ChainFlowPage() {
         onClose={() => setDetailsPlugin(null)}
         onAdd={(uri) => { addPlugin.mutate(uri); setDetailsPlugin(null); }}
       />
-
-      {/* File Storage Reference */}
-      <div className="card" style={{
-        marginTop: 24,
-        background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(20, 20, 30, 0.98))',
-        border: '1px solid rgba(100, 100, 120, 0.2)',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          marginBottom: 16,
-          paddingBottom: 12,
-          borderBottom: '1px solid rgba(100, 100, 120, 0.15)'
-        }}>
-          <FolderOpen size={18} style={{ color: '#64748b' }} />
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8', margin: 0 }}>File Storage Locations</h3>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-          {/* NAM Models */}
-          <div style={{
-            padding: 12,
-            background: 'rgba(255, 107, 53, 0.08)',
-            borderRadius: 8,
-            border: '1px solid rgba(255, 107, 53, 0.2)'
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#ff6b35', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Guitar size={14} />
-              NAM Models (.nam)
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
-              <div><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/.local/share/map2/nam</code> <span style={{ color: '#64748b' }}>primary</span></div>
-              <div style={{ marginTop: 4 }}><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/NAM/models</code></div>
-              <div style={{ marginTop: 4 }}><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>/var/lib/map2/nam</code> <span style={{ color: '#64748b' }}>system</span></div>
-            </div>
-          </div>
-
-          {/* Cabinet IR */}
-          <div style={{
-            padding: 12,
-            background: 'rgba(255, 184, 77, 0.08)',
-            borderRadius: 8,
-            border: '1px solid rgba(255, 184, 77, 0.2)'
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#ffb84d', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Speaker size={14} />
-              Cabinet IR (.wav)
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
-              <div><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/.local/share/map2/ir/cabinets</code> <span style={{ color: '#64748b' }}>primary</span></div>
-              <div style={{ marginTop: 4 }}><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/IRs</code> or <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/Impulses</code></div>
-              <div style={{ marginTop: 4 }}><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>/var/lib/map2/ir</code> <span style={{ color: '#64748b' }}>system</span></div>
-            </div>
-          </div>
-
-          {/* Reverb IR */}
-          <div style={{
-            padding: 12,
-            background: 'rgba(168, 85, 247, 0.08)',
-            borderRadius: 8,
-            border: '1px solid rgba(168, 85, 247, 0.2)'
-          }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#a855f7', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Waves size={14} />
-              Reverb IR (.wav)
-            </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>
-              <div><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/.local/share/map2/ir/reverbs</code> <span style={{ color: '#64748b' }}>primary</span></div>
-              <div style={{ marginTop: 4 }}><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/IRs</code> or <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>~/Impulses</code></div>
-              <div style={{ marginTop: 4 }}><code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 3 }}>/var/lib/map2/ir</code> <span style={{ color: '#64748b' }}>system</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{
-          marginTop: 12,
-          fontSize: 10,
-          color: '#64748b',
-          display: 'flex',
-          gap: 16,
-          flexWrap: 'wrap'
-        }}>
-          <span>Supported IR formats: <strong>.wav</strong>, <strong>.flac</strong>, <strong>.aiff</strong></span>
-          <span>Upload directory: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: 2 }}>/var/lib/map2/irs/user</code></span>
-        </div>
-      </div>
 
       {/* Audio Configuration Dialog */}
       <AudioConfigDialog
@@ -4665,17 +3282,102 @@ function ParameterPanel({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Control', 'Mix', 'Input', 'Output']))
   
   if (!meta) {
+    const isNativePlugin = plugin.uri.startsWith('urn:map2:') || plugin.uri.startsWith('http://map2-audio.local/')
+
     return (
       <div style={{
-        padding: 16,
+        padding: 20,
         borderRadius: 12,
-        background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(0,0,0,0.2) 100%)',
-        border: '1px solid rgba(255, 107, 53, 0.3)',
-        textAlign: 'center',
+        background: isNativePlugin
+          ? 'linear-gradient(135deg, rgba(55, 214, 201, 0.08) 0%, rgba(0,0,0,0.2) 100%)'
+          : 'linear-gradient(135deg, rgba(100, 100, 120, 0.1) 0%, rgba(0,0,0,0.2) 100%)',
+        border: `1px solid ${isNativePlugin ? 'rgba(55, 214, 201, 0.25)' : 'rgba(100, 100, 120, 0.25)'}`,
       }}>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 6 }}>Plugin not found in metadata</div>
-        <div style={{ fontSize: 11, color: '#888' }}>URI: {plugin.uri}</div>
-        <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>Try clicking Refresh to reload plugin data.</div>
+        {isNativePlugin ? (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 12,
+              paddingBottom: 12,
+              borderBottom: '1px solid rgba(55, 214, 201, 0.15)'
+            }}>
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, rgba(55, 214, 201, 0.2), rgba(55, 214, 201, 0.05))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+              }}>
+                🎛️
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#37d6c9' }}>Native Plugin</div>
+                <div style={{ fontSize: 11, color: '#888' }}>Built-in audio processor</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>
+              This processor has a dedicated control panel in the <strong style={{ color: '#37d6c9' }}>Native Plugins</strong> section below.
+              Expand it to access the full interface with real-time visualization and optimized controls.
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 12,
+              paddingBottom: 12,
+              borderBottom: '1px solid rgba(100, 100, 120, 0.15)'
+            }}>
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, rgba(100, 100, 120, 0.2), rgba(100, 100, 120, 0.05))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+              }}>
+                🔌
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#94a3b8' }}>LV2 / VST3 Parameters</div>
+                <div style={{ fontSize: 11, color: '#666' }}>Plugin metadata not loaded</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 12 }}>
+              This panel displays parameters for <strong style={{ color: '#94a3b8' }}>LV2</strong> and <strong style={{ color: '#94a3b8' }}>VST3</strong> plugins
+              scanned from your system. The plugin metadata hasn't been loaded yet.
+            </div>
+            <div style={{
+              fontSize: 11,
+              color: '#666',
+              padding: '8px 12px',
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <span style={{ color: '#64748b' }}>URI:</span>
+              <code style={{
+                fontSize: 10,
+                color: '#94a3b8',
+                background: 'rgba(255,255,255,0.05)',
+                padding: '2px 6px',
+                borderRadius: 3,
+                wordBreak: 'break-all'
+              }}>{plugin.uri}</code>
+            </div>
+          </>
+        )}
       </div>
     )
   }

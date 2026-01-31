@@ -24,6 +24,7 @@ import { PhaseCorrelationMeter } from '../Visualizations/PhaseCorrelationMeter'
 const PLUGINS = {
   nam: {
     id: 'nam',
+    type: 'NAM',
     name: 'Neural Amp Modeler',
     shortName: 'NAM',
     icon: '🎸',
@@ -36,7 +37,8 @@ const PLUGINS = {
   },
   cabinet: {
     id: 'cabinet',
-    name: 'Cabinet IR',
+    type: 'Cabinet',
+    name: 'Graphical IR Loader',
     shortName: 'Cabinet',
     icon: '🎛️',
     creator: 'James Stubbs',
@@ -48,7 +50,8 @@ const PLUGINS = {
   },
   reverb: {
     id: 'reverb',
-    name: 'Reverb IR',
+    type: 'Reverb IR',
+    name: 'Convolution Reverb',
     shortName: 'Reverb',
     icon: '✨',
     creator: 'MAP2 Audio',
@@ -60,6 +63,7 @@ const PLUGINS = {
   },
   delay: {
     id: 'delay',
+    type: 'Delay',
     name: 'Cocoa Delay',
     shortName: 'Delay',
     icon: '☕',
@@ -72,6 +76,7 @@ const PLUGINS = {
   },
   autotune: {
     id: 'autotune',
+    type: 'Pitch',
     name: 'Zita AT1',
     shortName: 'AT1',
     icon: '🎤',
@@ -84,6 +89,7 @@ const PLUGINS = {
   },
   triplespread: {
     id: 'triplespread',
+    type: 'Stereo',
     name: 'TripleSpread',
     shortName: 'Spread',
     icon: '↔️',
@@ -96,6 +102,7 @@ const PLUGINS = {
   },
   valentine: {
     id: 'valentine',
+    type: 'Compressor',
     name: 'Valentine',
     shortName: 'Val',
     icon: '💔',
@@ -108,6 +115,7 @@ const PLUGINS = {
   },
   zlequalizer: {
     id: 'zlequalizer',
+    type: 'Equalizer',
     name: 'ZL Equalizer',
     shortName: 'ZL EQ',
     icon: '📊',
@@ -120,6 +128,7 @@ const PLUGINS = {
   },
   freeverb3: {
     id: 'freeverb3',
+    type: 'Reverb',
     name: 'Freeverb3',
     shortName: 'FV3',
     icon: '🌊',
@@ -132,6 +141,7 @@ const PLUGINS = {
   },
   whammy: {
     id: 'whammy',
+    type: 'Pitch Shift',
     name: 'dm-Whammy',
     shortName: 'Whammy',
     icon: '🎵',
@@ -144,6 +154,7 @@ const PLUGINS = {
   },
   dragonfly: {
     id: 'dragonfly',
+    type: 'Reverb',
     name: 'Dragonfly Reverb',
     shortName: 'Dragonfly',
     icon: '🐉',
@@ -378,7 +389,7 @@ function CollapsiblePluginRow({
           {plugin.icon}
         </div>
 
-        {/* Plugin name */}
+        {/* Plugin type and name */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontSize: 14,
@@ -386,35 +397,19 @@ function CollapsiblePluginRow({
             color: plugin.color,
             letterSpacing: 0.3,
           }}>
-            {plugin.name}
+            {plugin.type}
           </div>
           <div style={{
             fontSize: 10,
             color: '#666',
             marginTop: 1,
           }}>
-            {plugin.description}
+            {plugin.name}
           </div>
         </div>
 
         {/* Status dot */}
         <StatusDot active={isActive && !isBypassed} color={plugin.color} />
-
-        {/* Bypass toggle */}
-        <BypassToggle
-          bypassed={isBypassed}
-          onToggle={onBypassChange}
-          color={plugin.color}
-          disabled={!isActive}
-        />
-
-        {/* Quick mix slider */}
-        <QuickMixSlider
-          value={mixValue}
-          onChange={onMixChange}
-          color={plugin.color}
-          disabled={!isActive || isBypassed}
-        />
       </div>
 
       {/* Expandable content */}
