@@ -53,10 +53,187 @@ import {
   Sliders,       // Audio Config
   PlayCircle,    // Automation Timeline
   X,             // Close
+  // Signal flow icons
+  ArrowRightToLine, // Signal input
+  ArrowLeftFromLine, // Signal output
+  Circle,        // Signal indicator
+  Signal,        // Signal strength
+  Minus,         // Level indicator
+  // View mode icons
+  LayoutList,    // Detailed view
+  LayoutGrid,    // Compact/horizontal view
 } from 'lucide-react'
+import { HorizontalSignalChain } from '../components/HorizontalSignalChain'
 import type { Chain, ChainPlugin, ChainsResponse, HistoryStatus, Plugin, PluginParameter, PluginUIInfo, PluginFormat } from '../../map2/types'
+
+// ============================================================================
+// N-Chain Flow System Types
+// ============================================================================
+
+interface ChainSlot {
+  id: string;              // Unique slot identifier
+  chainId: number | null;  // Selected chain ID (null = empty)
+  label: string;           // Display label (A, B, C, D, E, F)
+  color: string;           // Theme color
+  dryWetMix: number;       // Per-chain dry/wet (0-100)
+  muted: boolean;          // Per-chain mute
+  solo: boolean;           // Per-chain solo
+}
+
+type RoutingMode =
+  | 'parallel_blend'    // All chains mixed with individual levels
+  | 'ab_switch'         // Toggle between any single chain
+  | 'series'            // Sequential A→B→C→...
+  | 'parameter_morph'   // Interpolate between two chains
+  | 'sidechain';        // Plugin sidechain routing view
+
+interface RoutingConfig {
+  mode: RoutingMode;
+  activeSlotId: string | null;
+  blendPositions: Record<string, number>;
+  morphProgress: number;
+  morphSourceSlotId: string | null;
+  morphTargetSlotId: string | null;
+  seriesOrder: string[];
+}
+
+// Slot color palette - up to 6 chains
+const SLOT_COLORS = [
+  { label: 'A', color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.15)' },    // Cyan
+  { label: 'B', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },   // Purple
+  { label: 'C', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)' },    // Green
+  { label: 'D', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },   // Amber
+  { label: 'E', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },   // Pink
+  { label: 'F', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },    // Teal
+]
+
+const MAX_CHAINS = 6
+const MIN_CHAINS = 2
+const DEFAULT_CHAIN_COUNT = 3
+
+// Create default chain slots
+function createDefaultSlots(count: number = DEFAULT_CHAIN_COUNT): ChainSlot[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `slot-${i}`,
+    chainId: null,
+    label: SLOT_COLORS[i].label,
+    color: SLOT_COLORS[i].color,
+    dryWetMix: 100,
+    muted: false,
+    solo: false,
+  }))
+}
+
+// Create default routing config
+function createDefaultRouting(): RoutingConfig {
+  return {
+    mode: 'parallel_blend',
+    activeSlotId: 'slot-0',
+    blendPositions: {},
+    morphProgress: 0.5,
+    morphSourceSlotId: null,
+    morphTargetSlotId: null,
+    seriesOrder: [],
+  }
+}
+
+// Migration function - converts old A/B format to new N-chain format
+function migrateLocalStorage(): { slots: ChainSlot[]; routing: RoutingConfig; activeIndex: number } | null {
+  const MIGRATION_KEY = 'map2_flow_migrated_v2'
+
+  // Check if already migrated
+  if (localStorage.getItem(MIGRATION_KEY) === 'true') {
+    return null
+  }
+
+  try {
+    // Read old state
+    const oldSelectedChain = localStorage.getItem('map2_flow_selected_chain')
+    const oldSecondChain = localStorage.getItem('map2_flow_second_chain')
+    const oldActiveSlot = localStorage.getItem('map2_flow_active_slot')
+    const oldRoutingMode = localStorage.getItem('map2_flow_routing_mode')
+    const oldChainMix = localStorage.getItem('map2_flow_chain_mix')
+
+    // If no old data exists, skip migration
+    if (!oldSelectedChain && !oldSecondChain) {
+      localStorage.setItem(MIGRATION_KEY, 'true')
+      return null
+    }
+
+    // Create new slots - 3 by default, first two with migrated data
+    const newSlots: ChainSlot[] = [
+      {
+        id: 'slot-0',
+        chainId: oldSelectedChain ? parseInt(oldSelectedChain, 10) : null,
+        label: 'A',
+        color: '#00d4ff',
+        dryWetMix: 100,
+        muted: false,
+        solo: false,
+      },
+      {
+        id: 'slot-1',
+        chainId: oldSecondChain ? parseInt(oldSecondChain, 10) : null,
+        label: 'B',
+        color: '#8b5cf6',
+        dryWetMix: 100,
+        muted: false,
+        solo: false,
+      },
+      {
+        id: 'slot-2',
+        chainId: null, // New third slot starts empty
+        label: 'C',
+        color: '#22c55e',
+        dryWetMix: 100,
+        muted: false,
+        solo: false,
+      },
+    ]
+
+    // Map old routing mode to new format
+    const modeMap: Record<string, RoutingMode> = {
+      'parallel': 'parallel_blend',
+      'ab_switch': 'ab_switch',
+      'series': 'series',
+    }
+
+    const mixValue = oldChainMix ? parseInt(oldChainMix, 10) : 50
+
+    const newRouting: RoutingConfig = {
+      mode: modeMap[oldRoutingMode || 'parallel'] || 'parallel_blend',
+      activeSlotId: oldActiveSlot === '2' ? 'slot-1' : 'slot-0',
+      blendPositions: {
+        'slot-0': 100 - mixValue,
+        'slot-1': mixValue,
+        'slot-2': 100,
+      },
+      morphProgress: 0.5,
+      morphSourceSlotId: null,
+      morphTargetSlotId: null,
+      seriesOrder: ['slot-0', 'slot-1', 'slot-2'],
+    }
+
+    const activeIndex = oldActiveSlot === '2' ? 1 : 0
+
+    // Save new format
+    localStorage.setItem('map2_flow_chain_slots_v2', JSON.stringify(newSlots))
+    localStorage.setItem('map2_flow_routing_v2', JSON.stringify(newRouting))
+    localStorage.setItem('map2_flow_active_slot_v2', String(activeIndex))
+
+    // Mark migration complete
+    localStorage.setItem(MIGRATION_KEY, 'true')
+
+    return { slots: newSlots, routing: newRouting, activeIndex }
+  } catch (e) {
+    console.error('Migration failed:', e)
+    localStorage.setItem(MIGRATION_KEY, 'true')
+    return null
+  }
+}
 // Plugin visualization components
 import { AudioMeter, GainReductionMeter } from '../components/AudioMeter'
+import { AudioMeteringCard } from '../components/Visualizations/AudioMeteringCard'
 // Native plugin cards for Flows
 import { CabinetIRFlowCard } from '../components/NativePlugins/CabinetIRFlowCard'
 import { useNativePlugins } from '../hooks/useNativePlugins'
@@ -741,193 +918,265 @@ function PluginFlowItem({
         onDragEnd={onDragEnd}
         onDrop={(e) => onDrop?.(e, plugin.uri)}
         style={{
-          width: '100%',
-          border: isSelected ? `2px solid ${catConfig.color}` : isDragOver ? `2px dashed ${catConfig.color}` : '1px solid var(--surface-border)',
-          borderRadius: 8,
-          padding: '8px 10px',
-          background: plugin.bypassed ? 'rgba(30, 30, 30, 0.6)' : catConfig.bg,
+          width: '70%',
+          minWidth: 160,
+          maxWidth: 240,
+          margin: '0 auto',
+          border: isSelected ? `2px solid ${catConfig.color}` : isDragOver ? `2px dashed ${catConfig.color}` : `1px solid ${catConfig.color}40`,
+          borderRadius: 10,
+          padding: '12px 10px 14px',
+          background: plugin.bypassed
+            ? 'rgba(30, 30, 30, 0.6)'
+            : `linear-gradient(135deg, ${catConfig.bg} 0%, rgba(0,0,0,0.4) 100%)`,
           opacity: isDragging ? 0.5 : 1,
-          borderLeft: `3px solid ${plugin.bypassed ? '#666' : catConfig.color}`,
+          borderLeft: `4px solid ${plugin.bypassed ? '#666' : catConfig.color}`,
+          borderTop: `1px solid ${plugin.bypassed ? '#444' : catConfig.color}30`,
           cursor: 'grab',
           transition: 'all 0.2s ease',
           transform: isDragOver ? 'scale(1.02)' : 'scale(1)',
           position: 'relative',
+          boxShadow: isSelected
+            ? `0 0 20px ${catConfig.color}50, inset 0 0 15px ${catConfig.color}15`
+            : plugin.bypassed
+              ? 'none'
+              : `0 2px 8px rgba(0,0,0,0.3), 0 0 12px ${catConfig.color}20`,
         }}
         onClick={() => onSelect(plugin.uri)}
       >
-        {/* Level meters - left side (input) with glow effect */}
+        {/* Compact Signal Input Widget - Left side */}
         <div style={{
           position: 'absolute',
-          left: -12,
+          left: -8,
           top: '50%',
           transform: 'translateY(-50%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: 2,
-          height: '70%',
+          zIndex: 5,
         }}>
-          {/* Outer glow container */}
+          {/* Stereo/Mono indicator */}
           <div style={{
-            position: 'relative',
-            width: 6,
-            height: '100%',
+            fontSize: 6,
+            fontWeight: 700,
+            color: isStereo ? '#22c55e' : '#64748b',
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
           }}>
-            {/* Glow effect */}
+            {isStereo ? 'ST' : 'M'}
+          </div>
+          {/* Input signal indicator with icon */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              background: levelIn > 0.1
+                ? levelIn > 0.9 ? 'rgba(239, 68, 68, 0.95)' : levelIn > 0.6 ? 'rgba(245, 158, 11, 0.95)' : 'rgba(34, 197, 94, 0.95)'
+                : 'rgba(51, 65, 85, 0.6)',
+              border: `1.5px solid ${levelIn > 0.1
+                ? levelIn > 0.9 ? '#ef4444' : levelIn > 0.6 ? '#f59e0b' : '#22c55e'
+                : 'rgba(100, 116, 139, 0.4)'}`,
+              boxShadow: levelIn > 0.1
+                ? `0 0 8px ${levelIn > 0.9 ? '#ef4444' : levelIn > 0.6 ? '#f59e0b' : '#22c55e'}80`
+                : '0 1px 3px rgba(0,0,0,0.3)',
+              transition: 'all 0.06s ease',
+            }}
+            title={`Input Level: ${Math.round(levelIn * 100)}%${levelIn > 0.9 ? ' ⚠ CLIP' : ''}`}
+          >
+            <ArrowRightToLine size={9} style={{
+              color: levelIn > 0.1 ? '#fff' : 'rgba(255,255,255,0.35)',
+              filter: levelIn > 0.9 ? 'drop-shadow(0 0 2px #fff)' : 'none',
+            }} />
+          </div>
+          {/* Vertical level meter - gradient fill */}
+          <div style={{
+            width: 4,
+            height: 24,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.3))',
+            borderRadius: 2,
+            overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.08)',
+            position: 'relative',
+            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)',
+          }}>
+            {/* Meter fill with gradient */}
             <div style={{
               position: 'absolute',
-              width: 12,
-              height: '100%',
-              left: -3,
-              background: levelIn > 0.8 ? 'rgba(255, 107, 107, 0.3)' : levelIn > 0.5 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)',
-              filter: 'blur(4px)',
-              borderRadius: 4,
-              opacity: levelIn > 0.1 ? 1 : 0,
-              transition: 'all 0.1s ease',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: `${Math.min(100, levelIn * 100)}%`,
+              background: levelIn > 0.9
+                ? 'linear-gradient(to top, #ef4444, #f87171)'
+                : levelIn > 0.6
+                  ? 'linear-gradient(to top, #f59e0b, #fbbf24)'
+                  : 'linear-gradient(to top, #22c55e, #4ade80)',
+              borderRadius: 1,
+              transition: 'height 0.04s linear',
+              boxShadow: levelIn > 0.1 ? '0 0 4px currentColor' : 'none',
             }} />
-            {/* Track background */}
-            <div style={{
-              position: 'relative',
-              width: 6,
-              height: '100%',
-              background: 'linear-gradient(180deg, rgba(255,100,100,0.2) 0%, rgba(255,200,0,0.2) 50%, rgba(50,200,100,0.2) 100%)',
-              borderRadius: 3,
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: 'inset 0 0 4px rgba(0,0,0,0.5)',
-            }}>
-              {/* Level fill */}
+            {/* Peak line indicator */}
+            {levelIn > 0.7 && (
               <div style={{
                 position: 'absolute',
-                bottom: 0,
-                width: '100%',
-                height: `${Math.min(100, levelIn * 100)}%`,
-                background: levelIn > 0.8 
-                  ? 'linear-gradient(180deg, #ff4444 0%, #ff6b6b 100%)' 
-                  : levelIn > 0.5 
-                    ? 'linear-gradient(180deg, #f59e0b 0%, #fbbf24 100%)' 
-                    : 'linear-gradient(180deg, #22c55e 0%, #4ade80 100%)',
-                boxShadow: levelIn > 0.8 
-                  ? '0 0 8px #ff6b6b' 
-                  : levelIn > 0.5 
-                    ? '0 0 8px #f59e0b' 
-                    : '0 0 8px #22c55e',
-                transition: 'height 0.05s ease, background 0.2s ease',
-                borderRadius: '0 0 2px 2px',
+                bottom: `${Math.min(98, levelIn * 100)}%`,
+                left: 0,
+                right: 0,
+                height: 1,
+                background: levelIn > 0.9 ? '#fff' : '#fbbf24',
+                opacity: 0.8,
               }} />
-              {/* Peak indicator */}
-              {levelIn > 0.9 && (
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  width: '100%',
-                  height: 3,
-                  background: '#ff0000',
-                  boxShadow: '0 0 10px #ff0000',
-                  animation: 'activeGlow 0.3s ease-in-out infinite',
-                }} />
-              )}
-            </div>
+            )}
           </div>
-          <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>IN</span>
+          {/* Signal present dot */}
+          <div style={{
+            width: 4,
+            height: 4,
+            borderRadius: '50%',
+            background: levelIn > 0.05 ? '#22c55e' : '#334155',
+            boxShadow: levelIn > 0.05 ? '0 0 4px #22c55e' : 'none',
+            transition: 'all 0.1s ease',
+          }} />
         </div>
 
-        {/* Level meters - right side (output) with glow effect */}
+        {/* Compact Signal Output Widget - Right side */}
         <div style={{
           position: 'absolute',
-          right: -12,
+          right: -8,
           top: '50%',
           transform: 'translateY(-50%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: 2,
-          height: '70%',
+          zIndex: 5,
         }}>
-          {/* Outer glow container */}
+          {/* Gain change indicator */}
           <div style={{
-            position: 'relative',
-            width: 6,
-            height: '100%',
+            fontSize: 6,
+            fontWeight: 700,
+            color: levelOut > levelIn ? '#22c55e' : levelOut < levelIn ? '#f59e0b' : '#64748b',
+            letterSpacing: 0.5,
           }}>
-            {/* Glow effect */}
+            {levelOut > levelIn + 0.1 ? '+' : levelOut < levelIn - 0.1 ? '−' : '='}
+          </div>
+          {/* Output signal indicator with icon */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              background: levelOut > 0.1
+                ? levelOut > 0.9 ? 'rgba(239, 68, 68, 0.95)' : levelOut > 0.6 ? 'rgba(245, 158, 11, 0.95)' : 'rgba(34, 197, 94, 0.95)'
+                : 'rgba(51, 65, 85, 0.6)',
+              border: `1.5px solid ${levelOut > 0.1
+                ? levelOut > 0.9 ? '#ef4444' : levelOut > 0.6 ? '#f59e0b' : '#22c55e'
+                : 'rgba(100, 116, 139, 0.4)'}`,
+              boxShadow: levelOut > 0.1
+                ? `0 0 8px ${levelOut > 0.9 ? '#ef4444' : levelOut > 0.6 ? '#f59e0b' : '#22c55e'}80`
+                : '0 1px 3px rgba(0,0,0,0.3)',
+              transition: 'all 0.06s ease',
+            }}
+            title={`Output Level: ${Math.round(levelOut * 100)}%${levelOut > 0.9 ? ' ⚠ CLIP' : ''}`}
+          >
+            <ArrowLeftFromLine size={9} style={{
+              color: levelOut > 0.1 ? '#fff' : 'rgba(255,255,255,0.35)',
+              filter: levelOut > 0.9 ? 'drop-shadow(0 0 2px #fff)' : 'none',
+            }} />
+          </div>
+          {/* Vertical level meter - gradient fill */}
+          <div style={{
+            width: 4,
+            height: 24,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.3))',
+            borderRadius: 2,
+            overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.08)',
+            position: 'relative',
+            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)',
+          }}>
+            {/* Meter fill with gradient */}
             <div style={{
               position: 'absolute',
-              width: 12,
-              height: '100%',
-              left: -3,
-              background: levelOut > 0.8 ? 'rgba(255, 107, 107, 0.3)' : levelOut > 0.5 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)',
-              filter: 'blur(4px)',
-              borderRadius: 4,
-              opacity: levelOut > 0.1 ? 1 : 0,
-              transition: 'all 0.1s ease',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: `${Math.min(100, levelOut * 100)}%`,
+              background: levelOut > 0.9
+                ? 'linear-gradient(to top, #ef4444, #f87171)'
+                : levelOut > 0.6
+                  ? 'linear-gradient(to top, #f59e0b, #fbbf24)'
+                  : 'linear-gradient(to top, #22c55e, #4ade80)',
+              borderRadius: 1,
+              transition: 'height 0.04s linear',
+              boxShadow: levelOut > 0.1 ? '0 0 4px currentColor' : 'none',
             }} />
-            {/* Track background */}
-            <div style={{
-              position: 'relative',
-              width: 6,
-              height: '100%',
-              background: 'linear-gradient(180deg, rgba(255,100,100,0.2) 0%, rgba(255,200,0,0.2) 50%, rgba(50,200,100,0.2) 100%)',
-              borderRadius: 3,
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: 'inset 0 0 4px rgba(0,0,0,0.5)',
-            }}>
-              {/* Level fill */}
+            {/* Peak line indicator */}
+            {levelOut > 0.7 && (
               <div style={{
                 position: 'absolute',
-                bottom: 0,
-                width: '100%',
-                height: `${Math.min(100, levelOut * 100)}%`,
-                background: levelOut > 0.8 
-                  ? 'linear-gradient(180deg, #ff4444 0%, #ff6b6b 100%)' 
-                  : levelOut > 0.5 
-                    ? 'linear-gradient(180deg, #f59e0b 0%, #fbbf24 100%)' 
-                    : 'linear-gradient(180deg, #22c55e 0%, #4ade80 100%)',
-                boxShadow: levelOut > 0.8 
-                  ? '0 0 8px #ff6b6b' 
-                  : levelOut > 0.5 
-                    ? '0 0 8px #f59e0b' 
-                    : '0 0 8px #22c55e',
-                transition: 'height 0.05s ease, background 0.2s ease',
-                borderRadius: '0 0 2px 2px',
+                bottom: `${Math.min(98, levelOut * 100)}%`,
+                left: 0,
+                right: 0,
+                height: 1,
+                background: levelOut > 0.9 ? '#fff' : '#fbbf24',
+                opacity: 0.8,
               }} />
-              {/* Peak indicator */}
-              {levelOut > 0.9 && (
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  width: '100%',
-                  height: 3,
-                  background: '#ff0000',
-                  boxShadow: '0 0 10px #ff0000',
-                  animation: 'activeGlow 0.3s ease-in-out infinite',
-                }} />
-              )}
-            </div>
+            )}
           </div>
-          <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>OUT</span>
+          {/* Signal flow indicator */}
+          <div style={{
+            width: 4,
+            height: 4,
+            borderRadius: '50%',
+            background: levelOut > 0.05 ? (plugin.bypassed ? '#64748b' : '#22c55e') : '#334155',
+            boxShadow: levelOut > 0.05 && !plugin.bypassed ? '0 0 4px #22c55e' : 'none',
+            transition: 'all 0.1s ease',
+          }} />
         </div>
+        {/* Category color bar at top */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: plugin.bypassed
+            ? 'linear-gradient(90deg, #666, #444)'
+            : `linear-gradient(90deg, ${catConfig.color}, ${catConfig.color}80)`,
+          borderRadius: '10px 10px 0 0',
+          boxShadow: plugin.bypassed ? 'none' : `0 0 8px ${catConfig.color}60`,
+        }} />
+
         {/* Header row: Drag handle + Icon + Name + Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8, marginTop: 2 }}>
           <span
-            style={{ cursor: 'grab', color: 'var(--text-muted)', flexShrink: 0 }}
+            style={{ cursor: 'grab', color: catConfig.color, flexShrink: 0, opacity: 0.6 }}
             title="Drag to reorder"
           >
-            <GripVertical size={14} />
+            <GripVertical size={12} />
           </span>
           <span style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 26,
-            height: 26,
+            width: 24,
+            height: 24,
             borderRadius: 6,
-            background: `linear-gradient(135deg, ${catConfig.bg} 0%, rgba(0,0,0,0.2) 100%)`,
+            background: plugin.bypassed
+              ? 'rgba(50, 50, 50, 0.6)'
+              : `linear-gradient(135deg, ${catConfig.color}30 0%, ${catConfig.color}15 100%)`,
             color: catConfig.color,
             flexShrink: 0,
-            boxShadow: plugin.bypassed ? 'none' : `0 0 8px ${catConfig.color}40, inset 0 0 8px ${catConfig.color}20`,
-            border: `1px solid ${catConfig.color}40`,
+            boxShadow: plugin.bypassed ? 'none' : `0 0 10px ${catConfig.color}40`,
+            border: `1.5px solid ${plugin.bypassed ? '#555' : catConfig.color}60`,
             position: 'relative',
             overflow: 'hidden',
           }}>
@@ -936,184 +1185,207 @@ function PluginFlowItem({
               <div style={{
                 position: 'absolute',
                 inset: 0,
-                background: `linear-gradient(135deg, transparent 0%, ${catConfig.color}30 50%, transparent 100%)`,
+                background: `linear-gradient(135deg, transparent 0%, ${catConfig.color}25 50%, transparent 100%)`,
                 animation: 'shimmer 3s ease-in-out infinite',
-                opacity: 0.5,
+                opacity: 0.6,
               }} />
             )}
-            <CategoryIcon size={14} style={{ 
-              filter: plugin.bypassed ? 'none' : `drop-shadow(0 0 3px ${catConfig.color})`,
+            <CategoryIcon size={13} style={{
+              filter: plugin.bypassed ? 'grayscale(1)' : `drop-shadow(0 0 4px ${catConfig.color})`,
               position: 'relative',
               zIndex: 1,
             }} />
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="stat-label" style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={displayName}>
+            {/* Effect Type as Main Title */}
+            <div style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: plugin.bypassed ? '#888' : catConfig.color,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              textShadow: plugin.bypassed ? 'none' : `0 0 10px ${catConfig.color}50`,
+              letterSpacing: 0.3,
+            }} title={category}>
+              {category}
+            </div>
+            {/* Plugin Name as Subtext */}
+            <div className="stat-label" style={{
+              fontSize: 9,
+              color: plugin.bypassed ? '#666' : 'var(--text-muted)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              marginTop: 2,
+            }} title={displayName}>
               {displayName}
             </div>
           </div>
-          <span 
-            className={`pill ${plugin.bypassed ? 'warn' : 'success'}`} 
-            style={{ 
-              fontSize: 9, 
-              padding: '2px 8px',
-              boxShadow: plugin.bypassed ? 'none' : '0 0 8px rgba(34, 197, 94, 0.5)',
-              animation: plugin.bypassed ? 'none' : 'activeGlow 2s ease-in-out infinite',
+          <span
+            style={{
+              fontSize: 8,
+              fontWeight: 600,
+              padding: '2px 6px',
+              borderRadius: 4,
+              background: plugin.bypassed
+                ? 'rgba(100, 100, 100, 0.3)'
+                : `${catConfig.color}25`,
+              color: plugin.bypassed ? '#888' : catConfig.color,
+              border: `1px solid ${plugin.bypassed ? '#555' : catConfig.color}50`,
+              boxShadow: plugin.bypassed ? 'none' : `0 0 6px ${catConfig.color}40`,
               position: 'relative',
               overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
             }}
           >
-            {/* Animated dot indicator */}
-            {!plugin.bypassed && (
-              <span style={{
-                display: 'inline-block',
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#22c55e',
-                marginRight: 4,
-                boxShadow: '0 0 6px #22c55e',
-                animation: 'breathe 1s ease-in-out infinite',
-              }} />
-            )}
-            {plugin.bypassed ? 'Bypass' : 'Live'}
+            {/* Status dot */}
+            <span style={{
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: plugin.bypassed ? '#666' : catConfig.color,
+              boxShadow: plugin.bypassed ? 'none' : `0 0 4px ${catConfig.color}`,
+              animation: plugin.bypassed ? 'none' : 'breathe 1.5s ease-in-out infinite',
+            }} />
+            {plugin.bypassed ? 'OFF' : 'ON'}
           </span>
         </div>
 
-        {/* Info row: Author + Category + Ports (matching plugin browser style) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-          <span className="muted" style={{ fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 70 }}>
-            {author}
-          </span>
+        {/* Compact info row: Ports + Params */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          marginBottom: 6,
+          padding: '3px 0',
+          borderTop: `1px solid ${catConfig.color}15`,
+          borderBottom: `1px solid ${catConfig.color}15`,
+        }}>
           <span style={{
-            fontSize: 9,
-            padding: '0px 4px',
-            borderRadius: 3,
-            background: catConfig.bg,
-            color: catConfig.color,
+            fontSize: 8,
             fontWeight: 500,
-          }}>
-            {category}
-          </span>
-          <span className={`pill ${isStereo ? 'success' : 'muted'}`} style={{ fontSize: 9, padding: '0px 3px' }} title={`${inPorts} in, ${outPorts} out`}>
+            color: isStereo ? catConfig.color : '#666',
+            padding: '1px 4px',
+            background: isStereo ? `${catConfig.color}15` : 'rgba(100,100,100,0.2)',
+            borderRadius: 3,
+          }} title={`${inPorts} in, ${outPorts} out`}>
             {portConfig}
           </span>
           {paramCount > 0 && (
-            <span className="pill muted" style={{ fontSize: 9, padding: '0px 3px' }} title={`${paramCount} parameters`}>
-              {paramCount}p
+            <span style={{
+              fontSize: 8,
+              color: '#888',
+              fontFamily: 'monospace',
+            }} title={`${paramCount} parameters`}>
+              {paramCount}P
             </span>
           )}
         </div>
 
-        {/* UI Capability Badges */}
+        {/* UI Capability Badges - Compact inline */}
         {(hasMeters || hasTuner || hasSpectrum || hasNativeUI) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 3,
+            marginBottom: 6,
+            flexWrap: 'wrap',
+          }}>
             {hasMeters && (
-              <span 
-                style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8, 
-                  padding: '2px 5px', 
-                  background: 'rgba(16, 185, 129, 0.15)', 
-                  color: '#10b981',
-                  borderRadius: 4,
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
+              <span
+                style={{
+                  fontSize: 7,
+                  fontWeight: 600,
+                  padding: '1px 4px',
+                  background: `${catConfig.color}15`,
+                  color: catConfig.color,
+                  borderRadius: 3,
                 }}
-                title="Has output meters (gain reduction, level)"
+                title="Gain reduction/level meters"
               >
-                <Gauge size={9} /> METERS
+                <Gauge size={7} style={{ marginRight: 2, verticalAlign: 'middle' }} />M
               </span>
             )}
             {hasTuner && (
-              <span 
-                style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8, 
-                  padding: '2px 5px', 
-                  background: 'rgba(34, 211, 238, 0.15)', 
-                  color: '#22d3ee',
-                  borderRadius: 4,
-                  border: '1px solid rgba(34, 211, 238, 0.3)',
+              <span
+                style={{
+                  fontSize: 7,
+                  fontWeight: 600,
+                  padding: '1px 4px',
+                  background: `${catConfig.color}15`,
+                  color: catConfig.color,
+                  borderRadius: 3,
                 }}
-                title="Has tuner output"
+                title="Tuner output"
               >
-                <Radio size={9} /> TUNER
+                <Radio size={7} style={{ marginRight: 2, verticalAlign: 'middle' }} />T
               </span>
             )}
             {hasSpectrum && (
-              <span 
-                style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8, 
-                  padding: '2px 5px', 
-                  background: 'rgba(168, 85, 247, 0.15)', 
-                  color: '#a855f7',
-                  borderRadius: 4,
-                  border: '1px solid rgba(168, 85, 247, 0.3)',
+              <span
+                style={{
+                  fontSize: 7,
+                  fontWeight: 600,
+                  padding: '1px 4px',
+                  background: `${catConfig.color}15`,
+                  color: catConfig.color,
+                  borderRadius: 3,
                 }}
-                title="Has spectrum analyzer output"
+                title="Spectrum analyzer"
               >
-                <BarChart2 size={9} /> FFT
+                <BarChart2 size={7} style={{ marginRight: 2, verticalAlign: 'middle' }} />S
               </span>
             )}
             {hasNativeUI && (
-              <span 
-                style={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8, 
-                  padding: '2px 5px', 
-                  background: 'rgba(59, 130, 246, 0.15)', 
-                  color: '#3b82f6',
-                  borderRadius: 4,
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
+              <span
+                style={{
+                  fontSize: 7,
+                  fontWeight: 600,
+                  padding: '1px 4px',
+                  background: `${catConfig.color}15`,
+                  color: catConfig.color,
+                  borderRadius: 3,
                 }}
-                title={`Native UI available: ${uiInfo?.ui_types?.join(', ') || 'Unknown type'}`}
+                title={`Native UI: ${uiInfo?.ui_types?.join(', ') || 'GUI'}`}
               >
-                GUI
+                UI
               </span>
             )}
           </div>
         )}
 
-        {/* JUCE Performance Metrics Row */}
+        {/* JUCE Performance Metrics Row - Compact */}
         {(plugin.format || plugin.cpu_percent !== undefined || plugin.latency_samples || plugin.sidechain_source || plugin.latency_compensated) && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            marginBottom: 8,
-            padding: '4px 6px',
-            background: 'rgba(0, 0, 0, 0.2)',
-            borderRadius: 4,
-            border: '1px solid rgba(255, 255, 255, 0.05)',
+            justifyContent: 'center',
+            gap: 4,
+            marginBottom: 6,
+            flexWrap: 'wrap',
           }}>
             {/* Plugin Format Badge */}
             {plugin.format && plugin.format !== 'Unknown' && (
               <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8,
-                  padding: '2px 5px',
-                  background: plugin.format === 'VST3' ? 'rgba(74, 222, 128, 0.15)'
-                    : plugin.format === 'AudioUnit' ? 'rgba(96, 165, 250, 0.15)'
-                    : plugin.format === 'LV2' ? 'rgba(244, 114, 182, 0.15)'
-                    : 'rgba(251, 191, 36, 0.15)',
+                  fontSize: 7,
+                  fontWeight: 700,
+                  padding: '1px 4px',
+                  background: plugin.format === 'VST3' ? 'rgba(74, 222, 128, 0.2)'
+                    : plugin.format === 'AudioUnit' ? 'rgba(96, 165, 250, 0.2)'
+                    : plugin.format === 'LV2' ? 'rgba(244, 114, 182, 0.2)'
+                    : 'rgba(251, 191, 36, 0.2)',
                   color: plugin.format === 'VST3' ? '#4ade80'
                     : plugin.format === 'AudioUnit' ? '#60a5fa'
                     : plugin.format === 'LV2' ? '#f472b6'
                     : '#fbbf24',
                   borderRadius: 3,
-                  fontWeight: 600,
+                  letterSpacing: 0.3,
                 }}
                 title={`Plugin format: ${plugin.format}`}
               >
@@ -1125,23 +1397,21 @@ function PluginFlowItem({
             {plugin.cpu_percent !== undefined && plugin.cpu_percent > 0 && (
               <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8,
-                  padding: '2px 5px',
-                  background: plugin.cpu_percent > 30 ? 'rgba(239, 68, 68, 0.15)'
-                    : plugin.cpu_percent > 15 ? 'rgba(251, 191, 36, 0.15)'
-                    : 'rgba(100, 181, 246, 0.15)',
+                  fontSize: 7,
+                  fontWeight: 600,
+                  fontFamily: 'monospace',
+                  padding: '1px 4px',
+                  background: plugin.cpu_percent > 30 ? 'rgba(239, 68, 68, 0.2)'
+                    : plugin.cpu_percent > 15 ? 'rgba(251, 191, 36, 0.2)'
+                    : 'rgba(100, 181, 246, 0.2)',
                   color: plugin.cpu_percent > 30 ? '#ef4444'
                     : plugin.cpu_percent > 15 ? '#fbbf24'
                     : '#64b5f6',
                   borderRadius: 3,
-                  fontFamily: 'monospace',
                 }}
-                title={`Plugin CPU usage: ${plugin.cpu_percent.toFixed(1)}%`}
+                title={`CPU: ${plugin.cpu_percent.toFixed(1)}%`}
               >
-                <Cpu size={8} /> {plugin.cpu_percent.toFixed(1)}%
+                {plugin.cpu_percent.toFixed(0)}%
               </span>
             )}
 
@@ -1149,19 +1419,17 @@ function PluginFlowItem({
             {plugin.latency_samples !== undefined && plugin.latency_samples > 0 && (
               <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8,
-                  padding: '2px 5px',
-                  background: 'rgba(171, 71, 188, 0.15)',
+                  fontSize: 7,
+                  fontWeight: 600,
+                  fontFamily: 'monospace',
+                  padding: '1px 4px',
+                  background: 'rgba(171, 71, 188, 0.2)',
                   color: '#ab47bc',
                   borderRadius: 3,
-                  fontFamily: 'monospace',
                 }}
-                title={`Plugin latency: ${plugin.latency_samples} samples (${((plugin.latency_samples / 48000) * 1000).toFixed(2)}ms @ 48kHz)`}
+                title={`Latency: ${plugin.latency_samples} samples (${((plugin.latency_samples / 48000) * 1000).toFixed(2)}ms)`}
               >
-                <Clock size={8} /> {plugin.latency_samples}s
+                {plugin.latency_samples}s
               </span>
             )}
 
@@ -1169,18 +1437,16 @@ function PluginFlowItem({
             {plugin.latency_compensated && (
               <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8,
-                  padding: '2px 5px',
-                  background: 'rgba(34, 197, 94, 0.15)',
+                  fontSize: 7,
+                  fontWeight: 600,
+                  padding: '1px 4px',
+                  background: 'rgba(34, 197, 94, 0.2)',
                   color: '#22c55e',
                   borderRadius: 3,
                 }}
-                title="Plugin Delay Compensation active - latency is being compensated"
+                title="PDC Active"
               >
-                <CheckCircle2 size={8} /> PDC
+                PDC
               </span>
             )}
 
@@ -1188,36 +1454,34 @@ function PluginFlowItem({
             {plugin.sidechain_source && (
               <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: 8,
-                  padding: '2px 5px',
-                  background: 'rgba(168, 85, 247, 0.15)',
+                  fontSize: 7,
+                  fontWeight: 600,
+                  padding: '1px 4px',
+                  background: 'rgba(168, 85, 247, 0.2)',
                   color: '#a855f7',
                   borderRadius: 3,
                 }}
-                title={`Sidechain input from: ${plugin.sidechain_source}${plugin.sidechain_bus ? ` (bus ${plugin.sidechain_bus})` : ''}`}
+                title={`Sidechain from: ${plugin.sidechain_source}`}
               >
-                <Link2 size={8} /> SC
+                SC
               </span>
             )}
           </div>
         )}
 
-        {/* Output Port Meters - Inline visualization for dynamics plugins */}
+        {/* Output Port Meters - Compact inline visualization */}
         {showOutputMeters && hasMeters && outputPorts.length > 0 && !plugin.bypassed && (
-          <div 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
-              gap: 8, 
-              marginBottom: 8,
-              padding: '6px 8px',
-              background: 'rgba(0, 0, 0, 0.3)',
-              borderRadius: 6,
-              border: '1px solid rgba(255, 255, 255, 0.05)',
+              gap: 6,
+              marginBottom: 6,
+              padding: '4px 6px',
+              background: `${catConfig.color}08`,
+              borderRadius: 4,
+              border: `1px solid ${catConfig.color}20`,
             }}
           >
             {outputPorts.slice(0, 3).map((port) => {
@@ -1273,10 +1537,18 @@ function PluginFlowItem({
           </div>
         )}
 
-        {/* Wet/Dry Mix Slider */}
+        {/* Wet/Dry Mix Slider - Compact */}
         {onWetDryChange && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <span className="muted" style={{ fontSize: 9, minWidth: 24 }}>Mix</span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            marginBottom: 6,
+            padding: '2px 4px',
+            background: `${catConfig.color}08`,
+            borderRadius: 4,
+          }}>
+            <span style={{ fontSize: 7, fontWeight: 600, color: catConfig.color, minWidth: 18 }}>MIX</span>
             <input
               type="range"
               min={0}
@@ -1284,109 +1556,120 @@ function PluginFlowItem({
               value={wetDryMix}
               onChange={(e) => { e.stopPropagation(); onWetDryChange(plugin.uri, Number(e.target.value)) }}
               onClick={(e) => e.stopPropagation()}
-              style={{ flex: 1, height: 4 }}
+              style={{ flex: 1, height: 3, accentColor: catConfig.color }}
               title={`Wet/Dry: ${wetDryMix}%`}
             />
-            <span className="muted" style={{ fontSize: 9, minWidth: 28 }}>{wetDryMix}%</span>
+            <span style={{ fontSize: 8, fontFamily: 'monospace', color: '#888', minWidth: 22 }}>{wetDryMix}%</span>
           </div>
         )}
 
-        {/* Button row: uniform grid layout */}
-        <div style={{ 
-          display: 'flex', 
-          gap: 4, 
-          position: 'relative', 
+        {/* Button row: compact icon buttons */}
+        <div style={{
+          display: 'flex',
+          gap: 3,
+          marginTop: 4,
+          position: 'relative',
           zIndex: 10,
           pointerEvents: 'auto',
         }}>
           <button
             className="btn btn-ghost btn-sm"
-            style={{ 
-              padding: '6px 8px', 
-              fontSize: 11, 
+            style={{
+              padding: '4px',
+              fontSize: 10,
               justifyContent: 'center',
               flex: 1,
-              background: 'rgba(40, 40, 40, 0.8)',
-              borderColor: 'rgba(160, 160, 160, 0.6)',
+              minWidth: 0,
+              background: `${catConfig.color}10`,
+              borderColor: `${catConfig.color}30`,
+              borderRadius: 4,
               cursor: 'pointer',
             }}
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onMove(plugin.uri, -1) }}
             onMouseDown={(e) => e.stopPropagation()}
             disabled={reorderPending || idx === 0}
-            title="Move up in chain (↑)"
+            title="Move up (↑)"
           >
-            <ArrowUp size={12} />
+            <ArrowUp size={10} style={{ color: catConfig.color }} />
           </button>
           <button
             className="btn btn-ghost btn-sm"
-            style={{ 
-              padding: '6px 8px', 
-              fontSize: 11, 
+            style={{
+              padding: '4px',
+              fontSize: 10,
               justifyContent: 'center',
               flex: 1,
-              background: 'rgba(40, 40, 40, 0.8)',
-              borderColor: 'rgba(160, 160, 160, 0.6)',
+              minWidth: 0,
+              background: `${catConfig.color}10`,
+              borderColor: `${catConfig.color}30`,
+              borderRadius: 4,
               cursor: 'pointer',
             }}
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onMove(plugin.uri, 1) }}
             onMouseDown={(e) => e.stopPropagation()}
             disabled={reorderPending || idx === totalPlugins - 1}
-            title="Move down in chain (↓)"
+            title="Move down (↓)"
           >
-            <ArrowDown size={12} />
+            <ArrowDown size={10} style={{ color: catConfig.color }} />
           </button>
           <button
-            className={`btn btn-sm ${plugin.bypassed ? 'btn-primary' : 'btn-ghost'}`}
-            style={{ 
-              padding: '6px 8px', 
-              fontSize: 11, 
+            className="btn btn-sm"
+            style={{
+              padding: '4px',
+              fontSize: 10,
               justifyContent: 'center',
               flex: 1,
-              background: plugin.bypassed ? undefined : 'rgba(40, 40, 40, 0.8)',
-              borderColor: plugin.bypassed ? undefined : 'rgba(160, 160, 160, 0.6)',
+              minWidth: 0,
+              background: plugin.bypassed ? catConfig.color : `${catConfig.color}10`,
+              borderColor: plugin.bypassed ? catConfig.color : `${catConfig.color}30`,
+              borderRadius: 4,
               cursor: 'pointer',
             }}
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggleBypass.mutate({ chainId, uri: plugin.uri, bypass: plugin.bypassed }) }}
             onMouseDown={(e) => e.stopPropagation()}
-            title={plugin.bypassed ? 'Enable plugin (B)' : 'Bypass plugin (B)'}
+            title={plugin.bypassed ? 'Enable (B)' : 'Bypass (B)'}
           >
-            <Power size={12} />
+            <Power size={10} style={{ color: plugin.bypassed ? '#fff' : catConfig.color }} />
           </button>
           {onSavePreset && (
             <button
               className="btn btn-ghost btn-sm"
-              style={{ 
-                padding: '6px 8px', 
-                fontSize: 11, 
+              style={{
+                padding: '4px',
+                fontSize: 10,
                 justifyContent: 'center',
                 flex: 1,
-                background: 'rgba(40, 40, 40, 0.8)',
-                borderColor: 'rgba(160, 160, 160, 0.6)',
+                minWidth: 0,
+                background: `${catConfig.color}10`,
+                borderColor: `${catConfig.color}30`,
+                borderRadius: 4,
                 cursor: 'pointer',
               }}
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSavePreset(plugin.uri) }}
               onMouseDown={(e) => e.stopPropagation()}
               title="Save preset (S)"
             >
-              <Save size={12} />
+              <Save size={10} style={{ color: catConfig.color }} />
             </button>
           )}
           <button
             className="btn btn-ghost btn-sm"
-            style={{ 
-              padding: '6px 8px', 
-              fontSize: 11, 
+            style={{
+              padding: '4px',
+              fontSize: 10,
               justifyContent: 'center',
               flex: 1,
-              background: 'rgba(40, 40, 40, 0.8)',
-              borderColor: 'rgba(160, 160, 160, 0.6)',
+              minWidth: 0,
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              borderRadius: 4,
               cursor: 'pointer',
             }}
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRemove.mutate({ chainId, uri: plugin.uri }) }}
             onMouseDown={(e) => e.stopPropagation()}
-            title="Delete plugin from chain"
+            title="Delete"
           >
-            <Trash2 size={12} />
+            <Trash2 size={10} style={{ color: '#ef4444' }} />
           </button>
         </div>
       </div>
@@ -1469,44 +1752,179 @@ export function ChainFlowPage() {
     }
   }, [audioStatusQuery.data, jackMetricsQuery.data, systemMetricsQuery.data, juceMetrics])
 
-  // Persisted UI state - load from localStorage
-  const [selectedChainId, setSelectedChainId] = useState<number | null>(() => {
+  // ============================================================================
+  // N-Chain Flow System State
+  // ============================================================================
+
+  // Chain slots - array of chain slot configurations (default 3, max 6)
+  const [chainSlots, setChainSlots] = useState<ChainSlot[]>(() => {
+    // Run migration first
+    const migrated = migrateLocalStorage()
+    if (migrated) return migrated.slots
+
     try {
-      const val = localStorage.getItem('map2_flow_selected_chain');
-      return val ? parseInt(val, 10) : null;
-    } catch { return null; }
+      const saved = localStorage.getItem('map2_flow_chain_slots_v2')
+      if (saved) return JSON.parse(saved)
+    } catch { /* ignore */ }
+
+    return createDefaultSlots(DEFAULT_CHAIN_COUNT)
   })
-  const [secondChainId, setSecondChainId] = useState<number | null>(() => {
+
+  // Active slot index - which slot is currently focused for editing
+  const [activeSlotIndex, setActiveSlotIndex] = useState<number>(() => {
+    const migrated = migrateLocalStorage()
+    if (migrated) return migrated.activeIndex
+
     try {
-      const val = localStorage.getItem('map2_flow_second_chain');
-      return val ? parseInt(val, 10) : null;
-    } catch { return null; }
+      const val = localStorage.getItem('map2_flow_active_slot_v2')
+      return val ? parseInt(val, 10) : 0
+    } catch { return 0 }
   })
+
+  // Routing configuration
+  const [routing, setRouting] = useState<RoutingConfig>(() => {
+    const migrated = migrateLocalStorage()
+    if (migrated) return migrated.routing
+
+    try {
+      const saved = localStorage.getItem('map2_flow_routing_v2')
+      if (saved) return JSON.parse(saved)
+    } catch { /* ignore */ }
+
+    return createDefaultRouting()
+  })
+
+  // Legacy compatibility - derive old values for existing code
+  const selectedChainId = chainSlots[0]?.chainId ?? null
+  const secondChainId = chainSlots[1]?.chainId ?? null
+  const activeChainSlot = (activeSlotIndex + 1) as 1 | 2  // For backwards compat
+  const chainRoutingMode = routing.mode === 'parallel_blend' ? 'parallel' as const :
+                           routing.mode === 'ab_switch' ? 'ab_switch' as const : 'series' as const
+  const chainMix = routing.blendPositions['slot-1'] ?? 50
+
+  // Setters for legacy code - redirect to new state
+  const setSelectedChainId = useCallback((id: number | null) => {
+    setChainSlots(prev => prev.map((slot, i) => i === 0 ? { ...slot, chainId: id } : slot))
+  }, [])
+
+  const setSecondChainId = useCallback((id: number | null) => {
+    setChainSlots(prev => prev.map((slot, i) => i === 1 ? { ...slot, chainId: id } : slot))
+  }, [])
+
+  const setActiveChainSlot = useCallback((slot: 1 | 2) => {
+    setActiveSlotIndex(slot - 1)
+  }, [])
+
+  const setChainRoutingMode = useCallback((mode: 'parallel' | 'ab_switch' | 'series') => {
+    const modeMap: Record<string, RoutingMode> = {
+      'parallel': 'parallel_blend',
+      'ab_switch': 'ab_switch',
+      'series': 'series',
+    }
+    setRouting(prev => ({ ...prev, mode: modeMap[mode] || 'parallel_blend' }))
+  }, [])
+
+  const setChainMix = useCallback((mix: number) => {
+    setRouting(prev => ({
+      ...prev,
+      blendPositions: {
+        ...prev.blendPositions,
+        'slot-0': 100 - mix,
+        'slot-1': mix,
+      }
+    }))
+  }, [])
+
+  // Enhanced routing mode setter (supports all 5 JUCE modes)
+  const setRoutingMode = useCallback((mode: RoutingMode) => {
+    setRouting(prev => ({ ...prev, mode }))
+  }, [])
+
+  // Morph progress setter
+  const setMorphProgress = useCallback((progress: number) => {
+    setRouting(prev => ({ ...prev, morphProgress: progress }))
+  }, [])
+
+  // Morph source/target setters
+  const setMorphSource = useCallback((slotId: string | null) => {
+    setRouting(prev => ({ ...prev, morphSourceSlotId: slotId }))
+  }, [])
+
+  const setMorphTarget = useCallback((slotId: string | null) => {
+    setRouting(prev => ({ ...prev, morphTargetSlotId: slotId }))
+  }, [])
+
+  // Series order setter
+  const setSeriesOrder = useCallback((order: string[]) => {
+    setRouting(prev => ({ ...prev, seriesOrder: order }))
+  }, [])
+
+  // Per-chain blend position setter (for parallel mode with N chains)
+  const setSlotBlendLevel = useCallback((slotId: string, level: number) => {
+    setRouting(prev => ({
+      ...prev,
+      blendPositions: {
+        ...prev.blendPositions,
+        [slotId]: level,
+      }
+    }))
+  }, [])
+
+  // ============================================================================
+  // Chain Slot Management Functions
+  // ============================================================================
+
+  const addChainSlot = useCallback(() => {
+    if (chainSlots.length >= MAX_CHAINS) return
+
+    const nextIndex = chainSlots.length
+    const colorConfig = SLOT_COLORS[nextIndex] || SLOT_COLORS[nextIndex % SLOT_COLORS.length]
+
+    setChainSlots(prev => [...prev, {
+      id: `slot-${Date.now()}`,
+      chainId: null,
+      label: colorConfig.label,
+      color: colorConfig.color,
+      dryWetMix: 100,
+      muted: false,
+      solo: false,
+    }])
+  }, [chainSlots.length])
+
+  const removeChainSlot = useCallback((slotId: string) => {
+    if (chainSlots.length <= MIN_CHAINS) {
+      return // Don't allow removing below minimum
+    }
+
+    setChainSlots(prev => prev.filter(s => s.id !== slotId))
+
+    // Adjust active slot if necessary
+    const removedIndex = chainSlots.findIndex(s => s.id === slotId)
+    if (activeSlotIndex >= removedIndex && activeSlotIndex > 0) {
+      setActiveSlotIndex(prev => prev - 1)
+    }
+  }, [chainSlots, activeSlotIndex])
+
+  const updateChainSlot = useCallback((slotId: string, updates: Partial<ChainSlot>) => {
+    setChainSlots(prev => prev.map(slot =>
+      slot.id === slotId ? { ...slot, ...updates } : slot
+    ))
+  }, [])
+
+  // Get chain for a specific slot
+  const getChainForSlot = useCallback((slot: ChainSlot): Chain | undefined => {
+    return chainsQuery.data?.chains.find(c => c.id === slot.chainId)
+  }, [chainsQuery.data])
+
+  // ============================================================================
+  // Other UI State
+  // ============================================================================
+
   const [selectedPluginUri, setSelectedPluginUri] = useState<string | null>(null)
-  const [activeChainSlot, setActiveChainSlot] = useState<1 | 2>(() => {
-    try {
-      const val = localStorage.getItem('map2_flow_active_slot');
-      return val === '2' ? 2 : 1;
-    } catch { return 1; }
-  })
   const [search, setSearch] = useState(() => {
     try {
       return localStorage.getItem('map2_flow_search') || '';
     } catch { return ''; }
-  })
-  // Chain routing mode: how A and B chains interact
-  const [chainRoutingMode, setChainRoutingMode] = useState<'parallel' | 'ab_switch' | 'series'>(() => {
-    try {
-      const val = localStorage.getItem('map2_flow_routing_mode');
-      return (val as 'parallel' | 'ab_switch' | 'series') || 'parallel';
-    } catch { return 'parallel'; }
-  })
-  // Mix balance: 0 = 100% A, 50 = equal, 100 = 100% B (only used in parallel mode)
-  const [chainMix, setChainMix] = useState(() => {
-    try {
-      const val = localStorage.getItem('map2_flow_chain_mix');
-      return val ? parseInt(val, 10) : 50;
-    } catch { return 50; }
   })
   const [category, setCategory] = useState<string>(() => {
     try {
@@ -1544,6 +1962,13 @@ export function ChainFlowPage() {
   const [automationCurrentTime, setAutomationCurrentTime] = useState(0)
   const [automationDuration, setAutomationDuration] = useState(60)
 
+  // View mode for signal chain (detailed vertical vs compact horizontal)
+  const [viewMode, setViewMode] = useState<'detailed' | 'compact'>(() => {
+    try {
+      return (localStorage.getItem('map2_flow_view_mode') as 'detailed' | 'compact') || 'detailed'
+    } catch { return 'detailed' }
+  })
+
   // History query
   const historyQuery = useQuery({
     queryKey: ['history', 'status'],
@@ -1569,50 +1994,30 @@ export function ChainFlowPage() {
     }
   }, [])
 
-  // Persist UI state to localStorage
+  // Persist N-chain state to localStorage
   useEffect(() => {
     try {
-      if (selectedChainId !== null) {
-        localStorage.setItem('map2_flow_selected_chain', String(selectedChainId));
-      } else {
-        localStorage.removeItem('map2_flow_selected_chain');
-      }
+      localStorage.setItem('map2_flow_chain_slots_v2', JSON.stringify(chainSlots))
     } catch { /* Ignore localStorage errors */ }
-  }, [selectedChainId])
+  }, [chainSlots])
 
   useEffect(() => {
     try {
-      if (secondChainId !== null) {
-        localStorage.setItem('map2_flow_second_chain', String(secondChainId));
-      } else {
-        localStorage.removeItem('map2_flow_second_chain');
-      }
+      localStorage.setItem('map2_flow_routing_v2', JSON.stringify(routing))
     } catch { /* Ignore localStorage errors */ }
-  }, [secondChainId])
+  }, [routing])
 
   useEffect(() => {
     try {
-      localStorage.setItem('map2_flow_active_slot', String(activeChainSlot));
+      localStorage.setItem('map2_flow_active_slot_v2', String(activeSlotIndex))
     } catch { /* Ignore localStorage errors */ }
-  }, [activeChainSlot])
+  }, [activeSlotIndex])
 
   useEffect(() => {
     try {
       localStorage.setItem('map2_flow_search', search);
     } catch { /* Ignore localStorage errors */ }
   }, [search])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_flow_routing_mode', chainRoutingMode);
-    } catch { /* Ignore localStorage errors */ }
-  }, [chainRoutingMode])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_flow_chain_mix', String(chainMix));
-    } catch { /* Ignore localStorage errors */ }
-  }, [chainMix])
 
   useEffect(() => {
     try {
@@ -1625,6 +2030,12 @@ export function ChainFlowPage() {
       localStorage.setItem('map2_flow_collapsed_categories', JSON.stringify([...collapsedCategories]));
     } catch { /* Ignore localStorage errors */ }
   }, [collapsedCategories])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_flow_view_mode', viewMode);
+    } catch { /* Ignore localStorage errors */ }
+  }, [viewMode])
 
   // Inject CSS for animations (once on mount)
   useEffect(() => {
@@ -1648,20 +2059,44 @@ export function ChainFlowPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Initialize selection
+  // Initialize chain slots with available chains
   useEffect(() => {
     if (!chainsQuery.data?.chains?.length) return
-    if (!selectedChainId) {
-      const active = chainsQuery.data.chains.find((c) => c.is_active)
-      setSelectedChainId(active?.id ?? chainsQuery.data.chains[0].id)
-    }
-    // Initialize second chain to a different chain if available
-    if (!secondChainId && chainsQuery.data.chains.length > 1) {
-      const otherChain = chainsQuery.data.chains.find((c) => c.id !== selectedChainId)
-      if (otherChain) setSecondChainId(otherChain.id)
-    }
-  }, [chainsQuery.data, selectedChainId, secondChainId])
 
+    const availableChains = chainsQuery.data.chains
+    const needsInit = chainSlots.some((slot, idx) => slot.chainId === null && idx < availableChains.length)
+
+    if (needsInit) {
+      setChainSlots(prev => prev.map((slot, idx) => {
+        // Only initialize slots that don't have a chain selected
+        if (slot.chainId !== null) return slot
+
+        // Find a chain not already used in other slots
+        const usedChainIds = prev.filter((s, i) => i !== idx && s.chainId !== null).map(s => s.chainId)
+        const availableChain = availableChains.find(c => !usedChainIds.includes(c.id))
+
+        // Prefer the active chain for the first slot
+        if (idx === 0) {
+          const activeChain = availableChains.find(c => c.is_active)
+          if (activeChain && !usedChainIds.includes(activeChain.id)) {
+            return { ...slot, chainId: activeChain.id }
+          }
+        }
+
+        return availableChain ? { ...slot, chainId: availableChain.id } : slot
+      }))
+    }
+  }, [chainsQuery.data, chainSlots])
+
+  // Memoized chain lookups for all slots
+  const slotChains = useMemo(() => {
+    return chainSlots.map(slot => ({
+      slot,
+      chain: chainsQuery.data?.chains.find(c => c.id === slot.chainId),
+    }))
+  }, [chainsQuery.data, chainSlots])
+
+  // Legacy derived values for backwards compatibility
   const selectedChain = useMemo<Chain | undefined>(() => {
     return chainsQuery.data?.chains.find((c) => c.id === selectedChainId)
   }, [chainsQuery.data, selectedChainId])
@@ -1670,49 +2105,47 @@ export function ChainFlowPage() {
     return chainsQuery.data?.chains.find((c) => c.id === secondChainId)
   }, [chainsQuery.data, secondChainId])
 
-  // Get the active chain for plugin operations
-  const activeChain = activeChainSlot === 1 ? selectedChain : secondChain
-  const activeChainId = activeChainSlot === 1 ? selectedChainId : secondChainId
+  // Get the active chain for plugin operations (N-chain aware)
+  const activeSlot = chainSlots[activeSlotIndex]
+  const activeChain = activeSlot ? slotChains.find(sc => sc.slot.id === activeSlot.id)?.chain : undefined
+  const activeChainId = activeSlot?.chainId ?? null
 
   useEffect(() => {
-    if (selectedPluginUri && selectedChain) {
-      const exists = selectedChain.plugins.some((p) => p.uri === selectedPluginUri)
+    if (selectedPluginUri && activeChain) {
+      const exists = activeChain.plugins.some((p) => p.uri === selectedPluginUri)
       if (!exists) {
-        setSelectedPluginUri(selectedChain.plugins[0]?.uri ?? null)
+        setSelectedPluginUri(activeChain.plugins[0]?.uri ?? null)
       }
-    } else if (selectedChain && !selectedPluginUri && selectedChain.plugins.length > 0) {
-      setSelectedPluginUri(selectedChain.plugins[0].uri)
+    } else if (activeChain && !selectedPluginUri && activeChain.plugins.length > 0) {
+      setSelectedPluginUri(activeChain.plugins[0].uri)
     }
-  }, [selectedChain, selectedPluginUri])
+  }, [activeChain, selectedPluginUri])
 
-  // Simulate level meters (in production, connect to WebSocket)
+  // Simulate level meters for all chain slots
   useEffect(() => {
     const interval = setInterval(() => {
       const newLevels: Record<string, { in: number; out: number }> = {}
-      selectedChain?.plugins.forEach((p) => {
-        if (!p.bypassed) {
-          newLevels[p.uri] = {
-            in: Math.random() * 0.7 + 0.1,
-            out: Math.random() * 0.7 + 0.1,
+
+      // Process all chains in all slots
+      slotChains.forEach(({ slot, chain }) => {
+        if (!chain || slot.muted) return
+
+        chain.plugins.forEach((p) => {
+          if (!p.bypassed) {
+            newLevels[p.uri] = {
+              in: Math.random() * 0.7 + 0.1,
+              out: Math.random() * 0.7 + 0.1,
+            }
+          } else {
+            newLevels[p.uri] = { in: 0, out: 0 }
           }
-        } else {
-          newLevels[p.uri] = { in: 0, out: 0 }
-        }
+        })
       })
-      secondChain?.plugins.forEach((p) => {
-        if (!p.bypassed) {
-          newLevels[p.uri] = {
-            in: Math.random() * 0.7 + 0.1,
-            out: Math.random() * 0.7 + 0.1,
-          }
-        } else {
-          newLevels[p.uri] = { in: 0, out: 0 }
-        }
-      })
+
       setPluginLevels(newLevels)
     }, 100)
     return () => clearInterval(interval)
-  }, [selectedChain, secondChain])
+  }, [slotChains])
 
   const pluginMetaByUri = useMemo(() => {
     const map: Record<string, Plugin> = {}
@@ -2333,6 +2766,23 @@ export function ChainFlowPage() {
                 <Redo2 size={16} />
               </button>
             </div>
+            {/* View Mode Toggle */}
+            <div className="flex" style={{ gap: 4, borderRight: '1px solid var(--surface-border)', paddingRight: 8 }}>
+              <button
+                className={`view-toggle-btn ${viewMode === 'detailed' ? 'active' : ''}`}
+                onClick={() => setViewMode('detailed')}
+                title="Detailed view (vertical)"
+              >
+                <LayoutList size={16} />
+              </button>
+              <button
+                className={`view-toggle-btn ${viewMode === 'compact' ? 'active' : ''}`}
+                onClick={() => setViewMode('compact')}
+                title="Compact view (horizontal)"
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
             <button className="btn btn-ghost" onClick={handleRefresh}>
               <RefreshCcw size={16} /> Refresh
             </button>
@@ -2429,78 +2879,122 @@ export function ChainFlowPage() {
         }
       />
 
-      <div>
-        {/* Dual Chain Display - Full Width */}
-        <div className="card" style={{ minHeight: isMobile ? 'auto' : 520, position: 'relative', overflow: 'hidden' }}>
-          {/* Adding to Chain Banner */}
-          {activeChain && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              padding: '12px 20px',
-              marginBottom: 16,
-              marginLeft: -20,
-              marginRight: -20,
-              marginTop: -20,
-              background: activeChainSlot === 1
-                ? 'linear-gradient(135deg, rgba(0, 212, 255, 0.12), rgba(0, 153, 204, 0.08))'
-                : 'linear-gradient(135deg, rgba(255, 0, 170, 0.12), rgba(204, 0, 136, 0.08))',
-              borderBottom: activeChainSlot === 1
-                ? '2px solid rgba(0, 212, 255, 0.4)'
-                : '2px solid rgba(255, 0, 170, 0.4)',
-            }}>
+      {/* Audio Metering Card - At top above Signal Chain */}
+      <AudioMeteringCard defaultExpanded={true} />
+
+      {/* Signal Chain Cards - Dynamic N chains with routing card */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : `repeat(${chainSlots.length}, 1fr) auto`,
+        gap: 16,
+        alignItems: 'stretch'
+      }}>
+        {/* Add Chain Button - Header */}
+        <div style={{
+          gridColumn: isMobile ? '1' : `1 / -1`,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: -8,
+        }}>
+          {chainSlots.length < MAX_CHAINS && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={addChainSlot}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 11,
+                color: 'var(--text-muted)',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+                <path d="M7 4v6M4 7h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Add Chain ({chainSlots.length}/{MAX_CHAINS})
+            </button>
+          )}
+        </div>
+
+        {/* Chain A Card */}
+        <div className="card" style={{
+          minHeight: isMobile ? 'auto' : 480,
+          position: 'relative',
+          overflow: 'hidden',
+          borderColor: activeSlotIndex === 0 ? `${chainSlots[0]?.color}66` : undefined,
+          boxShadow: activeSlotIndex === 0 ? `0 0 20px ${chainSlots[0]?.color}26` : undefined,
+        }}>
+          {/* Chain A Header Banner */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '12px 20px',
+            marginBottom: 16,
+            marginLeft: -20,
+            marginRight: -20,
+            marginTop: -20,
+            background: `linear-gradient(135deg, ${chainSlots[0]?.color}1f, ${chainSlots[0]?.color}14)`,
+            borderBottom: `2px solid ${chainSlots[0]?.color}66`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' }}>
               <Zap size={18} style={{
-                color: activeChainSlot === 1 ? '#00d4ff' : '#ff00aa',
-                filter: `drop-shadow(0 0 4px ${activeChainSlot === 1 ? 'rgba(0, 212, 255, 0.5)' : 'rgba(255, 0, 170, 0.5)'})`
+                color: chainSlots[0]?.color,
+                filter: `drop-shadow(0 0 4px ${chainSlots[0]?.color}80)`
               }} />
               <div style={{ textAlign: 'center' }}>
                 <div style={{
                   fontSize: 9,
                   fontWeight: 700,
                   letterSpacing: 2,
-                  color: activeChainSlot === 1 ? '#00d4ff' : '#ff00aa',
+                  color: chainSlots[0]?.color,
                   textTransform: 'uppercase',
                   marginBottom: 1,
                 }}>
-                  {activeChainSlot === 1 ? 'PATH A' : 'PATH B'}
+                  PATH {chainSlots[0]?.label}
                 </div>
                 <div style={{
-                  fontSize: 16,
-                  fontWeight: 800,
+                  fontSize: 14,
+                  fontWeight: 700,
                   color: '#fff',
                   textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                  letterSpacing: 0.5,
                 }}>
-                  Adding to: {activeChainSlot === 1 ? 'A' : 'B'}: {activeChain.name}
+                  {selectedChain?.name || 'Select Chain'}
                 </div>
               </div>
-              <Radio size={18} style={{
-                color: activeChainSlot === 1 ? '#00d4ff' : '#ff00aa',
-                filter: `drop-shadow(0 0 4px ${activeChainSlot === 1 ? 'rgba(0, 212, 255, 0.5)' : 'rgba(255, 0, 170, 0.5)'})`
-              }} />
             </div>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 0, height: '100%' }}>
-            {/* Chain A */}
-            <div style={{ display: 'flex', flexDirection: 'column', padding: '0 12px 0 0' }}>
+            {chainSlots.length > MIN_CHAINS && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => removeChainSlot(chainSlots[0]?.id)}
+                title="Remove this chain slot"
+                style={{ color: '#ef4444', padding: 4 }}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <button
-                  className={`btn btn-sm ${activeChainSlot === 1 ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ 
-                    padding: '6px 14px', 
+                  className={`btn btn-sm ${activeSlotIndex === 0 ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{
+                    padding: '6px 14px',
                     fontSize: 13,
                     fontWeight: 700,
                     letterSpacing: '1px',
-                    boxShadow: activeChainSlot === 1 ? '0 0 15px rgba(0, 212, 255, 0.5), inset 0 0 10px rgba(255,255,255,0.1)' : 'none',
-                    border: activeChainSlot === 1 ? '1px solid rgba(0, 212, 255, 0.5)' : '1px solid transparent',
+                    backgroundColor: activeSlotIndex === 0 ? chainSlots[0]?.color : undefined,
+                    boxShadow: activeSlotIndex === 0 ? `0 0 15px ${chainSlots[0]?.color}80, inset 0 0 10px rgba(255,255,255,0.1)` : 'none',
+                    border: activeSlotIndex === 0 ? `1px solid ${chainSlots[0]?.color}80` : '1px solid transparent',
                     position: 'relative',
                     overflow: 'hidden',
                   }}
-                  onClick={() => setActiveChainSlot(1)}
+                  onClick={() => setActiveSlotIndex(0)}
                 >
-                  {activeChainSlot === 1 && (
+                  {activeSlotIndex === 0 && (
                     <span style={{
                       position: 'absolute',
                       inset: 0,
@@ -2508,23 +3002,23 @@ export function ChainFlowPage() {
                       animation: 'shimmer 2s ease-in-out infinite',
                     }} />
                   )}
-                  <span style={{ position: 'relative', zIndex: 1 }}>A</span>
+                  <span style={{ position: 'relative', zIndex: 1 }}>{chainSlots[0]?.label}</span>
                 </button>
                 <select
                   className="input"
                   style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
-                  value={selectedChainId ?? ''}
-                  onChange={(e) => setSelectedChainId(Number(e.target.value))}
+                  value={chainSlots[0]?.chainId ?? ''}
+                  onChange={(e) => updateChainSlot(chainSlots[0]?.id, { chainId: e.target.value ? Number(e.target.value) : null })}
                   disabled={chainsQuery.isLoading}
-                  title="Chain A - parallel signal path"
+                  title={`Chain ${chainSlots[0]?.label} - signal path`}
                 >
+                  <option value="">Select chain...</option>
                   {chainsQuery.data?.chains.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} {c.is_active ? '●' : ''}
                     </option>
                   ))}
                 </select>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }} title="A/B paths run in parallel and mix to output">Path A</span>
               </div>
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {chainsQuery.isLoading ? (
@@ -2535,7 +3029,19 @@ export function ChainFlowPage() {
                   <div className="pill warn" style={{ fontSize: 11 }}>No chain</div>
                 ) : selectedChain.plugins.length === 0 ? (
                   <div className="muted" style={{ fontSize: 11, padding: 8 }}>Empty chain</div>
+                ) : viewMode === 'compact' ? (
+                  /* Compact horizontal view */
+                  <HorizontalSignalChain
+                    plugins={selectedChain.plugins}
+                    pluginMeta={pluginMetaByUri}
+                    selectedPluginUri={selectedPluginUri}
+                    onPluginSelect={(uri) => { setActiveChainSlot(1); setSelectedPluginUri(uri); }}
+                    onPluginReorder={(uris) => reorder.mutate({ chainId: selectedChain.id, order: uris })}
+                    onToggleBypass={(uri, bypass) => toggleBypass.mutate({ chainId: selectedChain.id, uri, bypass })}
+                    isActive={selectedChain.is_active}
+                  />
                 ) : (
+                  /* Detailed vertical view */
                   <div className="stack" style={{ gap: 0 }}>
                     <ChainEndpoint type="input" label="AUDIO INPUT" audioStatus={audioInterfaceStatus} />
                     {selectedChain.plugins.map((plugin, idx) => (
@@ -2588,50 +3094,51 @@ export function ChainFlowPage() {
                 )}
               </div>
               {/* Plugin count indicator with glow */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
                 marginTop: 12,
                 padding: '6px 12px',
-                background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 100, 150, 0.1) 100%)',
+                background: `linear-gradient(135deg, ${chainSlots[0]?.color}1a 0%, ${chainSlots[0]?.color}1a 100%)`,
                 borderRadius: 20,
-                border: '1px solid rgba(0, 212, 255, 0.3)',
-                boxShadow: '0 0 10px rgba(0, 212, 255, 0.2)',
+                border: `1px solid ${chainSlots[0]?.color}4d`,
+                boxShadow: `0 0 10px ${chainSlots[0]?.color}33`,
               }}>
                 <svg width="16" height="16" viewBox="0 0 16 16">
-                  <circle cx="8" cy="8" r="6" fill="none" stroke="var(--primary)" strokeWidth="1.5" opacity="0.5" />
-                  <circle cx="8" cy="8" r="3" fill="var(--primary)">
+                  <circle cx="8" cy="8" r="6" fill="none" stroke={chainSlots[0]?.color} strokeWidth="1.5" opacity="0.5" />
+                  <circle cx="8" cy="8" r="3" fill={chainSlots[0]?.color}>
                     <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
                   </circle>
                 </svg>
-                <span style={{ 
-                  fontSize: 11, 
+                <span style={{
+                  fontSize: 11,
                   fontWeight: 600,
-                  color: 'var(--primary)',
-                  textShadow: '0 0 8px rgba(0, 212, 255, 0.5)',
+                  color: chainSlots[0]?.color,
+                  textShadow: `0 0 8px ${chainSlots[0]?.color}80`,
                 }}>
                   {selectedChain?.plugins.length ?? 0} plugins
                 </span>
               </div>
-            </div>
+          </div>
+        </div>
 
-            {/* Signal Flow Routing Panel - Hidden on mobile */}
-            {!isMobile && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              padding: '16px 20px',
-              borderLeft: '1px solid var(--surface-border)',
-              borderRight: '1px solid var(--surface-border)',
-              background: 'linear-gradient(180deg, rgba(0, 212, 255, 0.02) 0%, rgba(0, 212, 255, 0.08) 50%, rgba(0, 212, 255, 0.02) 100%)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
+        {/* Signal Routing Card - Hidden on mobile - All JUCE Routing Options */}
+        {!isMobile && (
+          <div className="card" style={{
+            minWidth: 220,
+            maxWidth: 280,
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            background: 'linear-gradient(180deg, rgba(0, 212, 255, 0.02) 0%, rgba(0, 212, 255, 0.08) 50%, rgba(0, 212, 255, 0.02) 100%)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
               {/* Ripple effect background */}
               <div style={{
                 position: 'absolute',
@@ -2654,6 +3161,7 @@ export function ChainFlowPage() {
                 animation: 'pulseRing 3s ease-out infinite',
                 pointerEvents: 'none',
               }} />
+
               {/* Routing Mode Header */}
               <div style={{
                 fontSize: 10,
@@ -2662,261 +3170,396 @@ export function ChainFlowPage() {
                 letterSpacing: '1.5px',
                 marginBottom: 12,
                 textTransform: 'uppercase',
-              }}>SIGNAL ROUTING</div>
+              }}>JUCE SIGNAL ROUTING</div>
 
-              {/* Routing Mode Selector */}
+              {/* Active Chains Indicator */}
+              <div style={{
+                display: 'flex',
+                gap: 4,
+                marginBottom: 12,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+              }}>
+                {chainSlots.map((slot) => (
+                  <span key={slot.id} style={{
+                    padding: '2px 8px',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    background: `${slot.color}20`,
+                    color: slot.color,
+                    borderRadius: 4,
+                    border: `1px solid ${slot.color}40`,
+                  }}>{slot.label}</span>
+                ))}
+              </div>
+
+              {/* Routing Mode Selector - All 5 JUCE Modes */}
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 6,
+                gap: 5,
                 width: '100%',
                 marginBottom: 16,
               }}>
-                {/* Parallel Mix Mode */}
+                {/* 1. Parallel Blend Mode */}
                 <button
-                  onClick={() => setChainRoutingMode('parallel')}
+                  onClick={() => setRoutingMode('parallel_blend')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '8px 10px',
-                    background: chainRoutingMode === 'parallel'
+                    padding: '7px 10px',
+                    background: routing.mode === 'parallel_blend'
                       ? 'linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(0, 150, 200, 0.15) 100%)'
                       : 'rgba(255, 255, 255, 0.03)',
-                    border: chainRoutingMode === 'parallel'
+                    border: routing.mode === 'parallel_blend'
                       ? '1px solid rgba(0, 212, 255, 0.5)'
                       : '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: 6,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    boxShadow: chainRoutingMode === 'parallel'
+                    boxShadow: routing.mode === 'parallel_blend'
                       ? '0 0 12px rgba(0, 212, 255, 0.3)'
                       : 'none',
                   }}
                 >
-                  {/* Parallel diagram */}
-                  <svg width="32" height="24" viewBox="0 0 32 24">
-                    <line x1="0" y1="6" x2="8" y2="6" stroke={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} strokeWidth="2" />
-                    <line x1="0" y1="18" x2="8" y2="18" stroke={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} strokeWidth="2" />
-                    <rect x="8" y="2" width="16" height="8" rx="2" fill="none" stroke={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} strokeWidth="1.5" />
-                    <rect x="8" y="14" width="16" height="8" rx="2" fill="none" stroke={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} strokeWidth="1.5" />
-                    <text x="16" y="8" textAnchor="middle" fontSize="6" fill={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'}>A</text>
-                    <text x="16" y="20" textAnchor="middle" fontSize="6" fill={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'}>B</text>
-                    <line x1="24" y1="6" x2="28" y2="12" stroke={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} strokeWidth="2" />
-                    <line x1="24" y1="18" x2="28" y2="12" stroke={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} strokeWidth="2" />
-                    <circle cx="28" cy="12" r="2" fill={chainRoutingMode === 'parallel' ? 'var(--primary)' : '#666'} />
+                  {/* Dynamic Parallel diagram - adapts to N chains */}
+                  <svg width="36" height="24" viewBox="0 0 36 24">
+                    {chainSlots.slice(0, 3).map((slot, i) => {
+                      const yPos = 4 + i * 8
+                      const isActive = routing.mode === 'parallel_blend'
+                      return (
+                        <React.Fragment key={slot.id}>
+                          <line x1="0" y1={yPos} x2="6" y2={yPos} stroke={isActive ? slot.color : '#666'} strokeWidth="1.5" />
+                          <rect x="6" y={yPos - 3} width="14" height="6" rx="1" fill="none" stroke={isActive ? slot.color : '#666'} strokeWidth="1" />
+                          <text x="13" y={yPos + 2} textAnchor="middle" fontSize="5" fill={isActive ? slot.color : '#666'}>{slot.label}</text>
+                          <line x1="20" y1={yPos} x2="26" y2="12" stroke={isActive ? slot.color : '#666'} strokeWidth="1.5" />
+                        </React.Fragment>
+                      )
+                    })}
+                    <circle cx="26" cy="12" r="2" fill={routing.mode === 'parallel_blend' ? 'var(--primary)' : '#666'} />
+                    <line x1="26" y1="12" x2="34" y2="12" stroke={routing.mode === 'parallel_blend' ? 'var(--primary)' : '#666'} strokeWidth="2" />
                   </svg>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <div style={{
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: 600,
-                      color: chainRoutingMode === 'parallel' ? 'var(--primary)' : 'var(--text)',
-                    }}>Parallel Mix</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>Blend both chains</div>
+                      color: routing.mode === 'parallel_blend' ? 'var(--primary)' : 'var(--text)',
+                    }}>Parallel Blend</div>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Mix {chainSlots.length} chains</div>
                   </div>
                 </button>
 
-                {/* A/B Switch Mode */}
+                {/* 2. Chain Switch Mode */}
                 <button
-                  onClick={() => setChainRoutingMode('ab_switch')}
+                  onClick={() => setRoutingMode('ab_switch')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '8px 10px',
-                    background: chainRoutingMode === 'ab_switch'
+                    padding: '7px 10px',
+                    background: routing.mode === 'ab_switch'
                       ? 'linear-gradient(135deg, rgba(255, 170, 0, 0.25) 0%, rgba(200, 120, 0, 0.15) 100%)'
                       : 'rgba(255, 255, 255, 0.03)',
-                    border: chainRoutingMode === 'ab_switch'
+                    border: routing.mode === 'ab_switch'
                       ? '1px solid rgba(255, 170, 0, 0.5)'
                       : '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: 6,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    boxShadow: chainRoutingMode === 'ab_switch'
+                    boxShadow: routing.mode === 'ab_switch'
                       ? '0 0 12px rgba(255, 170, 0, 0.3)'
                       : 'none',
                   }}
                 >
-                  {/* A/B switch diagram */}
-                  <svg width="32" height="24" viewBox="0 0 32 24">
-                    <line x1="0" y1="12" x2="8" y2="12" stroke={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="2" />
-                    <rect x="10" y="2" width="12" height="8" rx="2" fill="none" stroke={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="1.5" opacity={activeChainSlot === 1 ? 1 : 0.4} />
-                    <rect x="10" y="14" width="12" height="8" rx="2" fill="none" stroke={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="1.5" opacity={activeChainSlot === 2 ? 1 : 0.4} />
-                    <text x="16" y="8" textAnchor="middle" fontSize="6" fill={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} opacity={activeChainSlot === 1 ? 1 : 0.4}>A</text>
-                    <text x="16" y="20" textAnchor="middle" fontSize="6" fill={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} opacity={activeChainSlot === 2 ? 1 : 0.4}>B</text>
-                    <line x1="8" y1="12" x2="10" y2={activeChainSlot === 1 ? '6' : '18'} stroke={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="2" />
-                    <line x1="22" y1={activeChainSlot === 1 ? '6' : '18'} x2="28" y2="12" stroke={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="2" />
-                    <circle cx="28" cy="12" r="2" fill={chainRoutingMode === 'ab_switch' ? '#ffaa00' : '#666'} />
+                  {/* Dynamic Switch diagram */}
+                  <svg width="36" height="24" viewBox="0 0 36 24">
+                    <line x1="0" y1="12" x2="6" y2="12" stroke={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="2" />
+                    {chainSlots.slice(0, 3).map((slot, i) => {
+                      const yPos = 4 + i * 8
+                      const isSelected = activeSlotIndex === i
+                      const isActive = routing.mode === 'ab_switch'
+                      return (
+                        <React.Fragment key={slot.id}>
+                          <rect x="10" y={yPos - 3} width="12" height="6" rx="1" fill="none"
+                            stroke={isActive ? slot.color : '#666'} strokeWidth="1"
+                            opacity={isSelected ? 1 : 0.4} />
+                          <text x="16" y={yPos + 2} textAnchor="middle" fontSize="5"
+                            fill={isActive ? slot.color : '#666'}
+                            opacity={isSelected ? 1 : 0.4}>{slot.label}</text>
+                        </React.Fragment>
+                      )
+                    })}
+                    {/* Switch arm pointing to active chain */}
+                    <line x1="6" y1="12" x2="10" y2={4 + activeSlotIndex * 8}
+                      stroke={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="1.5" />
+                    <line x1="22" y1={4 + activeSlotIndex * 8} x2="28" y2="12"
+                      stroke={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} strokeWidth="1.5" />
+                    <circle cx="28" cy="12" r="2" fill={routing.mode === 'ab_switch' ? '#ffaa00' : '#666'} />
                   </svg>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <div style={{
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: 600,
-                      color: chainRoutingMode === 'ab_switch' ? '#ffaa00' : 'var(--text)',
-                    }}>A/B Switch</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>Toggle between chains</div>
+                      color: routing.mode === 'ab_switch' ? '#ffaa00' : 'var(--text)',
+                    }}>Chain Switch</div>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Toggle {chainSlots.map(s => s.label).join('/')}</div>
                   </div>
                 </button>
 
-                {/* Series Mode */}
+                {/* 3. Series Mode */}
                 <button
-                  onClick={() => setChainRoutingMode('series')}
+                  onClick={() => setRoutingMode('series')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '8px 10px',
-                    background: chainRoutingMode === 'series'
+                    padding: '7px 10px',
+                    background: routing.mode === 'series'
                       ? 'linear-gradient(135deg, rgba(170, 0, 255, 0.25) 0%, rgba(120, 0, 200, 0.15) 100%)'
                       : 'rgba(255, 255, 255, 0.03)',
-                    border: chainRoutingMode === 'series'
+                    border: routing.mode === 'series'
                       ? '1px solid rgba(170, 0, 255, 0.5)'
                       : '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: 6,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    boxShadow: chainRoutingMode === 'series'
+                    boxShadow: routing.mode === 'series'
                       ? '0 0 12px rgba(170, 0, 255, 0.3)'
                       : 'none',
                   }}
                 >
-                  {/* Series diagram */}
-                  <svg width="32" height="24" viewBox="0 0 32 24">
-                    <line x1="0" y1="12" x2="4" y2="12" stroke={chainRoutingMode === 'series' ? '#aa00ff' : '#666'} strokeWidth="2" />
-                    <rect x="4" y="6" width="10" height="12" rx="2" fill="none" stroke={chainRoutingMode === 'series' ? '#aa00ff' : '#666'} strokeWidth="1.5" />
-                    <text x="9" y="14" textAnchor="middle" fontSize="6" fill={chainRoutingMode === 'series' ? '#aa00ff' : '#666'}>A</text>
-                    <line x1="14" y1="12" x2="18" y2="12" stroke={chainRoutingMode === 'series' ? '#aa00ff' : '#666'} strokeWidth="2" />
-                    <rect x="18" y="6" width="10" height="12" rx="2" fill="none" stroke={chainRoutingMode === 'series' ? '#aa00ff' : '#666'} strokeWidth="1.5" />
-                    <text x="23" y="14" textAnchor="middle" fontSize="6" fill={chainRoutingMode === 'series' ? '#aa00ff' : '#666'}>B</text>
-                    <line x1="28" y1="12" x2="32" y2="12" stroke={chainRoutingMode === 'series' ? '#aa00ff' : '#666'} strokeWidth="2" />
+                  {/* Dynamic Series diagram */}
+                  <svg width="36" height="24" viewBox="0 0 36 24">
+                    <line x1="0" y1="12" x2="3" y2="12" stroke={routing.mode === 'series' ? '#aa00ff' : '#666'} strokeWidth="1.5" />
+                    {chainSlots.slice(0, Math.min(3, chainSlots.length)).map((slot, i) => {
+                      const xOffset = 3 + i * 10
+                      const isActive = routing.mode === 'series'
+                      return (
+                        <React.Fragment key={slot.id}>
+                          <rect x={xOffset} y="8" width="8" height="8" rx="1" fill="none" stroke={isActive ? slot.color : '#666'} strokeWidth="1" />
+                          <text x={xOffset + 4} y="14" textAnchor="middle" fontSize="5" fill={isActive ? slot.color : '#666'}>{slot.label}</text>
+                          {i < Math.min(2, chainSlots.length - 1) && (
+                            <line x1={xOffset + 8} y1="12" x2={xOffset + 10} y2="12" stroke={isActive ? '#aa00ff' : '#666'} strokeWidth="1.5" />
+                          )}
+                        </React.Fragment>
+                      )
+                    })}
+                    <line x1={3 + Math.min(3, chainSlots.length) * 10 - 2} y1="12" x2="36" y2="12"
+                      stroke={routing.mode === 'series' ? '#aa00ff' : '#666'} strokeWidth="1.5" />
                   </svg>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <div style={{
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: 600,
-                      color: chainRoutingMode === 'series' ? '#aa00ff' : 'var(--text)',
+                      color: routing.mode === 'series' ? '#aa00ff' : 'var(--text)',
                     }}>Series</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>A feeds into B</div>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>{chainSlots.map(s => s.label).join(' → ')}</div>
+                  </div>
+                </button>
+
+                {/* 4. Parameter Morph Mode */}
+                <button
+                  onClick={() => setRoutingMode('parameter_morph')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '7px 10px',
+                    background: routing.mode === 'parameter_morph'
+                      ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(180, 40, 120, 0.15) 100%)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                    border: routing.mode === 'parameter_morph'
+                      ? '1px solid rgba(236, 72, 153, 0.5)'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: routing.mode === 'parameter_morph'
+                      ? '0 0 12px rgba(236, 72, 153, 0.3)'
+                      : 'none',
+                  }}
+                >
+                  {/* Morph diagram - interpolation arc between two chains */}
+                  <svg width="36" height="24" viewBox="0 0 36 24">
+                    <rect x="4" y="6" width="10" height="8" rx="2" fill="none"
+                      stroke={routing.mode === 'parameter_morph' ? chainSlots[0]?.color || '#ec4899' : '#666'} strokeWidth="1" />
+                    <text x="9" y="12" textAnchor="middle" fontSize="5"
+                      fill={routing.mode === 'parameter_morph' ? chainSlots[0]?.color || '#ec4899' : '#666'}>
+                      {chainSlots[0]?.label || 'A'}
+                    </text>
+                    <rect x="22" y="6" width="10" height="8" rx="2" fill="none"
+                      stroke={routing.mode === 'parameter_morph' ? chainSlots[1]?.color || '#ec4899' : '#666'} strokeWidth="1" />
+                    <text x="27" y="12" textAnchor="middle" fontSize="5"
+                      fill={routing.mode === 'parameter_morph' ? chainSlots[1]?.color || '#ec4899' : '#666'}>
+                      {chainSlots[1]?.label || 'B'}
+                    </text>
+                    {/* Interpolation arc */}
+                    <path d="M 14 10 Q 18 2 22 10" fill="none"
+                      stroke={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'}
+                      strokeWidth="1.5" strokeDasharray="2,2" />
+                    {/* Morph indicator dot */}
+                    <circle cx={14 + (routing.morphProgress * 8)} cy={10 - Math.sin(routing.morphProgress * Math.PI) * 8}
+                      r="2" fill={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'} />
+                    {/* Output line */}
+                    <line x1="18" y1="18" x2="18" y2="22"
+                      stroke={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'} strokeWidth="1.5" />
+                    <circle cx="18" cy="22" r="1.5" fill={routing.mode === 'parameter_morph' ? '#ec4899' : '#666'} />
+                  </svg>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: routing.mode === 'parameter_morph' ? '#ec4899' : 'var(--text)',
+                    }}>Parameter Morph</div>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Interpolate settings</div>
+                  </div>
+                </button>
+
+                {/* 5. Sidechain Mode */}
+                <button
+                  onClick={() => setRoutingMode('sidechain')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '7px 10px',
+                    background: routing.mode === 'sidechain'
+                      ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(4, 140, 165, 0.15) 100%)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                    border: routing.mode === 'sidechain'
+                      ? '1px solid rgba(6, 182, 212, 0.5)'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: routing.mode === 'sidechain'
+                      ? '0 0 12px rgba(6, 182, 212, 0.3)'
+                      : 'none',
+                  }}
+                >
+                  {/* Sidechain diagram */}
+                  <svg width="36" height="24" viewBox="0 0 36 24">
+                    {/* Main signal path */}
+                    <line x1="0" y1="16" x2="8" y2="16" stroke={routing.mode === 'sidechain' ? '#06b6d4' : '#666'} strokeWidth="2" />
+                    <rect x="8" y="12" width="12" height="8" rx="2" fill="none"
+                      stroke={routing.mode === 'sidechain' ? '#06b6d4' : '#666'} strokeWidth="1.5" />
+                    <text x="14" y="18" textAnchor="middle" fontSize="5"
+                      fill={routing.mode === 'sidechain' ? '#06b6d4' : '#666'}>COMP</text>
+                    <line x1="20" y1="16" x2="36" y2="16" stroke={routing.mode === 'sidechain' ? '#06b6d4' : '#666'} strokeWidth="2" />
+                    {/* Sidechain input */}
+                    <line x1="14" y1="4" x2="14" y2="12" stroke={routing.mode === 'sidechain' ? '#f59e0b' : '#666'}
+                      strokeWidth="1.5" strokeDasharray="3,2" />
+                    <text x="14" y="3" textAnchor="middle" fontSize="4"
+                      fill={routing.mode === 'sidechain' ? '#f59e0b' : '#666'}>SC</text>
+                    {/* Key indicator */}
+                    <circle cx="14" cy="8" r="1.5" fill={routing.mode === 'sidechain' ? '#f59e0b' : '#666'} />
+                  </svg>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: routing.mode === 'sidechain' ? '#06b6d4' : 'var(--text)',
+                    }}>Sidechain</div>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>Plugin key inputs</div>
                   </div>
                 </button>
               </div>
 
-              {/* Mix Balance Slider - Only shown in parallel mode */}
-              {chainRoutingMode === 'parallel' && (
+              {/* Mode-Specific Controls */}
+
+              {/* Parallel Blend - Per-chain level sliders */}
+              {routing.mode === 'parallel_blend' && (
                 <div style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '10px',
                   background: 'rgba(0, 212, 255, 0.08)',
                   borderRadius: 8,
                   border: '1px solid rgba(0, 212, 255, 0.2)',
-                  marginBottom: 16,
+                  marginBottom: 12,
                 }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                  }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--primary)' }}>A</span>
-                    <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>MIX BALANCE</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--primary)' }}>B</span>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'center' }}>
+                    PER-CHAIN LEVELS
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={chainMix}
-                    onChange={(e) => setChainMix(Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      height: 6,
-                      appearance: 'none',
-                      background: `linear-gradient(90deg, var(--primary) ${chainMix}%, rgba(255,255,255,0.2) ${chainMix}%)`,
-                      borderRadius: 3,
-                      cursor: 'pointer',
-                    }}
-                  />
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    marginTop: 8,
-                  }}>
-                    <span style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'var(--text)',
-                      background: 'rgba(0, 212, 255, 0.15)',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                    }}>
-                      {chainMix === 50 ? '50/50' : chainMix < 50 ? `${100 - chainMix}% A` : `${chainMix}% B`}
-                    </span>
-                  </div>
+                  {chainSlots.map((slot) => (
+                    <div key={slot.id} style={{ marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: slot.color }}>{slot.label}</span>
+                        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                          {routing.blendPositions[slot.id] ?? 100}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={routing.blendPositions[slot.id] ?? 100}
+                        onChange={(e) => setSlotBlendLevel(slot.id, Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          height: 4,
+                          appearance: 'none',
+                          background: `linear-gradient(90deg, ${slot.color} ${routing.blendPositions[slot.id] ?? 100}%, rgba(255,255,255,0.15) ${routing.blendPositions[slot.id] ?? 100}%)`,
+                          borderRadius: 2,
+                          cursor: 'pointer',
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* A/B Switch Active Indicator */}
-              {chainRoutingMode === 'ab_switch' && (
+              {/* Chain Switch - Dynamic selector buttons */}
+              {routing.mode === 'ab_switch' && (
                 <div style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '10px',
                   background: 'rgba(255, 170, 0, 0.08)',
                   borderRadius: 8,
                   border: '1px solid rgba(255, 170, 0, 0.2)',
-                  marginBottom: 16,
+                  marginBottom: 12,
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 6 }}>ACTIVE CHAIN</div>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8 }}>ACTIVE CHAIN</div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: 8,
+                    gap: 6,
+                    flexWrap: 'wrap',
                   }}>
-                    <button
-                      onClick={() => setActiveChainSlot(1)}
-                      style={{
-                        padding: '6px 16px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        background: activeChainSlot === 1 ? '#ffaa00' : 'transparent',
-                        color: activeChainSlot === 1 ? '#000' : '#ffaa00',
-                        border: '1px solid #ffaa00',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    >A</button>
-                    <button
-                      onClick={() => setActiveChainSlot(2)}
-                      style={{
-                        padding: '6px 16px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        background: activeChainSlot === 2 ? '#ffaa00' : 'transparent',
-                        color: activeChainSlot === 2 ? '#000' : '#ffaa00',
-                        border: '1px solid #ffaa00',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    >B</button>
+                    {chainSlots.map((slot, index) => (
+                      <button
+                        key={slot.id}
+                        onClick={() => setActiveSlotIndex(index)}
+                        style={{
+                          padding: '5px 12px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: activeSlotIndex === index ? slot.color : 'transparent',
+                          color: activeSlotIndex === index ? '#000' : slot.color,
+                          border: `1px solid ${slot.color}`,
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
+                      >{slot.label}</button>
+                    ))}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 8 }}>
-                    Click A or B to switch
+                  <div style={{ fontSize: 8, color: 'var(--text-muted)', marginTop: 6 }}>
+                    Click to switch chains
                   </div>
                 </div>
               )}
 
-              {/* Series Flow Indicator */}
-              {chainRoutingMode === 'series' && (
+              {/* Series - Dynamic flow indicator */}
+              {routing.mode === 'series' && (
                 <div style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '10px',
                   background: 'rgba(170, 0, 255, 0.08)',
                   borderRadius: 8,
                   border: '1px solid rgba(170, 0, 255, 0.2)',
-                  marginBottom: 16,
+                  marginBottom: 12,
                   textAlign: 'center',
                 }}>
                   <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8 }}>SIGNAL FLOW</div>
@@ -2924,38 +3567,34 @@ export function ChainFlowPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 6,
+                    gap: 4,
+                    flexWrap: 'wrap',
                   }}>
                     <span style={{
-                      padding: '4px 10px',
-                      fontSize: 11,
+                      padding: '3px 8px',
+                      fontSize: 9,
                       fontWeight: 700,
                       background: 'rgba(170, 0, 255, 0.2)',
                       color: '#aa00ff',
                       borderRadius: 4,
-                    }}>INPUT</span>
-                    <ArrowRight size={14} style={{ color: '#aa00ff' }} />
+                    }}>IN</span>
+                    {chainSlots.map((slot, index) => (
+                      <React.Fragment key={slot.id}>
+                        <ArrowRight size={12} style={{ color: '#aa00ff' }} />
+                        <span style={{
+                          padding: '3px 8px',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          background: `${slot.color}30`,
+                          color: slot.color,
+                          borderRadius: 4,
+                        }}>{slot.label}</span>
+                      </React.Fragment>
+                    ))}
+                    <ArrowRight size={12} style={{ color: '#aa00ff' }} />
                     <span style={{
-                      padding: '4px 10px',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      background: 'rgba(170, 0, 255, 0.3)',
-                      color: '#aa00ff',
-                      borderRadius: 4,
-                    }}>A</span>
-                    <ArrowRight size={14} style={{ color: '#aa00ff' }} />
-                    <span style={{
-                      padding: '4px 10px',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      background: 'rgba(170, 0, 255, 0.3)',
-                      color: '#aa00ff',
-                      borderRadius: 4,
-                    }}>B</span>
-                    <ArrowRight size={14} style={{ color: '#aa00ff' }} />
-                    <span style={{
-                      padding: '4px 10px',
-                      fontSize: 11,
+                      padding: '3px 8px',
+                      fontSize: 9,
                       fontWeight: 700,
                       background: 'rgba(170, 0, 255, 0.2)',
                       color: '#aa00ff',
@@ -2965,10 +3604,150 @@ export function ChainFlowPage() {
                 </div>
               )}
 
+              {/* Parameter Morph - Source/Target selector + Morph slider */}
+              {routing.mode === 'parameter_morph' && (
+                <div style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'rgba(236, 72, 153, 0.08)',
+                  borderRadius: 8,
+                  border: '1px solid rgba(236, 72, 153, 0.2)',
+                  marginBottom: 12,
+                }}>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'center' }}>
+                    MORPH BETWEEN CHAINS
+                  </div>
+
+                  {/* Source/Target selectors */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 8, color: 'var(--text-muted)', marginBottom: 4 }}>SOURCE</div>
+                      <select
+                        value={routing.morphSourceSlotId || chainSlots[0]?.id || ''}
+                        onChange={(e) => setMorphSource(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '4px 6px',
+                          fontSize: 10,
+                          background: 'rgba(236, 72, 153, 0.15)',
+                          border: '1px solid rgba(236, 72, 153, 0.3)',
+                          borderRadius: 4,
+                          color: 'var(--text)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {chainSlots.map((slot) => (
+                          <option key={slot.id} value={slot.id}>Chain {slot.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 8, color: 'var(--text-muted)', marginBottom: 4 }}>TARGET</div>
+                      <select
+                        value={routing.morphTargetSlotId || chainSlots[1]?.id || ''}
+                        onChange={(e) => setMorphTarget(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '4px 6px',
+                          fontSize: 10,
+                          background: 'rgba(236, 72, 153, 0.15)',
+                          border: '1px solid rgba(236, 72, 153, 0.3)',
+                          borderRadius: 4,
+                          color: 'var(--text)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {chainSlots.map((slot) => (
+                          <option key={slot.id} value={slot.id}>Chain {slot.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Morph slider */}
+                  <div style={{ marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9 }}>
+                      <span style={{ color: chainSlots.find(s => s.id === (routing.morphSourceSlotId || chainSlots[0]?.id))?.color }}>
+                        {chainSlots.find(s => s.id === (routing.morphSourceSlotId || chainSlots[0]?.id))?.label || 'A'}
+                      </span>
+                      <span style={{ color: 'var(--text-muted)' }}>{Math.round(routing.morphProgress * 100)}%</span>
+                      <span style={{ color: chainSlots.find(s => s.id === (routing.morphTargetSlotId || chainSlots[1]?.id))?.color }}>
+                        {chainSlots.find(s => s.id === (routing.morphTargetSlotId || chainSlots[1]?.id))?.label || 'B'}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={routing.morphProgress * 100}
+                      onChange={(e) => setMorphProgress(Number(e.target.value) / 100)}
+                      style={{
+                        width: '100%',
+                        height: 6,
+                        appearance: 'none',
+                        background: `linear-gradient(90deg,
+                          ${chainSlots.find(s => s.id === (routing.morphSourceSlotId || chainSlots[0]?.id))?.color || '#ec4899'} 0%,
+                          ${chainSlots.find(s => s.id === (routing.morphTargetSlotId || chainSlots[1]?.id))?.color || '#ec4899'} 100%)`,
+                        borderRadius: 3,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: 8, color: 'var(--text-muted)', textAlign: 'center' }}>
+                    Smoothly interpolate plugin parameters
+                  </div>
+                </div>
+              )}
+
+              {/* Sidechain - Connection list + info */}
+              {routing.mode === 'sidechain' && (
+                <div style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: 'rgba(6, 182, 212, 0.08)',
+                  borderRadius: 8,
+                  border: '1px solid rgba(6, 182, 212, 0.2)',
+                  marginBottom: 12,
+                }}>
+                  <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, textAlign: 'center' }}>
+                    SIDECHAIN ROUTING
+                  </div>
+
+                  {/* Sidechain info */}
+                  <div style={{
+                    padding: '8px',
+                    background: 'rgba(6, 182, 212, 0.1)',
+                    borderRadius: 6,
+                    marginBottom: 8,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Link2 size={12} style={{ color: '#06b6d4' }} />
+                      <span style={{ fontSize: 9, fontWeight: 600, color: '#06b6d4' }}>Plugin Key Inputs</span>
+                    </div>
+                    <div style={{ fontSize: 8, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      Route audio from one chain to the sidechain input of compressors,
+                      gates, and other dynamics plugins.
+                    </div>
+                  </div>
+
+                  {/* Connection status */}
+                  <div style={{
+                    padding: '6px 8px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: 4,
+                    fontSize: 9,
+                    color: 'var(--text-muted)',
+                    textAlign: 'center',
+                  }}>
+                    <span style={{ color: '#f59e0b' }}>SC Key:</span> Select plugin with sidechain support
+                  </div>
+                </div>
+              )}
+
               {/* Mode Explanation */}
               <div style={{
                 width: '100%',
-                padding: '10px',
+                padding: '8px',
                 background: 'rgba(255, 255, 255, 0.03)',
                 borderRadius: 6,
                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -2977,22 +3756,31 @@ export function ChainFlowPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  marginBottom: 6
+                  marginBottom: 4
                 }}>
-                  <Info size={12} style={{ color: 'var(--text-muted)' }} />
-                  <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    {chainRoutingMode === 'parallel' ? 'Parallel Mode' : chainRoutingMode === 'ab_switch' ? 'A/B Mode' : 'Series Mode'}
+                  <Info size={10} style={{ color: 'var(--text-muted)' }} />
+                  <span style={{ fontSize: 8, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    {routing.mode === 'parallel_blend' ? 'Parallel Mode' :
+                     routing.mode === 'ab_switch' ? 'Switch Mode' :
+                     routing.mode === 'series' ? 'Series Mode' :
+                     routing.mode === 'parameter_morph' ? 'Morph Mode' : 'Sidechain Mode'}
                   </span>
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  {chainRoutingMode === 'parallel' && (
-                    <>Audio splits to both chains simultaneously. Adjust the mix slider to blend between them. Great for wet/dry effects or layering two different sounds.</>
+                <div style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  {routing.mode === 'parallel_blend' && (
+                    <>Audio splits to all {chainSlots.length} chains simultaneously. Adjust individual levels to blend between them.</>
                   )}
-                  {chainRoutingMode === 'ab_switch' && (
-                    <>Only one chain is active at a time. Switch instantly between A and B for comparing tones or switching between clean/dirty sounds live.</>
+                  {routing.mode === 'ab_switch' && (
+                    <>Only one chain is active at a time. Switch instantly between {chainSlots.map(s => s.label).join('/')} for comparing tones.</>
                   )}
-                  {chainRoutingMode === 'series' && (
-                    <>Chain A's output feeds directly into Chain B's input. Use this to stack effect chains or route through multiple processing stages.</>
+                  {routing.mode === 'series' && (
+                    <>Chains process in sequence: {chainSlots.map(s => s.label).join(' → ')}. Use for stacked processing stages.</>
+                  )}
+                  {routing.mode === 'parameter_morph' && (
+                    <>Smoothly interpolate plugin parameters between two chains. Great for transitions and expression pedal control.</>
+                  )}
+                  {routing.mode === 'sidechain' && (
+                    <>Configure sidechain routing between plugins. Route audio to the key input of compressors and gates.</>
                   )}
                 </div>
               </div>
@@ -3000,81 +3788,141 @@ export function ChainFlowPage() {
               {/* Output Indicator */}
               <div style={{
                 marginTop: 'auto',
-                paddingTop: 16,
+                paddingTop: 12,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 6,
+                gap: 4,
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px 12px',
+                  padding: '6px 10px',
                   background: 'rgba(34, 197, 94, 0.15)',
-                  borderRadius: 8,
+                  borderRadius: 6,
                   border: '1px solid var(--success)',
                   boxShadow: '0 0 10px rgba(34, 197, 94, 0.3)',
                 }}>
-                  <Speaker size={18} style={{
+                  <Speaker size={16} style={{
                     color: 'var(--success)',
                     filter: 'drop-shadow(0 0 4px rgba(34, 197, 94, 0.8))',
                   }} />
                 </div>
                 <span style={{
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: 600,
                   color: 'var(--success)',
                   letterSpacing: '1px',
                 }}>OUTPUT</span>
               </div>
-            </div>
-            )}
+          </div>
+        )}
 
-            {/* Chain B */}
-            <div style={{ display: 'flex', flexDirection: 'column', padding: '0 0 0 12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <button
-                  className={`btn btn-sm ${activeChainSlot === 2 ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ 
-                    padding: '6px 14px', 
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    boxShadow: activeChainSlot === 2 ? '0 0 15px rgba(0, 212, 255, 0.5), inset 0 0 10px rgba(255,255,255,0.1)' : 'none',
-                    border: activeChainSlot === 2 ? '1px solid rgba(0, 212, 255, 0.5)' : '1px solid transparent',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  onClick={() => setActiveChainSlot(2)}
-                >
-                  {activeChainSlot === 2 && (
-                    <span style={{
-                      position: 'absolute',
-                      inset: 0,
-                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                      animation: 'shimmer 2s ease-in-out infinite',
-                    }} />
-                  )}
-                  <span style={{ position: 'relative', zIndex: 1 }}>B</span>
-                </button>
-                <select
-                  className="input"
-                  style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
-                  value={secondChainId ?? ''}
-                  onChange={(e) => setSecondChainId(Number(e.target.value))}
-                  disabled={chainsQuery.isLoading}
-                  title="Chain B - parallel signal path"
-                >
-                  <option value="">None</option>
-                  {chainsQuery.data?.chains.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.is_active ? '●' : ''}
-                    </option>
-                  ))}
-                </select>
-                <span style={{ fontSize: 9, color: 'var(--text-muted)', marginLeft: 4 }} title="A/B paths run in parallel and mix to output">Path B</span>
+        {/* Chain B Card */}
+        {chainSlots.length >= 2 && (
+        <div className="card" style={{
+          minHeight: isMobile ? 'auto' : 480,
+          position: 'relative',
+          overflow: 'hidden',
+          borderColor: activeSlotIndex === 1 ? `${chainSlots[1]?.color}66` : undefined,
+          boxShadow: activeSlotIndex === 1 ? `0 0 20px ${chainSlots[1]?.color}26` : undefined,
+        }}>
+          {/* Chain B Header Banner */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '12px 20px',
+            marginBottom: 16,
+            marginLeft: -20,
+            marginRight: -20,
+            marginTop: -20,
+            background: `linear-gradient(135deg, ${chainSlots[1]?.color}1f, ${chainSlots[1]?.color}14)`,
+            borderBottom: `2px solid ${chainSlots[1]?.color}66`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' }}>
+              <Zap size={18} style={{
+                color: chainSlots[1]?.color,
+                filter: `drop-shadow(0 0 4px ${chainSlots[1]?.color}80)`
+              }} />
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: 2,
+                  color: chainSlots[1]?.color,
+                  textTransform: 'uppercase',
+                  marginBottom: 1,
+                }}>
+                  PATH {chainSlots[1]?.label}
+                </div>
+                <div style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#fff',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                }}>
+                  {secondChain?.name || 'Select Chain'}
+                </div>
               </div>
+            </div>
+            {chainSlots.length > MIN_CHAINS && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => removeChainSlot(chainSlots[1]?.id)}
+                title="Remove this chain slot"
+                style={{ color: '#ef4444', padding: 4 }}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <button
+                className={`btn btn-sm ${activeSlotIndex === 1 ? 'btn-primary' : 'btn-ghost'}`}
+                style={{
+                  padding: '6px 14px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  letterSpacing: '1px',
+                  backgroundColor: activeSlotIndex === 1 ? chainSlots[1]?.color : undefined,
+                  boxShadow: activeSlotIndex === 1 ? `0 0 15px ${chainSlots[1]?.color}80, inset 0 0 10px rgba(255,255,255,0.1)` : 'none',
+                  border: activeSlotIndex === 1 ? `1px solid ${chainSlots[1]?.color}80` : '1px solid transparent',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+                onClick={() => setActiveSlotIndex(1)}
+              >
+                {activeSlotIndex === 1 && (
+                  <span style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                    animation: 'shimmer 2s ease-in-out infinite',
+                  }} />
+                )}
+                <span style={{ position: 'relative', zIndex: 1 }}>{chainSlots[1]?.label}</span>
+              </button>
+              <select
+                className="input"
+                style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
+                value={chainSlots[1]?.chainId ?? ''}
+                onChange={(e) => updateChainSlot(chainSlots[1]?.id, { chainId: e.target.value ? Number(e.target.value) : null })}
+                disabled={chainsQuery.isLoading}
+                title={`Chain ${chainSlots[1]?.label} - signal path`}
+              >
+                <option value="">Select chain...</option>
+                {chainsQuery.data?.chains.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.is_active ? '●' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {!secondChainId ? (
                   <div className="muted" style={{ fontSize: 11, padding: 8, textAlign: 'center' }}>
@@ -3140,39 +3988,248 @@ export function ChainFlowPage() {
                   </div>
                 )}
               </div>
-              {/* Plugin count indicator with glow */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                gap: 8,
-                marginTop: 12,
-                padding: '6px 12px',
-                background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 100, 150, 0.1) 100%)',
-                borderRadius: 20,
-                border: '1px solid rgba(0, 212, 255, 0.3)',
-                boxShadow: '0 0 10px rgba(0, 212, 255, 0.2)',
+            {/* Plugin count indicator with glow */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              marginTop: 12,
+              padding: '6px 12px',
+              background: `linear-gradient(135deg, ${chainSlots[1]?.color}1a 0%, ${chainSlots[1]?.color}1a 100%)`,
+              borderRadius: 20,
+              border: `1px solid ${chainSlots[1]?.color}4d`,
+              boxShadow: `0 0 10px ${chainSlots[1]?.color}33`,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="6" fill="none" stroke={chainSlots[1]?.color} strokeWidth="1.5" opacity="0.5" />
+                <circle cx="8" cy="8" r="3" fill={chainSlots[1]?.color}>
+                  <animate attributeName="r" values="2;4;2" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                </circle>
+              </svg>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: chainSlots[1]?.color,
+                textShadow: `0 0 8px ${chainSlots[1]?.color}80`,
               }}>
-                <svg width="16" height="16" viewBox="0 0 16 16">
-                  <circle cx="8" cy="8" r="6" fill="none" stroke="var(--primary)" strokeWidth="1.5" opacity="0.5" />
-                  <circle cx="8" cy="8" r="3" fill="var(--primary)">
-                    <animate attributeName="r" values="2;4;2" dur="2s" begin="0.5s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin="0.5s" repeatCount="indefinite" />
-                  </circle>
-                </svg>
-                <span style={{ 
-                  fontSize: 11, 
-                  fontWeight: 600,
-                  color: 'var(--primary)',
-                  textShadow: '0 0 8px rgba(0, 212, 255, 0.5)',
-                }}>
-                  {secondChain?.plugins.length ?? 0} plugins
-                </span>
-              </div>
+                {secondChain?.plugins.length ?? 0} plugins
+              </span>
             </div>
           </div>
         </div>
+        )}
 
+        {/* Additional Chain Cards (C, D, E, F) */}
+        {chainSlots.slice(2).map((slot, idx) => {
+          const slotIndex = idx + 2
+          const chain = chainsQuery.data?.chains.find(c => c.id === slot.chainId)
+
+          return (
+            <div key={slot.id} className="card" style={{
+              minHeight: isMobile ? 'auto' : 480,
+              position: 'relative',
+              overflow: 'hidden',
+              borderColor: activeSlotIndex === slotIndex ? `${slot.color}66` : undefined,
+              boxShadow: activeSlotIndex === slotIndex ? `0 0 20px ${slot.color}26` : undefined,
+            }}>
+              {/* Header Banner */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                padding: '12px 20px',
+                marginBottom: 16,
+                marginLeft: -20,
+                marginRight: -20,
+                marginTop: -20,
+                background: `linear-gradient(135deg, ${slot.color}1f, ${slot.color}14)`,
+                borderBottom: `2px solid ${slot.color}66`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'center' }}>
+                  <Zap size={18} style={{
+                    color: slot.color,
+                    filter: `drop-shadow(0 0 4px ${slot.color}80)`
+                  }} />
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      letterSpacing: 2,
+                      color: slot.color,
+                      textTransform: 'uppercase',
+                      marginBottom: 1,
+                    }}>
+                      PATH {slot.label}
+                    </div>
+                    <div style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: '#fff',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                    }}>
+                      {chain?.name || 'Select Chain'}
+                    </div>
+                  </div>
+                </div>
+                {chainSlots.length > MIN_CHAINS && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => removeChainSlot(slot.id)}
+                    title="Remove this chain slot"
+                    style={{ color: '#ef4444', padding: 4 }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <button
+                    className={`btn btn-sm ${activeSlotIndex === slotIndex ? 'btn-primary' : 'btn-ghost'}`}
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      letterSpacing: '1px',
+                      backgroundColor: activeSlotIndex === slotIndex ? slot.color : undefined,
+                      boxShadow: activeSlotIndex === slotIndex ? `0 0 15px ${slot.color}80, inset 0 0 10px rgba(255,255,255,0.1)` : 'none',
+                      border: activeSlotIndex === slotIndex ? `1px solid ${slot.color}80` : '1px solid transparent',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                    onClick={() => setActiveSlotIndex(slotIndex)}
+                  >
+                    {activeSlotIndex === slotIndex && (
+                      <span style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                        animation: 'shimmer 2s ease-in-out infinite',
+                      }} />
+                    )}
+                    <span style={{ position: 'relative', zIndex: 1 }}>{slot.label}</span>
+                  </button>
+                  <select
+                    className="input"
+                    style={{ flex: 1, fontSize: 12, padding: '6px 8px' }}
+                    value={slot.chainId ?? ''}
+                    onChange={(e) => updateChainSlot(slot.id, { chainId: e.target.value ? Number(e.target.value) : null })}
+                    disabled={chainsQuery.isLoading}
+                    title={`Chain ${slot.label} - signal path`}
+                  >
+                    <option value="">Select chain...</option>
+                    {chainsQuery.data?.chains.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.is_active ? '●' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  {!slot.chainId ? (
+                    <div className="muted" style={{ fontSize: 11, padding: 8, textAlign: 'center' }}>
+                      Select a chain
+                    </div>
+                  ) : chainsQuery.isLoading ? (
+                    <div className="flex" style={{ padding: '12px 4px' }}>
+                      <Loader2 className="spin" size={18} /> Loading...
+                    </div>
+                  ) : !chain ? (
+                    <div className="pill warn" style={{ fontSize: 11 }}>No chain</div>
+                  ) : chain.plugins.length === 0 ? (
+                    <div className="muted" style={{ fontSize: 11, padding: 8 }}>Empty chain</div>
+                  ) : (
+                    <div className="stack" style={{ gap: 0 }}>
+                      <ChainEndpoint type="input" label="AUDIO INPUT" audioStatus={audioInterfaceStatus} />
+                      {chain.plugins.map((plugin, pluginIdx) => (
+                        <React.Fragment key={plugin.uri}>
+                          <SignalCable
+                            isActive={!plugin.bypassed}
+                            color={getCategoryConfig(pluginMetaByUri[plugin.uri]?.category || 'Effect').color}
+                          />
+                          {plugin.uri === CABINET_IR_PLUGIN_URI ? (
+                            <CabinetIRFlowCard
+                              status={cabinetStatus}
+                              onIRChange={updateCabinetIR}
+                              onMixChange={updateCabinetMix}
+                              onBypassChange={updateCabinetBypass}
+                              isSelected={activeSlotIndex === slotIndex && selectedPluginUri === plugin.uri}
+                              isDragging={draggedPluginUri === plugin.uri}
+                            />
+                          ) : (
+                            <PluginFlowItem
+                              plugin={plugin}
+                              pluginMeta={pluginMetaByUri[plugin.uri]}
+                              idx={pluginIdx}
+                              totalPlugins={chain.plugins.length}
+                              isSelected={activeSlotIndex === slotIndex && selectedPluginUri === plugin.uri}
+                              chainId={chain.id}
+                              onSelect={(uri) => { setActiveSlotIndex(slotIndex); setSelectedPluginUri(uri); }}
+                              onMove={movePlugin}
+                              onToggleBypass={toggleBypass}
+                              onRemove={removePlugin}
+                              reorderPending={reorder.isPending}
+                              onDragStart={handleDragStart}
+                              onDragOver={handleDragOver}
+                              onDragEnd={handleDragEnd}
+                              onDrop={handleDrop}
+                              isDragging={draggedPluginUri === plugin.uri}
+                              isDragOver={dragOverPluginUri === plugin.uri}
+                              levelIn={pluginLevels[plugin.uri]?.in ?? 0}
+                              levelOut={pluginLevels[plugin.uri]?.out ?? 0}
+                              wetDryMix={wetDryMixes[plugin.uri] ?? 100}
+                              onWetDryChange={handleWetDryChange}
+                              onSavePreset={handleSavePreset}
+                            />
+                          )}
+                        </React.Fragment>
+                      ))}
+                      <SignalCable isActive={chain.plugins.some(p => !p.bypassed)} />
+                      <ChainEndpoint type="output" label="AUDIO OUTPUT" audioStatus={audioInterfaceStatus} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Plugin count indicator */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  marginTop: 12,
+                  padding: '6px 12px',
+                  background: `linear-gradient(135deg, ${slot.color}1a 0%, ${slot.color}1a 100%)`,
+                  borderRadius: 20,
+                  border: `1px solid ${slot.color}4d`,
+                  boxShadow: `0 0 10px ${slot.color}33`,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="6" fill="none" stroke={slot.color} strokeWidth="1.5" opacity="0.5" />
+                    <circle cx="8" cy="8" r="3" fill={slot.color}>
+                      <animate attributeName="r" values="2;4;2" dur="2s" begin={`${idx * 0.3}s`} repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="1;0.5;1" dur="2s" begin={`${idx * 0.3}s`} repeatCount="indefinite" />
+                    </circle>
+                  </svg>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: slot.color,
+                    textShadow: `0 0 8px ${slot.color}80`,
+                  }}>
+                    {chain?.plugins.length ?? 0} plugins
+                  </span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Signal Routing Card - Last column */}
       </div>
 
       {/* Latency Overlay - Temporarily disabled
@@ -3237,6 +4294,7 @@ export function ChainFlowPage() {
         onLoadReverbIR={handleLoadReverbIR}
         chainName={activeChain ? `${activeChainSlot === 1 ? 'A' : 'B'}: ${activeChain.name}` : undefined}
         onAddToChain={handleAddNativePluginToChain}
+        hideMetering={true}
       />
 
       <PluginDetailsModal
