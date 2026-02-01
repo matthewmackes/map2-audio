@@ -1,22 +1,38 @@
 """
-MIDI Sessions Screen - MIDI Configuration & Sessions
-Consolidates: MIDI Setup, Sessions, Controllers
+MIDI Sessions Screen - Enhanced MIDI Configuration & Sessions
+Consolidates: MIDI Setup, Sessions, Controllers, CC Mappings, Chain Switching
+
+Features (v2):
+- CC Mappings with curve types (linear, logarithmic, exponential, s-curve)
+- Chain switching via Program Change
+- Per-chain mapping scope
+- MIDI output for controller feedback
+- Real-time activity monitoring
 
 Wired to JUCE engine API endpoints:
 - MIDI Devices: /api/engine/midi/devices, /api/engine/midi/status
 - MIDI Mappings: /api/engine/midi/mappings
 - MIDI Learn: /api/engine/midi/learn/*
 - Sessions: /api/sessions/*
+- Commands (v2): /api/v2/midi/commands
 """
 
 import logging
 import asyncio
 from textual.app import ComposeResult
-from textual.widgets import Static, Label, DataTable
-from textual.containers import Vertical
+from textual.widgets import Static, Label, DataTable, TabbedContent, TabPane, Button, Input, Select, Switch
+from textual.containers import Vertical, Horizontal, Container
 from textual.binding import Binding
 
 logger = logging.getLogger(__name__)
+
+# Curve type options for CC mappings
+CURVE_TYPES = [
+    ("Linear", "linear"),
+    ("Logarithmic", "logarithmic"),
+    ("Exponential", "exponential"),
+    ("S-Curve", "s_curve"),
+]
 
 
 class MIDIDevicesWidget(Static):
@@ -264,8 +280,161 @@ class SessionsWidget(Static):
             logger.debug(f"Error updating sessions display: {e}")
 
 
+class ChainSwitchingWidget(Static):
+    """Chain switching via Program Change - NEW v2 feature."""
+
+    DEFAULT_CSS = """
+    #chain-switching {
+        width: 100%;
+        height: auto;
+        background: $panel;
+        border: solid $primary;
+        padding: 1 2;
+        margin: 1 0;
+    }
+
+    #chain-commands-table {
+        width: 100%;
+        height: auto;
+        margin: 1 0;
+    }
+
+    .form-row {
+        width: 100%;
+        height: 3;
+        margin-bottom: 1;
+    }
+
+    .form-label {
+        width: 15;
+        padding-top: 1;
+    }
+    """
+
+    def __init__(self, api_client=None):
+        super().__init__()
+        self.api_client = api_client
+        self.id = "chain-switching"
+        self._commands = []
+        self._chains = []
+
+    def compose(self) -> ComposeResult:
+        yield Label("🔀 CHAIN SWITCHING (Program Change)", id="chain-switching-title")
+        yield Static("[dim]Switch active chain using MIDI Program Change messages[/]")
+        yield DataTable(id="chain-commands-table")
+
+        yield Label("Add Chain → PC Mapping:", id="add-mapping-label")
+        with Horizontal(classes="form-row"):
+            yield Label("Chain:", classes="form-label")
+            yield Select(options=[], id="chain-select", allow_blank=True)
+            yield Label("PC#:", classes="form-label")
+            yield Input(placeholder="0-127", id="pc-number-input")
+            yield Button("Add", id="btn-add-chain-pc", variant="primary")
+
+    def _init_tables(self) -> None:
+        """Initialize tables with headers."""
+        table = self.query_one("#chain-commands-table", DataTable)
+        if not table.columns:
+            table.add_columns("PC#", "Bank", "Chain", "Feedback", "Status")
+            table.add_row("...", "...", "Loading...", "...", "...")
+
+    async def on_mount(self) -> None:
+        """Initialize on mount."""
+        self._init_tables()
+        self.set_interval(10.0, self._refresh_data)
+        asyncio.create_task(self._refresh_data())
+
+    async def _refresh_data(self) -> None:
+        """Fetch chain switching commands."""
+        if not self.api_client:
+            return
+
+        try:
+            # Fetch chains for dropdown
+            chains_result = await self.api_client.list_chains()
+            if chains_result.success and chains_result.data:
+                chains = chains_result.data.get("chains", []) if isinstance(chains_result.data, dict) else chains_result.data
+                self._chains = chains if isinstance(chains, list) else []
+
+                # Update chain select dropdown
+                try:
+                    select = self.query_one("#chain-select", Select)
+                    options = [(c.get("name", f"Chain {c.get('id')}"), str(c.get("id"))) for c in self._chains]
+                    select.set_options(options)
+                except Exception:
+                    pass
+
+            # Fetch PC commands (v2 API)
+            try:
+                result = await self.api_client.get("/api/v2/midi/commands")
+                if result:
+                    self._commands = result.get("commands", [])
+            except Exception:
+                self._commands = []
+
+            self._update_display()
+        except Exception as e:
+            logger.debug(f"Error fetching chain switching data: {e}")
+
+    def _update_display(self) -> None:
+        """Update display with commands."""
+        try:
+            table = self.query_one("#chain-commands-table", DataTable)
+            table.clear()
+
+            if self._commands:
+                for cmd in self._commands:
+                    chain_name = cmd.get("chain_name", f"Chain {cmd.get('chain_id')}")
+                    pc = cmd.get("program_number", "-")
+                    bank = f"{cmd.get('bank_msb', 0)}/{cmd.get('bank_lsb', 0)}"
+                    feedback = "✓" if cmd.get("send_pc_on_activate", True) else "✗"
+                    enabled = "🟢" if cmd.get("enabled", True) else "⚪"
+                    table.add_row(str(pc), bank, chain_name[:20], feedback, enabled)
+            else:
+                table.add_row("-", "-", "No chain switching configured", "-", "-")
+                table.add_row("-", "-", "Send PC#1 → Chain 1, etc.", "-", "-")
+        except Exception as e:
+            logger.debug(f"Error updating chain switching display: {e}")
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.id == "btn-add-chain-pc":
+            await self._add_chain_pc()
+
+    async def _add_chain_pc(self) -> None:
+        """Add chain → PC mapping."""
+        try:
+            select = self.query_one("#chain-select", Select)
+            pc_input = self.query_one("#pc-number-input", Input)
+
+            chain_id = select.value
+            pc_number = pc_input.value
+
+            if not chain_id or not pc_number:
+                self.app.notify("Select chain and enter PC number", severity="warning")
+                return
+
+            # Create command via API
+            await self.api_client.post("/api/v2/midi/commands", json={
+                "chain_id": int(chain_id),
+                "program_number": int(pc_number),
+                "bank_msb": 0,
+                "bank_lsb": 0,
+                "send_pc_on_activate": True,
+            })
+
+            self.app.notify(f"PC#{pc_number} → Chain configured", severity="information")
+            pc_input.value = ""
+            await self._refresh_data()
+
+        except ValueError as e:
+            self.app.notify(f"Invalid input: {e}", severity="error")
+        except Exception as e:
+            logger.debug(f"Error adding chain PC: {e}")
+
+
 class ControlMappingWidget(Static):
-    """MIDI control mapping - wired to /api/midi/mappings endpoint."""
+    """Enhanced MIDI control mapping - with curve types (v2 feature)."""
 
     DEFAULT_CSS = """
     #control-mapping {
@@ -288,6 +457,12 @@ class ControlMappingWidget(Static):
         height: auto;
         margin: 1 0;
     }
+
+    .create-mapping-row {
+        width: 100%;
+        height: 3;
+        margin: 1 0;
+    }
     """
 
     def __init__(self, api_client=None):
@@ -299,19 +474,29 @@ class ControlMappingWidget(Static):
         self._learn_mode = False
 
     def compose(self) -> ComposeResult:
-        """Compose control mapping with tables."""
-        yield Label("🎛️ CONTROL MAPPING", id="mapping-title")
+        """Compose control mapping with tables and create form."""
+        yield Label("🎛️ CC MAPPINGS", id="mapping-title")
+        yield Static("[dim]Map MIDI CC to plugin parameters with custom curves[/]")
         yield DataTable(id="mapping-table")
+
+        yield Label("Quick Create:", id="quick-create-label")
+        with Horizontal(classes="create-mapping-row"):
+            yield Input(placeholder="CC# (0-127)", id="new-cc-input")
+            yield Input(placeholder="Plugin URI", id="new-plugin-input")
+            yield Input(placeholder="Param Index", id="new-param-input")
+            yield Select(options=CURVE_TYPES, value="linear", id="new-curve-select")
+            yield Button("Add", id="btn-add-mapping", variant="primary")
+
         yield Label("Actions:", id="mapping-actions-label")
         yield DataTable(id="mapping-actions-table")
 
     def _init_tables(self) -> None:
         """Initialize tables with headers."""
-        # Mappings table
+        # Mappings table - enhanced with curve type
         table = self.query_one("#mapping-table", DataTable)
         if not table.columns:
-            table.add_columns("Control", "MIDI", "Target", "Range")
-            table.add_row("...", "Loading...", "...", "...")
+            table.add_columns("Ch", "CC", "Plugin", "Param", "Range", "Curve")
+            table.add_row("...", "...", "Loading...", "...", "...", "...")
 
         # Actions table
         actions = self.query_one("#mapping-actions-table", DataTable)
@@ -348,45 +533,87 @@ class ControlMappingWidget(Static):
         try:
             # Update title with mapping count
             mapping_count = len(self._mappings)
-            learn_text = " [LEARN MODE]" if self._learn_mode else ""
+            learn_text = " [🔴 LEARN MODE]" if self._learn_mode else ""
 
             title = self.query_one("#mapping-title", Label)
-            title.update(f"🎛️ CONTROL MAPPING ({mapping_count} mappings){learn_text}")
+            title.update(f"🎛️ CC MAPPINGS ({mapping_count}){learn_text}")
 
-            # Update mappings table
+            # Update mappings table with enhanced columns
             table = self.query_one("#mapping-table", DataTable)
             table.clear()
 
             if self._mappings:
                 for mapping in self._mappings[:10]:
                     # Get mapping details
-                    control_name = mapping.get("control_name", mapping.get("name", "Control"))
-                    midi_type = mapping.get("midi_type", "CC")
-                    midi_channel = mapping.get("channel", 1)
-                    midi_cc = mapping.get("cc", mapping.get("control_number", mapping.get("note", 0)))
-                    target = mapping.get("target", mapping.get("parameter", "Unknown"))
-                    min_val = mapping.get("min_value", mapping.get("range_min", 0))
-                    max_val = mapping.get("max_value", mapping.get("range_max", 127))
+                    channel = mapping.get("channel", mapping.get("midi_channel", "All"))
+                    cc = mapping.get("cc", mapping.get("cc_number", mapping.get("control_number", 0)))
+                    plugin = mapping.get("plugin_uri", mapping.get("target_plugin_uri", ""))
+                    param = mapping.get("parameter_name", mapping.get("param_symbol", mapping.get("target", "-")))
+                    min_val = mapping.get("min_val", mapping.get("min_value", 0))
+                    max_val = mapping.get("max_val", mapping.get("max_value", 1))
+                    curve = mapping.get("curve_type", "linear")
 
-                    # Format MIDI info
-                    if midi_type.lower() == "note":
-                        midi_info = f"Note {midi_cc}"
-                    else:
-                        midi_info = f"CC {midi_cc}"
-
-                    if midi_channel != 1:
-                        midi_info += f" Ch{midi_channel}"
+                    # Truncate plugin URI for display
+                    plugin_short = plugin.split("/")[-1][:15] if plugin else "-"
 
                     # Format range
-                    range_str = f"{min_val}-{max_val}"
+                    range_str = f"{min_val:.1f}-{max_val:.1f}"
 
-                    table.add_row(control_name[:15], midi_info, target[:20], range_str)
+                    table.add_row(
+                        str(channel) if channel else "All",
+                        str(cc),
+                        plugin_short,
+                        str(param)[:12],
+                        range_str,
+                        curve[:8]
+                    )
             else:
-                table.add_row("-", "No mappings", "-", "-")
-                table.add_row("-", "Press 'L' to learn", "-", "-")
+                table.add_row("-", "-", "No mappings configured", "-", "-", "-")
+                table.add_row("-", "-", "Press 'L' to start learn mode", "-", "-", "-")
 
         except Exception as e:
             logger.debug(f"Error updating mappings display: {e}")
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses for mapping creation."""
+        if event.button.id == "btn-add-mapping":
+            await self._add_mapping()
+
+    async def _add_mapping(self) -> None:
+        """Add a new CC mapping with curve type."""
+        try:
+            cc = int(self.query_one("#new-cc-input", Input).value or "0")
+            plugin = self.query_one("#new-plugin-input", Input).value
+            param_idx = int(self.query_one("#new-param-input", Input).value or "0")
+            curve = self.query_one("#new-curve-select", Select).value
+
+            if not plugin:
+                self.app.notify("Plugin URI is required", severity="warning")
+                return
+
+            # Create mapping via API
+            result = await self.api_client.create_midi_mapping(
+                midi_channel=0,  # Omni
+                cc_number=cc,
+                plugin_uri=plugin,
+                parameter_index=param_idx,
+                parameter_name=""
+            )
+
+            if result.success:
+                self.app.notify(f"CC{cc} mapping created", severity="information")
+                # Clear inputs
+                self.query_one("#new-cc-input", Input).value = ""
+                self.query_one("#new-plugin-input", Input).value = ""
+                self.query_one("#new-param-input", Input).value = ""
+                await self._refresh_data()
+            else:
+                self.app.notify(f"Failed: {result.error}", severity="error")
+
+        except ValueError as e:
+            self.app.notify(f"Invalid input: {e}", severity="error")
+        except Exception as e:
+            logger.debug(f"Error adding mapping: {e}")
 
 
 class MIDISessionsScreen(Static):
@@ -421,11 +648,30 @@ class MIDISessionsScreen(Static):
         self.api_client = api_client
 
     def compose(self) -> ComposeResult:
-        """Compose MIDI sessions widgets."""
-        with Vertical(id="midi-container"):
-            yield MIDIDevicesWidget(self.api_client)
-            yield SessionsWidget(self.api_client)
-            yield ControlMappingWidget(self.api_client)
+        """Compose MIDI sessions widgets with enhanced v2 features."""
+        with TabbedContent(id="midi-tabs"):
+            # Overview Tab - Main MIDI status
+            with TabPane("📊 Overview", id="tab-overview"):
+                with Vertical(id="midi-overview"):
+                    yield MIDIDevicesWidget(self.api_client)
+                    yield ControlMappingWidget(self.api_client)
+
+            # Chain Switching Tab - NEW v2 feature
+            with TabPane("🔀 Chain Switch", id="tab-chain-switch"):
+                with Vertical(id="chain-switch-container"):
+                    yield ChainSwitchingWidget(self.api_client)
+                    yield Static(
+                        "[dim]\n"
+                        "Chain Switching via Program Change:\n"
+                        "• Send PC#1 to switch to Chain 1\n"
+                        "• Bank Select (CC#0, CC#32) + PC for >128 chains\n"
+                        "• Feedback sends PC back to sync controller[/]"
+                    )
+
+            # Sessions Tab
+            with TabPane("💾 Sessions", id="tab-sessions"):
+                with Vertical(id="sessions-container"):
+                    yield SessionsWidget(self.api_client)
 
     async def action_midi_learn(self) -> None:
         """Toggle MIDI learn mode via JUCE engine."""

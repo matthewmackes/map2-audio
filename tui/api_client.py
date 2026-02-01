@@ -2023,6 +2023,170 @@ class MAP2APIClient:
         """Delete a MIDI preset."""
         return await self._request("DELETE", f"/api/midi/presets/{preset_id}")
 
+    # ==================== MIDI v2 API (Enhanced Features) ====================
+
+    async def list_midi_mappings_v2(self, chain_id: int = None, plugin_uri: str = None) -> APIResult:
+        """
+        List CC mappings with enhanced v2 features.
+
+        Args:
+            chain_id: Filter by chain (per-chain scope)
+            plugin_uri: Filter by plugin
+
+        Returns:
+            APIResult with mappings including curve_type, min_val, max_val, etc.
+        """
+        params = {}
+        if chain_id:
+            params["chain_id"] = chain_id
+        if plugin_uri:
+            params["plugin_uri"] = plugin_uri
+        return await self._request("GET", "/api/v2/midi/mappings", params=params)
+
+    async def create_midi_mapping_v2(
+        self,
+        channel: int,
+        cc: int,
+        chain_id: int,
+        target_plugin_uri: str,
+        target_param_index: int,
+        target_param_symbol: str = "",
+        min_val: float = 0.0,
+        max_val: float = 1.0,
+        curve_type: str = "linear",
+        invert: bool = False,
+        feedback_enabled: bool = True,
+        name: str = ""
+    ) -> APIResult:
+        """
+        Create CC mapping with enhanced v2 features.
+
+        Args:
+            channel: MIDI channel (0=omni, 1-16=specific)
+            cc: CC number (0-127)
+            chain_id: Chain ID for per-chain scope
+            target_plugin_uri: Target plugin URI
+            target_param_index: Target parameter index
+            target_param_symbol: Target parameter symbol (optional)
+            min_val: Minimum output value
+            max_val: Maximum output value
+            curve_type: Curve type (linear, logarithmic, exponential, s_curve)
+            invert: Invert mapping
+            feedback_enabled: Send value back to controller
+            name: User-friendly name
+
+        Returns:
+            APIResult with created mapping ID
+        """
+        return await self._request("POST", "/api/v2/midi/mappings", json={
+            "channel": channel,
+            "cc": cc,
+            "chain_id": chain_id,
+            "target_plugin_uri": target_plugin_uri,
+            "target_param_index": target_param_index,
+            "target_param_symbol": target_param_symbol,
+            "min_val": min_val,
+            "max_val": max_val,
+            "curve_type": curve_type,
+            "invert": invert,
+            "feedback_enabled": feedback_enabled,
+            "name": name,
+        })
+
+    async def update_midi_mapping_v2(self, mapping_id: int, **updates) -> APIResult:
+        """
+        Update a MIDI mapping.
+
+        Args:
+            mapping_id: Mapping ID
+            **updates: Fields to update (min_val, max_val, curve_type, etc.)
+
+        Returns:
+            APIResult with update status
+        """
+        return await self._request("PATCH", f"/api/v2/midi/mappings/{mapping_id}", json=updates)
+
+    async def delete_midi_mapping_v2(self, mapping_id: int) -> APIResult:
+        """Delete a MIDI mapping by ID."""
+        return await self._request("DELETE", f"/api/v2/midi/mappings/{mapping_id}")
+
+    async def list_midi_commands(self) -> APIResult:
+        """
+        List chain switching commands (Program Change mappings).
+
+        Returns:
+            APIResult with list of chain→PC mappings
+        """
+        return await self._request("GET", "/api/v2/midi/commands")
+
+    async def create_midi_command(
+        self,
+        chain_id: int,
+        program_number: int,
+        bank_msb: int = 0,
+        bank_lsb: int = 0,
+        send_pc_on_activate: bool = True
+    ) -> APIResult:
+        """
+        Create chain switching command via Program Change.
+
+        Args:
+            chain_id: Chain to activate
+            program_number: Program Change number (0-127)
+            bank_msb: Bank Select MSB (CC#0)
+            bank_lsb: Bank Select LSB (CC#32)
+            send_pc_on_activate: Send PC back when chain activates programmatically
+
+        Returns:
+            APIResult with created command ID
+        """
+        return await self._request("POST", "/api/v2/midi/commands", json={
+            "chain_id": chain_id,
+            "program_number": program_number,
+            "bank_msb": bank_msb,
+            "bank_lsb": bank_lsb,
+            "send_pc_on_activate": send_pc_on_activate,
+        })
+
+    async def delete_midi_command(self, command_id: int) -> APIResult:
+        """Delete a chain switching command."""
+        return await self._request("DELETE", f"/api/v2/midi/commands/{command_id}")
+
+    async def get_midi_activity(self, limit: int = 50) -> APIResult:
+        """
+        Get recent MIDI activity for real-time monitoring.
+
+        Args:
+            limit: Maximum number of messages to return
+
+        Returns:
+            APIResult with recent MIDI messages (CC, notes, PC, etc.)
+        """
+        return await self._request("GET", f"/api/v2/midi/activity?limit={limit}")
+
+    async def save_midi_preset_v2(self, name: str, include_mappings: bool = True,
+                                   include_commands: bool = True) -> APIResult:
+        """
+        Save complete MIDI configuration as preset.
+
+        Args:
+            name: Preset name
+            include_mappings: Include CC mappings
+            include_commands: Include chain switching commands
+
+        Returns:
+            APIResult with preset ID
+        """
+        return await self._request("POST", "/api/v2/midi/presets", json={
+            "name": name,
+            "include_mappings": include_mappings,
+            "include_commands": include_commands,
+        })
+
+    async def load_midi_preset_v2(self, preset_id: int) -> APIResult:
+        """Load a complete MIDI preset."""
+        return await self._request("POST", f"/api/v2/midi/presets/{preset_id}/load")
+
     # ==================== FAVORITES ====================
 
     async def get_favorites(self, category: str = None) -> APIResult:
