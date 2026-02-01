@@ -151,7 +151,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'delay', 'autotune', 'triplespread', 'plugin_packages', 'valentine', 'zlequalizer', 'snapshots', 'freeverb3', 'whammy', 'dragonfly', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'vst3_routes', 'vst3_packages', 'upload']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins']
 
         for route_name in route_modules:
             try:

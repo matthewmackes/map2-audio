@@ -57,100 +57,34 @@ class PluginScanner(Singleton):
         "/usr/local/lib/lv2",
         "/usr/lib64/lv2",
         "/usr/lib/x86_64-linux-gnu/lv2",
+        "/usr/lib/aarch64-linux-gnu/lv2",  # ARM64 Debian/Ubuntu
     ]
 
-    # Native MAP2 plugins
-    NATIVE_PLUGINS = {
-        "http://map2-audio.local/nam-loader": {
-            "name": "MAP2 NAM Loader",
-            "category": "Simulator",
-            "author": "MAP2 Audio",
-            "audio_inputs": 1,
-            "audio_outputs": 1,
-            "is_rt_safe": True,
-            "features": ["neural-amp-modeler", "amp-simulation"]
-        },
-        "http://map2-audio.local/ir-cabinet-loader": {
-            "name": "MAP2 Cabinet IR Loader",
-            "category": "Simulator",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["impulse-response", "cabinet-simulation"]
-        },
-        "http://map2-audio.local/ir-reverb-loader": {
-            "name": "MAP2 Reverb IR Loader",
-            "category": "Reverb",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["impulse-response", "convolution-reverb"]
-        },
-        "http://map2-audio.local/reevr-engine": {
-            "name": "MAP2 ReevR Convolution",
-            "category": "Reverb",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["convolution", "reverb", "zero-latency"]
-        },
-        "http://map2-audio.local/cocoa-delay": {
-            "name": "MAP2 Cocoa Delay",
-            "category": "Delay",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["delay", "modulation", "ducking"]
-        },
-        "http://map2-audio.local/zita-at1": {
-            "name": "MAP2 Zita AT1 Auto-Tune",
-            "category": "Pitch",
-            "author": "MAP2 Audio",
-            "audio_inputs": 1,
-            "audio_outputs": 1,
-            "is_rt_safe": True,
-            "features": ["pitch-correction", "auto-tune", "midi-control"]
-        },
-        "http://map2-audio.local/triplespread": {
-            "name": "MAP2 TripleSpread",
-            "category": "Modulator",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["stereo-width", "spatial"]
-        },
-        "http://map2-audio.local/valentine": {
-            "name": "MAP2 Valentine",
-            "category": "Dynamics",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["compressor", "saturator", "dynamics"]
-        },
-        "http://map2-audio.local/zlequalizer": {
-            "name": "MAP2 ZL Equalizer",
-            "category": "Equaliser",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["dynamic-eq", "parametric-eq", "multiband", "sidechain"]
-        },
-        "http://map2-audio.local/freeverb3": {
-            "name": "MAP2 Freeverb3",
-            "category": "Reverb",
-            "author": "MAP2 Audio",
-            "audio_inputs": 2,
-            "audio_outputs": 2,
-            "is_rt_safe": True,
-            "features": ["algorithmic-reverb", "modulation", "simd-optimized", "multi-algorithm"]
-        },
+    # ToobAmp core plugin URIs (from PiPedal project)
+    TOOBAMP_URIS = {
+        "http://two-play.com/plugins/toob-nam": "TooB Neural Amp Modeler",
+        "http://two-play.com/plugins/toob-ml": "TooB ML Amplifier",
+        "http://two-play.com/plugins/toob-cab-ir": "TooB Cab IR",
+        "http://two-play.com/plugins/toob-cabsim": "TooB CabSim",
+        "http://two-play.com/plugins/toob-convolution-reverb": "TooB Convolution Reverb",
+        "http://two-play.com/plugins/toob-freeverb": "TooB Freeverb",
+        "http://two-play.com/plugins/toob-peq": "TooB Parametric EQ",
+        "http://two-play.com/plugins/toob-3band-eq": "TooB 3 Band EQ",
+        "http://two-play.com/plugins/toob-tone-stack": "TooB Tone Stack",
+        "http://two-play.com/plugins/toob-ge7-eq": "TooB GE-7 Graphics Equalizer",
+        "http://two-play.com/plugins/toob-ce2-chorus": "TooB CE-2 Chorus",
+        "http://two-play.com/plugins/toob-bf2-flanger": "TooB BF-2 Flanger",
+        "http://two-play.com/plugins/toob-phaser": "TooB Phaser",
+        "http://two-play.com/plugins/toob-tremolo": "TooB Tremolo",
+        "http://two-play.com/plugins/toob-delay": "TooB Delay",
+        "http://two-play.com/plugins/toob-tuner": "TooB Tuner",
+        "http://two-play.com/plugins/toob-noise-gate": "TooB Noise Gate",
+        "http://two-play.com/plugins/toob-input-stage": "TooB Input Stage",
+        "http://two-play.com/plugins/toob-volume": "TooB Volume",
+        "http://two-play.com/plugins/toob-mix": "TooB Mix",
+        "http://two-play.com/plugins/toob-spectrum-analyzer": "TooB Spectrum Analyzer",
+        "http://two-play.com/plugins/toob-4looper": "TooB 4Looper",
+        "http://two-play.com/plugins/toob-one-button-looper": "TooB One-Button Looper",
     }
 
     def __init__(self, cache_dir: Optional[str] = None, lv2_paths: Optional[List[str]] = None):
@@ -192,7 +126,7 @@ class PluginScanner(Singleton):
 
     def scan_all(self, force_rescan: bool = False) -> Dict[str, Dict[str, Any]]:
         """
-        Scan all LV2 plugins and native plugins.
+        Scan all LV2 plugins.
 
         Args:
             force_rescan: Force rescan even if cache is valid
@@ -211,25 +145,7 @@ class PluginScanner(Singleton):
         self._plugin_cache.clear()
         scan_time = datetime.now().isoformat()
 
-        # Scan native plugins first
-        for uri, info in self.NATIVE_PLUGINS.items():
-            self._plugin_cache[uri] = PluginMetadata(
-                uri=uri,
-                name=info["name"],
-                category=info["category"],
-                author=info.get("author"),
-                path="native",
-                audio_inputs=info.get("audio_inputs", 2),
-                audio_outputs=info.get("audio_outputs", 2),
-                control_ports=0,
-                is_rt_safe=info.get("is_rt_safe", True),
-                has_latency=False,
-                latency_samples=0,
-                features=info.get("features", []),
-                last_scanned=scan_time
-            )
-
-        # Try to use enhanced LV2 service
+        # Scan LV2 plugins
         try:
             from app.services.lv2_enhanced import get_lv2_service
             lv2_service = get_lv2_service()
@@ -538,19 +454,6 @@ class PluginScanner(Singleton):
         """
         return self.search_plugins(category=category)
 
-    def get_native_plugins(self) -> List[Dict[str, Any]]:
-        """
-        Get all native MAP2 plugins.
-
-        Returns:
-            List of native plugin metadata
-        """
-        return [
-            asdict(self._plugin_cache[uri])
-            for uri in self.NATIVE_PLUGINS.keys()
-            if uri in self._plugin_cache
-        ]
-
     def clear_cache(self) -> None:
         """Clear the plugin cache."""
         self._plugin_cache.clear()
@@ -567,15 +470,61 @@ class PluginScanner(Singleton):
 
     def get_stats(self) -> Dict[str, Any]:
         """Get scanner statistics."""
+        toobamp_status = self.check_toobamp_installed()
         return {
             "total_plugins": len(self._plugin_cache),
-            "native_plugins": len(self.NATIVE_PLUGINS),
-            "lv2_plugins": len(self._plugin_cache) - len(self.NATIVE_PLUGINS),
+            "lv2_plugins": len(self._plugin_cache),
             "categories": len(self._categories),
             "cache_file": str(self._cache_file),
             "cache_valid": self._last_scan_hash != "",
-            "lv2_paths": self._lv2_paths
+            "lv2_paths": self._lv2_paths,
+            "toobamp_installed": toobamp_status["installed"],
+            "toobamp_plugins_found": toobamp_status["found_count"]
         }
+
+    def check_toobamp_installed(self) -> Dict[str, Any]:
+        """Check if ToobAmp plugins are installed."""
+        if not self._plugin_cache:
+            self.scan_all()
+
+        found_plugins = []
+        missing_plugins = []
+
+        for uri, name in self.TOOBAMP_URIS.items():
+            if uri in self._plugin_cache:
+                found_plugins.append({"uri": uri, "name": name})
+            else:
+                missing_plugins.append({"uri": uri, "name": name})
+
+        # Check for ToobAmp.lv2 bundle in LV2 paths
+        bundle_path = None
+        for lv2_path in self._lv2_paths:
+            if os.path.isdir(lv2_path):
+                toobamp_bundle = os.path.join(lv2_path, "ToobAmp.lv2")
+                if os.path.isdir(toobamp_bundle):
+                    bundle_path = toobamp_bundle
+                    break
+
+        return {
+            "installed": len(found_plugins) > 0 or bundle_path is not None,
+            "bundle_path": bundle_path,
+            "found_count": len(found_plugins),
+            "missing_count": len(missing_plugins),
+            "found_plugins": found_plugins,
+            "missing_plugins": missing_plugins,
+            "coverage": f"{len(found_plugins)}/{len(self.TOOBAMP_URIS)}"
+        }
+
+    def get_toobamp_plugins(self) -> List[Dict[str, Any]]:
+        """Get list of available ToobAmp plugins."""
+        if not self._plugin_cache:
+            self.scan_all()
+
+        result = []
+        for uri, name in self.TOOBAMP_URIS.items():
+            if uri in self._plugin_cache:
+                result.append(asdict(self._plugin_cache[uri]))
+        return result
 
 
 # Singleton accessor

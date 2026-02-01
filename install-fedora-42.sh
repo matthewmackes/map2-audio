@@ -439,6 +439,34 @@ print_post_install() {
     echo ""
 }
 
+# Install ToobAmp core plugins (optional)
+install_toobamp_plugins() {
+    print_header "PHASE 7: Installing Core LV2 Plugins (ToobAmp)"
+
+    log_info "ToobAmp provides 26 high-quality LV2 plugins for guitar effects"
+    log_info "Source: https://github.com/rerdavies/ToobAmp"
+    echo ""
+
+    read -p "Install ToobAmp core plugins? (recommended) (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Skipping ToobAmp installation"
+        log_info "You can install later with: bash scripts/install-toobamp.sh"
+        return
+    fi
+
+    TOOBAMP_SCRIPT="$INSTALL_DIR/scripts/install-toobamp.sh"
+
+    if [ -f "$TOOBAMP_SCRIPT" ]; then
+        log_info "Running ToobAmp installer..."
+        bash "$TOOBAMP_SCRIPT" --build-from-source
+    else
+        log_warning "ToobAmp installer not found at $TOOBAMP_SCRIPT"
+        log_info "You can install manually with:"
+        log_info "  bash scripts/install-toobamp.sh --build-from-source"
+    fi
+}
+
 # Main installation flow
 main() {
     print_header "MAP2 Audio Platform - Fedora 42 Installer"
@@ -465,6 +493,7 @@ main() {
     setup_directories
     initialize_config
     setup_systemd_services
+    install_toobamp_plugins
     verify_installation
 
     # Post-installation
