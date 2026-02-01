@@ -514,7 +514,7 @@ export function LV2PluginsPage() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      navigate(`/chains/flow?addPlugin=${encodeURIComponent(p.uri)}`)
+                                      navigate(`/grid?addPlugin=${encodeURIComponent(p.uri)}`)
                                     }}
                                     style={{
                                       marginLeft: 'auto',

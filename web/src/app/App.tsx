@@ -4,16 +4,15 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AppShell } from './layout/AppShell'
 import { HomePage } from './pages/HomePage'
 import { ChainsPage } from './pages/ChainsPage'
-import { ChainFlowPage } from './pages/ChainFlowPage'
 import { PresetsPage } from './pages/PresetsPage'
 import { LegacyPage } from './pages/LegacyPage'
 import { AboutPage } from './pages/AboutPage'
 import { LV2PluginsPage } from './pages/LV2PluginsPage'
-import { VST3PluginsPage } from './pages/VST3PluginsPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { MIDIPage } from './pages/MIDIPage'
 import { ToastProvider } from './components/Toasts'
-import { NativePluginsPage } from './pages/NativePluginsPage'
+import { GridFlowPage } from './pages/GridFlowPage'
+// import { MeteringPage } from './pages/MeteringPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,15 +36,14 @@ export function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/chains" element={<ChainsPage />} />
-              <Route path="/chains/flow" element={<ChainFlowPage />} />
               <Route path="/presets" element={<PresetsPage />} />
               <Route path="/legacy" element={<LegacyPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/plugins" element={<LV2PluginsPage />} />
-              <Route path="/plugins/vst3" element={<VST3PluginsPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/midi" element={<MIDIPage />} />
-              <Route path="/native-plugins" element={<NativePluginsPage />} />
+              <Route path="/grid" element={<GridFlowPage />} />
+              {/* <Route path="/metering" element={<MeteringPage />} /> */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AppShell>

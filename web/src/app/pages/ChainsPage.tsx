@@ -120,8 +120,8 @@ export function ChainsPage() {
         subtitle="Curate and activate processing chains with Ariakit dialogs and menus."
         actions={
           <div className="flex" style={{ gap: 8 }}>
-            <a className="btn btn-ghost" href="/chains/flow">
-              <Plus size={16} /> Flow view
+            <a className="btn btn-ghost" href="/grid">
+              <Plus size={16} /> Grid view
             </a>
             <button className="btn btn-primary" onClick={() => setCreateDialogOpen(true)}>
               <Plus size={16} /> New chain
