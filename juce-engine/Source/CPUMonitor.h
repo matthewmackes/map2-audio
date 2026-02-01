@@ -13,22 +13,7 @@
 
 namespace map2 {
 
-/**
- * CPU metrics data structure
- */
-struct CPUMetrics {
-    double totalCpuPercent = 0.0;          // Total audio callback CPU %
-    double audioCallbackPercent = 0.0;      // Same as total (for compatibility)
-    std::map<InstanceId, double> perPluginPercent;  // Per-plugin CPU %
-    int xrunCount = 0;                      // Buffer underrun/overrun count
-    double peakCpuPercent = 0.0;           // Peak CPU usage
-    double averageCpuPercent = 0.0;        // Average CPU usage
-
-    // Additional metrics
-    double currentCallbackMs = 0.0;         // Last callback duration in ms
-    double budgetMs = 0.0;                  // Available time per callback in ms
-    double headroomPercent = 0.0;           // Available headroom (100 - cpu%)
-};
+// CPUMetrics is defined in Common.h
 
 /**
  * CPUMonitor - Audio thread CPU monitoring

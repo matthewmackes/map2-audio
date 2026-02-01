@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
 
 namespace map2 {
 
-SnapshotManager::SnapshotManager(PluginHost& host)
+SnapshotManager::SnapshotManager(JucePluginHost& host)
     : host_(host) {
     // Initialize snapshot slots
     for (int i = 0; i < MAX_SNAPSHOTS; i++) {

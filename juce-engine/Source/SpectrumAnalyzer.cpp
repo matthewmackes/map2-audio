@@ -9,7 +9,7 @@ namespace map2 {
 
 SpectrumAnalyzer::SpectrumAnalyzer()
     : fft_(FFT_ORDER)
-    , window_(FFT_SIZE, juce::dsp::WindowingFunction<float>::hann)
+    , window_(std::make_unique<juce::dsp::WindowingFunction<float>>(FFT_SIZE, juce::dsp::WindowingFunction<float>::hann))
 {
     // Initialize smoothed magnitudes to floor
     smoothedMagnitudes_.fill(floorDb_);
@@ -111,7 +111,7 @@ void SpectrumAnalyzer::processFFT() {
     }
 
     // Apply window function
-    window_.multiplyWithWindowingTable(fftData_.data(), FFT_SIZE);
+    window_->multiplyWithWindowingTable(fftData_.data(), FFT_SIZE);
 
     // Perform FFT (in-place, interleaved real/imag output)
     fft_.performFrequencyOnlyForwardTransform(fftData_.data());
@@ -119,9 +119,11 @@ void SpectrumAnalyzer::processFFT() {
     // Calculate decay factor
     float decayFactor = std::exp(-decayRate_ * elapsedSeconds / 20.0f);  // dB decay
 
-    // Find peak
+    // Find peak and compute spectral centroid
     float peakMag = floorDb_;
     int peakBin = 0;
+    float centroidNumerator = 0.0f;
+    float centroidDenominator = 0.0f;
 
     // Process magnitudes
     for (int i = 0; i < NUM_BINS; ++i) {
@@ -151,7 +153,18 @@ void SpectrumAnalyzer::processFFT() {
             peakMag = smoothedMagnitudes_[i];
             peakBin = i;
         }
+
+        // Accumulate spectral centroid (using linear magnitude)
+        if (magnitude > 0.0f) {
+            centroidNumerator += binFrequencies_[i] * magnitude;
+            centroidDenominator += magnitude;
+        }
     }
+
+    // Compute spectral centroid
+    float spectralCentroid = (centroidDenominator > 0.0f)
+        ? centroidNumerator / centroidDenominator
+        : 0.0f;
 
     // Update spectrum data (thread-safe)
     {
@@ -162,6 +175,7 @@ void SpectrumAnalyzer::processFFT() {
                  latestSpectrum_.frequencies.begin());
         latestSpectrum_.peakFrequency = binFrequencies_[peakBin];
         latestSpectrum_.peakMagnitude = peakMag;
+        latestSpectrum_.spectralCentroid = spectralCentroid;
         latestSpectrum_.ready = true;
     }
 }
@@ -205,7 +219,7 @@ void SpectrumAnalyzer::setEnabled(bool enabled) {
 }
 
 void SpectrumAnalyzer::updateWindowFunction() {
-    window_ = juce::dsp::WindowingFunction<float>(
+    window_ = std::make_unique<juce::dsp::WindowingFunction<float>>(
         FFT_SIZE, toJuceWindowType(windowType_));
 }
 

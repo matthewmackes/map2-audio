@@ -173,6 +173,10 @@ struct LufsLevels {
     float truePeak = -100.0f;     // True Peak (dBTP)
     float truePeakLeft = -100.0f;
     float truePeakRight = -100.0f;
+    // Additional metrics
+    float maxMomentary = -100.0f;
+    float maxShortTerm = -100.0f;
+    float maxTruePeak = -100.0f;
 };
 
 // CPU monitoring metrics

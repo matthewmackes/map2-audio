@@ -37,6 +37,7 @@ public:
         std::array<float, NUM_BINS> frequencies{};   // Hz values
         float peakFrequency = 0.0f;                  // Frequency of peak bin
         float peakMagnitude = -100.0f;               // Peak magnitude in dB
+        float spectralCentroid = 0.0f;               // Spectral centroid in Hz
         bool ready = false;                           // Data is valid
     };
 
@@ -143,7 +144,7 @@ public:
 private:
     // FFT processor
     juce::dsp::FFT fft_;
-    juce::dsp::WindowingFunction<float> window_;
+    std::unique_ptr<juce::dsp::WindowingFunction<float>> window_;
 
     // Configuration
     WindowType windowType_ = WindowType::Hann;

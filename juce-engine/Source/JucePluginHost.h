@@ -12,17 +12,7 @@
 
 namespace map2 {
 
-/**
- * Plugin format enumeration
- */
-enum class PluginFormat {
-    All,
-    VST3,
-    AudioUnit,
-    LV2,
-    LADSPA,
-    Unknown
-};
+// PluginFormat is defined in Common.h
 
 /**
  * JucePluginHost - Multi-format plugin hosting

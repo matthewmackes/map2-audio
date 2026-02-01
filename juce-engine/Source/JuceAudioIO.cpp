@@ -80,7 +80,7 @@ void JuceAudioIO::shutdown() {
     initialized_ = false;
 }
 
-std::vector<AudioDeviceInfo> JuceAudioIO::getAvailableDevices() const {
+std::vector<AudioDeviceInfo> JuceAudioIO::getAvailableDevices() {
     std::vector<AudioDeviceInfo> devices;
 
     for (auto& deviceType : deviceManager_.getAvailableDeviceTypes()) {
@@ -108,7 +108,7 @@ std::vector<AudioDeviceInfo> JuceAudioIO::getAvailableDevices() const {
     return devices;
 }
 
-std::vector<AudioDeviceInfo> JuceAudioIO::getInputDevices() const {
+std::vector<AudioDeviceInfo> JuceAudioIO::getInputDevices() {
     std::vector<AudioDeviceInfo> devices;
 
     for (auto& deviceType : deviceManager_.getAvailableDeviceTypes()) {
@@ -131,7 +131,7 @@ std::vector<AudioDeviceInfo> JuceAudioIO::getInputDevices() const {
     return devices;
 }
 
-std::vector<AudioDeviceInfo> JuceAudioIO::getOutputDevices() const {
+std::vector<AudioDeviceInfo> JuceAudioIO::getOutputDevices() {
     std::vector<AudioDeviceInfo> devices;
 
     for (auto& deviceType : deviceManager_.getAvailableDeviceTypes()) {

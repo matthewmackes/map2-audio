@@ -6,7 +6,7 @@
  */
 
 #include "Common.h"
-#include "PluginHost.h"
+#include "JucePluginHost.h"
 #include <fstream>
 
 namespace map2 {
@@ -30,7 +30,7 @@ struct ChainState {
 
 class SnapshotManager {
 public:
-    SnapshotManager(PluginHost& host);
+    SnapshotManager(JucePluginHost& host);
     ~SnapshotManager();
     
     // Snapshot management (0-5)
@@ -64,7 +64,7 @@ public:
     std::string getStoragePath() const { return storagePath_; }
     
 private:
-    PluginHost& host_;
+    JucePluginHost& host_;
     int currentSnapshot_ = 0;
     
     std::array<Snapshot, MAX_SNAPSHOTS> snapshots_;

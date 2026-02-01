@@ -364,7 +364,7 @@ bool JuceAudioGraph::connectSidechain(InstanceId sourcePlugin, InstanceId destPl
 
     // Check if connection already exists
     for (const auto& sc : sidechainConnections_) {
-        if (sc.destPlugin == destPlugin && sc.destBusIndex == destSidechainBus) {
+        if (sc.destPlugin == destPlugin && sc.destBus == destSidechainBus) {
             // Already connected to this bus
             return false;
         }
@@ -378,7 +378,7 @@ bool JuceAudioGraph::connectSidechain(InstanceId sourcePlugin, InstanceId destPl
 bool JuceAudioGraph::disconnectSidechain(InstanceId destPlugin, int destSidechainBus) {
     auto it = std::remove_if(sidechainConnections_.begin(), sidechainConnections_.end(),
         [&](const SidechainConnection& sc) {
-            return sc.destPlugin == destPlugin && sc.destBusIndex == destSidechainBus;
+            return sc.destPlugin == destPlugin && sc.destBus == destSidechainBus;
         });
 
     if (it == sidechainConnections_.end()) {

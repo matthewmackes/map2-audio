@@ -13,14 +13,7 @@
 
 namespace map2 {
 
-/**
- * Sidechain connection description
- */
-struct SidechainConnection {
-    InstanceId sourcePlugin;
-    InstanceId destPlugin;
-    int destBusIndex;
-};
+// SidechainConnection is defined in Common.h
 
 /**
  * JuceAudioGraph - Plugin signal routing with automatic PDC

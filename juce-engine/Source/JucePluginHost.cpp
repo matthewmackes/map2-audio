@@ -457,8 +457,9 @@ PluginInfo JucePluginHost::extractPluginInfo(const juce::PluginDescription& desc
 
     info.audioInputs = desc.numInputChannels;
     info.audioOutputs = desc.numOutputChannels;
-    info.hasMidiInput = desc.isInstrument || desc.wantsMidiInput;
-    info.hasMidiOutput = desc.producesMidiOutput;
+    // In modern JUCE, use acceptsMidi/producesMidi from description
+    info.hasMidiInput = desc.isInstrument;  // Instruments always accept MIDI
+    info.hasMidiOutput = desc.isInstrument; // Instruments may produce MIDI
 
     // Note: Parameter info requires loading the plugin
     // We can't get it from the description alone
@@ -503,9 +504,9 @@ void JucePluginHost::buildParameterMap(PluginEntry& entry) {
         pinfo.isInteger = params[i]->isDiscrete();
         pinfo.isLogarithmic = false;  // Not available in JUCE
 
-        // Try to get actual range from parameter
-        auto range = params[i]->getNormalisableRange();
-        if (range.start != range.end) {
+        // Try to get actual range from parameter if it's a RangedAudioParameter
+        if (auto* rangedParam = dynamic_cast<juce::RangedAudioParameter*>(params[i])) {
+            auto range = rangedParam->getNormalisableRange();
             pinfo.minValue = range.start;
             pinfo.maxValue = range.end;
         }

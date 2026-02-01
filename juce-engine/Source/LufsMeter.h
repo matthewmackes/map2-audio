@@ -12,21 +12,7 @@
 
 namespace map2 {
 
-/**
- * LUFS measurement data
- */
-struct LufsLevels {
-    float momentary = -100.0f;    // 400ms window (LUFS)
-    float shortTerm = -100.0f;    // 3s window (LUFS)
-    float integrated = -100.0f;   // Full program (LUFS)
-    float range = 0.0f;           // Loudness Range (LU)
-    float truePeak = -100.0f;     // True Peak (dBTP)
-
-    // Additional metrics
-    float maxMomentary = -100.0f;
-    float maxShortTerm = -100.0f;
-    float maxTruePeak = -100.0f;
-};
+// LufsLevels is defined in Common.h
 
 /**
  * LufsMeter - ITU-R BS.1770-4 Loudness Measurement

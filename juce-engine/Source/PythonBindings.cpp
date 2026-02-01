@@ -162,13 +162,12 @@ py::dict sidechainConnectionToDict(const SidechainConnection& conn) {
 // Convert IRInfo to Python dict
 py::dict irInfoToDict(const ConvolutionProcessor::IRInfo& info) {
     py::dict d;
-    d["name"] = info.name;
     d["path"] = info.path;
-    d["channels"] = info.channels;
+    d["channels"] = info.numChannels;
     d["length_samples"] = info.lengthSamples;
-    d["length_ms"] = info.lengthMs;
-    d["sample_rate"] = info.sampleRate;
-    d["loaded"] = info.loaded;
+    d["length_seconds"] = info.lengthSeconds;
+    d["sample_rate"] = info.originalSampleRate;
+    d["stereo"] = info.stereo;
     return d;
 }
 
@@ -940,8 +939,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         // Phase Correlation (NEW)
         // ========================================
 
-        .def("get_phase_correlation", &Map2AudioEngine::getPhaseCorrelation,
-             "Get stereo phase correlation (-1 to +1)")
+        .def("get_phase_correlation", [](const Map2AudioEngine& self) {
+            return self.getPhaseCorrelation();
+        }, "Get stereo phase correlation (-1 to +1)")
 
         .def("get_stereo_balance", &Map2AudioEngine::getStereoBalance,
              "Get stereo balance (-1=left, 0=center, +1=right)")

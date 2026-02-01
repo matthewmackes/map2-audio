@@ -56,9 +56,9 @@ public:
     // Device enumeration
     // ========================================
 
-    std::vector<AudioDeviceInfo> getAvailableDevices() const;
-    std::vector<AudioDeviceInfo> getInputDevices() const;
-    std::vector<AudioDeviceInfo> getOutputDevices() const;
+    std::vector<AudioDeviceInfo> getAvailableDevices();
+    std::vector<AudioDeviceInfo> getInputDevices();
+    std::vector<AudioDeviceInfo> getOutputDevices();
 
     AudioDeviceInfo getCurrentDevice() const;
     std::string getCurrentDeviceName() const;

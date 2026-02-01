@@ -21,12 +21,14 @@ struct ParameterUpdate {
     double timestamp;
 };
 
+// Smoothing type enum (compatible with all JUCE versions)
+enum class SmoothingType { Linear, Multiplicative };
+
 // Parameter smoothing configuration
 struct SmoothingConfig {
     bool enabled = true;
     float rampTimeMs = 20.0f;  // Default 20ms smoothing
-    juce::SmoothedValue<float>::SmoothingType type =
-        juce::SmoothedValue<float>::SmoothingType::Linear;
+    SmoothingType type = SmoothingType::Linear;
 };
 
 class ParameterBridge {
