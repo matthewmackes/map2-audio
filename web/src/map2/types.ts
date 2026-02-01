@@ -160,6 +160,169 @@ export interface MIDIMapping {
   param_name?: string;
 }
 
+// Enhanced MIDI types for v2 API
+export type MIDICurveType = 'linear' | 'logarithmic' | 'exponential' | 's_curve';
+
+export type MIDIActionType =
+  | 'activate_chain'
+  | 'toggle_chain'
+  | 'toggle_plugin'
+  | 'set_routing'
+  | 'next_preset'
+  | 'previous_preset';
+
+export type MIDITriggerType =
+  | 'program_change'
+  | 'note_on'
+  | 'note_off'
+  | 'control_change';
+
+export interface MIDIMappingV2 {
+  id: number;
+  channel: number;  // 0 = omni, 1-16 = specific
+  cc: number;
+  chain_id: number | null;
+  target_plugin_uri: string | null;
+  target_param_index: number | null;
+  target_param_symbol: string | null;
+  min_val: number;
+  max_val: number;
+  curve_type: MIDICurveType;
+  invert: boolean;
+  feedback_enabled: boolean;
+  feedback_cc: number | null;
+  name: string | null;
+  group_id: number | null;
+  is_learned: boolean;
+  is_enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MIDIMappingGroup {
+  id: number;
+  name: string;
+  color: string | null;
+  sort_order: number;
+  mappings?: MIDIMappingV2[];
+}
+
+export interface MIDICommand {
+  id: number;
+  name: string | null;
+  trigger_type: MIDITriggerType;
+  channel: number;
+  data1: number;  // PC number, Note, or CC
+  data2_threshold: number | null;  // For velocity/value gates
+  action: MIDIActionType;
+  target_chain_id: number | null;
+  target_plugin_uri: string | null;
+  action_params: Record<string, unknown> | null;
+  is_enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MIDIRoutingRule {
+  id: number;
+  chain_id: number;
+  name: string | null;
+  trigger_type: MIDITriggerType;
+  channel: number;
+  data1: number;
+  from_flow_index: number;
+  to_flow_index: number;
+  is_enabled: boolean;
+}
+
+export interface MIDIDeviceConfig {
+  id: number;
+  device_name: string;
+  device_type: 'input' | 'output';
+  is_enabled: boolean;
+  auto_connect: boolean;
+  channel_filter: number | null;  // null = all channels
+  last_seen?: string;
+}
+
+export interface MIDIPreset {
+  id: number;
+  name: string;
+  description: string | null;
+  is_default: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ChainMIDIConfig {
+  id: number;
+  chain_id: number;
+  program_number: number;
+  bank_msb: number;
+  bank_lsb: number;
+  send_pc_on_activate: boolean;
+}
+
+export interface MIDIStatus {
+  enabled: boolean;
+  input_open: boolean;
+  output_open: boolean;
+  input_device: string | null;
+  output_device: string | null;
+  mappings_count: number;
+  commands_count: number;
+  learning: boolean;
+  last_channel: number;
+  last_cc: number;
+  last_value: number;
+}
+
+export interface MIDILearnTarget {
+  chain_id: number;
+  plugin_id: number;
+  parameter_symbol: string;
+  parameter_index: number;
+  min_value: number;
+  max_value: number;
+  curve: MIDICurveType;
+  is_active: boolean;
+}
+
+// WebSocket event types for MIDI
+export interface MIDIActivityEvent {
+  type: 'midi_message' | 'midi_cc' | 'midi_note' | 'midi_program_change';
+  data: {
+    type: string;
+    channel: number;
+    data1: number;
+    data2: number;
+    timestamp: string;
+  };
+}
+
+export interface MIDIMappingTriggeredEvent {
+  type: 'midi_mapping_triggered';
+  data: {
+    plugin_id: number;
+    parameter_symbol: string;
+    parameter_index: number;
+    value: number;
+  };
+}
+
+export interface MIDICommandTriggeredEvent {
+  type: 'midi_command_triggered';
+  data: MIDICommand;
+}
+
+export interface MIDILearnEvent {
+  type: 'midi_learn_started' | 'midi_learn_completed' | 'midi_learn_stopped';
+  data: {
+    channel?: number;
+    cc?: number;
+  } | MIDILearnTarget;
+}
+
 // ==================== IR Types ====================
 
 export interface IRFile {

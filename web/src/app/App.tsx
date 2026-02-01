@@ -11,6 +11,7 @@ import { AboutPage } from './pages/AboutPage'
 import { LV2PluginsPage } from './pages/LV2PluginsPage'
 import { VST3PluginsPage } from './pages/VST3PluginsPage'
 import { LibraryPage } from './pages/LibraryPage'
+import { MIDIPage } from './pages/MIDIPage'
 import { ToastProvider } from './components/Toasts'
 import { NativePluginsPage } from './pages/NativePluginsPage'
 
@@ -43,6 +44,7 @@ export function App() {
               <Route path="/plugins" element={<LV2PluginsPage />} />
               <Route path="/plugins/vst3" element={<VST3PluginsPage />} />
               <Route path="/library" element={<LibraryPage />} />
+              <Route path="/midi" element={<MIDIPage />} />
               <Route path="/native-plugins" element={<NativePluginsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

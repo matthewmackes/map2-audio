@@ -14,6 +14,7 @@
 #include "PhaseCorrelation.h"
 #include "CPUMonitor.h"
 #include "ConvolutionProcessor.h"
+#include "MidiHandler.h"
 
 namespace py = pybind11;
 using namespace map2;
@@ -168,6 +169,194 @@ py::dict irInfoToDict(const ConvolutionProcessor::IRInfo& info) {
     d["length_ms"] = info.lengthMs;
     d["sample_rate"] = info.sampleRate;
     d["loaded"] = info.loaded;
+    return d;
+}
+
+// ========================================
+// MIDI Type Converters
+// ========================================
+
+// Convert CurveType to string
+std::string curveTypeToString(CurveType curve) {
+    switch (curve) {
+        case CurveType::Logarithmic: return "logarithmic";
+        case CurveType::Exponential: return "exponential";
+        case CurveType::SCurve: return "s_curve";
+        default: return "linear";
+    }
+}
+
+// Convert string to CurveType
+CurveType stringToCurveType(const std::string& str) {
+    if (str == "logarithmic") return CurveType::Logarithmic;
+    if (str == "exponential") return CurveType::Exponential;
+    if (str == "s_curve") return CurveType::SCurve;
+    return CurveType::Linear;
+}
+
+// Convert CommandActionType to string
+std::string actionTypeToString(CommandActionType action) {
+    switch (action) {
+        case CommandActionType::ActivateChain: return "activate_chain";
+        case CommandActionType::ToggleChain: return "toggle_chain";
+        case CommandActionType::TogglePlugin: return "toggle_plugin";
+        case CommandActionType::SetRouting: return "set_routing";
+        case CommandActionType::NextPreset: return "next_preset";
+        case CommandActionType::PreviousPreset: return "previous_preset";
+        default: return "activate_chain";
+    }
+}
+
+// Convert string to CommandActionType
+CommandActionType stringToActionType(const std::string& str) {
+    if (str == "activate_chain") return CommandActionType::ActivateChain;
+    if (str == "toggle_chain") return CommandActionType::ToggleChain;
+    if (str == "toggle_plugin") return CommandActionType::TogglePlugin;
+    if (str == "set_routing") return CommandActionType::SetRouting;
+    if (str == "next_preset") return CommandActionType::NextPreset;
+    if (str == "previous_preset") return CommandActionType::PreviousPreset;
+    return CommandActionType::ActivateChain;
+}
+
+// Convert MidiMessageType to string
+std::string midiMessageTypeToString(MidiMessageType type) {
+    switch (type) {
+        case MidiMessageType::NoteOn: return "note_on";
+        case MidiMessageType::NoteOff: return "note_off";
+        case MidiMessageType::ControlChange: return "control_change";
+        case MidiMessageType::ProgramChange: return "program_change";
+        case MidiMessageType::PitchBend: return "pitch_bend";
+        case MidiMessageType::ChannelPressure: return "channel_pressure";
+        case MidiMessageType::Clock: return "clock";
+        case MidiMessageType::Start: return "start";
+        case MidiMessageType::Stop: return "stop";
+        case MidiMessageType::Continue: return "continue";
+        default: return "other";
+    }
+}
+
+// Convert string to MidiMessageType
+MidiMessageType stringToMidiMessageType(const std::string& str) {
+    if (str == "note_on") return MidiMessageType::NoteOn;
+    if (str == "note_off") return MidiMessageType::NoteOff;
+    if (str == "control_change") return MidiMessageType::ControlChange;
+    if (str == "program_change") return MidiMessageType::ProgramChange;
+    if (str == "pitch_bend") return MidiMessageType::PitchBend;
+    if (str == "channel_pressure") return MidiMessageType::ChannelPressure;
+    if (str == "clock") return MidiMessageType::Clock;
+    if (str == "start") return MidiMessageType::Start;
+    if (str == "stop") return MidiMessageType::Stop;
+    if (str == "continue") return MidiMessageType::Continue;
+    return MidiMessageType::Other;
+}
+
+// Convert MidiCCMapping to Python dict
+py::dict midiCCMappingToDict(const MidiCCMapping& mapping) {
+    py::dict d;
+    d["id"] = mapping.id;
+    d["channel"] = mapping.channel;
+    d["cc_number"] = mapping.ccNumber;
+    d["target_plugin"] = mapping.targetPlugin;
+    d["parameter_symbol"] = mapping.parameterSymbol;
+    d["parameter_index"] = mapping.parameterIndex;
+    d["min_value"] = mapping.minValue;
+    d["max_value"] = mapping.maxValue;
+    d["curve"] = curveTypeToString(mapping.curve);
+    d["invert"] = mapping.invert;
+    d["active"] = mapping.active;
+    d["feedback_enabled"] = mapping.feedbackEnabled;
+    d["feedback_cc"] = mapping.feedbackCC;
+    return d;
+}
+
+// Create MidiCCMapping from Python dict
+MidiCCMapping dictToMidiCCMapping(const py::dict& d) {
+    MidiCCMapping mapping;
+    if (d.contains("id")) mapping.id = d["id"].cast<int>();
+    if (d.contains("channel")) mapping.channel = d["channel"].cast<int>();
+    if (d.contains("cc_number")) mapping.ccNumber = d["cc_number"].cast<int>();
+    if (d.contains("target_plugin")) mapping.targetPlugin = d["target_plugin"].cast<InstanceId>();
+    if (d.contains("parameter_symbol")) mapping.parameterSymbol = d["parameter_symbol"].cast<std::string>();
+    if (d.contains("parameter_index")) mapping.parameterIndex = d["parameter_index"].cast<int>();
+    if (d.contains("min_value")) mapping.minValue = d["min_value"].cast<float>();
+    if (d.contains("max_value")) mapping.maxValue = d["max_value"].cast<float>();
+    if (d.contains("curve")) mapping.curve = stringToCurveType(d["curve"].cast<std::string>());
+    if (d.contains("invert")) mapping.invert = d["invert"].cast<bool>();
+    if (d.contains("active")) mapping.active = d["active"].cast<bool>();
+    if (d.contains("feedback_enabled")) mapping.feedbackEnabled = d["feedback_enabled"].cast<bool>();
+    if (d.contains("feedback_cc")) mapping.feedbackCC = d["feedback_cc"].cast<int>();
+    return mapping;
+}
+
+// Convert MidiCommandTrigger to Python dict
+py::dict midiCommandTriggerToDict(const MidiCommandTrigger& trigger) {
+    py::dict d;
+    d["id"] = trigger.id;
+    d["trigger_type"] = midiMessageTypeToString(trigger.triggerType);
+    d["channel"] = trigger.channel;
+    d["data1"] = trigger.data1;
+    d["data2_threshold"] = trigger.data2Threshold;
+    d["action"] = actionTypeToString(trigger.action);
+    d["target_chain_id"] = trigger.targetChainId;
+    d["target_plugin_uri"] = trigger.targetPluginUri;
+    d["active"] = trigger.active;
+    return d;
+}
+
+// Create MidiCommandTrigger from Python dict
+MidiCommandTrigger dictToMidiCommandTrigger(const py::dict& d) {
+    MidiCommandTrigger trigger;
+    if (d.contains("id")) trigger.id = d["id"].cast<int>();
+    if (d.contains("trigger_type")) trigger.triggerType = stringToMidiMessageType(d["trigger_type"].cast<std::string>());
+    if (d.contains("channel")) trigger.channel = d["channel"].cast<int>();
+    if (d.contains("data1")) trigger.data1 = d["data1"].cast<int>();
+    if (d.contains("data2_threshold")) trigger.data2Threshold = d["data2_threshold"].cast<int>();
+    if (d.contains("action")) trigger.action = stringToActionType(d["action"].cast<std::string>());
+    if (d.contains("target_chain_id")) trigger.targetChainId = d["target_chain_id"].cast<int>();
+    if (d.contains("target_plugin_uri")) trigger.targetPluginUri = d["target_plugin_uri"].cast<std::string>();
+    if (d.contains("active")) trigger.active = d["active"].cast<bool>();
+    return trigger;
+}
+
+// Convert MidiLearnTarget to Python dict
+py::dict midiLearnTargetToDict(const MidiLearnTarget& target) {
+    py::dict d;
+    d["chain_id"] = target.chainId;
+    d["plugin_id"] = target.pluginId;
+    d["parameter_symbol"] = target.parameterSymbol;
+    d["parameter_index"] = target.parameterIndex;
+    d["min_value"] = target.minValue;
+    d["max_value"] = target.maxValue;
+    d["curve"] = curveTypeToString(target.curve);
+    d["is_active"] = target.isActive;
+    return d;
+}
+
+// Convert MidiStatus to Python dict
+py::dict midiStatusToDict(const MidiStatus& status) {
+    py::dict d;
+    d["enabled"] = status.enabled;
+    d["input_open"] = status.inputOpen;
+    d["output_open"] = status.outputOpen;
+    d["input_device"] = status.inputDevice;
+    d["output_device"] = status.outputDevice;
+    d["mappings_count"] = status.mappingsCount;
+    d["commands_count"] = status.commandsCount;
+    d["learning"] = status.learning;
+    d["last_channel"] = status.lastChannel;
+    d["last_cc"] = status.lastCC;
+    d["last_value"] = status.lastValue;
+    return d;
+}
+
+// Convert MidiMessage to Python dict
+py::dict midiMessageToDict(const MidiMessage& msg) {
+    py::dict d;
+    d["type"] = midiMessageTypeToString(msg.type);
+    d["channel"] = msg.channel;
+    d["data1"] = msg.data1;
+    d["data2"] = msg.data2;
+    d["timestamp"] = msg.timestamp;
     return d;
 }
 
@@ -407,7 +596,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "List all snapshots")
 
         // ========================================
-        // MIDI
+        // MIDI (Basic)
         // ========================================
 
         .def("enable_midi", &Map2AudioEngine::enableMidi,
@@ -420,6 +609,289 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("set_midi_device", &Map2AudioEngine::setMidiDevice,
              py::arg("device"),
              "Set MIDI input device")
+
+        // ========================================
+        // MIDI CC Mappings (Enhanced)
+        // ========================================
+
+        .def("midi_add_cc_mapping", [](Map2AudioEngine& self, py::dict mapping) {
+            return self.getMidiHandler().addCCMapping(dictToMidiCCMapping(mapping));
+        }, py::arg("mapping"), "Add a CC mapping, returns mapping ID")
+
+        .def("midi_update_cc_mapping", [](Map2AudioEngine& self, int id, py::dict mapping) {
+            return self.getMidiHandler().updateCCMapping(id, dictToMidiCCMapping(mapping));
+        }, py::arg("id"), py::arg("mapping"), "Update an existing CC mapping")
+
+        .def("midi_remove_cc_mapping", [](Map2AudioEngine& self, int id) {
+            return self.getMidiHandler().removeCCMapping(id);
+        }, py::arg("id"), "Remove a CC mapping by ID")
+
+        .def("midi_remove_cc_mapping_by_cc", [](Map2AudioEngine& self, int channel, int cc) {
+            return self.getMidiHandler().removeCCMappingByCC(channel, cc);
+        }, py::arg("channel"), py::arg("cc"), "Remove CC mapping by channel and CC number")
+
+        .def("midi_get_all_cc_mappings", [](Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& mapping : self.getMidiHandler().getAllCCMappings()) {
+                result.append(midiCCMappingToDict(mapping));
+            }
+            return result;
+        }, "Get all CC mappings")
+
+        .def("midi_get_mappings_for_chain", [](Map2AudioEngine& self, int chainId) {
+            py::list result;
+            for (const auto& mapping : self.getMidiHandler().getMappingsForChain(chainId)) {
+                result.append(midiCCMappingToDict(mapping));
+            }
+            return result;
+        }, py::arg("chain_id"), "Get CC mappings for a specific chain")
+
+        .def("midi_clear_cc_mappings", [](Map2AudioEngine& self) {
+            self.getMidiHandler().clearCCMappings();
+        }, "Clear all CC mappings")
+
+        .def("midi_set_all_cc_mappings", [](Map2AudioEngine& self, py::list mappings) {
+            std::vector<MidiCCMapping> midiMappings;
+            for (auto item : mappings) {
+                midiMappings.push_back(dictToMidiCCMapping(item.cast<py::dict>()));
+            }
+            self.getMidiHandler().setAllCCMappings(midiMappings);
+        }, py::arg("mappings"), "Replace all CC mappings")
+
+        .def("midi_set_active_chain", [](Map2AudioEngine& self, int chainId) {
+            self.getMidiHandler().setActiveChain(chainId);
+        }, py::arg("chain_id"), "Set the active chain for MIDI mappings")
+
+        .def("midi_get_active_chain_id", [](const Map2AudioEngine& self) {
+            return const_cast<Map2AudioEngine&>(self).getMidiHandler().getActiveChainId();
+        }, "Get the active chain ID")
+
+        // ========================================
+        // MIDI Command Triggers
+        // ========================================
+
+        .def("midi_add_command_trigger", [](Map2AudioEngine& self, py::dict trigger) {
+            return self.getMidiHandler().addCommandTrigger(dictToMidiCommandTrigger(trigger));
+        }, py::arg("trigger"), "Add a command trigger, returns trigger ID")
+
+        .def("midi_update_command_trigger", [](Map2AudioEngine& self, int id, py::dict trigger) {
+            return self.getMidiHandler().updateCommandTrigger(id, dictToMidiCommandTrigger(trigger));
+        }, py::arg("id"), py::arg("trigger"), "Update an existing command trigger")
+
+        .def("midi_remove_command_trigger", [](Map2AudioEngine& self, int id) {
+            return self.getMidiHandler().removeCommandTrigger(id);
+        }, py::arg("id"), "Remove a command trigger by ID")
+
+        .def("midi_get_all_command_triggers", [](Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& trigger : self.getMidiHandler().getAllCommandTriggers()) {
+                result.append(midiCommandTriggerToDict(trigger));
+            }
+            return result;
+        }, "Get all command triggers")
+
+        .def("midi_clear_command_triggers", [](Map2AudioEngine& self) {
+            self.getMidiHandler().clearCommandTriggers();
+        }, "Clear all command triggers")
+
+        .def("midi_set_all_command_triggers", [](Map2AudioEngine& self, py::list triggers) {
+            std::vector<MidiCommandTrigger> midiTriggers;
+            for (auto item : triggers) {
+                midiTriggers.push_back(dictToMidiCommandTrigger(item.cast<py::dict>()));
+            }
+            self.getMidiHandler().setAllCommandTriggers(midiTriggers);
+        }, py::arg("triggers"), "Replace all command triggers")
+
+        // ========================================
+        // MIDI Learn
+        // ========================================
+
+        .def("midi_start_learn", [](Map2AudioEngine& self, int chainId, InstanceId pluginId,
+                                     const std::string& paramSymbol, int paramIndex,
+                                     float minVal, float maxVal, const std::string& curve) {
+            self.getMidiHandler().startMidiLearn(chainId, pluginId, paramSymbol, paramIndex,
+                                                  minVal, maxVal, stringToCurveType(curve));
+        }, py::arg("chain_id"), py::arg("plugin_id"), py::arg("param_symbol"),
+           py::arg("param_index"), py::arg("min_val") = 0.0f, py::arg("max_val") = 1.0f,
+           py::arg("curve") = "linear", "Start MIDI learn mode for a parameter")
+
+        .def("midi_stop_learn", [](Map2AudioEngine& self) {
+            self.getMidiHandler().stopMidiLearn();
+        }, "Stop MIDI learn mode")
+
+        .def("midi_is_learning", [](const Map2AudioEngine& self) {
+            return const_cast<Map2AudioEngine&>(self).getMidiHandler().isLearning();
+        }, "Check if MIDI learn mode is active")
+
+        .def("midi_get_learn_target", [](Map2AudioEngine& self) {
+            return midiLearnTargetToDict(self.getMidiHandler().getLearnTarget());
+        }, "Get the current learn target info")
+
+        // ========================================
+        // MIDI Output (Controller Feedback)
+        // ========================================
+
+        .def("midi_send_cc", [](Map2AudioEngine& self, int channel, int cc, int value) {
+            return self.getMidiHandler().sendCC(channel, cc, value);
+        }, py::arg("channel"), py::arg("cc"), py::arg("value"),
+           "Send a CC message to MIDI output")
+
+        .def("midi_send_program_change", [](Map2AudioEngine& self, int channel, int program) {
+            return self.getMidiHandler().sendProgramChange(channel, program);
+        }, py::arg("channel"), py::arg("program"),
+           "Send a Program Change message")
+
+        .def("midi_send_note_on", [](Map2AudioEngine& self, int channel, int note, int velocity) {
+            return self.getMidiHandler().sendNoteOn(channel, note, velocity);
+        }, py::arg("channel"), py::arg("note"), py::arg("velocity"),
+           "Send a Note On message")
+
+        .def("midi_send_note_off", [](Map2AudioEngine& self, int channel, int note, int velocity) {
+            return self.getMidiHandler().sendNoteOff(channel, note, velocity);
+        }, py::arg("channel"), py::arg("note"), py::arg("velocity") = 0,
+           "Send a Note Off message")
+
+        .def("midi_send_parameter_feedback", [](Map2AudioEngine& self, int channel, int cc, float value) {
+            self.getMidiHandler().sendParameterFeedback(channel, cc, value);
+        }, py::arg("channel"), py::arg("cc"), py::arg("value"),
+           "Send parameter value feedback to controller (0.0-1.0)")
+
+        .def("midi_sync_all_mappings_to_controller", [](Map2AudioEngine& self) {
+            self.getMidiHandler().syncAllMappingsToController();
+        }, "Sync all active mapping values to controller (for chain switch)")
+
+        // ========================================
+        // Chain-to-Program Mapping
+        // ========================================
+
+        .def("midi_set_chain_program_mapping", [](Map2AudioEngine& self, int chainId, int programNumber) {
+            self.getMidiHandler().setChainProgramMapping(chainId, programNumber);
+        }, py::arg("chain_id"), py::arg("program_number"),
+           "Map a chain ID to a MIDI program number")
+
+        .def("midi_get_chain_for_program", [](const Map2AudioEngine& self, int programNumber) {
+            return const_cast<Map2AudioEngine&>(self).getMidiHandler().getChainForProgram(programNumber);
+        }, py::arg("program_number"), "Get chain ID for a program number (-1 if not mapped)")
+
+        .def("midi_get_program_for_chain", [](const Map2AudioEngine& self, int chainId) {
+            return const_cast<Map2AudioEngine&>(self).getMidiHandler().getProgramForChain(chainId);
+        }, py::arg("chain_id"), "Get program number for a chain ID (-1 if not mapped)")
+
+        .def("midi_clear_chain_program_mappings", [](Map2AudioEngine& self) {
+            self.getMidiHandler().clearChainProgramMappings();
+        }, "Clear all chain-to-program mappings")
+
+        // ========================================
+        // MIDI Status
+        // ========================================
+
+        .def("midi_get_status", [](Map2AudioEngine& self) {
+            return midiStatusToDict(self.getMidiHandler().getStatus());
+        }, "Get comprehensive MIDI status")
+
+        // ========================================
+        // MIDI Device Management (Enhanced)
+        // ========================================
+
+        .def("midi_get_input_devices", [](Map2AudioEngine& self) {
+            return self.getMidiHandler().getInputDevices();
+        }, "Get list of available MIDI input devices")
+
+        .def("midi_get_output_devices", [](Map2AudioEngine& self) {
+            return self.getMidiHandler().getOutputDevices();
+        }, "Get list of available MIDI output devices")
+
+        .def("midi_open_input_device", [](Map2AudioEngine& self, const std::string& device) {
+            return self.getMidiHandler().openInputDevice(device);
+        }, py::arg("device"), "Open a MIDI input device by name")
+
+        .def("midi_open_output_device", [](Map2AudioEngine& self, const std::string& device) {
+            return self.getMidiHandler().openOutputDevice(device);
+        }, py::arg("device"), "Open a MIDI output device by name")
+
+        .def("midi_close_input_device", [](Map2AudioEngine& self) {
+            self.getMidiHandler().closeInputDevice();
+        }, "Close the current MIDI input device")
+
+        .def("midi_close_output_device", [](Map2AudioEngine& self) {
+            self.getMidiHandler().closeOutputDevice();
+        }, "Close the current MIDI output device")
+
+        .def("midi_close_all_devices", [](Map2AudioEngine& self) {
+            self.getMidiHandler().closeAllDevices();
+        }, "Close all MIDI devices")
+
+        .def("midi_get_current_input_device", [](Map2AudioEngine& self) {
+            return self.getMidiHandler().getCurrentInputDevice();
+        }, "Get the current MIDI input device name")
+
+        .def("midi_get_current_output_device", [](Map2AudioEngine& self) {
+            return self.getMidiHandler().getCurrentOutputDevice();
+        }, "Get the current MIDI output device name")
+
+        // ========================================
+        // MIDI Callbacks (for Python-side event handling)
+        // ========================================
+
+        .def("midi_set_parameter_callback", [](Map2AudioEngine& self, py::function callback) {
+            self.getMidiHandler().setParameterCallback(
+                [callback](InstanceId plugin, const std::string& param, int index, float value) {
+                    py::gil_scoped_acquire acquire;
+                    try {
+                        callback(plugin, param, index, value);
+                    } catch (const py::error_already_set& e) {
+                        // Log error but don't crash
+                    }
+                });
+        }, py::arg("callback"), "Set callback for parameter changes from MIDI (plugin_id, param_symbol, index, value)")
+
+        .def("midi_set_command_callback", [](Map2AudioEngine& self, py::function callback) {
+            self.getMidiHandler().setCommandCallback(
+                [callback](const MidiCommandTrigger& trigger) {
+                    py::gil_scoped_acquire acquire;
+                    try {
+                        callback(midiCommandTriggerToDict(trigger));
+                    } catch (const py::error_already_set& e) {
+                        // Log error but don't crash
+                    }
+                });
+        }, py::arg("callback"), "Set callback for command triggers (trigger dict)")
+
+        .def("midi_set_monitor_callback", [](Map2AudioEngine& self, py::function callback) {
+            self.getMidiHandler().setMonitorCallback(
+                [callback](const MidiMessage& msg) {
+                    py::gil_scoped_acquire acquire;
+                    try {
+                        callback(midiMessageToDict(msg));
+                    } catch (const py::error_already_set& e) {
+                        // Log error but don't crash
+                    }
+                });
+        }, py::arg("callback"), "Set callback for all MIDI messages (for monitoring)")
+
+        .def("midi_set_learn_complete_callback", [](Map2AudioEngine& self, py::function callback) {
+            self.getMidiHandler().setLearnCompleteCallback(
+                [callback](int channel, int cc) {
+                    py::gil_scoped_acquire acquire;
+                    try {
+                        callback(channel, cc);
+                    } catch (const py::error_already_set& e) {
+                        // Log error but don't crash
+                    }
+                });
+        }, py::arg("callback"), "Set callback for when MIDI learn completes (channel, cc)")
+
+        .def("midi_set_chain_switch_callback", [](Map2AudioEngine& self, py::function callback) {
+            self.getMidiHandler().setChainSwitchCallback(
+                [callback](int programNumber, int chainId) {
+                    py::gil_scoped_acquire acquire;
+                    try {
+                        callback(programNumber, chainId);
+                    } catch (const py::error_already_set& e) {
+                        // Log error but don't crash
+                    }
+                });
+        }, py::arg("callback"), "Set callback for chain switch via Program Change (program, chain_id)")
 
         // ========================================
         // VU Meters (Legacy)

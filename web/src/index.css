@@ -1481,6 +1481,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
    ============================================ */
 
 .horizontal-chain {
+  --chain-color: transparent;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1489,10 +1490,26 @@ input[type="range"]:focus::-webkit-slider-thumb {
   padding: 28px 32px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  background: var(--surface);
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--chain-color) 8%, transparent) 0%,
+      color-mix(in srgb, var(--chain-color) 3%, transparent) 50%,
+      transparent 100%
+    ),
+    var(--surface);
   border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--chain-color) 25%, var(--border));
   min-height: 225px;
+  position: relative;
+}
+
+.horizontal-chain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--chain-color) 15%, transparent);
+  pointer-events: none;
 }
 
 .horizontal-chain::-webkit-scrollbar {
@@ -1752,18 +1769,20 @@ input[type="range"]:focus::-webkit-slider-thumb {
   border-radius: 1px;
 }
 
-/* Active signal - animated flowing gradient */
+/* Active signal - animated flowing gradient with chain color tint */
 .h-signal-arrow.active .h-signal-arrow-line {
   background: linear-gradient(90deg,
-    var(--success) 0%,
-    #4ade80 25%,
-    var(--primary) 50%,
-    #4ade80 75%,
-    var(--success) 100%
+    color-mix(in srgb, var(--chain-color, var(--success)) 60%, var(--success)) 0%,
+    color-mix(in srgb, var(--chain-color, #4ade80) 40%, #4ade80) 25%,
+    color-mix(in srgb, var(--chain-color, var(--primary)) 50%, var(--primary)) 50%,
+    color-mix(in srgb, var(--chain-color, #4ade80) 40%, #4ade80) 75%,
+    color-mix(in srgb, var(--chain-color, var(--success)) 60%, var(--success)) 100%
   );
   background-size: 200% 100%;
   animation: signal-flow 1.5s linear infinite;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6), 0 0 2px rgba(34, 197, 94, 0.8);
+  box-shadow:
+    0 0 6px color-mix(in srgb, var(--chain-color, var(--success)) 50%, rgba(34, 197, 94, 0.6)),
+    0 0 2px color-mix(in srgb, var(--chain-color, var(--success)) 50%, rgba(34, 197, 94, 0.8));
 }
 
 @keyframes signal-flow {
@@ -2340,11 +2359,18 @@ input[type="range"]:focus::-webkit-slider-thumb {
 }
 
 .chain-panel-body .horizontal-chain {
-  background: transparent;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--chain-color, transparent) 6%, transparent) 0%,
+    color-mix(in srgb, var(--chain-color, transparent) 2%, transparent) 100%
+  );
   border: none;
   padding: 16px 20px;
   min-height: 144px;
   justify-content: flex-start;
+}
+
+.chain-panel-body .horizontal-chain::before {
+  display: none;
 }
 
 .chain-panel-empty {
@@ -2468,4 +2494,135 @@ input[type="range"]:focus::-webkit-slider-thumb {
   .routing-chain-management {
     order: 1;
   }
+}
+
+/* ============================================
+   Unified Upload System Styles
+   ============================================ */
+
+/* Drop zone states */
+.upload-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--border-radius-lg, 12px);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.drag-over {
+  border-color: var(--primary);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.upload-dropzone.drag-over {
+  transform: scale(1.01);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+/* File type badges */
+.upload-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.upload-type-badge.nam {
+  background: rgba(246, 196, 82, 0.15);
+  color: #f6c452;
+  border: 1px solid rgba(246, 196, 82, 0.3);
+}
+
+.upload-type-badge.cabinet_ir {
+  background: rgba(55, 214, 201, 0.15);
+  color: #37d6c9;
+  border: 1px solid rgba(55, 214, 201, 0.3);
+}
+
+.upload-type-badge.reverb_ir {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196f3;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.upload-type-badge.vst3 {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* Upload file item states */
+.upload-file-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, var(--surface));
+  transition: all 0.2s ease;
+}
+
+.upload-file-item.pending {
+  border-color: var(--border);
+}
+
+.upload-file-item.uploading {
+  border-color: var(--primary);
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.upload-file-item.success {
+  border-color: var(--success);
+  background: rgba(0, 255, 65, 0.05);
+}
+
+.upload-file-item.error {
+  border-color: var(--danger);
+  background: rgba(255, 51, 51, 0.05);
+}
+
+/* Enhanced progress bar */
+.upload-progress {
+  height: 4px;
+  background: var(--surface-3, #333);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent, #ff6b35));
+  border-radius: 2px;
+  transition: width 0.15s ease-out;
+  position: relative;
+}
+
+.upload-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

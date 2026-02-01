@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
-import { ChevronDown, PanelsTopLeft, Sparkles, Workflow, Info, Package, Library, Plug, AudioLines } from 'lucide-react'
+import { ChevronDown, PanelsTopLeft, Sparkles, Workflow, Info, Package, Library, Plug, AudioLines, Piano } from 'lucide-react'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -58,6 +58,13 @@ const navItems = [
     color: '#22c55e'  // Green
   },
   {
+    to: '/midi',
+    label: 'MIDI',
+    icon: Piano,
+    description: 'MIDI mapping & control',
+    color: '#ec4899'  // Pink
+  },
+  {
     to: '/about',
     label: 'About',
     icon: Info,
@@ -105,9 +112,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Get all nav items in order, including library in the right position
   const allNavItems = [
-    ...navItems.slice(0, 4),  // Overview, Chains, Flow, Presets
+    ...navItems.slice(0, 5),  // Overview, Chains, Flow, Presets, MIDI
     { ...libraryPluginsNav, to: 'library-dropdown', isDropdown: true },
-    ...navItems.slice(4),     // About, Legacy
+    ...navItems.slice(5),     // About, Legacy
   ]
 
   return (

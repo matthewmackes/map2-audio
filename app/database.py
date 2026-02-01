@@ -267,19 +267,158 @@ class ChainPlugin(Base):
     chain = relationship("Chain", back_populates="chain_plugins")
 
 
+class MIDIMappingGroup(Base):
+    """Logical grouping for MIDI mappings (e.g., 'Expression Pedal', 'Faders')."""
+    __tablename__ = "midi_mapping_groups"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+    color = Column(String(7))  # Hex color for UI (e.g., '#ff5733')
+    display_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    mappings = relationship("MIDIMapping", back_populates="group")
+
+
 class MIDIMapping(Base):
-    """MIDI CC to plugin parameter mapping."""
+    """Enhanced MIDI CC to plugin parameter mapping with per-chain scope."""
     __tablename__ = "midi_mappings"
 
     id = Column(Integer, primary_key=True)
-    channel = Column(Integer, nullable=False)
-    cc = Column(Integer, nullable=False)
-    target_plugin_uri = Column(String(255))  # No FK - plugins are discovered at runtime from LV2
+
+    # Source MIDI
+    channel = Column(Integer, nullable=False)  # 0=omni, 1-16=specific channel
+    cc = Column(Integer, nullable=False)       # 0-127
+
+    # Target (Per-Chain Scope)
+    chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=True)
+    target_plugin_uri = Column(String(255))  # No FK - plugins discovered at runtime
     target_param_index = Column(Integer)
+    target_param_symbol = Column(String(100))  # Parameter symbol for name-based access
+
+    # Value Mapping
     min_val = Column(Float, default=0.0)
     max_val = Column(Float, default=1.0)
+    curve_type = Column(String(20), default="linear")  # linear, logarithmic, exponential, s_curve
+    invert = Column(Boolean, default=False)
+
+    # MIDI Feedback (for controller sync)
+    feedback_enabled = Column(Boolean, default=True)
+    feedback_cc = Column(Integer)  # CC to send back (defaults to same CC if None)
+
+    # Metadata
+    name = Column(String(255))  # User-friendly display name
+    group_id = Column(Integer, ForeignKey("midi_mapping_groups.id", ondelete="SET NULL"), nullable=True)
     is_learned = Column(Boolean, default=False)
+    is_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    chain = relationship("Chain", foreign_keys=[chain_id])
+    group = relationship("MIDIMappingGroup", back_populates="mappings")
+
+
+class MIDICommand(Base):
+    """MIDI commands for chain switching and plugin control."""
+    __tablename__ = "midi_commands"
+
+    id = Column(Integer, primary_key=True)
+
+    # Command Trigger
+    command_type = Column(String(20), nullable=False)  # program_change, note_on, cc_toggle
+    channel = Column(Integer, default=0)  # 0=omni, 1-16=specific
+    data1 = Column(Integer, nullable=False)  # PC number, Note number, or CC number
+    data2 = Column(Integer)  # Velocity threshold, CC value threshold (optional)
+
+    # Action
+    action_type = Column(String(30), nullable=False)  # activate_chain, toggle_chain, toggle_plugin, set_routing
+    target_chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=True)
+    target_plugin_uri = Column(String(255))
+    action_data = Column(JSON, default=dict)  # Extra action parameters
+
+    # Metadata
+    name = Column(String(255))
+    is_enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    target_chain = relationship("Chain", foreign_keys=[target_chain_id])
+
+
+class MIDIRoutingRule(Base):
+    """MIDI-controlled signal routing within chains."""
+    __tablename__ = "midi_routing_rules"
+
+    id = Column(Integer, primary_key=True)
+
+    # Trigger
+    channel = Column(Integer, default=0)  # 0=omni
+    cc = Column(Integer, nullable=False)
+
+    # Routing Change
+    chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"))
+    routing_type = Column(String(30))  # parallel_mix, serial_order, bypass_group
+    routing_data = Column(JSON, default=dict)
+
+    # Metadata
+    name = Column(String(255))
+    is_enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    chain = relationship("Chain", foreign_keys=[chain_id])
+
+
+class MIDIDeviceConfig(Base):
+    """Persistent MIDI device configuration."""
+    __tablename__ = "midi_device_configs"
+
+    id = Column(Integer, primary_key=True)
+    device_name = Column(String(255), nullable=False, unique=True)
+    device_type = Column(String(20))  # input, output
+    is_enabled = Column(Boolean, default=True)
+    auto_connect = Column(Boolean, default=True)
+    channel_filter = Column(Integer)  # None = all channels
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MIDIPreset(Base):
+    """Complete MIDI configuration preset."""
+    __tablename__ = "midi_presets"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+
+    # Snapshot of all mappings, commands, routing rules
+    mappings_snapshot = Column(JSON, default=list)
+    commands_snapshot = Column(JSON, default=list)
+    routing_rules_snapshot = Column(JSON, default=list)
+    device_configs_snapshot = Column(JSON, default=list)
+
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ChainMIDIConfig(Base):
+    """Maps Program Change numbers to chains for MIDI chain switching."""
+    __tablename__ = "chain_midi_configs"
+
+    id = Column(Integer, primary_key=True)
+    chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), unique=True)
+    program_number = Column(Integer, nullable=False)  # 0-127
+    bank_msb = Column(Integer, default=0)  # Bank Select MSB (CC#0) for >128 chains
+    bank_lsb = Column(Integer, default=0)  # Bank Select LSB (CC#32)
+    send_pc_on_activate = Column(Boolean, default=True)  # Send PC back to sync controller
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    chain = relationship("Chain", foreign_keys=[chain_id])
 
 
 class SystemConfig(Base):

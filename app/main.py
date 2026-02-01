@@ -79,6 +79,7 @@ async def lifespan(app):
         from app.services.parameter_routing import connect_parameter_routing, disconnect_parameter_routing
         from app.services.plugin_preset_lifecycle import get_preset_lifecycle
         from app.services.metering_broadcast import start_metering_broadcast, stop_metering_broadcast
+        from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
         from app.database import checkpoint_database
 
         # Start metrics daemon
@@ -98,6 +99,8 @@ async def lifespan(app):
         await safe_start_service(logger, "Plugin preset lifecycle manager", preset_lifecycle.startup)
         # Start metering broadcast service (spectrum, LUFS, CPU via WebSocket)
         await safe_start_service(logger, "Metering broadcast service", start_metering_broadcast)
+        # Start MIDI broadcast service (real-time MIDI events via WebSocket)
+        await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
 
         running = sum(1 for v in results.values() if v)
         total = len(results)
@@ -107,6 +110,7 @@ async def lifespan(app):
 
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
+        await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
         
         # Close database pool
@@ -147,7 +151,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'delay', 'autotune', 'triplespread', 'plugin_packages', 'valentine', 'zlequalizer', 'snapshots', 'freeverb3', 'whammy', 'dragonfly', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'vst3_routes', 'vst3_packages']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'delay', 'autotune', 'triplespread', 'plugin_packages', 'valentine', 'zlequalizer', 'snapshots', 'freeverb3', 'whammy', 'dragonfly', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'vst3_routes', 'vst3_packages', 'upload']
 
         for route_name in route_modules:
             try:

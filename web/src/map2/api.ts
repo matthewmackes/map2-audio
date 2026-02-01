@@ -15,6 +15,18 @@ import type {
   CreatePresetRequest,
   MIDIDevice,
   MIDIMapping,
+  MIDIMappingV2,
+  MIDIMappingGroup,
+  MIDICommand,
+  MIDIRoutingRule,
+  MIDIDeviceConfig,
+  MIDIPreset,
+  MIDIStatus,
+  MIDILearnTarget,
+  MIDICurveType,
+  MIDIActionType,
+  MIDITriggerType,
+  ChainMIDIConfig,
   IRStatus,
   NAMStatus,
   AutomationLane,
@@ -459,6 +471,230 @@ export const midiApi = {
     fetchJson<{ status: string; mapping_id: number }>(
       `${API_BASE}/midi/mappings/${mappingId}`,
       { method: 'DELETE' }
+    ),
+};
+
+// ==================== MIDI API V2 (Enhanced) ====================
+
+export const midiApiV2 = {
+  // ========== Status ==========
+  getStatus: () => fetchJson<MIDIStatus>(`${API_BASE}/v2/midi/status`),
+
+  // ========== Devices ==========
+  getDevices: () => fetchJson<{
+    input_devices: string[];
+    output_devices: string[];
+    current_input: string | null;
+    current_output: string | null;
+  }>(`${API_BASE}/v2/midi/devices`),
+
+  openInputDevice: (deviceName: string) =>
+    fetchJson<{ success: boolean; device: string }>(
+      `${API_BASE}/v2/midi/devices/input`,
+      { method: 'POST', body: JSON.stringify({ device_name: deviceName }) }
+    ),
+
+  openOutputDevice: (deviceName: string) =>
+    fetchJson<{ success: boolean; device: string }>(
+      `${API_BASE}/v2/midi/devices/output`,
+      { method: 'POST', body: JSON.stringify({ device_name: deviceName }) }
+    ),
+
+  closeInputDevice: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/v2/midi/devices/input`, { method: 'DELETE' }),
+
+  closeOutputDevice: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/v2/midi/devices/output`, { method: 'DELETE' }),
+
+  // ========== CC Mappings ==========
+  getMappings: (options?: { chain_id?: number; plugin_uri?: string }) => {
+    const params = new URLSearchParams();
+    if (options?.chain_id !== undefined) params.append('chain_id', options.chain_id.toString());
+    if (options?.plugin_uri) params.append('plugin_uri', options.plugin_uri);
+    const query = params.toString();
+    return fetchJson<{ mappings: MIDIMappingV2[]; count: number }>(
+      `${API_BASE}/v2/midi/mappings${query ? `?${query}` : ''}`
+    );
+  },
+
+  createMapping: (mapping: Partial<MIDIMappingV2>) =>
+    fetchJson<{ mapping: MIDIMappingV2; message: string }>(
+      `${API_BASE}/v2/midi/mappings`,
+      { method: 'POST', body: JSON.stringify(mapping) }
+    ),
+
+  updateMapping: (mappingId: number, updates: Partial<MIDIMappingV2>) =>
+    fetchJson<{ mapping: MIDIMappingV2; message: string }>(
+      `${API_BASE}/v2/midi/mappings/${mappingId}`,
+      { method: 'PATCH', body: JSON.stringify(updates) }
+    ),
+
+  deleteMapping: (mappingId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/mappings/${mappingId}`,
+      { method: 'DELETE' }
+    ),
+
+  // ========== Commands ==========
+  getCommands: () =>
+    fetchJson<{ commands: MIDICommand[]; count: number }>(`${API_BASE}/v2/midi/commands`),
+
+  createCommand: (command: Partial<MIDICommand>) =>
+    fetchJson<{ command: MIDICommand; message: string }>(
+      `${API_BASE}/v2/midi/commands`,
+      { method: 'POST', body: JSON.stringify(command) }
+    ),
+
+  updateCommand: (commandId: number, updates: Partial<MIDICommand>) =>
+    fetchJson<{ command: MIDICommand; message: string }>(
+      `${API_BASE}/v2/midi/commands/${commandId}`,
+      { method: 'PATCH', body: JSON.stringify(updates) }
+    ),
+
+  deleteCommand: (commandId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/commands/${commandId}`,
+      { method: 'DELETE' }
+    ),
+
+  // ========== Routing Rules ==========
+  getRoutingRules: (chainId?: number) => {
+    const query = chainId !== undefined ? `?chain_id=${chainId}` : '';
+    return fetchJson<{ routing_rules: MIDIRoutingRule[]; count: number }>(
+      `${API_BASE}/v2/midi/routing-rules${query}`
+    );
+  },
+
+  createRoutingRule: (rule: Partial<MIDIRoutingRule>) =>
+    fetchJson<{ routing_rule: MIDIRoutingRule; message: string }>(
+      `${API_BASE}/v2/midi/routing-rules`,
+      { method: 'POST', body: JSON.stringify(rule) }
+    ),
+
+  deleteRoutingRule: (ruleId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/routing-rules/${ruleId}`,
+      { method: 'DELETE' }
+    ),
+
+  // ========== MIDI Learn ==========
+  startLearn: (params: {
+    chain_id: number;
+    plugin_uri: string;
+    param_symbol: string;
+    param_index: number;
+    min_val?: number;
+    max_val?: number;
+    curve_type?: MIDICurveType;
+  }) =>
+    fetchJson<{ success: boolean; target: MIDILearnTarget }>(
+      `${API_BASE}/v2/midi/learn/start`,
+      { method: 'POST', body: JSON.stringify(params) }
+    ),
+
+  stopLearn: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/v2/midi/learn/stop`, { method: 'POST' }),
+
+  getLearnStatus: () =>
+    fetchJson<{ learning: boolean; target: MIDILearnTarget | null }>(`${API_BASE}/v2/midi/learn/status`),
+
+  // ========== Presets ==========
+  getPresets: () =>
+    fetchJson<{ presets: MIDIPreset[]; count: number }>(`${API_BASE}/v2/midi/presets`),
+
+  savePreset: (name: string, description?: string) =>
+    fetchJson<{ preset: MIDIPreset; message: string }>(
+      `${API_BASE}/v2/midi/presets`,
+      { method: 'POST', body: JSON.stringify({ name, description }) }
+    ),
+
+  loadPreset: (presetId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/presets/${presetId}/load`,
+      { method: 'POST' }
+    ),
+
+  deletePreset: (presetId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/presets/${presetId}`,
+      { method: 'DELETE' }
+    ),
+
+  // ========== Mapping Groups ==========
+  getGroups: () =>
+    fetchJson<{ groups: MIDIMappingGroup[]; count: number }>(`${API_BASE}/v2/midi/groups`),
+
+  createGroup: (name: string, color?: string) =>
+    fetchJson<{ group: MIDIMappingGroup; message: string }>(
+      `${API_BASE}/v2/midi/groups`,
+      { method: 'POST', body: JSON.stringify({ name, color }) }
+    ),
+
+  updateGroup: (groupId: number, updates: { name?: string; color?: string; sort_order?: number }) =>
+    fetchJson<{ group: MIDIMappingGroup; message: string }>(
+      `${API_BASE}/v2/midi/groups/${groupId}`,
+      { method: 'PATCH', body: JSON.stringify(updates) }
+    ),
+
+  deleteGroup: (groupId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/groups/${groupId}`,
+      { method: 'DELETE' }
+    ),
+
+  // ========== Chain MIDI Config ==========
+  getChainConfigs: () =>
+    fetchJson<{ configs: ChainMIDIConfig[]; count: number }>(`${API_BASE}/v2/midi/chain-configs`),
+
+  setChainConfig: (chainId: number, programNumber: number, options?: {
+    bank_msb?: number;
+    bank_lsb?: number;
+    send_pc_on_activate?: boolean;
+  }) =>
+    fetchJson<{ config: ChainMIDIConfig; message: string }>(
+      `${API_BASE}/v2/midi/chain-configs/${chainId}`,
+      { method: 'PUT', body: JSON.stringify({ program_number: programNumber, ...options }) }
+    ),
+
+  deleteChainConfig: (chainId: number) =>
+    fetchJson<{ success: boolean; message: string }>(
+      `${API_BASE}/v2/midi/chain-configs/${chainId}`,
+      { method: 'DELETE' }
+    ),
+
+  // ========== Device Configs ==========
+  getDeviceConfigs: () =>
+    fetchJson<{ configs: MIDIDeviceConfig[]; count: number }>(`${API_BASE}/v2/midi/device-configs`),
+
+  saveDeviceConfig: (config: Partial<MIDIDeviceConfig>) =>
+    fetchJson<{ config: MIDIDeviceConfig; message: string }>(
+      `${API_BASE}/v2/midi/device-configs`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
+  // ========== MIDI Output ==========
+  sendCC: (channel: number, cc: number, value: number) =>
+    fetchJson<{ success: boolean }>(
+      `${API_BASE}/v2/midi/send/cc`,
+      { method: 'POST', body: JSON.stringify({ channel, cc, value }) }
+    ),
+
+  sendProgramChange: (channel: number, program: number) =>
+    fetchJson<{ success: boolean }>(
+      `${API_BASE}/v2/midi/send/program-change`,
+      { method: 'POST', body: JSON.stringify({ channel, program }) }
+    ),
+
+  sendNote: (channel: number, note: number, velocity: number, on: boolean) =>
+    fetchJson<{ success: boolean }>(
+      `${API_BASE}/v2/midi/send/note`,
+      { method: 'POST', body: JSON.stringify({ channel, note, velocity, on }) }
+    ),
+
+  syncToController: () =>
+    fetchJson<{ success: boolean; mappings_synced: number }>(
+      `${API_BASE}/v2/midi/sync`,
+      { method: 'POST' }
     ),
 };
 
@@ -1520,6 +1756,140 @@ export const vst3PackagesApi = {
     ),
 };
 
+// ==================== Unified Upload API ====================
+
+export interface UploadResult {
+  success: boolean
+  asset_type: string
+  filename: string
+  file_path: string
+  file_size: number
+  file_hash: string
+  message: string
+  error?: string
+  already_exists: boolean
+}
+
+export interface BatchUploadResult {
+  total: number
+  successful: number
+  failed: number
+  results: UploadResult[]
+}
+
+export interface UploadTypeInfo {
+  type: string
+  name: string
+  extensions: string[]
+  max_size_mb: number
+  description: string
+}
+
+export const uploadApi = {
+  /**
+   * Upload a single file with optional progress callback
+   */
+  upload: async (
+    file: File,
+    assetType?: string,
+    onProgress?: (percent: number) => void
+  ): Promise<UploadResult> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (assetType) {
+      formData.append('asset_type', assetType)
+    }
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100))
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText))
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText)
+            reject(new Error(errorData.detail?.message || errorData.detail || 'Upload failed'))
+          } catch {
+            reject(new Error(xhr.statusText || 'Upload failed'))
+          }
+        }
+      })
+
+      xhr.addEventListener('error', () => reject(new Error('Network error')))
+      xhr.addEventListener('abort', () => reject(new Error('Upload aborted')))
+
+      xhr.open('POST', `${API_BASE}/upload/`)
+      xhr.send(formData)
+    })
+  },
+
+  /**
+   * Upload multiple files as a batch
+   */
+  uploadBatch: async (files: File[], assetType?: string): Promise<BatchUploadResult> => {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('files', file))
+    if (assetType) {
+      formData.append('asset_type', assetType)
+    }
+
+    const response = await fetch(`${API_BASE}/upload/batch`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new ApiError(response.status, response.statusText)
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Validate a file before upload
+   */
+  validate: async (
+    file: File,
+    assetType?: string
+  ): Promise<{
+    valid: boolean
+    asset_type: string | null
+    message: string
+    details: Record<string, unknown>
+    requires_type: boolean
+  }> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (assetType) {
+      formData.append('asset_type', assetType)
+    }
+
+    const response = await fetch(`${API_BASE}/upload/validate`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new ApiError(response.status, response.statusText)
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Get supported upload types
+   */
+  getTypes: () =>
+    fetchJson<{ types: UploadTypeInfo[] }>(`${API_BASE}/upload/types`),
+}
+
 // ==================== Export all APIs ====================
 
 export const map2Api = {
@@ -1529,6 +1899,7 @@ export const map2Api = {
   presets: presetsApi,
   pluginPresets: pluginPresetsApi,
   midi: midiApi,
+  midiV2: midiApiV2,
   ir: irApi,
   irLibrary: irLibraryApi,
   nam: namApi,
@@ -1544,6 +1915,7 @@ export const map2Api = {
   folders: foldersApi,
   vst3: vst3Api,
   vst3Packages: vst3PackagesApi,
+  upload: uploadApi,
 };
 
 export default map2Api;
