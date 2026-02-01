@@ -1,6 +1,6 @@
-# MAP2 Audio Platform
+# Mackes Audio Platform 2 FEB2025
 
-**Professional Real-Time Audio Processing System** (BETA Feb 2025)
+**Professional Real-Time Audio Processing System** (v2.0.0-FEB2025)
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Matthew%20Mackes-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/matthewmackes/)
 
@@ -11,7 +11,7 @@
 
 **Created by [Matthew Mackes](https://www.linkedin.com/in/matthewmackes/)**
 
-MAP2 Audio Platform is an enterprise-grade, real-time audio processing system designed for guitarists and audio professionals. It combines powerful LV2 plugin hosting, AI-powered amp modeling, and professional impulse response processing with a modern dual-interface architecture.
+Mackes Audio Platform 2 is an enterprise-grade, real-time audio processing system designed for guitarists and audio professionals. It combines powerful LV2 plugin hosting, AI-powered amp modeling, and professional impulse response processing with a modern dual-interface architecture.
 
 ---
 

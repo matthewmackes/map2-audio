@@ -1,8 +1,8 @@
 {
-  "name": "map2-audio-web",
+  "name": "mackes-audio-platform-2-web",
   "private": true,
-  "version": "1.24.25.1",
-  "description": "MAP2 Audio Platform - Professional Guitar Effects Processor Web Interface",
+  "version": "2.0.0-FEB2025",
+  "description": "Mackes Audio Platform 2 FEB2025 - Professional Guitar Effects Processor Web Interface",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
@@ -58,6 +58,6 @@
     "vite": "^6.4.1",
     "vite-plugin-svgr": "^4.3.0"
   },
-  "author": "MAP2 Audio Platform (based on PiPedal by Robin Davies)",
+  "author": "Mackes Audio Platform 2 (based on PiPedal by Robin Davies)",
   "license": "MIT"
 }

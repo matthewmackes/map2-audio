@@ -1,6 +1,6 @@
 [Unit]
-Description=MAP2 Audio Platform - Unified Service Orchestrator
-Documentation=https://github.com/map2-audio/map2-audio
+Description=Mackes Audio Platform 2 FEB2025 - Unified Service Orchestrator
+Documentation=https://github.com/matthewmackes/map2-audio
 After=network.target sound.target
 Wants=sound.target
 

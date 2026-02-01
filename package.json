@@ -1,7 +1,7 @@
 {
-  "name": "map2-audio",
-  "version": "1.24.25.1",
-  "description": "",
+  "name": "mackes-audio-platform-2",
+  "version": "2.0.0-FEB2025",
+  "description": "Mackes Audio Platform 2 FEB2025 - Professional Real-Time Audio Processing System",
   "main": "index.js",
   "directories": {
     "doc": "docs",

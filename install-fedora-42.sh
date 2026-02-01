@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# MAP2 Audio Platform - Fedora Server 42 Installer
+# Mackes Audio Platform 2 FEB2025 - Fedora Server 42 Installer
 # Complete automated installation script
 #
 # Usage: sudo bash install-fedora-42.sh

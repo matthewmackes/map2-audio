@@ -102,7 +102,7 @@ class AboutTab(ScrollableContainer):
     def __init__(self, api_client: MAP2APIClient, id: Optional[str] = None):
         super().__init__(id=id)
         self.api_client = api_client
-        self.version = "1.0.0"
+        self.version = "2.0.0-FEB2025"
         self.backend_version = "Unknown"
 
     def compose(self) -> ComposeResult:
@@ -110,22 +110,22 @@ class AboutTab(ScrollableContainer):
 
         # ASCII Art Logo
         yield Static("""
-   __  __    _    ____ ____     _             _ _
-  |  \\/  |  / \\  |  _ \\___ \\   / \\  _   _  __| (_) ___
-  | |\\/| | / _ \\ | |_) |__) | / _ \\| | | |/ _` | |/ _ \\
-  | |  | |/ ___ \\|  __// __/ / ___ \\ |_| | (_| | | (_) |
-  |_|  |_/_/   \\_\\_|  |_____/_/   \\_\\__,_|\\__,_|_|\\___/
+  __  __            _               _             _ _
+ |  \\/  | __ _  ___| | _____  ___  / \\  _   _  __| (_) ___
+ | |\\/| |/ _` |/ __| |/ / _ \\/ __| / _ \\| | | |/ _` | |/ _ \\
+ | |  | | (_| | (__|   <  __/\\__ \\/ ___ \\ |_| | (_| | | (_) |
+ |_|  |_|\\__,_|\\___|_|\\_\\___||___/_/   \\_\\__,_|\\__,_|_|\\___/
 
-        Professional Audio Processing Platform
+       Platform 2 FEB2025 - Professional Audio Processing
 """, classes="logo")
 
         # Main Header
-        yield Label("ℹ️ ABOUT & CREDITS", classes="main-header")
+        yield Label("ℹ️ MACKES AUDIO PLATFORM 2 FEB2025", classes="main-header")
 
         # System Information
         yield Label("📊 SYSTEM INFORMATION", classes="section-header")
         with Container(classes="info-panel"):
-            yield Static(f"[cyan]MAP2 Audio Platform[/] v{self.version}", classes="info-line", id="version-info")
+            yield Static(f"[cyan]Mackes Audio Platform 2[/] v{self.version}", classes="info-line", id="version-info")
             yield Static(f"[cyan]Backend Version:[/] ...", classes="info-line", id="backend-version")
             yield Static(f"[cyan]Platform:[/] {platform.system()} {platform.release()}", classes="info-line")
             yield Static(f"[cyan]Architecture:[/] {platform.machine()}", classes="info-line")
