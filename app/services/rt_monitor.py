@@ -12,6 +12,8 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass
 import statistics
 
+from app.utils.singleton import Singleton
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +26,7 @@ class RTMetrics:
     timestamp: float
 
 
-class RTPerformanceMonitor:
+class RTPerformanceMonitor(Singleton):
     """Monitor real-time audio callback performance.
     
     Tracks timing, detects xruns, and provides statistics.
