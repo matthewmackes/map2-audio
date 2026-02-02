@@ -6,13 +6,115 @@ API endpoints for plugin management.
 import time
 import logging
 import inspect
-from typing import List
+import json
+from pathlib import Path
+from typing import List, Dict, Any
 
 from app.response_models import PluginLoadResponse, PluginUnloadResponse
 from app.exceptions import PluginNotFoundException, PluginLoadException
 from app.services.plugin_resource_manager import get_resource_manager, ResourceLimits
 
 logger = logging.getLogger(__name__)
+
+
+def _load_juce_processors() -> List[Dict[str, Any]]:
+    """Load JUCE native processors from configuration file.
+
+    These are high-performance processors built into the JUCE C++ engine:
+    - Compressor, Limiter, Noise Gate (DynamicsProcessor)
+    - 8-Band Parametric EQ (FilterProcessor)
+    - Cabinet IR, Reverb IR (ConvolutionProcessor)
+    - Neural Amp Modeler (NAMProcessor)
+
+    Returns:
+        List of processor definitions in plugin format
+    """
+    config_path = Path(__file__).parent.parent / "config" / "juce_processors.json"
+
+    if not config_path.exists():
+        logger.warning(f"JUCE processors config not found: {config_path}")
+        return []
+
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+
+        processors = []
+        for proc in config.get("processors", []):
+            # Build parameters list from config
+            parameters = []
+            param_index = 0
+
+            for param in proc.get("parameters", []):
+                parameters.append({
+                    "index": param_index,
+                    "name": param.get("name", ""),
+                    "symbol": param.get("symbol", ""),
+                    "min": param.get("min", 0),
+                    "max": param.get("max", 1),
+                    "default": param.get("default", 0),
+                    "is_toggled": param.get("type") == "toggle",
+                    "is_log": param.get("logarithmic", False),
+                })
+                param_index += 1
+
+            # Add band parameters for EQ
+            if "band_parameters" in proc:
+                band_config = proc["band_parameters"]
+                for band_idx in range(band_config.get("count", 0)):
+                    for band_param in band_config.get("per_band", []):
+                        parameters.append({
+                            "index": param_index,
+                            "name": f"Band {band_idx + 1} {band_param.get('name', '')}",
+                            "symbol": f"band{band_idx}_{band_param.get('symbol', '')}",
+                            "min": band_param.get("min", 0),
+                            "max": band_param.get("max", 1),
+                            "default": band_param.get("default", 0),
+                            "is_toggled": band_param.get("type") == "toggle",
+                            "is_log": band_param.get("logarithmic", False),
+                        })
+                        param_index += 1
+
+            processors.append({
+                "uri": proc["uri"],
+                "name": proc["name"],
+                "author": proc.get("author", "MAP2 Audio"),
+                "category": proc["category"],
+                "class_label": "JUCE Native",
+                "version": "1.0",
+                "license": "Proprietary",
+                "has_ui": False,
+                "in_ports": proc["audio_ports"]["inputs"],
+                "out_ports": proc["audio_ports"]["outputs"],
+                "format": "JUCE",
+                "is_native": True,
+                "api_base": proc.get("api_base"),
+                "features": proc.get("features", []),
+                "parameters": parameters,
+                "priority": proc.get("priority", 10),
+            })
+
+        logger.info(f"Loaded {len(processors)} JUCE native processors")
+        return processors
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing JUCE processors config: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error loading JUCE processors: {e}")
+        return []
+
+
+# Cache for JUCE processors (loaded once at startup)
+_juce_processors_cache: List[Dict[str, Any]] = []
+
+
+def _get_juce_processors() -> List[Dict[str, Any]]:
+    """Get JUCE processors with caching."""
+    global _juce_processors_cache
+    if not _juce_processors_cache:
+        _juce_processors_cache = _load_juce_processors()
+    return _juce_processors_cache
 
 try:
     from fastapi import APIRouter, HTTPException, Query
@@ -102,10 +204,14 @@ try:
 
     @router.get("/discover")
     async def discover_plugins(refresh: bool = Query(False, description="Force refresh of plugin cache")):
-        """Discover available LV2 plugins.
+        """Discover available plugins (JUCE native + LV2).
 
         Args:
             refresh: If True, forces a fresh scan of plugins instead of using cache.
+
+        Returns:
+            Combined list of JUCE native processors and LV2 plugins.
+            JUCE processors are listed first as they are the best-in-class options.
         """
         global _discovered_plugins, _cache_timestamp
 
@@ -115,9 +221,19 @@ try:
             logger.debug(f"Cached plugins: {[p.get('uri') for p in _discovered_plugins]}")
             return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": True}
 
+        # Always include JUCE native processors (best-in-class built-in effects)
+        juce_processors = _get_juce_processors()
+        logger.info(f"Including {len(juce_processors)} JUCE native processors")
+
         loader = service_manager.get_plugin_loader()
         if not loader:
-            # If loader not available but we have cached data, return it anyway
+            # If loader not available, return JUCE processors only
+            if juce_processors:
+                _discovered_plugins = juce_processors
+                _cache_timestamp = time.time()
+                logger.warning("Plugin loader not available, returning JUCE processors only")
+                return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": False, "warning": "LV2 loader not available, showing JUCE processors only"}
+            # If we have cached data, return it anyway
             if _discovered_plugins:
                 logger.warning("Plugin loader not available, returning stale cache")
                 return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": True, "warning": "Plugin loader not available, showing cached data"}
@@ -134,19 +250,25 @@ try:
                 if inspect.iscoroutinefunction(loader.discover_plugins):
                     plugins = await loader.discover_plugins(force_refresh=refresh)
                 else:
-                    plugins = loader.discover_plugins()
-            
+                    plugins = loader.discover_plugins(force_refresh=refresh)
+
             logger.debug(f"Raw plugins from loader: {[(p.uri if hasattr(p, 'uri') else str(p)) for p in plugins]}")
-            _discovered_plugins = [_transform_plugin(p) for p in plugins]
+            lv2_plugins = [_transform_plugin(p) for p in plugins]
+
+            # Combine JUCE processors (first, highest priority) with LV2 plugins
+            # JUCE processors are preferred as they are optimized native implementations
+            _discovered_plugins = juce_processors + lv2_plugins
             _cache_timestamp = time.time()
-            logger.info(f"Discovered {len(_discovered_plugins)} plugins (refresh={refresh})")
+
+            logger.info(f"Discovered {len(_discovered_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
             logger.info(f"Plugin URIs: {[p.get('uri') for p in _discovered_plugins]}")
             return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": False}
         except Exception as e:
             logger.error(f"Error discovering plugins: {e}")
-            # Return cached data on error if available
-            if _discovered_plugins:
-                return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": True, "error": str(e)}
+            # Return JUCE processors + cached data on error if available
+            if juce_processors or _discovered_plugins:
+                fallback = juce_processors if juce_processors else _discovered_plugins
+                return {"plugins": fallback, "count": len(fallback), "cached": True, "error": str(e)}
             return {"plugins": [], "count": 0, "error": str(e)}
 
     @router.post("/refresh")
@@ -432,7 +554,7 @@ try:
 
     @router.get("/all")
     async def get_all_plugins():
-        """Get all available plugins across all formats (VST3, AU, LV2, LADSPA)"""
+        """Get all available plugins across all formats (AU, LV2, LADSPA)"""
         try:
             from app.services.juce_engine_service import get_audio_engine
             engine = get_audio_engine()
@@ -440,18 +562,6 @@ try:
             return [_transform_juce_plugin(p) for p in plugins]
         except Exception as e:
             logger.error(f"Error getting all plugins: {e}")
-            return []
-
-    @router.get("/vst3")
-    async def get_vst3_plugins():
-        """Get all VST3 plugins"""
-        try:
-            from app.services.juce_engine_service import get_audio_engine
-            engine = get_audio_engine()
-            plugins = await engine.list_vst3_plugins()
-            return [_transform_juce_plugin(p) for p in plugins]
-        except Exception as e:
-            logger.error(f"Error getting VST3 plugins: {e}")
             return []
 
     @router.get("/au")
@@ -491,7 +601,7 @@ try:
             )
 
     @router.post("/scan")
-    async def scan_all_plugins(format: str = Query(None, description="Plugin format to scan (VST3, AU, LV2, All)")):
+    async def scan_all_plugins(format: str = Query(None, description="Plugin format to scan (AU, LV2, All)")):
         """Trigger a plugin scan for all formats or a specific format"""
         try:
             from app.services.juce_engine_service import get_audio_engine

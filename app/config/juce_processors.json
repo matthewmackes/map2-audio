@@ -1,0 +1,163 @@
+{
+  "description": "JUCE Native Audio Processors for MAP2 - Best-in-class built into C++ engine",
+  "version": "1.0.0",
+  "processors": [
+    {
+      "uri": "map2://juce/dynamics/compressor",
+      "name": "Compressor",
+      "category": "Dynamics",
+      "description": "Smooth compression with adjustable ratio, knee, and auto-makeup gain",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/dynamics/compressor",
+      "features": ["real-time-metering", "gain-reduction-display", "transfer-curve"],
+      "parameters": [
+        {"name": "Threshold", "symbol": "threshold", "min": -60, "max": 0, "default": -12, "unit": "dB"},
+        {"name": "Ratio", "symbol": "ratio", "min": 1, "max": 20, "default": 4, "unit": ":1"},
+        {"name": "Attack", "symbol": "attack", "min": 0.1, "max": 500, "default": 10, "unit": "ms", "logarithmic": true},
+        {"name": "Release", "symbol": "release", "min": 10, "max": 5000, "default": 100, "unit": "ms", "logarithmic": true},
+        {"name": "Knee", "symbol": "knee", "min": 0, "max": 24, "default": 6, "unit": "dB"},
+        {"name": "Makeup Gain", "symbol": "makeup_gain", "min": -12, "max": 24, "default": 0, "unit": "dB"},
+        {"name": "Auto Makeup", "symbol": "auto_makeup", "type": "toggle", "default": false},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/dynamics/limiter",
+      "name": "Limiter",
+      "category": "Dynamics",
+      "description": "Brick wall limiter for peak control and loudness maximization",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/dynamics/limiter",
+      "features": ["real-time-metering", "gain-reduction-display"],
+      "parameters": [
+        {"name": "Ceiling", "symbol": "threshold", "min": -60, "max": 0, "default": -1, "unit": "dB"},
+        {"name": "Release", "symbol": "release", "min": 10, "max": 5000, "default": 100, "unit": "ms", "logarithmic": true},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/dynamics/gate",
+      "name": "Noise Gate",
+      "category": "Dynamics",
+      "description": "Noise gate with adjustable threshold and attack/release timing",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/dynamics/gate",
+      "features": ["real-time-metering", "open-close-indicator"],
+      "parameters": [
+        {"name": "Threshold", "symbol": "threshold", "min": -100, "max": 0, "default": -40, "unit": "dB"},
+        {"name": "Ratio", "symbol": "ratio", "min": 1, "max": 100, "default": 10, "unit": ":1"},
+        {"name": "Attack", "symbol": "attack", "min": 0.1, "max": 500, "default": 1, "unit": "ms", "logarithmic": true},
+        {"name": "Release", "symbol": "release", "min": 10, "max": 5000, "default": 100, "unit": "ms", "logarithmic": true},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/eq/parametric",
+      "name": "8-Band Parametric EQ",
+      "category": "EQ",
+      "description": "Professional 8-band parametric equalizer with multiple filter types",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/eq",
+      "features": ["frequency-response-display", "interactive-bands"],
+      "parameters": [
+        {"name": "Output Gain", "symbol": "output_gain", "min": -12, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "band_parameters": {
+        "count": 8,
+        "per_band": [
+          {"name": "Type", "symbol": "type", "type": "enum", "options": ["peak", "lowshelf", "highshelf", "lowpass", "highpass", "bandpass", "notch", "allpass"], "default": "peak"},
+          {"name": "Frequency", "symbol": "frequency", "min": 20, "max": 20000, "default": 1000, "unit": "Hz", "logarithmic": true},
+          {"name": "Gain", "symbol": "gain", "min": -24, "max": 24, "default": 0, "unit": "dB"},
+          {"name": "Q", "symbol": "q", "min": 0.1, "max": 10, "default": 1, "logarithmic": true},
+          {"name": "Enabled", "symbol": "enabled", "type": "toggle", "default": true}
+        ]
+      }
+    },
+    {
+      "uri": "map2://juce/convolution/cabinet",
+      "name": "Cabinet IR",
+      "category": "Cabinet",
+      "description": "Zero-latency cabinet impulse response loader for realistic speaker simulation",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/ir",
+      "ir_type": "cabinet",
+      "features": ["ir-browser", "ir-visualization"],
+      "parameters": [
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 100, "unit": "%"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/convolution/reverb",
+      "name": "Reverb IR",
+      "category": "Reverb",
+      "description": "Convolution reverb with impulse response for realistic spaces",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/ir",
+      "ir_type": "reverb",
+      "features": ["ir-browser", "decay-visualization"],
+      "parameters": [
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 30, "unit": "%"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/nam",
+      "name": "Neural Amp Modeler",
+      "category": "Amplifier",
+      "description": "Neural network amp modeling using NAM captures",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 1,
+        "outputs": 1
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/nam",
+      "features": ["model-browser", "level-meters", "zero-latency"],
+      "parameters": [
+        {"name": "Input Gain", "symbol": "input_gain", "min": -12, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Output Gain", "symbol": "output_gain", "min": -12, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Normalize", "symbol": "normalize", "type": "toggle", "default": true},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    }
+  ]
+}

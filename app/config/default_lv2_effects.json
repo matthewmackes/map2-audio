@@ -1,354 +1,127 @@
 {
-  "description": "Default LV2 effects based on PiPedal's ToobAmp collection",
-  "version": "1.0.0",
-  "source": "https://github.com/rerdavies/ToobAmp",
+  "description": "Optimized LV2 effects - Best-in-class plugins only (redundant plugins moved to JUCE native)",
+  "version": "2.0.0",
+  "source": "https://github.com/rerdavies/ToobAmp + Dragonfly Reverb",
+  "note": "JUCE native processors (Dynamics, EQ, NAM, IR) are now the primary choice. LV2 plugins complement them.",
   "plugins": [
-    {
-      "name": "TooB Neural Amp Modeler",
-      "uri": "http://two-play.com/plugins/toob-nam",
-      "category": "Simulator",
-      "description": "Neural Amp Modeler using Steven Atkinson's Neural Amp Model library",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 10,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB ML Amplifier",
-      "uri": "http://two-play.com/plugins/toob-ml",
-      "category": "Amplifier",
-      "description": "Neural net amp modeler based on Jatin Chowdhury's ML library",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 10,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Cab IR",
-      "uri": "http://two-play.com/plugins/toob-cab-ir",
-      "category": "Simulator",
-      "description": "Cabinet impulse response simulator",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 9,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB CabSim",
-      "uri": "http://two-play.com/plugins/toob-cabsim",
-      "category": "Simulator",
-      "description": "Cabinet simulator",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 9,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Convolution Reverb",
-      "uri": "http://two-play.com/plugins/toob-convolution-reverb",
-      "category": "Reverb",
-      "description": "Convolution reverb effect",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 7,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Freeverb",
-      "uri": "http://two-play.com/plugins/toob-freeverb",
-      "category": "Reverb",
-      "description": "Freeverb algorithm reverb",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 7,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Parametric EQ",
-      "uri": "http://two-play.com/plugins/toob-peq",
-      "category": "Equaliser",
-      "description": "Parametric equalizer",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 8,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB 3 Band EQ",
-      "uri": "http://two-play.com/plugins/toob-3band-eq",
-      "category": "Equaliser",
-      "description": "3-band equalizer (Low, Mid, High)",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 8,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Tone Stack",
-      "uri": "http://two-play.com/plugins/toob-tone-stack",
-      "category": "Filter",
-      "description": "Classic guitar amp tone stack",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 8,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Input Stage",
-      "uri": "http://two-play.com/plugins/toob-input-stage",
-      "category": "Amplifier",
-      "description": "Input stage amplifier",
-      "audio_ports": {
-        "inputs": 1,
-        "outputs": 1
-      },
-      "priority": 9,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Tremolo",
-      "uri": "http://two-play.com/plugins/toob-tremolo",
-      "category": "Modulator",
-      "description": "Tremolo effect",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 6,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Phaser",
-      "uri": "http://two-play.com/plugins/toob-phaser",
-      "category": "Phaser",
-      "description": "Phaser effect",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 6,
-      "is_hard_rt_capable": true
-    },
     {
       "name": "TooB CE-2 Chorus",
       "uri": "http://two-play.com/plugins/toob-ce2-chorus",
       "category": "Chorus",
-      "description": "CE-2 style chorus effect",
+      "description": "Boss CE-2 style chorus - warm analog modulation",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 6,
+      "priority": 10,
       "is_hard_rt_capable": true
     },
     {
       "name": "TooB BF-2 Flanger",
       "uri": "http://two-play.com/plugins/toob-bf2-flanger",
       "category": "Flanger",
-      "description": "BF-2 style flanger effect",
+      "description": "Boss BF-2 style flanger - classic jet sweep",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 6,
+      "priority": 10,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Phaser",
+      "uri": "http://two-play.com/plugins/toob-phaser",
+      "category": "Phaser",
+      "description": "Multi-stage phaser effect",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_hard_rt_capable": true
+    },
+    {
+      "name": "TooB Tremolo",
+      "uri": "http://two-play.com/plugins/toob-tremolo",
+      "category": "Modulator",
+      "description": "Classic tremolo with multiple waveforms",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
       "is_hard_rt_capable": true
     },
     {
       "name": "TooB Delay",
       "uri": "http://two-play.com/plugins/toob-delay",
       "category": "Delay",
-      "description": "Delay effect",
+      "description": "Versatile delay with feedback and filtering",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 7,
+      "priority": 10,
       "is_hard_rt_capable": true
     },
     {
       "name": "TooB Tuner",
       "uri": "http://two-play.com/plugins/toob-tuner",
       "category": "Utility",
-      "description": "Guitar tuner",
+      "description": "Chromatic guitar tuner",
       "audio_ports": {
         "inputs": 1,
         "outputs": 1
       },
-      "priority": 5,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Noise Gate",
-      "uri": "http://two-play.com/plugins/toob-noise-gate",
-      "category": "Gate",
-      "description": "Noise gate",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 9,
+      "priority": 10,
       "is_hard_rt_capable": true
     },
     {
       "name": "TooB 4Looper",
       "uri": "http://two-play.com/plugins/toob-4looper",
       "category": "Utility",
-      "description": "4-track looper",
+      "description": "4-track looper for layered performances",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 5,
+      "priority": 9,
       "is_hard_rt_capable": false
-    },
-    {
-      "name": "TooB One-Button Looper",
-      "uri": "http://two-play.com/plugins/toob-one-button-looper",
-      "category": "Utility",
-      "description": "Simple one-button looper",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 5,
-      "is_hard_rt_capable": false
-    },
-    {
-      "name": "TooB Spectrum Analyzer",
-      "uri": "http://two-play.com/plugins/toob-spectrum-analyzer",
-      "category": "Analyser",
-      "description": "Spectrum analyzer",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 3,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Input Recorder",
-      "uri": "http://two-play.com/plugins/toob-input-recorder",
-      "category": "Utility",
-      "description": "Input recorder",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 4,
-      "is_hard_rt_capable": false
-    },
-    {
-      "name": "TooB Volume",
-      "uri": "http://two-play.com/plugins/toob-volume",
-      "category": "Utility",
-      "description": "Volume control",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 8,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Mix",
-      "uri": "http://two-play.com/plugins/toob-mix",
-      "category": "Mixer",
-      "description": "Audio mixer",
-      "audio_ports": {
-        "inputs": 4,
-        "outputs": 2
-      },
-      "priority": 7,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "TooB Player",
-      "uri": "http://two-play.com/plugins/toob-player",
-      "category": "Utility",
-      "description": "Audio file player",
-      "audio_ports": {
-        "inputs": 0,
-        "outputs": 2
-      },
-      "priority": 4,
-      "is_hard_rt_capable": false
-    },
-    {
-      "name": "TooB GE-7 Graphics Equalizer",
-      "uri": "http://two-play.com/plugins/toob-ge7-eq",
-      "category": "Equaliser",
-      "description": "7-band graphic equalizer",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 8,
-      "is_hard_rt_capable": true
     },
     {
       "name": "Dragonfly Room Reverb",
       "uri": "https://michaelwillis.github.io/dragonfly-reverb#room",
       "category": "Reverb",
-      "description": "Small to medium room reverb with natural sound",
+      "description": "Natural small-to-medium room ambience",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 8,
+      "priority": 10,
       "is_hard_rt_capable": true
     },
     {
       "name": "Dragonfly Hall Reverb",
       "uri": "https://michaelwillis.github.io/dragonfly-reverb#hall",
       "category": "Reverb",
-      "description": "Medium to large concert hall reverb",
+      "description": "Concert hall and large space reverb",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 8,
+      "priority": 10,
       "is_hard_rt_capable": true
     },
     {
       "name": "Dragonfly Plate Reverb",
       "uri": "https://michaelwillis.github.io/dragonfly-reverb#plate",
       "category": "Reverb",
-      "description": "Classic plate reverb sound",
+      "description": "Classic studio plate reverb",
       "audio_ports": {
         "inputs": 2,
         "outputs": 2
       },
-      "priority": 8,
-      "is_hard_rt_capable": true
-    },
-    {
-      "name": "Dragonfly Early Reflections",
-      "uri": "https://michaelwillis.github.io/dragonfly-reverb#early",
-      "category": "Reverb",
-      "description": "Early reflections only, no reverb tail",
-      "audio_ports": {
-        "inputs": 2,
-        "outputs": 2
-      },
-      "priority": 7,
+      "priority": 10,
       "is_hard_rt_capable": true
     }
   ],
@@ -357,128 +130,126 @@
       "name": "Clean Tone",
       "description": "Clean guitar tone with subtle effects",
       "plugins": [
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-3band-eq",
+        "map2://juce/dynamics/gate",
+        "map2://juce/eq/parametric",
         "http://two-play.com/plugins/toob-ce2-chorus",
         "http://two-play.com/plugins/toob-delay",
-        "http://two-play.com/plugins/toob-freeverb"
+        "https://michaelwillis.github.io/dragonfly-reverb#room"
       ]
     },
     {
-      "name": "Rock Distortion",
-      "description": "Classic rock amp tone",
+      "name": "High Gain",
+      "description": "Modern high-gain amp tone",
       "plugins": [
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-ml",
-        "http://two-play.com/plugins/toob-tone-stack",
-        "http://two-play.com/plugins/toob-cabsim",
+        "map2://juce/dynamics/gate",
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+        "map2://juce/eq/parametric",
         "http://two-play.com/plugins/toob-delay"
       ]
     },
     {
       "name": "Lead Guitar",
-      "description": "High-gain lead tone",
+      "description": "High-gain lead tone with reverb",
       "plugins": [
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-nam",
-        "http://two-play.com/plugins/toob-peq",
+        "map2://juce/dynamics/gate",
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+        "map2://juce/dynamics/compressor",
         "http://two-play.com/plugins/toob-delay",
-        "http://two-play.com/plugins/toob-convolution-reverb"
+        "https://michaelwillis.github.io/dragonfly-reverb#hall"
       ]
     },
     {
       "name": "Practice Setup",
-      "description": "Practice chain with tuner and basic tone",
+      "description": "Practice chain with tuner and EQ",
       "plugins": [
         "http://two-play.com/plugins/toob-tuner",
-        "http://two-play.com/plugins/toob-3band-eq",
-        "http://two-play.com/plugins/toob-volume"
+        "map2://juce/eq/parametric",
+        "map2://juce/dynamics/compressor"
       ]
     },
     {
       "name": "Ambient Soundscape",
-      "description": "Spacious ambient sound with Dragonfly Reverb",
+      "description": "Spacious ambient sound",
       "plugins": [
-        "http://two-play.com/plugins/toob-3band-eq",
+        "map2://juce/eq/parametric",
         "http://two-play.com/plugins/toob-delay",
         "https://michaelwillis.github.io/dragonfly-reverb#hall",
-        "http://two-play.com/plugins/toob-volume"
+        "map2://juce/dynamics/limiter"
       ]
     },
     {
       "name": "Metal High Gain",
-      "description": "Heavy metal tone with tight low-end",
+      "description": "Tight metal tone with gate",
       "plugins": [
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-nam",
-        "http://two-play.com/plugins/toob-peq",
-        "http://two-play.com/plugins/toob-cab-ir",
-        "http://two-play.com/plugins/toob-noise-gate"
+        "map2://juce/dynamics/gate",
+        "map2://juce/nam",
+        "map2://juce/eq/parametric",
+        "map2://juce/convolution/cabinet",
+        "map2://juce/dynamics/compressor"
       ]
     },
     {
       "name": "Blues Crunch",
       "description": "Warm bluesy overdrive tone",
       "plugins": [
-        "http://two-play.com/plugins/toob-input-stage",
-        "http://two-play.com/plugins/toob-ml",
-        "http://two-play.com/plugins/toob-tone-stack",
-        "http://two-play.com/plugins/toob-cabsim",
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+        "map2://juce/eq/parametric",
         "http://two-play.com/plugins/toob-tremolo",
-        "http://two-play.com/plugins/toob-freeverb"
+        "https://michaelwillis.github.io/dragonfly-reverb#room"
       ]
     },
     {
       "name": "Jazz Clean",
       "description": "Warm, clean jazz tone",
       "plugins": [
-        "http://two-play.com/plugins/toob-input-stage",
-        "http://two-play.com/plugins/toob-3band-eq",
+        "map2://juce/dynamics/compressor",
+        "map2://juce/eq/parametric",
         "http://two-play.com/plugins/toob-ce2-chorus",
         "https://michaelwillis.github.io/dragonfly-reverb#room"
       ]
     },
     {
-      "name": "Acoustic Simulator",
-      "description": "Electric to acoustic simulation",
+      "name": "80s Rock",
+      "description": "Classic 80s rock tone",
       "plugins": [
-        "http://two-play.com/plugins/toob-input-stage",
-        "http://two-play.com/plugins/toob-peq",
-        "http://two-play.com/plugins/toob-cabsim",
-        "http://two-play.com/plugins/toob-convolution-reverb"
+        "map2://juce/dynamics/gate",
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+        "http://two-play.com/plugins/toob-ce2-chorus",
+        "http://two-play.com/plugins/toob-delay"
       ]
     },
     {
       "name": "Looper Practice",
-      "description": "Loop-based practice setup with tuner",
+      "description": "Loop-based practice setup",
       "plugins": [
         "http://two-play.com/plugins/toob-tuner",
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-3band-eq",
-        "http://two-play.com/plugins/toob-4looper",
-        "http://two-play.com/plugins/toob-volume"
-      ]
-    },
-    {
-      "name": "80s Rock",
-      "description": "Classic 80s rock tone with chorus and delay",
-      "plugins": [
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-ml",
-        "http://two-play.com/plugins/toob-tone-stack",
-        "http://two-play.com/plugins/toob-cabsim",
-        "http://two-play.com/plugins/toob-ce2-chorus",
-        "http://two-play.com/plugins/toob-delay"
+        "map2://juce/dynamics/gate",
+        "map2://juce/eq/parametric",
+        "http://two-play.com/plugins/toob-4looper"
       ]
     },
     {
       "name": "Funk Clean",
       "description": "Tight, punchy funk tone",
       "plugins": [
-        "http://two-play.com/plugins/toob-noise-gate",
-        "http://two-play.com/plugins/toob-input-stage",
-        "http://two-play.com/plugins/toob-peq",
+        "map2://juce/dynamics/gate",
+        "map2://juce/dynamics/compressor",
+        "map2://juce/eq/parametric",
         "http://two-play.com/plugins/toob-phaser"
+      ]
+    },
+    {
+      "name": "IR Reverb",
+      "description": "Convolution reverb with cabinet",
+      "plugins": [
+        "map2://juce/dynamics/gate",
+        "map2://juce/nam",
+        "map2://juce/convolution/cabinet",
+        "map2://juce/convolution/reverb"
       ]
     }
   ]

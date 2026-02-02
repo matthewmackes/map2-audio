@@ -1,0 +1,3 @@
+[submodule "juce-engine/Modules/NeuralAmpModelerCore"]
+	path = juce-engine/Modules/NeuralAmpModelerCore
+	url = https://github.com/sdatkinson/NeuralAmpModelerCore.git
