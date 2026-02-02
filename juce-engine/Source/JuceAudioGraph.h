@@ -9,6 +9,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include "JucePluginHost.h"
 #include "VuMeter.h"
+#include "ParallelMixerProcessor.h"
 #include "Common.h"
 
 namespace map2 {
@@ -130,6 +131,80 @@ public:
     std::vector<SidechainConnection> getSidechainConnections() const;
 
     // ========================================
+    // Parallel Processing (A/B Routing)
+    // ========================================
+
+    /**
+     * Parallel group - contains multiple branches that are mixed together
+     */
+    struct ParallelGroup {
+        int id = -1;
+        std::vector<std::vector<InstanceId>> branches;  // Each branch is a chain of plugins
+        std::vector<float> branchLevels;                // Per-branch mix levels
+        float abBlend = 0.5f;                           // A/B blend (0=A, 1=B)
+        float masterLevel = 1.0f;
+        bool bypass = false;
+        ParallelMixerProcessor::Mode mode = ParallelMixerProcessor::Mode::ABBlend;
+    };
+
+    /**
+     * Create a new parallel group at the specified chain position
+     * @param position Position in main chain (-1 for end)
+     * @param numBranches Number of parallel branches (2-4)
+     * @return Group ID, or -1 on failure
+     */
+    int createParallelGroup(int position = -1, int numBranches = 2);
+
+    /**
+     * Remove a parallel group and its contents
+     */
+    bool removeParallelGroup(int groupId);
+
+    /**
+     * Add a plugin to a specific branch within a parallel group
+     * @param groupId Parallel group ID
+     * @param branchIndex Branch within the group (0-based)
+     * @param pluginId Plugin to add
+     * @param position Position within branch (-1 for end)
+     */
+    bool addToParallelBranch(int groupId, int branchIndex, InstanceId pluginId, int position = -1);
+
+    /**
+     * Remove a plugin from a parallel branch
+     */
+    bool removeFromParallelBranch(int groupId, int branchIndex, InstanceId pluginId);
+
+    /**
+     * Set A/B blend for a parallel group (0.0 = all A, 1.0 = all B)
+     */
+    void setParallelABBlend(int groupId, float blend);
+
+    /**
+     * Get A/B blend for a parallel group
+     */
+    float getParallelABBlend(int groupId) const;
+
+    /**
+     * Set individual branch level
+     */
+    void setParallelBranchLevel(int groupId, int branchIndex, float level);
+
+    /**
+     * Set parallel group bypass
+     */
+    void setParallelBypass(int groupId, bool bypass);
+
+    /**
+     * Get all parallel groups
+     */
+    std::vector<ParallelGroup> getParallelGroups() const;
+
+    /**
+     * Get a specific parallel group
+     */
+    std::optional<ParallelGroup> getParallelGroup(int groupId) const;
+
+    // ========================================
     // Latency
     // ========================================
 
@@ -225,6 +300,12 @@ private:
 
     // Sidechain connections
     std::vector<SidechainConnection> sidechainConnections_;
+
+    // Parallel groups
+    std::vector<ParallelGroup> parallelGroups_;
+    std::map<int, std::unique_ptr<ParallelMixerProcessor>> parallelMixers_;
+    std::map<int, juce::AudioProcessorGraph::NodeID> parallelMixerNodes_;
+    int nextParallelGroupId_ = 1;
 
     // Metering
     VuMeter inputMeter_;

@@ -14,14 +14,15 @@
  * - atomTransfer for structured data
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AudioMeter, GainReductionMeter } from './AudioMeter';
 import { TunerDisplay, TunerData } from './TunerDisplay';
 import { SpectrumAnalyzer, SpectrumData } from './SpectrumAnalyzer';
-import type { 
-  OutputPort, 
-  PluginUIInfo, 
-  PeakData 
+import { usePluginOutput } from '../hooks/usePluginOutputs';
+import type {
+  OutputPort,
+  PluginUIInfo,
+  PeakData
 } from '../../map2/types';
 
 // Icons
@@ -452,19 +453,35 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
 /**
  * Hook for subscribing to plugin output data via WebSocket
  */
-export const usePluginOutputData = (pluginUri: string) => {
-  const [data, _setData] = useState<PluginOutputData>({ uri: pluginUri });
-  
-  useEffect(() => {
-    // TODO: Implement WebSocket subscription to plugin_outputs topic
-    // For now, return empty data
-    
-    return () => {
-      // Cleanup subscription
+export const usePluginOutputData = (pluginUri: string): PluginOutputData => {
+  const { peaks, outputPorts, tuner, spectrum } = usePluginOutput(pluginUri);
+
+  return useMemo(() => {
+    // Convert snake_case tuner data to camelCase for TunerDisplay component
+    const tunerData: TunerData | undefined = tuner ? {
+      frequencyHz: tuner.frequency_hz,
+      noteName: tuner.note_name,
+      octave: tuner.octave,
+      centsDeviation: tuner.cents_deviation,
+      confidence: tuner.confidence,
+    } : undefined;
+
+    // Convert snake_case spectrum data to camelCase for SpectrumAnalyzer component
+    const spectrumData: SpectrumData | undefined = spectrum ? {
+      magnitudes: spectrum.magnitudes,
+      frequencies: spectrum.frequencies,
+      sampleRate: spectrum.sample_rate,
+      binCount: spectrum.bin_count,
+    } : undefined;
+
+    return {
+      uri: pluginUri,
+      peakData: peaks,
+      outputPortValues: outputPorts,
+      tunerData,
+      spectrumData,
     };
-  }, [pluginUri]);
-  
-  return data;
+  }, [pluginUri, peaks, outputPorts, tuner, spectrum]);
 };
 
 export default PluginOutputPanel;

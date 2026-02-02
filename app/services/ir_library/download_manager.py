@@ -22,6 +22,7 @@ from .signaltonoize_scraper import SignalToNoizeScraper
 from .echothief_scraper import EchoThiefScraper
 from .lexicon_scraper import LexiconScraper
 from .tone3000_scraper import Tone3000Scraper
+from .fokke_scraper import FokkeScraper
 from app.services.ir_loader import get_ir_loader
 from app.database import get_session, ImpulseResponse
 from app.paths import StoragePaths
@@ -95,6 +96,7 @@ class IRDownloadManager:
             'signaltonoize': SignalToNoizeScraper(),
             'echothief': EchoThiefScraper(),
             'lexicon': LexiconScraper(),
+            'fokke': FokkeScraper(),
             # Cabinet IR scrapers
             'djammincabs': DjammincabsScraper(),
             'overdriven': OverdrivenScraper(),

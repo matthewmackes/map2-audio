@@ -43,6 +43,8 @@ export interface HorizontalSignalChainProps {
   chainLabel?: string
   /** Whether the chain is active (processing audio) */
   isActive?: boolean
+  /** Chain color for background tinting */
+  chainColor?: string
 }
 
 export interface HorizontalPluginNodeProps {

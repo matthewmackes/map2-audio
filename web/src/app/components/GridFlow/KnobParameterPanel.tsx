@@ -1,16 +1,19 @@
 /**
  * KnobParameterPanel Component
  *
- * Bottom panel displaying parameter knobs for the selected plugin.
- * Cortex Control inspired layout with grid of minimal knobs.
+ * Bottom panel displaying parameter controls for the selected plugin.
+ * Uses the PluginCards system for custom templates when available,
+ * falls back to Cortex Control inspired knob grid for others.
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Power, Settings2 } from 'lucide-react'
 import { ParameterKnob } from '../Controls/ParameterKnob'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
+import { getPluginCardComponent, getCategoryConfig } from '../PluginCards'
+import type { PluginCardProps } from '../PluginCards/types'
 
-// Category colors for accent
+// Category colors for accent (fallback when card system not used)
 const CATEGORY_COLORS: Record<string, string> = {
   'Distortion': '#ff6b6b',
   'Amplifier': '#ff6b6b',
@@ -44,6 +47,8 @@ export interface KnobParameterPanelProps {
   onParameterChange: (symbol: string, value: number) => void
   onParameterChangeEnd?: (symbol: string) => void
   onToggleBypass?: () => void
+  /** Force use of classic knob grid instead of card templates */
+  useClassicMode?: boolean
 }
 
 export function KnobParameterPanel({
@@ -52,6 +57,7 @@ export function KnobParameterPanel({
   onParameterChange,
   onParameterChangeEnd,
   onToggleBypass,
+  useClassicMode = false,
 }: KnobParameterPanelProps) {
   // Track which parameters are being edited (for batch updates)
   const [editingParams, setEditingParams] = useState<Set<string>>(new Set())
@@ -76,7 +82,67 @@ export function KnobParameterPanel({
     [onParameterChangeEnd]
   )
 
-  if (!plugin || !meta) {
+  // Build index-to-symbol map for card system integration
+  const parameterMap = useMemo(() => {
+    const indexToSymbol: Record<number, string> = {}
+    const symbolToIndex: Record<string, number> = {}
+
+    meta?.parameters?.forEach((param) => {
+      indexToSymbol[param.index] = param.symbol
+      symbolToIndex[param.symbol] = param.index
+    })
+
+    return { indexToSymbol, symbolToIndex }
+  }, [meta?.parameters])
+
+  // Handle index-based parameter change (for card system)
+  const handleIndexParameterChange = useCallback(
+    (paramIndex: number, value: number) => {
+      const symbol = parameterMap.indexToSymbol[paramIndex]
+      if (symbol) {
+        handleParameterChange(symbol, value)
+      }
+    },
+    [parameterMap.indexToSymbol, handleParameterChange]
+  )
+
+  // Handle index-based parameter change end (for card system)
+  const handleIndexParameterChangeEnd = useCallback(() => {
+    // Flush all editing params
+    editingParams.forEach((symbol) => {
+      onParameterChangeEnd?.(symbol)
+    })
+  }, [editingParams, onParameterChangeEnd])
+
+  // Handle bypass toggle for card system
+  const handleCardBypassToggle = useCallback(
+    (bypassed: boolean) => {
+      onToggleBypass?.()
+    },
+    [onToggleBypass]
+  )
+
+  // Check if there's a custom card component for this plugin
+  const CardComponent = useMemo(() => {
+    if (useClassicMode || !meta) return null
+    return getPluginCardComponent(meta.uri, meta.category)
+  }, [meta, useClassicMode])
+
+  // Build parameter values from chain plugin (index-based for card system)
+  const parameterValues = useMemo(() => {
+    const values: Record<number, number> = {}
+
+    if (meta?.parameters && plugin?.parameters) {
+      meta.parameters.forEach((param) => {
+        values[param.index] = plugin.parameters?.[param.symbol] ?? param.default
+      })
+    }
+
+    return values
+  }, [meta?.parameters, plugin?.parameters])
+
+  // Empty state - no plugin selected
+  if (!plugin) {
     return (
       <div className="knob-param-panel">
         <div className="knob-param-panel-empty">
@@ -87,9 +153,54 @@ export function KnobParameterPanel({
     )
   }
 
+  // Loading state - plugin selected but metadata not yet loaded
+  if (!meta) {
+    return (
+      <div className="knob-param-panel">
+        <div className="knob-param-panel-loading">
+          <Settings2 size={32} strokeWidth={1.5} className="knob-param-panel-loading-icon" />
+          <p>Loading {plugin.name || 'plugin'} parameters...</p>
+        </div>
+      </div>
+    )
+  }
+
   const accentColor = getCategoryColor(meta.category)
+
+  // Use custom card component if available
+  if (CardComponent) {
+    const catConfig = getCategoryConfig(meta.category)
+
+    // Build a Plugin object that includes current parameter values
+    const pluginWithValues: Plugin = {
+      ...meta,
+      parameters: meta.parameters?.map((param) => ({
+        ...param,
+        value: plugin.parameters?.[param.symbol] ?? param.default,
+      })),
+      bypassed: plugin.bypassed,
+    }
+
+    const cardProps: PluginCardProps = {
+      plugin: pluginWithValues,
+      parameterValues,
+      onParameterChange: handleIndexParameterChange,
+      onParameterChangeEnd: handleIndexParameterChangeEnd,
+      onBypassToggle: handleCardBypassToggle,
+      accentColor: catConfig.color,
+      disabled: false,
+      compact: false,
+    }
+
+    return (
+      <div className="knob-param-panel knob-param-panel-card">
+        <CardComponent {...cardProps} />
+      </div>
+    )
+  }
+
+  // Classic mode: Use original knob grid
   const parameters = meta.parameters || []
-  // All parameters in the parameters array are control/input parameters
   const toggleParams = parameters.filter((p) => p.is_toggled)
   const continuousParams = parameters.filter((p) => !p.is_toggled)
 

@@ -398,7 +398,7 @@ class ChainService:
             return False
 
     async def add_plugin_to_chain(self, chain_id: int, plugin_uri: str) -> bool:
-        """Add plugin to chain (handles LV2 and all native plugins with dedicated handlers).
+        """Add LV2 plugin to chain.
         Args:
             chain_id: Chain ID
             plugin_uri: Plugin URI
@@ -406,83 +406,7 @@ class ChainService:
             True if added, False otherwise
         """
         try:
-            # Dedicated handler for NAM
-            if plugin_uri == "urn:map2:nam-player":
-                logger.info(f"Adding NAM plugin to chain {chain_id}")
-                return await self._add_nam_to_chain(chain_id)
-            # Dedicated handler for Cabinet IR
-            if plugin_uri == "urn:map2:ir-cabinet":
-                logger.info(f"Adding Cabinet IR plugin to chain {chain_id}")
-                return await self._add_ir_to_chain(chain_id, "cabinet")
-            # Dedicated handler for Reverb IR
-            if plugin_uri == "urn:map2:ir-reverb":
-                logger.info(f"Adding Reverb IR plugin to chain {chain_id}")
-                return await self._add_ir_to_chain(chain_id, "reverb")
-
-            # Dedicated handlers for all other native plugins (pattern match by URI)
-            native_plugin_map = {
-                # URI: (log_name, event_extra)
-                "http://map2-audio.local/nam-loader": ("NAM Loader", {}),
-                "http://map2-audio.local/ir-cabinet-loader": ("Cabinet IR Loader", {}),
-                "http://map2-audio.local/ir-reverb-loader": ("Reverb IR Loader", {}),
-                "http://map2-audio.local/reevr-engine": ("ReevR Engine", {}),
-                "http://map2-audio.local/cocoa-delay": ("Cocoa Delay", {}),
-                "http://map2-audio.local/zita-at1": ("Zita AT1", {}),
-                "http://map2-audio.local/triplespread": ("TripleSpread", {}),
-                "http://map2-audio.local/valentine": ("Valentine", {}),
-            }
-            if plugin_uri in native_plugin_map:
-                log_name, event_extra = native_plugin_map[plugin_uri]
-                logger.info(f"Adding native plugin {log_name} ({plugin_uri}) to chain {chain_id}")
-                # Add to chain using same pattern as NAM/IR
-                if not self.session:
-                    logger.error("No database session available")
-                    return False
-                from app.database import Chain, ChainPlugin
-                # Verify chain exists
-                result = await self.session.execute(
-                    select(Chain).filter(Chain.id == chain_id)
-                )
-                chain = result.scalar_one_or_none()
-                if not chain:
-                    logger.warning(f"Chain {chain_id} not found in database")
-                    return False
-                # Get max position
-                pos_result = await self.session.execute(
-                    select(ChainPlugin)
-                    .filter(ChainPlugin.chain_id == chain_id)
-                    .order_by(ChainPlugin.position.desc())
-                )
-                last_plugin = pos_result.scalars().first()
-                next_position = (last_plugin.position + 1) if last_plugin else 0
-                # Add plugin
-                chain_plugin = ChainPlugin(
-                    chain_id=chain_id,
-                    plugin_uri=plugin_uri,
-                    position=next_position,
-                    bypass=False
-                )
-                self.session.add(chain_plugin)
-                await self.session.flush()
-                logger.info(f"Added native plugin {log_name} ({plugin_uri}) to chain {chain_id} at position {next_position}")
-                # Optionally publish event (pattern matches NAM/IR)
-                try:
-                    from .event_publisher import event_publisher, EventType
-                    event_data = {
-                        "chain_id": chain_id,
-                        "action": "plugin_added",
-                        "plugin_uri": plugin_uri,
-                    }
-                    event_data.update(event_extra)
-                    await event_publisher.publish(
-                        EventType.CHAIN_UPDATED,
-                        event_data
-                    )
-                except Exception as e:
-                    logger.debug(f"Failed to publish event: {e}")
-                return True
-
-            # Generic LV2 plugin handling (fallback)
+            # LV2 plugin handling
             logger.debug(f"Adding LV2 plugin {plugin_uri} to chain {chain_id}")
             if not self.session:
                 logger.error("No database session available")

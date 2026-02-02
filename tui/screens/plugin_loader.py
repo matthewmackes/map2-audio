@@ -1,9 +1,8 @@
 """
 Plugin Loader Screen - Unified Plugin Management System
 
-This screen integrates the following previously unused components:
+This screen integrates the following components:
 - LV2 Discovery & Enhanced Services (plugin scanning)
-- Native Plugin Adapters (NAM, IR Loaders, ReevR)
 - DSP Manager (quality modes, CPU budgeting)
 - Latency Compensation (per-plugin latency tracking)
 - RT Monitor (real-time performance metrics)
@@ -125,7 +124,6 @@ class PluginCard(Static):
         super().__init__(**kwargs)
         self.plugin_data = plugin_data
         self.is_loaded = plugin_data.get('loaded', False)
-        self.is_native = plugin_data.get('uri', '').startswith('http://map2-audio.local/')
 
     def compose(self) -> ComposeResult:
         with Vertical():
@@ -179,8 +177,6 @@ class PluginCard(Static):
     def on_mount(self) -> None:
         if self.is_loaded:
             self.add_class("loaded")
-        if self.is_native:
-            self.add_class("native")
 
 
 class DSPModeSelector(Static):
@@ -569,67 +565,6 @@ class LatencyCompensationPanel(Static):
             pass
 
 
-class NativePluginsPanel(Static):
-    """Panel showing native MAP2 plugins (NAM, IR Loaders, etc.)."""
-
-    DEFAULT_CSS = """
-    NativePluginsPanel {
-        width: 100%;
-        height: auto;
-        background: $panel;
-        border: double $warning;
-        padding: 1;
-        margin-bottom: 1;
-    }
-
-    .native-title {
-        text-style: bold;
-        color: $warning;
-        margin-bottom: 1;
-    }
-
-    .native-plugin-row {
-        width: 100%;
-        height: auto;
-        padding: 0 0 1 0;
-        border-bottom: solid $panel-lighten-1;
-    }
-
-    .native-plugin-name {
-        width: 1fr;
-        text-style: bold;
-    }
-
-    .native-plugin-uri {
-        color: $text-muted;
-        text-style: italic;
-    }
-
-    .native-plugin-status {
-        color: $success;
-    }
-    """
-
-    NATIVE_PLUGINS = [
-        {"name": "NAM Loader", "uri": "http://map2-audio.local/nam-loader", "desc": "Neural Amp Modeler - AI amp/pedal simulation"},
-        {"name": "Cabinet IR Loader", "uri": "http://map2-audio.local/ir-cabinet-loader", "desc": "Cabinet impulse response convolution"},
-        {"name": "Reverb IR Loader", "uri": "http://map2-audio.local/ir-reverb-loader", "desc": "Reverb impulse response convolution"},
-        {"name": "ReevR Engine", "uri": "http://map2-audio.local/reevr-engine", "desc": "High-quality convolution reverb engine"},
-    ]
-
-    def compose(self) -> ComposeResult:
-        yield Label("🔌 Native MAP2 Plugins", classes="native-title")
-
-        with Vertical():
-            for plugin in self.NATIVE_PLUGINS:
-                with Vertical(classes="native-plugin-row"):
-                    with Horizontal():
-                        yield Label(plugin["name"], classes="native-plugin-name")
-                        yield Label("● Available", classes="native-plugin-status")
-                    yield Label(plugin["uri"], classes="native-plugin-uri")
-                    yield Label(plugin["desc"], classes="native-plugin-uri")
-
-
 class PluginLoaderScreen(ScrollableContainer):
     """
     Plugin Loader Screen - Unified Plugin Management System.
@@ -765,8 +700,6 @@ class PluginLoaderScreen(ScrollableContainer):
                     yield Button("Effect", id="cat-effect", classes="category-button")
                     yield Button("Reverb", id="cat-reverb", classes="category-button")
                     yield Button("EQ", id="cat-eq", classes="category-button")
-
-                yield NativePluginsPanel()
 
                 yield Label("📋 Available Plugins", classes="section-title")
                 with Vertical(classes="plugin-list", id="plugin-list"):

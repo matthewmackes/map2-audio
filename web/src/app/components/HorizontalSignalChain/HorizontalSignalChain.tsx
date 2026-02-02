@@ -80,6 +80,7 @@ export function HorizontalSignalChain({
   sidechainSources,
   chainLabel,
   isActive = true,
+  chainColor,
 }: HorizontalSignalChainProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -159,6 +160,7 @@ export function HorizontalSignalChain({
       role="listbox"
       aria-label="Signal chain plugins"
       onKeyDown={handleKeyDown}
+      style={chainColor ? { '--chain-color': chainColor } as React.CSSProperties : undefined}
     >
       {/* Input Endpoint */}
       <SignalEndpoint type="input" channels={inputChannels} />

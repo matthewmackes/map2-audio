@@ -39,6 +39,7 @@ import {
   RefreshCw,
   Radio,
   Volume2,
+  Gamepad2,
 } from 'lucide-react'
 import { midiApiV2, chainsApi, pluginsApi } from '../../map2/api'
 import type {
@@ -55,6 +56,7 @@ import type {
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
+import { MIDICommanderSetup } from '../components/MIDICommanderSetup'
 
 // Curve type labels
 const CURVE_LABELS: Record<MIDICurveType, string> = {
@@ -85,7 +87,7 @@ const TRIGGER_LABELS: Record<MIDITriggerType, string> = {
 export function MIDIPage() {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
-  const [selectedTab, setSelectedTab] = useState('mappings')
+  const [selectedTab, setSelectedTab] = useState('controller')
 
   // Query keys
   const statusKey = ['midi', 'status'] as const
@@ -179,8 +181,11 @@ export function MIDIPage() {
 
       {/* Tabs */}
       <div className="card">
-        <TabProvider defaultSelectedId="mappings" selectedId={selectedTab} setSelectedId={(id) => setSelectedTab(id ?? 'mappings')}>
+        <TabProvider defaultSelectedId="controller" selectedId={selectedTab} setSelectedId={(id) => setSelectedTab(id ?? 'controller')}>
           <TabList className="tab-list" aria-label="MIDI sections">
+            <Tab id="controller" className="tab">
+              <Gamepad2 size={16} /> Controller Setup
+            </Tab>
             <Tab id="mappings" className="tab">
               <Music size={16} /> CC Mappings
             </Tab>
@@ -197,6 +202,10 @@ export function MIDIPage() {
               <Save size={16} /> Presets
             </Tab>
           </TabList>
+
+          <TabPanel id="controller" className="tab-panel">
+            <MIDICommanderSetup />
+          </TabPanel>
 
           <TabPanel id="mappings" className="tab-panel">
             <MappingsTab
@@ -879,7 +888,7 @@ function DevicesTab({
             </div>
           )}
           <div className="stack" style={{ gap: 4 }}>
-            {devices?.input_devices.map((device) => (
+            {devices?.input_devices?.map((device) => (
               <div
                 key={device}
                 className="list-item"
@@ -919,7 +928,7 @@ function DevicesTab({
             </div>
           )}
           <div className="stack" style={{ gap: 4 }}>
-            {devices?.output_devices.map((device) => (
+            {devices?.output_devices?.map((device) => (
               <div
                 key={device}
                 className="list-item"

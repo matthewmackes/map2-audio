@@ -40,6 +40,7 @@ class MeteringBroadcastService:
             "phase": 1.0 / 10,     # 10 fps
             "meters": 1.0 / 30,    # 30 fps
             "latency": 1.0 / 1,    # 1 fps (latency doesn't change often)
+            "dynamics": 1.0 / 30,  # 30 fps (gain reduction meters)
         }
 
     async def start(self):
@@ -58,6 +59,7 @@ class MeteringBroadcastService:
             asyncio.create_task(self._broadcast_loop("phase", self._get_phase)),
             asyncio.create_task(self._broadcast_loop("meters", self._get_meters)),
             asyncio.create_task(self._broadcast_loop("latency", self._get_latency)),
+            asyncio.create_task(self._broadcast_loop("dynamics", self._get_dynamics)),
         ]
 
         logger.info("Metering broadcast service started")
@@ -213,6 +215,27 @@ class MeteringBroadcastService:
             "breakdown": await service.get_latency_breakdown(),
             "running": True
         }
+
+    async def _get_dynamics(self) -> Optional[dict]:
+        """Get dynamics processor metering from audio engine"""
+        service = get_audio_engine()
+        if not service.is_running:
+            empty_metering = {
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "gain_reduction": 0.0,
+                "input_rms": -100.0,
+                "output_rms": -100.0
+            }
+            return {
+                "compressor": empty_metering.copy(),
+                "limiter": empty_metering.copy(),
+                "gate": empty_metering.copy(),
+                "running": False
+            }
+        data = await service.get_dynamics_metering()
+        data["running"] = True
+        return data
 
     def set_interval(self, topic: str, fps: float):
         """

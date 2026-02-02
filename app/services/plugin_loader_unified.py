@@ -322,6 +322,9 @@ class UnifiedPluginLoader:
         # Initialize lilv if available
         if LILV_AVAILABLE:
             try:
+                # Set LV2_PATH to include all standard paths before loading
+                # This ensures lilv finds plugins in /usr/lib/lv2 on x86_64 systems
+                self._ensure_lv2_path()
                 self._lilv_world = lilv.World()
                 self._lilv_world.load_all()
                 logger.info("lilv world initialized")
@@ -349,6 +352,8 @@ class UnifiedPluginLoader:
             if LILV_AVAILABLE:
                 try:
                     import lilv
+                    # Ensure LV2_PATH includes all standard paths
+                    self._ensure_lv2_path()
                     self._lilv_world = lilv.World()
                     self._lilv_world.load_all()
                     logger.info("lilv world refreshed for new plugins")
@@ -363,6 +368,36 @@ class UnifiedPluginLoader:
                     logger.info("Persistent plugin cache cleared")
             except Exception as e:
                 logger.warning(f"Failed to clear persistent cache: {e}")
+
+    def _ensure_lv2_path(self) -> None:
+        """Ensure LV2_PATH environment variable includes all standard paths.
+
+        On x86_64 systems, lilv defaults to /usr/lib64/lv2 but may skip /usr/lib/lv2.
+        This ensures all standard LV2 directories are searched.
+        """
+        standard_paths = [
+            os.path.expanduser("~/.lv2"),
+            "/usr/lib/lv2",
+            "/usr/local/lib/lv2",
+            "/usr/lib64/lv2",
+            "/usr/lib/x86_64-linux-gnu/lv2",
+            "/usr/lib/aarch64-linux-gnu/lv2",
+        ]
+
+        # Get existing LV2_PATH
+        existing = os.environ.get("LV2_PATH", "")
+        existing_paths = set(existing.split(":")) if existing else set()
+
+        # Add standard paths that exist
+        for path in standard_paths:
+            if os.path.isdir(path) and path not in existing_paths:
+                existing_paths.add(path)
+
+        # Set the environment variable
+        new_path = ":".join(p for p in existing_paths if p)
+        if new_path:
+            os.environ["LV2_PATH"] = new_path
+            logger.debug(f"Set LV2_PATH to: {new_path}")
 
     def _get_lv2_paths(self) -> List[str]:
         """Get list of LV2 plugin directories."""
@@ -800,9 +835,9 @@ class UnifiedPluginLoader:
 
         return list(self._plugins.values())
 
-    def discover_plugins(self) -> List[LV2Plugin]:
+    def discover_plugins(self, force_refresh: bool = False) -> List[LV2Plugin]:
         """Sync wrapper for API compatibility."""
-        return self.discover_sync()
+        return self.discover_sync(force_refresh=force_refresh)
 
     def get_plugin(self, uri: str) -> Optional[LV2Plugin]:
         """Get a plugin by URI."""

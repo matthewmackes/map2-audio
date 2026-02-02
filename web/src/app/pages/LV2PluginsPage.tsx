@@ -1,11 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
-import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight, Plus } from 'lucide-react'
+import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight, Plus, User, List, Tag, Star, X } from 'lucide-react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 import { getPluginDescription } from '../data/pluginDescriptions'
+import { TagBadge, TagSelector } from '../components/PluginTags'
+import { usePluginTags, usePluginMetadata } from '../hooks/usePluginTags'
+
+// Inline tag display that lazy-loads tags for a plugin
+function PluginTagDisplay({ uri, onClick }: { uri: string; onClick?: () => void }) {
+  const { metadata } = usePluginMetadata(uri)
+  if (!metadata?.tags || metadata.tags.length === 0) return null
+  return <TagBadge tags={metadata.tags} maxDisplay={2} onClick={onClick} />
+}
 
 // Category configuration for plugin display
 type IconComponent = React.ComponentType<{ size?: number; style?: React.CSSProperties }>
@@ -50,10 +59,12 @@ interface PluginDiscoverResponse {
 
 export function LV2PluginsPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [pluginPacks, setPluginPacks] = useState<PluginPack[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshingPlugins, setRefreshingPlugins] = useState(false)
 
   // Plugin Browser state - persisted to localStorage
   const [searchQuery, setSearchQuery] = useState(() => {
@@ -74,6 +85,14 @@ export function LV2PluginsPage() {
     } catch { return new Set(); }
   })
 
+  // Sort/Group mode state - persisted to localStorage
+  const [sortBy, setSortBy] = useState<'category' | 'author' | 'name'>(() => {
+    try {
+      const val = localStorage.getItem('map2_lv2_sort_by');
+      return (val as 'category' | 'author' | 'name') || 'category';
+    } catch { return 'category'; }
+  })
+
   // Hidden plugins state - persisted to localStorage
   const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(() => {
     try {
@@ -83,6 +102,11 @@ export function LV2PluginsPage() {
   })
   const [showHidden, setShowHidden] = useState(false)
 
+  // Tag management state
+  const [tagSelectorPlugin, setTagSelectorPlugin] = useState<Plugin | null>(null)
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const { favorites, isLoadingFavorites } = usePluginTags()
+
   // Plugin discovery query
   const pluginsQuery = useQuery<PluginDiscoverResponse>({
     queryKey: ['plugins', 'discover'],
@@ -90,12 +114,32 @@ export function LV2PluginsPage() {
     staleTime: 60000,
   })
 
+  // Refresh plugins with force refresh to pick up newly installed plugins
+  const refreshPlugins = useCallback(async () => {
+    setRefreshingPlugins(true)
+    try {
+      // Call API with refresh=true to bypass backend cache
+      await pluginsApi.discover(true)
+      // Invalidate React Query cache to refetch
+      await queryClient.invalidateQueries({ queryKey: ['plugins', 'discover'] })
+    } catch (err) {
+      console.error('Failed to refresh plugins:', err)
+    } finally {
+      setRefreshingPlugins(false)
+    }
+  }, [queryClient])
+
   // Filter and group plugins
   const pluginCategories = useMemo(() => {
     const set = new Set<string>()
     pluginsQuery.data?.plugins?.forEach((p: Plugin) => set.add(p.category))
     return Array.from(set).sort()
   }, [pluginsQuery.data])
+
+  // Build favorite URIs set for quick lookup
+  const favoriteUris = useMemo(() => {
+    return new Set(favorites.map((f: { uri: string }) => f.uri))
+  }, [favorites])
 
   const filteredPlugins = useMemo(() => {
     if (!pluginsQuery.data?.plugins) return []
@@ -106,20 +150,41 @@ export function LV2PluginsPage() {
                        p.category.toLowerCase().includes(term) ||
                        p.author?.toLowerCase().includes(term)
       const matchHidden = showHidden || !hiddenPlugins.has(p.uri)
-      return matchCategory && matchText && matchHidden
+      const matchFavorite = !showFavoritesOnly || favoriteUris.has(p.uri)
+      return matchCategory && matchText && matchHidden && matchFavorite
     })
-  }, [pluginsQuery.data, searchQuery, selectedCategory, showHidden, hiddenPlugins])
+  }, [pluginsQuery.data, searchQuery, selectedCategory, showHidden, hiddenPlugins, showFavoritesOnly, favoriteUris])
 
   const hiddenCount = hiddenPlugins.size
 
   const groupedPlugins = useMemo(() => {
     const groups: Record<string, Plugin[]> = {}
-    filteredPlugins.forEach((p: Plugin) => {
-      if (!groups[p.category]) groups[p.category] = []
-      groups[p.category].push(p)
-    })
+
+    if (sortBy === 'name') {
+      // Flat list sorted alphabetically by plugin name
+      const sorted = [...filteredPlugins].sort((a, b) => a.name.localeCompare(b.name))
+      groups['All Plugins'] = sorted
+    } else if (sortBy === 'author') {
+      // Group by author
+      filteredPlugins.forEach((p: Plugin) => {
+        const author = p.author || 'Unknown Author'
+        if (!groups[author]) groups[author] = []
+        groups[author].push(p)
+      })
+      // Sort plugins within each author group by name
+      Object.values(groups).forEach(plugins => plugins.sort((a, b) => a.name.localeCompare(b.name)))
+    } else {
+      // Group by category (default)
+      filteredPlugins.forEach((p: Plugin) => {
+        if (!groups[p.category]) groups[p.category] = []
+        groups[p.category].push(p)
+      })
+      // Sort plugins within each category by name
+      Object.values(groups).forEach(plugins => plugins.sort((a, b) => a.name.localeCompare(b.name)))
+    }
+
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [filteredPlugins])
+  }, [filteredPlugins, sortBy])
 
   const toggleCategory = (cat: string) => {
     setCollapsedCategories(prev => {
@@ -180,6 +245,12 @@ export function LV2PluginsPage() {
       localStorage.setItem('map2_lv2_hidden_plugins', JSON.stringify([...hiddenPlugins]));
     } catch { /* Ignore localStorage errors */ }
   }, [hiddenPlugins])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_lv2_sort_by', sortBy);
+    } catch { /* Ignore localStorage errors */ }
+  }, [sortBy])
 
   const toggleHidePlugin = (uri: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -273,23 +344,14 @@ export function LV2PluginsPage() {
         title="LV2 Plugin Pack Manager"
         subtitle="Install and manage curated LV2 plugin collections from system packages"
         actions={
-          <div className="flex" style={{ gap: 8 }}>
-            <button
-              className="btn btn-ghost"
-              onClick={loadPluginPacks}
-              disabled={loading}
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-              Refresh
-            </button>
-            <button
-              className="btn btn-ghost"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              {expanded ? 'Collapse' : 'Expand'}
-            </button>
-          </div>
+          <button
+            className="btn btn-ghost"
+            onClick={loadPluginPacks}
+            disabled={loading}
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            Refresh
+          </button>
         }
       />
 
@@ -351,6 +413,23 @@ export function LV2PluginsPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span className="pill">{filteredPlugins.length} shown</span>
+              {/* Favorites filter */}
+              <button
+                className={`btn btn-sm ${showFavoritesOnly ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                style={{
+                  fontSize: 11,
+                  padding: '6px 10px',
+                  color: showFavoritesOnly ? '#f59e0b' : '#6b7280',
+                  borderColor: showFavoritesOnly ? 'rgba(245, 158, 11, 0.5)' : 'rgba(107, 114, 128, 0.3)',
+                  background: showFavoritesOnly ? 'rgba(245, 158, 11, 0.15)' : undefined,
+                }}
+                title={showFavoritesOnly ? 'Show all plugins' : `Show only favorites (${favoriteUris.size})`}
+                disabled={isLoadingFavorites}
+              >
+                <Star size={12} style={{ fill: showFavoritesOnly ? '#f59e0b' : 'none' }} />
+                {showFavoritesOnly ? 'Favorites' : `${favoriteUris.size} Favorites`}
+              </button>
               {hiddenCount > 0 && (
                 <button
                   className={`btn btn-sm ${showHidden ? 'btn-primary' : 'btn-ghost'}`}
@@ -389,6 +468,26 @@ export function LV2PluginsPage() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+                <select
+                  className="input"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'category' | 'author' | 'name')}
+                  title="Group/sort plugins by"
+                >
+                  <option value="category">Group by Category</option>
+                  <option value="author">Group by Author</option>
+                  <option value="name">Sort by Name</option>
+                </select>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={refreshPlugins}
+                  disabled={refreshingPlugins || pluginsQuery.isLoading}
+                  title="Rescan for newly installed LV2 plugins"
+                  style={{ padding: '6px 10px' }}
+                >
+                  {refreshingPlugins ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  Refresh
+                </button>
               </div>
             </div>
           </div>
@@ -407,45 +506,64 @@ export function LV2PluginsPage() {
                   No plugins match your search
                 </div>
               ) : (
-                groupedPlugins.map(([categoryName, plugins]) => {
-                  const catConfig = getCategoryConfig(categoryName)
-                  const CategoryIcon = catConfig.icon
-                  const isCollapsed = collapsedCategories.has(categoryName)
-                  return (
-                    <div key={categoryName} style={{ marginBottom: 12 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '8px 12px',
-                          background: `linear-gradient(90deg, ${catConfig.bg} 0%, rgba(0,0,0,0.2) 100%)`,
-                          borderLeft: `4px solid ${catConfig.color}`,
-                          borderRadius: '0 6px 6px 0',
-                          marginBottom: isCollapsed ? 0 : 8,
-                          cursor: 'pointer',
-                          userSelect: 'none',
-                        }}
-                        onClick={() => toggleCategory(categoryName)}
-                      >
-                        {isCollapsed ? (
-                          <ChevronRight size={14} style={{ color: catConfig.color }} />
-                        ) : (
-                          <ChevronDown size={14} style={{ color: catConfig.color }} />
-                        )}
-                        <CategoryIcon size={14} style={{ color: catConfig.color }} />
-                        <span style={{ color: catConfig.color, fontWeight: 600, fontSize: 13 }}>
-                          {categoryName}
-                        </span>
-                        <span className="pill" style={{ fontSize: 10, marginLeft: 'auto', background: `${catConfig.color}20`, color: catConfig.color }}>
-                          {plugins.length}
-                        </span>
-                      </div>
+                groupedPlugins.map(([groupName, plugins]) => {
+                  // Get styling based on sort mode
+                  const isCategoryMode = sortBy === 'category'
+                  const isAuthorMode = sortBy === 'author'
+                  const isNameMode = sortBy === 'name'
 
-                      {!isCollapsed && (
+                  // For category mode, use category colors; for author/name mode, use neutral colors
+                  const catConfig = isCategoryMode ? getCategoryConfig(groupName) : {
+                    color: isAuthorMode ? '#a78bfa' : '#37d6c9',
+                    bg: isAuthorMode ? 'rgba(167, 139, 250, 0.15)' : 'rgba(55, 214, 201, 0.15)',
+                    icon: isAuthorMode ? User : List
+                  }
+                  const GroupIcon = catConfig.icon
+                  const isCollapsed = collapsedCategories.has(groupName)
+
+                  // For 'name' mode (flat list), don't show a collapsible header
+                  const showHeader = !isNameMode
+
+                  return (
+                    <div key={groupName} style={{ marginBottom: 12 }}>
+                      {showHeader && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '8px 12px',
+                            background: `linear-gradient(90deg, ${catConfig.bg} 0%, rgba(0,0,0,0.2) 100%)`,
+                            borderLeft: `4px solid ${catConfig.color}`,
+                            borderRadius: '0 6px 6px 0',
+                            marginBottom: isCollapsed ? 0 : 8,
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                          }}
+                          onClick={() => toggleCategory(groupName)}
+                        >
+                          {isCollapsed ? (
+                            <ChevronRight size={14} style={{ color: catConfig.color }} />
+                          ) : (
+                            <ChevronDown size={14} style={{ color: catConfig.color }} />
+                          )}
+                          <GroupIcon size={14} style={{ color: catConfig.color }} />
+                          <span style={{ color: catConfig.color, fontWeight: 600, fontSize: 13 }}>
+                            {groupName}
+                          </span>
+                          <span className="pill" style={{ fontSize: 10, marginLeft: 'auto', background: `${catConfig.color}20`, color: catConfig.color }}>
+                            {plugins.length}
+                          </span>
+                        </div>
+                      )}
+
+                      {(!isCollapsed || isNameMode) && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 8px' }}>
                           {plugins.map((p: Plugin) => {
+                            // Use plugin's actual category for individual item styling
+                            const pluginCatConfig = getCategoryConfig(p.category)
                             const isHidden = hiddenPlugins.has(p.uri)
+                            const PluginIcon = pluginCatConfig.icon
                             return (
                               <div
                                 key={p.uri}
@@ -453,14 +571,14 @@ export function LV2PluginsPage() {
                                 style={{
                                   padding: '10px 12px',
                                   cursor: 'pointer',
-                                  borderLeft: `3px solid ${catConfig.color}`,
+                                  borderLeft: `3px solid ${pluginCatConfig.color}`,
                                   background: selectedPlugin?.uri === p.uri
-                                    ? `linear-gradient(135deg, ${catConfig.bg} 0%, rgba(0,0,0,0.3) 100%)`
+                                    ? `linear-gradient(135deg, ${pluginCatConfig.bg} 0%, rgba(0,0,0,0.3) 100%)`
                                     : isHidden
                                       ? 'rgba(107, 114, 128, 0.1)'
                                       : undefined,
                                   boxShadow: selectedPlugin?.uri === p.uri
-                                    ? `0 0 10px ${catConfig.color}30`
+                                    ? `0 0 10px ${pluginCatConfig.color}30`
                                     : undefined,
                                   opacity: isHidden ? 0.6 : 1,
                                   position: 'relative',
@@ -468,8 +586,41 @@ export function LV2PluginsPage() {
                                 onClick={() => setSelectedPlugin(p)}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                  <CategoryIcon size={14} style={{ color: catConfig.color }} />
+                                  <PluginIcon size={14} style={{ color: pluginCatConfig.color }} />
+                                  {favoriteUris.has(p.uri) && (
+                                    <Star size={12} style={{ color: '#f59e0b', fill: '#f59e0b', flexShrink: 0 }} />
+                                  )}
                                   <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{p.name}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setTagSelectorPlugin(p)
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      padding: 4,
+                                      borderRadius: 4,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: '#666',
+                                      opacity: 0.6,
+                                      transition: 'opacity 0.15s, color 0.15s',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.opacity = '1'
+                                      e.currentTarget.style.color = '#a78bfa'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.opacity = '0.6'
+                                      e.currentTarget.style.color = '#666'
+                                    }}
+                                    title="Manage tags"
+                                  >
+                                    <Tag size={12} />
+                                  </button>
                                   <button
                                     onClick={(e) => toggleHidePlugin(p.uri, e)}
                                     style={{
@@ -498,7 +649,10 @@ export function LV2PluginsPage() {
                                     {isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
                                   </button>
                                 </div>
-                                <div style={{ fontSize: 11, color: '#888' }}>{p.author || 'Unknown author'}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 11, color: '#888' }}>{p.author || 'Unknown author'}</span>
+                                  <PluginTagDisplay uri={p.uri} onClick={() => setTagSelectorPlugin(p)} />
+                                </div>
                                 {getPluginDescription(p.name) && (
                                   <div style={{ fontSize: 10, color: '#666', marginTop: 4, lineHeight: 1.4 }}>
                                     {getPluginDescription(p.name)}
@@ -510,6 +664,9 @@ export function LV2PluginsPage() {
                                     <span className="pill muted" style={{ fontSize: 9 }}>{p.parameters.length} params</span>
                                   )}
                                   {p.has_ui && <span className="pill info" style={{ fontSize: 9 }}>GUI</span>}
+                                  {!isCategoryMode && (
+                                    <span className="pill" style={{ fontSize: 9, color: pluginCatConfig.color, borderColor: `${pluginCatConfig.color}40`, background: pluginCatConfig.bg }}>{p.category}</span>
+                                  )}
                                   {isHidden && <span className="pill" style={{ fontSize: 9, color: '#6b7280', borderColor: 'rgba(107, 114, 128, 0.3)' }}>Hidden</span>}
                                   <button
                                     onClick={(e) => {
@@ -522,22 +679,22 @@ export function LV2PluginsPage() {
                                       alignItems: 'center',
                                       gap: 4,
                                       padding: '3px 8px',
-                                      background: `linear-gradient(135deg, ${catConfig.color}30, ${catConfig.color}15)`,
-                                      border: `1px solid ${catConfig.color}50`,
+                                      background: `linear-gradient(135deg, ${pluginCatConfig.color}30, ${pluginCatConfig.color}15)`,
+                                      border: `1px solid ${pluginCatConfig.color}50`,
                                       borderRadius: 6,
                                       fontSize: 10,
                                       fontWeight: 600,
-                                      color: catConfig.color,
+                                      color: pluginCatConfig.color,
                                       cursor: 'pointer',
                                       transition: 'all 0.15s ease',
                                     }}
                                     onMouseEnter={(e) => {
-                                      e.currentTarget.style.background = `linear-gradient(135deg, ${catConfig.color}50, ${catConfig.color}30)`
+                                      e.currentTarget.style.background = `linear-gradient(135deg, ${pluginCatConfig.color}50, ${pluginCatConfig.color}30)`
                                       e.currentTarget.style.transform = 'translateY(-1px)'
-                                      e.currentTarget.style.boxShadow = `0 2px 8px ${catConfig.color}40`
+                                      e.currentTarget.style.boxShadow = `0 2px 8px ${pluginCatConfig.color}40`
                                     }}
                                     onMouseLeave={(e) => {
-                                      e.currentTarget.style.background = `linear-gradient(135deg, ${catConfig.color}30, ${catConfig.color}15)`
+                                      e.currentTarget.style.background = `linear-gradient(135deg, ${pluginCatConfig.color}30, ${pluginCatConfig.color}15)`
                                       e.currentTarget.style.transform = 'none'
                                       e.currentTarget.style.boxShadow = 'none'
                                     }}
@@ -564,7 +721,7 @@ export function LV2PluginsPage() {
       <div className="card" style={{ padding: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <Package size={16} style={{ color: '#37d6c9' }} />
-          <span style={{ fontSize: 12, color: '#888', marginRight: 8 }}>Quick Status:</span>
+          <span style={{ fontSize: 12, color: '#888' }}>Quick Status:</span>
           {pluginPacks.map(pack => {
             const isTransitional = ['installing', 'uninstalling', 'disabling', 'enabling'].includes(pack.status)
             const isDisabled = pack.status === 'disabled'
@@ -609,6 +766,14 @@ export function LV2PluginsPage() {
               </span>
             )
           })}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setExpanded(!expanded)}
+            style={{ marginLeft: 'auto', padding: '4px 10px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {expanded ? 'Collapse Packs' : 'Expand Packs'}
+          </button>
         </div>
       </div>
 
@@ -809,6 +974,34 @@ export function LV2PluginsPage() {
           and utilities. Installation requires sudo privileges and an internet connection.
         </p>
       </div>
+
+      {/* Tag Selector Modal */}
+      {tagSelectorPlugin && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setTagSelectorPlugin(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <TagSelector
+              pluginUri={tagSelectorPlugin.uri}
+              pluginName={tagSelectorPlugin.name}
+              onClose={() => setTagSelectorPlugin(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

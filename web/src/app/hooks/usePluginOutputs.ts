@@ -11,13 +11,16 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { 
-  PeakData, 
-  OutputPortValue, 
-  TunerData, 
+import type {
+  PeakData,
+  OutputPortValue,
+  TunerData,
   SpectrumData,
-  PluginDataMessage 
+  PluginDataMessage
 } from '../../map2/types';
+
+// Stable empty array to avoid recreating on every render
+const EMPTY_PLUGIN_URIS: string[] = [];
 
 export interface PluginOutputState {
   /** Peak data keyed by plugin URI and port symbol */
@@ -56,7 +59,7 @@ export function usePluginOutputs(options: UsePluginOutputsOptions = {}) {
   const {
     wsUrl = `ws://${window.location.host}/api/ws`,
     autoConnect = true,
-    pluginUris = [],
+    pluginUris = EMPTY_PLUGIN_URIS,
   } = options;
 
   const [state, setState] = useState<PluginOutputState>(initialState);

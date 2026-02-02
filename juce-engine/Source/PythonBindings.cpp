@@ -14,6 +14,8 @@
 #include "PhaseCorrelation.h"
 #include "CPUMonitor.h"
 #include "ConvolutionProcessor.h"
+#include "DynamicsProcessor.h"
+#include "FilterProcessor.h"
 #include "MidiHandler.h"
 
 namespace py = pybind11;
@@ -169,6 +171,117 @@ py::dict irInfoToDict(const ConvolutionProcessor::IRInfo& info) {
     d["sample_rate"] = info.originalSampleRate;
     d["stereo"] = info.stereo;
     return d;
+}
+
+// Convert DynamicsProcessor::Mode to string
+std::string dynamicsModeToString(DynamicsProcessor::Mode mode) {
+    switch (mode) {
+        case DynamicsProcessor::Mode::Compressor: return "compressor";
+        case DynamicsProcessor::Mode::Limiter: return "limiter";
+        case DynamicsProcessor::Mode::NoiseGate: return "noise_gate";
+        default: return "compressor";
+    }
+}
+
+// Convert string to DynamicsProcessor::Mode
+DynamicsProcessor::Mode stringToDynamicsMode(const std::string& str) {
+    if (str == "limiter") return DynamicsProcessor::Mode::Limiter;
+    if (str == "noise_gate") return DynamicsProcessor::Mode::NoiseGate;
+    return DynamicsProcessor::Mode::Compressor;
+}
+
+// Convert DynamicsProcessor::Parameters to Python dict
+py::dict dynamicsParamsToDict(const DynamicsProcessor::Parameters& params) {
+    py::dict d;
+    d["threshold"] = params.threshold;
+    d["ratio"] = params.ratio;
+    d["attack"] = params.attack;
+    d["release"] = params.release;
+    d["knee"] = params.knee;
+    d["makeup_gain"] = params.makeupGain;
+    d["auto_makeup"] = params.autoMakeup;
+    d["mode"] = dynamicsModeToString(params.mode);
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+// Convert Python dict to DynamicsProcessor::Parameters
+DynamicsProcessor::Parameters dictToDynamicsParams(const py::dict& d) {
+    DynamicsProcessor::Parameters params;
+    if (d.contains("threshold")) params.threshold = d["threshold"].cast<float>();
+    if (d.contains("ratio")) params.ratio = d["ratio"].cast<float>();
+    if (d.contains("attack")) params.attack = d["attack"].cast<float>();
+    if (d.contains("release")) params.release = d["release"].cast<float>();
+    if (d.contains("knee")) params.knee = d["knee"].cast<float>();
+    if (d.contains("makeup_gain")) params.makeupGain = d["makeup_gain"].cast<float>();
+    if (d.contains("auto_makeup")) params.autoMakeup = d["auto_makeup"].cast<bool>();
+    if (d.contains("mode")) params.mode = stringToDynamicsMode(d["mode"].cast<std::string>());
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+// Convert DynamicsProcessor::Metering to Python dict
+py::dict dynamicsMeteringToDict(const DynamicsProcessor::Metering& m) {
+    py::dict d;
+    d["input_level"] = m.inputLevel;
+    d["output_level"] = m.outputLevel;
+    d["gain_reduction"] = m.gainReduction;
+    d["input_rms"] = m.inputRms;
+    d["output_rms"] = m.outputRms;
+    return d;
+}
+
+// ========================================
+// Filter/EQ Type Converters
+// ========================================
+
+// Convert FilterProcessor::BandParameters to Python dict
+py::dict filterBandToDict(const FilterProcessor::BandParameters& band) {
+    py::dict d;
+    d["type"] = FilterProcessor::filterTypeToString(band.type);
+    d["frequency"] = band.frequency;
+    d["gain"] = band.gain;
+    d["q"] = band.q;
+    d["enabled"] = band.enabled;
+    return d;
+}
+
+// Convert Python dict to FilterProcessor::BandParameters
+FilterProcessor::BandParameters dictToFilterBand(const py::dict& d) {
+    FilterProcessor::BandParameters band;
+    if (d.contains("type")) band.type = FilterProcessor::stringToFilterType(d["type"].cast<std::string>());
+    if (d.contains("frequency")) band.frequency = d["frequency"].cast<float>();
+    if (d.contains("gain")) band.gain = d["gain"].cast<float>();
+    if (d.contains("q")) band.q = d["q"].cast<float>();
+    if (d.contains("enabled")) band.enabled = d["enabled"].cast<bool>();
+    return band;
+}
+
+// Convert FilterProcessor::Parameters to Python dict
+py::dict filterParamsToDict(const FilterProcessor::Parameters& params) {
+    py::dict d;
+    py::list bands;
+    for (int i = 0; i < FilterProcessor::MAX_BANDS; ++i) {
+        bands.append(filterBandToDict(params.bands[i]));
+    }
+    d["bands"] = bands;
+    d["output_gain"] = params.outputGain;
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+// Convert Python dict to FilterProcessor::Parameters
+FilterProcessor::Parameters dictToFilterParams(const py::dict& d) {
+    FilterProcessor::Parameters params;
+    if (d.contains("bands")) {
+        auto bands = d["bands"].cast<py::list>();
+        for (size_t i = 0; i < std::min(static_cast<size_t>(FilterProcessor::MAX_BANDS), bands.size()); ++i) {
+            params.bands[i] = dictToFilterBand(bands[i].cast<py::dict>());
+        }
+    }
+    if (d.contains("output_gain")) params.outputGain = d["output_gain"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
 }
 
 // ========================================
@@ -417,6 +530,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             d["midi_enabled"] = info.midiEnabled;
             d["total_latency_samples"] = info.totalLatencySamples;
             d["total_latency_ms"] = info.totalLatencyMs;
+            d["input_channels"] = self.getNumInputChannels();
+            d["output_channels"] = self.getNumOutputChannels();
             d["available"] = true;
             d["initialized"] = info.running;
             return d;
@@ -457,6 +572,17 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Set LV2 plugin search path")
         .def("get_lv2_path", &Map2AudioEngine::getLv2Path,
              "Get LV2 plugin path")
+
+        .def("set_num_input_channels", &Map2AudioEngine::setNumInputChannels,
+             py::arg("channels"),
+             "Set number of input channels (1-32)")
+        .def("get_num_input_channels", &Map2AudioEngine::getNumInputChannels,
+             "Get number of input channels")
+        .def("set_num_output_channels", &Map2AudioEngine::setNumOutputChannels,
+             py::arg("channels"),
+             "Set number of output channels (1-32)")
+        .def("get_num_output_channels", &Map2AudioEngine::getNumOutputChannels,
+             "Get number of output channels")
 
         // ========================================
         // Plugin Management (Multi-Format)
@@ -1030,6 +1156,334 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_reverb_ir_info", [](const Map2AudioEngine& self) {
             return irInfoToDict(self.getReverbIRInfo());
         }, "Get reverb IR info")
+
+        // ========================================
+        // Dynamics - Compressor (NEW)
+        // ========================================
+
+        .def("set_compressor_threshold", &Map2AudioEngine::setCompressorThreshold,
+             py::arg("db"),
+             "Set compressor threshold in dB (-60 to 0)")
+
+        .def("set_compressor_ratio", &Map2AudioEngine::setCompressorRatio,
+             py::arg("ratio"),
+             "Set compressor ratio (1 to 20)")
+
+        .def("set_compressor_attack", &Map2AudioEngine::setCompressorAttack,
+             py::arg("ms"),
+             "Set compressor attack time in ms (0.1 to 500)")
+
+        .def("set_compressor_release", &Map2AudioEngine::setCompressorRelease,
+             py::arg("ms"),
+             "Set compressor release time in ms (10 to 5000)")
+
+        .def("set_compressor_knee", &Map2AudioEngine::setCompressorKnee,
+             py::arg("db"),
+             "Set compressor knee width in dB (0 to 24)")
+
+        .def("set_compressor_makeup_gain", &Map2AudioEngine::setCompressorMakeupGain,
+             py::arg("db"),
+             "Set compressor makeup gain in dB (-12 to 24)")
+
+        .def("set_compressor_auto_makeup", &Map2AudioEngine::setCompressorAutoMakeup,
+             py::arg("enabled"),
+             "Enable/disable auto makeup gain")
+
+        .def("set_compressor_bypass", &Map2AudioEngine::setCompressorBypass,
+             py::arg("bypass"),
+             "Bypass compressor")
+
+        .def("get_compressor_parameters", [](const Map2AudioEngine& self) {
+            return dynamicsParamsToDict(self.getCompressorParameters());
+        }, "Get all compressor parameters")
+
+        .def("set_compressor_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setCompressorParameters(dictToDynamicsParams(params));
+        }, py::arg("params"), "Set all compressor parameters at once")
+
+        .def("get_compressor_metering", [](const Map2AudioEngine& self) {
+            return dynamicsMeteringToDict(self.getCompressorMetering());
+        }, "Get compressor metering (input, output, gain reduction)")
+
+        // ========================================
+        // Dynamics - Limiter (NEW)
+        // ========================================
+
+        .def("set_limiter_threshold", &Map2AudioEngine::setLimiterThreshold,
+             py::arg("db"),
+             "Set limiter ceiling/threshold in dB")
+
+        .def("set_limiter_release", &Map2AudioEngine::setLimiterRelease,
+             py::arg("ms"),
+             "Set limiter release time in ms")
+
+        .def("set_limiter_bypass", &Map2AudioEngine::setLimiterBypass,
+             py::arg("bypass"),
+             "Bypass limiter")
+
+        .def("get_limiter_parameters", [](const Map2AudioEngine& self) {
+            return dynamicsParamsToDict(self.getLimiterParameters());
+        }, "Get all limiter parameters")
+
+        .def("get_limiter_metering", [](const Map2AudioEngine& self) {
+            return dynamicsMeteringToDict(self.getLimiterMetering());
+        }, "Get limiter metering (input, output, gain reduction)")
+
+        // ========================================
+        // Dynamics - Noise Gate (NEW)
+        // ========================================
+
+        .def("set_gate_threshold", &Map2AudioEngine::setGateThreshold,
+             py::arg("db"),
+             "Set noise gate threshold in dB")
+
+        .def("set_gate_ratio", &Map2AudioEngine::setGateRatio,
+             py::arg("ratio"),
+             "Set noise gate ratio (attenuation below threshold)")
+
+        .def("set_gate_attack", &Map2AudioEngine::setGateAttack,
+             py::arg("ms"),
+             "Set noise gate attack time in ms")
+
+        .def("set_gate_release", &Map2AudioEngine::setGateRelease,
+             py::arg("ms"),
+             "Set noise gate release time in ms")
+
+        .def("set_gate_bypass", &Map2AudioEngine::setGateBypass,
+             py::arg("bypass"),
+             "Bypass noise gate")
+
+        .def("get_gate_parameters", [](const Map2AudioEngine& self) {
+            return dynamicsParamsToDict(self.getGateParameters());
+        }, "Get all noise gate parameters")
+
+        .def("get_gate_metering", [](const Map2AudioEngine& self) {
+            return dynamicsMeteringToDict(self.getGateMetering());
+        }, "Get noise gate metering (input, output, gain reduction)")
+
+        // ========================================
+        // Dynamics - Combined Access (NEW)
+        // ========================================
+
+        .def("get_dynamics_metering", [](const Map2AudioEngine& self) {
+            py::dict d;
+            d["compressor"] = dynamicsMeteringToDict(self.getCompressorMetering());
+            d["limiter"] = dynamicsMeteringToDict(self.getLimiterMetering());
+            d["gate"] = dynamicsMeteringToDict(self.getGateMetering());
+            return d;
+        }, "Get all dynamics processor metering")
+
+        // ========================================
+        // EQ / Filter Processing (NEW)
+        // ========================================
+
+        .def("set_eq_band", [](Map2AudioEngine& self, int index, py::dict params) {
+            self.setEQBand(index, dictToFilterBand(params));
+        }, py::arg("index"), py::arg("params"), "Set EQ band parameters")
+
+        .def("set_eq_band_frequency", &Map2AudioEngine::setEQBandFrequency,
+             py::arg("index"), py::arg("hz"),
+             "Set EQ band frequency in Hz")
+
+        .def("set_eq_band_gain", &Map2AudioEngine::setEQBandGain,
+             py::arg("index"), py::arg("db"),
+             "Set EQ band gain in dB")
+
+        .def("set_eq_band_q", &Map2AudioEngine::setEQBandQ,
+             py::arg("index"), py::arg("q"),
+             "Set EQ band Q factor")
+
+        .def("set_eq_band_type", [](Map2AudioEngine& self, int index, const std::string& type) {
+            self.setEQBandType(index, FilterProcessor::stringToFilterType(type));
+        }, py::arg("index"), py::arg("type"), "Set EQ band filter type")
+
+        .def("set_eq_band_enabled", &Map2AudioEngine::setEQBandEnabled,
+             py::arg("index"), py::arg("enabled"),
+             "Enable/disable EQ band")
+
+        .def("get_eq_band", [](const Map2AudioEngine& self, int index) {
+            return filterBandToDict(self.getEQBand(index));
+        }, py::arg("index"), "Get EQ band parameters")
+
+        .def("set_eq_output_gain", &Map2AudioEngine::setEQOutputGain,
+             py::arg("db"),
+             "Set EQ output gain in dB")
+
+        .def("get_eq_output_gain", &Map2AudioEngine::getEQOutputGain,
+             "Get EQ output gain in dB")
+
+        .def("set_eq_bypass", &Map2AudioEngine::setEQBypass,
+             py::arg("bypass"),
+             "Bypass EQ")
+
+        .def("is_eq_bypassed", &Map2AudioEngine::isEQBypassed,
+             "Check if EQ is bypassed")
+
+        .def("get_eq_parameters", [](const Map2AudioEngine& self) {
+            return filterParamsToDict(self.getEQParameters());
+        }, "Get all EQ parameters")
+
+        .def("set_eq_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setEQParameters(dictToFilterParams(params));
+        }, py::arg("params"), "Set all EQ parameters")
+
+        .def("get_eq_frequency_response", [](const Map2AudioEngine& self, py::list frequencies) {
+            std::vector<float> freqs;
+            for (auto f : frequencies) {
+                freqs.push_back(f.cast<float>());
+            }
+            auto response = self.getEQFrequencyResponse(freqs);
+            py::list result;
+            for (float r : response) {
+                result.append(r);
+            }
+            return result;
+        }, py::arg("frequencies"), "Get EQ frequency response at given frequencies")
+
+        // ========================================
+        // Parallel Chains (NEW)
+        // ========================================
+
+        .def("create_parallel_group", [](Map2AudioEngine& self, int position, int numBranches) {
+            return self.getAudioGraph().createParallelGroup(position, numBranches);
+        }, py::arg("position") = -1, py::arg("num_branches") = 2,
+           "Create a parallel processing group, returns group ID")
+
+        .def("remove_parallel_group", [](Map2AudioEngine& self, int groupId) {
+            return self.getAudioGraph().removeParallelGroup(groupId);
+        }, py::arg("group_id"), "Remove a parallel group")
+
+        .def("add_to_parallel_branch", [](Map2AudioEngine& self, int groupId, int branchIndex,
+                                           InstanceId pluginId, int position) {
+            return self.getAudioGraph().addToParallelBranch(groupId, branchIndex, pluginId, position);
+        }, py::arg("group_id"), py::arg("branch_index"), py::arg("plugin_id"), py::arg("position") = -1,
+           "Add a plugin to a parallel branch")
+
+        .def("remove_from_parallel_branch", [](Map2AudioEngine& self, int groupId, int branchIndex,
+                                                InstanceId pluginId) {
+            return self.getAudioGraph().removeFromParallelBranch(groupId, branchIndex, pluginId);
+        }, py::arg("group_id"), py::arg("branch_index"), py::arg("plugin_id"),
+           "Remove a plugin from a parallel branch")
+
+        .def("set_parallel_ab_blend", [](Map2AudioEngine& self, int groupId, float blend) {
+            self.getAudioGraph().setParallelABBlend(groupId, blend);
+        }, py::arg("group_id"), py::arg("blend"),
+           "Set A/B blend for parallel group (0.0 = all A, 1.0 = all B)")
+
+        .def("get_parallel_ab_blend", [](const Map2AudioEngine& self, int groupId) {
+            return const_cast<Map2AudioEngine&>(self).getAudioGraph().getParallelABBlend(groupId);
+        }, py::arg("group_id"), "Get A/B blend for parallel group")
+
+        .def("set_parallel_branch_level", [](Map2AudioEngine& self, int groupId, int branchIndex, float level) {
+            self.getAudioGraph().setParallelBranchLevel(groupId, branchIndex, level);
+        }, py::arg("group_id"), py::arg("branch_index"), py::arg("level"),
+           "Set individual branch level (0.0 - 2.0)")
+
+        .def("set_parallel_bypass", [](Map2AudioEngine& self, int groupId, bool bypass) {
+            self.getAudioGraph().setParallelBypass(groupId, bypass);
+        }, py::arg("group_id"), py::arg("bypass"),
+           "Bypass a parallel group")
+
+        .def("get_parallel_groups", [](const Map2AudioEngine& self) {
+            py::list result;
+            auto groups = const_cast<Map2AudioEngine&>(self).getAudioGraph().getParallelGroups();
+            for (const auto& group : groups) {
+                py::dict d;
+                d["id"] = group.id;
+                d["ab_blend"] = group.abBlend;
+                d["master_level"] = group.masterLevel;
+                d["bypass"] = group.bypass;
+
+                py::list branches;
+                for (const auto& branch : group.branches) {
+                    py::list branchPlugins;
+                    for (auto pluginId : branch) {
+                        branchPlugins.append(pluginId);
+                    }
+                    branches.append(branchPlugins);
+                }
+                d["branches"] = branches;
+
+                py::list levels;
+                for (float level : group.branchLevels) {
+                    levels.append(level);
+                }
+                d["branch_levels"] = levels;
+
+                result.append(d);
+            }
+            return result;
+        }, "Get all parallel groups")
+
+        // ========================================
+        // Neural Amp Modeler (NEW - RT-safe)
+        // ========================================
+
+        .def("is_nam_available", &Map2AudioEngine::isNAMAvailable,
+             "Check if NAM support is compiled in")
+
+        .def("load_nam_model", &Map2AudioEngine::loadNAMModel,
+             py::arg("path"),
+             "Load a NAM model (.nam file)")
+
+        .def("unload_nam_model", &Map2AudioEngine::unloadNAMModel,
+             "Unload current NAM model")
+
+        .def("is_nam_model_loaded", &Map2AudioEngine::isNAMModelLoaded,
+             "Check if NAM model is loaded")
+
+        .def("is_nam_loading", &Map2AudioEngine::isNAMLoading,
+             "Check if NAM model is currently loading")
+
+        .def("get_nam_model_info", [](const Map2AudioEngine& self) {
+            auto info = self.getNAMModelInfo();
+            py::dict d;
+            d["path"] = info.path;
+            d["name"] = info.name;
+            d["expected_sample_rate"] = info.expectedSampleRate;
+            d["input_channels"] = info.inputChannels;
+            d["output_channels"] = info.outputChannels;
+            d["has_input_level"] = info.hasInputLevel;
+            d["has_output_level"] = info.hasOutputLevel;
+            d["input_level"] = info.inputLevel;
+            d["output_level"] = info.outputLevel;
+            d["loaded"] = info.loaded;
+            return d;
+        }, "Get NAM model information")
+
+        .def("set_nam_input_gain", &Map2AudioEngine::setNAMInputGain,
+             py::arg("db"),
+             "Set NAM input gain in dB")
+
+        .def("get_nam_input_gain", &Map2AudioEngine::getNAMInputGain,
+             "Get NAM input gain in dB")
+
+        .def("set_nam_output_gain", &Map2AudioEngine::setNAMOutputGain,
+             py::arg("db"),
+             "Set NAM output gain in dB")
+
+        .def("get_nam_output_gain", &Map2AudioEngine::getNAMOutputGain,
+             "Get NAM output gain in dB")
+
+        .def("set_nam_bypass", &Map2AudioEngine::setNAMBypass,
+             py::arg("bypass"),
+             "Bypass NAM processor")
+
+        .def("is_nam_bypassed", &Map2AudioEngine::isNAMBypassed,
+             "Check if NAM is bypassed")
+
+        .def("set_nam_normalize", &Map2AudioEngine::setNAMNormalize,
+             py::arg("normalize"),
+             "Enable/disable NAM output normalization")
+
+        .def("is_nam_normalized", &Map2AudioEngine::isNAMNormalized,
+             "Check if NAM normalization is enabled")
+
+        .def("get_nam_input_level", &Map2AudioEngine::getNAMInputLevel,
+             "Get NAM input metering level in dB")
+
+        .def("get_nam_output_level", &Map2AudioEngine::getNAMOutputLevel,
+             "Get NAM output metering level in dB")
 
         // ========================================
         // Pedalboard State (Legacy Compatibility)

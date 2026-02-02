@@ -77,6 +77,17 @@ class StoragePaths:
         """
         return StoragePaths.get_ir_user_dir() / "user"
 
+    @staticmethod
+    def get_soundfont_user_dir() -> Path:
+        """Get primary user SoundFont files directory.
+
+        Default: ~/.local/share/map2/soundfonts
+        """
+        try:
+            return Path(get_config().get("storage.soundfont_user_dir")).expanduser()
+        except (KeyError, AttributeError):
+            return Path("~/.local/share/map2/soundfonts").expanduser()
+
     # =========================================================================
     # System Directories (service-writable locations)
     # =========================================================================
@@ -104,6 +115,25 @@ class StoragePaths:
         Returns: /var/lib/map2/ir/downloads
         """
         return StoragePaths.get_ir_system_dir() / "downloads"
+
+    @staticmethod
+    def get_soundfont_system_dir() -> Path:
+        """Get system SoundFont files directory.
+
+        Default: /var/lib/map2/soundfonts
+        """
+        try:
+            return Path(get_config().get("storage.soundfont_system_dir"))
+        except (KeyError, AttributeError):
+            return Path("/var/lib/map2/soundfonts")
+
+    @staticmethod
+    def get_soundfont_download_dir() -> Path:
+        """Get downloaded SoundFont library directory.
+
+        Returns: ~/.local/share/map2/soundfonts/downloads (user-writable)
+        """
+        return StoragePaths.get_soundfont_user_dir() / "downloads"
 
     # =========================================================================
     # Aggregated Search Paths
@@ -181,6 +211,8 @@ class StoragePaths:
             StoragePaths.get_ir_cabinet_dir(),
             StoragePaths.get_ir_reverb_dir(),
             StoragePaths.get_ir_user_upload_dir(),
+            StoragePaths.get_soundfont_user_dir(),
+            StoragePaths.get_soundfont_download_dir(),
         ]
 
         for directory in directories:
@@ -277,10 +309,12 @@ class StoragePaths:
             "ir_cabinets": str(StoragePaths.get_ir_cabinet_dir()),
             "ir_reverbs": str(StoragePaths.get_ir_reverb_dir()),
             "ir_user_uploads": str(StoragePaths.get_ir_user_upload_dir()),
+            "soundfonts": str(StoragePaths.get_soundfont_user_dir()),
             # Tilde-formatted versions for display
             "nam_models_display": StoragePaths._to_tilde_path(StoragePaths.get_nam_user_dir()),
             "ir_cabinets_display": StoragePaths._to_tilde_path(StoragePaths.get_ir_cabinet_dir()),
             "ir_reverbs_display": StoragePaths._to_tilde_path(StoragePaths.get_ir_reverb_dir()),
+            "soundfonts_display": StoragePaths._to_tilde_path(StoragePaths.get_soundfont_user_dir()),
         }
 
     @staticmethod

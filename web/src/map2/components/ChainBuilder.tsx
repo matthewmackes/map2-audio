@@ -51,7 +51,7 @@ import {
   Tune as AudioConfigIcon,
   Timeline as AutomationIcon,
 } from '@mui/icons-material';
-import { chainsApi, pluginsApi, usbApi, historyApi, audioApi } from '../api';
+import { chainsApi, pluginsApi, usbApi, historyApi, audioApi, automationApi } from '../api';
 import { useChainUpdates, useMeterData } from '../hooks/useWebSocket';
 import type { Chain, Plugin, PluginParameter } from '../types';
 import {
@@ -1486,16 +1486,38 @@ export default function ChainBuilder() {
                       onToggleLoop={() => setAutomationLoopEnabled(!automationLoopEnabled)}
                       onSeek={(time) => setAutomationCurrentTime(time)}
                       onAddLane={() => {
-                        // TODO: Open parameter selector for automation lane
-                        console.log('Add automation lane');
+                        // TODO: Open parameter selector dialog for automation lane
+                        // For now, this requires user to select a parameter first
                       }}
-                      onDeleteLane={(laneId) => console.log('Delete lane:', laneId)}
-                      onToggleLaneEnabled={(laneId) => console.log('Toggle lane enabled:', laneId)}
-                      onToggleLaneArmed={(laneId) => console.log('Toggle lane armed:', laneId)}
-                      onAddPoint={(laneId, time, value) => console.log('Add point:', laneId, time, value)}
-                      onMovePoint={(laneId, pointId, time, value) => console.log('Move point:', laneId, pointId, time, value)}
-                      onDeletePoint={(laneId, pointId) => console.log('Delete point:', laneId, pointId)}
-                      onChangeCurve={(laneId, pointId, curve) => console.log('Change curve:', laneId, pointId, curve)}
+                      onDeleteLane={(laneId) => {
+                        automationApi.deleteLane(laneId).catch(() => {});
+                      }}
+                      onToggleLaneEnabled={(laneId) => {
+                        // Lane enable/disable requires fetching lane, modifying, and updating
+                        // TODO: Implement lane update endpoint in backend
+                      }}
+                      onToggleLaneArmed={(laneId) => {
+                        // Armed state is local to UI for recording
+                        // TODO: Track armed state locally
+                      }}
+                      onAddPoint={(laneId, time, value) => {
+                        automationApi.addPoint(laneId, time, value).catch(() => {});
+                      }}
+                      onMovePoint={(laneId, pointId, time, value) => {
+                        // Move = delete old + add new at new position
+                        automationApi.addPoint(laneId, time, value).catch(() => {});
+                      }}
+                      onDeletePoint={(laneId, pointId) => {
+                        // pointId contains the time for the point
+                        const time = typeof pointId === 'number' ? pointId : parseFloat(pointId);
+                        if (!isNaN(time)) {
+                          automationApi.removePoint(laneId, time).catch(() => {});
+                        }
+                      }}
+                      onChangeCurve={(laneId, pointId, curve) => {
+                        // Curve changes require re-adding the point with new curve type
+                        // TODO: Implement curve update in backend
+                      }}
                       defaultCollapsed={false}
                       position="bottom"
                       expandedSize={200}
@@ -1705,10 +1727,16 @@ export default function ChainBuilder() {
       <AudioConfigDialog
         open={audioConfigDialogOpen}
         onClose={() => setAudioConfigDialogOpen(false)}
-        onApply={(config) => {
-          console.log('Apply audio config:', config);
-          // TODO: Call audio API to apply configuration
-          setAudioConfigDialogOpen(false);
+        onApply={async (config) => {
+          try {
+            await audioApi.configure({
+              sampleRate: config.sampleRate,
+              bufferSize: config.bufferSize,
+            });
+            setAudioConfigDialogOpen(false);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to apply audio configuration');
+          }
         }}
       />
 

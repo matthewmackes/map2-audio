@@ -1,32 +1,36 @@
 """
 NAM (Neural Amp Modeler) API Routes
 
-Enhanced with:
-- Database-backed model metadata
-- Favorites and ratings
-- Search and categories
+All NAM model loading goes through the RT-safe JUCE C++ engine.
+This module provides:
+- Model discovery and scanning
+- Database-backed metadata (favorites, ratings, tags)
 - Upload support
+- Status/metering endpoints
+
+IMPORTANT: Audio processing is handled ONLY by the JUCE C++ NAMProcessor.
+The Python side handles file management and metadata only.
 """
 
 import logging
 import os
 import hashlib
 from typing import List, Dict, Optional
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 try:
     from fastapi import APIRouter, HTTPException, Query, UploadFile, File
     from pydantic import BaseModel
-    from app.services.nam_processor import NAMProcessor
     from app.paths import StoragePaths
     from app.database import get_db, NAMModel
+    from app.services.juce_engine_service import get_audio_engine
     from sqlalchemy import or_
 
     router = APIRouter(prefix="/api/nam", tags=["nam"])
 
-    # Initialize NAM processor
-    _nam_processor = NAMProcessor()
+    # ==================== Pydantic Models ====================
 
     class NAMModelInfo(BaseModel):
         name: str
@@ -41,75 +45,129 @@ try:
     class NAMRatingRequest(BaseModel):
         rating: int  # 1-5
 
+    class NAMGainRequest(BaseModel):
+        gain_db: float
+
+    # ==================== Helper Functions ====================
+
+    def _scan_nam_models() -> List[Dict]:
+        """Scan directories for NAM model files (.nam format).
+
+        Scans all configured NAM paths including:
+        - User directory (~/.local/share/map2/nam)
+        - System directory (/var/lib/map2/nam)
+        - Extra paths from config
+        """
+        models = []
+        seen_names = set()
+
+        scan_dirs = StoragePaths.get_all_nam_paths(include_nonexistent=False)
+
+        # Legacy config location
+        legacy_dir = Path.home() / ".config" / "map2" / "nam_models"
+        if legacy_dir.exists() and legacy_dir not in scan_dirs:
+            scan_dirs.append(legacy_dir)
+
+        for scan_dir in scan_dirs:
+            if not scan_dir.exists():
+                continue
+            for model_file in scan_dir.glob("**/*.nam"):
+                if model_file.stem in seen_names:
+                    continue
+                seen_names.add(model_file.stem)
+
+                models.append({
+                    "name": model_file.stem,
+                    "path": str(model_file),
+                    "type": _detect_model_type(model_file),
+                    "size_mb": model_file.stat().st_size / (1024 * 1024)
+                })
+
+        return models
+
+    def _detect_model_type(model_path: Path) -> str:
+        """Detect if model is amp, pedal, or preamp based on filename."""
+        name_lower = model_path.stem.lower()
+
+        if any(x in name_lower for x in ['amp', 'amplifier', 'head']):
+            return 'amp'
+        elif any(x in name_lower for x in ['pedal', 'drive', 'dist', 'fuzz', 'boost']):
+            return 'pedal'
+        elif 'preamp' in name_lower:
+            return 'preamp'
+        else:
+            return 'unknown'
+
+    def _find_model_path(model_name: str) -> Optional[str]:
+        """Find the full path for a model by name."""
+        models = _scan_nam_models()
+        for m in models:
+            if m['name'] == model_name:
+                return m['path']
+        return None
+
     # ==================== Status Endpoints ====================
 
     @router.get("/")
     async def get_nam_root():
-        """Get NAM processor status including GPU information."""
-        status = _nam_processor.get_status()
-        gpu_info = _nam_processor.get_gpu_info()
-        return {**status, "gpu_details": gpu_info}
+        """Get NAM processor status from JUCE engine."""
+        engine = get_audio_engine()
+        status = await engine.get_nam_status()
+
+        # Add model count
+        models = _scan_nam_models()
+        status["total_models_found"] = len(models)
+
+        return status
 
     @router.get("/status")
     async def get_nam_status():
-        """Get NAM status for the native plugins UI.
+        """Get NAM model status for frontend.
 
         Returns the format expected by the frontend NAMStatus interface.
         """
-        from app.services.nam_processor import NAM_AVAILABLE
-        from app.services.native_plugin_meters import get_native_plugin_meters
+        engine = get_audio_engine()
+
+        # Get status from JUCE engine
+        available = await engine.is_nam_available()
+        model_loaded = await engine.is_nam_model_loaded()
+        loading = await engine.is_nam_loading()
+        bypassed = await engine.is_nam_bypassed()
+        model_info = await engine.get_nam_model_info()
 
         # Scan for available models
-        models = _nam_processor.scan_models()
+        models = _scan_nam_models()
         model_names = [m['name'] for m in models]
 
-        # Get active model info
-        active_model = _nam_processor.active_model
-        active_name = active_model.name if active_model else None
-        latency_ms = (active_model.get_latency_samples() / 48000 * 1000) if active_model else 0
-
-        # Get real-time audio levels from metering service
-        meters = get_native_plugin_meters()
-        levels = meters.get_levels("nam")
+        # Get metering
+        input_level = await engine.get_nam_input_level()
+        output_level = await engine.get_nam_output_level()
 
         return {
-            "available": NAM_AVAILABLE,
-            "activeModel": active_name,
-            "mix": 100,  # TODO: Store mix level in processor
-            "bypass": active_model._is_bypassed if active_model else False,
-            "inputLevel": levels["inputLevel"],
-            "outputLevel": levels["outputLevel"],
-            "peakInput": levels["peakInput"],
-            "peakOutput": levels["peakOutput"],
-            "latency": latency_ms,
+            "available": available,
+            "activeModel": model_info.get("name") if model_loaded else None,
+            "loading": loading,
+            "mix": 100,
+            "bypass": bypassed,
+            "inputLevel": input_level,
+            "outputLevel": output_level,
+            "peakInput": input_level,  # Simplified - use same as current
+            "peakOutput": output_level,
+            "latency": 0,  # NAM models are zero-latency (causal)
             "availableModels": model_names
         }
-
-    @router.get("/gpu")
-    async def get_gpu_status():
-        """Get detailed GPU/acceleration status."""
-        return _nam_processor.get_gpu_info()
 
     # ==================== Categories ====================
 
     @router.get("/categories")
     async def get_nam_categories() -> Dict:
-        """Get available NAM model categories and amp types.
-
-        Returns:
-            {
-                "categories": ["Amp Model", ...],
-                "amp_types": ["amp", "pedal", "preamp", ...]
-            }
-        """
+        """Get available NAM model categories and amp types."""
         try:
             session = get_db()
 
-            # Get unique categories
             categories = session.query(NAMModel.category).distinct().all()
             category_list = [c[0] for c in categories if c[0]]
 
-            # Get unique amp types
             amp_types = session.query(NAMModel.amp_type).distinct().all()
             amp_type_list = [t[0] for t in amp_types if t[0]]
 
@@ -133,28 +191,11 @@ try:
         amp_type: Optional[str] = None,
         favorites_only: bool = False
     ) -> Dict:
-        """List available NAM models with optional filtering.
-
-        Args:
-            limit: Max models to return
-            offset: Pagination offset
-            category: Filter by category
-            amp_type: Filter by amp type (amp, pedal, preamp)
-            favorites_only: Only return favorites
-
-        Returns:
-            {
-                "models": [...],
-                "total": int,
-                "limit": int,
-                "offset": int
-            }
-        """
+        """List available NAM models with optional filtering."""
         try:
             session = get_db()
             query = session.query(NAMModel)
 
-            # Apply filters
             if category:
                 query = query.filter(NAMModel.category == category)
             if amp_type:
@@ -162,10 +203,7 @@ try:
             if favorites_only:
                 query = query.filter(NAMModel.is_favorite == True)
 
-            # Get total count
             total = query.count()
-
-            # Get page
             models = query.order_by(NAMModel.name).offset(offset).limit(limit).all()
 
             model_list = []
@@ -195,29 +233,18 @@ try:
         except Exception as e:
             logger.error(f"Error listing NAM models: {e}")
             # Fall back to file-based listing
-            models = _nam_processor.scan_models()
+            models = _scan_nam_models()
             return {"models": models, "total": len(models), "limit": limit, "offset": offset}
 
     # ==================== Search ====================
 
     @router.post("/search")
     async def search_nam_models(request: NAMSearchRequest) -> Dict:
-        """Search NAM models by text and filters.
-
-        Args:
-            request: Search parameters
-
-        Returns:
-            {
-                "results": [...],
-                "count": int
-            }
-        """
+        """Search NAM models by text and filters."""
         try:
             session = get_db()
             query = session.query(NAMModel)
 
-            # Text search
             if request.query:
                 search_term = f"%{request.query}%"
                 query = query.filter(
@@ -229,19 +256,13 @@ try:
                     )
                 )
 
-            # Category filter
             if request.category:
                 query = query.filter(NAMModel.category == request.category)
-
-            # Amp type filter
             if request.amp_type:
                 query = query.filter(NAMModel.amp_type == request.amp_type)
-
-            # Favorites filter
             if request.favorites_only:
                 query = query.filter(NAMModel.is_favorite == True)
 
-            # Execute
             models = query.order_by(NAMModel.name).limit(100).all()
 
             results = []
@@ -271,14 +292,7 @@ try:
 
     @router.get("/models/{model_id}")
     async def get_nam_model(model_id: int) -> Dict:
-        """Get detailed NAM model information.
-
-        Args:
-            model_id: Model database ID
-
-        Returns:
-            Complete model metadata
-        """
+        """Get detailed NAM model information."""
         try:
             session = get_db()
             model = session.query(NAMModel).filter_by(id=model_id).first()
@@ -319,41 +333,77 @@ try:
             logger.error(f"Error getting NAM model: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
-    # ==================== Load/Activate ====================
+    # ==================== Load/Unload (RT-safe via JUCE) ====================
 
     @router.post("/models/{model_name}/load")
     async def load_nam_model(model_name: str):
-        """Load a NAM model (also activates it)."""
-        success = _nam_processor.load_model(model_name)
+        """Load a NAM model via RT-safe JUCE C++ engine.
+
+        This is the ONLY way to load NAM models for real-time audio.
+        Loading happens on a background thread to avoid blocking audio.
+        """
+        # Find the model file path
+        model_path = _find_model_path(model_name)
+        if not model_path:
+            raise HTTPException(status_code=404, detail=f"Model not found: {model_name}")
+
+        # Load via JUCE engine (RT-safe)
+        engine = get_audio_engine()
+        success = await engine.load_nam_model(model_path)
+
         if not success:
-            raise HTTPException(status_code=404, detail="Model not found or failed to load")
-        # Also activate after loading
-        _nam_processor.set_active_model(model_name)
-        return {"status": "loaded", "model": model_name}
+            raise HTTPException(status_code=500, detail="Failed to start model loading")
+
+        logger.info(f"NAM model loading started: {model_name} ({model_path})")
+        return {"status": "loading", "model": model_name, "path": model_path}
 
     @router.post("/models/{model_name}/activate")
     async def activate_nam_model(model_name: str):
-        """Set active NAM model (deprecated, use load instead)."""
-        success = _nam_processor.set_active_model(model_name)
-        if not success:
-            raise HTTPException(status_code=404, detail="Model not found")
-        return {"status": "activated", "model": model_name}
+        """Activate a NAM model (alias for load)."""
+        return await load_nam_model(model_name)
+
+    @router.post("/unload")
+    async def unload_nam_model():
+        """Unload the current NAM model."""
+        engine = get_audio_engine()
+        await engine.unload_nam_model()
+        return {"status": "unloaded"}
+
+    # ==================== Controls ====================
+
+    @router.post("/bypass")
+    async def set_nam_bypass(bypass: bool = True):
+        """Set NAM bypass state."""
+        engine = get_audio_engine()
+        await engine.set_nam_bypass(bypass)
+        return {"status": "ok", "bypass": bypass}
+
+    @router.post("/input-gain")
+    async def set_nam_input_gain(request: NAMGainRequest):
+        """Set NAM input gain in dB."""
+        engine = get_audio_engine()
+        await engine.set_nam_input_gain(request.gain_db)
+        return {"status": "ok", "input_gain": request.gain_db}
+
+    @router.post("/output-gain")
+    async def set_nam_output_gain(request: NAMGainRequest):
+        """Set NAM output gain in dB."""
+        engine = get_audio_engine()
+        await engine.set_nam_output_gain(request.gain_db)
+        return {"status": "ok", "output_gain": request.gain_db}
+
+    @router.post("/normalize")
+    async def set_nam_normalize(normalize: bool = True):
+        """Enable/disable NAM output normalization."""
+        engine = get_audio_engine()
+        await engine.set_nam_normalize(normalize)
+        return {"status": "ok", "normalize": normalize}
 
     # ==================== Favorites and Ratings ====================
 
     @router.post("/models/{model_id}/favorite")
     async def toggle_nam_favorite(model_id: int) -> Dict:
-        """Toggle favorite status for NAM model.
-
-        Args:
-            model_id: Model ID
-
-        Returns:
-            {
-                "status": "ok",
-                "is_favorite": bool
-            }
-        """
+        """Toggle favorite status for NAM model."""
         try:
             session = get_db()
             model = session.query(NAMModel).filter_by(id=model_id).first()
@@ -381,18 +431,7 @@ try:
 
     @router.put("/models/{model_id}/rating")
     async def set_nam_rating(model_id: int, request: NAMRatingRequest) -> Dict:
-        """Set rating for NAM model.
-
-        Args:
-            model_id: Model ID
-            request: Rating (1-5)
-
-        Returns:
-            {
-                "status": "ok",
-                "rating": int
-            }
-        """
+        """Set rating for NAM model."""
         try:
             if not 1 <= request.rating <= 5:
                 raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
@@ -423,34 +462,20 @@ try:
 
     @router.post("/upload")
     async def upload_nam_model(file: UploadFile = File(...)) -> Dict:
-        """Upload a NAM model file.
-
-        Args:
-            file: NAM model file (.nam)
-
-        Returns:
-            {
-                "status": "ok",
-                "model": {...}
-            }
-        """
+        """Upload a NAM model file."""
         try:
-            # Validate file extension
             if not file.filename.lower().endswith('.nam'):
                 raise HTTPException(status_code=400, detail="File must be a .nam file")
 
-            # Get upload directory
             upload_dir = StoragePaths.get_nam_user_dir()
             upload_dir.mkdir(parents=True, exist_ok=True)
 
-            # Save file
             file_path = upload_dir / file.filename
             content = await file.read()
 
             with open(file_path, 'wb') as f:
                 f.write(content)
 
-            # Compute hash
             file_hash = hashlib.sha256(content).hexdigest()
 
             # Check if already in database
@@ -503,6 +528,18 @@ try:
             logger.error(f"Error uploading NAM model: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
+    # ==================== Rescan ====================
+
+    @router.post("/rescan")
+    async def rescan_nam_models() -> Dict:
+        """Rescan NAM model directories."""
+        models = _scan_nam_models()
+        return {
+            "status": "ok",
+            "count": len(models),
+            "models": models
+        }
+
 except ImportError as e:
     # Create stub router if dependencies not available
     from fastapi import APIRouter
@@ -510,41 +547,19 @@ except ImportError as e:
 
     @router.get("/")
     async def get_nam_root():
-        # Use default path from config schema when dependencies unavailable
         return {
             "available": False,
-            "torch_available": False,
-            "cuda_available": False,
-            "mps_available": False,
-            "device": "cpu",
-            "gpu_info": None,
-            "model_directory": "~/.local/share/map2/nam",  # Default from config
-            "loaded_models": [],
-            "active_model": None,
-            "active_model_stats": None,
-            "total_models_found": 0,
             "error": "NAM dependencies not installed"
         }
 
     @router.get("/status")
     async def get_nam_status():
-        # Fallback status when NAM dependencies not available
         return {
             "available": False,
             "activeModel": None,
-            "mix": 100,
+            "loading": False,
             "bypass": False,
-            "inputLevel": -60,
-            "outputLevel": -60,
-            "peakInput": -60,
-            "peakOutput": -60,
-            "latency": 0,
+            "inputLevel": -100,
+            "outputLevel": -100,
             "availableModels": []
-        }
-
-    @router.get("/gpu")
-    async def get_gpu_status():
-        return {
-            "available": False,
-            "reason": "PyTorch not installed",
         }

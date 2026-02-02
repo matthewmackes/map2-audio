@@ -21,6 +21,7 @@ __all__ = [
     'AutomationTab',
     'NetworkTab',
     'WWWTab',
+    'StageViewScreen',
 ]
 
 # Lazy import mapping: attribute name -> (module, class_name)
@@ -41,6 +42,7 @@ _LAZY_IMPORTS = {
     'AutomationTab': ('.automation_tab', 'AutomationTab'),
     'NetworkTab': ('.network_tab', 'NetworkTab'),
     'WWWTab': ('.www_tab', 'WWWTab'),
+    'StageViewScreen': ('.stage_view_screen', 'StageViewScreen'),
 }
 
 # Cache for loaded classes

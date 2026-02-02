@@ -1,0 +1,47 @@
+[Unit]
+Description=MAP2 LCD Boot Status Display
+Documentation=https://github.com/yourusername/map2-audio
+DefaultDependencies=no
+Before=multi-user.target
+After=local-fs.target sysinit.target
+
+# Start early, before most services
+Wants=local-fs.target
+
+[Service]
+Type=simple
+# Run as root to access USB/I2C hardware
+User=root
+Group=root
+
+WorkingDirectory=/home/mm/map2-audio
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=HOME=/root
+
+# Start command - run as boot status service
+ExecStart=/home/mm/map2-audio/.venv/bin/python -m lcd.boot_display --service
+
+# Stop command - show shutdown message
+ExecStop=/home/mm/map2-audio/.venv/bin/python -m lcd.boot_display -m "System" "Shutting down..."
+
+# Restart only on failure, not on normal stop
+Restart=on-failure
+RestartSec=2
+
+# Resource limits - high priority for boot display
+Nice=-15
+OOMScoreAdjust=-500
+
+# Timeouts
+TimeoutStartSec=10
+TimeoutStopSec=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-lcd-boot
+
+[Install]
+WantedBy=sysinit.target

@@ -5,7 +5,7 @@
  * Each chain gets its own panel with header controls and HorizontalSignalChain.
  */
 
-import { Volume2, VolumeX, Disc } from 'lucide-react'
+import { Volume2, VolumeX, Disc, Trash2 } from 'lucide-react'
 import type { Chain, ChainPlugin, Plugin } from '../../../map2/types'
 import { HorizontalSignalChain } from '../HorizontalSignalChain'
 
@@ -35,6 +35,8 @@ export interface ChainPanelProps {
   onDeletePlugin?: (uri: string) => void
   onMuteToggle: () => void
   onSoloToggle: () => void
+  onDeleteFlow?: () => void
+  canDeleteFlow?: boolean
 }
 
 export function ChainPanel({
@@ -53,6 +55,8 @@ export function ChainPanel({
   onDeletePlugin,
   onMuteToggle,
   onSoloToggle,
+  onDeleteFlow,
+  canDeleteFlow = true,
 }: ChainPanelProps) {
   return (
     <div
@@ -140,7 +144,23 @@ export function ChainPanel({
             onToggleBypass={onToggleBypass}
             onDeletePlugin={onDeletePlugin}
             isActive={chain.is_active && !slot.muted}
+            chainColor={slot.color}
           />
+        )}
+
+        {/* Floating Delete Button */}
+        {onDeleteFlow && canDeleteFlow && (
+          <button
+            className="chain-panel-delete-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDeleteFlow()
+            }}
+            title={`Delete flow ${slot.label}`}
+            style={{ '--slot-color': slot.color } as React.CSSProperties}
+          >
+            <Trash2 size={16} />
+          </button>
         )}
       </div>
     </div>

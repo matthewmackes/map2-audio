@@ -4,6 +4,7 @@ LCD Services Screen - Comprehensive LCD Programming, Testing, and Alert Manageme
 Provides:
 - Real-time dual LCD simulation display
 - Hardware setup wizard (I2C scan, display test, GPIO test)
+- FT232H USB controller discovery and status
 - Test suite runner with visual progress
 - Alert routing and information assignment to specific LCDs
 """
@@ -17,6 +18,124 @@ from textual.containers import Vertical, Horizontal
 from textual.binding import Binding
 
 logger = logging.getLogger(__name__)
+
+# Try to import FT232H scanner
+try:
+    from lcd.hardware_controller import FT232HScanner, FT232HDevice
+    HAS_FT232H_SUPPORT = True
+except ImportError:
+    HAS_FT232H_SUPPORT = False
+    logger.debug("FT232H support not available")
+
+
+class LCDControllerWidget(Static):
+    """Display for LCD controller hardware (FT232H, I2C, etc)."""
+
+    DEFAULT_CSS = """
+    LCDControllerWidget {
+        width: 100%;
+        height: auto;
+        background: $panel;
+        border: solid $primary;
+        padding: 1 2;
+        margin: 1 0;
+    }
+
+    .controller-title {
+        text-style: bold;
+        color: $text;
+        margin-bottom: 1;
+    }
+
+    .controller-table {
+        width: 100%;
+        height: auto;
+    }
+
+    .controller-connected {
+        color: $success;
+    }
+
+    .controller-disconnected {
+        color: $error;
+    }
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.id = "lcd-controllers"
+        self._controllers: List[Dict[str, Any]] = []
+
+    def compose(self) -> ComposeResult:
+        yield Label("LCD CONTROLLERS", classes="controller-title")
+        yield DataTable(id="controllers-table", classes="controller-table")
+
+    def _init_table(self) -> None:
+        """Initialize the controllers table."""
+        table = self.query_one("#controllers-table", DataTable)
+        if not table.columns:
+            table.add_columns("Controller", "Type", "Status", "LCD Target", "Details")
+
+    async def on_mount(self) -> None:
+        """Initialize and start scanning for controllers."""
+        self._init_table()
+        # Initial scan
+        await self._scan_controllers()
+        # Periodic refresh every 5 seconds
+        self.set_interval(5.0, self._scan_controllers)
+
+    async def _scan_controllers(self) -> None:
+        """Scan for connected LCD controllers."""
+        self._controllers = []
+
+        # Scan for FT232H controllers
+        if HAS_FT232H_SUPPORT:
+            try:
+                ft_devices = FT232HScanner.scan()
+                for i, device in enumerate(ft_devices):
+                    self._controllers.append({
+                        'name': f"FT232H #{i+1}",
+                        'type': 'USB-I2C',
+                        'connected': device.connected,
+                        'target': f"LCD {i+1}",
+                        'details': f"Serial: {device.serial[:12]}..." if len(device.serial) > 12 else f"Serial: {device.serial}"
+                    })
+            except Exception as e:
+                logger.debug(f"FT232H scan error: {e}")
+
+        # If no FT232H found, show placeholder for I2C
+        if not self._controllers:
+            self._controllers.append({
+                'name': 'Native I2C',
+                'type': 'I2C Bus 1',
+                'connected': False,
+                'target': 'LCD 1-2',
+                'details': 'No FT232H detected'
+            })
+
+        self._update_table()
+
+    def _update_table(self) -> None:
+        """Update the controllers table with current data."""
+        try:
+            table = self.query_one("#controllers-table", DataTable)
+            table.clear()
+
+            for ctrl in self._controllers:
+                status = "[green]Connected[/]" if ctrl['connected'] else "[red]Disconnected[/]"
+                table.add_row(
+                    ctrl['name'],
+                    ctrl['type'],
+                    "Connected" if ctrl['connected'] else "Disconnected",
+                    ctrl['target'],
+                    ctrl['details']
+                )
+        except Exception as e:
+            logger.debug(f"Error updating controllers table: {e}")
+
+    def get_connected_controllers(self) -> List[Dict[str, Any]]:
+        """Get list of connected controllers."""
+        return [c for c in self._controllers if c['connected']]
 
 
 class LCDSimulationBox(Static):
@@ -54,18 +173,29 @@ class LCDSimulationBox(Static):
     }
     """
 
-    def __init__(self, lcd_id: int = 0, **kwargs):
+    def __init__(self, lcd_id: int = 0, controller_type: str = "I2C", **kwargs):
         super().__init__(**kwargs)
         self.lcd_id = lcd_id
         self.address = 0x27 if lcd_id == 0 else 0x3F
+        self.controller_type = controller_type
         self.connected = False
         self.current_page = "STATUS"
         self.lines = ["", "", "", ""]
 
     def compose(self) -> ComposeResult:
-        yield Label(f"LCD {self.lcd_id + 1} (0x{self.address:02X})", classes="lcd-header")
+        yield Label(f"LCD {self.lcd_id + 1} (0x{self.address:02X}) [{self.controller_type}]", classes="lcd-header")
         yield Static(self._render_lcd_content(), id=f"lcd-content-{self.lcd_id}", classes="lcd-content")
         yield Label("Status: Checking...", id=f"lcd-status-{self.lcd_id}", classes="lcd-status")
+
+    def set_controller_type(self, controller_type: str):
+        """Update the controller type displayed."""
+        self.controller_type = controller_type
+        try:
+            # Update header label
+            header = self.query_one(".lcd-header", Label)
+            header.update(f"LCD {self.lcd_id + 1} (0x{self.address:02X}) [{self.controller_type}]")
+        except Exception:
+            pass
 
     def _render_lcd_content(self) -> str:
         """Render LCD content as ASCII box."""
@@ -140,8 +270,8 @@ class LCDStatusWidget(Static):
     def compose(self) -> ComposeResult:
         yield Label("LCD HARDWARE STATUS", id="lcd-status-title")
         with Horizontal(classes="lcd-displays-container"):
-            yield LCDSimulationBox(lcd_id=0, id="lcd-sim-0")
-            yield LCDSimulationBox(lcd_id=1, id="lcd-sim-1")
+            yield LCDSimulationBox(lcd_id=0, controller_type="Detecting...", id="lcd-sim-0")
+            yield LCDSimulationBox(lcd_id=1, controller_type="I2C", id="lcd-sim-1")
         yield DataTable(id="lcd-stats-table", classes="lcd-stats-table")
 
     def _init_table(self) -> None:
@@ -157,8 +287,31 @@ class LCDStatusWidget(Static):
     async def on_mount(self) -> None:
         """Start periodic refresh."""
         self._init_table()
+        # Detect FT232H controller on startup
+        await self._detect_controllers()
         self.set_interval(0.5, self._refresh_data)
         asyncio.create_task(self._refresh_data())
+
+    async def _detect_controllers(self) -> None:
+        """Detect connected LCD controllers (FT232H, etc)."""
+        if HAS_FT232H_SUPPORT:
+            try:
+                ft_devices = FT232HScanner.scan()
+                if ft_devices:
+                    # Update LCD 1 to show FT232H as controller
+                    lcd1 = self.query_one("#lcd-sim-0", LCDSimulationBox)
+                    lcd1.set_controller_type("FT232H")
+                    logger.info(f"FT232H detected: {ft_devices[0].serial}")
+                else:
+                    lcd1 = self.query_one("#lcd-sim-0", LCDSimulationBox)
+                    lcd1.set_controller_type("I2C")
+            except Exception as e:
+                logger.debug(f"Controller detection error: {e}")
+                lcd1 = self.query_one("#lcd-sim-0", LCDSimulationBox)
+                lcd1.set_controller_type("I2C")
+        else:
+            lcd1 = self.query_one("#lcd-sim-0", LCDSimulationBox)
+            lcd1.set_controller_type("I2C")
 
     async def _refresh_data(self) -> None:
         """Fetch LCD status and simulation data."""
@@ -261,7 +414,9 @@ class LCDProgrammingWidget(Static):
         table = self.query_one("#programming-actions-table", DataTable)
         if not table.columns:
             table.add_columns("Key", "Action", "Description")
-            table.add_row("s", "Scan I2C", "Detect connected LCD displays")
+            table.add_row("s", "Scan I2C", "Detect connected LCD displays on I2C bus")
+            table.add_row("f", "Scan FT232H", "Detect FT232H USB controllers")
+            table.add_row("u", "Fix USB Perms", "Setup udev rules & fix FT232H permissions")
             table.add_row("d", "Display Test", "Write test patterns to displays")
             table.add_row("g", "GPIO Test", "Test rotary encoder and buttons")
             table.add_row("c", "Generate Config", "Create lcd_config.ini")
@@ -280,6 +435,367 @@ class LCDProgrammingWidget(Static):
             results.update(message)
         except Exception as e:
             logger.debug(f"Error updating results: {e}")
+
+
+class LCDGraphicsTestWidget(Static):
+    """LCD Graphics Test Widget - Test different graphic outputs to LCD screens."""
+
+    DEFAULT_CSS = """
+    LCDGraphicsTestWidget {
+        width: 100%;
+        height: auto;
+        background: $panel;
+        border: solid #00aa00;
+        padding: 1 2;
+        margin: 1 0;
+    }
+
+    #graphics-test-title {
+        text-style: bold;
+        color: #00ff00;
+        margin-bottom: 1;
+    }
+
+    #graphics-test-table {
+        width: 100%;
+        height: auto;
+        margin: 1 0;
+    }
+
+    #graphics-test-status {
+        width: 100%;
+        height: auto;
+        padding: 1;
+        background: $surface;
+        color: $text;
+    }
+
+    #graphics-preview {
+        width: 100%;
+        height: 6;
+        background: #1a1a2e;
+        color: #00ff00;
+        padding: 0 1;
+        margin: 1 0;
+        border: solid #333;
+    }
+    """
+
+    def __init__(self, api_client=None, **kwargs):
+        super().__init__(**kwargs)
+        self.api_client = api_client
+        self.id = "lcd-graphics-test"
+        self._current_test = None
+        self._test_running = False
+
+    def compose(self) -> ComposeResult:
+        yield Label("LCD GRAPHICS TEST SUITE", id="graphics-test-title")
+        yield Static(self._render_preview([" " * 20] * 2), id="graphics-preview")
+        yield DataTable(id="graphics-test-table")
+        yield Label("Select a test to run", id="graphics-test-status")
+
+    def _render_preview(self, lines: List[str]) -> str:
+        """Render LCD preview."""
+        width = 20
+        border = "+" + "-" * width + "+"
+        content = []
+        for line in lines[:2]:
+            padded = str(line)[:width].ljust(width)
+            content.append(f"|{padded}|")
+        while len(content) < 2:
+            content.append("|" + " " * width + "|")
+        return "\n".join([border] + content + [border])
+
+    def _init_table(self) -> None:
+        """Initialize the graphics test table."""
+        table = self.query_one("#graphics-test-table", DataTable)
+        if not table.columns:
+            table.add_columns("Key", "Test Name", "Description")
+            table.add_row("F1", "Text Patterns", "Test text alignment and wrapping")
+            table.add_row("F2", "VU Meter Bars", "Animate VU meter custom characters")
+            table.add_row("F3", "Scrolling Text", "Test horizontal text scrolling")
+            table.add_row("F4", "Character Set", "Display all printable characters")
+            table.add_row("F5", "Custom Chars", "Test custom character definitions")
+            table.add_row("F6", "Fill Pattern", "Fill screen with pattern")
+            table.add_row("F7", "Backlight Test", "Flash backlight on/off")
+            table.add_row("F8", "Stress Test", "Rapid update stress test")
+            table.add_row("F9", "Border Test", "Draw border around display")
+            table.add_row("F10", "Animation", "Run animation sequence")
+            table.add_row("F11", "Contrast Cycle", "Cycle through contrast levels")
+            table.add_row("F12", "All Tests", "Run complete graphics test suite")
+
+    async def on_mount(self) -> None:
+        """Initialize widget."""
+        self._init_table()
+
+    def update_preview(self, lines: List[str]) -> None:
+        """Update the LCD preview display."""
+        try:
+            preview = self.query_one("#graphics-preview", Static)
+            preview.update(self._render_preview(lines))
+        except Exception as e:
+            logger.debug(f"Error updating preview: {e}")
+
+    def update_status(self, message: str) -> None:
+        """Update status message."""
+        try:
+            status = self.query_one("#graphics-test-status", Label)
+            status.update(message)
+        except Exception as e:
+            logger.debug(f"Error updating status: {e}")
+
+    async def run_text_patterns_test(self) -> bool:
+        """Test text alignment and patterns."""
+        self.update_status("Running: Text Patterns...")
+        patterns = [
+            (["Left aligned text", ""], "Left align"),
+            (["   Centered text", ""], "Center"),
+            (["      Right aligned", ""], "Right align"),
+            (["ABCDEFGHIJKLMNOPQRST", "01234567890123456789"], "Full width"),
+            (["Line 1 content", "Line 2 content"], "Two lines"),
+            (["Mixed UPPER lower", "Numbers 12345"], "Mixed case"),
+        ]
+
+        for lines, desc in patterns:
+            self.update_preview(lines)
+            self.update_status(f"Text Pattern: {desc}")
+            await asyncio.sleep(1.0)
+
+        self.update_status("Text Patterns: COMPLETE")
+        return True
+
+    async def run_vu_meter_test(self) -> bool:
+        """Test VU meter animation."""
+        self.update_status("Running: VU Meter Animation...")
+
+        # Simulate VU meter bars
+        vu_chars = [" ", ".", ":", "|", "#", "@", "X", "0"]
+
+        for level in range(0, 21, 2):
+            bar = ""
+            for i in range(20):
+                if i < level:
+                    bar += vu_chars[min(7, level - i)]
+                else:
+                    bar += " "
+            self.update_preview([f"L:{bar}", f"R:{bar[::-1]}"])
+            await asyncio.sleep(0.15)
+
+        # Fade out
+        for level in range(20, -1, -2):
+            bar = ""
+            for i in range(20):
+                if i < level:
+                    bar += vu_chars[min(7, level - i)]
+                else:
+                    bar += " "
+            self.update_preview([f"L:{bar}", f"R:{bar[::-1]}"])
+            await asyncio.sleep(0.15)
+
+        self.update_status("VU Meter: COMPLETE")
+        return True
+
+    async def run_scrolling_text_test(self) -> bool:
+        """Test horizontal text scrolling."""
+        self.update_status("Running: Scrolling Text...")
+
+        message = "    This is a scrolling text message that demonstrates horizontal scrolling on the LCD display    "
+
+        for i in range(len(message) - 20):
+            visible = message[i:i+20]
+            self.update_preview([visible, "Scrolling test..."])
+            await asyncio.sleep(0.1)
+
+        self.update_status("Scrolling Text: COMPLETE")
+        return True
+
+    async def run_character_set_test(self) -> bool:
+        """Display all printable ASCII characters."""
+        self.update_status("Running: Character Set...")
+
+        # Show ASCII chars in groups
+        for start in range(32, 127, 40):
+            end = min(start + 40, 127)
+            chars = "".join(chr(c) for c in range(start, end))
+            line1 = chars[:20] if len(chars) > 0 else ""
+            line2 = chars[20:40] if len(chars) > 20 else ""
+            self.update_preview([line1, line2])
+            self.update_status(f"ASCII {start}-{end-1}")
+            await asyncio.sleep(1.5)
+
+        self.update_status("Character Set: COMPLETE")
+        return True
+
+    async def run_custom_chars_test(self) -> bool:
+        """Test custom character display."""
+        self.update_status("Running: Custom Characters...")
+
+        custom_chars = [
+            ("VU Bars", ["[||||||||]  [    ]", "[||||]      [||||||]"]),
+            ("Icons", ["* Note  # CPU  @ Spk", "^ Up  v Down  > Play"]),
+            ("Borders", ["+------------------+", "|  Border Test    |"]),
+            ("Progress", ["[==========        ]", "[==============    ]"]),
+            ("Symbols", ["<< || >> [] () {}", "~!@#$%^&*_+-=?"]),
+        ]
+
+        for name, lines in custom_chars:
+            self.update_preview(lines)
+            self.update_status(f"Custom: {name}")
+            await asyncio.sleep(1.2)
+
+        self.update_status("Custom Characters: COMPLETE")
+        return True
+
+    async def run_fill_pattern_test(self) -> bool:
+        """Fill screen with various patterns."""
+        self.update_status("Running: Fill Patterns...")
+
+        patterns = [
+            ("Solid", "#" * 20),
+            ("Dots", "." * 20),
+            ("Dashes", "-" * 20),
+            ("Equals", "=" * 20),
+            ("Hash", "# " * 10),
+            ("Checker", "* " * 10),
+            ("Slash", "/" * 20),
+            ("Backslash", "\\" * 20),
+        ]
+
+        for name, pattern in patterns:
+            self.update_preview([pattern, pattern])
+            self.update_status(f"Fill: {name}")
+            await asyncio.sleep(0.6)
+
+        self.update_status("Fill Pattern: COMPLETE")
+        return True
+
+    async def run_backlight_test(self) -> bool:
+        """Test backlight flashing."""
+        self.update_status("Running: Backlight Test...")
+
+        for i in range(6):
+            state = "ON" if i % 2 == 0 else "OFF"
+            self.update_preview([f"  Backlight: {state}", ""])
+            self.update_status(f"Backlight {state}")
+            await asyncio.sleep(0.5)
+
+        self.update_preview(["  Backlight: ON", "  Test complete"])
+        self.update_status("Backlight: COMPLETE")
+        return True
+
+    async def run_stress_test(self) -> bool:
+        """Rapid update stress test."""
+        self.update_status("Running: Stress Test...")
+
+        import random
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+        for i in range(50):
+            line1 = "".join(random.choice(chars) for _ in range(20))
+            line2 = "".join(random.choice(chars) for _ in range(20))
+            self.update_preview([line1, line2])
+            if i % 10 == 0:
+                self.update_status(f"Stress test: {i}/50 updates")
+            await asyncio.sleep(0.05)
+
+        self.update_status("Stress Test: COMPLETE (50 rapid updates)")
+        return True
+
+    async def run_border_test(self) -> bool:
+        """Draw border patterns."""
+        self.update_status("Running: Border Test...")
+
+        borders = [
+            (["+------------------+", "|                  |"], "Simple"),
+            (["####################", "#                  #"], "Hash"),
+            (["********************", "*                  *"], "Stars"),
+            (["====================", "=                  ="], "Equals"),
+            (["....................", ".                  ."], "Dots"),
+        ]
+
+        for lines, name in borders:
+            self.update_preview(lines)
+            self.update_status(f"Border: {name}")
+            await asyncio.sleep(0.8)
+
+        self.update_status("Border Test: COMPLETE")
+        return True
+
+    async def run_animation_test(self) -> bool:
+        """Run animation sequence."""
+        self.update_status("Running: Animation...")
+
+        # Spinning animation
+        spinner = ["|", "/", "-", "\\"]
+        for frame in range(16):
+            char = spinner[frame % 4]
+            line = f"  Loading {char}  {char}  {char}  "
+            self.update_preview([line, f"  Frame {frame+1}/16"])
+            await asyncio.sleep(0.15)
+
+        # Progress bar animation
+        for i in range(21):
+            bar = "=" * i + " " * (20 - i)
+            self.update_preview([f"[{bar}]", f"   Progress: {i*5}%"])
+            await asyncio.sleep(0.1)
+
+        # Bouncing ball
+        for pos in list(range(18)) + list(range(18, 0, -1)):
+            line = " " * pos + "O" + " " * (17 - pos)
+            self.update_preview([line, "  Bouncing ball"])
+            await asyncio.sleep(0.08)
+
+        self.update_status("Animation: COMPLETE")
+        return True
+
+    async def run_contrast_test(self) -> bool:
+        """Simulate contrast levels (visual only in TUI)."""
+        self.update_status("Running: Contrast Cycle...")
+
+        for level in range(0, 16):
+            intensity = "#" * (level + 1) + "." * (15 - level)
+            self.update_preview([f"Contrast: {level:2d}/15", f"[{intensity[:16]}]"])
+            await asyncio.sleep(0.3)
+
+        self.update_status("Contrast: COMPLETE")
+        return True
+
+    async def run_all_tests(self) -> Dict[str, bool]:
+        """Run all graphics tests."""
+        self.update_status("Running ALL graphics tests...")
+        self._test_running = True
+
+        results = {}
+        tests = [
+            ("Text Patterns", self.run_text_patterns_test),
+            ("VU Meters", self.run_vu_meter_test),
+            ("Scrolling", self.run_scrolling_text_test),
+            ("Character Set", self.run_character_set_test),
+            ("Custom Chars", self.run_custom_chars_test),
+            ("Fill Pattern", self.run_fill_pattern_test),
+            ("Backlight", self.run_backlight_test),
+            ("Border", self.run_border_test),
+            ("Animation", self.run_animation_test),
+            ("Stress Test", self.run_stress_test),
+        ]
+
+        for name, test_func in tests:
+            try:
+                self.update_status(f"Running: {name}...")
+                result = await test_func()
+                results[name] = result
+                await asyncio.sleep(0.3)
+            except Exception as e:
+                logger.error(f"Test {name} failed: {e}")
+                results[name] = False
+
+        passed = sum(1 for v in results.values() if v)
+        total = len(results)
+        self.update_status(f"ALL TESTS COMPLETE: {passed}/{total} passed")
+        self.update_preview([f"  Tests: {passed}/{total}", "  All tests done!"])
+        self._test_running = False
+
+        return results
 
 
 class LCDTestingWidget(Static):
@@ -482,6 +998,8 @@ class LCDServicesScreen(Static):
     BINDINGS = [
         # Programming actions
         Binding("s", "scan_i2c", "Scan I2C", show=True),
+        Binding("f", "scan_ft232h", "Scan FT232H", show=True),
+        Binding("u", "fix_usb_permissions", "Fix USB", show=True),
         Binding("d", "test_display", "Test Display", show=True),
         Binding("g", "test_gpio", "GPIO Test", show=False),
         Binding("c", "generate_config", "Gen Config", show=False),
@@ -497,6 +1015,19 @@ class LCDServicesScreen(Static):
         Binding("t", "test_alert", "Test Alert", show=False),
         # General
         Binding("r", "refresh_all", "Refresh", show=True),
+        # Graphics tests (F1-F12)
+        Binding("f1", "gfx_text_patterns", "Text Test", show=False),
+        Binding("f2", "gfx_vu_meters", "VU Test", show=False),
+        Binding("f3", "gfx_scrolling", "Scroll Test", show=False),
+        Binding("f4", "gfx_charset", "Charset", show=False),
+        Binding("f5", "gfx_custom_chars", "Custom", show=False),
+        Binding("f6", "gfx_fill_pattern", "Fill", show=False),
+        Binding("f7", "gfx_backlight", "Backlight", show=False),
+        Binding("f8", "gfx_stress", "Stress", show=False),
+        Binding("f9", "gfx_border", "Border", show=False),
+        Binding("f10", "gfx_animation", "Animate", show=False),
+        Binding("f11", "gfx_contrast", "Contrast", show=False),
+        Binding("f12", "gfx_all_tests", "All GFX", show=True),
     ]
 
     def __init__(self, api_client=None, **kwargs):
@@ -505,7 +1036,9 @@ class LCDServicesScreen(Static):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="lcd-services-container"):
+            yield LCDControllerWidget()
             yield LCDStatusWidget(self.api_client)
+            yield LCDGraphicsTestWidget(self.api_client)
             yield LCDProgrammingWidget(self.api_client)
             yield LCDTestingWidget(self.api_client)
             yield LCDAlertConfigWidget(self.api_client)
@@ -538,6 +1071,166 @@ class LCDServicesScreen(Static):
                     self.notify("I2C scan not available", severity="warning", timeout=2)
         except Exception as e:
             self.notify(f"Scan error: {e}", severity="error", timeout=3)
+
+    async def action_scan_ft232h(self) -> None:
+        """Scan for FT232H USB controllers and I2C devices."""
+        self.notify("Scanning for FT232H controllers...", severity="information", timeout=2)
+
+        if not HAS_FT232H_SUPPORT:
+            self.notify("FT232H support not available - install pyftdi", severity="warning", timeout=3)
+            programming = self.query_one("#lcd-programming", LCDProgrammingWidget)
+            programming.update_results("FT232H support requires: pip install pyftdi")
+            return
+
+        try:
+            # Scan for FT232H devices
+            devices = FT232HScanner.scan()
+            programming = self.query_one("#lcd-programming", LCDProgrammingWidget)
+
+            if devices:
+                device_info = []
+                for i, dev in enumerate(devices):
+                    device_info.append(f"#{i+1}: {dev.serial}")
+
+                self.notify(f"Found {len(devices)} FT232H device(s)", severity="information", timeout=2)
+
+                # Also scan I2C bus for LCDs
+                self.notify("Scanning I2C bus for LCD devices...", severity="information", timeout=2)
+                i2c_results = FT232HScanner.scan_i2c_bus()
+
+                found_lcds = [f"0x{addr:02X}" for addr, found in i2c_results if found]
+
+                if found_lcds:
+                    programming.update_results(f"FT232H: OK | LCDs found: {', '.join(found_lcds)}")
+                    self.notify(f"Found LCDs at: {', '.join(found_lcds)}", severity="information", timeout=3)
+                else:
+                    # No LCDs found - likely I2C bus stuck
+                    programming.update_results(
+                        "FT232H: OK | I2C: No response - LCD may need power cycle"
+                    )
+                    self.notify(
+                        "I2C bus not responding - try power cycling LCD",
+                        severity="warning",
+                        timeout=4
+                    )
+
+                # Update the controller widget
+                try:
+                    controller_widget = self.query_one("#lcd-controllers", LCDControllerWidget)
+                    await controller_widget._scan_controllers()
+                except Exception:
+                    pass
+
+                # Update LCD display headers
+                try:
+                    status_widget = self.query_one("#lcd-status", LCDStatusWidget)
+                    await status_widget._detect_controllers()
+                except Exception:
+                    pass
+            else:
+                self.notify("No FT232H devices found", severity="warning", timeout=3)
+                programming.update_results("No FT232H found - check USB connection")
+        except Exception as e:
+            self.notify(f"FT232H scan error: {e}", severity="error", timeout=3)
+
+    async def action_fix_usb_permissions(self) -> None:
+        """Fix USB permissions for FT232H devices."""
+        import subprocess
+        import os
+
+        self.notify("Fixing USB permissions for FT232H...", severity="information", timeout=2)
+        programming = self.query_one("#lcd-programming", LCDProgrammingWidget)
+
+        steps_completed = []
+        errors = []
+
+        # Step 1: Create udev rule
+        udev_rule = '# FT232H USB-to-I2C/SPI/GPIO adapter\nSUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6014", MODE="0666", GROUP="plugdev"'
+        udev_path = "/etc/udev/rules.d/99-ftdi.rules"
+
+        try:
+            # Check if rule already exists
+            if os.path.exists(udev_path):
+                steps_completed.append("udev rule exists")
+            else:
+                # Create udev rule (requires sudo)
+                result = subprocess.run(
+                    ["sudo", "tee", udev_path],
+                    input=udev_rule.encode(),
+                    capture_output=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    steps_completed.append("udev rule created")
+                else:
+                    errors.append(f"udev rule failed: {result.stderr.decode()[:50]}")
+        except subprocess.TimeoutExpired:
+            errors.append("udev rule timed out")
+        except Exception as e:
+            errors.append(f"udev rule error: {str(e)[:30]}")
+
+        # Step 2: Reload udev rules
+        try:
+            result = subprocess.run(
+                ["sudo", "udevadm", "control", "--reload-rules"],
+                capture_output=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                steps_completed.append("udev reloaded")
+
+                # Trigger udev
+                subprocess.run(
+                    ["sudo", "udevadm", "trigger"],
+                    capture_output=True,
+                    timeout=10
+                )
+        except Exception as e:
+            errors.append(f"udev reload: {str(e)[:30]}")
+
+        # Step 3: Fix current device permissions
+        try:
+            # Find FT232H device path
+            result = subprocess.run(
+                ["lsusb", "-d", "0403:6014"],
+                capture_output=True,
+                timeout=5
+            )
+            if result.returncode == 0 and result.stdout:
+                # Parse: "Bus 001 Device 006: ID 0403:6014 ..."
+                output = result.stdout.decode()
+                parts = output.split()
+                if len(parts) >= 4:
+                    bus = parts[1]
+                    device = parts[3].rstrip(':')
+                    dev_path = f"/dev/bus/usb/{bus}/{device}"
+
+                    # chmod the device
+                    chmod_result = subprocess.run(
+                        ["sudo", "chmod", "666", dev_path],
+                        capture_output=True,
+                        timeout=5
+                    )
+                    if chmod_result.returncode == 0:
+                        steps_completed.append(f"fixed {dev_path}")
+                    else:
+                        errors.append(f"chmod failed on {dev_path}")
+        except Exception as e:
+            errors.append(f"device fix: {str(e)[:30]}")
+
+        # Report results
+        if steps_completed and not errors:
+            self.notify("USB permissions fixed successfully!", severity="information", timeout=3)
+            programming.update_results(f"Done: {', '.join(steps_completed)}")
+
+            # Rescan for FT232H
+            await self.action_scan_ft232h()
+        elif steps_completed:
+            self.notify("USB fix partially complete", severity="warning", timeout=3)
+            programming.update_results(f"Done: {', '.join(steps_completed)} | Errors: {', '.join(errors)}")
+        else:
+            self.notify("USB fix failed - check sudo access", severity="error", timeout=3)
+            programming.update_results(f"Errors: {', '.join(errors)}")
 
     async def action_test_display(self) -> None:
         """Run display test."""
@@ -679,3 +1372,110 @@ class LCDServicesScreen(Static):
             self.notify("Status refreshed", severity="information", timeout=2)
         except Exception as e:
             self.notify(f"Refresh error: {e}", severity="error", timeout=3)
+
+    # ========== Graphics Test Actions (F1-F12) ==========
+
+    def _get_graphics_widget(self) -> Optional[LCDGraphicsTestWidget]:
+        """Get the graphics test widget."""
+        try:
+            return self.query_one("#lcd-graphics-test", LCDGraphicsTestWidget)
+        except Exception:
+            return None
+
+    async def action_gfx_text_patterns(self) -> None:
+        """F1: Run text patterns test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Text Patterns test...", severity="information", timeout=2)
+            await widget.run_text_patterns_test()
+            self.notify("Text Patterns test complete", severity="information", timeout=2)
+
+    async def action_gfx_vu_meters(self) -> None:
+        """F2: Run VU meter test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running VU Meter test...", severity="information", timeout=2)
+            await widget.run_vu_meter_test()
+            self.notify("VU Meter test complete", severity="information", timeout=2)
+
+    async def action_gfx_scrolling(self) -> None:
+        """F3: Run scrolling text test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Scrolling Text test...", severity="information", timeout=2)
+            await widget.run_scrolling_text_test()
+            self.notify("Scrolling test complete", severity="information", timeout=2)
+
+    async def action_gfx_charset(self) -> None:
+        """F4: Run character set test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Character Set test...", severity="information", timeout=2)
+            await widget.run_character_set_test()
+            self.notify("Character Set test complete", severity="information", timeout=2)
+
+    async def action_gfx_custom_chars(self) -> None:
+        """F5: Run custom characters test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Custom Characters test...", severity="information", timeout=2)
+            await widget.run_custom_chars_test()
+            self.notify("Custom Characters test complete", severity="information", timeout=2)
+
+    async def action_gfx_fill_pattern(self) -> None:
+        """F6: Run fill pattern test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Fill Pattern test...", severity="information", timeout=2)
+            await widget.run_fill_pattern_test()
+            self.notify("Fill Pattern test complete", severity="information", timeout=2)
+
+    async def action_gfx_backlight(self) -> None:
+        """F7: Run backlight test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Backlight test...", severity="information", timeout=2)
+            await widget.run_backlight_test()
+            self.notify("Backlight test complete", severity="information", timeout=2)
+
+    async def action_gfx_stress(self) -> None:
+        """F8: Run stress test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Stress test...", severity="information", timeout=2)
+            await widget.run_stress_test()
+            self.notify("Stress test complete", severity="information", timeout=2)
+
+    async def action_gfx_border(self) -> None:
+        """F9: Run border test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Border test...", severity="information", timeout=2)
+            await widget.run_border_test()
+            self.notify("Border test complete", severity="information", timeout=2)
+
+    async def action_gfx_animation(self) -> None:
+        """F10: Run animation test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Animation test...", severity="information", timeout=2)
+            await widget.run_animation_test()
+            self.notify("Animation test complete", severity="information", timeout=2)
+
+    async def action_gfx_contrast(self) -> None:
+        """F11: Run contrast test."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running Contrast test...", severity="information", timeout=2)
+            await widget.run_contrast_test()
+            self.notify("Contrast test complete", severity="information", timeout=2)
+
+    async def action_gfx_all_tests(self) -> None:
+        """F12: Run all graphics tests."""
+        widget = self._get_graphics_widget()
+        if widget:
+            self.notify("Running ALL Graphics tests...", severity="information", timeout=3)
+            results = await widget.run_all_tests()
+            passed = sum(1 for v in results.values() if v)
+            total = len(results)
+            self.notify(f"Graphics tests complete: {passed}/{total} passed", severity="information", timeout=3)

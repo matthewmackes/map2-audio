@@ -27,6 +27,12 @@ import type {
   MIDIActionType,
   MIDITriggerType,
   ChainMIDIConfig,
+  MIDIDeviceProfile,
+  ExpressionCalibration,
+  DFUStatus,
+  DFUInstructions,
+  ProfileApplyResult,
+  MIDIExpressionCurve,
   IRStatus,
   NAMStatus,
   AutomationLane,
@@ -215,7 +221,180 @@ export const audioApi = {
   getPluginLevels: () => fetchJson<{ plugins: PluginLevels[] }>(`${API_BASE}/audio/levels/plugins`),
 
   getPipedalMetrics: () => fetchJson<Record<string, unknown>>(`${API_BASE}/audio/pipedal`),
+
+  configure: (config: { sampleRate?: number; bufferSize?: number }) => {
+    const params = new URLSearchParams();
+    if (config.sampleRate) params.append('sample_rate', config.sampleRate.toString());
+    if (config.bufferSize) params.append('buffer_size', config.bufferSize.toString());
+    return fetchJson<{
+      success: boolean;
+      message: string;
+      updated_settings: Record<string, number>;
+      current_config: { sample_rate: number; buffer_size: number; cpu_load: number };
+    }>(`${API_BASE}/audio/config?${params.toString()}`, { method: 'POST' });
+  },
+
+  restart: () => fetchJson<{ success: boolean; message: string }>(`${API_BASE}/audio/restart`, { method: 'POST' }),
+
+  getHealth: () => fetchJson<AudioHealth>(`${API_BASE}/audio/health`),
+
+  getXruns: () => fetchJson<XrunStats>(`${API_BASE}/audio/health/xruns`),
+
+  getSignalStatus: () => fetchJson<SignalStatus>(`${API_BASE}/audio/health/signal`),
+
+  getBufferPresets: () => fetchJson<BufferPreset[]>(`${API_BASE}/audio/buffer-presets`),
+
+  getJuceMetrics: () => fetchJson<JuceMetrics>(`${API_BASE}/audio/juce`),
+
+  unmute: () => fetchJson<{ success: boolean }>(`${API_BASE}/audio/health/unmute`, { method: 'POST' }),
 };
+
+// Audio health types
+export interface AudioHealth {
+  status: 'healthy' | 'warning' | 'critical';
+  running: boolean;
+  auto_muted: boolean;
+  xruns_last_minute: number;
+  signal_detected: boolean;
+  cpu_load: number;
+  latency_ms: number;
+  alerts: string[];
+}
+
+export interface XrunStats {
+  total: number;
+  last_minute: number;
+  last_hour: number;
+  last_timestamp?: string;
+}
+
+export interface SignalStatus {
+  input_detected: boolean;
+  output_active: boolean;
+  peak_input: number;
+  peak_output: number;
+}
+
+export interface BufferPreset {
+  size: number;
+  latency_ms: number;
+  label: string;
+  recommended?: boolean;
+}
+
+export interface JuceMetrics {
+  engine_version: string;
+  audio_device: string;
+  input_channels: number;
+  output_channels: number;
+  sample_rate: number;
+  buffer_size: number;
+  cpu_load: number;
+  available_devices?: string[];
+}
+
+// Diagnostics API
+export const diagnosticsApi = {
+  // Run audio loopback test
+  runLoopbackTest: () =>
+    fetchJson<DiagnosticResult>(`${API_BASE}/audio/test`, { method: 'POST' }),
+
+  // Get ALSA device info
+  getAlsaInfo: () => fetchJson<AlsaDeviceInfo>(`${API_BASE}/audio/alsa/info`),
+
+  // Reset ALSA state
+  resetAlsaState: () =>
+    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/audio/alsa/reset`, { method: 'POST' }),
+
+  // Enumerate USB devices
+  getUsbDevices: () => fetchJson<UsbDevice[]>(`${API_BASE}/usb/devices/list`),
+
+  // Reset USB device
+  resetUsbDevice: (deviceId: string) =>
+    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/usb/reset/${deviceId}`, { method: 'POST' }),
+
+  // Run full diagnostic suite
+  runFullDiagnostic: () =>
+    fetchJson<FullDiagnosticResult>(`${API_BASE}/audio/diagnostics/full`, { method: 'POST' }),
+
+  // Clear XRun counter
+  clearXruns: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/audio/health/xruns/clear`, { method: 'POST' }),
+
+  // Test specific sample rate
+  testSampleRate: (rate: number) =>
+    fetchJson<DiagnosticResult>(`${API_BASE}/audio/test/sample-rate?rate=${rate}`, { method: 'POST' }),
+
+  // Test buffer stability
+  testBufferStability: (bufferSize: number, duration: number) =>
+    fetchJson<BufferStabilityResult>(
+      `${API_BASE}/audio/test/buffer-stability?buffer_size=${bufferSize}&duration=${duration}`,
+      { method: 'POST' }
+    ),
+};
+
+export interface DiagnosticResult {
+  success: boolean;
+  test_name: string;
+  duration_ms: number;
+  latency_ms?: number;
+  quality_score?: number;
+  xruns_detected: number;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+export interface AlsaDeviceInfo {
+  cards: AlsaCard[];
+  current_device: string;
+  driver: string;
+  state: 'running' | 'stopped' | 'error';
+}
+
+export interface AlsaCard {
+  id: number;
+  name: string;
+  driver: string;
+  devices: AlsaSubDevice[];
+}
+
+export interface AlsaSubDevice {
+  id: number;
+  name: string;
+  type: 'playback' | 'capture';
+  channels: number;
+  sample_rates: number[];
+  formats: string[];
+}
+
+export interface UsbDevice {
+  bus: number;
+  device: number;
+  vendor_id: string;
+  product_id: string;
+  manufacturer: string;
+  product: string;
+  serial?: string;
+  is_audio: boolean;
+}
+
+export interface FullDiagnosticResult {
+  timestamp: string;
+  overall_status: 'pass' | 'warning' | 'fail';
+  tests: DiagnosticResult[];
+  recommendations: string[];
+}
+
+export interface BufferStabilityResult {
+  success: boolean;
+  buffer_size: number;
+  duration_seconds: number;
+  xruns: number;
+  avg_cpu_load: number;
+  peak_cpu_load: number;
+  stability_score: number;
+  recommendation: string;
+}
 
 // ==================== USB / Device API ====================
 
@@ -696,6 +875,93 @@ export const midiApiV2 = {
       `${API_BASE}/v2/midi/sync`,
       { method: 'POST' }
     ),
+
+  // ========== Device Profiles ==========
+  getDeviceProfiles: () =>
+    fetchJson<{ profiles: MIDIDeviceProfile[]; count: number; active_profile_id: string | null }>(
+      `${API_BASE}/v2/midi/device-profiles`
+    ),
+
+  getDeviceProfile: (profileId: string) =>
+    fetchJson<MIDIDeviceProfile>(`${API_BASE}/v2/midi/device-profiles/${profileId}`),
+
+  applyDeviceProfile: (profileId: string, clearExisting = true) =>
+    fetchJson<ProfileApplyResult>(
+      `${API_BASE}/v2/midi/device-profiles/apply`,
+      { method: 'POST', body: JSON.stringify({ profile_id: profileId, clear_existing: clearExisting }) }
+    ),
+
+  detectDeviceProfile: (deviceName: string) =>
+    fetchJson<{ detected: boolean; profile_id: string | null; profile?: MIDIDeviceProfile; suggestion?: string }>(
+      `${API_BASE}/v2/midi/device-profiles/detect?device_name=${encodeURIComponent(deviceName)}`
+    ),
+
+  getActiveProfile: () =>
+    fetchJson<{ active: boolean; profile: MIDIDeviceProfile | null }>(
+      `${API_BASE}/v2/midi/device-profiles/active`
+    ),
+
+  // ========== Bank Management ==========
+  getCurrentBank: () =>
+    fetchJson<{ current_bank: number; max_banks: number; items_per_bank: number; pc_offset: number }>(
+      `${API_BASE}/v2/midi/banks/current`
+    ),
+
+  bankUp: () =>
+    fetchJson<{ bank: number; max_bank: number; pc_offset: number }>(
+      `${API_BASE}/v2/midi/banks/up`,
+      { method: 'POST' }
+    ),
+
+  bankDown: () =>
+    fetchJson<{ bank: number; max_bank: number; pc_offset: number }>(
+      `${API_BASE}/v2/midi/banks/down`,
+      { method: 'POST' }
+    ),
+
+  setBank: (bank: number) =>
+    fetchJson<{ bank: number; max_bank: number; pc_offset: number }>(
+      `${API_BASE}/v2/midi/banks/set?bank=${bank}`,
+      { method: 'POST' }
+    ),
+
+  // ========== Expression Pedal Calibration ==========
+  getExpressionCalibrations: () =>
+    fetchJson<{ calibrations: Record<string, ExpressionCalibration> }>(
+      `${API_BASE}/v2/midi/expression/calibration`
+    ),
+
+  getExpressionCalibration: (pedalId: string) =>
+    fetchJson<ExpressionCalibration>(
+      `${API_BASE}/v2/midi/expression/calibration/${pedalId}`
+    ),
+
+  updateExpressionCalibration: (params: {
+    pedal_id: string;
+    min_raw?: number;
+    max_raw?: number;
+    deadzone_low?: number;
+    deadzone_high?: number;
+    curve?: MIDIExpressionCurve;
+    invert?: boolean;
+  }) =>
+    fetchJson<{ status: string; calibration: ExpressionCalibration }>(
+      `${API_BASE}/v2/midi/expression/calibration`,
+      { method: 'POST', body: JSON.stringify(params) }
+    ),
+
+  // ========== Firmware Update ==========
+  getDFUStatus: () =>
+    fetchJson<DFUStatus>(`${API_BASE}/v2/midi/firmware/dfu-status`),
+
+  getDFUInstructions: (profileId: string) =>
+    fetchJson<DFUInstructions>(`${API_BASE}/v2/midi/firmware/dfu-instructions/${profileId}`),
+
+  flashFirmware: (profileId: string, firmwarePath: string) =>
+    fetchJson<{ success: boolean; message?: string; error?: string; output?: string }>(
+      `${API_BASE}/v2/midi/firmware/flash`,
+      { method: 'POST', body: JSON.stringify({ profile_id: profileId, firmware_path: firmwarePath }) }
+    ),
 };
 
 // ==================== IR API ====================
@@ -942,6 +1208,66 @@ export const namApi = {
       throw new Error(`Upload failed: ${response.statusText}`)
     }
     return response.json() as Promise<{ status: string; model: { id: number; name: string; file_path: string } }>
+  },
+};
+
+// ==================== SoundFont API ====================
+
+import type {
+  SoundFontListResponse,
+  SoundFontLibrariesResponse,
+  SoundFontCategoriesResponse,
+} from '../app/types/library'
+
+export const soundfontApi = {
+  listSoundfonts: (params?: { limit?: number; offset?: number; category?: string; format?: string }) => {
+    const query = new URLSearchParams()
+    if (params?.limit) query.set('limit', params.limit.toString())
+    if (params?.offset) query.set('offset', params.offset.toString())
+    if (params?.category) query.set('category', params.category)
+    if (params?.format) query.set('format', params.format)
+    const queryString = query.toString()
+    return fetchJson<SoundFontListResponse>(`${API_BASE}/soundfonts/${queryString ? `?${queryString}` : ''}`)
+  },
+
+  getLibraries: () =>
+    fetchJson<SoundFontLibrariesResponse>(`${API_BASE}/soundfonts/libraries/`),
+
+  getCategories: () =>
+    fetchJson<SoundFontCategoriesResponse>(`${API_BASE}/soundfonts/categories/`),
+
+  startDownload: (request: DownloadRequest) =>
+    fetchJson<{ status: string; sources: string[]; parallel: number; skip_existing: boolean }>(
+      `${API_BASE}/soundfonts/download`,
+      { method: 'POST', body: JSON.stringify(request) }
+    ),
+
+  getDownloadStatus: () =>
+    fetchJson<DownloadProgress>(`${API_BASE}/soundfonts/download/status`),
+
+  cancelDownload: () =>
+    fetchJson<{ status: string }>(`${API_BASE}/soundfonts/download/cancel`, { method: 'POST' }),
+
+  resetDownload: () =>
+    fetchJson<{ status: string }>(`${API_BASE}/soundfonts/download/reset`, { method: 'POST' }),
+
+  retrySource: (source: string) =>
+    fetchJson<{ status: string; source: string }>(
+      `${API_BASE}/soundfonts/download/retry/${encodeURIComponent(source)}`,
+      { method: 'POST' }
+    ),
+
+  upload: async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await fetch(`${API_BASE}/soundfonts/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`)
+    }
+    return response.json() as Promise<{ status: string; filename: string; format: string; path: string }>
   },
 };
 
@@ -1557,205 +1883,6 @@ export const foldersApi = {
     }>(`${API_BASE}/folders/network-shares`),
 };
 
-// ==================== VST3 API ====================
-
-export interface VST3Plugin {
-  uri: string;
-  name: string;
-  category: string;
-  author: string;
-  description: string;
-  format: string;
-  in_ports: number;
-  out_ports: number;
-  has_ui: boolean;
-  parameters: unknown[];
-  path?: string;
-  compatible?: boolean;
-  platform?: 'linux' | 'windows' | 'macos' | 'unknown';
-}
-
-export interface VST3DiscoverResponse {
-  plugins: VST3Plugin[];
-  count: number;
-  cached?: boolean;
-  error?: string;
-}
-
-export const vst3Api = {
-  discover: (refresh = false) =>
-    fetchJson<VST3DiscoverResponse>(`${API_BASE}/vst3/discover${refresh ? '?refresh=true' : ''}`),
-
-  list: () =>
-    fetchJson<{ plugins: VST3Plugin[]; count: number }>(`${API_BASE}/vst3/plugins`),
-
-  get: (uri: string) =>
-    fetchJson<VST3Plugin>(`${API_BASE}/vst3/plugin?uri=${encodeURIComponent(uri)}`),
-
-  search: (query?: string, category?: string, author?: string) => {
-    const params = new URLSearchParams();
-    if (query) params.set('query', query);
-    if (category) params.set('category', category);
-    if (author) params.set('author', author);
-    const queryString = params.toString();
-    return fetchJson<{ results: VST3Plugin[]; count: number; query?: string; category?: string; author?: string }>(
-      `${API_BASE}/vst3/search${queryString ? `?${queryString}` : ''}`
-    );
-  },
-
-  getCategories: () =>
-    fetchJson<{ categories: string[]; count: number }>(`${API_BASE}/vst3/categories`),
-
-  refresh: () =>
-    fetchJson<{ status: string; message: string; plugin_count: number }>(`${API_BASE}/vst3/refresh`, { method: 'POST' }),
-
-  clearCache: () =>
-    fetchJson<{ status: string; message: string }>(`${API_BASE}/vst3/clear-cache`, { method: 'POST' }),
-
-  getCacheStatus: () =>
-    fetchJson<{ cached_plugins: number; cache_loaded: boolean; cache_timestamp: number; vst3_paths: string[] }>(
-      `${API_BASE}/vst3/cache-status`
-    ),
-
-  getPaths: () =>
-    fetchJson<{ paths: Array<{ path: string; exists: boolean; plugin_count: number }> }>(`${API_BASE}/vst3/paths`),
-
-  load: (uri: string) =>
-    fetchJson<{ status: string; instance: unknown }>(`${API_BASE}/vst3/load?uri=${encodeURIComponent(uri)}`, {
-      method: 'POST',
-    }),
-
-  unload: (instanceId: string) =>
-    fetchJson<{ status: string; message: string }>(
-      `${API_BASE}/vst3/unload?instance_id=${encodeURIComponent(instanceId)}`,
-      { method: 'POST' }
-    ),
-
-  getParameters: (uri: string) =>
-    fetchJson<{
-      uri: string;
-      parameters: Array<{
-        index: number;
-        name: string;
-        symbol: string;
-        min: number;
-        max: number;
-        default: number;
-        value: number;
-        unit?: string;
-        label?: string;
-        is_toggled?: boolean;
-        is_log?: boolean;
-      }>;
-      parameter_count: number;
-      requires_instantiation: boolean;
-      message: string;
-      plugin_path?: string;
-      error?: string;
-    }>(`${API_BASE}/vst3/parameters?uri=${encodeURIComponent(uri)}`),
-};
-
-// ==================== VST3 Packages API ====================
-
-export interface VST3Package {
-  source: string;
-  name: string;
-  filename: string;
-  category: string;
-  author: string | null;
-  version: string | null;
-  license: string;
-  description: string | null;
-  tags: string[];
-  file_size: number | null;
-  url: string;
-  homepage: string | null;
-}
-
-export interface VST3DownloadProgress {
-  is_downloading: boolean;
-  progress_percent: number;
-  current_source: string | null;
-  active_sources: string[];
-  install_path: string;
-  stats: {
-    total_packages: number;
-    downloaded: number;
-    failed: number;
-    skipped: number;
-    duration_seconds: number;
-  } | null;
-  sources: Array<{
-    name: string;
-    state: string;
-    discovered: number;
-    total_packages: number;
-    downloaded: number;
-    failed: number;
-    skipped: number;
-    current_package: string | null;
-  }> | null;
-}
-
-export const vst3PackagesApi = {
-  getSources: () =>
-    fetchJson<{ sources: Array<{ id: string; name: string; library_name: string; base_url: string }>; count: number }>(
-      `${API_BASE}/vst3-packages/sources`
-    ),
-
-  discover: (sources?: string[]) =>
-    fetchJson<{ packages: VST3Package[]; count: number; sources_queried: string[] }>(
-      `${API_BASE}/vst3-packages/discover`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: sources ? JSON.stringify(sources) : undefined,
-      }
-    ),
-
-  list: () =>
-    fetchJson<{ packages: VST3Package[]; count: number }>(`${API_BASE}/vst3-packages/packages`),
-
-  download: (sources?: string[], parallel = 2) =>
-    fetchJson<{ status: string; message: string; sources?: string[]; progress?: VST3DownloadProgress }>(
-      `${API_BASE}/vst3-packages/download?parallel=${parallel}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: sources ? JSON.stringify(sources) : undefined,
-      }
-    ),
-
-  getProgress: () =>
-    fetchJson<VST3DownloadProgress>(`${API_BASE}/vst3-packages/progress`),
-
-  cancel: () =>
-    fetchJson<{ status: string; message: string }>(`${API_BASE}/vst3-packages/cancel`, { method: 'POST' }),
-
-  reset: () =>
-    fetchJson<{ status: string; message: string }>(`${API_BASE}/vst3-packages/reset`, { method: 'POST' }),
-
-  getInstallPath: () =>
-    fetchJson<{ path: string; exists: boolean; available: boolean }>(`${API_BASE}/vst3-packages/install-path`),
-
-  getSourcePackages: (sourceName: string) =>
-    fetchJson<{ source: string; packages: VST3Package[]; count: number }>(
-      `${API_BASE}/vst3-packages/source/${encodeURIComponent(sourceName)}`
-    ),
-
-  discoverSource: (sourceName: string) =>
-    fetchJson<{ source: string; packages: VST3Package[]; count: number }>(
-      `${API_BASE}/vst3-packages/source/${encodeURIComponent(sourceName)}/discover`,
-      { method: 'POST' }
-    ),
-
-  downloadSource: (sourceName: string) =>
-    fetchJson<{ status: string; message: string; source: string }>(
-      `${API_BASE}/vst3-packages/source/${encodeURIComponent(sourceName)}/download`,
-      { method: 'POST' }
-    ),
-};
-
 // ==================== Unified Upload API ====================
 
 export interface UploadResult {
@@ -1903,6 +2030,7 @@ export const map2Api = {
   ir: irApi,
   irLibrary: irLibraryApi,
   nam: namApi,
+  soundfont: soundfontApi,
   automation: automationApi,
   history: historyApi,
   sessions: sessionsApi,
@@ -1913,8 +2041,6 @@ export const map2Api = {
   www: wwwApi,
   services: servicesApi,
   folders: foldersApi,
-  vst3: vst3Api,
-  vst3Packages: vst3PackagesApi,
   upload: uploadApi,
 };
 

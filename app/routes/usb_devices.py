@@ -298,3 +298,165 @@ async def get_usb_diagnostics():
             )
 
     return diagnostics
+
+
+@router.get("/devices/list")
+async def list_usb_devices() -> List[Dict[str, Any]]:
+    """
+    List all USB devices in a simple format.
+
+    Returns list of USB devices matching the frontend UsbDevice interface.
+    """
+    import subprocess
+
+    devices = []
+
+    try:
+        # Use lsusb to get all USB devices
+        result = subprocess.run(
+            ["lsusb"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0:
+            for line in result.stdout.strip().split('\n'):
+                if not line:
+                    continue
+                # Parse: Bus 001 Device 002: ID 1234:5678 Manufacturer Product
+                parts = line.split()
+                if len(parts) >= 6:
+                    try:
+                        bus = int(parts[1])
+                        device = int(parts[3].rstrip(':'))
+                        id_parts = parts[5].split(':')
+                        vendor_id = id_parts[0] if len(id_parts) >= 1 else ""
+                        product_id = id_parts[1] if len(id_parts) >= 2 else ""
+
+                        # Get the rest as product name
+                        product_name = " ".join(parts[6:]) if len(parts) > 6 else "Unknown"
+
+                        # Check if it's an audio device (common audio vendor IDs or "Audio" in name)
+                        is_audio = (
+                            "audio" in product_name.lower() or
+                            "sound" in product_name.lower() or
+                            vendor_id in ["0582", "1235", "0d8c", "046d", "17cc", "1397", "0763"]  # Roland, Focusrite, C-Media, Logitech, Native Instruments, Behringer, M-Audio
+                        )
+
+                        devices.append({
+                            "bus": bus,
+                            "device": device,
+                            "vendor_id": vendor_id,
+                            "product_id": product_id,
+                            "manufacturer": "",  # Would need lsusb -v for this
+                            "product": product_name,
+                            "serial": None,
+                            "is_audio": is_audio
+                        })
+                    except (ValueError, IndexError):
+                        continue
+
+    except subprocess.TimeoutExpired:
+        pass
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+
+    return devices
+
+
+@router.post("/reset/{device_id}")
+async def reset_usb_device(device_id: str) -> Dict[str, Any]:
+    """
+    Reset a USB device.
+
+    Args:
+        device_id: Device identifier in format "bus-device" (e.g., "001-002")
+
+    Returns:
+        Success status and message
+    """
+    import subprocess
+    import os
+
+    try:
+        # Parse device_id (format: "bus-device")
+        parts = device_id.split('-')
+        if len(parts) != 2:
+            return {
+                "success": False,
+                "message": f"Invalid device_id format. Expected 'bus-device', got '{device_id}'"
+            }
+
+        bus = parts[0].zfill(3)
+        device = parts[1].zfill(3)
+
+        # USB device path
+        usb_path = f"/dev/bus/usb/{bus}/{device}"
+
+        if not os.path.exists(usb_path):
+            return {
+                "success": False,
+                "message": f"USB device not found at {usb_path}"
+            }
+
+        # Try using usbreset if available
+        try:
+            result = subprocess.run(
+                ["usbreset", usb_path],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                return {
+                    "success": True,
+                    "message": f"USB device {device_id} reset successfully"
+                }
+        except FileNotFoundError:
+            pass  # usbreset not installed, try alternative
+
+        # Alternative: unbind and rebind the USB device
+        # Find the USB device sysfs path
+        sysfs_base = "/sys/bus/usb/devices"
+        for entry in os.listdir(sysfs_base):
+            entry_path = os.path.join(sysfs_base, entry)
+            if os.path.isdir(entry_path):
+                busnum_path = os.path.join(entry_path, "busnum")
+                devnum_path = os.path.join(entry_path, "devnum")
+                if os.path.exists(busnum_path) and os.path.exists(devnum_path):
+                    try:
+                        with open(busnum_path) as f:
+                            dev_bus = f.read().strip()
+                        with open(devnum_path) as f:
+                            dev_num = f.read().strip()
+                        if dev_bus == str(int(bus)) and dev_num == str(int(device)):
+                            # Found the device, try to reset via authorized
+                            auth_path = os.path.join(entry_path, "authorized")
+                            if os.path.exists(auth_path):
+                                with open(auth_path, 'w') as f:
+                                    f.write('0')
+                                with open(auth_path, 'w') as f:
+                                    f.write('1')
+                                return {
+                                    "success": True,
+                                    "message": f"USB device {device_id} reset via sysfs"
+                                }
+                    except (IOError, PermissionError) as e:
+                        return {
+                            "success": False,
+                            "message": f"Permission denied - may require root: {str(e)}"
+                        }
+
+        return {
+            "success": False,
+            "message": f"Could not find sysfs entry for device {device_id}"
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error resetting USB device: {str(e)}"
+        }

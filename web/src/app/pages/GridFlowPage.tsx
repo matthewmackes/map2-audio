@@ -440,8 +440,15 @@ export function GridFlowPage() {
 
   const selectedPluginMeta = useMemo(() => {
     if (!selectedPluginUri) return null
-    return pluginMeta[selectedPluginUri] || null
-  }, [selectedPluginUri, pluginMeta])
+    const meta = pluginMeta[selectedPluginUri]
+    // Debug: log when metadata lookup fails
+    if (!meta && selectedPluginUri) {
+      console.warn('[GridFlowPage] Plugin metadata not found for URI:', selectedPluginUri)
+      console.warn('[GridFlowPage] Available URIs:', Object.keys(pluginMeta).slice(0, 5), '...')
+      console.warn('[GridFlowPage] pluginsQuery status:', pluginsQuery.status, 'data count:', pluginsQuery.data?.plugins?.length ?? 0)
+    }
+    return meta || null
+  }, [selectedPluginUri, pluginMeta, pluginsQuery.status, pluginsQuery.data?.plugins?.length])
 
   // Compute available categories
   const categories = useMemo(() => {
@@ -973,50 +980,127 @@ export function GridFlowPage() {
 
   return (
     <div className="grid-flow-page">
-      {/* Header */}
+      {/* Unified Header/Toolbar */}
       <header className="grid-flow-header">
-        <div className="grid-flow-title">
-          <LayoutGrid size={24} />
-          <h1>Grid Editor</h1>
-        </div>
+        {/* Left: Title + Chain Controls */}
+        <div className="grid-flow-header-left">
+          <div className="grid-flow-title">
+            <LayoutGrid size={24} />
+            <h1>Grid Editor</h1>
+          </div>
 
-        {/* System Status */}
-        <div className="grid-flow-status">
-          {/* CPU Status */}
-          <div
-            className={`grid-status-item ${cpuStatus}`}
-            title={`CPU: ${cpuMetrics.totalCpuPercent.toFixed(1)}%`}
+          <div className="grid-header-divider" />
+
+          {/* Chain Controls */}
+          <button
+            className={`grid-header-btn ${currentChain?.is_active ? 'active power' : ''}`}
+            onClick={handleToggleChainActive}
+            disabled={!currentChain}
+            title={currentChain?.is_active ? 'Deactivate' : 'Activate'}
           >
-            <Cpu size={14} />
-            <span>{cpuMetrics.totalCpuPercent.toFixed(0)}%</span>
-          </div>
+            <Power size={18} />
+          </button>
 
-          {/* Latency */}
-          {jackMetrics && (
-            <div className="grid-status-item" title={`Buffer: ${jackMetrics.buffer_size} @ ${jackMetrics.sample_rate}Hz`}>
-              <Clock size={14} />
-              <span>{((jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000).toFixed(1)}ms</span>
-            </div>
-          )}
+          <button
+            className="grid-header-btn"
+            onClick={handleSavePreset}
+            disabled={!currentChain}
+            title="Save Preset"
+          >
+            <Save size={18} />
+          </button>
 
-          {/* XRuns */}
-          {hasXruns && (
-            <div className="grid-status-item warning" title={`${cpuMetrics.xrunCount} XRuns`}>
-              <AlertTriangle size={14} />
-              <span>{cpuMetrics.xrunCount}</span>
-            </div>
-          )}
+          <button
+            className="grid-header-btn"
+            onClick={() => setShowPresetBrowser(true)}
+            title="Load Preset"
+          >
+            <FolderOpen size={18} />
+          </button>
 
-          {/* Flow count */}
-          <div className="grid-status-item">
-            <Layers size={14} />
-            <span>{flowSlots.length} Flows</span>
-          </div>
+          <button
+            className="grid-header-btn"
+            onClick={handleDuplicateChain}
+            disabled={!currentChain}
+            title="Duplicate Chain"
+          >
+            <Copy size={18} />
+          </button>
+
+          <div className="grid-header-divider" />
+
+          {/* MIDI Learn */}
+          <MidiLearnButton
+            isActive={midiLearnActive}
+            onToggle={() => setMidiLearnActive(prev => !prev)}
+            position="relative"
+            size="small"
+          />
         </div>
 
-        {/* Header Actions */}
-        <div className="grid-flow-header-actions">
-          {/* Undo */}
+        {/* Center: Routing */}
+        <div className="grid-flow-header-center">
+          {/* Routing Mode */}
+          <div className="grid-toolbar-routing">
+            <span className="grid-toolbar-routing-label">Routing</span>
+            <div className="grid-toolbar-routing-modes">
+              <button
+                className={`grid-toolbar-route-btn ${routing.mode === 'series' ? 'active' : ''}`}
+                onClick={() => setRoutingMode('series')}
+                title="Series (Sequential)"
+              >
+                <ArrowRightLeft size={14} />
+              </button>
+              <button
+                className={`grid-toolbar-route-btn ${routing.mode === 'parallel_blend' ? 'active' : ''}`}
+                onClick={() => setRoutingMode('parallel_blend')}
+                title="Parallel Blend"
+              >
+                <GitBranch size={14} />
+              </button>
+              <button
+                className={`grid-toolbar-route-btn ${routing.mode === 'ab_switch' ? 'active' : ''}`}
+                onClick={() => setRoutingMode('ab_switch')}
+                title="A/B Switch"
+              >
+                <Shuffle size={14} />
+              </button>
+              <button
+                className={`grid-toolbar-route-btn ${routing.mode === 'parameter_morph' ? 'active' : ''}`}
+                onClick={() => setRoutingMode('parameter_morph')}
+                title="Parameter Morph"
+              >
+                <Settings2 size={14} />
+              </button>
+              <button
+                className={`grid-toolbar-route-btn ${routing.mode === 'sidechain' ? 'active' : ''}`}
+                onClick={() => setRoutingMode('sidechain')}
+                title="Sidechain View"
+              >
+                <Link2 size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* Morph slider (when in morph mode) */}
+          {routing.mode === 'parameter_morph' && (
+            <div className="grid-toolbar-morph">
+              <span>Morph</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={routing.morphProgress * 100}
+                onChange={(e) => setMorphProgress(Number(e.target.value) / 100)}
+              />
+              <span>{(routing.morphProgress * 100).toFixed(0)}%</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Actions */}
+        <div className="grid-flow-header-right">
+          {/* Undo/Redo */}
           <button
             className="grid-header-btn"
             onClick={() => undoMutation.mutate()}
@@ -1025,8 +1109,6 @@ export function GridFlowPage() {
           >
             <Undo2 size={18} />
           </button>
-
-          {/* Redo */}
           <button
             className="grid-header-btn"
             onClick={() => redoMutation.mutate()}
@@ -1216,7 +1298,6 @@ export function GridFlowPage() {
                     onAddPlugin={handleAddPlugin}
                     audioStatus={audioInterfaceStatus}
                     pluginLevels={pluginLevels}
-                    showEndpoints={isActive}
                   />
                 </div>
               </div>
@@ -1230,130 +1311,6 @@ export function GridFlowPage() {
               <span>Add Flow</span>
             </button>
           )}
-        </div>
-
-        {/* Routing Toolbar */}
-        <div className="grid-flow-toolbar">
-          {/* Left: Chain Controls */}
-          <div className="grid-flow-toolbar-left">
-            <button
-              className={`grid-toolbar-btn power ${currentChain?.is_active ? 'active' : ''}`}
-              onClick={handleToggleChainActive}
-              disabled={!currentChain}
-              title={currentChain?.is_active ? 'Deactivate' : 'Activate'}
-            >
-              <Power size={16} />
-              <span>{currentChain?.is_active ? 'Active' : 'Inactive'}</span>
-            </button>
-
-            <div className="grid-toolbar-divider" />
-
-            <button
-              className="grid-toolbar-btn"
-              onClick={handleSavePreset}
-              disabled={!currentChain}
-              title="Save Preset"
-            >
-              <Save size={16} />
-            </button>
-
-            <button
-              className="grid-toolbar-btn"
-              onClick={() => setShowPresetBrowser(true)}
-              title="Load Preset"
-            >
-              <FolderOpen size={16} />
-            </button>
-
-            <button
-              className="grid-toolbar-btn"
-              onClick={handleDuplicateChain}
-              disabled={!currentChain}
-              title="Duplicate"
-            >
-              <Copy size={16} />
-            </button>
-
-            {/* MIDI Learn */}
-            <div className="grid-toolbar-divider" />
-            <MidiLearnButton
-              isActive={midiLearnActive}
-              onToggle={() => setMidiLearnActive(prev => !prev)}
-              position="relative"
-              size="small"
-            />
-          </div>
-
-          {/* Center: Chain Info */}
-          <div className="grid-flow-toolbar-center">
-            {currentChain && (
-              <div className="grid-chain-info" onClick={handleRenameChain} title="Click to rename">
-                <span className="grid-chain-name">{currentChain.name}</span>
-                <span className="grid-chain-stats">
-                  {currentChain.plugins.length} plugins
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Routing Mode */}
-          <div className="grid-flow-toolbar-right">
-            <div className="grid-toolbar-routing">
-              <span className="grid-toolbar-routing-label">Routing</span>
-              <div className="grid-toolbar-routing-modes">
-                <button
-                  className={`grid-toolbar-route-btn ${routing.mode === 'series' ? 'active' : ''}`}
-                  onClick={() => setRoutingMode('series')}
-                  title="Series (Sequential)"
-                >
-                  <ArrowRightLeft size={14} />
-                </button>
-                <button
-                  className={`grid-toolbar-route-btn ${routing.mode === 'parallel_blend' ? 'active' : ''}`}
-                  onClick={() => setRoutingMode('parallel_blend')}
-                  title="Parallel Blend"
-                >
-                  <GitBranch size={14} />
-                </button>
-                <button
-                  className={`grid-toolbar-route-btn ${routing.mode === 'ab_switch' ? 'active' : ''}`}
-                  onClick={() => setRoutingMode('ab_switch')}
-                  title="A/B Switch"
-                >
-                  <Shuffle size={14} />
-                </button>
-                <button
-                  className={`grid-toolbar-route-btn ${routing.mode === 'parameter_morph' ? 'active' : ''}`}
-                  onClick={() => setRoutingMode('parameter_morph')}
-                  title="Parameter Morph"
-                >
-                  <Settings2 size={14} />
-                </button>
-                <button
-                  className={`grid-toolbar-route-btn ${routing.mode === 'sidechain' ? 'active' : ''}`}
-                  onClick={() => setRoutingMode('sidechain')}
-                  title="Sidechain View"
-                >
-                  <Link2 size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Morph slider (when in morph mode) */}
-            {routing.mode === 'parameter_morph' && (
-              <div className="grid-toolbar-morph">
-                <span>Morph</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={routing.morphProgress * 100}
-                  onChange={(e) => setMorphProgress(Number(e.target.value) / 100)}
-                />
-                <span>{(routing.morphProgress * 100).toFixed(0)}%</span>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Parameter panel */}
@@ -1759,6 +1716,36 @@ export function GridFlowPage() {
           />
         </div>
       )}
+
+      {/* Footer Status Bar */}
+      <footer className="grid-flow-footer">
+        <div
+          className={`grid-footer-item ${cpuStatus}`}
+          title={`CPU: ${cpuMetrics.totalCpuPercent.toFixed(1)}%`}
+        >
+          <Cpu size={12} />
+          <span>{cpuMetrics.totalCpuPercent.toFixed(0)}%</span>
+        </div>
+
+        {jackMetrics && (
+          <div className="grid-footer-item" title={`Buffer: ${jackMetrics.buffer_size} @ ${jackMetrics.sample_rate}Hz`}>
+            <Clock size={12} />
+            <span>{((jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000).toFixed(1)}ms</span>
+          </div>
+        )}
+
+        {hasXruns && (
+          <div className="grid-footer-item warning" title={`${cpuMetrics.xrunCount} XRuns`}>
+            <AlertTriangle size={12} />
+            <span>{cpuMetrics.xrunCount}</span>
+          </div>
+        )}
+
+        <div className="grid-footer-item">
+          <Layers size={12} />
+          <span>{flowSlots.length} Flows</span>
+        </div>
+      </footer>
     </div>
   )
 }

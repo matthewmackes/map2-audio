@@ -36,8 +36,11 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
         }
     });
 
-    // Initialize JUCE audio I/O
-    if (!audioIO_.initialize(audioDevice_, sampleRate_, bufferSize_, 2, 2)) {
+    // Initialize JUCE audio I/O with configured channel counts
+    std::cout << "  Configuring audio: " << numInputChannels_ << " inputs, "
+              << numOutputChannels_ << " outputs" << std::endl;
+    if (!audioIO_.initialize(audioDevice_, sampleRate_, bufferSize_,
+                              numInputChannels_, numOutputChannels_)) {
         std::cerr << "Failed to initialize audio I/O" << std::endl;
         return false;
     }
@@ -46,8 +49,9 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     sampleRate_ = audioIO_.getSampleRate();
     bufferSize_ = audioIO_.getBufferSize();
 
-    // Initialize audio graph
-    audioGraph_->initialize(sampleRate_, bufferSize_, 2);
+    // Initialize audio graph with max of input/output channels
+    int graphChannels = std::max(numInputChannels_, numOutputChannels_);
+    audioGraph_->initialize(sampleRate_, bufferSize_, graphChannels);
 
     // Initialize MIDI
     if (!midiHandler_.initialize()) {
@@ -68,6 +72,26 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     // Initialize convolution processors
     cabinetProcessor_.prepare(sampleRate_, bufferSize_, 2);
     reverbProcessor_.prepare(sampleRate_, bufferSize_, 2);
+
+    // Initialize dynamics processors
+    compressor_.prepare(sampleRate_, bufferSize_, 2);
+    compressor_.setMode(DynamicsProcessor::Mode::Compressor);
+
+    limiter_.prepare(sampleRate_, bufferSize_, 2);
+    limiter_.setMode(DynamicsProcessor::Mode::Limiter);
+    limiter_.setThreshold(-1.0f);  // Default limiter ceiling
+
+    gate_.prepare(sampleRate_, bufferSize_, 2);
+    gate_.setMode(DynamicsProcessor::Mode::NoiseGate);
+
+    // Initialize EQ processor
+    eq_.prepare(sampleRate_, bufferSize_, 2);
+
+#ifdef HAS_NAM
+    // Initialize Neural Amp Modeler processor
+    namProcessor_.prepare(sampleRate_, bufferSize_);
+    std::cout << "  NAM (Neural Amp Modeler): Available" << std::endl;
+#endif
 
     // Set up audio callback
     audioIO_.setProcessCallback([this](const float* const* inputs, int numInputs,
@@ -164,12 +188,25 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // Process through plugin graph (includes automatic PDC)
     audioGraph_->process(buffer, midiBuffer);
 
+#ifdef HAS_NAM
+    // Process Neural Amp Modeler (before cabinet IR)
+    namProcessor_.process(buffer);
+#endif
+
     // Process cabinet IR (if loaded)
     if (cabinetProcessor_.isIRLoaded()) {
         cabinetProcessor_.process(buffer);
     }
 
-    // Process reverb IR (if loaded)
+    // Process EQ
+    eq_.process(buffer);
+
+    // Process dynamics chain: Gate -> Compressor -> Limiter
+    gate_.process(buffer);
+    compressor_.process(buffer);
+    limiter_.process(buffer);
+
+    // Process reverb IR (if loaded) - at end of chain
     if (reverbProcessor_.isIRLoaded()) {
         reverbProcessor_.process(buffer);
     }
@@ -213,6 +250,13 @@ void Map2AudioEngine::setSampleRate(double rate) {
         cpuMonitor_.prepare(rate, bufferSize_);
         cabinetProcessor_.prepare(rate, bufferSize_, 2);
         reverbProcessor_.prepare(rate, bufferSize_, 2);
+        compressor_.prepare(rate, bufferSize_, 2);
+        limiter_.prepare(rate, bufferSize_, 2);
+        gate_.prepare(rate, bufferSize_, 2);
+        eq_.prepare(rate, bufferSize_, 2);
+#ifdef HAS_NAM
+        namProcessor_.prepare(rate, bufferSize_);
+#endif
     }
 }
 
@@ -224,6 +268,10 @@ void Map2AudioEngine::setBufferSize(int size) {
         cpuMonitor_.prepare(sampleRate_, size);
         cabinetProcessor_.prepare(sampleRate_, size, 2);
         reverbProcessor_.prepare(sampleRate_, size, 2);
+        compressor_.prepare(sampleRate_, size, 2);
+        limiter_.prepare(sampleRate_, size, 2);
+        gate_.prepare(sampleRate_, size, 2);
+        eq_.prepare(sampleRate_, size, 2);
     }
 }
 
@@ -236,6 +284,14 @@ void Map2AudioEngine::setAudioDevice(const std::string& device) {
 
 void Map2AudioEngine::setLv2Path(const std::string& path) {
     lv2Path_ = path;
+}
+
+void Map2AudioEngine::setNumInputChannels(int channels) {
+    numInputChannels_ = std::max(1, std::min(channels, 32));  // Clamp to 1-32
+}
+
+void Map2AudioEngine::setNumOutputChannels(int channels) {
+    numOutputChannels_ = std::max(1, std::min(channels, 32));  // Clamp to 1-32
 }
 
 // ========================================
@@ -499,6 +555,301 @@ ConvolutionProcessor::IRInfo Map2AudioEngine::getCabinetIRInfo() const {
 
 ConvolutionProcessor::IRInfo Map2AudioEngine::getReverbIRInfo() const {
     return reverbProcessor_.getIRInfo();
+}
+
+// ========================================
+// Dynamics - Compressor
+// ========================================
+
+void Map2AudioEngine::setCompressorThreshold(float dB) {
+    compressor_.setThreshold(dB);
+}
+
+void Map2AudioEngine::setCompressorRatio(float ratio) {
+    compressor_.setRatio(ratio);
+}
+
+void Map2AudioEngine::setCompressorAttack(float ms) {
+    compressor_.setAttack(ms);
+}
+
+void Map2AudioEngine::setCompressorRelease(float ms) {
+    compressor_.setRelease(ms);
+}
+
+void Map2AudioEngine::setCompressorKnee(float dB) {
+    compressor_.setKnee(dB);
+}
+
+void Map2AudioEngine::setCompressorMakeupGain(float dB) {
+    compressor_.setMakeupGain(dB);
+}
+
+void Map2AudioEngine::setCompressorAutoMakeup(bool enabled) {
+    compressor_.setAutoMakeup(enabled);
+}
+
+void Map2AudioEngine::setCompressorBypass(bool bypass) {
+    compressor_.setBypass(bypass);
+}
+
+DynamicsProcessor::Parameters Map2AudioEngine::getCompressorParameters() const {
+    return compressor_.getParameters();
+}
+
+void Map2AudioEngine::setCompressorParameters(const DynamicsProcessor::Parameters& params) {
+    compressor_.setParameters(params);
+}
+
+DynamicsProcessor::Metering Map2AudioEngine::getCompressorMetering() const {
+    return compressor_.getMetering();
+}
+
+// ========================================
+// Dynamics - Limiter
+// ========================================
+
+void Map2AudioEngine::setLimiterThreshold(float dB) {
+    limiter_.setThreshold(dB);
+}
+
+void Map2AudioEngine::setLimiterRelease(float ms) {
+    limiter_.setRelease(ms);
+}
+
+void Map2AudioEngine::setLimiterBypass(bool bypass) {
+    limiter_.setBypass(bypass);
+}
+
+DynamicsProcessor::Parameters Map2AudioEngine::getLimiterParameters() const {
+    return limiter_.getParameters();
+}
+
+DynamicsProcessor::Metering Map2AudioEngine::getLimiterMetering() const {
+    return limiter_.getMetering();
+}
+
+// ========================================
+// Dynamics - Noise Gate
+// ========================================
+
+void Map2AudioEngine::setGateThreshold(float dB) {
+    gate_.setThreshold(dB);
+}
+
+void Map2AudioEngine::setGateRatio(float ratio) {
+    gate_.setRatio(ratio);
+}
+
+void Map2AudioEngine::setGateAttack(float ms) {
+    gate_.setAttack(ms);
+}
+
+void Map2AudioEngine::setGateRelease(float ms) {
+    gate_.setRelease(ms);
+}
+
+void Map2AudioEngine::setGateBypass(bool bypass) {
+    gate_.setBypass(bypass);
+}
+
+DynamicsProcessor::Parameters Map2AudioEngine::getGateParameters() const {
+    return gate_.getParameters();
+}
+
+DynamicsProcessor::Metering Map2AudioEngine::getGateMetering() const {
+    return gate_.getMetering();
+}
+
+// ========================================
+// EQ / Filter Processing
+// ========================================
+
+void Map2AudioEngine::setEQBand(int bandIndex, const FilterProcessor::BandParameters& params) {
+    eq_.setBand(bandIndex, params);
+}
+
+void Map2AudioEngine::setEQBandFrequency(int bandIndex, float hz) {
+    eq_.setBandFrequency(bandIndex, hz);
+}
+
+void Map2AudioEngine::setEQBandGain(int bandIndex, float dB) {
+    eq_.setBandGain(bandIndex, dB);
+}
+
+void Map2AudioEngine::setEQBandQ(int bandIndex, float q) {
+    eq_.setBandQ(bandIndex, q);
+}
+
+void Map2AudioEngine::setEQBandType(int bandIndex, FilterProcessor::FilterType type) {
+    eq_.setBandType(bandIndex, type);
+}
+
+void Map2AudioEngine::setEQBandEnabled(int bandIndex, bool enabled) {
+    eq_.setBandEnabled(bandIndex, enabled);
+}
+
+FilterProcessor::BandParameters Map2AudioEngine::getEQBand(int bandIndex) const {
+    return eq_.getBand(bandIndex);
+}
+
+void Map2AudioEngine::setEQOutputGain(float dB) {
+    eq_.setOutputGain(dB);
+}
+
+float Map2AudioEngine::getEQOutputGain() const {
+    return eq_.getOutputGain();
+}
+
+void Map2AudioEngine::setEQBypass(bool bypass) {
+    eq_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isEQBypassed() const {
+    return eq_.isBypassed();
+}
+
+FilterProcessor::Parameters Map2AudioEngine::getEQParameters() const {
+    return eq_.getParameters();
+}
+
+void Map2AudioEngine::setEQParameters(const FilterProcessor::Parameters& params) {
+    eq_.setParameters(params);
+}
+
+std::vector<float> Map2AudioEngine::getEQFrequencyResponse(const std::vector<float>& frequencies) const {
+    return eq_.getFrequencyResponse(frequencies);
+}
+
+// ========================================
+// Neural Amp Modeler
+// ========================================
+
+bool Map2AudioEngine::isNAMAvailable() const {
+#ifdef HAS_NAM
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool Map2AudioEngine::loadNAMModel(const std::string& path) {
+#ifdef HAS_NAM
+    return namProcessor_.loadModel(path);
+#else
+    (void)path;
+    return false;
+#endif
+}
+
+void Map2AudioEngine::unloadNAMModel() {
+#ifdef HAS_NAM
+    namProcessor_.unloadModel();
+#endif
+}
+
+bool Map2AudioEngine::isNAMModelLoaded() const {
+#ifdef HAS_NAM
+    return namProcessor_.isModelLoaded();
+#else
+    return false;
+#endif
+}
+
+bool Map2AudioEngine::isNAMLoading() const {
+#ifdef HAS_NAM
+    return namProcessor_.isLoading();
+#else
+    return false;
+#endif
+}
+
+NAMModelInfo Map2AudioEngine::getNAMModelInfo() const {
+#ifdef HAS_NAM
+    return namProcessor_.getModelInfo();
+#else
+    return NAMModelInfo();
+#endif
+}
+
+void Map2AudioEngine::setNAMInputGain(float dB) {
+#ifdef HAS_NAM
+    namProcessor_.setInputGain(dB);
+#else
+    (void)dB;
+#endif
+}
+
+float Map2AudioEngine::getNAMInputGain() const {
+#ifdef HAS_NAM
+    return namProcessor_.getInputGain();
+#else
+    return 0.0f;
+#endif
+}
+
+void Map2AudioEngine::setNAMOutputGain(float dB) {
+#ifdef HAS_NAM
+    namProcessor_.setOutputGain(dB);
+#else
+    (void)dB;
+#endif
+}
+
+float Map2AudioEngine::getNAMOutputGain() const {
+#ifdef HAS_NAM
+    return namProcessor_.getOutputGain();
+#else
+    return 0.0f;
+#endif
+}
+
+void Map2AudioEngine::setNAMBypass(bool bypass) {
+#ifdef HAS_NAM
+    namProcessor_.setBypass(bypass);
+#else
+    (void)bypass;
+#endif
+}
+
+bool Map2AudioEngine::isNAMBypassed() const {
+#ifdef HAS_NAM
+    return namProcessor_.isBypassed();
+#else
+    return true;
+#endif
+}
+
+void Map2AudioEngine::setNAMNormalize(bool normalize) {
+#ifdef HAS_NAM
+    namProcessor_.setNormalize(normalize);
+#else
+    (void)normalize;
+#endif
+}
+
+bool Map2AudioEngine::isNAMNormalized() const {
+#ifdef HAS_NAM
+    return namProcessor_.isNormalized();
+#else
+    return false;
+#endif
+}
+
+float Map2AudioEngine::getNAMInputLevel() const {
+#ifdef HAS_NAM
+    return namProcessor_.getInputLevel();
+#else
+    return -100.0f;
+#endif
+}
+
+float Map2AudioEngine::getNAMOutputLevel() const {
+#ifdef HAS_NAM
+    return namProcessor_.getOutputLevel();
+#else
+    return -100.0f;
+#endif
 }
 
 } // namespace map2

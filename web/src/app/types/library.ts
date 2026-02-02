@@ -219,3 +219,65 @@ export interface Tone3000Status {
   auth_url: string
   token_expires: string | null
 }
+
+// ==================== SoundFont Types ====================
+
+export interface SoundFont {
+  name: string
+  filename: string
+  path: string
+  format: 'sf2' | 'sfz'
+  category: string
+  library: string
+  size: number
+}
+
+export interface SoundFontListResponse {
+  soundfonts: SoundFont[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface SoundFontLibrary {
+  name: string
+  displayName: string
+  description: string
+  license: string
+  count: number
+  iconColor: string
+}
+
+export interface SoundFontLibrariesResponse {
+  libraries: SoundFontLibrary[]
+}
+
+export interface SoundFontCategoriesResponse {
+  categories: Array<{ name: string; count: number }>
+}
+
+// ==================== SoundFont Static Data ====================
+
+export const SOUNDFONT_SOURCES: IRLibrarySource[] = [
+  {
+    name: 'sfzinstruments',
+    displayName: 'SFZ Instruments',
+    description: 'Open source SFZ instruments from GitHub',
+    license: 'Various (mostly CC)',
+    iconColor: '#10b981',
+  },
+  {
+    name: 'musical_artifacts',
+    displayName: 'Musical Artifacts',
+    description: 'Community-curated SF2 and SFZ collection',
+    license: 'Various',
+    iconColor: '#8b5cf6',
+  },
+  {
+    name: 'freepats',
+    displayName: 'FreePats',
+    description: 'Quality free soundfonts with CC licenses',
+    license: 'CC-BY / CC0',
+    iconColor: '#f59e0b',
+  },
+]

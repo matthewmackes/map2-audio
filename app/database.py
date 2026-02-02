@@ -188,6 +188,12 @@ class Plugin(Base):
     has_worker_interface = Column(Boolean, default=False)
     bundle_path = Column(String(512), nullable=True)
 
+    # User metadata
+    tags = Column(JSON, default=list)  # User-assigned tags
+    user_description = Column(Text, default="")  # User notes
+    is_favorite = Column(Boolean, default=False)  # Mark as favorite
+    is_hidden = Column(Boolean, default=False)  # Hide from browser
+
 
 class Chain(Base):
     """Signal chain combining multiple plugins."""

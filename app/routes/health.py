@@ -67,14 +67,12 @@ try:
         except Exception:
             pass
 
-        # Get NAM/GPU status
+        # Get NAM status (via JUCE C++ engine, no GPU - uses CPU-based NeuralAmpModelerCore)
         nam_available = False
-        gpu_device = None
+        gpu_device = None  # NAM no longer uses GPU (PyTorch removed, uses C++ inference)
         try:
-            from app.services.nam_processor import NAMProcessor, CUDA_AVAILABLE, GPU_NAME
-            nam_available = True
-            if CUDA_AVAILABLE:
-                gpu_device = GPU_NAME
+            from app.services.nam_processor import NAM_AVAILABLE
+            nam_available = NAM_AVAILABLE
         except Exception:
             pass
 

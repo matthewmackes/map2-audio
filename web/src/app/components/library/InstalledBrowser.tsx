@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Speaker, Waves, Zap, Loader2, RefreshCw } from 'lucide-react'
-import { irApi, namApi } from '../../../map2/api'
+import { Search, Speaker, Waves, Zap, Music, Loader2, RefreshCw } from 'lucide-react'
+import { irApi, namApi, soundfontApi } from '../../../map2/api'
 import type { NAMModel, IRFile } from '../../../map2/types'
+import type { SoundFont } from '../../types/library'
 import { IRItemCard } from './IRItemCard'
 import { NAMItemCard } from './NAMItemCard'
+import { SFItemCard } from './SFItemCard'
 
-type TabId = 'cabinets' | 'reverbs' | 'nam'
+type TabId = 'cabinets' | 'reverbs' | 'nam' | 'soundfonts'
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof Speaker }> = [
   { id: 'cabinets', label: 'Cabinets', icon: Speaker },
   { id: 'reverbs', label: 'Reverbs', icon: Waves },
   { id: 'nam', label: 'NAM Models', icon: Zap },
+  { id: 'soundfonts', label: 'SoundFonts', icon: Music },
 ]
 
 export function InstalledBrowser() {
@@ -31,6 +34,11 @@ export function InstalledBrowser() {
   const namQuery = useQuery({
     queryKey: ['nam', 'models'],
     queryFn: () => namApi.listModels(),
+  })
+
+  const soundfontsQuery = useQuery({
+    queryKey: ['soundfonts', 'list'],
+    queryFn: () => soundfontApi.listSoundfonts(),
   })
 
   const irStatusQuery = useQuery({
@@ -54,13 +62,15 @@ export function InstalledBrowser() {
   const filteredCabinets = filterBySearch<IRFile>(cabinetsQuery.data?.irs)
   const filteredReverbs = filterBySearch<IRFile>(reverbsQuery.data?.irs)
   const filteredNAM = filterBySearch<NAMModel>(namQuery.data?.models)
+  const filteredSoundfonts = filterBySearch<SoundFont>(soundfontsQuery.data?.soundfonts)
 
-  const isLoading = cabinetsQuery.isLoading || reverbsQuery.isLoading || namQuery.isLoading
+  const isLoading = cabinetsQuery.isLoading || reverbsQuery.isLoading || namQuery.isLoading || soundfontsQuery.isLoading
 
   const handleRefresh = () => {
     cabinetsQuery.refetch()
     reverbsQuery.refetch()
     namQuery.refetch()
+    soundfontsQuery.refetch()
     irStatusQuery.refetch()
     namStatusQuery.refetch()
   }
@@ -69,6 +79,7 @@ export function InstalledBrowser() {
     cabinets: cabinetsQuery.data?.count ?? 0,
     reverbs: reverbsQuery.data?.count ?? 0,
     nam: namQuery.data?.count ?? 0,
+    soundfonts: soundfontsQuery.data?.total ?? 0,
   })
 
   const counts = getCounts()
@@ -169,6 +180,12 @@ export function InstalledBrowser() {
                 emptyMessage="No NAM models installed"
               />
             )}
+            {activeTab === 'soundfonts' && (
+              <SFList
+                items={filteredSoundfonts}
+                emptyMessage="No SoundFonts installed"
+              />
+            )}
           </>
         )}
       </div>
@@ -228,6 +245,32 @@ function NAMList({ items, activeModel, emptyMessage }: NAMListProps) {
           key={model.name}
           model={model}
           isActive={model.name === activeModel}
+        />
+      ))}
+    </div>
+  )
+}
+
+interface SFListProps {
+  items: SoundFont[]
+  emptyMessage: string
+}
+
+function SFList({ items, emptyMessage }: SFListProps) {
+  if (items.length === 0) {
+    return (
+      <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
+        {emptyMessage}
+      </div>
+    )
+  }
+
+  return (
+    <div className="model-list" style={{ maxHeight: 400, overflowY: 'auto' }}>
+      {items.map(sf => (
+        <SFItemCard
+          key={sf.path}
+          soundfont={sf}
         />
       ))}
     </div>

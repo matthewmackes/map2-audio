@@ -12,25 +12,31 @@ export function applyTheme(themeId: string): void {
   const theme = themes[themeId];
   if (!theme) {
     console.warn(`Theme "${themeId}" not found, falling back to default`);
-    applyTheme(DEFAULT_THEME_ID);
+    if (themeId !== DEFAULT_THEME_ID) {
+      applyTheme(DEFAULT_THEME_ID);
+    }
     return;
   }
 
   const root = document.documentElement;
 
   // Apply color variables
-  Object.entries(theme.colors).forEach(([key, value]) => {
-    if (key === 'color-scheme') {
-      root.style.colorScheme = value;
-    } else {
-      root.style.setProperty(`--${key}`, value);
-    }
-  });
+  if (theme.colors) {
+    Object.entries(theme.colors).forEach(([key, value]) => {
+      if (key === 'color-scheme') {
+        root.style.colorScheme = value;
+      } else {
+        root.style.setProperty(`--${key}`, value);
+      }
+    });
+  }
 
   // Apply widget style variables
-  Object.entries(theme.widgets).forEach(([key, value]) => {
-    root.style.setProperty(`--${key}`, value);
-  });
+  if (theme.widgets) {
+    Object.entries(theme.widgets).forEach(([key, value]) => {
+      root.style.setProperty(`--${key}`, value);
+    });
+  }
 
   // Store the theme preference
   try {
@@ -55,8 +61,18 @@ export function getSavedThemeId(): string {
  * Initialize theme on app load
  */
 export function initializeTheme(): void {
-  const savedThemeId = getSavedThemeId();
-  applyTheme(savedThemeId);
+  try {
+    const savedThemeId = getSavedThemeId();
+    applyTheme(savedThemeId);
+  } catch (e) {
+    console.error('Failed to initialize theme:', e);
+    // Apply default theme as fallback
+    try {
+      applyTheme(DEFAULT_THEME_ID);
+    } catch {
+      // If even that fails, at least the app will load
+    }
+  }
 }
 
 /**
@@ -83,8 +99,6 @@ export function useTheme() {
     theme: currentTheme,
     themeId: currentThemeId,
     setTheme,
-    themes,
-    isDark: currentTheme.colors['color-scheme'] === 'dark',
-    isLight: currentTheme.colors['color-scheme'] === 'light'
+    themes
   };
 }

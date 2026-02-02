@@ -66,6 +66,7 @@ try:
     from screens.diagnostics_screen import DiagnosticsScreen
     from screens.lcd_services_screen import LCDServicesScreen
     from screens.backup_tab import BackupTab
+    from screens.stage_view_screen import StageViewScreen
     MASTER_SCREENS_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"Could not import master screens: {e}")
@@ -79,6 +80,7 @@ except ImportError as e:
     DiagnosticsScreen = None
     LCDServicesScreen = None
     BackupTab = None
+    StageViewScreen = None
 
 # Fallback to old screens if master screens not available
 if not MASTER_SCREENS_AVAILABLE:
@@ -580,9 +582,10 @@ class MAP2AudioTUI(App):
         Binding("7", "goto_tab_6", "Diagnostics", show=True),
         Binding("8", "goto_tab_7", "LCD", show=True),
         Binding("9", "goto_tab_8", "Backup", show=True),
+        Binding("0", "goto_tab_9", "Stage", show=True),
     ]
 
-    # New simplified screen factory mapping: 9 tabs
+    # New simplified screen factory mapping: 10 tabs
     # Tab 0 uses LandingDashboard as the main landing zone
     SCREEN_FACTORIES = {
         0: (LandingDashboard if UI_COMPONENTS_AVAILABLE and LandingDashboard else DashboardScreen, "dashboard"),
@@ -594,9 +597,10 @@ class MAP2AudioTUI(App):
         6: (DiagnosticsScreen, "diagnostics"),
         7: (LCDServicesScreen, "lcd-services"),
         8: (BackupTab, "backup"),
+        9: (StageViewScreen, "stage-view"),
     }
 
-    # New tab names for 9 master screens
+    # New tab names for 10 master screens
     TAB_NAMES = [
         "📊 Dashboard",
         "🎸 Chains",
@@ -607,6 +611,7 @@ class MAP2AudioTUI(App):
         "🔍 Diagnostics",
         "📺 LCD",
         "💾 Backup",
+        "🎤 Stage",
     ]
 
     def __init__(self, daemon_mode: bool = False):
@@ -784,7 +789,7 @@ class MAP2AudioTUI(App):
 ║  TABS:                                                                ║
 ║    1 = Dashboard     5 = Workflow      8 = LCD                        ║
 ║    2 = Chains        6 = Settings      9 = Backup                     ║
-║    3 = Effects       7 = Diagnostics                                  ║
+║    3 = Effects       7 = Diagnostics   0 = Stage View                 ║
 ║    4 = MIDI                                                           ║
 ║                                                                       ║
 ╠═══════════════════════════════════════════════════════════════════════╣
@@ -859,6 +864,10 @@ class MAP2AudioTUI(App):
     async def action_goto_tab_8(self) -> None:
         """Go to Backup tab."""
         await self.show_tab(8)
+
+    async def action_goto_tab_9(self) -> None:
+        """Go to Stage View tab - Full-screen performance display."""
+        await self.show_tab(9)
 
     def _clear_content_area(self) -> None:
         """Clear the content area."""

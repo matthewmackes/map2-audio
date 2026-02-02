@@ -23,15 +23,13 @@ try:
 
     @router.get("/status")
     async def get_ir_status(type: str = "cabinet"):
-        """Get IR status for the native plugins UI.
+        """Get IR status for managing IR files.
 
         Args:
             type: Either 'cabinet' or 'reverb'
 
-        Returns the format expected by the frontend CabinetStatus/ReverbStatus interface.
+        Returns status of available IR files for LV2 plugins.
         """
-        from app.services.native_plugin_meters import get_native_plugin_meters
-
         irs = _ir_processor.scan_irs(type)
 
         # Get currently loaded IR
@@ -42,19 +40,15 @@ try:
 
         loaded = active_ir.name if active_ir else None
 
-        # Get real-time audio levels from metering service
-        meters = get_native_plugin_meters()
-        levels = meters.get_levels(type)
-
         if type == "cabinet":
             return {
                 "loaded": loaded,
                 "mix": 100,
                 "bypass": False,
-                "inputLevel": levels["inputLevel"],
-                "outputLevel": levels["outputLevel"],
-                "peakInput": levels["peakInput"],
-                "peakOutput": levels["peakOutput"],
+                "inputLevel": -60.0,
+                "outputLevel": -60.0,
+                "peakInput": -60.0,
+                "peakOutput": -60.0,
                 "latency": 0,
                 "frequencyResponse": [],
                 "availableIRs": [{"name": ir["name"], "size": f"{ir.get('size_mb', 0):.2f} MB", "length": ir.get("length", 0)} for ir in irs],
@@ -65,10 +59,10 @@ try:
                 "loaded": loaded,
                 "mix": 30,
                 "bypass": False,
-                "inputLevel": levels["inputLevel"],
-                "outputLevel": levels["outputLevel"],
-                "peakInput": levels["peakInput"],
-                "peakOutput": levels["peakOutput"],
+                "inputLevel": -60.0,
+                "outputLevel": -60.0,
+                "peakInput": -60.0,
+                "peakOutput": -60.0,
                 "latency": 0,
                 "decayTail": [],
                 "availableIRs": [{"name": ir["name"], "type": ir.get("type", "room"), "decay": ir.get("decay", 0)} for ir in irs],

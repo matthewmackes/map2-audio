@@ -14,6 +14,7 @@ endif()
 # Options
 option(USE_JUCE_AUDIO "Use JUCE for audio I/O (recommended)" ON)
 option(USE_LEGACY_LV2 "Keep legacy LV2 support via lilv" ON)
+option(USE_NAM "Enable Neural Amp Modeler support (RT-safe)" ON)
 option(JUCE_PLUGINHOST_VST3 "Enable VST3 plugin hosting" ON)
 option(JUCE_PLUGINHOST_AU "Enable AudioUnit plugin hosting (macOS)" ON)
 option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" ON)
@@ -82,6 +83,37 @@ if(USE_LEGACY_LV2)
 endif()
 
 # ========================================
+# Neural Amp Modeler Core (RT-safe)
+# ========================================
+if(USE_NAM)
+    set(NAM_CORE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules/NeuralAmpModelerCore")
+    if(EXISTS "${NAM_CORE_PATH}/NAM/dsp.h")
+        message(STATUS "Neural Amp Modeler Core: ENABLED")
+
+        # NAM Core source files
+        set(NAM_SOURCES
+            ${NAM_CORE_PATH}/NAM/activations.cpp
+            ${NAM_CORE_PATH}/NAM/conv1d.cpp
+            ${NAM_CORE_PATH}/NAM/convnet.cpp
+            ${NAM_CORE_PATH}/NAM/dsp.cpp
+            ${NAM_CORE_PATH}/NAM/get_dsp.cpp
+            ${NAM_CORE_PATH}/NAM/lstm.cpp
+            ${NAM_CORE_PATH}/NAM/ring_buffer.cpp
+            ${NAM_CORE_PATH}/NAM/util.cpp
+            ${NAM_CORE_PATH}/NAM/wavenet.cpp
+        )
+
+        # NAM dependencies paths
+        set(NAM_EIGEN_PATH "${NAM_CORE_PATH}/Dependencies/eigen")
+        set(NAM_JSON_PATH "${NAM_CORE_PATH}/Dependencies/nlohmann")
+    else()
+        message(STATUS "Neural Amp Modeler Core: DISABLED (submodule not found)")
+        message(STATUS "  To enable: git submodule add https://github.com/sdatkinson/NeuralAmpModelerCore.git juce-engine/Modules/NeuralAmpModelerCore")
+        set(USE_NAM OFF)
+    endif()
+endif()
+
+# ========================================
 # Source files - JUCE-based engine
 # ========================================
 set(SOURCES
@@ -95,6 +127,9 @@ set(SOURCES
 
     # Enhanced audio processing (new)
     Source/ConvolutionProcessor.cpp
+    Source/DynamicsProcessor.cpp
+    Source/FilterProcessor.cpp
+    Source/ParallelMixerProcessor.cpp
     Source/SpectrumAnalyzer.cpp
     Source/LufsMeter.cpp
     Source/PhaseCorrelation.cpp
@@ -110,6 +145,14 @@ set(SOURCES
     Source/PythonBindings.cpp
 )
 
+# Add NAM sources if enabled
+if(USE_NAM)
+    list(APPEND SOURCES
+        Source/NAMProcessor.cpp
+        ${NAM_SOURCES}
+    )
+endif()
+
 set(HEADERS
     Source/Common.h
     Source/Map2AudioEngine.h
@@ -121,6 +164,9 @@ set(HEADERS
 
     # Enhanced audio processing
     Source/ConvolutionProcessor.h
+    Source/DynamicsProcessor.h
+    Source/FilterProcessor.h
+    Source/ParallelMixerProcessor.h
     Source/SpectrumAnalyzer.h
     Source/LufsMeter.h
     Source/PhaseCorrelation.h
@@ -132,6 +178,11 @@ set(HEADERS
     Source/ParameterBridge.h
     Source/SnapshotManager.h
 )
+
+# Add NAM headers if enabled
+if(USE_NAM)
+    list(APPEND HEADERS Source/NAMProcessor.h)
+endif()
 
 # Legacy LV2 support files
 if(USE_LEGACY_LV2)
@@ -158,6 +209,15 @@ endif()
 
 if(UNIX AND NOT APPLE)
     target_include_directories(map2_audio_engine PRIVATE ${ALSA_INCLUDE_DIRS})
+endif()
+
+# NAM include directories
+if(USE_NAM)
+    target_include_directories(map2_audio_engine PRIVATE
+        ${NAM_CORE_PATH}
+        ${NAM_EIGEN_PATH}
+        ${NAM_JSON_PATH}
+    )
 endif()
 
 # ========================================
@@ -224,6 +284,17 @@ if(JACK_FOUND)
     target_compile_definitions(map2_audio_engine PRIVATE HAS_JACK=1)
 endif()
 
+if(USE_NAM)
+    target_compile_definitions(map2_audio_engine PRIVATE
+        HAS_NAM=1
+        NAM_SAMPLE_FLOAT=1  # Use float instead of double for JUCE compatibility
+    )
+    # NAM uses std::filesystem
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(map2_audio_engine PRIVATE stdc++fs)
+    endif()
+endif()
+
 # ========================================
 # Compiler flags
 # ========================================
@@ -273,5 +344,8 @@ if(UNIX AND NOT APPLE)
 endif()
 message(STATUS "  JACK: ${JACK_FOUND}")
 message(STATUS "  Legacy LV2 (lilv): ${USE_LEGACY_LV2}")
+message(STATUS "")
+message(STATUS "Neural Processing:")
+message(STATUS "  NAM (Neural Amp Modeler): ${USE_NAM}")
 message(STATUS "========================================")
 message(STATUS "")

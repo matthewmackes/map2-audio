@@ -27,6 +27,10 @@ from app.services.midi_service import (
     ActionType,
     CommandType,
 )
+from app.services.midi_device_profiles import device_profile_service
+
+# Connect services
+device_profile_service.set_midi_service(midi_service)
 
 logger = logging.getLogger(__name__)
 
@@ -499,3 +503,204 @@ async def get_midi_activity(limit: int = Query(50, ge=1, le=200)):
         "count": 0,
         "note": "Use WebSocket topic 'midi' for real-time activity",
     }
+
+
+# ==================== Device Profiles ====================
+
+class ProfileApplyRequest(BaseModel):
+    """Request to apply a device profile."""
+    profile_id: str = Field(..., description="Profile ID to apply")
+    clear_existing: bool = Field(True, description="Clear existing mappings first")
+
+
+class ExpressionCalibrationRequest(BaseModel):
+    """Request to update expression pedal calibration."""
+    pedal_id: str = Field(..., description="Pedal ID (EXP1, EXP2)")
+    min_raw: Optional[int] = Field(None, ge=0, le=127)
+    max_raw: Optional[int] = Field(None, ge=0, le=127)
+    deadzone_low: Optional[int] = Field(None, ge=0, le=127)
+    deadzone_high: Optional[int] = Field(None, ge=0, le=127)
+    curve: Optional[str] = Field(None, description="linear, logarithmic, exponential, s_curve")
+    invert: Optional[bool] = None
+
+
+class FirmwareFlashRequest(BaseModel):
+    """Request to flash firmware."""
+    profile_id: str = Field(..., description="Device profile ID")
+    firmware_path: str = Field(..., description="Path to firmware file")
+
+
+@router.get("/device-profiles")
+async def list_device_profiles():
+    """List all available device profiles."""
+    profiles = device_profile_service.get_all_profiles()
+    active = device_profile_service.get_active_profile()
+
+    return {
+        "profiles": profiles,
+        "count": len(profiles),
+        "active_profile_id": active["profile_id"] if active else None,
+    }
+
+
+@router.get("/device-profiles/{profile_id}")
+async def get_device_profile(profile_id: str):
+    """Get a specific device profile."""
+    profile = device_profile_service.get_profile(profile_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
+
+
+@router.post("/device-profiles/apply")
+async def apply_device_profile(request: ProfileApplyRequest):
+    """Apply a device profile, creating default mappings and commands."""
+    try:
+        async with get_session() as session:
+            result = await device_profile_service.apply_profile(
+                request.profile_id,
+                session,
+                clear_existing=request.clear_existing,
+            )
+            return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/device-profiles/detect")
+async def detect_device_profile(device_name: str = Query(..., description="Connected device name")):
+    """Auto-detect which profile matches a device name."""
+    profile_id = await device_profile_service.detect_device(device_name)
+
+    if profile_id:
+        profile = device_profile_service.get_profile(profile_id)
+        return {
+            "detected": True,
+            "profile_id": profile_id,
+            "profile": profile,
+        }
+
+    return {
+        "detected": False,
+        "profile_id": None,
+        "suggestion": "generic",
+    }
+
+
+@router.get("/device-profiles/active")
+async def get_active_profile():
+    """Get the currently active device profile."""
+    profile = device_profile_service.get_active_profile()
+    if not profile:
+        return {"active": False, "profile": None}
+
+    return {"active": True, "profile": profile}
+
+
+# ==================== Bank Management ====================
+
+@router.get("/banks/current")
+async def get_current_bank():
+    """Get current bank state."""
+    bank = device_profile_service.get_current_bank()
+    profile = device_profile_service.get_active_profile()
+
+    if profile and profile.get("bank_config"):
+        return {
+            "current_bank": bank,
+            "max_banks": profile["bank_config"]["max_banks"],
+            "items_per_bank": profile["bank_config"]["items_per_bank"],
+            "pc_offset": bank * profile["bank_config"]["items_per_bank"],
+        }
+
+    return {"current_bank": 0, "max_banks": 1, "items_per_bank": 128, "pc_offset": 0}
+
+
+@router.post("/banks/up")
+async def bank_up():
+    """Move to next bank."""
+    result = device_profile_service.bank_up()
+    return result
+
+
+@router.post("/banks/down")
+async def bank_down():
+    """Move to previous bank."""
+    result = device_profile_service.bank_down()
+    return result
+
+
+@router.post("/banks/set")
+async def set_bank(bank: int = Query(..., ge=0, description="Bank number to set")):
+    """Set specific bank number."""
+    result = device_profile_service.set_bank(bank)
+    return result
+
+
+# ==================== Expression Pedal Calibration ====================
+
+@router.get("/expression/calibration")
+async def get_expression_calibration():
+    """Get all expression pedal calibration settings."""
+    calibrations = device_profile_service.get_all_expression_calibrations()
+    return {"calibrations": calibrations}
+
+
+@router.get("/expression/calibration/{pedal_id}")
+async def get_pedal_calibration(pedal_id: str):
+    """Get calibration for a specific expression pedal."""
+    cal = device_profile_service.get_expression_calibration(pedal_id)
+    if not cal:
+        raise HTTPException(status_code=404, detail="Pedal not found")
+    return cal
+
+
+@router.post("/expression/calibration")
+async def update_expression_calibration(request: ExpressionCalibrationRequest):
+    """Update expression pedal calibration settings."""
+    result = device_profile_service.update_expression_calibration(
+        pedal_id=request.pedal_id,
+        min_raw=request.min_raw,
+        max_raw=request.max_raw,
+        deadzone_low=request.deadzone_low,
+        deadzone_high=request.deadzone_high,
+        curve=request.curve,
+        invert=request.invert,
+    )
+    return {"status": "updated", "calibration": result}
+
+
+# ==================== Firmware Update ====================
+
+@router.get("/firmware/dfu-status")
+async def check_dfu_status():
+    """Check if DFU utility is available and list devices in DFU mode."""
+    dfu_available = await device_profile_service.check_dfu_available()
+    devices = await device_profile_service.list_dfu_devices() if dfu_available else []
+
+    return {
+        "dfu_available": dfu_available,
+        "devices_in_dfu_mode": devices,
+        "install_hint": "sudo dnf install dfu-util" if not dfu_available else None,
+    }
+
+
+@router.get("/firmware/dfu-instructions/{profile_id}")
+async def get_dfu_instructions(profile_id: str):
+    """Get instructions for entering DFU mode for a device."""
+    instructions = device_profile_service.get_dfu_instructions(profile_id)
+    return instructions
+
+
+@router.post("/firmware/flash")
+async def flash_firmware(request: FirmwareFlashRequest):
+    """Flash firmware to a device in DFU mode."""
+    result = await device_profile_service.flash_firmware(
+        profile_id=request.profile_id,
+        firmware_path=request.firmware_path,
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Flash failed"))
+
+    return result

@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
-import { ChevronDown, PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Settings2, Activity } from 'lucide-react'
+import { ChevronDown, PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Settings2, Activity, Sliders, Usb } from 'lucide-react'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
-// Items under the "Under-The-Hood" dropdown
+// Items under the "hic sunt dracones" dropdown
 const underTheHoodItems = [
   {
     to: '/',
@@ -49,6 +49,27 @@ const underTheHoodItems = [
     description: 'Audio analysis & monitoring',
     color: '#37d6c9'  // Cyan-teal
   },
+  {
+    to: '/dsp',
+    label: 'DSP',
+    icon: Sliders,
+    description: 'Dynamics & EQ processors',
+    color: '#ff6644'  // Orange-red
+  },
+  {
+    to: '/edirol-ua1000',
+    label: 'Edirol UA-1000',
+    icon: Usb,
+    description: 'USB audio interface control',
+    color: '#0066cc'  // Roland blue
+  },
+  {
+    to: '/hotone-jogg',
+    label: 'HoTone JoGG',
+    icon: AudioLines,
+    description: 'HoTone audio interface',
+    color: '#e53935'  // HoTone red
+  },
 ]
 
 // Main navigation items (left side, top-level)
@@ -63,7 +84,7 @@ const navItemsLeft = [
   ...(enableLegacy ? [{ to: '/legacy', label: 'Legacy', icon: Sparkles, description: 'Classic interface', color: '#ec4899' }] : []),
 ]
 
-// Right-side navigation items (Under-The-Hood dropdown + About)
+// Right-side navigation items (hic sunt dracones dropdown + About)
 const navItemsRight = [
   {
     to: '/about',
@@ -74,9 +95,9 @@ const navItemsRight = [
   },
 ]
 
-// Under-The-Hood dropdown nav item
+// hic sunt dracones dropdown nav item
 const underTheHoodNav = {
-  label: 'Under-The-Hood',
+  label: 'hic sunt dracones',
   icon: Settings2,
   description: 'Advanced settings & configuration',
   color: '#a855f7'  // Purple
@@ -86,7 +107,7 @@ const underTheHoodNav = {
 function useActiveNavItem() {
   const location = useLocation()
 
-  // Check Under-The-Hood items
+  // Check hic sunt dracones items
   const underTheHoodMatch = underTheHoodItems.find(item =>
     location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'))
   )
@@ -103,7 +124,7 @@ function useActiveNavItem() {
     }
   }
 
-  // Default to first Under-The-Hood item (Overview)
+  // Default to first hic sunt dracones item (Overview)
   return { type: 'under-the-hood' as const, item: underTheHoodItems[0], parentNav: underTheHoodNav }
 }
 
@@ -113,7 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Left nav: main items
   const leftNavItems = [...navItemsLeft]
 
-  // Right nav: Under-The-Hood dropdown + About
+  // Right nav: hic sunt dracones dropdown + About
   const rightNavItems = [
     { ...underTheHoodNav, to: 'under-the-hood-dropdown', isDropdown: true },
     ...navItemsRight,
@@ -123,7 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const renderNavItem = (item: typeof rightNavItems[number]) => {
     const Icon = item.icon
 
-    // Dropdown for Under-The-Hood section
+    // Dropdown for hic sunt dracones section
     if (item.to === 'under-the-hood-dropdown') {
       return (
         <MenuProvider key="under-the-hood">
@@ -191,7 +212,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Right: Under-The-Hood + About */}
+        {/* Right: hic sunt dracones + About */}
         <nav className="nav-tabs-right" aria-label="Settings navigation">
           {rightNavItems.map(renderNavItem)}
         </nav>

@@ -11,6 +11,8 @@
 #include "JucePluginHost.h"
 #include "JuceAudioGraph.h"
 #include "ConvolutionProcessor.h"
+#include "DynamicsProcessor.h"
+#include "FilterProcessor.h"
 #include "SpectrumAnalyzer.h"
 #include "LufsMeter.h"
 #include "PhaseCorrelation.h"
@@ -19,6 +21,10 @@
 #include "VuMeter.h"
 #include "ParameterBridge.h"
 #include "SnapshotManager.h"
+
+#ifdef HAS_NAM
+#include "NAMProcessor.h"
+#endif
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
@@ -86,6 +92,12 @@ public:
 
     void setLv2Path(const std::string& path);
     std::string getLv2Path() const { return lv2Path_; }
+
+    void setNumInputChannels(int channels);
+    int getNumInputChannels() const { return numInputChannels_; }
+
+    void setNumOutputChannels(int channels);
+    int getNumOutputChannels() const { return numOutputChannels_; }
 
     // ========================================
     // Plugin Management
@@ -203,6 +215,166 @@ public:
     ConvolutionProcessor::IRInfo getReverbIRInfo() const;
 
     // ========================================
+    // Dynamics Processing (NEW)
+    // ========================================
+
+    // Compressor
+    void setCompressorThreshold(float dB);
+    void setCompressorRatio(float ratio);
+    void setCompressorAttack(float ms);
+    void setCompressorRelease(float ms);
+    void setCompressorKnee(float dB);
+    void setCompressorMakeupGain(float dB);
+    void setCompressorAutoMakeup(bool enabled);
+    void setCompressorBypass(bool bypass);
+    DynamicsProcessor::Parameters getCompressorParameters() const;
+    void setCompressorParameters(const DynamicsProcessor::Parameters& params);
+    DynamicsProcessor::Metering getCompressorMetering() const;
+
+    // Limiter
+    void setLimiterThreshold(float dB);
+    void setLimiterRelease(float ms);
+    void setLimiterBypass(bool bypass);
+    DynamicsProcessor::Parameters getLimiterParameters() const;
+    DynamicsProcessor::Metering getLimiterMetering() const;
+
+    // Noise Gate
+    void setGateThreshold(float dB);
+    void setGateRatio(float ratio);
+    void setGateAttack(float ms);
+    void setGateRelease(float ms);
+    void setGateBypass(bool bypass);
+    DynamicsProcessor::Parameters getGateParameters() const;
+    DynamicsProcessor::Metering getGateMetering() const;
+
+    // Combined dynamics access
+    DynamicsProcessor& getCompressor() { return compressor_; }
+    DynamicsProcessor& getLimiter() { return limiter_; }
+    DynamicsProcessor& getGate() { return gate_; }
+
+    // ========================================
+    // EQ / Filter Processing (NEW)
+    // ========================================
+
+    // Band control
+    void setEQBand(int bandIndex, const FilterProcessor::BandParameters& params);
+    void setEQBandFrequency(int bandIndex, float hz);
+    void setEQBandGain(int bandIndex, float dB);
+    void setEQBandQ(int bandIndex, float q);
+    void setEQBandType(int bandIndex, FilterProcessor::FilterType type);
+    void setEQBandEnabled(int bandIndex, bool enabled);
+    FilterProcessor::BandParameters getEQBand(int bandIndex) const;
+
+    // Global EQ control
+    void setEQOutputGain(float dB);
+    float getEQOutputGain() const;
+    void setEQBypass(bool bypass);
+    bool isEQBypassed() const;
+
+    // Full parameter access
+    FilterProcessor::Parameters getEQParameters() const;
+    void setEQParameters(const FilterProcessor::Parameters& params);
+
+    // Frequency response
+    std::vector<float> getEQFrequencyResponse(const std::vector<float>& frequencies) const;
+
+    // Direct access
+    FilterProcessor& getEQ() { return eq_; }
+
+    // ========================================
+    // Neural Amp Modeler (NEW - RT-safe)
+    // ========================================
+
+    /**
+     * Check if NAM support is available
+     */
+    bool isNAMAvailable() const;
+
+    /**
+     * Load a NAM model (.nam file)
+     * @param path Path to .nam model file
+     * @return true if loading started
+     */
+    bool loadNAMModel(const std::string& path);
+
+    /**
+     * Unload current NAM model
+     */
+    void unloadNAMModel();
+
+    /**
+     * Check if NAM model is loaded
+     */
+    bool isNAMModelLoaded() const;
+
+    /**
+     * Check if NAM model is currently loading
+     */
+    bool isNAMLoading() const;
+
+    /**
+     * Get NAM model information
+     */
+    NAMModelInfo getNAMModelInfo() const;
+
+    /**
+     * Set NAM input gain (dB)
+     */
+    void setNAMInputGain(float dB);
+
+    /**
+     * Get NAM input gain (dB)
+     */
+    float getNAMInputGain() const;
+
+    /**
+     * Set NAM output gain (dB)
+     */
+    void setNAMOutputGain(float dB);
+
+    /**
+     * Get NAM output gain (dB)
+     */
+    float getNAMOutputGain() const;
+
+    /**
+     * Set NAM bypass
+     */
+    void setNAMBypass(bool bypass);
+
+    /**
+     * Check if NAM is bypassed
+     */
+    bool isNAMBypassed() const;
+
+    /**
+     * Enable/disable NAM output normalization
+     */
+    void setNAMNormalize(bool normalize);
+
+    /**
+     * Check if NAM normalization is enabled
+     */
+    bool isNAMNormalized() const;
+
+    /**
+     * Get NAM input metering level (dB)
+     */
+    float getNAMInputLevel() const;
+
+    /**
+     * Get NAM output metering level (dB)
+     */
+    float getNAMOutputLevel() const;
+
+#ifdef HAS_NAM
+    /**
+     * Direct NAM processor access
+     */
+    NAMProcessor& getNAMProcessor() { return namProcessor_; }
+#endif
+
+    // ========================================
     // Component Access (for advanced use)
     // ========================================
 
@@ -226,6 +398,19 @@ private:
     ConvolutionProcessor cabinetProcessor_;
     ConvolutionProcessor reverbProcessor_;
 
+    // Dynamics Processors (NEW)
+    DynamicsProcessor compressor_;
+    DynamicsProcessor limiter_;
+    DynamicsProcessor gate_;
+
+    // EQ Processor (NEW)
+    FilterProcessor eq_;
+
+#ifdef HAS_NAM
+    // Neural Amp Modeler (NEW - RT-safe)
+    NAMProcessor namProcessor_;
+#endif
+
     // Metering (NEW)
     SpectrumAnalyzer spectrumAnalyzer_;
     LufsMeter lufsMeter_;
@@ -245,6 +430,8 @@ private:
     // Configuration
     double sampleRate_ = DEFAULT_SAMPLE_RATE;
     int bufferSize_ = DEFAULT_BUFFER_SIZE;
+    int numInputChannels_ = 2;
+    int numOutputChannels_ = 2;
     std::string audioDevice_ = "default";
     std::string lv2Path_ = "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2";
 

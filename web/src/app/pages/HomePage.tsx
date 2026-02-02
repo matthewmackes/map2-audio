@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { Gauge, PanelsTopLeft, Plug2, Workflow, Share2, CheckCircle, XCircle, Copy } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { CPUStatusOverview } from '../components/CPUStatusOverview'
 import { PlatformCapabilities } from '../components/PlatformCapabilities'
 import { SystemArchitectureFlow } from '../components/SystemArchitectureFlow'
-import { AudioInterfaceControl } from '../../map2/components/AudioInterfaceControl'
 
 interface NetworkShareStatus {
   smb_enabled: boolean
@@ -60,12 +58,6 @@ export function HomePage() {
           alt: `${cpuBrand.display_name} Processor`,
           title: cpuBrand.model
         } : undefined}
-        actions={
-          <div className="flex">
-            <Link to="/chains" className="btn btn-primary">Open chains</Link>
-            <Link to="/metrics" className="btn btn-ghost">View metrics</Link>
-          </div>
-        }
       />
 
       {/* System Architecture & Health - Top Priority */}
@@ -78,9 +70,6 @@ export function HomePage() {
       <div className="card">
         <CPUStatusOverview />
       </div>
-
-      {/* Audio Interface Control */}
-      <AudioInterfaceControl />
 
       {/* Network Share Access - Standalone Section */}
       {networkStatus?.smb_enabled && (

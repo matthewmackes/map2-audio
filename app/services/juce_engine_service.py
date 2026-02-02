@@ -35,7 +35,24 @@ HOTONE_JOGG = {
     "alsa_device": "hw:0,0",
     "alsa_device_alt": "hw:1,0",
     "sample_rate": 48000,
-    "channels": 2,
+    "input_channels": 2,
+    "output_channels": 2,
+    "format": "S24_3LE",
+    "period_size": 64,
+    "buffer_size": 256,
+}
+
+# Edirol UA-1000 Hi-Speed USB Audio Interface constants
+EDIROL_UA1000 = {
+    "vendor_id": "0582",
+    "product_id": "0044",
+    "name": "Edirol UA-1000",
+    "manufacturer": "Roland",
+    "alsa_device": "hw:UA1000",
+    "alsa_device_alt": "hw:1,0",
+    "sample_rate": 48000,
+    "input_channels": 10,  # 4 analog + 2 S/PDIF + 8 ADAT (shared optical)
+    "output_channels": 10,  # 8 analog + 2 S/PDIF (+ ADAT optical)
     "format": "S24_3LE",
     "period_size": 64,
     "buffer_size": 256,
@@ -44,10 +61,12 @@ HOTONE_JOGG = {
 
 @dataclass
 class AudioEngineConfig:
-    """Audio engine configuration - defaults to Hotone Jogg USB Audio"""
-    sample_rate: int = HOTONE_JOGG["sample_rate"]
-    buffer_size: int = HOTONE_JOGG["buffer_size"]
-    audio_device: str = HOTONE_JOGG["alsa_device"]
+    """Audio engine configuration - defaults to Edirol UA-1000"""
+    sample_rate: int = EDIROL_UA1000["sample_rate"]
+    buffer_size: int = EDIROL_UA1000["buffer_size"]
+    audio_device: str = EDIROL_UA1000["alsa_device"]
+    input_channels: int = EDIROL_UA1000["input_channels"]
+    output_channels: int = EDIROL_UA1000["output_channels"]
     enable_midi: bool = True
     lv2_path: str = "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2"
     config_file: str = ""
@@ -77,6 +96,12 @@ class JuceEngineService(Singleton):
             self._engine.set_buffer_size(self.config.buffer_size)
             self._engine.set_audio_device(self.config.audio_device)
             self._engine.set_lv2_path(self.config.lv2_path)
+
+            # Configure channel counts (for multi-channel interfaces like UA-1000)
+            self._engine.set_num_input_channels(self.config.input_channels)
+            self._engine.set_num_output_channels(self.config.output_channels)
+            logger.info(f"Configuring audio: {self.config.input_channels} inputs, "
+                       f"{self.config.output_channels} outputs")
 
             # Initialize
             result = self._engine.initialize(self.config.config_file)
@@ -686,6 +711,552 @@ class JuceEngineService(Singleton):
                 "loaded": False
             }
         return self._engine.get_reverb_ir_info()
+
+    # ========================================
+    # Dynamics - Compressor (NEW)
+    # ========================================
+
+    async def set_compressor_threshold(self, db: float) -> None:
+        """Set compressor threshold in dB (-60 to 0)"""
+        if self._engine:
+            self._engine.set_compressor_threshold(db)
+
+    async def set_compressor_ratio(self, ratio: float) -> None:
+        """Set compressor ratio (1 to 20)"""
+        if self._engine:
+            self._engine.set_compressor_ratio(ratio)
+
+    async def set_compressor_attack(self, ms: float) -> None:
+        """Set compressor attack time in ms (0.1 to 500)"""
+        if self._engine:
+            self._engine.set_compressor_attack(ms)
+
+    async def set_compressor_release(self, ms: float) -> None:
+        """Set compressor release time in ms (10 to 5000)"""
+        if self._engine:
+            self._engine.set_compressor_release(ms)
+
+    async def set_compressor_knee(self, db: float) -> None:
+        """Set compressor knee width in dB (0 to 24)"""
+        if self._engine:
+            self._engine.set_compressor_knee(db)
+
+    async def set_compressor_makeup_gain(self, db: float) -> None:
+        """Set compressor makeup gain in dB (-12 to 24)"""
+        if self._engine:
+            self._engine.set_compressor_makeup_gain(db)
+
+    async def set_compressor_auto_makeup(self, enabled: bool) -> None:
+        """Enable/disable auto makeup gain"""
+        if self._engine:
+            self._engine.set_compressor_auto_makeup(enabled)
+
+    async def set_compressor_bypass(self, bypass: bool) -> None:
+        """Bypass compressor"""
+        if self._engine:
+            self._engine.set_compressor_bypass(bypass)
+
+    async def get_compressor_parameters(self) -> Dict[str, Any]:
+        """Get all compressor parameters"""
+        if not self._engine:
+            return {
+                "threshold": -12.0,
+                "ratio": 4.0,
+                "attack": 10.0,
+                "release": 100.0,
+                "knee": 6.0,
+                "makeup_gain": 0.0,
+                "auto_makeup": False,
+                "bypass": False
+            }
+        return self._engine.get_compressor_parameters()
+
+    async def set_compressor_parameters(self, params: Dict[str, Any]) -> None:
+        """Set all compressor parameters at once"""
+        if self._engine:
+            self._engine.set_compressor_parameters(params)
+
+    async def get_compressor_metering(self) -> Dict[str, float]:
+        """Get compressor metering (input, output, gain reduction)"""
+        if not self._engine:
+            return {
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "gain_reduction": 0.0,
+                "input_rms": -100.0,
+                "output_rms": -100.0
+            }
+        return self._engine.get_compressor_metering()
+
+    # ========================================
+    # Dynamics - Limiter (NEW)
+    # ========================================
+
+    async def set_limiter_threshold(self, db: float) -> None:
+        """Set limiter ceiling/threshold in dB"""
+        if self._engine:
+            self._engine.set_limiter_threshold(db)
+
+    async def set_limiter_release(self, ms: float) -> None:
+        """Set limiter release time in ms"""
+        if self._engine:
+            self._engine.set_limiter_release(ms)
+
+    async def set_limiter_bypass(self, bypass: bool) -> None:
+        """Bypass limiter"""
+        if self._engine:
+            self._engine.set_limiter_bypass(bypass)
+
+    async def get_limiter_parameters(self) -> Dict[str, Any]:
+        """Get all limiter parameters"""
+        if not self._engine:
+            return {
+                "threshold": -1.0,
+                "release": 100.0,
+                "bypass": False
+            }
+        return self._engine.get_limiter_parameters()
+
+    async def get_limiter_metering(self) -> Dict[str, float]:
+        """Get limiter metering (input, output, gain reduction)"""
+        if not self._engine:
+            return {
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "gain_reduction": 0.0,
+                "input_rms": -100.0,
+                "output_rms": -100.0
+            }
+        return self._engine.get_limiter_metering()
+
+    # ========================================
+    # Dynamics - Noise Gate (NEW)
+    # ========================================
+
+    async def set_gate_threshold(self, db: float) -> None:
+        """Set noise gate threshold in dB"""
+        if self._engine:
+            self._engine.set_gate_threshold(db)
+
+    async def set_gate_ratio(self, ratio: float) -> None:
+        """Set noise gate ratio"""
+        if self._engine:
+            self._engine.set_gate_ratio(ratio)
+
+    async def set_gate_attack(self, ms: float) -> None:
+        """Set noise gate attack time in ms"""
+        if self._engine:
+            self._engine.set_gate_attack(ms)
+
+    async def set_gate_release(self, ms: float) -> None:
+        """Set noise gate release time in ms"""
+        if self._engine:
+            self._engine.set_gate_release(ms)
+
+    async def set_gate_bypass(self, bypass: bool) -> None:
+        """Bypass noise gate"""
+        if self._engine:
+            self._engine.set_gate_bypass(bypass)
+
+    async def get_gate_parameters(self) -> Dict[str, Any]:
+        """Get all noise gate parameters"""
+        if not self._engine:
+            return {
+                "threshold": -40.0,
+                "ratio": 10.0,
+                "attack": 1.0,
+                "release": 100.0,
+                "bypass": False
+            }
+        return self._engine.get_gate_parameters()
+
+    async def get_gate_metering(self) -> Dict[str, float]:
+        """Get noise gate metering"""
+        if not self._engine:
+            return {
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "gain_reduction": 0.0,
+                "input_rms": -100.0,
+                "output_rms": -100.0
+            }
+        return self._engine.get_gate_metering()
+
+    # ========================================
+    # Dynamics - Combined Access (NEW)
+    # ========================================
+
+    async def get_dynamics_metering(self) -> Dict[str, Dict[str, float]]:
+        """Get all dynamics processor metering"""
+        if not self._engine:
+            empty_metering = {
+                "input_level": -100.0,
+                "output_level": -100.0,
+                "gain_reduction": 0.0,
+                "input_rms": -100.0,
+                "output_rms": -100.0
+            }
+            return {
+                "compressor": empty_metering.copy(),
+                "limiter": empty_metering.copy(),
+                "gate": empty_metering.copy()
+            }
+        return self._engine.get_dynamics_metering()
+
+    # ========================================
+    # EQ / Filter Processing (NEW)
+    # ========================================
+
+    async def set_eq_band(self, index: int, params: Dict[str, Any]) -> None:
+        """Set EQ band parameters"""
+        if self._engine:
+            self._engine.set_eq_band(index, params)
+
+    async def set_eq_band_frequency(self, index: int, hz: float) -> None:
+        """Set EQ band frequency"""
+        if self._engine:
+            self._engine.set_eq_band_frequency(index, hz)
+
+    async def set_eq_band_gain(self, index: int, db: float) -> None:
+        """Set EQ band gain"""
+        if self._engine:
+            self._engine.set_eq_band_gain(index, db)
+
+    async def set_eq_band_q(self, index: int, q: float) -> None:
+        """Set EQ band Q factor"""
+        if self._engine:
+            self._engine.set_eq_band_q(index, q)
+
+    async def set_eq_band_type(self, index: int, filter_type: str) -> None:
+        """Set EQ band filter type"""
+        if self._engine:
+            self._engine.set_eq_band_type(index, filter_type)
+
+    async def set_eq_band_enabled(self, index: int, enabled: bool) -> None:
+        """Enable/disable EQ band"""
+        if self._engine:
+            self._engine.set_eq_band_enabled(index, enabled)
+
+    async def get_eq_band(self, index: int) -> Dict[str, Any]:
+        """Get EQ band parameters"""
+        if not self._engine:
+            return {
+                "type": "peak",
+                "frequency": 1000.0,
+                "gain": 0.0,
+                "q": 1.0,
+                "enabled": True
+            }
+        return self._engine.get_eq_band(index)
+
+    async def set_eq_output_gain(self, db: float) -> None:
+        """Set EQ output gain"""
+        if self._engine:
+            self._engine.set_eq_output_gain(db)
+
+    async def get_eq_output_gain(self) -> float:
+        """Get EQ output gain"""
+        if not self._engine:
+            return 0.0
+        return self._engine.get_eq_output_gain()
+
+    async def set_eq_bypass(self, bypass: bool) -> None:
+        """Bypass EQ"""
+        if self._engine:
+            self._engine.set_eq_bypass(bypass)
+
+    async def is_eq_bypassed(self) -> bool:
+        """Check if EQ is bypassed"""
+        if not self._engine:
+            return False
+        return self._engine.is_eq_bypassed()
+
+    async def get_eq_parameters(self) -> Dict[str, Any]:
+        """Get all EQ parameters"""
+        if not self._engine:
+            default_band = {
+                "type": "peak",
+                "frequency": 1000.0,
+                "gain": 0.0,
+                "q": 1.0,
+                "enabled": True
+            }
+            return {
+                "bands": [default_band.copy() for _ in range(8)],
+                "output_gain": 0.0,
+                "bypass": False
+            }
+        return self._engine.get_eq_parameters()
+
+    async def set_eq_parameters(self, params: Dict[str, Any]) -> None:
+        """Set all EQ parameters"""
+        if self._engine:
+            self._engine.set_eq_parameters(params)
+
+    async def get_eq_frequency_response(self, frequencies: List[float]) -> List[float]:
+        """Get EQ frequency response at given frequencies"""
+        if not self._engine:
+            return [0.0] * len(frequencies)
+        return self._engine.get_eq_frequency_response(frequencies)
+
+    # ========================================
+    # Parallel Processing Chains (NEW)
+    # ========================================
+
+    async def create_parallel_group(self, position: int = -1, num_branches: int = 2) -> int:
+        """Create a parallel processing group at given position"""
+        if not self._engine:
+            return -1
+        return self._engine.create_parallel_group(position, num_branches)
+
+    async def remove_parallel_group(self, group_id: int) -> bool:
+        """Remove a parallel processing group"""
+        if not self._engine:
+            return False
+        return self._engine.remove_parallel_group(group_id)
+
+    async def add_to_parallel_branch(self, group_id: int, branch_index: int,
+                                      plugin_id: int, position: int = -1) -> bool:
+        """Add a plugin to a parallel branch"""
+        if not self._engine:
+            return False
+        return self._engine.add_to_parallel_branch(group_id, branch_index, plugin_id, position)
+
+    async def remove_from_parallel_branch(self, group_id: int, branch_index: int,
+                                           plugin_id: int) -> bool:
+        """Remove a plugin from a parallel branch"""
+        if not self._engine:
+            return False
+        return self._engine.remove_from_parallel_branch(group_id, branch_index, plugin_id)
+
+    async def set_parallel_ab_blend(self, group_id: int, blend: float) -> None:
+        """Set A/B blend for a parallel group (0.0 = all A, 1.0 = all B)"""
+        if self._engine:
+            self._engine.set_parallel_ab_blend(group_id, blend)
+
+    async def get_parallel_ab_blend(self, group_id: int) -> float:
+        """Get A/B blend for a parallel group"""
+        if not self._engine:
+            return 0.5
+        return self._engine.get_parallel_ab_blend(group_id)
+
+    async def set_parallel_branch_level(self, group_id: int, branch_index: int,
+                                         level: float) -> None:
+        """Set individual branch level (0.0 to 2.0)"""
+        if self._engine:
+            self._engine.set_parallel_branch_level(group_id, branch_index, level)
+
+    async def set_parallel_bypass(self, group_id: int, bypass: bool) -> None:
+        """Set bypass for a parallel group"""
+        if self._engine:
+            self._engine.set_parallel_bypass(group_id, bypass)
+
+    async def get_parallel_groups(self) -> List[Dict[str, Any]]:
+        """Get all parallel processing groups"""
+        if not self._engine:
+            return []
+        return self._engine.get_parallel_groups()
+
+    # ========================================
+    # Neural Amp Modeler (RT-safe via JUCE C++)
+    # ========================================
+
+    async def is_nam_available(self) -> bool:
+        """Check if NAM support is compiled into the JUCE engine"""
+        if not self._engine:
+            return False
+        try:
+            return self._engine.is_nam_available()
+        except AttributeError:
+            return False
+
+    async def load_nam_model(self, path: str) -> bool:
+        """Load a NAM model (.nam file) via RT-safe JUCE engine
+
+        This is the ONLY way to load NAM models for real-time audio.
+        Loading happens on a background thread to avoid blocking audio.
+
+        Args:
+            path: Full path to .nam model file
+
+        Returns:
+            True if loading started successfully
+        """
+        if not self._engine:
+            logger.error("Cannot load NAM model: engine not initialized")
+            return False
+        try:
+            result = self._engine.load_nam_model(path)
+            if result:
+                logger.info(f"NAM model loading started: {path}")
+            else:
+                logger.error(f"NAM model load failed to start: {path}")
+            return result
+        except AttributeError:
+            logger.error("JUCE engine does not have NAM support compiled in")
+            return False
+        except Exception as e:
+            logger.error(f"Error loading NAM model: {e}")
+            return False
+
+    async def unload_nam_model(self) -> None:
+        """Unload the current NAM model"""
+        if self._engine:
+            try:
+                self._engine.unload_nam_model()
+                logger.info("NAM model unloaded")
+            except AttributeError:
+                pass
+
+    async def is_nam_model_loaded(self) -> bool:
+        """Check if a NAM model is loaded and ready"""
+        if not self._engine:
+            return False
+        try:
+            return self._engine.is_nam_model_loaded()
+        except AttributeError:
+            return False
+
+    async def is_nam_loading(self) -> bool:
+        """Check if a NAM model is currently loading"""
+        if not self._engine:
+            return False
+        try:
+            return self._engine.is_nam_loading()
+        except AttributeError:
+            return False
+
+    async def get_nam_model_info(self) -> Dict[str, Any]:
+        """Get information about the currently loaded NAM model"""
+        if not self._engine:
+            return {
+                "path": "",
+                "name": "",
+                "expected_sample_rate": 48000.0,
+                "input_channels": 1,
+                "output_channels": 1,
+                "has_input_level": False,
+                "has_output_level": False,
+                "input_level": 0.0,
+                "output_level": 0.0,
+                "loaded": False
+            }
+        try:
+            return self._engine.get_nam_model_info()
+        except AttributeError:
+            return {
+                "path": "",
+                "name": "",
+                "expected_sample_rate": 48000.0,
+                "input_channels": 1,
+                "output_channels": 1,
+                "has_input_level": False,
+                "has_output_level": False,
+                "input_level": 0.0,
+                "output_level": 0.0,
+                "loaded": False
+            }
+
+    async def set_nam_input_gain(self, db: float) -> None:
+        """Set NAM input gain in dB"""
+        if self._engine:
+            try:
+                self._engine.set_nam_input_gain(db)
+            except AttributeError:
+                pass
+
+    async def get_nam_input_gain(self) -> float:
+        """Get NAM input gain in dB"""
+        if not self._engine:
+            return 0.0
+        try:
+            return self._engine.get_nam_input_gain()
+        except AttributeError:
+            return 0.0
+
+    async def set_nam_output_gain(self, db: float) -> None:
+        """Set NAM output gain in dB"""
+        if self._engine:
+            try:
+                self._engine.set_nam_output_gain(db)
+            except AttributeError:
+                pass
+
+    async def get_nam_output_gain(self) -> float:
+        """Get NAM output gain in dB"""
+        if not self._engine:
+            return 0.0
+        try:
+            return self._engine.get_nam_output_gain()
+        except AttributeError:
+            return 0.0
+
+    async def set_nam_bypass(self, bypass: bool) -> None:
+        """Set NAM bypass state"""
+        if self._engine:
+            try:
+                self._engine.set_nam_bypass(bypass)
+            except AttributeError:
+                pass
+
+    async def is_nam_bypassed(self) -> bool:
+        """Check if NAM is bypassed"""
+        if not self._engine:
+            return False
+        try:
+            return self._engine.is_nam_bypassed()
+        except AttributeError:
+            return False
+
+    async def set_nam_normalize(self, normalize: bool) -> None:
+        """Enable/disable NAM output normalization"""
+        if self._engine:
+            try:
+                self._engine.set_nam_normalize(normalize)
+            except AttributeError:
+                pass
+
+    async def is_nam_normalized(self) -> bool:
+        """Check if NAM normalization is enabled"""
+        if not self._engine:
+            return True
+        try:
+            return self._engine.is_nam_normalized()
+        except AttributeError:
+            return True
+
+    async def get_nam_input_level(self) -> float:
+        """Get NAM input metering level in dB"""
+        if not self._engine:
+            return -100.0
+        try:
+            return self._engine.get_nam_input_level()
+        except AttributeError:
+            return -100.0
+
+    async def get_nam_output_level(self) -> float:
+        """Get NAM output metering level in dB"""
+        if not self._engine:
+            return -100.0
+        try:
+            return self._engine.get_nam_output_level()
+        except AttributeError:
+            return -100.0
+
+    async def get_nam_status(self) -> Dict[str, Any]:
+        """Get comprehensive NAM status"""
+        return {
+            "available": await self.is_nam_available(),
+            "model_loaded": await self.is_nam_model_loaded(),
+            "loading": await self.is_nam_loading(),
+            "bypassed": await self.is_nam_bypassed(),
+            "normalized": await self.is_nam_normalized(),
+            "input_gain": await self.get_nam_input_gain(),
+            "output_gain": await self.get_nam_output_gain(),
+            "input_level": await self.get_nam_input_level(),
+            "output_level": await self.get_nam_output_level(),
+            "model_info": await self.get_nam_model_info()
+        }
 
     # ========================================
     # Multi-Format Plugin Support (NEW)

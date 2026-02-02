@@ -158,21 +158,7 @@ class ServiceOrchestrator:
             startup_retries=3,
         ))
 
-        self._register_service(ServiceDefinition(
-            name="audio_engine",
-            display_name="Audio Engine",
-            description="Real-time audio processing engine",
-            priority=ServicePriority.HIGH,
-            dependencies=["database", "plugin_loader"],
-            start_func=self._start_audio_engine,
-            stop_func=self._stop_audio_engine,
-            health_check=self._check_audio_engine_health,
-            is_async=True,
-            auto_restart=True,
-            max_restarts=5,
-            is_critical_for_ready=True,
-            startup_retries=3,
-        ))
+        # NOTE: Legacy audio_engine service removed - use juce_engine instead
 
         self._register_service(ServiceDefinition(
             name="juce_engine",
@@ -1006,37 +992,6 @@ class ServiceOrchestrator:
             return ServiceHealth(
                 healthy=False,
                 message="Plugin loader not initialized"
-            )
-        except Exception as e:
-            return ServiceHealth(healthy=False, message=str(e))
-
-    async def _start_audio_engine(self):
-        """Start audio engine service (deprecated - use juce_engine)."""
-        # Legacy audio_io_v2 is deprecated, JUCE engine is primary
-        # This is kept for backwards compatibility only
-        logger.warning("Legacy audio_engine service is deprecated. Use juce_engine instead.")
-        pass
-
-    async def _stop_audio_engine(self):
-        """Stop audio engine service (deprecated - use juce_engine)."""
-        # Legacy audio_io_v2 is deprecated, JUCE engine is primary
-        # This is kept for backwards compatibility only
-        logger.warning("Legacy audio_engine service is deprecated. Use juce_engine instead.")
-        pass
-
-    async def _check_audio_engine_health(self) -> ServiceHealth:
-        """Check audio engine health."""
-        try:
-            from app.services.audio_io_v2 import get_audio_status
-            status = get_audio_status()
-            return ServiceHealth(
-                healthy=status.get("running", False),
-                message="Audio engine running" if status.get("running") else "Audio engine stopped",
-                metrics={
-                    "sample_rate": status.get("sample_rate", 0),
-                    "buffer_size": status.get("buffer_size", 0),
-                    "xruns": status.get("xruns", 0)
-                }
             )
         except Exception as e:
             return ServiceHealth(healthy=False, message=str(e))

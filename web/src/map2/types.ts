@@ -323,6 +323,89 @@ export interface MIDILearnEvent {
   } | MIDILearnTarget;
 }
 
+// ==================== MIDI Device Profile Types ====================
+
+export type MIDISwitchMode = 'momentary' | 'toggle' | 'timed';
+export type MIDIMessageType = 'pc' | 'cc' | 'note';
+export type MIDIExpressionCurve = 'linear' | 'logarithmic' | 'exponential' | 's_curve';
+
+export interface FootswitchConfig {
+  switch_id: string;
+  label: string;
+  midi_type: MIDIMessageType;
+  channel: number;
+  number: number;
+  mode: MIDISwitchMode;
+  default_action: string | null;
+}
+
+export interface ExpressionPedalConfig {
+  pedal_id: string;
+  label: string;
+  cc_number: number;
+  channel: number;
+  curve: MIDIExpressionCurve;
+  invert: boolean;
+  default_target: string | null;
+  deadzone_low: number;
+  deadzone_high: number;
+}
+
+export interface BankConfig {
+  enabled: boolean;
+  items_per_bank: number;
+  max_banks: number;
+  current_bank: number;
+}
+
+export interface MIDIDeviceProfile {
+  profile_id: string;
+  name: string;
+  manufacturer: string;
+  description: string;
+  icon: string;
+  is_recommended: boolean;
+  name_patterns: string[];
+  footswitches: FootswitchConfig[];
+  expression_pedals: ExpressionPedalConfig[];
+  bank_config: BankConfig | null;
+  supports_firmware_update: boolean;
+  current_firmware_version: string | null;
+}
+
+export interface ExpressionCalibration {
+  cc_number?: number;
+  channel?: number;
+  min_raw: number;
+  max_raw: number;
+  deadzone_low: number;
+  deadzone_high: number;
+  curve: MIDIExpressionCurve;
+  invert: boolean;
+  target?: string;
+}
+
+export interface DFUStatus {
+  dfu_available: boolean;
+  devices_in_dfu_mode: Array<{ raw: string; in_dfu_mode: boolean }>;
+  install_hint: string | null;
+}
+
+export interface DFUInstructions {
+  device: string;
+  steps: string[];
+  exit_dfu: string;
+  notes: string[];
+}
+
+export interface ProfileApplyResult {
+  profile_id: string;
+  profile_name: string;
+  commands_created: number;
+  mappings_created: number;
+  expression_configs: number;
+}
+
 // ==================== IR Types ====================
 
 export interface IRFile {

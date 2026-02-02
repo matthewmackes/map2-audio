@@ -23,6 +23,7 @@ import {
   Settings2,
 } from 'lucide-react'
 import { pluginsApi, pluginPresetsApi, chainsApi } from '../../map2/api'
+import { usePluginOutput } from '../hooks/usePluginOutputs'
 import type { Plugin, PluginParameter, OutputPort } from '../../map2/types'
 
 // Category colors (matching existing system)
@@ -492,6 +493,9 @@ export function LV2PluginParameterEditor({
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = catConfig.color
 
+  // Real-time output data from WebSocket
+  const { outputPorts: pluginOutputValues } = usePluginOutput(plugin.uri)
+
   // State
   const [parameterValues, setParameterValues] = useState<Record<number, number>>({})
   const [searchQuery, setSearchQuery] = useState('')
@@ -933,7 +937,7 @@ export function LV2PluginParameterEditor({
               <OutputMeter
                 key={port.index}
                 port={port}
-                value={0} // TODO: Wire to real-time WebSocket data
+                value={pluginOutputValues[port.index] ?? 0}
                 accentColor={accentColor}
               />
             ))}

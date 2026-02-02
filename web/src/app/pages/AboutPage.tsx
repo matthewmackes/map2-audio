@@ -1,6 +1,6 @@
-import { Github, ExternalLink, Book } from 'lucide-react'
+import { Github, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { themes, darkThemes, lightThemes, applyTheme, getSavedThemeId } from '../theme'
+import { themes, themeOrder, applyTheme, getSavedThemeId } from '../theme'
 
 interface VersionInfo {
   version?: string
@@ -38,7 +38,7 @@ export function AboutPage() {
     <div className="stack" style={{ maxWidth: 500, margin: '0 auto' }}>
       {/* Version Info */}
       <div className="card">
-        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
           Version
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
@@ -63,7 +63,7 @@ export function AboutPage() {
 
       {/* Links */}
       <div className="card">
-        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'inherit' }}>
           Links
         </h3>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -81,7 +81,7 @@ export function AboutPage() {
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--border-radius-sm)',
-                color: 'var(--text)',
+                color: 'inherit',
                 textDecoration: 'none',
                 fontSize: 13,
                 transition: 'border-color 150ms',
@@ -98,7 +98,7 @@ export function AboutPage() {
 
       {/* Credits */}
       <div className="card">
-        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'inherit' }}>
           Credits
         </h3>
         <ul style={{
@@ -119,7 +119,7 @@ export function AboutPage() {
 
       {/* Theme Selection */}
       <div className="card">
-        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'inherit' }}>
           Theme
         </h3>
         <select
@@ -130,7 +130,7 @@ export function AboutPage() {
             borderRadius: 'var(--border-radius-sm)',
             fontSize: 14,
             background: 'var(--surface)',
-            color: 'var(--text)',
+            color: 'inherit',
             border: '1px solid var(--border)',
             outline: 'none',
             cursor: 'pointer',
@@ -138,16 +138,9 @@ export function AboutPage() {
           onChange={e => applyTheme(e.target.value)}
           defaultValue={getSavedThemeId()}
         >
-          <optgroup label="Dark Themes">
-            {darkThemes.map(id => (
-              <option key={id} value={id}>{themes[id].name}</option>
-            ))}
-          </optgroup>
-          <optgroup label="Light Themes">
-            {lightThemes.map(id => (
-              <option key={id} value={id}>{themes[id].name}</option>
-            ))}
-          </optgroup>
+          {themeOrder.map(id => (
+            <option key={id} value={id}>{themes[id].name}</option>
+          ))}
         </select>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8 }}>
           {themes[getSavedThemeId()]?.description}

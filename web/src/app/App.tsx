@@ -12,6 +12,9 @@ import { LibraryPage } from './pages/LibraryPage'
 import { MIDIPage } from './pages/MIDIPage'
 import { ToastProvider } from './components/Toasts'
 import { GridFlowPage } from './pages/GridFlowPage'
+import { DSPPage } from './pages/DSPPage'
+import { EdirolUA1000Page } from './pages/EdirolUA1000Page'
+import { HoToneJoGGPage } from './pages/HoToneJoGGPage'
 // import { MeteringPage } from './pages/MeteringPage'
 
 const queryClient = new QueryClient({
@@ -43,6 +46,9 @@ export function App() {
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/midi" element={<MIDIPage />} />
               <Route path="/grid" element={<GridFlowPage />} />
+              <Route path="/dsp" element={<DSPPage />} />
+              <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
+              <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
               {/* <Route path="/metering" element={<MeteringPage />} /> */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

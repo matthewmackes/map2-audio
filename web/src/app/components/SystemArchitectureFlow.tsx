@@ -182,7 +182,7 @@ export function SystemArchitectureFlow() {
             utilization: config?.cores?.[1]?.utilization,
             details: {
               description: 'Real-time audio I/O with SCHED_FIFO priority',
-              components: ['JACK Server', 'ALSA Backend', 'Buffer Manager', 'Latency Compensator'],
+              components: ['JUCE Audio Engine', 'ALSA Backend', 'Buffer Manager', 'Latency Compensator'],
               metrics: [
                 { label: 'Sample Rate', value: `${testData?.sample_rate || 48000} Hz` },
                 { label: 'Buffer Size', value: `${testData?.buffer_size || 256} samples` },
