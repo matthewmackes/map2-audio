@@ -11,6 +11,8 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Check,
   AlertTriangle,
   FolderOpen,
@@ -103,6 +105,8 @@ function extractFolder(path: string): string {
   return parts[parts.length - 2] || '-'
 }
 
+const PAGE_SIZE = 100
+
 export function InstalledAssetsTable() {
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
@@ -113,6 +117,7 @@ export function InstalledAssetsTable() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [columns, setColumns] = useState<ColumnVisibility>(DEFAULT_COLUMNS)
+  const [currentPage, setCurrentPage] = useState(0)
 
   // Fetch all asset types
   const cabinetsQuery = useQuery({
@@ -295,6 +300,16 @@ export function InstalledAssetsTable() {
     return result
   }, [unifiedAssets, typeFilter, searchQuery, sortField, sortDirection])
 
+  // Paginate the filtered assets
+  const totalPages = Math.ceil(filteredAssets.length / PAGE_SIZE)
+  const paginatedAssets = useMemo(() => {
+    const start = currentPage * PAGE_SIZE
+    return filteredAssets.slice(start, start + PAGE_SIZE)
+  }, [filteredAssets, currentPage])
+
+  // Reset page when filters change
+  const resetPage = useCallback(() => setCurrentPage(0), [])
+
   const isLoading =
     cabinetsQuery.isLoading ||
     reverbsQuery.isLoading ||
@@ -334,12 +349,12 @@ export function InstalledAssetsTable() {
   }, [])
 
   const toggleSelectAll = useCallback(() => {
-    if (selectedIds.size === filteredAssets.length) {
+    if (selectedIds.size === paginatedAssets.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(filteredAssets.map((a) => a.id)))
+      setSelectedIds(new Set(paginatedAssets.map((a) => a.id)))
     }
-  }, [selectedIds.size, filteredAssets])
+  }, [selectedIds.size, paginatedAssets])
 
   const handleDeleteSelected = useCallback(() => {
     // For now, just show confirmation and clear selection
@@ -482,7 +497,7 @@ export function InstalledAssetsTable() {
         <div className="flex" style={{ gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
           <button
             className={`btn btn-sm ${typeFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setTypeFilter('all')}
+            onClick={() => { setTypeFilter('all'); resetPage() }}
           >
             All ({counts.total})
           </button>
@@ -499,7 +514,7 @@ export function InstalledAssetsTable() {
                   color: typeFilter === type ? config.color : undefined,
                   borderColor: typeFilter === type ? config.color : undefined,
                 }}
-                onClick={() => setTypeFilter(type)}
+                onClick={() => { setTypeFilter(type); resetPage() }}
               >
                 <Icon size={14} />
                 {config.label} ({count})
@@ -524,7 +539,7 @@ export function InstalledAssetsTable() {
             type="text"
             placeholder="Search by name, source, category, folder..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); resetPage() }}
             style={{
               flex: 1,
               background: 'none',
@@ -564,7 +579,7 @@ export function InstalledAssetsTable() {
                   <input
                     type="checkbox"
                     checked={
-                      selectedIds.size === filteredAssets.length && filteredAssets.length > 0
+                      selectedIds.size === paginatedAssets.length && paginatedAssets.length > 0
                     }
                     onChange={toggleSelectAll}
                     style={{ cursor: 'pointer' }}
@@ -659,7 +674,7 @@ export function InstalledAssetsTable() {
               </tr>
             </thead>
             <tbody>
-              {filteredAssets.map((asset) => {
+              {paginatedAssets.map((asset) => {
                 const config = TYPE_CONFIG[asset.type]
                 const Icon = config.icon
                 const isSelected = selectedIds.has(asset.id)
@@ -820,7 +835,7 @@ export function InstalledAssetsTable() {
         )}
       </div>
 
-      {/* Footer with count */}
+      {/* Footer with count and pagination */}
       <div
         style={{
           padding: '8px 16px',
@@ -829,14 +844,40 @@ export function InstalledAssetsTable() {
           color: 'var(--muted)',
           display: 'flex',
           justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
         <span>
-          {filteredAssets.length} of {unifiedAssets.length} assets
-          {selectedIds.size > 0 && ` (${selectedIds.size} selected)`}
+          Showing {paginatedAssets.length > 0 ? currentPage * PAGE_SIZE + 1 : 0}-
+          {Math.min((currentPage + 1) * PAGE_SIZE, filteredAssets.length)} of {filteredAssets.length}
+          {filteredAssets.length !== unifiedAssets.length && ` (${unifiedAssets.length} total)`}
+          {selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
         </span>
+        {totalPages > 1 && (
+          <div className="flex" style={{ gap: 4, alignItems: 'center' }}>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ padding: '2px 6px' }}
+              onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ minWidth: 80, textAlign: 'center' }}>
+              Page {currentPage + 1} of {totalPages}
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ padding: '2px 6px' }}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage >= totalPages - 1}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
         <span>
-          Sorted by {sortField} ({sortDirection === 'asc' ? 'ascending' : 'descending'})
+          Sorted by {sortField} ({sortDirection === 'asc' ? 'asc' : 'desc'})
         </span>
       </div>
 
