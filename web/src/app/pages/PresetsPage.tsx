@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Combobox, ComboboxItem, ComboboxPopover, ComboboxProvider, useComboboxStore } from '@ariakit/react'
-import { BookmarkPlus, Loader2, Star } from 'lucide-react'
+import { BookmarkPlus, Loader2, Star, Settings } from 'lucide-react'
 import type { Preset } from '../../map2/types'
 import { presetsApi } from '../../map2/api'
 import { PageHeader } from '../components/PageHeader'
@@ -35,6 +35,7 @@ export function PresetsPage() {
       <PageHeader
         title="Presets"
         subtitle="Search, filter, and favorite presets with keyboard-friendly controls."
+        icon={<Settings size={32} style={{ color: '#3b82f6' }} />}
         actions={<span className="pill">Synced with backend</span>}
       />
 

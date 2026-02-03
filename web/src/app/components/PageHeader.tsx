@@ -9,9 +9,10 @@ interface Props {
     alt: string
     title?: string
   }
+  icon?: ReactNode
 }
 
-export function PageHeader({ title, subtitle, actions, logo }: Props) {
+export function PageHeader({ title, subtitle, actions, logo, icon }: Props) {
   return (
     <div className="page-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -30,6 +31,11 @@ export function PageHeader({ title, subtitle, actions, logo }: Props) {
               e.currentTarget.style.display = 'none'
             }}
           />
+        )}
+        {icon && (
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            {icon}
+          </div>
         )}
         <div>
           <h1>{title}</h1>

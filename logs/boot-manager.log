@@ -179121,3 +179121,1127 @@ disabled: map2-lcd.service
 [0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
 [0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
 [1;33m⚠[0m Boot manager already running (PID: 644)
+[2026-01-29 14:42:17] =========================================
+[2026-01-29 14:42:17] MAP2 Audio Platform - Boot Manager
+[2026-01-29 14:42:17] Version: 2.0.0
+[2026-01-29 14:42:17] Date: 2026-01-29 14:42:17
+[2026-01-29 14:42:17] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-30 16:46:53] =========================================
+[2026-01-30 16:46:53] MAP2 Audio Platform - Boot Manager
+[2026-01-30 16:46:53] Version: 2.0.0
+[2026-01-30 16:46:53] Date: 2026-01-30 16:46:53
+[2026-01-30 16:46:53] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-30 16:48:20] =========================================
+[2026-01-30 16:48:20] MAP2 Audio Platform - Boot Manager
+[2026-01-30 16:48:20] Version: 2.0.0
+[2026-01-30 16:48:20] Date: 2026-01-30 16:48:20
+[2026-01-30 16:48:20] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-30 16:54:59] =========================================
+[2026-01-30 16:54:59] MAP2 Audio Platform - Boot Manager
+[2026-01-30 16:54:59] Version: 2.0.0
+[2026-01-30 16:54:59] Date: 2026-01-30 16:54:59
+[2026-01-30 16:54:59] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-31 16:13:27] =========================================
+[2026-01-31 16:13:27] MAP2 Audio Platform - Boot Manager
+[2026-01-31 16:13:27] Version: 2.0.0
+[2026-01-31 16:13:27] Date: 2026-01-31 16:13:27
+[2026-01-31 16:13:27] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-31 19:33:54] =========================================
+[2026-01-31 19:33:54] MAP2 Audio Platform - Boot Manager
+[2026-01-31 19:33:54] Version: 2.0.0
+[2026-01-31 19:33:54] Date: 2026-01-31 19:33:54
+[2026-01-31 19:33:54] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-31 19:42:31] =========================================
+[2026-01-31 19:42:31] MAP2 Audio Platform - Boot Manager
+[2026-01-31 19:42:31] Version: 2.0.0
+[2026-01-31 19:42:31] Date: 2026-01-31 19:42:31
+[2026-01-31 19:42:31] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-01-31 23:28:34] =========================================
+[2026-01-31 23:28:34] MAP2 Audio Platform - Boot Manager
+[2026-01-31 23:28:34] Version: 2.0.0
+[2026-01-31 23:28:34] Date: 2026-01-31 23:28:34
+[2026-01-31 23:28:34] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[1;33m⚠[0m Boot manager already running (PID: 641)
+[1;33m⚠[0m Boot manager already running (PID: 641)
+[2026-02-01 21:43:44] =========================================
+[2026-02-01 21:43:44] MAP2 Audio Platform - Boot Manager
+[2026-02-01 21:43:44] Version: 2.0.0
+[2026-02-01 21:43:44] Date: 2026-02-01 21:43:44
+[2026-02-01 21:43:44] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-01 22:20:09] =========================================
+[2026-02-01 22:20:09] MAP2 Audio Platform - Boot Manager
+[2026-02-01 22:20:09] Version: 2.0.0
+[2026-02-01 22:20:09] Date: 2026-02-01 22:20:09
+[2026-02-01 22:20:09] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-01 22:21:05] =========================================
+[2026-02-01 22:21:05] MAP2 Audio Platform - Boot Manager
+[2026-02-01 22:21:05] Version: 2.0.0
+[2026-02-01 22:21:05] Date: 2026-02-01 22:21:05
+[2026-02-01 22:21:05] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-01 22:36:24] =========================================
+[2026-02-01 22:36:24] MAP2 Audio Platform - Boot Manager
+[2026-02-01 22:36:24] Version: 2.0.0
+[2026-02-01 22:36:24] Date: 2026-02-01 22:36:24
+[2026-02-01 22:36:24] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 09:34:18] =========================================
+[2026-02-02 09:34:18] MAP2 Audio Platform - Boot Manager
+[2026-02-02 09:34:18] Version: 2.0.0
+[2026-02-02 09:34:18] Date: 2026-02-02 09:34:18
+[2026-02-02 09:34:18] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 09:36:13] =========================================
+[2026-02-02 09:36:13] MAP2 Audio Platform - Boot Manager
+[2026-02-02 09:36:13] Version: 2.0.0
+[2026-02-02 09:36:13] Date: 2026-02-02 09:36:13
+[2026-02-02 09:36:13] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 14:06:35] =========================================
+[2026-02-02 14:06:35] MAP2 Audio Platform - Boot Manager
+[2026-02-02 14:06:35] Version: 2.0.0
+[2026-02-02 14:06:35] Date: 2026-02-02 14:06:35
+[2026-02-02 14:06:35] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 14:08:26] =========================================
+[2026-02-02 14:08:26] MAP2 Audio Platform - Boot Manager
+[2026-02-02 14:08:26] Version: 2.0.0
+[2026-02-02 14:08:26] Date: 2026-02-02 14:08:26
+[2026-02-02 14:08:26] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 16:47:49] =========================================
+[2026-02-02 16:47:49] MAP2 Audio Platform - Boot Manager
+[2026-02-02 16:47:49] Version: 2.0.0
+[2026-02-02 16:47:49] Date: 2026-02-02 16:47:49
+[2026-02-02 16:47:49] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 17:07:15] =========================================
+[2026-02-02 17:07:15] MAP2 Audio Platform - Boot Manager
+[2026-02-02 17:07:15] Version: 2.0.0
+[2026-02-02 17:07:15] Date: 2026-02-02 17:07:15
+[2026-02-02 17:07:15] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 17:12:29] =========================================
+[2026-02-02 17:12:29] MAP2 Audio Platform - Boot Manager
+[2026-02-02 17:12:29] Version: 2.0.0
+[2026-02-02 17:12:29] Date: 2026-02-02 17:12:29
+[2026-02-02 17:12:29] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 17:12:49] =========================================
+[2026-02-02 17:12:49] MAP2 Audio Platform - Boot Manager
+[2026-02-02 17:12:49] Version: 2.0.0
+[2026-02-02 17:12:49] Date: 2026-02-02 17:12:49
+[2026-02-02 17:12:49] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 17:52:35] =========================================
+[2026-02-02 17:52:35] MAP2 Audio Platform - Boot Manager
+[2026-02-02 17:52:35] Version: 2.0.0
+[2026-02-02 17:52:35] Date: 2026-02-02 17:52:35
+[2026-02-02 17:52:35] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 18:43:08] =========================================
+[2026-02-02 18:43:08] MAP2 Audio Platform - Boot Manager
+[2026-02-02 18:43:08] Version: 2.0.0
+[2026-02-02 18:43:08] Date: 2026-02-02 18:43:08
+[2026-02-02 18:43:08] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 18:44:56] =========================================
+[2026-02-02 18:44:56] MAP2 Audio Platform - Boot Manager
+[2026-02-02 18:44:56] Version: 2.0.0
+[2026-02-02 18:44:57] Date: 2026-02-02 18:44:56
+[2026-02-02 18:44:57] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 18:49:25] =========================================
+[2026-02-02 18:49:25] MAP2 Audio Platform - Boot Manager
+[2026-02-02 18:49:25] Version: 2.0.0
+[2026-02-02 18:49:25] Date: 2026-02-02 18:49:25
+[2026-02-02 18:49:25] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 19:11:44] =========================================
+[2026-02-02 19:11:44] MAP2 Audio Platform - Boot Manager
+[2026-02-02 19:11:44] Version: 2.0.0
+[2026-02-02 19:11:44] Date: 2026-02-02 19:11:44
+[2026-02-02 19:11:44] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 20:19:07] =========================================
+[2026-02-02 20:19:07] MAP2 Audio Platform - Boot Manager
+[2026-02-02 20:19:07] Version: 2.0.0
+[2026-02-02 20:19:07] Date: 2026-02-02 20:19:07
+[2026-02-02 20:19:07] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 20:19:39] =========================================
+[2026-02-02 20:19:39] MAP2 Audio Platform - Boot Manager
+[2026-02-02 20:19:39] Version: 2.0.0
+[2026-02-02 20:19:39] Date: 2026-02-02 20:19:39
+[2026-02-02 20:19:39] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 20:55:58] =========================================
+[2026-02-02 20:55:58] MAP2 Audio Platform - Boot Manager
+[2026-02-02 20:55:59] Version: 2.0.0
+[2026-02-02 20:55:59] Date: 2026-02-02 20:55:59
+[2026-02-02 20:55:59] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 21:50:23] =========================================
+[2026-02-02 21:50:23] MAP2 Audio Platform - Boot Manager
+[2026-02-02 21:50:23] Version: 2.0.0
+[2026-02-02 21:50:23] Date: 2026-02-02 21:50:23
+[2026-02-02 21:50:23] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 21:50:46] =========================================
+[2026-02-02 21:50:46] MAP2 Audio Platform - Boot Manager
+[2026-02-02 21:50:46] Version: 2.0.0
+[2026-02-02 21:50:46] Date: 2026-02-02 21:50:46
+[2026-02-02 21:50:46] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 21:54:13] =========================================
+[2026-02-02 21:54:13] MAP2 Audio Platform - Boot Manager
+[2026-02-02 21:54:13] Version: 2.0.0
+[2026-02-02 21:54:13] Date: 2026-02-02 21:54:13
+[2026-02-02 21:54:13] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 21:58:57] =========================================
+[2026-02-02 21:58:57] MAP2 Audio Platform - Boot Manager
+[2026-02-02 21:58:57] Version: 2.0.0
+[2026-02-02 21:58:57] Date: 2026-02-02 21:58:57
+[2026-02-02 21:58:57] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite
+[2026-02-02 22:02:40] =========================================
+[2026-02-02 22:02:40] MAP2 Audio Platform - Boot Manager
+[2026-02-02 22:02:40] Version: 2.0.0
+[2026-02-02 22:02:40] Date: 2026-02-02 22:02:40
+[2026-02-02 22:02:40] =========================================
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Creating Required Directories[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/data
+[0;32m✓[0m Directory exists: /home/mm/map2-audio/logs
+[0;32m✓[0m Directory exists: /home/mm/.map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/nam
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/cabinets
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/reverbs
+[0;32m✓[0m Directory exists: /home/mm/.local/share/map2/ir/user
+[0;32m✓[0m Directory exists: /home/mm/.map2/packages
+[0;32m✓[0m Directory exists: /home/mm/.map2/sessions
+
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m[0;36m  Checking Prerequisites[0m
+[1m[0;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;32m✓[0m Python: Python 3.14.2
+[0;32m✓[0m Node.js: v22.20.0
+[0;32m✓[0m npm: v10.9.3
+[0;34m→[0m Checking Python modules...
+[0;31m✗[0m Missing: fastapi
+[0;31m✗[0m Missing: uvicorn
+[0;31m✗[0m Missing: sqlalchemy
+[0;31m✗[0m Missing: aiosqlite
+[0;31m✗[0m Missing required Python modules: fastapi uvicorn sqlalchemy aiosqlite
+[0;34m→[0m Install with: pip3 install fastapi uvicorn sqlalchemy aiosqlite

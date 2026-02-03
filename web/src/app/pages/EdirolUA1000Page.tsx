@@ -238,6 +238,7 @@ export function EdirolUA1000Page() {
       <PageHeader
         title="Edirol UA-1000"
         subtitle="Hi-Speed USB 2.0 Audio Interface - Connected to JUCE Audio Engine"
+        icon={<Usb size={32} style={{ color: '#3b82f6' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
             {!isRunning ? (

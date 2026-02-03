@@ -1810,20 +1810,21 @@ export function GridFlowPage() {
               <p className="grid-flow-lane-picker-hint">Select a parameter to automate:</p>
               {currentChain?.plugins && currentChain.plugins.length > 0 ? (
                 <div className="grid-flow-lane-picker-plugins">
-                  {currentChain.plugins.map((plugin: Plugin) => (
+                  {currentChain.plugins.map((plugin) => (
                     <div key={plugin.uri} className="grid-flow-lane-picker-plugin">
                       <div className="grid-flow-lane-picker-plugin-name">{plugin.name}</div>
                       <div className="grid-flow-lane-picker-params">
-                        {plugin.parameters?.map((param: { index: number; name: string; symbol: string; min: number; max: number }) => {
+                        {Object.entries(plugin.parameters || {}).map(([symbol, value]) => {
+                          const param = { symbol, value }
                           const laneColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD']
                           return (
                             <button
-                              key={param.index}
+                              key={param.symbol}
                               className="grid-flow-lane-picker-param"
                               onClick={() => {
                                 const newLane: AutomationLane = {
                                   id: `${plugin.uri}:${param.symbol}`,
-                                  parameterName: param.name,
+                                  parameterName: param.symbol,
                                   pluginName: plugin.name,
                                   pluginUri: plugin.uri,
                                   parameterSymbol: param.symbol,
@@ -1836,10 +1837,7 @@ export function GridFlowPage() {
                                 setLanePickerOpen(false)
                               }}
                             >
-                              {param.name}
-                              <span className="grid-flow-lane-picker-param-range">
-                                {param.min.toFixed(1)} - {param.max.toFixed(1)}
-                              </span>
+                              {param.symbol}
                             </button>
                           )
                         })}

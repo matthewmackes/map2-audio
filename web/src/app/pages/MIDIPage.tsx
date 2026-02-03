@@ -141,6 +141,7 @@ export function MIDIPage() {
       <PageHeader
         title="MIDI Control"
         subtitle="CC mappings, chain switching, and real-time MIDI monitoring."
+        icon={<Music size={32} style={{ color: '#3b82f6' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
             <button

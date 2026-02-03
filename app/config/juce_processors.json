@@ -211,6 +211,41 @@
       }
     },
     {
+      "uri": "map2://juce/delay/circular",
+      "name": "Circular Delay",
+      "category": "Delay",
+      "description": "Yamaha SPX90-inspired circular delay with configurable taps, pan modulation, and lush ambient textures. Zero-latency processing with smooth parameter transitions.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/delay/circular",
+      "features": ["multi-tap", "pan-modulation", "lfo-visualization", "real-time-metering", "zero-latency", "preset-browser"],
+      "parameters": [
+        {"name": "Taps", "symbol": "tap_count", "min": 4, "max": 12, "default": 6, "type": "integer"},
+        {"name": "Delay Time", "symbol": "delay_time", "min": 100, "max": 2000, "default": 500, "unit": "ms", "logarithmic": true},
+        {"name": "Feedback", "symbol": "feedback", "min": 0, "max": 0.95, "default": 0.4, "unit": "ratio"},
+        {"name": "Pan Rate", "symbol": "pan_rate", "min": 0.1, "max": 5.0, "default": 1.0, "unit": "Hz", "logarithmic": true},
+        {"name": "Pan Depth", "symbol": "pan_depth", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Output Level", "symbol": "output_level", "min": -12, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "description": "Yamaha SPX90-inspired circular delay presets",
+        "presets": [
+          {"id": "manual", "name": "Manual", "description": "User-defined settings"},
+          {"id": "ambient_swirl", "name": "Ambient Swirl", "description": "Long delays, slow pan, lush environment", "settings": {"tap_count": 8, "delay_time": 1500, "feedback": 0.6, "pan_rate": 0.3, "pan_depth": 80, "mix": 60}},
+          {"id": "vocal_sheen", "name": "Vocal Sheen", "description": "Short delays, quick decay, subtle effect", "settings": {"tap_count": 4, "delay_time": 200, "feedback": 0.2, "pan_rate": 2.0, "pan_depth": 30, "mix": 40}},
+          {"id": "deep_space", "name": "Deep Space", "description": "Very long delays, slow rotation, spacious feel", "settings": {"tap_count": 10, "delay_time": 2000, "feedback": 0.7, "pan_rate": 0.2, "pan_depth": 100, "mix": 70}},
+          {"id": "percussive_shower", "name": "Percussive Shower", "description": "Very short delays, fast rotation, rhythmic texture", "settings": {"tap_count": 12, "delay_time": 150, "feedback": 0.3, "pan_rate": 3.5, "pan_depth": 70, "mix": 55}}
+        ]
+      }
+    },
+    {
       "uri": "map2://juce/modulation/chorus",
       "name": "Stereo Chorus",
       "category": "Modulation",

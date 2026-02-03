@@ -299,17 +299,20 @@ export function WelcomePage() {
     <div className="stack" style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Hero Section */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <h1 style={{
-          fontSize: 28,
-          fontWeight: 700,
-          marginBottom: 8,
-          background: 'linear-gradient(135deg, var(--primary) 0%, #00ff88 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-        }}>
-          Welcome to Mackes Audio Platform
-        </h1>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <Zap size={32} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #00ff88 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }} />
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 700,
+            margin: 0,
+            background: 'linear-gradient(135deg, var(--primary) 0%, #00ff88 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            Welcome to Mackes Audio Platform
+          </h1>
+        </div>
         <p style={{
           fontSize: 14,
           color: 'var(--muted)',

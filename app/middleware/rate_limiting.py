@@ -21,6 +21,25 @@ from app.exceptions import RateLimitException
 
 logger = get_logger(__name__)
 
+# Global rate limiting enabled state (default: True)
+_rate_limiting_enabled = True
+_rate_limiting_lock = threading.Lock()
+
+
+def set_rate_limiting_enabled(enabled: bool) -> None:
+    """Set whether rate limiting is enabled globally."""
+    global _rate_limiting_enabled
+    with _rate_limiting_lock:
+        _rate_limiting_enabled = enabled
+        state = "enabled" if enabled else "disabled"
+        logger.info(f"Rate limiting {state}")
+
+
+def get_rate_limiting_enabled() -> bool:
+    """Get whether rate limiting is currently enabled."""
+    with _rate_limiting_lock:
+        return _rate_limiting_enabled
+
 
 class TokenBucket:
     """Token bucket for rate limiting."""
@@ -152,17 +171,21 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         # Skip rate limiting for health checks
         if request.url.path in ["/health", "/api/health", "/docs", "/openapi.json"]:
             return await call_next(request)
-        
+
+        # Check if rate limiting is enabled globally
+        if not get_rate_limiting_enabled():
+            return await call_next(request)
+
         # Get client ID and limits
         client_id = self._get_client_id(request)
         limit, window = self._get_limits(request.url.path)
-        
+
         # Get token bucket
         bucket = self._get_bucket(client_id, limit, window)
-        
+
         # Try to consume token
         allowed, retry_after = bucket.consume()
-        
+
         if not allowed:
             # Rate limit exceeded
             logger.warning(
@@ -175,7 +198,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
                     "retry_after": retry_after,
                 }
             )
-            
+
             # Return 429 Too Many Requests
             return Response(
                 content=f'{{"error":"Rate limit exceeded","limit":{limit},"window":"{window}s","retry_after":{retry_after:.1f}}}',
@@ -187,18 +210,18 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
                 },
                 media_type="application/json",
             )
-        
+
         # Process request
         response = await call_next(request)
-        
+
         # Add rate limit headers
         response.headers["X-RateLimit-Limit"] = str(limit)
         response.headers["X-RateLimit-Window"] = f"{window}s"
         response.headers["X-RateLimit-Remaining"] = str(int(bucket.tokens))
-        
+
         # Periodic cleanup
         self._cleanup_old_buckets()
-        
+
         return response
 
 

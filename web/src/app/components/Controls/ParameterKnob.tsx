@@ -70,6 +70,10 @@ function valueToPosition(
 
 // Default value formatter
 function defaultFormatter(value: number): string {
+  // Handle non-numeric values gracefully
+  if (typeof value !== 'number' || isNaN(value)) {
+    return '-'
+  }
   if (Math.abs(value) >= 1000) {
     return `${(value / 1000).toFixed(1)}k`
   }

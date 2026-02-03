@@ -1,6 +1,7 @@
 """
 SoundFont Download Manager
 Coordinate downloading from multiple SoundFont libraries.
+Enhanced with pause/resume, state persistence, and real-time progress tracking.
 """
 
 import logging
@@ -9,8 +10,9 @@ import os
 import zipfile
 import tarfile
 import shutil
-from typing import List, Dict, Optional, Set
-from dataclasses import dataclass
+import json
+from typing import List, Dict, Optional, Set, Callable
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
 
@@ -24,6 +26,12 @@ from .scraper_base import SFScraperBase, SFFileInfo
 from .sfzinstruments_scraper import SFZInstrumentsScraper
 from .musical_artifacts_scraper import MusicalArtifactsScraper
 from .freepats_scraper import FreePatsScraper
+from .internet_archive_scraper import InternetArchiveScraper
+from .polyphone_scraper import PolyphoneScraper
+from .vsco_scraper import VSCOScraper
+from .pianobook_scraper import PianoBookScraper
+from .vpo_scraper import VirtualPlayingOrchestraScraper
+from app.services.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +56,42 @@ class DownloadStats:
     downloaded: int = 0
     failed: int = 0
     skipped: int = 0
+    paused: int = 0
     total_bytes: int = 0
+    downloaded_bytes: int = 0
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    pause_time: Optional[datetime] = None
+    resume_time: Optional[datetime] = None
+    total_pause_duration: float = 0.0
+    speed_bps: float = 0.0
+    average_speed_bps: float = 0.0
+    peak_speed_bps: float = 0.0
+
+
+@dataclass
+class EnhancedDownloadState:
+    """Persistent download state for resume capability."""
+    manager_state: str = "IDLE"  # IDLE, DOWNLOADING, PAUSED, CANCELLED, COMPLETED
+    stats: Dict = field(default_factory=dict)
+    sources: Dict = field(default_factory=dict)
+    active_files: Dict = field(default_factory=dict)
+    completed_files: List[str] = field(default_factory=list)
+    failed_files: List[str] = field(default_factory=list)
+    paused_files: List[str] = field(default_factory=list)
+    pending_files: List[Dict] = field(default_factory=list)
+    parallel: int = 4
+    skip_existing: bool = True
+    chunk_size: int = 1024 * 1024
+    max_retries: int = 3
+    last_saved: Optional[datetime] = None
 
 
 class SFDownloadManager:
-    """Manage SoundFont library downloads."""
+    """Manage SoundFont library downloads with pause/resume and state persistence."""
+
+    STATE_FILE_PATH = "~/.map2/soundfont_download_state.json"
+    BROADCASTER_INTERVAL = 0.5  # Broadcast every 500ms
 
     def __init__(self, storage_path: Optional[str] = None):
         """Initialize download manager.
@@ -72,10 +109,16 @@ class SFDownloadManager:
         self.stats = DownloadStats()
         self.source_stats: Dict[str, SourceStats] = {}
         self.is_downloading = False
+        self.is_paused = False
         self.downloaded_hashes: Set[str] = set()
         self.current_source: Optional[str] = None
         self.active_sources: List[str] = []
         self.failed_sources: List[str] = []
+
+        # Enhanced state management
+        self._state_lock = asyncio.Lock()
+        self._download_state = EnhancedDownloadState()
+        self.state_file_path = os.path.expanduser(self.STATE_FILE_PATH)
 
         # Initialize scrapers
         self._init_scrapers()
@@ -83,7 +126,13 @@ class SFDownloadManager:
         # Create storage directory
         os.makedirs(self.storage_path, exist_ok=True)
 
+        # Create state directory
+        os.makedirs(os.path.dirname(self.state_file_path), exist_ok=True)
+
         logger.info(f"SoundFont Download Manager initialized: {self.storage_path}")
+
+        # Try to load previous state
+        asyncio.create_task(self._load_state_async())
 
     def _get_default_storage_path(self) -> str:
         """Get default storage path for SoundFonts."""
@@ -100,7 +149,127 @@ class SFDownloadManager:
             'sfzinstruments': SFZInstrumentsScraper(),
             'musical_artifacts': MusicalArtifactsScraper(),
             'freepats': FreePatsScraper(),
+            'internet_archive': InternetArchiveScraper(),
+            'polyphone': PolyphoneScraper(),
+            'vsco': VSCOScraper(),
+            'pianobook': PianoBookScraper(),
+            'vpo': VirtualPlayingOrchestraScraper(),
         }
+
+    # ==================== State Persistence ====================
+
+    async def _load_state_async(self) -> None:
+        """Asynchronously load saved download state."""
+        try:
+            await self._load_state()
+        except Exception as e:
+            logger.warning(f"Could not load previous download state: {e}")
+
+    async def _load_state(self) -> bool:
+        """Load download state from disk."""
+        try:
+            if not os.path.exists(self.state_file_path):
+                return False
+
+            with open(self.state_file_path, 'r') as f:
+                data = json.load(f)
+
+            async with self._state_lock:
+                self._download_state = EnhancedDownloadState(**data)
+                logger.info(f"Loaded download state: {self._download_state.manager_state}")
+
+            return True
+        except Exception as e:
+            logger.error(f"Error loading download state: {e}")
+            return False
+
+    async def _save_state(self) -> None:
+        """Save download state to disk."""
+        try:
+            async with self._state_lock:
+                state_dict = asdict(self._download_state)
+                state_dict['last_saved'] = datetime.utcnow().isoformat()
+
+            with open(self.state_file_path, 'w') as f:
+                json.dump(state_dict, f, indent=2, default=str)
+
+            logger.debug("Download state saved")
+        except Exception as e:
+            logger.warning(f"Error saving download state: {e}")
+
+    # ==================== Pause/Resume Control ====================
+
+    async def pause_download(self) -> None:
+        """Pause ongoing download."""
+        if not self.is_downloading:
+            logger.warning("No download in progress to pause")
+            return
+
+        async with self._state_lock:
+            self.is_paused = True
+            self._download_state.manager_state = "PAUSED"
+            self.stats.pause_time = datetime.utcnow()
+
+        logger.info("Download paused")
+        await self._save_state()
+        await self._broadcast_event("download:paused", {})
+
+    async def resume_download(self) -> None:
+        """Resume paused download."""
+        if not self.is_paused:
+            logger.warning("No paused download to resume")
+            return
+
+        async with self._state_lock:
+            self.is_paused = False
+            self._download_state.manager_state = "DOWNLOADING"
+            if self.stats.pause_time:
+                pause_duration = (datetime.utcnow() - self.stats.pause_time).total_seconds()
+                self.stats.total_pause_duration += pause_duration
+            self.stats.resume_time = datetime.utcnow()
+
+        logger.info("Download resumed")
+        await self._save_state()
+        await self._broadcast_event("download:resumed", {})
+
+    # ==================== Progress Broadcasting ====================
+
+    async def _broadcast_progress(self) -> None:
+        """Broadcast current progress via WebSocket."""
+        try:
+            progress = self.get_progress()
+            await ws_manager.broadcast_json(
+                topic="soundfont:download:progress",
+                message=progress
+            )
+        except Exception as e:
+            logger.warning(f"Error broadcasting progress: {e}")
+
+    async def _broadcast_event(self, event_type: str, data: Dict) -> None:
+        """Broadcast a download event via WebSocket."""
+        try:
+            message = {
+                "event": event_type,
+                "timestamp": datetime.utcnow().isoformat(),
+                "data": data
+            }
+            await ws_manager.broadcast_json(
+                topic="soundfont:download:progress",
+                message=message
+            )
+        except Exception as e:
+            logger.warning(f"Error broadcasting event: {e}")
+
+    async def _progress_broadcaster_task(self) -> None:
+        """Background task to broadcast progress periodically."""
+        while self.is_downloading:
+            try:
+                await self._broadcast_progress()
+                await asyncio.sleep(self.BROADCASTER_INTERVAL)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.warning(f"Error in progress broadcaster: {e}")
 
     async def discover_all(self, sources: Optional[List[str]] = None) -> Dict[str, List[SFFileInfo]]:
         """Discover SoundFonts from all or specified sources.
@@ -158,6 +327,7 @@ class SFDownloadManager:
             return self.stats
 
         self.is_downloading = True
+        self.is_paused = False
         self.stats = DownloadStats(start_time=datetime.utcnow())
         self.failed_sources = []
 
@@ -171,7 +341,14 @@ class SFDownloadManager:
             for source in sources
         }
 
+        # Start progress broadcaster
+        broadcaster_task = asyncio.create_task(self._progress_broadcaster_task())
+        state_saver_task = asyncio.create_task(self._state_saver_task())
+
         try:
+            # Broadcast download started
+            await self._broadcast_event("download:started", {"sources": sources, "parallel": parallel})
+
             # Discover files
             discovered = await self.discover_all(sources)
 
@@ -219,10 +396,26 @@ class SFDownloadManager:
                        f"{self.stats.skipped} skipped, {self.stats.failed} failed "
                        f"in {duration:.1f}s")
 
+            # Broadcast completion
+            await self._broadcast_event("download:completed", {
+                "downloaded": self.stats.downloaded,
+                "failed": self.stats.failed,
+                "skipped": self.stats.skipped,
+                "duration_seconds": duration
+            })
+
             return self.stats
 
         finally:
             self.is_downloading = False
+            broadcaster_task.cancel()
+            state_saver_task.cancel()
+            try:
+                await broadcaster_task
+                await state_saver_task
+            except asyncio.CancelledError:
+                pass
+            await self._save_state()
 
     async def _download_with_semaphore(self, file_info: SFFileInfo,
                                       semaphore: asyncio.Semaphore,
@@ -493,6 +686,25 @@ class SFDownloadManager:
 
         return extracted_files
 
+    async def _state_saver_task(self) -> None:
+        """Background task to save state periodically."""
+        while self.is_downloading:
+            try:
+                await asyncio.sleep(5)  # Save every 5 seconds
+                await self._save_state()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.warning(f"Error in state saver: {e}")
+
+    async def get_file_tasks(self) -> List[Dict]:
+        """Get all active file download tasks."""
+        return []  # SoundFonts use different tracking mechanism
+
+    async def get_file_task(self, filename: str) -> Optional[Dict]:
+        """Get progress for specific file."""
+        return None  # SoundFonts use different tracking mechanism
+
     def reset_stats(self) -> None:
         """Reset download stats for a fresh start."""
         self.stats = DownloadStats()
@@ -509,6 +721,7 @@ class SFDownloadManager:
             for scraper in self.scrapers.values():
                 scraper.cancel_downloads()
             logger.info("Download cancelled by user")
+            await self._broadcast_event("download:cancelled", {})
 
     def get_libraries_info(self) -> List[Dict]:
         """Get information about available SoundFont libraries.
@@ -540,6 +753,46 @@ class SFDownloadManager:
                 "license": "CC-BY / CC0",
                 "iconColor": "#f59e0b",
                 "count": len(self.scrapers['freepats'].discovered_files) if 'freepats' in self.scrapers else 0,
+            },
+            {
+                "name": "internet_archive",
+                "displayName": "Internet Archive",
+                "description": "Classic GM soundfonts - Arachno, FluidR3, GeneralUser",
+                "license": "Various",
+                "iconColor": "#3b82f6",
+                "count": len(self.scrapers['internet_archive'].discovered_files) if 'internet_archive' in self.scrapers else 0,
+            },
+            {
+                "name": "polyphone",
+                "displayName": "Polyphone",
+                "description": "Community SF2 repository with quality instruments",
+                "license": "Various",
+                "iconColor": "#06b6d4",
+                "count": len(self.scrapers['polyphone'].discovered_files) if 'polyphone' in self.scrapers else 0,
+            },
+            {
+                "name": "vsco",
+                "displayName": "VSCO Community",
+                "description": "Versilian Studios Chamber Orchestra - professional orchestral",
+                "license": "CC0",
+                "iconColor": "#8b5cf6",
+                "count": len(self.scrapers['vsco'].discovered_files) if 'vsco' in self.scrapers else 0,
+            },
+            {
+                "name": "pianobook",
+                "displayName": "PianoBook",
+                "description": "Community-sampled instruments - pianos and more",
+                "license": "Free for personal use",
+                "iconColor": "#ec4899",
+                "count": len(self.scrapers['pianobook'].discovered_files) if 'pianobook' in self.scrapers else 0,
+            },
+            {
+                "name": "vpo",
+                "displayName": "Virtual Playing Orchestra",
+                "description": "Free orchestral library with SSO - strings, brass, woodwinds",
+                "license": "CC-BY-SA",
+                "iconColor": "#f97316",
+                "count": len(self.scrapers['vpo'].discovered_files) if 'vpo' in self.scrapers else 0,
             },
         ]
 

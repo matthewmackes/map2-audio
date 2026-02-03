@@ -1125,7 +1125,7 @@ export const irLibraryApi = {
       body: JSON.stringify(request),
     }),
 
-  startDownload: (request: DownloadRequest) =>
+  startDownload: (request: { sources?: string[]; parallel?: number; skip_existing?: boolean; limit?: number }) =>
     fetchJson<{ status: string; sources: string[]; parallel: number; skip_existing: boolean }>(
       `${API_BASE}/irs/download`,
       { method: 'POST', body: JSON.stringify(request) }
@@ -1142,6 +1142,18 @@ export const irLibraryApi = {
 
   retrySource: (source: string) =>
     fetchJson<{ status: string; source: string }>(`${API_BASE}/irs/download/retry/${source}`, { method: 'POST' }),
+
+  pauseDownload: () =>
+    fetchJson<{ status: string }>(`${API_BASE}/irs/download/pause`, { method: 'POST' }),
+
+  resumeDownload: () =>
+    fetchJson<{ status: string }>(`${API_BASE}/irs/download/resume`, { method: 'POST' }),
+
+  getFileTasks: () =>
+    fetchJson<FileDownloadTask[]>(`${API_BASE}/irs/download/files`),
+
+  getFileProgress: (filename: string) =>
+    fetchJson<FileDownloadTask>(`${API_BASE}/irs/download/file/${filename}`),
 
   toggleFavorite: (id: number) =>
     fetchJson<{ status: string; is_favorite: boolean }>(
@@ -1290,6 +1302,7 @@ import type {
   SoundFontListResponse,
   SoundFontLibrariesResponse,
   SoundFontCategoriesResponse,
+  FileDownloadTask,
 } from '../app/types/library'
 
 export const soundfontApi = {
@@ -1329,6 +1342,18 @@ export const soundfontApi = {
       `${API_BASE}/soundfonts/download/retry/${encodeURIComponent(source)}`,
       { method: 'POST' }
     ),
+
+  pauseDownload: () =>
+    fetchJson<{ status: string }>(`${API_BASE}/soundfonts/download/pause`, { method: 'POST' }),
+
+  resumeDownload: () =>
+    fetchJson<{ status: string }>(`${API_BASE}/soundfonts/download/resume`, { method: 'POST' }),
+
+  getFileTasks: () =>
+    fetchJson<FileDownloadTask[]>(`${API_BASE}/soundfonts/download/files`),
+
+  getFileProgress: (filename: string) =>
+    fetchJson<FileDownloadTask>(`${API_BASE}/soundfonts/download/file/${filename}`),
 
   upload: async (file: File) => {
     const formData = new FormData()

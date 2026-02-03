@@ -16,6 +16,8 @@ import re
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException
 
+from app.middleware.rate_limiting import get_rate_limiting_enabled, set_rate_limiting_enabled
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/system", tags=["system"])
@@ -1431,3 +1433,43 @@ async def get_cpu_brand() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error getting CPU brand info: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get CPU brand info: {str(e)}")
+
+
+@router.get("/rate-limiting")
+async def get_rate_limiting_status() -> Dict[str, Any]:
+    """
+    Check if rate limiting is currently enabled.
+
+    Returns:
+        Status of rate limiting (enabled/disabled)
+    """
+    return {
+        "enabled": get_rate_limiting_enabled()
+    }
+
+
+@router.post("/rate-limiting")
+async def toggle_rate_limiting(enabled: bool = True) -> Dict[str, Any]:
+    """
+    Enable or disable rate limiting.
+
+    Args:
+        enabled: If True, enable rate limiting. If False, disable it.
+
+    Returns:
+        Updated rate limiting status
+    """
+    try:
+        set_rate_limiting_enabled(enabled)
+        state = "enabled" if enabled else "disabled"
+        return {
+            "success": True,
+            "enabled": enabled,
+            "message": f"Rate limiting {state}"
+        }
+    except Exception as e:
+        logger.error(f"Error toggling rate limiting: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }

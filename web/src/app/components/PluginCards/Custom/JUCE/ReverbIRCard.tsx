@@ -38,7 +38,10 @@ async function fetchReverbList(): Promise<Array<{ name: string; size: string }>>
   const res = await fetch('/api/ir/reverbs')
   if (!res.ok) throw new Error('Failed to fetch reverbs')
   const data = await res.json()
-  return data.reverbs || []
+  return (data.irs || []).map((ir: any) => ({
+    name: ir.name,
+    size: `${(ir.size_mb || 0).toFixed(2)} MB`
+  }))
 }
 
 export function ReverbIRCard({
@@ -68,6 +71,7 @@ export function ReverbIRCard({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ir', 'reverb'] })
+      queryClient.invalidateQueries({ queryKey: ['ir', 'reverb', 'status'] })
       setShowBrowser(false)
     },
   })
@@ -212,25 +216,34 @@ export function ReverbIRCard({
           >
             <h3 style={{ margin: '0 0 16px 0', color: accentColor }}>Select Reverb IR</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {reverbs.map((rev) => (
-                <button
-                  key={rev.name}
-                  onClick={() => loadMutation.mutate(rev.name)}
-                  style={{
-                    padding: '12px 16px',
-                    background: status?.loaded === rev.name ? accentColor : '#333',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: status?.loaded === rev.name ? '#000' : '#fff',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontSize: '12px',
-                  }}
-                >
-                  <div style={{ fontWeight: 'bold' }}>{rev.name}</div>
-                  <div style={{ fontSize: '10px', opacity: 0.7 }}>{rev.size}</div>
-                </button>
-              ))}
+              {reverbs.map((rev) => {
+                const isLoading = loadMutation.isPending && loadMutation.variables === rev.name
+                const isActive = status?.loaded === rev.name
+                return (
+                  <button
+                    key={rev.name}
+                    onClick={() => loadMutation.mutate(rev.name)}
+                    disabled={loadMutation.isPending}
+                    style={{
+                      padding: '12px 16px',
+                      background: isActive ? accentColor : '#333',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: isActive ? '#000' : '#fff',
+                      cursor: loadMutation.isPending ? 'not-allowed' : 'pointer',
+                      textAlign: 'left',
+                      fontSize: '12px',
+                      opacity: loadMutation.isPending && !isLoading ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ fontWeight: 'bold' }}>
+                      {isLoading ? 'Loading...' : rev.name}
+                    </div>
+                    <div style={{ fontSize: '10px', opacity: 0.7 }}>{rev.size}</div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>

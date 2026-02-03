@@ -174,7 +174,7 @@ export function IntelliFXCard({
     <PluginCardShell
       plugin={plugin}
       accentColor={accentColor}
-      bypassed={getValue(GLOBAL_PARAMS.hush_enabled + 4, false) === 0} // Adjust if bypass is at a different index
+      bypassed={getValue(GLOBAL_PARAMS.hush_enabled + 4, 0) === 0} // Adjust if bypass is at a different index
       onBypassToggle={() => {
         // Toggle bypass - adjust index based on actual parameter location
       }}

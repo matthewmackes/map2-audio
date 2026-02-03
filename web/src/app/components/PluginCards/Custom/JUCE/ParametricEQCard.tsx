@@ -63,16 +63,10 @@ export function ParametricEQCard({
         type: b.type as 'peak' | 'lowshelf' | 'highshelf' | 'lowpass' | 'highpass' | 'bandpass' | 'notch',
         enabled: b.enabled,
       }))}
-      frequencyResponse={frequencyResponse}
       width={compact ? 280 : 380}
       height={compact ? 100 : 140}
       accentColor={accentColor}
       interactive
-      onBandChange={(index: number, updates: { frequency?: number; gain?: number; q?: number }) => {
-        if (updates.frequency !== undefined) setBandFrequency(index, updates.frequency)
-        if (updates.gain !== undefined) setBandGain(index, updates.gain)
-        if (updates.q !== undefined) setBandQ(index, updates.q)
-      }}
     />
   )
 

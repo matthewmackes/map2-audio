@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import { Waves } from 'lucide-react'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
 
@@ -18,8 +19,13 @@ export function DSPPage() {
   return (
     <div className="dsp-page">
       <header className="page-header">
-        <h1>DSP Processors</h1>
-        <p className="page-subtitle">Built-in dynamics and EQ processing</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Waves size={32} style={{ color: '#3b82f6' }} />
+          <div>
+            <h1>DSP Processors</h1>
+            <p className="page-subtitle">Built-in dynamics and EQ processing</p>
+          </div>
+        </div>
       </header>
 
       {/* Section Tabs */}

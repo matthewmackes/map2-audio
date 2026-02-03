@@ -45,6 +45,10 @@ export function Tone3000Config() {
     }
   }
 
+  const handleDownloadCabinetIRs = () => {
+    startDownload({ sources: ['djammincabs', 'overdriven'], parallel: 4, skip_existing: true })
+  }
+
   return (
     <div className="card" style={{ padding: 16, borderLeft: '3px solid #8b5cf6' }}>
       <div className="flex-between" style={{ marginBottom: 12 }}>
@@ -64,7 +68,7 @@ export function Tone3000Config() {
           )}
         </div>
         {isConfigured && (
-          <div className="flex" style={{ gap: 8 }}>
+          <div className="flex" style={{ gap: 8, flexWrap: 'wrap' }}>
             <button
               className="btn btn-primary btn-sm"
               onClick={() => startDownload({ sources: ['tone3000'], parallel: 4, skip_existing: true })}
@@ -75,7 +79,31 @@ export function Tone3000Config() {
               ) : (
                 <Download size={14} />
               )}
-              Download Top 10
+              Download Top 10 NAM
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => startDownload({ sources: ['tone3000'], parallel: 4, skip_existing: true })}
+              disabled={isDownloading || isStarting}
+            >
+              {isStarting ? (
+                <Loader2 size={14} className="spin" />
+              ) : (
+                <Download size={14} />
+              )}
+              Download Top 25 Trending Amp Heads
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleDownloadCabinetIRs}
+              disabled={isDownloading || isStarting}
+            >
+              {isStarting ? (
+                <Loader2 size={14} className="spin" />
+              ) : (
+                <Download size={14} />
+              )}
+              Download Cabinet IRs
             </button>
             <button
               className="btn btn-ghost btn-sm"

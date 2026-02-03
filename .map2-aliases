@@ -1,0 +1,39 @@
+#!/bin/bash
+###############################################################################
+# MAP2 Audio - Shell Alias Setup
+# Add these commands to your ~/.bashrc or ~/.zshrc for convenient access
+###############################################################################
+
+# Restart the MAP2 web server on port 3000
+alias /server-restart='/home/mm/map2-audio/server-restart.sh'
+alias server-restart='/home/mm/map2-audio/server-restart.sh'
+
+# Quick navigation
+alias map2='cd /home/mm/map2-audio'
+alias map2-web='cd /home/mm/map2-audio/web'
+alias map2-app='cd /home/mm/map2-audio/app'
+alias map2-juce='cd /home/mm/map2-audio/juce-engine'
+
+# Quick status checks
+alias server-status='lsof -i :3000 | grep -q LISTEN && echo "✓ Server running on port 3000" || echo "✗ Server not running"'
+alias api-status='curl -s http://localhost:8080/api/health || echo "API not responding"'
+
+###############################################################################
+# Installation Instructions:
+# 
+# For Bash:
+#   cat /home/mm/map2-audio/.map2-aliases >> ~/.bashrc
+#   source ~/.bashrc
+#
+# For Zsh:
+#   cat /home/mm/map2-audio/.map2-aliases >> ~/.zshrc
+#   source ~/.zshrc
+#
+# Usage Examples:
+#   /server-restart        # Restart web server
+#   server-restart         # (same, without slash)
+#   server-status          # Check if server is running
+#   api-status             # Check if API is running
+#   map2                   # Navigate to project root
+#   map2-web               # Navigate to web folder
+###############################################################################

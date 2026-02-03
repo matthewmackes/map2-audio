@@ -1,13 +1,76 @@
-import { Library, Mic, Zap, Waves, Music } from 'lucide-react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Library, Mic, Zap, Waves, Music, HardDrive, ChevronDown, ChevronUp, Copy, Check, RefreshCw, Speaker } from 'lucide-react'
 import { LibrarySources } from '../components/library/LibrarySources'
 import { DownloadManager } from '../components/library/DownloadManager'
 import { InstalledBrowser } from '../components/library/InstalledBrowser'
-import { LibraryPaths } from '../components/library/LibraryPaths'
 import { useDownloadProgress } from '../hooks/useDownloadProgress'
 import { UploadButton } from '../components/upload'
+import { foldersApi } from '../../map2/api'
+
+interface PathInfo {
+  label: string
+  path: string
+  displayPath: string
+  icon: typeof Library
+  description: string
+}
 
 export function LibraryPage() {
+  const [pathsExpanded, setPathsExpanded] = useState(false)
+  const [copiedPath, setCopiedPath] = useState<string | null>(null)
   const { status, isDownloading } = useDownloadProgress()
+
+  const pathsQuery = useQuery({
+    queryKey: ['folders', 'display-paths'],
+    queryFn: foldersApi.getDisplayPaths,
+    staleTime: 60000,
+  })
+
+  const handleCopyPath = async (path: string) => {
+    try {
+      await navigator.clipboard.writeText(path)
+      setCopiedPath(path)
+      setTimeout(() => setCopiedPath(null), 2000)
+    } catch (err) {
+      console.error('Failed to copy path:', err)
+    }
+  }
+
+  const handleRefreshPaths = () => {
+    pathsQuery.refetch()
+  }
+
+  const paths: PathInfo[] = pathsQuery.data ? [
+    {
+      label: 'NAM Models',
+      path: pathsQuery.data.nam_models,
+      displayPath: pathsQuery.data.nam_models_display,
+      icon: Music,
+      description: 'Neural Amp Models (.nam files)',
+    },
+    {
+      label: 'Cabinet IRs',
+      path: pathsQuery.data.ir_cabinets,
+      displayPath: pathsQuery.data.ir_cabinets_display,
+      icon: Speaker,
+      description: 'Guitar/Bass cabinet impulse responses',
+    },
+    {
+      label: 'Reverb IRs',
+      path: pathsQuery.data.ir_reverbs,
+      displayPath: pathsQuery.data.ir_reverbs_display,
+      icon: Waves,
+      description: 'Reverb impulse responses (.wav, .flac)',
+    },
+    {
+      label: 'User Uploads',
+      path: pathsQuery.data.ir_user_uploads,
+      displayPath: pathsQuery.data.ir_user_uploads?.replace(/^\/home\/[^/]+/, '~') || '',
+      icon: Music,
+      description: 'Your custom imported IRs',
+    },
+  ] : []
 
   return (
     <div className="stack" style={{ gap: 24, padding: '24px 0' }}>
@@ -25,7 +88,7 @@ export function LibraryPage() {
         <UploadButton label="Upload Assets" />
       </div>
 
-      {/* Sound Asset Types Overview */}
+      {/* Sound Asset Library Overview & Paths */}
       <div className="card" style={{
         background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.05))',
         borderColor: 'rgba(139, 92, 246, 0.4)',
@@ -116,23 +179,140 @@ export function LibraryPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Library Paths Section */}
+            <div style={{
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              paddingTop: 24,
+              marginTop: 12
+            }}>
+              <button
+                onClick={() => setPathsExpanded(!pathsExpanded)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  color: 'inherit',
+                  marginBottom: pathsExpanded ? 12 : 0
+                }}
+              >
+                <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
+                  <HardDrive size={18} style={{ color: 'var(--secondary)' }} />
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>File Locations</span>
+                </div>
+                <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleRefreshPaths()
+                    }}
+                    title="Refresh paths"
+                  >
+                    <RefreshCw size={14} className={pathsQuery.isFetching ? 'spin' : ''} />
+                  </button>
+                  {pathsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </div>
+              </button>
+
+              {pathsExpanded && (
+                <div>
+                  <p className="muted" style={{ fontSize: 13, marginBottom: 16 }}>
+                    Place your files in these directories to use them in MAP2. Files are automatically detected.
+                  </p>
+
+                  {pathsQuery.isLoading ? (
+                    <div className="flex" style={{ justifyContent: 'center', padding: 16 }}>
+                      <span className="muted">Loading paths...</span>
+                    </div>
+                  ) : pathsQuery.error ? (
+                    <div className="flex" style={{ justifyContent: 'center', padding: 16 }}>
+                      <span style={{ color: 'var(--danger)' }}>Error loading paths</span>
+                    </div>
+                  ) : (
+                    <div className="stack" style={{ gap: 8 }}>
+                      {paths.map(({ label, path, displayPath, description }) => (
+                        <div
+                          key={label}
+                          style={{
+                            padding: '12px 16px',
+                            background: 'rgba(0, 0, 0, 0.2)',
+                            borderRadius: 8,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 16,
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div className="flex" style={{ gap: 8, alignItems: 'baseline' }}>
+                              <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
+                              <span className="muted" style={{ fontSize: 11 }}>{description}</span>
+                            </div>
+                            <code
+                              style={{
+                                display: 'block',
+                                fontSize: 11,
+                                color: 'var(--text-secondary)',
+                                background: 'rgba(0, 0, 0, 0.3)',
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                marginTop: 4,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                              title={path}
+                            >
+                              {displayPath || path}
+                            </code>
+                          </div>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => handleCopyPath(path)}
+                            title="Copy full path"
+                            style={{ flexShrink: 0 }}
+                          >
+                            {copiedPath === path ? (
+                              <>
+                                <Check size={14} style={{ color: 'var(--success)' }} />
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={14} />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="muted" style={{ fontSize: 11, marginTop: 12, opacity: 0.7 }}>
+                    Tip: You can also access these directories via SMB network share (see Settings).
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Library Paths - where to put files */}
-      <LibraryPaths />
+      {/* Installed Browser */}
+      <InstalledBrowser />
 
-      {/* Download Manager - visible when downloading or recently downloaded */}
+      {/* Download Manager - hidden by default, shown when downloading or recently downloaded */}
       {(isDownloading || status?.stats) && (
         <DownloadManager />
       )}
 
-      {/* Library Sources */}
+      {/* Library Sources - Downloads & Source Management (hidden by default) */}
       <LibrarySources />
-
-      {/* Installed Browser */}
-      <InstalledBrowser />
     </div>
   )
 }

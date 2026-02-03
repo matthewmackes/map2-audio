@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Gauge, PanelsTopLeft, Plug2, Workflow, Share2, CheckCircle, XCircle, Copy } from 'lucide-react'
+import { Home, Gauge, PanelsTopLeft, Plug2, Workflow, Share2, CheckCircle, XCircle, Copy } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { CPUStatusOverview } from '../components/CPUStatusOverview'
@@ -53,6 +53,7 @@ export function HomePage() {
       <PageHeader
         title="Mackes Audio Platform 1-22-25"
         subtitle="Neural Amp Modeler | LV2 (LADSPA Version 2) | Convolution Reverb | Realtime Linux"
+        icon={<Home size={32} style={{ color: '#3b82f6' }} />}
         logo={cpuBrand?.logo_url ? {
           url: cpuBrand.logo_url,
           alt: `${cpuBrand.display_name} Processor`,

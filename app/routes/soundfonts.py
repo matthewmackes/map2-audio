@@ -277,6 +277,89 @@ async def cancel_download() -> Dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/download/pause")
+async def pause_download() -> Dict:
+    """Pause ongoing download.
+
+    Returns:
+        {
+            "status": "paused"
+        }
+    """
+    try:
+        manager = get_sf_download_manager()
+        await manager.pause_download()
+
+        return {
+            "status": "paused"
+        }
+    except Exception as e:
+        logger.error(f"Error pausing download: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/download/resume")
+async def resume_download() -> Dict:
+    """Resume paused download.
+
+    Returns:
+        {
+            "status": "resumed"
+        }
+    """
+    try:
+        manager = get_sf_download_manager()
+        await manager.resume_download()
+
+        return {
+            "status": "resumed"
+        }
+    except Exception as e:
+        logger.error(f"Error resuming download: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/download/files")
+async def get_file_tasks() -> List[Dict]:
+    """Get all active file download tasks.
+
+    Returns:
+        List of file download tasks with progress
+    """
+    try:
+        manager = get_sf_download_manager()
+        tasks = await manager.get_file_tasks()
+        return tasks
+    except Exception as e:
+        logger.error(f"Error getting file tasks: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/download/file/{filename}")
+async def get_file_progress(filename: str) -> Dict:
+    """Get progress for a specific file.
+
+    Args:
+        filename: Name of the file
+
+    Returns:
+        File download task with progress
+    """
+    try:
+        manager = get_sf_download_manager()
+        task = await manager.get_file_task(filename)
+
+        if not task:
+            raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+
+        return task
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting file progress: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/download/reset")
 async def reset_download() -> Dict:
     """Reset download stats and prepare for a new download.

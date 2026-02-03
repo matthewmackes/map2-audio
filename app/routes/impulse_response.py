@@ -21,6 +21,7 @@ class DownloadRequest(BaseModel):
     sources: Optional[List[str]] = None  # None = all sources
     parallel: int = 4
     skip_existing: bool = True
+    limit: Optional[int] = None  # Limit for tone3000 source (default: 10)
 
 
 class IRSearchRequest(BaseModel):
@@ -655,10 +656,10 @@ async def scan_existing_irs() -> Dict:
 @router.post("/download")
 async def start_download(request: DownloadRequest) -> Dict:
     """Start IR library download.
-    
+
     Args:
         request: Download configuration
-        
+
     Returns:
         {
             "status": "started",
@@ -668,24 +669,25 @@ async def start_download(request: DownloadRequest) -> Dict:
     """
     try:
         manager = get_download_manager()
-        
+
         # Start download in background (non-blocking)
         import asyncio
         asyncio.create_task(
             manager.download_all(
                 sources=request.sources,
                 parallel=request.parallel,
-                skip_existing=request.skip_existing
+                skip_existing=request.skip_existing,
+                limit=request.limit
             )
         )
-        
+
         return {
             "status": "started",
             "sources": request.sources or list(manager.scrapers.keys()),
             "parallel": request.parallel,
             "skip_existing": request.skip_existing
         }
-        
+
     except Exception as e:
         logger.error(f"Error starting download: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -709,6 +711,89 @@ async def cancel_download() -> Dict:
         }
     except Exception as e:
         logger.error(f"Error cancelling download: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/download/pause")
+async def pause_download() -> Dict:
+    """Pause ongoing download.
+
+    Returns:
+        {
+            "status": "paused"
+        }
+    """
+    try:
+        manager = get_download_manager()
+        await manager.pause_download()
+
+        return {
+            "status": "paused"
+        }
+    except Exception as e:
+        logger.error(f"Error pausing download: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/download/resume")
+async def resume_download() -> Dict:
+    """Resume paused download.
+
+    Returns:
+        {
+            "status": "resumed"
+        }
+    """
+    try:
+        manager = get_download_manager()
+        await manager.resume_download()
+
+        return {
+            "status": "resumed"
+        }
+    except Exception as e:
+        logger.error(f"Error resuming download: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/download/files")
+async def get_file_tasks() -> List[Dict]:
+    """Get all active file download tasks.
+
+    Returns:
+        List of file download tasks with progress
+    """
+    try:
+        manager = get_download_manager()
+        tasks = await manager.get_file_tasks()
+        return tasks
+    except Exception as e:
+        logger.error(f"Error getting file tasks: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/download/file/{filename}")
+async def get_file_progress(filename: str) -> Dict:
+    """Get progress for a specific file.
+
+    Args:
+        filename: Name of the file
+
+    Returns:
+        File download task with progress
+    """
+    try:
+        manager = get_download_manager()
+        task = await manager.get_file_task(filename)
+
+        if not task:
+            raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+
+        return task
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting file progress: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

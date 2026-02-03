@@ -18,7 +18,7 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import type { Plugin } from '../../../../map2/types'
-import { getCategoryConfig } from '../types'
+import { getCategoryConfig, getCategoryIcon } from '../types'
 import { BypassSwitch } from './BypassSwitch'
 import { getPluginDescription } from '../../../data/pluginDescriptions'
 
@@ -65,6 +65,7 @@ export function PluginCardShell({
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const description = getPluginDescription(plugin.name)
+  const CategoryIcon = getCategoryIcon(plugin.category)
 
   const handleBypassToggle = useCallback(() => {
     onBypassToggle?.(!bypassed)
@@ -96,6 +97,13 @@ export function PluginCardShell({
               <div className="plugin-card-subtitle">
                 <span className="plugin-card-author">{plugin.author || 'Unknown'}</span>
                 <span className="plugin-card-category" style={{ color: accentColor }}>
+                  {CategoryIcon && (
+                    <CategoryIcon
+                      size={10}
+                      color={accentColor}
+                      style={{ marginRight: '3px', display: 'inline-block', verticalAlign: 'middle' }}
+                    />
+                  )}
                   {plugin.category}
                 </span>
               </div>
@@ -278,6 +286,9 @@ export function PluginCardShell({
           text-transform: uppercase;
           letter-spacing: 0.5px;
           font-size: 9px;
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
         }
 
         .plugin-card-header-right {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, X, Check, AlertCircle, Loader2, ChevronDown, ChevronUp, RotateCcw, RefreshCw, Search } from 'lucide-react'
+import { Download, X, Check, AlertCircle, Loader2, ChevronDown, ChevronUp, RotateCcw, RefreshCw, Search, Pause, Play } from 'lucide-react'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import type { SourceProgress } from '../../types/library'
 
@@ -8,6 +8,18 @@ function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = Math.round(seconds % 60)
   return `${mins}m ${secs}s`
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+function formatSpeed(bytesPerSecond: number): string {
+  return formatBytes(bytesPerSecond) + '/s'
 }
 
 function getStateColor(state: SourceProgress['state']): string {
@@ -32,7 +44,21 @@ function getStateIcon(state: SourceProgress['state']) {
 
 export function DownloadManager() {
   const [showSources, setShowSources] = useState(false)
-  const { status, isDownloading, cancelDownload, isCancelling, resetDownload, retrySource } = useDownloadProgress()
+  const [showFiles, setShowFiles] = useState(false)
+  const {
+    status,
+    fileTasks,
+    isDownloading,
+    isPaused,
+    pauseDownload,
+    resumeDownload,
+    cancelDownload,
+    isCancelling,
+    isPausing,
+    isResuming,
+    resetDownload,
+    retrySource,
+  } = useDownloadProgress()
 
   if (!status) return null
 
@@ -44,11 +70,13 @@ export function DownloadManager() {
   let speed = 0
   let eta = 0
   let remaining = 0
+  let speedDisplay = '0 files/s'
 
   if (stats && stats.duration_seconds > 0) {
     speed = stats.downloaded / stats.duration_seconds
     remaining = stats.total_files - stats.downloaded - stats.failed - stats.skipped
     eta = remaining / Math.max(0.1, speed)
+    speedDisplay = `${speed.toFixed(1)} files/s`
   }
 
   const hasFailedSources = sources?.some(s => s.state === 'failed' || s.failed > 0)
@@ -61,13 +89,15 @@ export function DownloadManager() {
         <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
           {isDownloading ? (
             <Loader2 size={20} className="spin" style={{ color: 'var(--primary)' }} />
+          ) : isPaused ? (
+            <AlertCircle size={20} style={{ color: 'var(--warning)' }} />
           ) : hasFailedSources ? (
             <AlertCircle size={20} style={{ color: 'var(--warning)' }} />
           ) : (
             <Download size={20} style={{ color: 'var(--success)' }} />
           )}
           <span style={{ fontWeight: 600 }}>
-            {isDownloading ? 'Downloading IRs...' : hasFailedSources ? 'Download Complete (with errors)' : 'Download Complete'}
+            {isDownloading ? (isPaused ? 'Download Paused' : 'Downloading IRs...') : hasFailedSources ? 'Download Complete (with errors)' : 'Download Complete'}
           </span>
         </div>
         <div className="flex" style={{ gap: 8 }}>
@@ -78,6 +108,46 @@ export function DownloadManager() {
               title="Clear status"
             >
               <RotateCcw size={14} />
+            </button>
+          )}
+          {isDownloading && isPaused && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => resumeDownload()}
+              disabled={isResuming}
+              title="Resume download"
+            >
+              {isResuming ? (
+                <>
+                  <Loader2 size={14} className="spin" />
+                  Resuming...
+                </>
+              ) : (
+                <>
+                  <Play size={14} />
+                  Resume
+                </>
+              )}
+            </button>
+          )}
+          {isDownloading && !isPaused && (
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => pauseDownload()}
+              disabled={isPausing}
+              title="Pause download"
+            >
+              {isPausing ? (
+                <>
+                  <Loader2 size={14} className="spin" />
+                  Pausing...
+                </>
+              ) : (
+                <>
+                  <Pause size={14} />
+                  Pause
+                </>
+              )}
             </button>
           )}
           {isDownloading && (
@@ -130,19 +200,96 @@ export function DownloadManager() {
 
         {/* Stats row */}
         {stats && (
-          <div className="flex" style={{ gap: 16, fontSize: 12 }}>
-            <span style={{ color: 'var(--success)' }}>
-              <Check size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-              {stats.downloaded} downloaded
-            </span>
-            <span className="muted">
-              {stats.skipped} skipped
-            </span>
-            {stats.failed > 0 && (
-              <span style={{ color: 'var(--danger)' }}>
-                <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                {stats.failed} failed
+          <div className="stack" style={{ gap: 8 }}>
+            <div className="flex" style={{ gap: 16, fontSize: 12, flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--success)' }}>
+                <Check size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                {stats.downloaded} downloaded
               </span>
+              <span className="muted">
+                {stats.skipped} skipped
+              </span>
+              {stats.failed > 0 && (
+                <span style={{ color: 'var(--danger)' }}>
+                  <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                  {stats.failed} failed
+                </span>
+              )}
+              {isDownloading && (
+                <>
+                  <span className="muted">
+                    {speedDisplay}
+                  </span>
+                  {eta > 0 && (
+                    <span className="muted">
+                      ETA: {formatDuration(eta)}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Per-file progress toggle */}
+            {fileTasks && fileTasks.length > 0 && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowFiles(!showFiles)}
+                style={{ width: '100%', justifyContent: 'space-between', gap: 8 }}
+              >
+                <span style={{ fontSize: 12 }}>
+                  Active Downloads ({fileTasks.filter(t => t.state === 'DOWNLOADING').length})
+                </span>
+                {showFiles ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            )}
+
+            {/* Per-file progress display */}
+            {showFiles && fileTasks && fileTasks.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                {fileTasks
+                  .filter(t => t.state === 'DOWNLOADING' || t.state === 'PAUSED')
+                  .slice(0, 5)
+                  .map(task => (
+                    <div
+                      key={task.filename}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        background: 'var(--bg-secondary)',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <div className="flex-between" style={{ marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }} title={task.filename}>
+                          {task.filename.length > 30
+                            ? task.filename.slice(0, 27) + '...'
+                            : task.filename}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                          {formatBytes(task.downloaded_bytes)} / {formatBytes(task.total_size)}
+                        </span>
+                      </div>
+                      <div style={{
+                        height: 4,
+                        background: 'var(--border)',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${(task.downloaded_bytes / Math.max(task.total_size, 1)) * 100}%`,
+                          background: 'var(--primary)',
+                          transition: 'width 0.3s ease',
+                        }} />
+                      </div>
+                      {task.speed_bps > 0 && (
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                          {formatSpeed(task.speed_bps)} {task.eta_seconds && `• ${formatDuration(task.eta_seconds)}`}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
             )}
           </div>
         )}

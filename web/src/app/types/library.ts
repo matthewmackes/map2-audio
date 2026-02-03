@@ -57,6 +57,58 @@ export interface DownloadProgress {
   sources: SourceProgress[] | null
 }
 
+// ==================== Enhanced Download Types ====================
+
+export interface ChunkInfo {
+  index: number
+  start_byte: number
+  end_byte: number
+  size: number
+  downloaded: boolean
+  checksum: string | null
+  retry_count: number
+}
+
+export interface FileDownloadTask {
+  filename: string
+  url: string
+  total_size: number
+  output_path: string
+  state: 'PENDING' | 'DOWNLOADING' | 'PAUSED' | 'COMPLETED' | 'FAILED'
+  downloaded_bytes: number
+  chunks: ChunkInfo[]
+  current_chunk: number | null
+  speed_bps: number
+  eta_seconds: number | null
+  retry_count: number
+  error_message: string | null
+  checksum: string | null
+  checksum_algorithm: string
+  part_file_path: string
+  manifest_path: string
+  started_at: string | null
+  completed_at: string | null
+  paused_at: string | null
+}
+
+export interface EnhancedDownloadStats extends DownloadStats {
+  paused: number
+  downloaded_bytes: number
+  total_bytes: number
+  speed_bps: number
+  average_speed_bps: number
+  peak_speed_bps: number
+  pause_time: string | null
+  resume_time: string | null
+  total_pause_duration: number
+}
+
+export interface DownloadEvent {
+  event: string
+  timestamp: string
+  data: Record<string, any>
+}
+
 // ==================== IR Database Types ====================
 
 export interface IRDatabaseItem {
@@ -279,5 +331,40 @@ export const SOUNDFONT_SOURCES: IRLibrarySource[] = [
     description: 'Quality free soundfonts with CC licenses',
     license: 'CC-BY / CC0',
     iconColor: '#f59e0b',
+  },
+  {
+    name: 'internet_archive',
+    displayName: 'Internet Archive',
+    description: 'Classic GM soundfonts - Arachno, FluidR3, GeneralUser, Timbres of Heaven',
+    license: 'Various',
+    iconColor: '#3b82f6',
+  },
+  {
+    name: 'polyphone',
+    displayName: 'Polyphone',
+    description: 'Community SF2 repository with quality instruments',
+    license: 'Various',
+    iconColor: '#06b6d4',
+  },
+  {
+    name: 'vsco',
+    displayName: 'VSCO Community',
+    description: 'Versilian Studios Chamber Orchestra - professional orchestral SFZ',
+    license: 'CC0',
+    iconColor: '#a855f7',
+  },
+  {
+    name: 'pianobook',
+    displayName: 'PianoBook',
+    description: 'Community-sampled instruments - pianos, strings, and more',
+    license: 'Free for personal use',
+    iconColor: '#ec4899',
+  },
+  {
+    name: 'vpo',
+    displayName: 'Virtual Playing Orchestra',
+    description: 'Free orchestral library - includes Sonatina Symphonic Orchestra',
+    license: 'CC-BY-SA',
+    iconColor: '#f97316',
   },
 ]

@@ -18,12 +18,12 @@ import {
   FolderOpen,
   Settings2,
 } from 'lucide-react'
-import { irApi, namApi, soundfontApi, foldersApi } from '../../../map2/api'
+import { irApi, namApi, soundfontApi, foldersApi, pluginsApi } from '../../../map2/api'
 import type { NAMModel, IRFile } from '../../../map2/types'
 import type { SoundFont } from '../../types/library'
 
 // Unified asset type for the table
-type AssetType = 'nam' | 'cabinet' | 'reverb' | 'sfz'
+type AssetType = 'nam' | 'cabinet' | 'reverb' | 'sfz' | 'native'
 
 interface UnifiedAsset {
   id: string
@@ -38,6 +38,7 @@ interface UnifiedAsset {
   category?: string
   isActive?: boolean
   folder?: string
+  uri?: string
 }
 
 type SortField = 'name' | 'type' | 'source' | 'size' | 'category' | 'format' | 'sampleRate' | 'duration' | 'folder'
@@ -75,6 +76,7 @@ const TYPE_CONFIG: Record<AssetType, { label: string; icon: typeof Zap; color: s
   cabinet: { label: 'Cabinet IR', icon: Speaker, color: '#f97316' },
   reverb: { label: 'Reverb IR', icon: Waves, color: '#a855f7' },
   sfz: { label: 'SoundFont', icon: Music, color: '#22c55e' },
+  native: { label: 'Native Plugin', icon: Zap, color: '#06b6d4' },
 }
 
 function formatSize(bytes?: number): string {
@@ -140,6 +142,11 @@ export function InstalledAssetsTable() {
     queryFn: () => soundfontApi.listSoundfonts(),
   })
 
+  const nativePluginsQuery = useQuery({
+    queryKey: ['plugins', 'native'],
+    queryFn: () => pluginsApi.discover(),
+  })
+
   const irStatusQuery = useQuery({
     queryKey: ['ir', 'status'],
     queryFn: irApi.getStatus,
@@ -157,6 +164,7 @@ export function InstalledAssetsTable() {
       queryClient.invalidateQueries({ queryKey: ['ir'] })
       queryClient.invalidateQueries({ queryKey: ['nam'] })
       queryClient.invalidateQueries({ queryKey: ['soundfonts'] })
+      queryClient.invalidateQueries({ queryKey: ['plugins', 'native'] })
     },
   })
 
@@ -230,12 +238,30 @@ export function InstalledAssetsTable() {
       })
     })
 
+    // Add Native Plugins (JUCE processors and LV2 plugins)
+    const plugins = nativePluginsQuery.data?.plugins ?? []
+    plugins.forEach((plugin: any) => {
+      // Only include native JUCE processors for now
+      if (plugin.is_native || plugin.format === 'JUCE') {
+        assets.push({
+          id: `native:${plugin.uri}`,
+          name: plugin.name,
+          type: 'native',
+          path: plugin.uri,
+          source: plugin.author || 'Built-in',
+          category: plugin.category,
+          uri: plugin.uri,
+        })
+      }
+    })
+
     return assets
   }, [
     cabinetsQuery.data,
     reverbsQuery.data,
     namQuery.data,
     soundfontsQuery.data,
+    nativePluginsQuery.data,
     irStatusQuery.data,
     namStatusQuery.data,
   ])
@@ -314,16 +340,18 @@ export function InstalledAssetsTable() {
     cabinetsQuery.isLoading ||
     reverbsQuery.isLoading ||
     namQuery.isLoading ||
-    soundfontsQuery.isLoading
+    soundfontsQuery.isLoading ||
+    nativePluginsQuery.isLoading
 
   const handleRefresh = useCallback(() => {
     cabinetsQuery.refetch()
     reverbsQuery.refetch()
     namQuery.refetch()
     soundfontsQuery.refetch()
+    nativePluginsQuery.refetch()
     irStatusQuery.refetch()
     namStatusQuery.refetch()
-  }, [cabinetsQuery, reverbsQuery, namQuery, soundfontsQuery, irStatusQuery, namStatusQuery])
+  }, [cabinetsQuery, reverbsQuery, namQuery, soundfontsQuery, nativePluginsQuery, irStatusQuery, namStatusQuery])
 
   const handleSort = useCallback((field: SortField) => {
     setSortField((prev) => {
@@ -370,18 +398,23 @@ export function InstalledAssetsTable() {
   }, [])
 
   const getCounts = useCallback(() => {
+    const nativeCount = (nativePluginsQuery.data?.plugins ?? []).filter(
+      (p: any) => p.is_native || p.format === 'JUCE'
+    ).length
     return {
       nam: namQuery.data?.total ?? 0,
       cabinet: cabinetsQuery.data?.count ?? 0,
       reverb: reverbsQuery.data?.count ?? 0,
       sfz: soundfontsQuery.data?.total ?? 0,
+      native: nativeCount,
       total:
         (namQuery.data?.total ?? 0) +
         (cabinetsQuery.data?.count ?? 0) +
         (reverbsQuery.data?.count ?? 0) +
-        (soundfontsQuery.data?.total ?? 0),
+        (soundfontsQuery.data?.total ?? 0) +
+        nativeCount,
     }
-  }, [namQuery.data, cabinetsQuery.data, reverbsQuery.data, soundfontsQuery.data])
+  }, [namQuery.data, cabinetsQuery.data, reverbsQuery.data, soundfontsQuery.data, nativePluginsQuery.data])
 
   const counts = getCounts()
 

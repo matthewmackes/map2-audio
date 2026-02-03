@@ -13,33 +13,8 @@ import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginCardComponent, getCategoryConfig } from '../PluginCards'
 import type { PluginCardProps } from '../PluginCards/types'
 
-// Category colors for accent (fallback when card system not used)
-const CATEGORY_COLORS: Record<string, string> = {
-  'Distortion': '#ff6b6b',
-  'Amplifier': '#ff6b6b',
-  'Filter': '#4ecdc4',
-  'EQ': '#4ecdc4',
-  'Equaliser': '#4ecdc4',
-  'Delay': '#45b7d1',
-  'Reverb': '#a855f7',
-  'Modulation': '#f59e0b',
-  'Chorus': '#f59e0b',
-  'Flanger': '#f59e0b',
-  'Phaser': '#f59e0b',
-  'Compressor': '#22c55e',
-  'Dynamics': '#22c55e',
-  'Limiter': '#22c55e',
-  'Gate': '#22c55e',
-  'Simulator': '#ec4899',
-  'Cabinet': '#f97316',
-  'Utility': '#64748b',
-  'Generator': '#8b5cf6',
-  'Instrument': '#ec4899',
-}
-
-function getCategoryColor(category: string): string {
-  return CATEGORY_COLORS[category] || '#ff3333'
-}
+// Fallback color for unknown categories
+const FALLBACK_COLOR = '#37d6c9'
 
 export interface KnobParameterPanelProps {
   plugin: ChainPlugin | null
@@ -191,7 +166,7 @@ export function KnobParameterPanel({
     )
   }
 
-  const accentColor = getCategoryColor(meta.category)
+  const accentColor = getCategoryConfig(meta.category).color
 
   // Use custom card component if available
   if (CardComponent) {

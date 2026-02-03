@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Download, ChevronDown, ChevronUp, Waves, Speaker, Loader2, Github, Building2, Radio, AlertCircle, Mountain, Music, Zap, FileMusic } from 'lucide-react'
 import { irLibraryApi, soundfontApi } from '../../../map2/api'
 import { LIBRARY_SOURCES, SOUNDFONT_SOURCES } from '../../types/library'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
+import { useSoundFontDownloadProgress } from '../../hooks/useSoundFontDownloadProgress'
 import { Tone3000Config } from './Tone3000Config'
 
 const SOURCE_ICONS: Record<string, typeof Waves> = {
@@ -27,9 +28,18 @@ const SOURCE_ICONS: Record<string, typeof Waves> = {
 }
 
 export function LibrarySources() {
-  const [irExpanded, setIRExpanded] = useState(true)
-  const [sfExpanded, setSFExpanded] = useState(true)
+  const [irExpanded, setIRExpanded] = useState(false)
+  const [sfExpanded, setSFExpanded] = useState(false)
+  const [downloadingSourceId, setDownloadingSourceId] = useState<string | null>(null)
   const { startDownload, isDownloading, isStarting, startError } = useDownloadProgress()
+  const { startDownload: startSFDownload, isDownloading: isSFDownloading, startError: sfStartError } = useSoundFontDownloadProgress()
+
+  const allExpanded = irExpanded && sfExpanded
+  const toggleAllSources = () => {
+    const newState = !allExpanded
+    setIRExpanded(newState)
+    setSFExpanded(newState)
+  }
 
   const librariesQuery = useQuery({
     queryKey: ['ir', 'libraries'],
@@ -41,11 +51,6 @@ export function LibrarySources() {
     queryFn: soundfontApi.getLibraries,
   })
 
-  // SoundFont download state
-  const sfDownloadMutation = useMutation({
-    mutationFn: (sources?: string[]) => soundfontApi.startDownload({ sources, parallel: 4, skip_existing: true }),
-  })
-
   const handleDownloadAll = () => {
     startDownload({ parallel: 4, skip_existing: true })
   }
@@ -55,11 +60,13 @@ export function LibrarySources() {
   }
 
   const handleSFDownloadAll = () => {
-    sfDownloadMutation.mutate(undefined)
+    setDownloadingSourceId('all')
+    startSFDownload({ parallel: 4, skip_existing: true })
   }
 
   const handleSFDownloadSource = (sourceName: string) => {
-    sfDownloadMutation.mutate([sourceName])
+    setDownloadingSourceId(sourceName)
+    startSFDownload({ sources: [sourceName], parallel: 4, skip_existing: true })
   }
 
   // Merge static source info with API counts for IRs
@@ -82,10 +89,31 @@ export function LibrarySources() {
     }
   })
 
-  const isSFDownloading = sfDownloadMutation.isPending
+  const isSFDownloadingAll = isSFDownloading && downloadingSourceId === 'all'
 
   return (
     <div className="stack" style={{ gap: 16 }}>
+      {/* Toggle All Sources Button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={toggleAllSources}
+          style={{ gap: 8 }}
+        >
+          {allExpanded ? (
+            <>
+              <ChevronUp size={16} />
+              Hide All Sources
+            </>
+          ) : (
+            <>
+              <ChevronDown size={16} />
+              Show All Sources
+            </>
+          )}
+        </button>
+      </div>
+
       {/* IR & NAM Library Sources */}
       <div className="card">
         <button
@@ -224,40 +252,38 @@ export function LibrarySources() {
             </span>
           </div>
           <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            {!isSFDownloading && (
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleSFDownloadAll()
-                }}
-                disabled={isSFDownloading}
-              >
-                {isSFDownloading ? (
-                  <>
-                    <Loader2 size={14} className="spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Download size={14} />
-                    Download All
-                  </>
-                )}
-              </button>
-            )}
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSFDownloadAll()
+              }}
+              disabled={isSFDownloading}
+            >
+              {isSFDownloadingAll ? (
+                <>
+                  <Loader2 size={14} className="spin" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  Download All
+                </>
+              )}
+            </button>
             {sfExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </div>
         </button>
 
         {sfExpanded && (
           <div style={{ padding: '0 16px 16px' }}>
-            {sfDownloadMutation.isError && (
+            {sfStartError && (
               <div className="card" style={{ padding: 12, marginBottom: 12, background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)' }}>
                 <div className="flex" style={{ gap: 8, alignItems: 'center', color: 'var(--danger)' }}>
                   <AlertCircle size={16} />
                   <span style={{ fontSize: 13 }}>
-                    Download failed: {sfDownloadMutation.error instanceof Error ? sfDownloadMutation.error.message : 'Unknown error'}
+                    Download failed: {sfStartError instanceof Error ? sfStartError.message : 'Unknown error'}
                   </span>
                 </div>
               </div>
@@ -266,6 +292,7 @@ export function LibrarySources() {
             <div className="grid" style={{ gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
               {sfSourcesWithCounts.map(source => {
                 const Icon = SOURCE_ICONS[source.name] ?? FileMusic
+                const isDownloadingThisSource = isSFDownloading && downloadingSourceId === source.name
                 return (
                   <div
                     key={source.name}
@@ -293,10 +320,19 @@ export function LibrarySources() {
                       <button
                         className="btn btn-ghost btn-sm"
                         onClick={() => handleSFDownloadSource(source.name)}
-                        disabled={isSFDownloading}
+                        disabled={false}
                       >
-                        <Download size={14} />
-                        Download
+                        {isDownloadingThisSource ? (
+                          <>
+                            <Loader2 size={14} className="spin" />
+                            Downloading...
+                          </>
+                        ) : (
+                          <>
+                            <Download size={14} />
+                            Download
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

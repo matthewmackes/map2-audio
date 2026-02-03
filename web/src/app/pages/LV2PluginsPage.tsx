@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
-import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, SlidersHorizontal, Zap, Waves, Gauge, AlertTriangle, Check } from 'lucide-react'
+import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, SlidersHorizontal, Zap, Waves, Gauge, AlertTriangle, Check, Plug } from 'lucide-react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 
@@ -249,6 +249,7 @@ export function LV2PluginsPage() {
       <PageHeader
         title="LV2 Plugin Pack Manager"
         subtitle="Install and manage curated LV2 plugin collections from system packages"
+        icon={<Plug size={32} style={{ color: '#3b82f6' }} />}
         actions={
           <button
             className="btn btn-ghost"

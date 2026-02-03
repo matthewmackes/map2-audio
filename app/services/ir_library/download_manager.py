@@ -1,17 +1,21 @@
 """
 IR Download Manager
 Coordinate downloading from multiple IR libraries.
+Enhanced with pause/resume, state persistence, and real-time progress tracking.
 """
 
 import logging
 import asyncio
 import os
-from typing import List, Dict, Optional, Set
+import json
+from typing import List, Dict, Optional, Set, Callable
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
+from pathlib import Path
 
 from .scraper_base import IRScraperBase, IRFileInfo
+from .chunk_assembler import ChunkAssembler, FileDownloadTask
 from .conners_scraper import ConnersScraper
 from .voxengo_scraper import VoxengoScraper
 from .nam_github_scraper import NAMGitHubScraper
@@ -24,6 +28,7 @@ from .lexicon_scraper import LexiconScraper
 from .tone3000_scraper import Tone3000Scraper
 from .fokke_scraper import FokkeScraper
 from app.services.ir_loader import get_ir_loader
+from app.services.websocket_manager import ws_manager
 from app.database import get_session, ImpulseResponse
 from app.paths import StoragePaths
 
@@ -50,13 +55,42 @@ class DownloadStats:
     downloaded: int = 0
     failed: int = 0
     skipped: int = 0
+    paused: int = 0
     total_bytes: int = 0
+    downloaded_bytes: int = 0
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    pause_time: Optional[datetime] = None
+    resume_time: Optional[datetime] = None
+    total_pause_duration: float = 0.0
+    speed_bps: float = 0.0
+    average_speed_bps: float = 0.0
+    peak_speed_bps: float = 0.0
+
+
+@dataclass
+class EnhancedDownloadState:
+    """Persistent download state for resume capability."""
+    manager_state: str = "IDLE"  # IDLE, DOWNLOADING, PAUSED, CANCELLED, COMPLETED
+    stats: Dict = field(default_factory=dict)
+    sources: Dict = field(default_factory=dict)
+    active_files: Dict = field(default_factory=dict)
+    completed_files: List[str] = field(default_factory=list)
+    failed_files: List[str] = field(default_factory=list)
+    paused_files: List[str] = field(default_factory=list)
+    pending_files: List[Dict] = field(default_factory=list)
+    parallel: int = 4
+    skip_existing: bool = True
+    chunk_size: int = 1024 * 1024
+    max_retries: int = 3
+    last_saved: Optional[datetime] = None
 
 
 class IRDownloadManager:
-    """Manage IR library downloads."""
+    """Manage IR library downloads with pause/resume and state persistence."""
+
+    STATE_FILE_PATH = "~/.map2/download_state.json"
+    BROADCASTER_INTERVAL = 0.5  # Broadcast every 500ms
 
     def __init__(self, storage_path: Optional[str] = None):
         """Initialize download manager.
@@ -73,10 +107,22 @@ class IRDownloadManager:
         self.stats = DownloadStats()
         self.source_stats: Dict[str, SourceStats] = {}
         self.is_downloading = False
+        self.is_paused = False
         self.downloaded_hashes: Set[str] = set()
         self.current_source: Optional[str] = None
         self.active_sources: List[str] = []
         self.failed_sources: List[str] = []
+
+        # Enhanced state management
+        self._state_lock = asyncio.Lock()
+        self._download_state = EnhancedDownloadState()
+        self.state_file_path = os.path.expanduser(self.STATE_FILE_PATH)
+
+        # Chunk assembler
+        self.chunk_assembler = ChunkAssembler()
+
+        # Active file tasks
+        self.active_file_tasks: Dict[str, FileDownloadTask] = {}
 
         # Initialize scrapers
         self._init_scrapers()
@@ -84,7 +130,13 @@ class IRDownloadManager:
         # Create storage directory
         os.makedirs(self.storage_path, exist_ok=True)
 
+        # Create state directory
+        os.makedirs(os.path.dirname(self.state_file_path), exist_ok=True)
+
         logger.info(f"IR Download Manager initialized: {self.storage_path}")
+
+        # Try to load previous state
+        asyncio.create_task(self._load_state_async())
     
     def _init_scrapers(self) -> None:
         """Initialize all scrapers."""
@@ -105,6 +157,127 @@ class IRDownloadManager:
             'tone3000': Tone3000Scraper(),
         }
 
+    # ==================== State Persistence ====================
+
+    async def _load_state_async(self) -> None:
+        """Asynchronously load saved download state."""
+        try:
+            await self._load_state()
+        except Exception as e:
+            logger.warning(f"Could not load previous download state: {e}")
+
+    async def _load_state(self) -> bool:
+        """Load download state from disk."""
+        try:
+            if not os.path.exists(self.state_file_path):
+                return False
+
+            with open(self.state_file_path, 'r') as f:
+                data = json.load(f)
+
+            async with self._state_lock:
+                self._download_state = EnhancedDownloadState(**data)
+                logger.info(f"Loaded download state: {self._download_state.manager_state}")
+
+            return True
+        except Exception as e:
+            logger.error(f"Error loading download state: {e}")
+            return False
+
+    async def _save_state(self) -> None:
+        """Save download state to disk."""
+        try:
+            async with self._state_lock:
+                state_dict = asdict(self._download_state)
+                state_dict['last_saved'] = datetime.utcnow().isoformat()
+
+            with open(self.state_file_path, 'w') as f:
+                json.dump(state_dict, f, indent=2, default=str)
+
+            logger.debug("Download state saved")
+        except Exception as e:
+            logger.warning(f"Error saving download state: {e}")
+
+    # ==================== Pause/Resume Control ====================
+
+    async def pause_download(self) -> None:
+        """Pause ongoing download."""
+        if not self.is_downloading:
+            logger.warning("No download in progress to pause")
+            return
+
+        async with self._state_lock:
+            self.is_paused = True
+            self._download_state.manager_state = "PAUSED"
+            self.stats.pause_time = datetime.utcnow()
+
+        # Tell chunk assembler to stop
+        self.chunk_assembler.cancel()
+
+        logger.info("Download paused")
+        await self._save_state()
+        await self._broadcast_event("download:paused", {})
+
+    async def resume_download(self) -> None:
+        """Resume paused download."""
+        if not self.is_paused:
+            logger.warning("No paused download to resume")
+            return
+
+        async with self._state_lock:
+            self.is_paused = False
+            self._download_state.manager_state = "DOWNLOADING"
+            if self.stats.pause_time:
+                pause_duration = (datetime.utcnow() - self.stats.pause_time).total_seconds()
+                self.stats.total_pause_duration += pause_duration
+            self.stats.resume_time = datetime.utcnow()
+
+        # Re-enable chunk assembler
+        self.chunk_assembler._cancel_requested = False
+
+        logger.info("Download resumed")
+        await self._save_state()
+        await self._broadcast_event("download:resumed", {})
+
+    # ==================== Progress Broadcasting ====================
+
+    async def _broadcast_progress(self) -> None:
+        """Broadcast current progress via WebSocket."""
+        try:
+            progress = self.get_progress()
+            await ws_manager.broadcast_json(
+                topic="download:progress",
+                message=progress
+            )
+        except Exception as e:
+            logger.warning(f"Error broadcasting progress: {e}")
+
+    async def _broadcast_event(self, event_type: str, data: Dict) -> None:
+        """Broadcast a download event via WebSocket."""
+        try:
+            message = {
+                "event": event_type,
+                "timestamp": datetime.utcnow().isoformat(),
+                "data": data
+            }
+            await ws_manager.broadcast_json(
+                topic="download:progress",
+                message=message
+            )
+        except Exception as e:
+            logger.warning(f"Error broadcasting event: {e}")
+
+    async def _progress_broadcaster_task(self) -> None:
+        """Background task to broadcast progress periodically."""
+        while self.is_downloading:
+            try:
+                await self._broadcast_progress()
+                await asyncio.sleep(self.BROADCASTER_INTERVAL)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.warning(f"Error in progress broadcaster: {e}")
+
     def get_tone3000_scraper(self) -> Tone3000Scraper:
         """Get the TONE3000 scraper instance.
 
@@ -113,11 +286,12 @@ class IRDownloadManager:
         """
         return self.scrapers.get('tone3000')
     
-    async def discover_all(self, sources: Optional[List[str]] = None) -> Dict[str, List[IRFileInfo]]:
+    async def discover_all(self, sources: Optional[List[str]] = None, limit: Optional[int] = None) -> Dict[str, List[IRFileInfo]]:
         """Discover IRs from all or specified sources.
 
         Args:
             sources: List of source names (None = all)
+            limit: Limit for tone3000 source (default: 10)
 
         Returns:
             Dict of source -> file list
@@ -139,7 +313,11 @@ class IRDownloadManager:
             logger.info(f"Discovering IRs from {source}...")
             scraper = self.scrapers[source]
             try:
-                files = await scraper.discover_irs()
+                # Pass limit parameter for tone3000 source
+                if source == "tone3000" and limit is not None:
+                    files = await scraper.discover_irs(limit=limit)
+                else:
+                    files = await scraper.discover_irs()
                 discovered[source] = files
                 if source in self.source_stats:
                     self.source_stats[source].discovered = len(files)
@@ -153,13 +331,14 @@ class IRDownloadManager:
         return discovered
 
     async def download_all(self, sources: Optional[List[str]] = None,
-                          parallel: int = 4, skip_existing: bool = True) -> DownloadStats:
+                          parallel: int = 4, skip_existing: bool = True, limit: Optional[int] = None) -> DownloadStats:
         """Download IRs from all or specified sources.
 
         Args:
             sources: List of source names (None = all)
             parallel: Number of parallel downloads
             skip_existing: Skip files that already exist
+            limit: Limit for tone3000 source (default: 10)
 
         Returns:
             Download statistics
@@ -169,6 +348,7 @@ class IRDownloadManager:
             return self.stats
 
         self.is_downloading = True
+        self.is_paused = False
         self.stats = DownloadStats(start_time=datetime.utcnow())
         self.failed_sources = []
 
@@ -182,9 +362,16 @@ class IRDownloadManager:
             for source in sources
         }
 
+        # Start progress broadcaster
+        broadcaster_task = asyncio.create_task(self._progress_broadcaster_task())
+        state_saver_task = asyncio.create_task(self._state_saver_task())
+
         try:
+            # Broadcast download started
+            await self._broadcast_event("download:started", {"sources": sources, "parallel": parallel})
+
             # Discover files
-            discovered = await self.discover_all(sources)
+            discovered = await self.discover_all(sources, limit=limit)
 
             # Flatten file list and track per-source counts
             all_files = []
@@ -234,10 +421,26 @@ class IRDownloadManager:
                        f"{self.stats.skipped} skipped, {self.stats.failed} failed "
                        f"in {duration:.1f}s")
 
+            # Broadcast completion
+            await self._broadcast_event("download:completed", {
+                "downloaded": self.stats.downloaded,
+                "failed": self.stats.failed,
+                "skipped": self.stats.skipped,
+                "duration_seconds": duration
+            })
+
             return self.stats
-            
+
         finally:
             self.is_downloading = False
+            broadcaster_task.cancel()
+            state_saver_task.cancel()
+            try:
+                await broadcaster_task
+                await state_saver_task
+            except asyncio.CancelledError:
+                pass
+            await self._save_state()
     
     async def _download_with_semaphore(self, file_info: IRFileInfo, 
                                       semaphore: asyncio.Semaphore,
@@ -462,6 +665,42 @@ class IRDownloadManager:
             "sources": sources_progress if sources_progress else None
         }
 
+    async def _state_saver_task(self) -> None:
+        """Background task to save state periodically."""
+        while self.is_downloading:
+            try:
+                await asyncio.sleep(5)  # Save every 5 seconds
+                await self._save_state()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.warning(f"Error in state saver: {e}")
+
+    async def get_file_tasks(self) -> List[Dict]:
+        """Get all active file download tasks."""
+        tasks = []
+        for filename, task in self.active_file_tasks.items():
+            task_dict = task.to_dict() if hasattr(task, 'to_dict') else {
+                'filename': filename,
+                'state': getattr(task, 'state', 'UNKNOWN'),
+                'downloaded_bytes': getattr(task, 'downloaded_bytes', 0),
+                'total_size': getattr(task, 'total_size', 0),
+            }
+            tasks.append(task_dict)
+        return tasks
+
+    async def get_file_task(self, filename: str) -> Optional[Dict]:
+        """Get progress for specific file."""
+        task = self.active_file_tasks.get(filename)
+        if task:
+            return task.to_dict() if hasattr(task, 'to_dict') else {
+                'filename': filename,
+                'state': getattr(task, 'state', 'UNKNOWN'),
+                'downloaded_bytes': getattr(task, 'downloaded_bytes', 0),
+                'total_size': getattr(task, 'total_size', 0),
+            }
+        return None
+
     def reset_stats(self) -> None:
         """Reset download stats for a fresh start."""
         self.stats = DownloadStats()
@@ -469,12 +708,14 @@ class IRDownloadManager:
         self.current_source = None
         self.active_sources = []
         self.failed_sources = []
-    
+
     async def cancel_download(self) -> None:
         """Cancel ongoing download."""
         if self.is_downloading:
             self.is_downloading = False
+            self.chunk_assembler.cancel()
             logger.info("Download cancelled by user")
+            await self._broadcast_event("download:cancelled", {})
 
 
 # Global instance

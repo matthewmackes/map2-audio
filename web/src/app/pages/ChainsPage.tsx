@@ -20,7 +20,7 @@ import {
   TextField,
   Button,
 } from '@mui/material'
-import { BadgeCheck, Loader2, Plus, Power, Trash2 } from 'lucide-react'
+import { BadgeCheck, Loader2, Plus, Power, Trash2, Link2 } from 'lucide-react'
 import type { Chain, ChainsResponse } from '../../map2/types'
 import { chainsApi } from '../../map2/api'
 import { PageHeader } from '../components/PageHeader'
@@ -118,6 +118,7 @@ export function ChainsPage() {
       <PageHeader
         title="Chains"
         subtitle="Curate and activate processing chains with Ariakit dialogs and menus."
+        icon={<Link2 size={32} style={{ color: '#3b82f6' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
             <a className="btn btn-ghost" href="/grid">

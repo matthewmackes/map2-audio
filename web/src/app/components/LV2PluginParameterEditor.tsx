@@ -26,27 +26,7 @@ import { pluginsApi, pluginPresetsApi, chainsApi } from '../../map2/api'
 import { usePluginOutput } from '../hooks/usePluginOutputs'
 import { NumberInput } from './Controls/NumberInput'
 import type { Plugin, PluginParameter, OutputPort } from '../../map2/types'
-
-// Category colors (matching existing system)
-const CATEGORY_COLORS: Record<string, { color: string; bg: string }> = {
-  'Distortion': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)' },
-  'Amplifier': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)' },
-  'Filter': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)' },
-  'EQ': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)' },
-  'Delay': { color: '#45b7d1', bg: 'rgba(69, 183, 209, 0.15)' },
-  'Reverb': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
-  'Modulation': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
-  'Compressor': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)' },
-  'Dynamics': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)' },
-  'Simulator': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
-  'Cabinet': { color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)' },
-  'Utility': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
-  'Generator': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },
-}
-
-const getCategoryConfig = (category: string) => {
-  return CATEGORY_COLORS[category] || { color: '#37d6c9', bg: 'rgba(55, 214, 201, 0.15)' }
-}
+import { getCategoryConfig } from './PluginCards/types'
 
 interface LV2PluginParameterEditorProps {
   plugin: Plugin
