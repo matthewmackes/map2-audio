@@ -7,6 +7,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { getSectionIcon } from './sectionIcons'
 
 interface ParameterSectionProps {
   title?: string
@@ -16,6 +17,10 @@ interface ParameterSectionProps {
   defaultCollapsed?: boolean
   accentColor?: string
   className?: string
+  /** Enable automatic icon selection based on title (default: true) */
+  autoIcon?: boolean
+  /** Icon size in pixels (default: 14) */
+  iconSize?: number
 }
 
 export function ParameterSection({
@@ -26,8 +31,13 @@ export function ParameterSection({
   defaultCollapsed = false,
   accentColor = '#37d6c9',
   className = '',
+  autoIcon = true,
+  iconSize = 14,
 }: ParameterSectionProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
+
+  // Auto-select icon based on title if not explicitly provided
+  const resolvedIcon = icon || (autoIcon && title ? getSectionIcon(title, iconSize) : null)
 
   const toggleCollapse = () => {
     if (collapsible) {
@@ -59,7 +69,7 @@ export function ParameterSection({
                 {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
               </span>
             )}
-            {icon && <span className="parameter-section-icon">{icon}</span>}
+            {resolvedIcon && <span className="parameter-section-icon">{resolvedIcon}</span>}
             <span className="parameter-section-label">{title}</span>
           </div>
         </div>
@@ -129,7 +139,7 @@ export function ParameterSection({
         }
 
         .parameter-section-content {
-          padding: 12px;
+          padding: var(--card-padding, 12px);
         }
 
         /* Without header */

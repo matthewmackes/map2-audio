@@ -3765,6 +3765,51 @@ input[type="range"]:focus::-webkit-slider-thumb {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
+  container-type: inline-size;
+  container-name: knob-grid;
+  --knob-size: 56px;
+  --card-gap: 16px;
+}
+
+/* Responsive knob grid breakpoints */
+@container knob-grid (max-width: 400px) {
+  .knob-param-grid {
+    --knob-size: 36px;
+    --card-gap: 8px;
+    gap: 8px;
+  }
+}
+
+@container knob-grid (min-width: 400px) and (max-width: 600px) {
+  .knob-param-grid {
+    --knob-size: 44px;
+    --card-gap: 10px;
+    gap: 10px;
+  }
+}
+
+@container knob-grid (min-width: 600px) and (max-width: 800px) {
+  .knob-param-grid {
+    --knob-size: 56px;
+    --card-gap: 12px;
+    gap: 12px;
+  }
+}
+
+@container knob-grid (min-width: 800px) and (max-width: 1000px) {
+  .knob-param-grid {
+    --knob-size: 64px;
+    --card-gap: 14px;
+    gap: 14px;
+  }
+}
+
+@container knob-grid (min-width: 1000px) {
+  .knob-param-grid {
+    --knob-size: 72px;
+    --card-gap: 16px;
+    gap: 16px;
+  }
 }
 
 /* Parameter Knob */
@@ -3797,6 +3842,11 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .param-knob-dial {
   cursor: grab;
   touch-action: none;
+}
+
+.param-knob-dial.responsive {
+  width: var(--knob-size, 56px);
+  height: var(--knob-size, 56px);
 }
 
 .param-knob-dial:active {
@@ -5539,6 +5589,715 @@ kbd {
 .grid-flow-header .grid-chain-stats {
   font-size: 11px;
   color: var(--muted);
+}
+
+/* ============================================================================
+   Toolbar Enhancements - Section Labels & Tinting
+   ============================================================================ */
+
+.grid-toolbar-section {
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.grid-flow-header-left {
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.grid-flow-header-center {
+  background: rgba(0, 212, 255, 0.05);
+}
+
+.grid-flow-header-right {
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.grid-toolbar-section-label {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  opacity: 0.6;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   Toolbar Tooltip
+   ============================================================================ */
+
+.toolbar-tooltip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.toolbar-tooltip-content {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  max-width: 200px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-tooltip-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+  font-size: 10px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   Context Menu
+   ============================================================================ */
+
+.toolbar-context-menu {
+  position: fixed;
+  z-index: 10001;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  min-width: 180px;
+  animation: slideUp 0.15s ease;
+}
+
+.toolbar-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.toolbar-context-menu-item:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+
+.toolbar-context-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-context-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+}
+
+.toolbar-context-menu-label {
+  flex: 1;
+}
+
+.toolbar-context-menu-shortcut {
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.toolbar-context-menu-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ============================================================================
+   Confirmation Dialog
+   ============================================================================ */
+
+.toolbar-confirmation-dialog {
+  max-width: 400px;
+  animation: slideUp 0.2s ease;
+}
+
+.toolbar-confirmation-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+}
+
+.toolbar-confirmation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar-confirmation-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.toolbar-confirmation-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.toolbar-confirmation-close:hover {
+  background: var(--surface-3);
+  color: #fff;
+}
+
+.toolbar-confirmation-content {
+  padding: 20px;
+  color: #ccc;
+  line-height: 1.5;
+}
+
+.toolbar-confirmation-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.toolbar-confirmation-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-confirmation-btn.cancel {
+  background: var(--surface-3);
+  color: #fff;
+}
+
+.toolbar-confirmation-btn.cancel:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.toolbar-confirmation-btn.danger {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+.toolbar-confirmation-btn.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.toolbar-confirmation-btn.warning {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+}
+
+.toolbar-confirmation-btn.warning:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.toolbar-confirmation-btn.info {
+  background: rgba(0, 212, 255, 0.2);
+  border: 1px solid #00d4ff;
+  color: #00d4ff;
+}
+
+.toolbar-confirmation-btn.info:hover:not(:disabled) {
+  background: rgba(0, 212, 255, 0.3);
+}
+
+.toolbar-confirmation-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-confirmation-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spin-mini {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================================================
+   Button Groups
+   ============================================================================ */
+
+.grid-toolbar-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grid-toolbar-button-group-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  opacity: 0.6;
+  text-transform: uppercase;
+  padding: 0 4px;
+}
+
+.grid-toolbar-button-group-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================================
+   Toolbar Collapse
+   ============================================================================ */
+
+.grid-flow-header-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg,
+    #252525 0%,
+    #1e1e1e 50%,
+    #1a1a1a 100%
+  );
+  border-bottom: 1px solid #333;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.grid-flow-header-collapsed-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grid-flow-header-collapsed-btn:hover {
+  background: var(--surface-3);
+  color: #fff;
+}
+
+/* ============================================================================
+   Flow Selection Buttons (A/B Mode)
+   ============================================================================ */
+
+.grid-toolbar-flow-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.grid-toolbar-flow-selector-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.grid-toolbar-flow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grid-toolbar-flow-btn:hover {
+  background: var(--surface-3);
+  border-color: var(--flow-color);
+  color: var(--flow-color);
+}
+
+.grid-toolbar-flow-btn.active {
+  background: var(--flow-color);
+  border-color: var(--flow-color);
+  color: var(--surface-background);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--flow-color) 50%, transparent);
+}
+
+/* ============================================================================
+   Morph Control Labels
+   ============================================================================ */
+
+.grid-toolbar-morph-labels {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grid-toolbar-morph-label-start,
+.grid-toolbar-morph-label-end {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 4px 8px;
+  background: rgba(0, 212, 255, 0.1);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   History Stack Visualization
+   ============================================================================ */
+
+.grid-toolbar-history-wrapper {
+  position: relative;
+}
+
+.toolbar-history-stack {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: slideUp 0.15s ease;
+}
+
+.toolbar-history-stack-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.toolbar-history-stack-item {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.toolbar-history-stack-item:hover {
+  background: var(--surface-3);
+}
+
+/* ============================================================================
+   Quick Presets Dropdown
+   ============================================================================ */
+
+.grid-toolbar-quick-presets {
+  position: relative;
+}
+
+.grid-toolbar-preset-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.grid-toolbar-preset-quick-btn:hover {
+  background: var(--surface-3);
+  color: #fff;
+}
+
+.grid-toolbar-preset-count {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  background: rgba(234, 179, 8, 0.2);
+  border-radius: 3px;
+  color: #eab308;
+}
+
+.grid-toolbar-preset-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: slideUp 0.15s ease;
+}
+
+.grid-toolbar-preset-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.grid-toolbar-preset-dropdown button:hover {
+  background: var(--surface-3);
+}
+
+/* ============================================================================
+   MIDI Learn Indicator
+   ============================================================================ */
+
+.midi-learn-indicator {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.2s ease;
+  z-index: 1000;
+}
+
+.midi-learn-pulse {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: breathe 1.5s ease-in-out infinite;
+}
+
+.midi-learn-status {
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   Batch Operations
+   ============================================================================ */
+
+.grid-toolbar-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+}
+
+.grid-toolbar-batch-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.grid-toolbar-batch-actions button {
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grid-toolbar-batch-actions button:hover {
+  background: var(--surface-3);
+}
+
+/* ============================================================================
+   Power Button Animation
+   ============================================================================ */
+
+.grid-header-btn.active.power {
+  animation: breathe 2s ease-in-out infinite;
+}
+
+.grid-header-btn.active.power::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 8px;
+  border: 2px solid #22c55e;
+  opacity: 0.5;
+  animation: pulseRing 2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   Loading Spinner
+   ============================================================================ */
+
+.spin {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   Drag and Drop Flow Slots
+   ============================================================================ */
+
+.grid-flow-slot {
+  cursor: grab;
+  transition: all 0.15s ease;
+}
+
+.grid-flow-slot:active {
+  cursor: grabbing;
+}
+
+.grid-flow-slot.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.grid-flow-slot.drag-over {
+  border-color: var(--primary) !important;
+  border-width: 2px !important;
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2) !important;
+}
+
+.grid-flow-slot-drag-handle {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  transform: translateY(-50%);
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  cursor: grab;
+  z-index: 5;
+}
+
+.grid-flow-slot:hover .grid-flow-slot-drag-handle {
+  opacity: 1;
+}
+
+.grid-flow-slot.dragging .grid-flow-slot-drag-handle {
+  cursor: grabbing;
 }
 
 /* ============================================================================

@@ -271,7 +271,7 @@ export function KnobParameterPanel({
                   onChangeEnd={() => handleParameterChangeEnd(param.symbol)}
                   accentColor={accentColor}
                   isLogarithmic={param.is_log}
-                  size="medium"
+                  size="responsive"
                 />
               )
             })}

@@ -39,9 +39,9 @@ export function ParameterGrid({
         gridTemplateColumns,
         gap: rowGap !== undefined || columnGap !== undefined
           ? undefined
-          : `${gap}px`,
-        rowGap: rowGap !== undefined ? `${rowGap}px` : undefined,
-        columnGap: columnGap !== undefined ? `${columnGap}px` : undefined,
+          : `var(--card-gap, ${gap}px)`,
+        rowGap: rowGap !== undefined ? `var(--card-gap, ${rowGap}px)` : undefined,
+        columnGap: columnGap !== undefined ? `var(--card-gap, ${columnGap}px)` : undefined,
       }}
     >
       {children}

@@ -31,7 +31,7 @@ export function ParameterRow({
         display: 'flex',
         justifyContent: justify,
         alignItems: align,
-        gap: `${gap}px`,
+        gap: `var(--card-gap, ${gap}px)`,
         flexWrap: wrap ? 'wrap' : 'nowrap',
       }}
     >

@@ -33,7 +33,7 @@ interface ParameterKnobProps {
   disabled?: boolean
   isLogarithmic?: boolean
   valueFormatter?: (value: number) => string
-  size?: 'small' | 'medium' | 'large'
+  size?: 'small' | 'medium' | 'large' | 'responsive'
   /** Optional MIDI CC configuration - enables MIDI learn on this knob */
   midi?: MidiConfig
 }
@@ -100,7 +100,7 @@ export function ParameterKnob({
   disabled = false,
   isLogarithmic = false,
   valueFormatter = defaultFormatter,
-  size = 'medium',
+  size = 'responsive',
   midi,
 }: ParameterKnobProps) {
   const [isDragging, setIsDragging] = useState(false)
@@ -120,12 +120,20 @@ export function ParameterKnob({
   const rotation = -135 + position * 270
 
   // Size configurations
-  const sizeConfig = {
-    small: { knobSize: 40, strokeWidth: 3, fontSize: 10 },
-    medium: { knobSize: 56, strokeWidth: 4, fontSize: 11 },
-    large: { knobSize: 72, strokeWidth: 5, fontSize: 12 },
+  // For responsive, we'll use the default 'md' breakpoint value and let CSS handle the scaling
+  const getSizeConfig = (s: string) => {
+    if (s === 'responsive') {
+      return { knobSize: 56, strokeWidth: 4, fontSize: 11 }
+    }
+    const configs = {
+      small: { knobSize: 40, strokeWidth: 3, fontSize: 10 },
+      medium: { knobSize: 56, strokeWidth: 4, fontSize: 11 },
+      large: { knobSize: 72, strokeWidth: 5, fontSize: 12 },
+    }
+    return configs[s] || configs.medium
   }
-  const { knobSize, strokeWidth, fontSize } = sizeConfig[size]
+
+  const { knobSize, strokeWidth, fontSize } = getSizeConfig(size)
   const radius = (knobSize - strokeWidth) / 2
   const center = knobSize / 2
 
@@ -241,8 +249,12 @@ export function ParameterKnob({
       {/* Knob */}
       <div
         ref={knobRef}
-        className="param-knob-dial"
-        style={{ width: knobSize, height: knobSize }}
+        className={`param-knob-dial ${size === 'responsive' ? 'responsive' : ''}`}
+        style={
+          size === 'responsive'
+            ? {}
+            : { width: knobSize, height: knobSize }
+        }
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
         onDoubleClick={handleDoubleClick}

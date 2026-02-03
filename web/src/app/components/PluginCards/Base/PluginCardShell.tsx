@@ -78,6 +78,13 @@ export function PluginCardShell({
         '--accent-color': accentColor,
         '--accent-bg': catConfig.bg,
         '--accent-gradient': catConfig.gradient,
+        '--card-padding': '16px',
+        '--card-gap': '12px',
+        '--header-padding': '12px 16px',
+        '--knob-size': '56px',
+        '--font-scale': '1',
+        containerType: 'inline-size',
+        containerName: 'plugin-card',
       } as React.CSSProperties}
     >
       {/* Header */}
@@ -234,7 +241,7 @@ export function PluginCardShell({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 12px 16px;
+          padding: var(--header-padding);
           background: rgba(0, 0, 0, 0.2);
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -257,7 +264,7 @@ export function PluginCardShell({
 
         .plugin-card-title {
           margin: 0;
-          font-size: 14px;
+          font-size: calc(14px * var(--font-scale));
           font-weight: 600;
           color: #f2f6ff;
           letter-spacing: 0.3px;
@@ -375,7 +382,7 @@ export function PluginCardShell({
         }
 
         .plugin-card-visualization {
-          padding: 16px;
+          padding: var(--card-padding);
           background: rgba(0, 0, 0, 0.15);
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
@@ -385,7 +392,7 @@ export function PluginCardShell({
         }
 
         .plugin-card-content {
-          padding: 16px;
+          padding: var(--card-padding);
         }
 
         .compact .plugin-card-content {
@@ -400,6 +407,88 @@ export function PluginCardShell({
 
         .compact .plugin-card-footer {
           padding: 8px 12px;
+        }
+
+        /* Container Query Breakpoints for Responsive Sizing */
+
+        /* xs: < 400px - Ultra compact */
+        @container plugin-card (max-width: 400px) {
+          .plugin-card-shell {
+            --card-padding: 8px;
+            --card-gap: 8px;
+            --header-padding: 6px 10px;
+            --knob-size: 36px;
+            --font-scale: 0.85;
+          }
+
+          .plugin-card-header {
+            padding: var(--header-padding);
+          }
+
+          .plugin-card-visualization {
+            padding: var(--card-padding);
+          }
+
+          .plugin-card-content {
+            padding: var(--card-padding);
+          }
+
+          .plugin-card-title {
+            font-size: calc(12px * var(--font-scale));
+          }
+        }
+
+        /* sm: 400-600px - Compact */
+        @container plugin-card (min-width: 400px) and (max-width: 600px) {
+          .plugin-card-shell {
+            --card-padding: 10px;
+            --card-gap: 10px;
+            --header-padding: 8px 12px;
+            --knob-size: 44px;
+            --font-scale: 0.9;
+          }
+        }
+
+        /* md: 600-800px - Normal (default) */
+        @container plugin-card (min-width: 600px) and (max-width: 800px) {
+          .plugin-card-shell {
+            --card-padding: 16px;
+            --card-gap: 12px;
+            --header-padding: 12px 16px;
+            --knob-size: 56px;
+            --font-scale: 1;
+          }
+        }
+
+        /* lg: 800-1000px - Comfortable */
+        @container plugin-card (min-width: 800px) and (max-width: 1000px) {
+          .plugin-card-shell {
+            --card-padding: 18px;
+            --card-gap: 14px;
+            --header-padding: 14px 18px;
+            --knob-size: 64px;
+            --font-scale: 1.05;
+          }
+        }
+
+        /* xl: > 1000px - Spacious */
+        @container plugin-card (min-width: 1000px) {
+          .plugin-card-shell {
+            --card-padding: 20px;
+            --card-gap: 16px;
+            --header-padding: 16px 20px;
+            --knob-size: 72px;
+            --font-scale: 1.1;
+          }
+        }
+
+        /* Backward compatibility: compact prop overrides container queries */
+        .plugin-card-shell.compact {
+          --card-padding: 12px;
+          --card-gap: 8px;
+          --header-padding: 8px 12px;
+          --knob-size: 40px;
+          --font-scale: 0.85;
         }
       `}</style>
     </div>
