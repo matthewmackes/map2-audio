@@ -13,6 +13,8 @@ import {
   ChevronDown,
   Check,
   AlertTriangle,
+  FolderOpen,
+  Settings2,
 } from 'lucide-react'
 import { irApi, namApi, soundfontApi, foldersApi } from '../../../map2/api'
 import type { NAMModel, IRFile } from '../../../map2/types'
@@ -33,10 +35,38 @@ interface UnifiedAsset {
   duration?: number
   category?: string
   isActive?: boolean
+  folder?: string
 }
 
-type SortField = 'name' | 'type' | 'source' | 'size'
+type SortField = 'name' | 'type' | 'source' | 'size' | 'category' | 'format' | 'sampleRate' | 'duration' | 'folder'
 type SortDirection = 'asc' | 'desc'
+
+// Column visibility state
+interface ColumnVisibility {
+  type: boolean
+  name: boolean
+  category: boolean
+  source: boolean
+  format: boolean
+  sampleRate: boolean
+  duration: boolean
+  size: boolean
+  folder: boolean
+  status: boolean
+}
+
+const DEFAULT_COLUMNS: ColumnVisibility = {
+  type: true,
+  name: true,
+  category: true,
+  source: true,
+  format: true,
+  sampleRate: true,
+  duration: true,
+  size: true,
+  folder: false,
+  status: true,
+}
 
 const TYPE_CONFIG: Record<AssetType, { label: string; icon: typeof Zap; color: string }> = {
   nam: { label: 'NAM', icon: Zap, color: '#ff6b6b' },
@@ -52,6 +82,27 @@ function formatSize(bytes?: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function formatSampleRate(rate?: number): string {
+  if (!rate) return '-'
+  return `${(rate / 1000).toFixed(1)} kHz`
+}
+
+function formatDuration(seconds?: number): string {
+  if (!seconds) return '-'
+  if (seconds < 1) return `${Math.round(seconds * 1000)} ms`
+  if (seconds < 60) return `${seconds.toFixed(2)} s`
+  const mins = Math.floor(seconds / 60)
+  const secs = (seconds % 60).toFixed(1)
+  return `${mins}:${secs.padStart(4, '0')}`
+}
+
+function extractFolder(path: string): string {
+  if (!path) return '-'
+  const parts = path.split('/')
+  if (parts.length < 2) return '-'
+  return parts[parts.length - 2] || '-'
+}
+
 export function InstalledAssetsTable() {
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
@@ -60,6 +111,8 @@ export function InstalledAssetsTable() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [typeFilter, setTypeFilter] = useState<AssetType | 'all'>('all')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showColumnSettings, setShowColumnSettings] = useState(false)
+  const [columns, setColumns] = useState<ColumnVisibility>(DEFAULT_COLUMNS)
 
   // Fetch all asset types
   const cabinetsQuery = useQuery({
@@ -118,6 +171,7 @@ export function InstalledAssetsTable() {
         source: 'Local',
         sampleRate: ir.sample_rate,
         duration: ir.duration,
+        folder: extractFolder(ir.path),
         isActive: ir.name === irStatusQuery.data?.loaded_cabinet,
       })
     })
@@ -134,6 +188,7 @@ export function InstalledAssetsTable() {
         source: 'Local',
         sampleRate: ir.sample_rate,
         duration: ir.duration,
+        folder: extractFolder(ir.path),
         isActive: ir.name === irStatusQuery.data?.loaded_reverb,
       })
     })
@@ -148,6 +203,8 @@ export function InstalledAssetsTable() {
         path: model.path ?? '',
         size: model.size,
         source: model.type || 'Unknown',
+        category: model.type || undefined,
+        folder: extractFolder(model.path ?? ''),
         isActive: model.name === namStatusQuery.data?.activeModel,
       })
     })
@@ -162,8 +219,9 @@ export function InstalledAssetsTable() {
         path: sf.path,
         size: sf.size,
         source: sf.library || 'Local',
-        format: sf.format,
+        format: sf.format?.toUpperCase(),
         category: sf.category,
+        folder: extractFolder(sf.path),
       })
     })
 
@@ -193,7 +251,9 @@ export function InstalledAssetsTable() {
         (a) =>
           a.name.toLowerCase().includes(query) ||
           a.source?.toLowerCase().includes(query) ||
-          a.category?.toLowerCase().includes(query)
+          a.category?.toLowerCase().includes(query) ||
+          a.folder?.toLowerCase().includes(query) ||
+          a.format?.toLowerCase().includes(query)
       )
     }
 
@@ -210,8 +270,23 @@ export function InstalledAssetsTable() {
         case 'source':
           comparison = (a.source ?? '').localeCompare(b.source ?? '')
           break
+        case 'category':
+          comparison = (a.category ?? '').localeCompare(b.category ?? '')
+          break
+        case 'format':
+          comparison = (a.format ?? '').localeCompare(b.format ?? '')
+          break
+        case 'sampleRate':
+          comparison = (a.sampleRate ?? 0) - (b.sampleRate ?? 0)
+          break
+        case 'duration':
+          comparison = (a.duration ?? 0) - (b.duration ?? 0)
+          break
         case 'size':
           comparison = (a.size ?? 0) - (b.size ?? 0)
+          break
+        case 'folder':
+          comparison = (a.folder ?? '').localeCompare(b.folder ?? '')
           break
       }
       return sortDirection === 'asc' ? comparison : -comparison
@@ -275,6 +350,10 @@ export function InstalledAssetsTable() {
     handleRefresh()
   }, [handleRefresh])
 
+  const toggleColumn = useCallback((col: keyof ColumnVisibility) => {
+    setColumns((prev) => ({ ...prev, [col]: !prev[col] }))
+  }, [])
+
   const getCounts = useCallback(() => {
     return {
       nam: namQuery.data?.total ?? 0,
@@ -300,6 +379,14 @@ export function InstalledAssetsTable() {
     )
   }
 
+  const thStyle = (clickable = true): React.CSSProperties => ({
+    padding: '12px 16px',
+    textAlign: 'left',
+    cursor: clickable ? 'pointer' : 'default',
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
+  })
+
   return (
     <div className="card">
       {/* Header */}
@@ -320,6 +407,13 @@ export function InstalledAssetsTable() {
                 Delete ({selectedIds.size})
               </button>
             )}
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => setShowColumnSettings(!showColumnSettings)}
+              title="Column settings"
+            >
+              <Settings2 size={14} />
+            </button>
             <button
               className="btn btn-sm btn-primary"
               onClick={() => scanMutation.mutate()}
@@ -342,8 +436,50 @@ export function InstalledAssetsTable() {
           </div>
         </div>
 
+        {/* Column Settings Dropdown */}
+        {showColumnSettings && (
+          <div
+            style={{
+              background: 'var(--bg-secondary)',
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 12,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 12, color: 'var(--muted)', width: '100%', marginBottom: 4 }}>
+              Show columns:
+            </span>
+            {(Object.keys(columns) as Array<keyof ColumnVisibility>).map((col) => (
+              <label
+                key={col}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  background: columns[col] ? 'var(--primary-dim)' : 'transparent',
+                  borderRadius: 4,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={columns[col]}
+                  onChange={() => toggleColumn(col)}
+                  style={{ cursor: 'pointer' }}
+                />
+                {col.charAt(0).toUpperCase() + col.slice(1).replace(/([A-Z])/g, ' $1')}
+              </label>
+            ))}
+          </div>
+        )}
+
         {/* Filter chips */}
-        <div className="flex" style={{ gap: 4, marginBottom: 12 }}>
+        <div className="flex" style={{ gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
           <button
             className={`btn btn-sm ${typeFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setTypeFilter('all')}
@@ -386,7 +522,7 @@ export function InstalledAssetsTable() {
           <Search size={16} className="muted" />
           <input
             type="text"
-            placeholder="Search assets..."
+            placeholder="Search by name, source, category, folder..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -434,69 +570,91 @@ export function InstalledAssetsTable() {
                     style={{ cursor: 'pointer' }}
                   />
                 </th>
-                <th
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    width: 120,
-                  }}
-                  onClick={() => handleSort('type')}
-                >
-                  <div className="flex" style={{ alignItems: 'center' }}>
-                    Type
-                    <SortIcon field="type" />
-                  </div>
-                </th>
-                <th
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex" style={{ alignItems: 'center' }}>
-                    Name
-                    <SortIcon field="name" />
-                  </div>
-                </th>
-                <th
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    width: 150,
-                  }}
-                  onClick={() => handleSort('source')}
-                >
-                  <div className="flex" style={{ alignItems: 'center' }}>
-                    Source
-                    <SortIcon field="source" />
-                  </div>
-                </th>
-                <th
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'right',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    width: 100,
-                  }}
-                  onClick={() => handleSort('size')}
-                >
-                  <div
-                    className="flex"
-                    style={{ alignItems: 'center', justifyContent: 'flex-end' }}
+                {columns.type && (
+                  <th style={{ ...thStyle(), width: 110 }} onClick={() => handleSort('type')}>
+                    <div className="flex" style={{ alignItems: 'center' }}>
+                      Type
+                      <SortIcon field="type" />
+                    </div>
+                  </th>
+                )}
+                {columns.name && (
+                  <th style={thStyle()} onClick={() => handleSort('name')}>
+                    <div className="flex" style={{ alignItems: 'center' }}>
+                      Name
+                      <SortIcon field="name" />
+                    </div>
+                  </th>
+                )}
+                {columns.category && (
+                  <th style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('category')}>
+                    <div className="flex" style={{ alignItems: 'center' }}>
+                      Category
+                      <SortIcon field="category" />
+                    </div>
+                  </th>
+                )}
+                {columns.source && (
+                  <th style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('source')}>
+                    <div className="flex" style={{ alignItems: 'center' }}>
+                      Source
+                      <SortIcon field="source" />
+                    </div>
+                  </th>
+                )}
+                {columns.format && (
+                  <th style={{ ...thStyle(), width: 80 }} onClick={() => handleSort('format')}>
+                    <div className="flex" style={{ alignItems: 'center' }}>
+                      Format
+                      <SortIcon field="format" />
+                    </div>
+                  </th>
+                )}
+                {columns.sampleRate && (
+                  <th
+                    style={{ ...thStyle(), width: 100, textAlign: 'right' }}
+                    onClick={() => handleSort('sampleRate')}
                   >
-                    Size
-                    <SortIcon field="size" />
-                  </div>
-                </th>
-                <th style={{ padding: '12px 16px', textAlign: 'center', width: 80 }}>Status</th>
+                    <div className="flex" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                      Sample Rate
+                      <SortIcon field="sampleRate" />
+                    </div>
+                  </th>
+                )}
+                {columns.duration && (
+                  <th
+                    style={{ ...thStyle(), width: 90, textAlign: 'right' }}
+                    onClick={() => handleSort('duration')}
+                  >
+                    <div className="flex" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                      Duration
+                      <SortIcon field="duration" />
+                    </div>
+                  </th>
+                )}
+                {columns.size && (
+                  <th
+                    style={{ ...thStyle(), width: 90, textAlign: 'right' }}
+                    onClick={() => handleSort('size')}
+                  >
+                    <div className="flex" style={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                      Size
+                      <SortIcon field="size" />
+                    </div>
+                  </th>
+                )}
+                {columns.folder && (
+                  <th style={{ ...thStyle(), width: 140 }} onClick={() => handleSort('folder')}>
+                    <div className="flex" style={{ alignItems: 'center' }}>
+                      <FolderOpen size={14} style={{ marginRight: 4 }} />
+                      Folder
+                      <SortIcon field="folder" />
+                    </div>
+                  </th>
+                )}
+                {columns.status && (
+                  <th style={{ ...thStyle(false), width: 80, textAlign: 'center' }}>Status</th>
+                )}
                 <th style={{ padding: '12px 16px', textAlign: 'center', width: 60 }}>Actions</th>
               </tr>
             </thead>
@@ -522,48 +680,125 @@ export function InstalledAssetsTable() {
                         style={{ cursor: 'pointer' }}
                       />
                     </td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <div className="flex" style={{ alignItems: 'center', gap: 6 }}>
-                        <Icon size={14} style={{ color: config.color }} />
-                        <span
-                          className="badge"
-                          style={{
-                            background: `${config.color}20`,
-                            color: config.color,
-                            fontSize: 11,
-                          }}
-                        >
-                          {config.label}
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <div style={{ fontWeight: 500 }}>{asset.name}</div>
-                      {asset.category && (
-                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>{asset.category}</div>
-                      )}
-                    </td>
-                    <td style={{ padding: '10px 16px', color: 'var(--muted)' }}>
-                      {asset.source || '-'}
-                    </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'right', color: 'var(--muted)' }}>
-                      {formatSize(asset.size)}
-                    </td>
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                      {asset.isActive && (
-                        <span
-                          className="pill"
-                          style={{
-                            background: 'var(--success)',
-                            color: '#fff',
-                            padding: '2px 8px',
-                            fontSize: 11,
-                          }}
-                        >
-                          <Check size={10} /> Active
-                        </span>
-                      )}
-                    </td>
+                    {columns.type && (
+                      <td style={{ padding: '10px 16px' }}>
+                        <div className="flex" style={{ alignItems: 'center', gap: 6 }}>
+                          <Icon size={14} style={{ color: config.color }} />
+                          <span
+                            className="badge"
+                            style={{
+                              background: `${config.color}20`,
+                              color: config.color,
+                              fontSize: 11,
+                            }}
+                          >
+                            {config.label}
+                          </span>
+                        </div>
+                      </td>
+                    )}
+                    {columns.name && (
+                      <td style={{ padding: '10px 16px' }}>
+                        <div style={{ fontWeight: 500 }}>{asset.name}</div>
+                      </td>
+                    )}
+                    {columns.category && (
+                      <td style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
+                        {asset.category || '-'}
+                      </td>
+                    )}
+                    {columns.source && (
+                      <td style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
+                        {asset.source || '-'}
+                      </td>
+                    )}
+                    {columns.format && (
+                      <td style={{ padding: '10px 16px' }}>
+                        {asset.format ? (
+                          <span
+                            className="badge"
+                            style={{
+                              background: 'var(--bg-secondary)',
+                              fontSize: 10,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            {asset.format}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--muted)' }}>-</span>
+                        )}
+                      </td>
+                    )}
+                    {columns.sampleRate && (
+                      <td
+                        style={{
+                          padding: '10px 16px',
+                          textAlign: 'right',
+                          color: 'var(--muted)',
+                          fontSize: 13,
+                        }}
+                      >
+                        {formatSampleRate(asset.sampleRate)}
+                      </td>
+                    )}
+                    {columns.duration && (
+                      <td
+                        style={{
+                          padding: '10px 16px',
+                          textAlign: 'right',
+                          color: 'var(--muted)',
+                          fontSize: 13,
+                        }}
+                      >
+                        {formatDuration(asset.duration)}
+                      </td>
+                    )}
+                    {columns.size && (
+                      <td
+                        style={{
+                          padding: '10px 16px',
+                          textAlign: 'right',
+                          color: 'var(--muted)',
+                          fontSize: 13,
+                        }}
+                      >
+                        {formatSize(asset.size)}
+                      </td>
+                    )}
+                    {columns.folder && (
+                      <td
+                        style={{
+                          padding: '10px 16px',
+                          color: 'var(--muted)',
+                          fontSize: 12,
+                          maxWidth: 140,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={asset.path}
+                      >
+                        {asset.folder || '-'}
+                      </td>
+                    )}
+                    {columns.status && (
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                        {asset.isActive && (
+                          <span
+                            className="pill"
+                            style={{
+                              background: 'var(--success)',
+                              color: '#fff',
+                              padding: '2px 8px',
+                              fontSize: 11,
+                            }}
+                          >
+                            <Check size={10} /> Active
+                          </span>
+                        )}
+                      </td>
+                    )}
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                       <button
                         className="btn btn-ghost btn-sm"
@@ -583,6 +818,26 @@ export function InstalledAssetsTable() {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* Footer with count */}
+      <div
+        style={{
+          padding: '8px 16px',
+          borderTop: '1px solid var(--border)',
+          fontSize: 12,
+          color: 'var(--muted)',
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span>
+          {filteredAssets.length} of {unifiedAssets.length} assets
+          {selectedIds.size > 0 && ` (${selectedIds.size} selected)`}
+        </span>
+        <span>
+          Sorted by {sortField} ({sortDirection === 'asc' ? 'ascending' : 'descending'})
+        </span>
       </div>
 
       {/* Delete Confirmation Modal */}
