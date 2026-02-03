@@ -1,0 +1,369 @@
+/**
+ * IntervalShifterCard Styles
+ * Musical interval pitch shifter with piano visualization
+ */
+
+/* Header */
+.interval-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.interval-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary, #fff);
+}
+
+.interval-subtitle {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  margin-top: 2px;
+}
+
+/* Visualization */
+.interval-visualization {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.interval-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.interval-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.interval-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary, #888);
+}
+
+.interval-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid var(--accent, #8b5cf6);
+}
+
+.interval-semitones {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent, #8b5cf6);
+}
+
+.interval-name {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  margin-top: 2px;
+}
+
+.interval-arrow-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.interval-arrow {
+  color: var(--color, #10b981);
+  opacity: 0.8;
+  transform: translateY(calc(var(--shift) * -10px));
+  transition: transform 0.2s ease;
+}
+
+/* Piano keyboard visualization */
+.interval-piano {
+  display: flex;
+  justify-content: center;
+  height: 32px;
+  position: relative;
+}
+
+.piano-key {
+  width: 10px;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 1px;
+  border-radius: 0 0 2px 2px;
+  transition: all 0.15s ease;
+}
+
+.piano-key.white {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.piano-key.black {
+  background: rgba(0, 0, 0, 0.4);
+  width: 7px;
+  height: 60%;
+  margin-left: -4px;
+  margin-right: -3px;
+  z-index: 1;
+}
+
+.piano-key.root {
+  background: rgba(139, 92, 246, 0.4);
+  border-color: #8b5cf6;
+}
+
+.piano-key.shifted-l {
+  background: rgba(78, 205, 196, 0.6);
+  border-color: #4ecdc4;
+  box-shadow: 0 0 8px rgba(78, 205, 196, 0.5);
+}
+
+.piano-key.shifted-r {
+  background: rgba(245, 158, 11, 0.6);
+  border-color: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.piano-key.shifted-l.shifted-r {
+  background: linear-gradient(180deg, rgba(78, 205, 196, 0.6), rgba(245, 158, 11, 0.6));
+}
+
+/* Presets Section */
+.interval-presets-section {
+  margin-bottom: 12px;
+}
+
+.interval-presets-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 12px;
+}
+
+.interval-presets-toggle:hover {
+  background: rgba(var(--accent-rgb, 139, 92, 246), 0.1);
+  border-color: var(--accent, #8b5cf6);
+}
+
+.interval-presets-toggle svg.rotated {
+  transform: rotate(180deg);
+}
+
+.interval-presets-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.interval-preset-btn {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #fff);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.interval-preset-btn:hover {
+  background: rgba(var(--accent-rgb, 139, 92, 246), 0.15);
+}
+
+.interval-preset-btn:last-child {
+  border-bottom: none;
+}
+
+.interval-preset-btn .preset-name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.interval-preset-btn .preset-desc {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  margin-top: 2px;
+}
+
+/* Interval Controls */
+.interval-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.interval-stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.stepper-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+}
+
+.stepper-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.stepper-buttons button {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stepper-buttons button:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+}
+
+.stepper-buttons button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stepper-value {
+  min-width: 40px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary, #fff);
+}
+
+.stepper-interval {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+}
+
+/* Link button */
+.interval-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.interval-link-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.interval-link-btn.linked {
+  background: rgba(var(--accent-rgb, 139, 92, 246), 0.2);
+  border-color: var(--accent, #8b5cf6);
+  color: var(--accent, #8b5cf6);
+}
+
+/* Quick interval buttons */
+.interval-quick-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.interval-quick-buttons button {
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.interval-quick-buttons button:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+  color: var(--text-primary, #fff);
+}
+
+.interval-quick-buttons button.active {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: #8b5cf6;
+  color: #fff;
+}
+
+/* Mix section */
+.interval-mix-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 30%;
+  margin-top: 4px;
+  font-size: 9px;
+  color: var(--text-secondary, #888);
+}
+
+/* Footer */
+.interval-footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 8px;
+}
+
+.interval-metering {
+  display: flex;
+  gap: 16px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-secondary, #888);
+}

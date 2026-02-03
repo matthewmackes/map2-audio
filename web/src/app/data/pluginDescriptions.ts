@@ -54,8 +54,25 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   // Calf Studio Gear - Instruments
   'Calf Monosynth': 'Monophonic synthesizer with classic analog-style oscillators.',
   'Calf Organ': 'Drawbar organ with rotary speaker simulation.',
-  'Calf Fluidsynth': 'SoundFont sample player for realistic instrument sounds.',
+  'Calf Fluidsynth': 'SoundFont (SF2) sample player for realistic instrument sounds.',
   'Calf Wavetable': 'Wavetable synthesizer for evolving digital tones.',
+
+  // Keyboard Sampler (Sfizz)
+  'Keyboard Sampler': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
+  'Sfizz': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
+  'sfizz': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
+
+  // REEV-R Reverb
+  'REEV-R': 'Algorithmic reverb with smooth decay, rich modulation, and space presets inspired by FabFilter Pro-R.',
+  'REEV R': 'Algorithmic reverb with smooth decay, rich modulation, and space presets inspired by FabFilter Pro-R.',
+
+  // Outotune
+  'Outotune': 'Real-time pitch correction with key/scale selection, piano roll note enable, and formant preservation.',
+  'outotune': 'Real-time pitch correction with key/scale selection, piano roll note enable, and formant preservation.',
+
+  // dm-Whammy
+  'dm-Whammy': 'Expression-controlled pitch shifter with DigiTech Whammy-style modes including octave, harmony, and dive bomb.',
+  'Whammy': 'Expression-controlled pitch shifter with classic Whammy modes and harmony intervals.',
 
   // Calf Studio Gear - Utilities
   'Calf Analyzer': 'Real-time spectrum analyzer for frequency visualization.',
@@ -154,7 +171,7 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   'ZamDynamicEQ': 'Dynamic equalizer combining EQ and compression.',
   'ZamHeadX2': 'Binaural head simulation for headphone mixing.',
   'ZamPhono': 'RIAA phono preamp for vinyl playback.',
-  'ZamSFZ': 'SFZ sample format player.',
+  'ZamSFZ': 'SFZ sample format player. (Consider using Sfizz for better SFZ support)',
   'ZamSynth': 'Subtractive synthesizer.',
 
   // x42 Plugins
@@ -234,8 +251,18 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   'TAL-Dub': 'Vintage delay with filtering.',
   'TAL-Vocoder': 'Eleven-band vocoder.',
 
-  // Airwindows
-  'Airwindows': 'High-quality audio processing from Chris Johnson.',
+  // MAP2 Native Processors - Modulation
+  'Stereo Chorus': 'Classic stereo chorus with adjustable depth, rate, and centre delay for rich modulation.',
+  '6-Stage Phaser': 'Classic 6-stage phaser with modulated all-pass filters for sweeping notches.',
+  'IntelliFX 8-Voice': 'Rocktron IntelliFX-style 8-voice multi-chorus with independent voice control and HUSH noise reduction.',
+
+  // GlitchShifter - Airwindows plugin ported to LV2 by Hannes Braun
+  'GlitchShifter': 'Granular pitch shifter/harmonizer with intentional glitchy artifacts. Creates smooth or lo-fi pitch-shifted harmonies with adjustable grain tightness and feedback.',
+  'Airwindows GlitchShifter': 'Granular pitch shifter/harmonizer with intentional glitchy artifacts. Creates smooth or lo-fi pitch-shifted harmonies with adjustable grain tightness and feedback.',
+
+  // SWH Plugins
+  'Modulatable delay': 'CV-controlled delay where delay time is modulated by an external audio signal. Connect an LFO or envelope to the Delay input for chorus, flanger, and vibrato effects.',
+  'modDelay': 'CV-controlled delay where delay time is modulated by an external audio signal. Connect an LFO or envelope to the Delay input for chorus, flanger, and vibrato effects.',
 
   // General/Fallback patterns
   'Compressor': 'Dynamic range compressor for controlling audio levels.',

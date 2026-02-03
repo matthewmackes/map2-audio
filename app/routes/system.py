@@ -674,6 +674,176 @@ fi'''
         }
 
 
+@router.post("/welcome-banner")
+async def toggle_welcome_banner(install: bool = True) -> Dict[str, Any]:
+    """
+    Install or remove the bash welcome banner.
+
+    Args:
+        install: If True, install the banner. If False, remove it.
+
+    Returns:
+        Operation results
+    """
+    try:
+        if install:
+            # Find branding directory
+            script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            branding_dir = os.path.join(script_dir, "branding")
+            welcome_script = os.path.join(branding_dir, "welcome.sh")
+
+            if not os.path.exists(welcome_script):
+                return {
+                    "success": False,
+                    "installed": False,
+                    "error": f"Welcome script not found: {welcome_script}"
+                }
+
+            # Install to /etc/profile.d/
+            _run_cmd("sudo mkdir -p /etc/profile.d")
+            _run_cmd(f"sudo cp '{welcome_script}' /etc/profile.d/map2-welcome.sh")
+            _run_cmd("sudo chmod 755 /etc/profile.d/map2-welcome.sh")
+
+            return {
+                "success": True,
+                "installed": True,
+                "message": "Welcome banner installed. It will show on new terminal sessions."
+            }
+        else:
+            # Remove from /etc/profile.d/
+            _run_cmd("sudo rm -f /etc/profile.d/map2-welcome.sh")
+
+            return {
+                "success": True,
+                "installed": False,
+                "message": "Welcome banner removed."
+            }
+
+    except Exception as e:
+        logger.error(f"Error toggling welcome banner: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@router.get("/welcome-banner")
+async def get_welcome_banner_status() -> Dict[str, Any]:
+    """
+    Check if the welcome banner is currently installed.
+
+    Returns:
+        Installation status
+    """
+    installed = os.path.exists("/etc/profile.d/map2-welcome.sh")
+    return {
+        "installed": installed,
+        "path": "/etc/profile.d/map2-welcome.sh"
+    }
+
+
+@router.get("/boot-splash")
+async def get_boot_splash_status() -> Dict[str, Any]:
+    """
+    Check if the boot splash is currently installed and active.
+
+    Returns:
+        Installation status
+    """
+    theme_exists = os.path.exists("/usr/share/plymouth/themes/map2/map2-boot-splash.script")
+    plymouth_installed = _run_cmd("command -v plymouth") != ""
+    current_theme = _run_cmd("plymouth-set-default-theme 2>/dev/null") if plymouth_installed else ""
+    is_active = current_theme.strip() == "map2-boot-splash"
+
+    return {
+        "installed": theme_exists and is_active,
+        "theme_exists": theme_exists,
+        "plymouth_installed": plymouth_installed,
+        "current_theme": current_theme.strip() if current_theme else "unknown",
+        "is_active": is_active
+    }
+
+
+@router.post("/boot-splash")
+async def toggle_boot_splash(install: bool = True) -> Dict[str, Any]:
+    """
+    Install or remove the boot splash theme.
+
+    Args:
+        install: If True, install the theme. If False, remove it.
+
+    Returns:
+        Operation results
+    """
+    try:
+        if install:
+            # Find branding directory
+            script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            branding_dir = os.path.join(script_dir, "branding")
+            splash_script = os.path.join(branding_dir, "map2-boot-splash.script")
+            splash_plymouth = os.path.join(branding_dir, "map2-boot-splash.plymouth")
+
+            if not os.path.exists(splash_script) or not os.path.exists(splash_plymouth):
+                return {
+                    "success": False,
+                    "installed": False,
+                    "error": "Boot splash source files not found"
+                }
+
+            # Check Plymouth is installed
+            if not _run_cmd("command -v plymouth"):
+                return {
+                    "success": False,
+                    "installed": False,
+                    "error": "Plymouth is not installed. Install it with: sudo dnf install plymouth"
+                }
+
+            # Create theme directory and copy files
+            _run_cmd("sudo mkdir -p /usr/share/plymouth/themes/map2")
+            _run_cmd(f"sudo cp '{splash_script}' /usr/share/plymouth/themes/map2/")
+            _run_cmd(f"sudo cp '{splash_plymouth}' /usr/share/plymouth/themes/map2/")
+            _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.script")
+            _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth")
+
+            # Set as default theme
+            set_result = _run_cmd("sudo plymouth-set-default-theme map2-boot-splash 2>&1")
+
+            # Rebuild initramfs in background
+            kernel_version = _run_cmd("uname -r")
+            _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
+
+            return {
+                "success": True,
+                "installed": True,
+                "message": "Boot splash installed. Reboot to see changes.",
+                "note": "Initramfs rebuild started in background."
+            }
+        else:
+            # Reset to default theme
+            _run_cmd("sudo plymouth-set-default-theme bgrt 2>/dev/null || sudo plymouth-set-default-theme spinner 2>/dev/null")
+
+            # Remove theme files
+            _run_cmd("sudo rm -rf /usr/share/plymouth/themes/map2")
+
+            # Rebuild initramfs in background
+            kernel_version = _run_cmd("uname -r")
+            _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
+
+            return {
+                "success": True,
+                "installed": False,
+                "message": "Boot splash removed and reset to default.",
+                "note": "Initramfs rebuild started in background."
+            }
+
+    except Exception as e:
+        logger.error(f"Error toggling boot splash: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 @router.get("/core-config")
 async def get_core_config():
     """

@@ -247,6 +247,26 @@ export const audioApi = {
   getJuceMetrics: () => fetchJson<JuceMetrics>(`${API_BASE}/audio/juce`),
 
   unmute: () => fetchJson<{ success: boolean }>(`${API_BASE}/audio/health/unmute`, { method: 'POST' }),
+
+  // Port routing
+  getPorts: () => fetchJson<AudioPortsResponse>(`${API_BASE}/audio/ports`),
+
+  getRouting: () => fetchJson<AudioRoutingResponse>(`${API_BASE}/audio/routing`),
+
+  setRouting: (config: { inputPorts?: number[]; outputPorts?: number[] }) => {
+    const params = new URLSearchParams();
+    if (config.inputPorts) {
+      config.inputPorts.forEach(p => params.append('input_ports', p.toString()));
+    }
+    if (config.outputPorts) {
+      config.outputPorts.forEach(p => params.append('output_ports', p.toString()));
+    }
+    return fetchJson<AudioRoutingUpdateResponse>(`${API_BASE}/audio/routing?${params.toString()}`, {
+      method: 'POST',
+    });
+  },
+
+  getPortPresets: () => fetchJson<AudioPortPresetsResponse>(`${API_BASE}/audio/ports/presets`),
 };
 
 // Audio health types
@@ -291,6 +311,53 @@ export interface JuceMetrics {
   buffer_size: number;
   cpu_load: number;
   available_devices?: string[];
+}
+
+// Audio port routing types
+export interface AudioPort {
+  index: number;
+  name: string;
+  type: 'input' | 'output';
+}
+
+export interface AudioPortsResponse {
+  available: boolean;
+  device?: string;
+  inputs: AudioPort[];
+  outputs: AudioPort[];
+  input_count: number;
+  output_count: number;
+  error?: string;
+}
+
+export interface AudioRoutingResponse {
+  available: boolean;
+  input_ports: number[];
+  output_ports: number[];
+  error?: string;
+}
+
+export interface AudioRoutingUpdateResponse {
+  success: boolean;
+  message: string;
+  input_ports: number[];
+  output_ports: number[];
+}
+
+export interface AudioPortPreset {
+  id: string;
+  name: string;
+  description: string;
+  input_ports: number[];
+  output_ports: number[];
+}
+
+export interface AudioPortPresetsResponse {
+  presets: AudioPortPreset[];
+  current: {
+    input_ports: number[];
+    output_ports: number[];
+  };
 }
 
 // Diagnostics API
@@ -527,6 +594,12 @@ export const pluginsApi = {
     fetchJson<{ status: string; uri: string }>(`${API_BASE}/plugins/unload?uri=${encodeURIComponent(uri)}`, {
       method: 'POST',
     }),
+
+  delete: (uri: string) =>
+    fetchJson<{ status: string; uri: string; path: string; removed: number }>(
+      `${API_BASE}/plugins/${encodeURIComponent(uri)}`,
+      { method: 'DELETE' }
+    ),
 
   getParameters: (uri: string) =>
     fetchJson<{ uri: string; parameters: unknown[] }>(`${API_BASE}/plugins/${encodeURIComponent(uri)}/parameters`),

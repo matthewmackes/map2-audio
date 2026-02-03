@@ -13,7 +13,7 @@
  * - bypass: boolean
  */
 
-import { useFilters } from '../../../../hooks/useFilters'
+import { useFilters, type FilterType } from '../../../../hooks/useFilters'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
@@ -68,7 +68,7 @@ export function ParametricEQCard({
       height={compact ? 100 : 140}
       accentColor={accentColor}
       interactive
-      onBandChange={(index, updates) => {
+      onBandChange={(index: number, updates: { frequency?: number; gain?: number; q?: number }) => {
         if (updates.frequency !== undefined) setBandFrequency(index, updates.frequency)
         if (updates.gain !== undefined) setBandGain(index, updates.gain)
         if (updates.q !== undefined) setBandQ(index, updates.q)
@@ -189,7 +189,7 @@ export function ParametricEQCard({
               {/* Filter Type Select */}
               <select
                 value={band.type}
-                onChange={(e) => setBandType(index, e.target.value)}
+                onChange={(e) => setBandType(index, e.target.value as FilterType)}
                 disabled={!band.enabled}
                 style={{
                   width: '100%',

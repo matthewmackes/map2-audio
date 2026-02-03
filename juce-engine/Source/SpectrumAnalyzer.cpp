@@ -42,17 +42,32 @@ void SpectrumAnalyzer::reset() {
 void SpectrumAnalyzer::pushSamples(const float* samples, int numSamples) {
     if (!enabled_ || samples == nullptr) return;
 
-    for (int i = 0; i < numSamples; ++i) {
-        int idx = fifoIndex_.load();
-        inputFifo_[idx] = samples[i];
-
-        if (++idx >= FFT_SIZE) {
+    // RT-SAFE OPTIMIZATION: Batch copy instead of per-sample atomic ops
+    int idx = fifoIndex_.load(std::memory_order_relaxed);
+    int remaining = numSamples;
+    const float* src = samples;
+    
+    while (remaining > 0) {
+        // Calculate how many samples we can copy before wrap
+        int spaceToEnd = FFT_SIZE - idx;
+        int toCopy = std::min(remaining, spaceToEnd);
+        
+        // Batch memcpy instead of per-sample assignment
+        std::memcpy(&inputFifo_[idx], src, toCopy * sizeof(float));
+        
+        idx += toCopy;
+        src += toCopy;
+        remaining -= toCopy;
+        
+        // Handle wrap-around
+        if (idx >= FFT_SIZE) {
             idx = 0;
             fftReady_ = true;
         }
-
-        fifoIndex_.store(idx);
     }
+    
+    // Single atomic store at end (RT-safe)
+    fifoIndex_.store(idx, std::memory_order_relaxed);
 
     // Process FFT when buffer is full
     if (fftReady_) {

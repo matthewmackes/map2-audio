@@ -10,7 +10,6 @@ import {
   Button,
   Stack,
   Typography,
-  Slider,
   Chip,
   IconButton,
   Divider,
@@ -21,6 +20,7 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   SwapHoriz as SwapIcon,
   ContentCopy as DuplicateIcon,
@@ -242,7 +242,7 @@ export default function ChainABMode({
             </Box>
 
             {/* Center Blend Control */}
-            <Box sx={{ 
+            <Box sx={{
               flex: 0.8,
               display: 'flex',
               flexDirection: 'column',
@@ -253,19 +253,15 @@ export default function ChainABMode({
             }}>
               <VolumeIcon />
               <Box sx={{ width: '100%', textAlign: 'center' }}>
-                <Slider
-                  orientation="vertical"
+                <NumberInput
+                  label="Blend"
+                  value={currentBlend}
+                  onChange={(v) => handleBlendChange(null as any, v)}
                   min={0}
                   max={100}
-                  value={currentBlend}
-                  onChange={handleBlendChange}
-                  marks={[
-                    { value: 0, label: 'A' },
-                    { value: 50, label: '50%' },
-                    { value: 100, label: 'B' },
-                  ]}
-                  valueLabelDisplay="auto"
-                  sx={{ height: 200 }}
+                  step={1}
+                  unit="%"
+                  size="small"
                 />
               </Box>
               <Typography variant="caption" color="text.secondary" textAlign="center">

@@ -12,7 +12,10 @@ This module is deprecated in favor of ServiceOrchestrator which provides:
 For new code, use:
     from app.services.service_orchestrator import get_orchestrator
 
-This module remains for backwards compatibility only."""
+This module remains for backwards compatibility only.
+
+Fix #7: This module now warns on import and delegates to ServiceOrchestrator.
+"""
 
 import logging
 import time
@@ -21,12 +24,20 @@ import asyncio
 import subprocess
 import psutil
 import os
+import warnings
 from typing import Optional, Dict, List
 from pathlib import Path
 from .audio_io_v2 import AudioIOFactory, RealAudioIOManager
 from .plugin_loader_unified import get_plugin_loader, UnifiedPluginLoader
 
 logger = logging.getLogger(__name__)
+
+# Fix #7: Emit deprecation warning on module import
+warnings.warn(
+    "ServiceManager is deprecated. Use 'from app.services.service_orchestrator import get_orchestrator' instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class ServiceManager:

@@ -1,7 +1,23 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
-import { ChevronDown, PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Settings2, Activity, Sliders, Usb } from 'lucide-react'
+import { ChevronDown, PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen } from 'lucide-react'
+
+// Red Dragon icon for "hic sunt dracones" menu
+const DragonIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M12 2C10.5 2 9 3 8.5 4.5C8 6 8.5 7.5 9.5 8.5L7 11C6 10.5 4.5 10.5 3.5 11.5C2.5 12.5 2.5 14 3 15L2 16L3 17L4 16C5 16.5 6.5 16.5 7.5 15.5L10 18C9 19 9 20.5 9.5 21.5C10 22.5 11.5 23 13 22.5C14.5 22 15.5 20.5 15.5 19L18.5 16C19.5 17 21 17 22 16C22 14.5 21.5 13 20 12.5L21 10L19.5 9.5L18.5 11C17.5 10.5 16 11 15 12L12.5 9.5C13.5 8.5 14 7 13.5 5.5C13 4 11.5 3 10 3"
+      stroke="#dc2626"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="#dc2626"
+      fillOpacity="0.2"
+    />
+    <circle cx="10" cy="5" r="1" fill="#dc2626" />
+  </svg>
+)
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -75,6 +91,13 @@ const underTheHoodItems = [
 // Main navigation items (left side, top-level)
 const navItemsLeft = [
   {
+    to: '/welcome',
+    label: 'Guide',
+    icon: BookOpen,
+    description: 'Platform guide & concepts',
+    color: '#22c55e'  // Green
+  },
+  {
     to: '/grid',
     label: 'Grid',
     icon: LayoutGrid,
@@ -98,9 +121,9 @@ const navItemsRight = [
 // hic sunt dracones dropdown nav item
 const underTheHoodNav = {
   label: 'hic sunt dracones',
-  icon: Settings2,
+  icon: DragonIcon,
   description: 'Advanced settings & configuration',
-  color: '#a855f7'  // Purple
+  color: '#dc2626'  // Red (dragon)
 }
 
 // Check if current path matches a nav item

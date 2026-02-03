@@ -1320,6 +1320,406 @@ class JuceEngineService(Singleton):
         return "unavailable"
 
 
+    # ========================================
+    # Boss XS-1 Polyphonic Pitch Shifter (NEW)
+    # ========================================
+
+    async def set_boss_xs1_shift_amount(self, semitones: float) -> None:
+        """Set Boss XS-1 pitch shift amount in semitones (-7 to +7)"""
+        if self._engine:
+            self._engine.set_boss_xs1_shift_amount(semitones)
+
+    async def get_boss_xs1_shift_amount(self) -> float:
+        """Get Boss XS-1 pitch shift amount"""
+        if not self._engine:
+            return 0.0
+        return self._engine.get_boss_xs1_shift_amount()
+
+    async def set_boss_xs1_balance(self, percent: float) -> None:
+        """Set Boss XS-1 wet/dry balance (0-100%)"""
+        if self._engine:
+            self._engine.set_boss_xs1_balance(percent)
+
+    async def get_boss_xs1_balance(self) -> float:
+        """Get Boss XS-1 balance"""
+        if not self._engine:
+            return 50.0
+        return self._engine.get_boss_xs1_balance()
+
+    async def set_boss_xs1_detune_mode(self, enabled: bool) -> None:
+        """Enable Boss XS-1 detune mode"""
+        if self._engine:
+            self._engine.set_boss_xs1_detune_mode(enabled)
+
+    async def is_boss_xs1_detune_mode(self) -> bool:
+        """Check if Boss XS-1 is in detune mode"""
+        if not self._engine:
+            return False
+        return self._engine.is_boss_xs1_detune_mode()
+
+    async def set_boss_xs1_detune_amount(self, cents: float) -> None:
+        """Set Boss XS-1 detune amount in cents"""
+        if self._engine:
+            self._engine.set_boss_xs1_detune_amount(cents)
+
+    async def get_boss_xs1_detune_amount(self) -> float:
+        """Get Boss XS-1 detune amount"""
+        if not self._engine:
+            return 20.0
+        return self._engine.get_boss_xs1_detune_amount()
+
+    async def set_boss_xs1_glide(self, ms: float) -> None:
+        """Set Boss XS-1 glide time in ms"""
+        if self._engine:
+            self._engine.set_boss_xs1_glide(ms)
+
+    async def get_boss_xs1_glide(self) -> float:
+        """Get Boss XS-1 glide time"""
+        if not self._engine:
+            return 0.0
+        return self._engine.get_boss_xs1_glide()
+
+    async def set_boss_xs1_feedback(self, feedback: float) -> None:
+        """Set Boss XS-1 feedback (0 to 0.7)"""
+        if self._engine:
+            self._engine.set_boss_xs1_feedback(feedback)
+
+    async def get_boss_xs1_feedback(self) -> float:
+        """Get Boss XS-1 feedback"""
+        if not self._engine:
+            return 0.0
+        return self._engine.get_boss_xs1_feedback()
+
+    async def set_boss_xs1_pedal_enabled(self, enabled: bool) -> None:
+        """Enable Boss XS-1 expression pedal"""
+        if self._engine:
+            self._engine.set_boss_xs1_pedal_enabled(enabled)
+
+    async def is_boss_xs1_pedal_enabled(self) -> bool:
+        """Check if Boss XS-1 pedal is enabled"""
+        if not self._engine:
+            return False
+        return self._engine.is_boss_xs1_pedal_enabled()
+
+    async def set_boss_xs1_pedal_position(self, position: float) -> None:
+        """Set Boss XS-1 pedal position (0-100%)"""
+        if self._engine:
+            self._engine.set_boss_xs1_pedal_position(position)
+
+    async def get_boss_xs1_pedal_position(self) -> float:
+        """Get Boss XS-1 pedal position"""
+        if not self._engine:
+            return 0.0
+        return self._engine.get_boss_xs1_pedal_position()
+
+    async def set_boss_xs1_pedal_range(self, min_st: float, max_st: float) -> None:
+        """Set Boss XS-1 pedal range in semitones"""
+        if self._engine:
+            self._engine.set_boss_xs1_pedal_range(min_st, max_st)
+
+    async def get_boss_xs1_pedal_min(self) -> float:
+        """Get Boss XS-1 pedal min"""
+        if not self._engine:
+            return -7.0
+        return self._engine.get_boss_xs1_pedal_min()
+
+    async def get_boss_xs1_pedal_max(self) -> float:
+        """Get Boss XS-1 pedal max"""
+        if not self._engine:
+            return 7.0
+        return self._engine.get_boss_xs1_pedal_max()
+
+    async def set_boss_xs1_preset(self, preset_index: int) -> None:
+        """Set Boss XS-1 preset by index"""
+        if self._engine:
+            presets = [
+                "manual", "drop_d", "drop_d_sharp", "half_step_down",
+                "capo_2nd_fret", "capo_3rd_fret", "capo_5th_fret",
+                "octave_up", "octave_down", "octave_up_down",
+                "micro_pitch_wide", "micro_pitch_narrow", "voice_doubling",
+                "string_doubling", "pianist_octaves", "sub_bass",
+                "sonic_screamer", "unique_intervals", "minor_third",
+                "chord_shift", "detune_chorus", "spacey_vibrato", "robotic_mod"
+            ]
+            if 0 <= preset_index < len(presets):
+                self._engine.set_boss_xs1_preset(presets[preset_index])
+
+    async def get_boss_xs1_preset(self) -> str:
+        """Get Boss XS-1 current preset name"""
+        if not self._engine:
+            return "manual"
+        return self._engine.get_boss_xs1_preset()
+
+    async def set_boss_xs1_bypass(self, bypass: bool) -> None:
+        """Bypass Boss XS-1"""
+        if self._engine:
+            self._engine.set_boss_xs1_bypass(bypass)
+
+    async def is_boss_xs1_bypassed(self) -> bool:
+        """Check if Boss XS-1 is bypassed"""
+        if not self._engine:
+            return False
+        return self._engine.is_boss_xs1_bypassed()
+
+    def _preset_name_to_index(self, preset_name: str) -> int:
+        """Convert Boss XS-1 preset name to index"""
+        presets = [
+            "manual", "drop_d", "drop_d_sharp", "half_step_down",
+            "capo_2nd_fret", "capo_3rd_fret", "capo_5th_fret",
+            "octave_up", "octave_down", "octave_up_down",
+            "micro_pitch_wide", "micro_pitch_narrow", "voice_doubling",
+            "string_doubling", "pianist_octaves", "sub_bass",
+            "sonic_screamer", "unique_intervals", "minor_third",
+            "chord_shift", "detune_chorus", "spacey_vibrato", "robotic_mod"
+        ]
+        try:
+            return presets.index(preset_name)
+        except ValueError:
+            return 0
+
+    async def get_boss_xs1_parameters(self) -> Dict[str, Any]:
+        """Get all Boss XS-1 parameters"""
+        if not self._engine:
+            return {
+                "shift_amount": 0.0,
+                "balance": 50.0,
+                "detune_mode": False,
+                "detune_amount": 20.0,
+                "glide": 0.0,
+                "feedback": 0.0,
+                "pedal_enabled": False,
+                "pedal_position": 0.0,
+                "pedal_min": -7.0,
+                "pedal_max": 7.0,
+                "preset": 0,
+                "bypass": False
+            }
+        params = self._engine.get_boss_xs1_parameters()
+        # Convert preset name to index for frontend compatibility
+        if isinstance(params.get("preset"), str):
+            params["preset"] = self._preset_name_to_index(params["preset"])
+        return params
+
+    async def set_boss_xs1_parameters(self, params: Dict[str, Any]) -> None:
+        """Set all Boss XS-1 parameters at once"""
+        if self._engine:
+            self._engine.set_boss_xs1_parameters(params)
+
+    async def get_boss_xs1_input_level(self) -> float:
+        """Get Boss XS-1 input level in dB"""
+        if not self._engine:
+            return -100.0
+        return self._engine.get_boss_xs1_input_level()
+
+    async def get_boss_xs1_output_level(self) -> float:
+        """Get Boss XS-1 output level in dB"""
+        if not self._engine:
+            return -100.0
+        return self._engine.get_boss_xs1_output_level()
+
+    async def get_boss_xs1_metering(self) -> Dict[str, float]:
+        """Get Boss XS-1 metering"""
+        if not self._engine:
+            return {
+                "input_level": -100.0,
+                "output_level": -100.0
+            }
+        return {
+            "input_level": self._engine.get_boss_xs1_input_level(),
+            "output_level": self._engine.get_boss_xs1_output_level()
+        }
+
+    async def get_boss_xs1_presets(self) -> List[Dict[str, Any]]:
+        """Get all Boss XS-1 presets"""
+        if not self._engine:
+            return []
+        return self._engine.get_boss_xs1_presets()
+
+    # ========================================
+    # ShoeGaze Multi-Effect Processor
+    # ========================================
+
+    async def set_shoegaze_atmosphere(self, percent: float) -> None:
+        """Set ShoeGaze atmosphere (master dreamy control)"""
+        if self._engine:
+            self._engine.set_shoegaze_atmosphere(percent)
+
+    async def set_shoegaze_decay(self, seconds: float) -> None:
+        """Set ShoeGaze reverb decay time"""
+        if self._engine:
+            self._engine.set_shoegaze_decay(seconds)
+
+    async def set_shoegaze_shimmer(self, percent: float) -> None:
+        """Set ShoeGaze shimmer amount"""
+        if self._engine:
+            self._engine.set_shoegaze_shimmer(percent)
+
+    async def set_shoegaze_shimmer_pitch(self, semitones: float) -> None:
+        """Set ShoeGaze shimmer pitch in semitones"""
+        if self._engine:
+            self._engine.set_shoegaze_shimmer_pitch(semitones)
+
+    async def set_shoegaze_modulation(self, percent: float) -> None:
+        """Set ShoeGaze chorus modulation depth"""
+        if self._engine:
+            self._engine.set_shoegaze_modulation(percent)
+
+    async def set_shoegaze_mod_rate(self, hz: float) -> None:
+        """Set ShoeGaze modulation rate in Hz"""
+        if self._engine:
+            self._engine.set_shoegaze_mod_rate(hz)
+
+    async def set_shoegaze_drive(self, percent: float) -> None:
+        """Set ShoeGaze saturation drive"""
+        if self._engine:
+            self._engine.set_shoegaze_drive(percent)
+
+    async def set_shoegaze_delay_time(self, ms: float) -> None:
+        """Set ShoeGaze delay time in ms"""
+        if self._engine:
+            self._engine.set_shoegaze_delay_time(ms)
+
+    async def set_shoegaze_delay_feedback(self, percent: float) -> None:
+        """Set ShoeGaze delay feedback"""
+        if self._engine:
+            self._engine.set_shoegaze_delay_feedback(percent)
+
+    async def set_shoegaze_delay_mod(self, percent: float) -> None:
+        """Set ShoeGaze delay modulation/BBD wobble"""
+        if self._engine:
+            self._engine.set_shoegaze_delay_mod(percent)
+
+    async def set_shoegaze_low_cut(self, hz: float) -> None:
+        """Set ShoeGaze low cut frequency"""
+        if self._engine:
+            self._engine.set_shoegaze_low_cut(hz)
+
+    async def set_shoegaze_high_cut(self, hz: float) -> None:
+        """Set ShoeGaze high cut frequency"""
+        if self._engine:
+            self._engine.set_shoegaze_high_cut(hz)
+
+    async def set_shoegaze_mix(self, percent: float) -> None:
+        """Set ShoeGaze wet/dry mix"""
+        if self._engine:
+            self._engine.set_shoegaze_mix(percent)
+
+    async def set_shoegaze_stereo_width(self, percent: float) -> None:
+        """Set ShoeGaze stereo width"""
+        if self._engine:
+            self._engine.set_shoegaze_stereo_width(percent)
+
+    async def set_shoegaze_reverb_diffusion(self, percent: float) -> None:
+        """Set ShoeGaze reverb diffusion"""
+        if self._engine:
+            self._engine.set_shoegaze_reverb_diffusion(percent)
+
+    async def set_shoegaze_reverb_damping(self, percent: float) -> None:
+        """Set ShoeGaze reverb damping"""
+        if self._engine:
+            self._engine.set_shoegaze_reverb_damping(percent)
+
+    async def set_shoegaze_shimmer_feedback(self, percent: float) -> None:
+        """Set ShoeGaze shimmer feedback"""
+        if self._engine:
+            self._engine.set_shoegaze_shimmer_feedback(percent)
+
+    async def set_shoegaze_chorus_voices(self, voices: int) -> None:
+        """Set ShoeGaze chorus voices (1-6)"""
+        if self._engine:
+            self._engine.set_shoegaze_chorus_voices(voices)
+
+    async def set_shoegaze_ducking(self, percent: float) -> None:
+        """Set ShoeGaze ducking amount"""
+        if self._engine:
+            self._engine.set_shoegaze_ducking(percent)
+
+    async def set_shoegaze_preset(self, preset_name: str) -> None:
+        """Set ShoeGaze preset by name"""
+        if self._engine:
+            self._engine.set_shoegaze_preset(preset_name.lower())
+
+    async def set_shoegaze_bypass(self, bypass: bool) -> None:
+        """Set ShoeGaze bypass state"""
+        if self._engine:
+            self._engine.set_shoegaze_bypass(bypass)
+
+    async def set_shoegaze_spillover(self, enabled: bool) -> None:
+        """Set ShoeGaze spillover (reverb tails when bypassed)"""
+        if self._engine:
+            self._engine.set_shoegaze_spillover(enabled)
+
+    async def get_shoegaze_parameters(self) -> Dict[str, Any]:
+        """Get all ShoeGaze parameters"""
+        if not self._engine:
+            return {
+                "atmosphere": 50.0, "decay": 4.0, "shimmer": 25.0,
+                "shimmer_pitch": 12.0, "modulation": 35.0, "mod_rate": 0.7,
+                "drive": 15.0, "delay_time": 200.0, "delay_feedback": 30.0,
+                "delay_mod": 20.0, "low_cut": 80.0, "high_cut": 8000.0,
+                "mix": 50.0, "stereo_width": 150.0, "ducking_amount": 20.0,
+                "preset": 0, "bypass": False
+            }
+        params = self._engine.get_shoegaze_parameters()
+        return {
+            "atmosphere": params.get("atmosphere", 50.0),
+            "decay": params.get("decay", 4.0),
+            "shimmer": params.get("shimmer", 25.0),
+            "shimmer_pitch": params.get("shimmer_pitch", 12.0),
+            "modulation": params.get("modulation", 35.0),
+            "mod_rate": params.get("mod_rate", 0.7),
+            "drive": params.get("drive", 15.0),
+            "delay_time": params.get("delay_time", 200.0),
+            "delay_feedback": params.get("delay_feedback", 30.0),
+            "delay_mod": params.get("delay_mod", 20.0),
+            "low_cut": params.get("low_cut", 80.0),
+            "high_cut": params.get("high_cut", 8000.0),
+            "mix": params.get("mix", 50.0),
+            "stereo_width": params.get("stereo_width", 150.0),
+            "ducking_amount": params.get("ducking_amount", 20.0),
+            "preset": params.get("preset", 0),
+            "bypass": params.get("bypass", False)
+        }
+
+    async def get_shoegaze_metering(self) -> Dict[str, float]:
+        """Get ShoeGaze metering data"""
+        if not self._engine:
+            return {
+                "input_level": -100.0, "output_level": -100.0,
+                "reverb_level": -100.0, "shimmer_level": -100.0,
+                "lfo_phase": 0.0, "grain_activity": 0.0,
+                "ducking_reduction": 0.0, "feedback_level": -100.0,
+                "saturation_level": 0.0, "stereo_correlation": 1.0,
+                "cpu_load": 0.0
+            }
+        metering = self._engine.get_shoegaze_metering()
+        return {
+            "input_level": metering.get("input_level", -100.0),
+            "output_level": metering.get("output_level", -100.0),
+            "reverb_level": metering.get("reverb_level", -100.0),
+            "shimmer_level": metering.get("shimmer_level", -100.0),
+            "lfo_phase": metering.get("lfo_phase", 0.0),
+            "grain_activity": metering.get("grain_activity", 0.0),
+            "ducking_reduction": metering.get("ducking_reduction", 0.0),
+            "feedback_level": metering.get("feedback_level", -100.0),
+            "saturation_level": metering.get("saturation_level", 0.0),
+            "stereo_correlation": metering.get("stereo_correlation", 1.0),
+            "cpu_load": metering.get("cpu_load", 0.0)
+        }
+
+    async def get_shoegaze_presets(self) -> List[Dict[str, str]]:
+        """Get all ShoeGaze presets"""
+        return [
+            {"id": "manual", "name": "Manual", "description": "User-defined settings"},
+            {"id": "loveless", "name": "Loveless", "artist": "My Bloody Valentine", "description": "Dense, gliding walls of sound"},
+            {"id": "souvlaki", "name": "Souvlaki", "artist": "Slowdive", "description": "Ethereal, washy dream-pop"},
+            {"id": "treasure", "name": "Treasure", "artist": "Cocteau Twins", "description": "Shimmering crystal highs"},
+            {"id": "spaceage", "name": "Space Age", "artist": "Spiritualized", "description": "Expansive, evolving soundscapes"},
+            {"id": "psychocandy", "name": "Psychocandy", "artist": "Jesus and Mary Chain", "description": "Feedback-drenched noise-pop"},
+            {"id": "nowhere", "name": "Nowhere", "artist": "Ride", "description": "Swirling, propulsive textures"}
+        ]
+
+
 # Singleton accessor using base class
 def get_audio_engine() -> JuceEngineService:
     """Get or create JUCE audio engine service instance."""

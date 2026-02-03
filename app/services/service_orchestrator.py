@@ -943,13 +943,15 @@ class ServiceOrchestrator:
     def _check_database_health(self) -> ServiceHealth:
         """Check database health."""
         try:
-            from app.database import _SessionLocal
+            import app.database
             from sqlalchemy import text
 
-            if _SessionLocal is None:
+            # Get current _SessionLocal - must be re-imported to get updated reference
+            session_factory = app.database._SessionLocal
+            if session_factory is None:
                 return ServiceHealth(healthy=False, message="Database not initialized")
 
-            db = _SessionLocal()
+            db = session_factory()
             try:
                 db.execute(text("SELECT 1"))
                 return ServiceHealth(healthy=True, message="Database responding")

@@ -134,6 +134,7 @@ export const CATEGORY_ICON_MAP: Record<string, FxIconName> = {
 
   // Modulation effects
   chorus: 'fx_chorus',
+  intellifx: 'fx_chorus',
   flanger: 'fx_flanger',
   phaser: 'fx_phaser',
   modulator: 'fx_modulator',

@@ -11,7 +11,7 @@ export interface EQBandData {
   frequency: number // Hz
   gain: number // dB
   q?: number // Q factor
-  type?: 'peak' | 'lowshelf' | 'highshelf' | 'lowpass' | 'highpass' | 'notch'
+  type?: 'peak' | 'lowshelf' | 'highshelf' | 'lowpass' | 'highpass' | 'notch' | 'bandpass'
   enabled?: boolean
 }
 

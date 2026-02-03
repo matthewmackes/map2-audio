@@ -45,6 +45,7 @@ export function DynamicsTemplate({
   accentColor: providedAccent,
   disabled = false,
   compact = false,
+  realtimeData,
 }: PluginCardProps) {
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
@@ -85,12 +86,15 @@ export function DynamicsTemplate({
   const formatMs = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(2)}s` : `${v.toFixed(1)}ms`
   const formatDb = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`
 
+  // Get gain reduction from real-time data if available
+  const gainReduction = realtimeData?.gainReduction ?? 0
+
   // Visualization section
   const visualization = (
     <div className="dynamics-visualization">
       <div className="dynamics-meter-container">
         <GainReductionMeter
-          gainReduction={0} // TODO: Connect to real-time data
+          gainReduction={gainReduction}
           height={compact ? 100 : 120}
           width={24}
         />

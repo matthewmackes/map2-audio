@@ -649,7 +649,9 @@ export interface IRsResponse {
 
 export interface NAMModelsResponse {
   models: NAMModel[];
-  count: number;
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface SessionsResponse {

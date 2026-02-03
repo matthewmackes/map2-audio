@@ -349,6 +349,134 @@ try:
         del _loaded_plugins[uri]
         return {"status": "unloaded", "uri": uri, "engine_unloaded": engine_unloaded}
 
+    @router.delete("/{uri:path}")
+    async def delete_plugin(uri: str):
+        """Delete an LV2 plugin from the system.
+        
+        This removes the plugin package/bundle from the LV2 paths.
+        For LV2 plugins, it removes the .lv2 directory.
+        If the plugin doesn't exist on the filesystem, it removes it from the database.
+        
+        Args:
+            uri: Plugin URI identifier
+            
+        Returns:
+            Status and count of removed plugins
+        """
+        import shutil
+        from pathlib import Path
+        
+        logger.info(f"Delete request for plugin: {uri}")
+        
+        # Define standard LV2 paths
+        lv2_paths = [
+            Path.home() / ".lv2",
+            Path("/usr/lib/lv2"),
+            Path("/usr/lib64/lv2"),  # 64-bit lib path
+            Path("/usr/local/lib/lv2"),
+            Path("/usr/local/lib64/lv2"),  # 64-bit local lib path
+            Path("/opt/lv2"),
+        ]
+        
+        bundle_path = None
+        removed_from_fs = False
+        
+        # Search through LV2 directories for the plugin
+        for lv2_dir in lv2_paths:
+            if not lv2_dir.exists():
+                continue
+                
+            # Scan all .lv2 bundles in this directory
+            for bundle in lv2_dir.glob("*.lv2"):
+                # Check if this is the plugin we're looking for
+                # by examining the manifest.ttl file
+                manifest = bundle / "manifest.ttl"
+                if manifest.exists():
+                    try:
+                        with open(manifest, 'r') as f:
+                            content = f.read()
+                            # Check if the URI is in the manifest
+                            if uri.replace(":", "\\:") in content or uri in content:
+                                bundle_path = bundle
+                                logger.info(f"Found plugin bundle at: {bundle_path}")
+                                break
+                    except Exception as e:
+                        logger.debug(f"Error reading manifest {manifest}: {e}")
+                        continue
+            
+            if bundle_path:
+                break
+        
+        # Also check non-.lv2 bundles (some plugins install as regular directories)
+        if not bundle_path:
+            for lv2_dir in lv2_paths:
+                if not lv2_dir.exists():
+                    continue
+                    
+                for item in lv2_dir.iterdir():
+                    if item.is_dir() and not item.name.endswith('.lv2'):
+                        manifest = item / "manifest.ttl"
+                        if manifest.exists():
+                            try:
+                                with open(manifest, 'r') as f:
+                                    content = f.read()
+                                    if uri.replace(":", "\\:") in content or uri in content:
+                                        bundle_path = item
+                                        logger.info(f"Found plugin bundle at: {bundle_path}")
+                                        break
+                            except Exception as e:
+                                logger.debug(f"Error reading manifest {manifest}: {e}")
+                                continue
+                
+                if bundle_path:
+                    break
+        
+        # If found on filesystem, try to delete it
+        if bundle_path:
+            logger.info(f"Deleting plugin bundle: {bundle_path}")
+            try:
+                if bundle_path.exists():
+                    if bundle_path.is_dir():
+                        shutil.rmtree(bundle_path)
+                        removed_from_fs = True
+                        logger.info(f"Successfully deleted LV2 plugin directory: {bundle_path}")
+                    else:
+                        bundle_path.unlink()
+                        removed_from_fs = True
+                        logger.info(f"Successfully deleted LV2 plugin file: {bundle_path}")
+                else:
+                    logger.warning(f"Plugin path does not exist: {bundle_path}")
+                    # Continue - we'll remove from database below
+            except PermissionError as e:
+                logger.error(f"Permission denied deleting {bundle_path}: {e}")
+                raise HTTPException(status_code=403, detail=f"Permission denied: {str(e)}")
+            except Exception as e:
+                logger.error(f"Error removing plugin files: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=f"Failed to delete plugin files: {str(e)}")
+        else:
+            logger.info(f"Plugin not found on filesystem: {uri}")
+        
+        # Always invalidate plugin cache to remove from database
+        invalidate_plugin_cache()
+        
+        # Try to remove from plugin loader's cache if it has one
+        try:
+            loader = service_manager.get_plugin_loader()
+            if loader and hasattr(loader, 'plugins') and isinstance(loader.plugins, dict):
+                if uri in loader.plugins:
+                    del loader.plugins[uri]
+                    logger.info(f"Removed plugin from loader cache: {uri}")
+        except Exception as e:
+            logger.debug(f"Could not remove from loader cache: {e}")
+        
+        return {
+            "status": "deleted",
+            "uri": uri,
+            "path": str(bundle_path) if bundle_path else None,
+            "removed_from_filesystem": removed_from_fs,
+            "removed_from_database": True
+        }
+
     @router.get("/{uri:path}/parameters")
     async def get_parameters(uri: str):
         """Get plugin parameters."""

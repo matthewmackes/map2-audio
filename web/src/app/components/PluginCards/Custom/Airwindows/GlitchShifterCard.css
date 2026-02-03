@@ -1,0 +1,323 @@
+/**
+ * GlitchShifterCard Styles
+ * Airwindows GlitchShifter - Granular Pitch Harmonizer
+ */
+
+/* ==================== Visualization ==================== */
+
+.glitch-shifter-viz {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #111 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glitch-grain-field {
+  position: absolute;
+  inset: 0;
+  opacity: 0.8;
+}
+
+.glitch-grain {
+  animation: grainFloat 0.3s ease-out forwards;
+}
+
+@keyframes grainFloat {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2) translateY(-5px);
+  }
+}
+
+/* ==================== Pitch Display ==================== */
+
+.glitch-pitch-display {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  border: 1px solid #333;
+  backdrop-filter: blur(4px);
+}
+
+.glitch-shift-direction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.glitch-shift-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.glitch-semitones {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  letter-spacing: -1px;
+}
+
+.glitch-unit {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.glitch-interval-name {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.glitch-fine-tune {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+/* ==================== Feedback Indicator ==================== */
+
+.glitch-feedback-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
+  font-size: 10px;
+  color: #a855f7;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ==================== Glitch Level Bar ==================== */
+
+.glitch-level-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+.glitch-level-label {
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.glitch-level-track {
+  width: 60px;
+  height: 4px;
+  background: #222;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.glitch-level-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.15s ease;
+}
+
+/* ==================== Interval Selection ==================== */
+
+.glitch-intervals {
+  padding: 12px;
+  border-bottom: 1px solid #222;
+}
+
+.glitch-intervals-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.glitch-interval-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.glitch-interval-chip {
+  padding: 6px 10px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #888;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 36px;
+  text-align: center;
+}
+
+.glitch-interval-chip:hover {
+  background: #222;
+  border-color: #444;
+  color: #ccc;
+}
+
+.glitch-interval-chip.active {
+  background: color-mix(in srgb, var(--accent) 20%, #1a1a1a);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ==================== Footer ==================== */
+
+.glitch-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #0a0a0a;
+  border-top: 1px solid #1a1a1a;
+  margin-top: auto;
+}
+
+.glitch-footer-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.glitch-footer-label {
+  font-size: 9px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.glitch-footer-value {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+}
+
+/* ==================== Compact Mode ==================== */
+
+.plugin-card-shell.compact .glitch-shifter-viz {
+  height: 80px;
+}
+
+.plugin-card-shell.compact .glitch-pitch-display {
+  padding: 8px 14px;
+}
+
+.plugin-card-shell.compact .glitch-semitones {
+  font-size: 22px;
+}
+
+.plugin-card-shell.compact .glitch-intervals {
+  padding: 8px;
+}
+
+.plugin-card-shell.compact .glitch-interval-chip {
+  padding: 4px 8px;
+  font-size: 10px;
+  min-width: 30px;
+}
+
+/* ==================== Animations ==================== */
+
+@keyframes glitchPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.glitch-shifter-viz::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(6, 182, 212, 0.02) 50%,
+    transparent 100%
+  );
+  animation: glitchPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Scanline effect for extra glitchy aesthetic */
+.glitch-shifter-viz::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* ==================== Responsive ==================== */
+
+@media (max-width: 400px) {
+  .glitch-interval-chips {
+    gap: 3px;
+  }
+
+  .glitch-interval-chip {
+    padding: 4px 6px;
+    font-size: 10px;
+    min-width: 28px;
+  }
+
+  .glitch-semitones {
+    font-size: 24px;
+  }
+}

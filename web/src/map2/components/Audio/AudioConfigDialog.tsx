@@ -17,7 +17,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Slider,
   Chip,
   Alert,
   Box,
@@ -28,6 +27,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
+import { NumberInput } from '../NumberInput';
 import {
   Settings as SettingsIcon,
   Speed as PerformanceIcon,
@@ -374,19 +374,24 @@ const AudioConfigDialog = memo(({
               ))}
             </Stack>
 
-            {/* Slider */}
+            {/* Buffer Size Input */}
             <Stack spacing={1}>
-              <Slider
-                value={bufferSliderValue >= 0 ? bufferSliderValue : 3}
-                onChange={handleBufferSizeChange}
-                step={1}
-                min={0}
-                max={BUFFER_SIZES.length - 1}
-                marks={BUFFER_SIZES.map((size, idx) => ({
-                  value: idx,
-                  label: size.toString(),
-                }))}
-                sx={{ mx: 1 }}
+              <NumberInput
+                label="Buffer Size"
+                value={config.bufferSize}
+                onChange={(v) => {
+                  // Find closest valid buffer size
+                  const closest = BUFFER_SIZES.reduce((prev, curr) =>
+                    Math.abs(curr - v) < Math.abs(prev - v) ? curr : prev
+                  );
+                  const idx = BUFFER_SIZES.indexOf(closest);
+                  handleBufferSizeChange(null, idx);
+                }}
+                min={BUFFER_SIZES[0]}
+                max={BUFFER_SIZES[BUFFER_SIZES.length - 1]}
+                step={64}
+                unit="samples"
+                size="small"
               />
               <Typography variant="caption" color="text.secondary" textAlign="center">
                 {config.bufferSize} samples = {formatLatency(latencyMs)} latency @ {config.sampleRate / 1000}kHz

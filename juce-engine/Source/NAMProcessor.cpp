@@ -48,6 +48,12 @@ void NAMProcessor::releaseResources()
 #endif
     modelReady_.store(false);
     modelInfo_ = NAMModelInfo();
+    
+    // Clear pre-allocated buffers
+    inputBuffer_.clear();
+    outputBuffer_.clear();
+    inputBuffer_.shrink_to_fit();
+    outputBuffer_.shrink_to_fit();
 }
 
 bool NAMProcessor::loadModel(const std::string& path)
@@ -171,37 +177,40 @@ void NAMProcessor::process(const float* input, float* output, int numSamples)
     }
 
 #ifdef HAS_NAM
-    // Resize buffers if needed
+    // RT-SAFE: Use pre-allocated buffers only - no allocation in process()
+    // If buffer is too small, log warning and use what we have
+    int processSize = numSamples;
     if (static_cast<int>(inputBuffer_.size()) < numSamples)
     {
-        inputBuffer_.resize(numSamples);
-        outputBuffer_.resize(numSamples);
+        // Should never happen if prepare() was called correctly
+        // Clamp to available buffer size rather than allocating
+        processSize = static_cast<int>(inputBuffer_.size());
     }
 
     // Apply input gain and copy to temp buffer
-    for (int i = 0; i < numSamples; ++i)
+    for (int i = 0; i < processSize; ++i)
     {
         inputBuffer_[i] = input[i] * inputGainLinear_;
     }
 
     // Calculate input level for metering
-    float inputRms = calculateRMS(inputBuffer_.data(), numSamples);
+    float inputRms = calculateRMS(inputBuffer_.data(), processSize);
     inputLevelDb_.store(linearToDb(inputRms));
 
-    // Process through NAM
+    // Process through NAM (RT-SAFE: use try_lock to avoid blocking audio)
     {
-        std::lock_guard<std::mutex> lock(modelMutex_);
-        if (model_)
+        std::unique_lock<std::mutex> lock(modelMutex_, std::try_to_lock);
+        if (lock.owns_lock() && model_)
         {
             // NAM expects float** for multi-channel, but we're mono
             float* inPtr = inputBuffer_.data();
             float* outPtr = outputBuffer_.data();
-            model_->process(&inPtr, &outPtr, numSamples);
+            model_->process(&inPtr, &outPtr, processSize);
         }
         else
         {
-            // No model, pass through
-            std::memcpy(outputBuffer_.data(), inputBuffer_.data(), numSamples * sizeof(float));
+            // Lock contended or no model - pass through (RT-safe)
+            std::memcpy(outputBuffer_.data(), inputBuffer_.data(), processSize * sizeof(float));
         }
     }
 
@@ -216,9 +225,15 @@ void NAMProcessor::process(const float* input, float* output, int numSamples)
 
     float totalOutputGain = outputGainLinear_ * normalizationGain;
 
-    for (int i = 0; i < numSamples; ++i)
+    for (int i = 0; i < processSize; ++i)
     {
         output[i] = outputBuffer_[i] * totalOutputGain;
+    }
+    
+    // If we processed less than requested, zero the rest
+    if (processSize < numSamples)
+    {
+        std::memset(output + processSize, 0, (numSamples - processSize) * sizeof(float));
     }
 
     // Calculate output level for metering

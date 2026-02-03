@@ -8,7 +8,6 @@ import {
   Box,
   Paper,
   Typography,
-  Slider,
   Select,
   MenuItem,
   FormControl,
@@ -24,6 +23,7 @@ import {
   Grid,
   LinearProgress,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   GraphicEq as EnvelopeIcon,
   PlayArrow as ActiveIcon,
@@ -264,24 +264,26 @@ export default function EnvelopeFollowerPanel({
         {/* Attack/Release */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid item xs={6}>
-            <Typography variant="caption">Attack: {config.attackMs.toFixed(0)}ms</Typography>
-            <Slider
+            <NumberInput
+              label="Attack"
               value={config.attackMs}
-              onChange={(_, value) => setConfig({ ...config, attackMs: value as number })}
+              onChange={(value) => setConfig({ ...config, attackMs: value })}
               min={0.1}
               max={500}
               step={0.1}
+              unit="ms"
               size="small"
             />
           </Grid>
           <Grid item xs={6}>
-            <Typography variant="caption">Release: {config.releaseMs.toFixed(0)}ms</Typography>
-            <Slider
+            <NumberInput
+              label="Release"
               value={config.releaseMs}
-              onChange={(_, value) => setConfig({ ...config, releaseMs: value as number })}
+              onChange={(value) => setConfig({ ...config, releaseMs: value })}
               min={1}
               max={2000}
               step={1}
+              unit="ms"
               size="small"
             />
           </Grid>
@@ -289,26 +291,28 @@ export default function EnvelopeFollowerPanel({
 
         {/* Threshold */}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="caption">Threshold: {config.thresholdDb.toFixed(0)} dB</Typography>
-          <Slider
+          <NumberInput
+            label="Threshold"
             value={config.thresholdDb}
-            onChange={(_, value) => setConfig({ ...config, thresholdDb: value as number })}
+            onChange={(value) => setConfig({ ...config, thresholdDb: value })}
             min={-80}
             max={0}
             step={1}
+            unit="dB"
             size="small"
           />
         </Box>
 
         {/* Sensitivity */}
         <Box sx={{ mb: 2 }}>
-          <Typography variant="caption">Sensitivity: {config.sensitivity.toFixed(2)}x</Typography>
-          <Slider
+          <NumberInput
+            label="Sensitivity"
             value={config.sensitivity}
-            onChange={(_, value) => setConfig({ ...config, sensitivity: value as number })}
+            onChange={(value) => setConfig({ ...config, sensitivity: value })}
             min={0.1}
             max={4}
             step={0.1}
+            unit="x"
             size="small"
           />
         </Box>

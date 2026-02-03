@@ -173,7 +173,7 @@ export function getDefaultVisualizations(template: PluginCardTemplate): Visualiz
 
 // ==================== Pre-register Known Plugins ====================
 
-// Dragonfly Reverbs
+// Dragonfly Reverbs (template fallback)
 registerPluginCard('urn:dragonfly:room', {
   template: 'reverb',
   visualizations: ['reverb-decay', 'level-meter'],
@@ -229,17 +229,6 @@ registerPluginPattern(/\beq\b|equalizer/i, {
   visualizations: ['eq-curve'],
 })
 
-// Pitch shifters
-registerPluginCard('http://drobilla.net/plugins/mda/dm-Whammy', {
-  template: 'pitch',
-  visualizations: ['pitch-display'],
-})
-
-registerPluginPattern(/pitch|whammy|graillon/i, {
-  template: 'pitch',
-  visualizations: ['pitch-display', 'tuner'],
-})
-
 // Modulation effects
 registerPluginPattern(/chorus|flanger|phaser|tremolo|vibrato/i, {
   template: 'modulation',
@@ -252,31 +241,6 @@ registerPluginPattern(/dist|drive|fuzz|overdrive|saturate|valve|tube/i, {
   visualizations: ['distortion-curve'],
 })
 
-// Cardinal (VCV Rack) - Custom cards for all variants
-import { CardinalCard } from './Custom/CardinalCard'
-
-registerPluginCard('https://distrho.kx.studio/plugins/cardinal', {
-  component: CardinalCard,
-})
-
-registerPluginCard('https://distrho.kx.studio/plugins/cardinal#synth', {
-  component: CardinalCard,
-})
-
-registerPluginCard('https://distrho.kx.studio/plugins/cardinal#fx', {
-  component: CardinalCard,
-})
-
-registerPluginCard('https://distrho.kx.studio/plugins/cardinal#mini', {
-  component: CardinalCard,
-})
-
-// sfizz
-registerPluginCard('http://sfztools.github.io/sfizz', {
-  template: 'instrument',
-  visualizations: ['spectrum-analyzer', 'level-meter'],
-})
-
 // ==================== JUCE Native Processors ====================
 // Best-in-class processors built into the C++ audio engine
 
@@ -287,6 +251,14 @@ import { ParametricEQCard } from './Custom/JUCE/ParametricEQCard'
 import { CabinetIRCard } from './Custom/JUCE/CabinetIRCard'
 import { ReverbIRCard } from './Custom/JUCE/ReverbIRCard'
 import { NAMCard } from './Custom/JUCE/NAMCard'
+import { NativeDelayCard } from './Custom/JUCE/NativeDelayCard'
+import { ChorusCard } from './Custom/JUCE/ChorusCard'
+import { PhaserCard as JUCEPhaserCard } from './Custom/JUCE/PhaserCard'
+import { IntelliFXCard } from './Custom/JUCE/IntelliFXCard'
+import { EVHPitchShifterCard } from './Custom/JUCE/EVHPitchShifterCard'
+import { IntervalShifterCard } from './Custom/JUCE/IntervalShifterCard'
+import { BossXS1Card } from './Custom/JUCE/BossXS1Card'
+import { ShoeGazeCard } from './Custom/JUCE/ShoeGazeCard'
 
 // JUCE Dynamics
 registerPluginCard('map2://juce/dynamics/compressor', {
@@ -318,6 +290,44 @@ registerPluginCard('map2://juce/convolution/reverb', {
 // JUCE Neural Amp Modeler
 registerPluginCard('map2://juce/nam', {
   component: NAMCard,
+})
+
+// JUCE Stereo Delay
+registerPluginCard('map2://juce/delay', {
+  component: NativeDelayCard,
+})
+
+// JUCE Modulation
+registerPluginCard('map2://juce/modulation/chorus', {
+  component: ChorusCard,
+})
+
+registerPluginCard('map2://juce/modulation/phaser', {
+  component: JUCEPhaserCard,
+})
+
+registerPluginCard('map2://juce/modulation/intellifx', {
+  component: IntelliFXCard,
+})
+
+// JUCE Pitch - EVH Harmonizer with Van Halen presets
+registerPluginCard('map2://juce/pitch/shifter', {
+  component: EVHPitchShifterCard,
+})
+
+// JUCE Pitch - Musical Interval Shifter (semitone steps)
+registerPluginCard('map2://juce/pitch/interval', {
+  component: IntervalShifterCard,
+})
+
+// JUCE Pitch - Boss XS-1 Polyphonic Pitch Shifter
+registerPluginCard('map2://juce/pitch/boss-xs1', {
+  component: BossXS1Card,
+})
+
+// JUCE Multi-Effect - ShoeGaze (wall of sound)
+registerPluginCard('map2://juce/multieffect/shoegaze', {
+  component: ShoeGazeCard,
 })
 
 // ==================== Dragonfly Reverbs ====================
@@ -379,4 +389,60 @@ registerPluginCard('http://two-play.com/plugins/toob-tuner', {
 
 registerPluginCard('http://two-play.com/plugins/toob-4looper', {
   component: LooperCard,
+})
+
+// ==================== LV2 Plugin Cards ====================
+// Third-party LV2 plugins with custom world-class interfaces
+
+import { REEVRCard } from './Custom/LV2/REEVRCard'
+import { OutotuneCard } from './Custom/LV2/OutotuneCard'
+import { WhammyCard } from './Custom/LV2/WhammyCard'
+import { KeyboardSamplerCard } from './Custom/LV2/KeyboardSamplerCard'
+
+// REEV-R Reverb (FabFilter Pro-R inspired)
+registerPluginPattern(/REEV-?R/i, {
+  component: REEVRCard,
+})
+
+// Outotune Auto-Tune (Antares inspired)
+registerPluginPattern(/outotune/i, {
+  component: OutotuneCard,
+})
+
+// dm-Whammy Pitch Shifter (DigiTech Whammy inspired)
+registerPluginCard('http://drobilla.net/plugins/mda/dm-Whammy', {
+  component: WhammyCard,
+})
+
+registerPluginPattern(/whammy/i, {
+  component: WhammyCard,
+})
+
+// Sfizz - Keyboard Sampler (with soundfont browser)
+registerPluginCard('http://sfztools.github.io/sfizz', {
+  component: KeyboardSamplerCard,
+})
+
+// Also match sfizz variants
+registerPluginPattern(/sfizz/i, {
+  component: KeyboardSamplerCard,
+})
+
+// ==================== GlitchShifter ====================
+// Airwindows plugin ported to LV2 by Hannes Braun
+
+import { GlitchShifterCard } from './Custom/Airwindows/GlitchShifterCard'
+
+// GlitchShifter - Granular pitch shifter / harmonizer
+registerPluginCard('https://hannesbraun.net/ns/lv2/airwindows/glitchshifter', {
+  component: GlitchShifterCard,
+})
+
+// Also match by name pattern
+registerPluginPattern(/airwindows.*glitchshifter/i, {
+  component: GlitchShifterCard,
+})
+
+registerPluginPattern(/glitchshifter/i, {
+  component: GlitchShifterCard,
 })

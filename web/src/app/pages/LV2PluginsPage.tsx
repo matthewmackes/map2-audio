@@ -1,42 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
-import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, Search, SlidersHorizontal, Zap, Timer, Waves, Activity, Gauge, Guitar, Mic, AudioLines, Settings2, ChevronRight, Plus, User, List, Tag, Star, X } from 'lucide-react'
+import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, SlidersHorizontal, Zap, Waves, Gauge, AlertTriangle, Check } from 'lucide-react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
-import { getPluginDescription } from '../data/pluginDescriptions'
-import { TagBadge, TagSelector } from '../components/PluginTags'
-import { usePluginTags, usePluginMetadata } from '../hooks/usePluginTags'
-
-// Inline tag display that lazy-loads tags for a plugin
-function PluginTagDisplay({ uri, onClick }: { uri: string; onClick?: () => void }) {
-  const { metadata } = usePluginMetadata(uri)
-  if (!metadata?.tags || metadata.tags.length === 0) return null
-  return <TagBadge tags={metadata.tags} maxDisplay={2} onClick={onClick} />
-}
-
-// Category configuration for plugin display
-type IconComponent = React.ComponentType<{ size?: number; style?: React.CSSProperties }>
-const CATEGORY_CONFIG: Record<string, { color: string; bg: string; icon: IconComponent }> = {
-  'Distortion': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)', icon: Zap },
-  'Amplifier': { color: '#ff6b6b', bg: 'rgba(255, 107, 107, 0.15)', icon: Zap },
-  'Filter': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)', icon: SlidersHorizontal },
-  'EQ': { color: '#4ecdc4', bg: 'rgba(78, 205, 196, 0.15)', icon: SlidersHorizontal },
-  'Delay': { color: '#45b7d1', bg: 'rgba(69, 183, 209, 0.15)', icon: Timer },
-  'Reverb': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', icon: Waves },
-  'Modulation': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: Activity },
-  'Compressor': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', icon: Gauge },
-  'Dynamics': { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', icon: Gauge },
-  'Simulator': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', icon: Guitar },
-  'Cabinet': { color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', icon: Mic },
-  'Utility': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: Settings2 },
-  'Generator': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: AudioLines },
-}
-
-const getCategoryConfig = (category: string) => {
-  return CATEGORY_CONFIG[category] || { color: '#888', bg: 'rgba(136, 136, 136, 0.15)', icon: AudioLines }
-}
 
 interface PluginPack {
   id: string
@@ -58,7 +25,6 @@ interface PluginDiscoverResponse {
 }
 
 export function LV2PluginsPage() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [pluginPacks, setPluginPacks] = useState<PluginPack[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,46 +32,11 @@ export function LV2PluginsPage() {
   const [error, setError] = useState<string | null>(null)
   const [refreshingPlugins, setRefreshingPlugins] = useState(false)
 
-  // Plugin Browser state - persisted to localStorage
-  const [searchQuery, setSearchQuery] = useState(() => {
-    try {
-      return localStorage.getItem('map2_lv2_search') || '';
-    } catch { return ''; }
-  })
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    try {
-      return localStorage.getItem('map2_lv2_category') || 'all';
-    } catch { return 'all'; }
-  })
-  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null)
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(() => {
-    try {
-      const val = localStorage.getItem('map2_lv2_collapsed_categories');
-      return val ? new Set(JSON.parse(val)) : new Set();
-    } catch { return new Set(); }
-  })
-
-  // Sort/Group mode state - persisted to localStorage
-  const [sortBy, setSortBy] = useState<'category' | 'author' | 'name'>(() => {
-    try {
-      const val = localStorage.getItem('map2_lv2_sort_by');
-      return (val as 'category' | 'author' | 'name') || 'category';
-    } catch { return 'category'; }
-  })
-
-  // Hidden plugins state - persisted to localStorage
-  const [hiddenPlugins, setHiddenPlugins] = useState<Set<string>>(() => {
-    try {
-      const val = localStorage.getItem('map2_lv2_hidden_plugins');
-      return val ? new Set(JSON.parse(val)) : new Set();
-    } catch { return new Set(); }
-  })
-  const [showHidden, setShowHidden] = useState(false)
-
-  // Tag management state
-  const [tagSelectorPlugin, setTagSelectorPlugin] = useState<Plugin | null>(null)
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
-  const { favorites, isLoadingFavorites } = usePluginTags()
+  // Plugin management state (bulk select/delete)
+  const [selectedUris, setSelectedUris] = useState<Set<string>>(new Set())
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [managementSearchTerm, setManagementSearchTerm] = useState('')
+  const [managementSortBy, setManagementSortBy] = useState<'name' | 'author' | 'format'>('name')
 
   // Plugin discovery query
   const pluginsQuery = useQuery<PluginDiscoverResponse>({
@@ -129,71 +60,87 @@ export function LV2PluginsPage() {
     }
   }, [queryClient])
 
-  // Filter and group plugins
-  const pluginCategories = useMemo(() => {
-    const set = new Set<string>()
-    pluginsQuery.data?.plugins?.forEach((p: Plugin) => set.add(p.category))
-    return Array.from(set).sort()
-  }, [pluginsQuery.data])
+  // Filtered plugins for management table
+  const managementPlugins = useMemo(() => {
+    const list = pluginsQuery.data?.plugins || []
+    
+    // Filter by search term
+    let filtered = list.filter((p: Plugin) =>
+      p.name.toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
+      (p.author || '').toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
+      p.uri.toLowerCase().includes(managementSearchTerm.toLowerCase())
+    )
 
-  // Build favorite URIs set for quick lookup
-  const favoriteUris = useMemo(() => {
-    return new Set(favorites.map((f: { uri: string }) => f.uri))
-  }, [favorites])
-
-  const filteredPlugins = useMemo(() => {
-    if (!pluginsQuery.data?.plugins) return []
-    const term = searchQuery.toLowerCase()
-    return pluginsQuery.data.plugins.filter((p: Plugin) => {
-      const matchCategory = selectedCategory === 'all' || p.category === selectedCategory
-      const matchText = p.name.toLowerCase().includes(term) ||
-                       p.category.toLowerCase().includes(term) ||
-                       p.author?.toLowerCase().includes(term)
-      const matchHidden = showHidden || !hiddenPlugins.has(p.uri)
-      const matchFavorite = !showFavoritesOnly || favoriteUris.has(p.uri)
-      return matchCategory && matchText && matchHidden && matchFavorite
+    // Sort
+    filtered.sort((a: Plugin, b: Plugin) => {
+      switch (managementSortBy) {
+        case 'author':
+          return (a.author || '').localeCompare(b.author || '') || a.name.localeCompare(b.name)
+        case 'format':
+          return (a.format || '').localeCompare(b.format || '') || a.name.localeCompare(b.name)
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name)
+      }
     })
-  }, [pluginsQuery.data, searchQuery, selectedCategory, showHidden, hiddenPlugins, showFavoritesOnly, favoriteUris])
 
-  const hiddenCount = hiddenPlugins.size
+    return filtered
+  }, [pluginsQuery.data, managementSearchTerm, managementSortBy])
 
-  const groupedPlugins = useMemo(() => {
-    const groups: Record<string, Plugin[]> = {}
+  // Delete mutation for plugin management
+  const deleteMutation = useMutation({
+    mutationFn: async (uris: string[]) => {
+      const errors: string[] = []
+      const successes: string[] = []
+      
+      for (const uri of uris) {
+        try {
+          const result = await pluginsApi.delete(uri)
+          successes.push(result.uri)
+          console.log(`Deleted: ${uri}`, result)
+        } catch (error: any) {
+          const message = error?.message || `Failed to delete ${uri}`
+          errors.push(message)
+          console.error(`Error deleting ${uri}:`, error)
+        }
+      }
+      
+      if (errors.length > 0) {
+        throw new Error(`${errors.length}/${uris.length} failed: ${errors.join(', ')}`)
+      }
+      
+      return { successes, errors }
+    },
+    onSuccess: () => {
+      setSelectedUris(new Set())
+      setShowDeleteConfirm(false)
+      queryClient.invalidateQueries({ queryKey: ['plugins'] })
+    },
+  })
 
-    if (sortBy === 'name') {
-      // Flat list sorted alphabetically by plugin name
-      const sorted = [...filteredPlugins].sort((a, b) => a.name.localeCompare(b.name))
-      groups['All Plugins'] = sorted
-    } else if (sortBy === 'author') {
-      // Group by author
-      filteredPlugins.forEach((p: Plugin) => {
-        const author = p.author || 'Unknown Author'
-        if (!groups[author]) groups[author] = []
-        groups[author].push(p)
-      })
-      // Sort plugins within each author group by name
-      Object.values(groups).forEach(plugins => plugins.sort((a, b) => a.name.localeCompare(b.name)))
+  // Selection handlers for plugin management
+  const toggleSelectAll = useCallback(() => {
+    if (selectedUris.size === managementPlugins.length) {
+      setSelectedUris(new Set())
     } else {
-      // Group by category (default)
-      filteredPlugins.forEach((p: Plugin) => {
-        if (!groups[p.category]) groups[p.category] = []
-        groups[p.category].push(p)
-      })
-      // Sort plugins within each category by name
-      Object.values(groups).forEach(plugins => plugins.sort((a, b) => a.name.localeCompare(b.name)))
+      setSelectedUris(new Set(managementPlugins.map((p: Plugin) => p.uri)))
     }
+  }, [managementPlugins, selectedUris.size])
 
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [filteredPlugins, sortBy])
+  const toggleSelect = useCallback((uri: string) => {
+    const newSelected = new Set(selectedUris)
+    if (newSelected.has(uri)) {
+      newSelected.delete(uri)
+    } else {
+      newSelected.add(uri)
+    }
+    setSelectedUris(newSelected)
+  }, [selectedUris])
 
-  const toggleCategory = (cat: string) => {
-    setCollapsedCategories(prev => {
-      const next = new Set(prev)
-      if (next.has(cat)) next.delete(cat)
-      else next.add(cat)
-      return next
-    })
-  }
+  const handleDeletePlugins = useCallback(() => {
+    if (selectedUris.size === 0) return
+    deleteMutation.mutate(Array.from(selectedUris))
+  }, [selectedUris, deleteMutation])
 
   const loadPluginPacks = useCallback(async () => {
     try {
@@ -220,47 +167,6 @@ export function LV2PluginsPage() {
   useEffect(() => {
     loadPluginPacks()
   }, [loadPluginPacks])
-
-  // Persist filter state to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_lv2_search', searchQuery);
-    } catch { /* Ignore localStorage errors */ }
-  }, [searchQuery])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_lv2_category', selectedCategory);
-    } catch { /* Ignore localStorage errors */ }
-  }, [selectedCategory])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_lv2_collapsed_categories', JSON.stringify([...collapsedCategories]));
-    } catch { /* Ignore localStorage errors */ }
-  }, [collapsedCategories])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_lv2_hidden_plugins', JSON.stringify([...hiddenPlugins]));
-    } catch { /* Ignore localStorage errors */ }
-  }, [hiddenPlugins])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('map2_lv2_sort_by', sortBy);
-    } catch { /* Ignore localStorage errors */ }
-  }, [sortBy])
-
-  const toggleHidePlugin = (uri: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setHiddenPlugins(prev => {
-      const next = new Set(prev)
-      if (next.has(uri)) next.delete(uri)
-      else next.add(uri)
-      return next
-    })
-  }
 
   const handleInstall = async (packId: string) => {
     try {
@@ -355,6 +261,115 @@ export function LV2PluginsPage() {
         }
       />
 
+      {/* Native Plugins Warning */}
+      <div className="card" style={{
+        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(234, 88, 12, 0.05))',
+        borderColor: 'rgba(245, 158, 11, 0.4)',
+        borderLeft: '6px solid #f59e0b',
+        padding: 32
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
+          <AlertTriangle size={36} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 4 }} />
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: 22, fontWeight: 700, color: '#fbbf24', marginBottom: 12 }}>
+              Native Realtime Processors Available
+            </h3>
+            {/* Quote */}
+            <div style={{
+              fontStyle: 'italic',
+              color: '#9ca3af',
+              fontSize: 16,
+              paddingLeft: 20,
+              paddingTop: 8,
+              paddingBottom: 8,
+              marginBottom: 20,
+              borderLeft: '3px solid rgba(245, 158, 11, 0.4)'
+            }}>
+              <span style={{ color: '#d1d5db' }}>"Beware the man with one gun. He can probably use it."</span>
+              <span style={{ color: '#6b7280', marginLeft: 12 }}>— Jeff Cooper</span>
+            </div>
+            <p style={{ fontSize: 16, color: '#d1d5db', lineHeight: 1.7, marginBottom: 24 }}>
+              This system fully supports LV2 plugins. However, for <strong style={{ color: '#fbbf24' }}>maximum realtime performance</strong> and
+              <strong style={{ color: '#fbbf24' }}> lowest latency</strong>, the following best-in-class processors have been compiled directly
+              into the audio engine as native JUCE DSP modules:
+            </p>
+
+            {/* Native Processors Chart */}
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: 12,
+              overflow: 'hidden',
+              marginBottom: 24
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+                <thead>
+                  <tr style={{ background: 'rgba(245, 158, 11, 0.15)' }}>
+                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#fbbf24', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(245, 158, 11, 0.2)' }}>Category</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#fbbf24', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(245, 158, 11, 0.2)' }}>Native Processor</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#fbbf24', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(245, 158, 11, 0.2)' }}>Features</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'right', color: '#fbbf24', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(245, 158, 11, 0.2)' }}>Project / Build</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '16px 20px', color: '#22c55e' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
+                        <Gauge size={20} /> Dynamics
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>DynamicsProcessor</td>
+                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>Compressor, Limiter, Noise Gate with RT metering</td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>MAP2</div>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>FEB 2026</div>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '16px 20px', color: '#4ecdc4' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
+                        <SlidersHorizontal size={20} /> EQ
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>FilterProcessor</td>
+                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>8-band Parametric EQ with multiple filter types</td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>MAP2</div>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>FEB 2026</div>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '16px 20px', color: '#ff6b6b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
+                        <Zap size={20} /> Amp Modeling
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>NAMProcessor</td>
+                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>Neural Amp Modeler with ML inference</td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>MAP2</div>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>FEB 2026</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '16px 20px', color: '#a855f7' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
+                        <Waves size={20} /> Cabinet / Reverb
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>ConvolutionProcessor</td>
+                    <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>Zero-latency IR convolution for cabs & spaces</td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>MAP2</div>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>FEB 2026</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Error Display */}
       {error && (
         <div className="card" style={{
@@ -404,318 +419,302 @@ export function LV2PluginsPage() {
         </div>
       </div>
 
-      {/* Plugin Browser */}
+      {/* Plugin Management */}
       <div className="card">
-          <div className="section-heading">
-            <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Plugin Browser</h2>
-              <p className="subtitle">Browse {pluginsQuery.data?.plugins?.length ?? 0} discovered LV2 plugins</p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span className="pill">{filteredPlugins.length} shown</span>
-              {/* Favorites filter */}
-              <button
-                className={`btn btn-sm ${showFavoritesOnly ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                style={{
-                  fontSize: 11,
-                  padding: '6px 10px',
-                  color: showFavoritesOnly ? '#f59e0b' : '#6b7280',
-                  borderColor: showFavoritesOnly ? 'rgba(245, 158, 11, 0.5)' : 'rgba(107, 114, 128, 0.3)',
-                  background: showFavoritesOnly ? 'rgba(245, 158, 11, 0.15)' : undefined,
-                }}
-                title={showFavoritesOnly ? 'Show all plugins' : `Show only favorites (${favoriteUris.size})`}
-                disabled={isLoadingFavorites}
+        <div className="section-heading">
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Plugin Management</h2>
+            <p className="subtitle">{managementPlugins.length} plugins installed</p>
+          </div>
+        </div>
+
+        {/* Toolbar */}
+        <div style={{ 
+          background: 'rgba(30, 41, 59, 0.8)', 
+          borderRadius: 8, 
+          border: '1px solid rgba(71, 85, 105, 0.5)', 
+          padding: 16, 
+          marginBottom: 16 
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Search and Sort */}
+            <div style={{ display: 'flex', gap: 16 }}>
+              <input
+                type="text"
+                placeholder="Search plugins..."
+                value={managementSearchTerm}
+                onChange={(e) => setManagementSearchTerm(e.target.value)}
+                className="input"
+                style={{ flex: 1 }}
+              />
+              <select
+                value={managementSortBy}
+                onChange={(e) => setManagementSortBy(e.target.value as 'name' | 'author' | 'format')}
+                className="input"
               >
-                <Star size={12} style={{ fill: showFavoritesOnly ? '#f59e0b' : 'none' }} />
-                {showFavoritesOnly ? 'Favorites' : `${favoriteUris.size} Favorites`}
-              </button>
-              {hiddenCount > 0 && (
+                <option value="name">Sort by Name</option>
+                <option value="author">Sort by Author</option>
+                <option value="format">Sort by Format</option>
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button
-                  className={`btn btn-sm ${showHidden ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setShowHidden(!showHidden)}
-                  style={{
-                    fontSize: 11,
-                    padding: '6px 10px',
-                    color: showHidden ? undefined : '#6b7280',
-                    borderColor: showHidden ? undefined : 'rgba(107, 114, 128, 0.3)',
-                  }}
-                  title={showHidden ? 'Hide hidden plugins' : `Show ${hiddenCount} hidden plugin${hiddenCount > 1 ? 's' : ''}`}
-                >
-                  {showHidden ? <Eye size={12} /> : <EyeOff size={12} />}
-                  {showHidden ? 'Showing All' : `${hiddenCount} Hidden`}
-                </button>
-              )}
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ position: 'relative' }}>
-                  <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-                  <input
-                    type="text"
-                    placeholder="Search plugins..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="input"
-                    style={{ paddingLeft: 32, minWidth: 180 }}
-                  />
-                </div>
-                <select
-                  className="input"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  <option value="all">All categories</option>
-                  {pluginCategories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <select
-                  className="input"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'category' | 'author' | 'name')}
-                  title="Group/sort plugins by"
-                >
-                  <option value="category">Group by Category</option>
-                  <option value="author">Group by Author</option>
-                  <option value="name">Sort by Name</option>
-                </select>
-                <button
+                  onClick={toggleSelectAll}
                   className="btn btn-ghost btn-sm"
-                  onClick={refreshPlugins}
-                  disabled={refreshingPlugins || pluginsQuery.isLoading}
-                  title="Rescan for newly installed LV2 plugins"
-                  style={{ padding: '6px 10px' }}
                 >
-                  {refreshingPlugins ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                  Refresh
+                  {selectedUris.size === managementPlugins.length && managementPlugins.length > 0
+                    ? 'Deselect All'
+                    : 'Select All'}
+                </button>
+                <span style={{ color: '#94a3b8', fontSize: 13 }}>
+                  {selectedUris.size} of {managementPlugins.length} selected
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={refreshPlugins}
+                  disabled={pluginsQuery.isLoading || refreshingPlugins}
+                  className="btn btn-ghost btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  {refreshingPlugins ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={14} />
+                      Refresh
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={selectedUris.size === 0 || deleteMutation.isPending}
+                  className="btn btn-sm"
+                  style={{ 
+                    background: selectedUris.size > 0 ? 'rgba(220, 38, 38, 0.8)' : 'rgba(71, 85, 105, 0.5)',
+                    color: selectedUris.size > 0 ? '#fff' : '#64748b',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 6 
+                  }}
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      Delete Selected
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           </div>
+        </div>
 
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98))',
+              border: '1px solid rgba(71, 85, 105, 0.5)',
+              borderRadius: 12,
+              padding: 24,
+              maxWidth: 400
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, color: '#ef4444' }}>
+                <AlertTriangle size={24} />
+                <h2 style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>Delete Plugins</h2>
+              </div>
+              <p style={{ color: '#94a3b8', marginBottom: 24 }}>
+                This will permanently delete {selectedUris.size} plugin{selectedUris.size === 1 ? '' : 's'} from your system.
+                This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="btn btn-ghost"
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeletePlugins}
+                  disabled={deleteMutation.isPending}
+                  className="btn"
+                  style={{ 
+                    flex: 1, 
+                    background: 'rgba(220, 38, 38, 0.8)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8
+                  }}
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      Delete
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Status Messages */}
+        {deleteMutation.isError && (
+          <div style={{
+            marginBottom: 16,
+            padding: 16,
+            background: 'rgba(127, 29, 29, 0.5)',
+            border: '1px solid rgba(185, 28, 28, 0.5)',
+            borderRadius: 8,
+            color: '#fecaca'
+          }}>
+            <p style={{ fontWeight: 600 }}>Error deleting plugins</p>
+            <p style={{ fontSize: 13 }}>{(deleteMutation.error as any)?.message || 'Unknown error'}</p>
+          </div>
+        )}
+
+        {deleteMutation.isSuccess && (
+          <div style={{
+            marginBottom: 16,
+            padding: 16,
+            background: 'rgba(20, 83, 45, 0.5)',
+            border: '1px solid rgba(34, 197, 94, 0.5)',
+            borderRadius: 8,
+            color: '#bbf7d0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <Check size={20} />
+            <p style={{ fontWeight: 600 }}>Plugins deleted successfully</p>
+          </div>
+        )}
+
+        {/* Plugin Table */}
+        <div style={{
+          background: 'rgba(30, 41, 59, 0.5)',
+          borderRadius: 8,
+          border: '1px solid rgba(71, 85, 105, 0.3)',
+          overflow: 'hidden'
+        }}>
           {pluginsQuery.isLoading ? (
-            <div className="flex" style={{ padding: '24px', justifyContent: 'center' }}>
-              <Loader2 className="animate-spin" size={18} />
-              <span style={{ marginLeft: 8 }}>Loading plugins...</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+              <Loader2 className="animate-spin" size={32} style={{ color: '#3b82f6' }} />
             </div>
           ) : pluginsQuery.error ? (
-            <div className="pill warn">Failed to load plugins</div>
+            <div style={{ padding: 32, color: '#f87171', textAlign: 'center' }}>
+              Failed to load plugins
+            </div>
+          ) : managementPlugins.length === 0 ? (
+            <div style={{ padding: 32, color: '#94a3b8', textAlign: 'center' }}>
+              No plugins found
+            </div>
           ) : (
-            <div style={{ maxHeight: 500, overflowY: 'auto', overflowX: 'hidden' }}>
-              {groupedPlugins.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 24, color: '#888' }}>
-                  No plugins match your search
-                </div>
-              ) : (
-                groupedPlugins.map(([groupName, plugins]) => {
-                  // Get styling based on sort mode
-                  const isCategoryMode = sortBy === 'category'
-                  const isAuthorMode = sortBy === 'author'
-                  const isNameMode = sortBy === 'name'
-
-                  // For category mode, use category colors; for author/name mode, use neutral colors
-                  const catConfig = isCategoryMode ? getCategoryConfig(groupName) : {
-                    color: isAuthorMode ? '#a78bfa' : '#37d6c9',
-                    bg: isAuthorMode ? 'rgba(167, 139, 250, 0.15)' : 'rgba(55, 214, 201, 0.15)',
-                    icon: isAuthorMode ? User : List
-                  }
-                  const GroupIcon = catConfig.icon
-                  const isCollapsed = collapsedCategories.has(groupName)
-
-                  // For 'name' mode (flat list), don't show a collapsible header
-                  const showHeader = !isNameMode
-
-                  return (
-                    <div key={groupName} style={{ marginBottom: 12 }}>
-                      {showHeader && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            padding: '8px 12px',
-                            background: `linear-gradient(90deg, ${catConfig.bg} 0%, rgba(0,0,0,0.2) 100%)`,
-                            borderLeft: `4px solid ${catConfig.color}`,
-                            borderRadius: '0 6px 6px 0',
-                            marginBottom: isCollapsed ? 0 : 8,
-                            cursor: 'pointer',
-                            userSelect: 'none',
-                          }}
-                          onClick={() => toggleCategory(groupName)}
-                        >
-                          {isCollapsed ? (
-                            <ChevronRight size={14} style={{ color: catConfig.color }} />
-                          ) : (
-                            <ChevronDown size={14} style={{ color: catConfig.color }} />
-                          )}
-                          <GroupIcon size={14} style={{ color: catConfig.color }} />
-                          <span style={{ color: catConfig.color, fontWeight: 600, fontSize: 13 }}>
-                            {groupName}
-                          </span>
-                          <span className="pill" style={{ fontSize: 10, marginLeft: 'auto', background: `${catConfig.color}20`, color: catConfig.color }}>
-                            {plugins.length}
-                          </span>
-                        </div>
-                      )}
-
-                      {(!isCollapsed || isNameMode) && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 8px' }}>
-                          {plugins.map((p: Plugin) => {
-                            // Use plugin's actual category for individual item styling
-                            const pluginCatConfig = getCategoryConfig(p.category)
-                            const isHidden = hiddenPlugins.has(p.uri)
-                            const PluginIcon = pluginCatConfig.icon
-                            return (
-                              <div
-                                key={p.uri}
-                                className="list-item"
-                                style={{
-                                  padding: '10px 12px',
-                                  cursor: 'pointer',
-                                  borderLeft: `3px solid ${pluginCatConfig.color}`,
-                                  background: selectedPlugin?.uri === p.uri
-                                    ? `linear-gradient(135deg, ${pluginCatConfig.bg} 0%, rgba(0,0,0,0.3) 100%)`
-                                    : isHidden
-                                      ? 'rgba(107, 114, 128, 0.1)'
-                                      : undefined,
-                                  boxShadow: selectedPlugin?.uri === p.uri
-                                    ? `0 0 10px ${pluginCatConfig.color}30`
-                                    : undefined,
-                                  opacity: isHidden ? 0.6 : 1,
-                                  position: 'relative',
-                                }}
-                                onClick={() => setSelectedPlugin(p)}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                  <PluginIcon size={14} style={{ color: pluginCatConfig.color }} />
-                                  {favoriteUris.has(p.uri) && (
-                                    <Star size={12} style={{ color: '#f59e0b', fill: '#f59e0b', flexShrink: 0 }} />
-                                  )}
-                                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{p.name}</span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setTagSelectorPlugin(p)
-                                    }}
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      padding: 4,
-                                      borderRadius: 4,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      color: '#666',
-                                      opacity: 0.6,
-                                      transition: 'opacity 0.15s, color 0.15s',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.opacity = '1'
-                                      e.currentTarget.style.color = '#a78bfa'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.opacity = '0.6'
-                                      e.currentTarget.style.color = '#666'
-                                    }}
-                                    title="Manage tags"
-                                  >
-                                    <Tag size={12} />
-                                  </button>
-                                  <button
-                                    onClick={(e) => toggleHidePlugin(p.uri, e)}
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      padding: 4,
-                                      borderRadius: 4,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      color: isHidden ? '#6b7280' : '#666',
-                                      opacity: 0.6,
-                                      transition: 'opacity 0.15s, color 0.15s',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.opacity = '1'
-                                      e.currentTarget.style.color = isHidden ? '#4ade80' : '#ef4444'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.opacity = '0.6'
-                                      e.currentTarget.style.color = isHidden ? '#6b7280' : '#666'
-                                    }}
-                                    title={isHidden ? 'Show plugin' : 'Hide plugin'}
-                                  >
-                                    {isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
-                                  </button>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                  <span style={{ fontSize: 11, color: '#888' }}>{p.author || 'Unknown author'}</span>
-                                  <PluginTagDisplay uri={p.uri} onClick={() => setTagSelectorPlugin(p)} />
-                                </div>
-                                {getPluginDescription(p.name) && (
-                                  <div style={{ fontSize: 10, color: '#666', marginTop: 4, lineHeight: 1.4 }}>
-                                    {getPluginDescription(p.name)}
-                                  </div>
-                                )}
-                                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                                  <span className="pill muted" style={{ fontSize: 9 }}>{p.in_ports}→{p.out_ports}</span>
-                                  {p.parameters && p.parameters.length > 0 && (
-                                    <span className="pill muted" style={{ fontSize: 9 }}>{p.parameters.length} params</span>
-                                  )}
-                                  {p.has_ui && <span className="pill info" style={{ fontSize: 9 }}>GUI</span>}
-                                  {!isCategoryMode && (
-                                    <span className="pill" style={{ fontSize: 9, color: pluginCatConfig.color, borderColor: `${pluginCatConfig.color}40`, background: pluginCatConfig.bg }}>{p.category}</span>
-                                  )}
-                                  {isHidden && <span className="pill" style={{ fontSize: 9, color: '#6b7280', borderColor: 'rgba(107, 114, 128, 0.3)' }}>Hidden</span>}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      navigate(`/grid?addPlugin=${encodeURIComponent(p.uri)}`)
-                                    }}
-                                    style={{
-                                      marginLeft: 'auto',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 4,
-                                      padding: '3px 8px',
-                                      background: `linear-gradient(135deg, ${pluginCatConfig.color}30, ${pluginCatConfig.color}15)`,
-                                      border: `1px solid ${pluginCatConfig.color}50`,
-                                      borderRadius: 6,
-                                      fontSize: 10,
-                                      fontWeight: 600,
-                                      color: pluginCatConfig.color,
-                                      cursor: 'pointer',
-                                      transition: 'all 0.15s ease',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.background = `linear-gradient(135deg, ${pluginCatConfig.color}50, ${pluginCatConfig.color}30)`
-                                      e.currentTarget.style.transform = 'translateY(-1px)'
-                                      e.currentTarget.style.boxShadow = `0 2px 8px ${pluginCatConfig.color}40`
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.background = `linear-gradient(135deg, ${pluginCatConfig.color}30, ${pluginCatConfig.color}15)`
-                                      e.currentTarget.style.transform = 'none'
-                                      e.currentTarget.style.boxShadow = 'none'
-                                    }}
-                                    title="Add this plugin to the Flow editor"
-                                  >
-                                    <Plus size={10} />
-                                    Add to Flow
-                                  </button>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              )}
+            <div style={{ overflowX: 'auto', maxHeight: 500 }}>
+              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                <thead style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid rgba(71, 85, 105, 0.5)', position: 'sticky', top: 0 }}>
+                  <tr>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', width: 32 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedUris.size === managementPlugins.length && managementPlugins.length > 0}
+                        onChange={toggleSelectAll}
+                        style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
+                      />
+                    </th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Name</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Author</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Format</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>Category</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#94a3b8' }}>URI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {managementPlugins.map((plugin: Plugin, idx: number) => (
+                    <tr
+                      key={plugin.uri}
+                      style={{
+                        borderBottom: '1px solid rgba(71, 85, 105, 0.3)',
+                        background: selectedUris.has(plugin.uri) 
+                          ? 'rgba(30, 58, 138, 0.3)' 
+                          : idx % 2 === 0 
+                            ? 'rgba(30, 41, 59, 0.5)' 
+                            : 'transparent',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!selectedUris.has(plugin.uri)) {
+                          e.currentTarget.style.background = 'rgba(51, 65, 85, 0.5)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!selectedUris.has(plugin.uri)) {
+                          e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(30, 41, 59, 0.5)' : 'transparent'
+                        }
+                      }}
+                    >
+                      <td style={{ padding: '12px 16px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedUris.has(plugin.uri)}
+                          onChange={() => toggleSelect(plugin.uri)}
+                          style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
+                        />
+                      </td>
+                      <td style={{ padding: '12px 16px', fontWeight: 500, color: '#fff' }}>{plugin.name}</td>
+                      <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{plugin.author || '-'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          padding: '2px 8px',
+                          background: 'rgba(30, 58, 138, 0.5)',
+                          color: '#93c5fd',
+                          borderRadius: 4,
+                          fontSize: 11
+                        }}>
+                          {plugin.format || 'LV2'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{plugin.category || '-'}</td>
+                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={plugin.uri}>
+                        {plugin.uri}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
+      </div>
 
       {/* Quick Status Row */}
       <div className="card" style={{ padding: 12 }}>
@@ -974,34 +973,6 @@ export function LV2PluginsPage() {
           and utilities. Installation requires sudo privileges and an internet connection.
         </p>
       </div>
-
-      {/* Tag Selector Modal */}
-      {tagSelectorPlugin && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)',
-          }}
-          onClick={() => setTagSelectorPlugin(null)}
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            <TagSelector
-              pluginUri={tagSelectorPlugin.uri}
-              pluginName={tagSelectorPlugin.name}
-              onClose={() => setTagSelectorPlugin(null)}
-            />
-          </div>
-        </div>
-      )}
     </div>
   )
 }

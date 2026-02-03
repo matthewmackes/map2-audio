@@ -1,0 +1,153 @@
+/**
+ * MidiCcBadge Styles
+ * Compact MIDI CC assignment indicator for parameter controls
+ */
+
+/* Wrapper for WithMidiCc component */
+.with-midi-cc-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Base badge styles */
+.midi-cc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+/* Size variants */
+.midi-cc-badge.small {
+  font-size: 8px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  min-width: 24px;
+  height: 14px;
+}
+
+.midi-cc-badge.medium {
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  min-width: 32px;
+  height: 18px;
+}
+
+/* Position variants */
+.midi-cc-badge.top-right {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+
+.midi-cc-badge.top-left {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+}
+
+.midi-cc-badge.bottom-right {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+}
+
+.midi-cc-badge.bottom-left {
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+}
+
+.midi-cc-badge.inline {
+  position: relative;
+  margin-left: 4px;
+}
+
+/* Default state (no mapping, shown only when showWhenEmpty) */
+.midi-cc-badge:not(.mapped):not(.learning) {
+  background: rgba(100, 100, 100, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.midi-cc-badge:not(.mapped):not(.learning):hover {
+  background: rgba(156, 39, 176, 0.2);
+  border-color: rgba(156, 39, 176, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Mapped state */
+.midi-cc-badge.mapped {
+  background: linear-gradient(135deg, #7c3aed 0%, #9c27b0 100%);
+  border: 1px solid rgba(156, 39, 176, 0.6);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(156, 39, 176, 0.3);
+}
+
+.midi-cc-badge.mapped:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ab47bc 100%);
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.5);
+  transform: scale(1.05);
+}
+
+/* Learning state */
+.midi-cc-badge.learning {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  border: 1px solid rgba(245, 158, 11, 0.8);
+  color: #fff;
+  animation: midiLearnBadgePulse 1s ease-in-out infinite;
+}
+
+@keyframes midiLearnBadgePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(245, 158, 11, 0.8);
+  }
+}
+
+/* Pulse indicator (learning) */
+.midi-cc-badge-pulse {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid #f59e0b;
+  animation: midiPulseRing 1s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes midiPulseRing {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Badge text */
+.midi-cc-badge-text {
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+/* Focus state for accessibility */
+.midi-cc-badge:focus {
+  outline: 2px solid #9c27b0;
+  outline-offset: 2px;
+}
+
+.midi-cc-badge:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -6,6 +6,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# SIMD optimization: Enable native CPU optimizations for DSP performance
+option(ENABLE_NATIVE_OPTIMIZATIONS "Enable -march=native for SIMD" ON)
+if(ENABLE_NATIVE_OPTIMIZATIONS AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # Detect and use best available SIMD instructions
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+    if(COMPILER_SUPPORTS_MARCH_NATIVE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+        message(STATUS "SIMD: Enabled native CPU optimizations (-march=native)")
+    endif()
+    # Enable fast math for DSP (use with caution)
+    option(ENABLE_FAST_MATH "Enable -ffast-math for DSP" OFF)
+    if(ENABLE_FAST_MATH)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+        message(STATUS "Fast math: Enabled")
+    endif()
+endif()
+
 # Build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -13,11 +31,10 @@ endif()
 
 # Options
 option(USE_JUCE_AUDIO "Use JUCE for audio I/O (recommended)" ON)
-option(USE_LEGACY_LV2 "Keep legacy LV2 support via lilv" ON)
 option(USE_NAM "Enable Neural Amp Modeler support (RT-safe)" ON)
 option(JUCE_PLUGINHOST_VST3 "Enable VST3 plugin hosting" ON)
 option(JUCE_PLUGINHOST_AU "Enable AudioUnit plugin hosting (macOS)" ON)
-option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" ON)
+option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" OFF)
 option(JUCE_PLUGINHOST_LADSPA "Enable LADSPA plugin hosting" ON)
 
 # ========================================
@@ -70,17 +87,6 @@ endif()
 
 # JACK (optional)
 pkg_check_modules(JACK jack)
-
-# Legacy LV2 support via lilv (optional fallback)
-if(USE_LEGACY_LV2)
-    pkg_check_modules(LILV lilv-0)
-    if(LILV_FOUND)
-        message(STATUS "Legacy LV2 support via lilv: ENABLED")
-    else()
-        message(STATUS "Legacy LV2 support via lilv: DISABLED (lilv not found)")
-        set(USE_LEGACY_LV2 OFF)
-    endif()
-endif()
 
 # ========================================
 # Neural Amp Modeler Core (RT-safe)
@@ -135,6 +141,18 @@ set(SOURCES
     Source/PhaseCorrelation.cpp
     Source/CPUMonitor.cpp
 
+    # Modulation processors
+    Source/ChorusProcessor.cpp
+    Source/PhaserProcessor.cpp
+    Source/PitchShifterProcessor.cpp
+    Source/DelayProcessor.cpp
+    Source/CircularDelayProcessor.cpp
+    Source/CircularDelayUI.cpp
+    Source/IntelliFX8VoiceChorusProcessor.cpp
+    Source/BossXS1PolyShifterProcessor.cpp
+    Source/BossXS1UI.cpp
+    Source/ShoeGazeProcessor.cpp
+
     # Existing components (updated)
     Source/MidiHandler.cpp
     Source/VuMeter.cpp
@@ -172,6 +190,19 @@ set(HEADERS
     Source/PhaseCorrelation.h
     Source/CPUMonitor.h
 
+    # Modulation processors
+    Source/ChorusProcessor.h
+    Source/PhaserProcessor.h
+    Source/PitchShifterProcessor.h
+    Source/DelayProcessor.h
+    Source/CircularDelayProcessor.h
+    Source/CircularDelayUI.h
+    Source/CircularDelayExamples.h
+    Source/IntelliFX8VoiceChorusProcessor.h
+    Source/BossXS1PolyShifterProcessor.h
+    Source/BossXS1UI.h
+    Source/ShoeGazeProcessor.h
+
     # Existing components
     Source/MidiHandler.h
     Source/VuMeter.h
@@ -182,12 +213,6 @@ set(HEADERS
 # Add NAM headers if enabled
 if(USE_NAM)
     list(APPEND HEADERS Source/NAMProcessor.h)
-endif()
-
-# Legacy LV2 support files
-if(USE_LEGACY_LV2)
-    list(APPEND SOURCES Source/LegacyPluginHost.cpp)
-    list(APPEND HEADERS Source/LegacyPluginHost.h)
 endif()
 
 # ========================================
@@ -202,10 +227,6 @@ target_include_directories(map2_audio_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Source
     ${Python3_INCLUDE_DIRS}
 )
-
-if(USE_LEGACY_LV2 AND LILV_FOUND)
-    target_include_directories(map2_audio_engine PRIVATE ${LILV_INCLUDE_DIRS})
-endif()
 
 if(UNIX AND NOT APPLE)
     target_include_directories(map2_audio_engine PRIVATE ${ALSA_INCLUDE_DIRS})
@@ -241,10 +262,6 @@ target_link_libraries(map2_audio_engine PRIVATE
     m
 )
 
-if(USE_LEGACY_LV2 AND LILV_FOUND)
-    target_link_libraries(map2_audio_engine PRIVATE ${LILV_LIBRARIES})
-endif()
-
 if(UNIX AND NOT APPLE)
     target_link_libraries(map2_audio_engine PRIVATE ${ALSA_LIBRARIES})
 endif()
@@ -277,7 +294,6 @@ target_compile_definitions(map2_audio_engine PRIVATE
 
     # Feature flags
     USE_JUCE_AUDIO=$<BOOL:${USE_JUCE_AUDIO}>
-    USE_LEGACY_LV2=$<BOOL:${USE_LEGACY_LV2}>
 )
 
 if(JACK_FOUND)
@@ -343,7 +359,6 @@ if(UNIX AND NOT APPLE)
     message(STATUS "  ALSA: ${ALSA_VERSION}")
 endif()
 message(STATUS "  JACK: ${JACK_FOUND}")
-message(STATUS "  Legacy LV2 (lilv): ${USE_LEGACY_LV2}")
 message(STATUS "")
 message(STATUS "Neural Processing:")
 message(STATUS "  NAM (Neural Amp Modeler): ${USE_NAM}")

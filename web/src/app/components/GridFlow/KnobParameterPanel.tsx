@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react'
-import { Power, Settings2 } from 'lucide-react'
+import { Power, Settings2, RefreshCw, AlertCircle } from 'lucide-react'
 import { ParameterKnob } from '../Controls/ParameterKnob'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginCardComponent, getCategoryConfig } from '../PluginCards'
@@ -49,6 +49,10 @@ export interface KnobParameterPanelProps {
   onToggleBypass?: () => void
   /** Force use of classic knob grid instead of card templates */
   useClassicMode?: boolean
+  /** Callback to refresh plugin discovery when metadata is missing */
+  onRefreshPlugins?: () => void
+  /** Whether plugin refresh is in progress */
+  isRefreshing?: boolean
 }
 
 export function KnobParameterPanel({
@@ -58,6 +62,8 @@ export function KnobParameterPanel({
   onParameterChangeEnd,
   onToggleBypass,
   useClassicMode = false,
+  onRefreshPlugins,
+  isRefreshing = false,
 }: KnobParameterPanelProps) {
   // Track which parameters are being edited (for batch updates)
   const [editingParams, setEditingParams] = useState<Set<string>>(new Set())
@@ -153,13 +159,33 @@ export function KnobParameterPanel({
     )
   }
 
-  // Loading state - plugin selected but metadata not yet loaded
+  // Error state - plugin selected but metadata not found in discovery cache
   if (!meta) {
     return (
       <div className="knob-param-panel">
-        <div className="knob-param-panel-loading">
-          <Settings2 size={32} strokeWidth={1.5} className="knob-param-panel-loading-icon" />
-          <p>Loading {plugin.name || 'plugin'} parameters...</p>
+        <div className="knob-param-panel-error">
+          <AlertCircle size={32} strokeWidth={1.5} style={{ color: '#f59e0b' }} />
+          <div className="knob-param-panel-error-content">
+            <p className="knob-param-panel-error-title">
+              Plugin metadata not found
+            </p>
+            <p className="knob-param-panel-error-desc">
+              "{plugin.name || 'Unknown plugin'}" is in the chain but not found in the plugin discovery cache.
+            </p>
+            <p className="knob-param-panel-error-uri">
+              URI: {plugin.uri}
+            </p>
+            {onRefreshPlugins && (
+              <button
+                className="knob-param-panel-refresh-btn"
+                onClick={onRefreshPlugins}
+                disabled={isRefreshing}
+              >
+                <RefreshCw size={14} className={isRefreshing ? 'spin' : ''} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Plugin List'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )

@@ -16,9 +16,9 @@ import {
   Chip,
   Stack,
   Box,
-  Slider,
   Tooltip,
 } from '@mui/material';
+import { NumberInput } from '../../NumberInput';
 import {
   PowerSettingsNew as PowerIcon,
   Delete as DeleteIcon,
@@ -354,26 +354,22 @@ const AudioPluginNode = memo(
               </Stack>
             )}
 
-            {/* Quick tweak sliders */}
+            {/* Quick tweak inputs */}
             {!compact && quickParameters && quickParameters.length > 0 && (
               <Stack spacing={0.5} mb={1}>
                 {quickParameters.slice(0, 2).map((param) => (
-                  <Stack key={param.symbol} spacing={0.25}>
-                    <Typography variant="caption" color="text.secondary">
-                      {param.name}
-                    </Typography>
-                    <Slider
-                      size="small"
-                      value={param.value}
-                      min={param.min}
-                      max={param.max}
-                      step={(param.max - param.min) / 50}
-                      onChange={(_, val) => {
-                        const newVal = Array.isArray(val) ? val[0] : val;
-                        onQuickParamChange?.(param.symbol, newVal, param.index);
-                      }}
-                    />
-                  </Stack>
+                  <NumberInput
+                    key={param.symbol}
+                    label={param.name}
+                    value={param.value}
+                    min={param.min}
+                    max={param.max}
+                    step={(param.max - param.min) / 50}
+                    onChange={(val) => {
+                      onQuickParamChange?.(param.symbol, val, param.index);
+                    }}
+                    size="small"
+                  />
                 ))}
               </Stack>
             )}

@@ -114,8 +114,12 @@ class SignalToNoizeScraper(IRScraperBase):
     async def discover_irs(self) -> List[IRFileInfo]:
         """Discover IR packs from Signal To Noize.
 
+        Note: As of 2024, Signal To Noize has moved to a paid/donation model.
+        Direct free downloads are no longer available. The site offers high-quality
+        classic hardware reverb IRs for purchase ($1-20 suggested donation).
+
         Returns:
-            List of discovered IR pack files
+            List of discovered IR pack files (may be empty if no free downloads found)
         """
         logger.info(f"Discovering IRs from {self.library_name}")
 
@@ -124,13 +128,31 @@ class SignalToNoizeScraper(IRScraperBase):
         try:
             await self._rate_limit()
 
-            async with aiohttp.ClientSession() as session:
-                headers = {"User-Agent": "MAP2-Audio-IR-Scraper/1.0"}
+            # Use browser-like headers
+            headers = {
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            }
 
+            timeout = aiohttp.ClientTimeout(total=30, connect=10)
+
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(self.DOWNLOADS_PAGE, headers=headers) as response:
                     if response.status == 200:
                         html = await response.text()
                         self._parse_downloads_page(html)
+
+                        # If no direct downloads found, log info about paid options
+                        if not self.discovered_files:
+                            logger.info(
+                                f"Signal To Noize: No free downloads available. "
+                                f"Site offers paid IRs (Lexicon, Quantec, Eventide, etc.) "
+                                f"at https://signaltonoize.com/?page_id=4188"
+                            )
+                    elif response.status == 403:
+                        logger.warning(f"Signal To Noize: Access forbidden (may require browser)")
+                    else:
+                        logger.warning(f"Signal To Noize: HTTP {response.status}")
 
         except Exception as e:
             logger.warning(f"Could not scrape Signal To Noize page: {e}")

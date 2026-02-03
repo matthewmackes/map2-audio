@@ -8,7 +8,6 @@ import {
   Box,
   Paper,
   Typography,
-  Slider,
   IconButton,
   Button,
   ButtonGroup,
@@ -23,6 +22,7 @@ import {
   FormControl,
   Divider,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   SwapHoriz as SwapIcon,
   ContentCopy as DuplicateIcon,
@@ -158,17 +158,21 @@ export default function ABQuickToggle({
               variant={localBlend < 50 ? 'filled' : 'outlined'}
               sx={{ height: 20, fontSize: 10 }}
             />
-            
-            <Slider
+
+            <NumberInput
               value={localBlend}
-              onChange={handleBlendChange}
-              onChangeCommitted={handleBlendCommit}
+              onChange={(v) => {
+                handleBlendChange(null as any, v);
+                handleBlendCommit(null as any, v);
+              }}
               min={0}
               max={100}
-              sx={{ width: 80 }}
+              step={1}
+              unit="%"
               size="small"
+              sx={{ width: 100 }}
             />
-            
+
             <Chip
               label="B"
               size="small"
@@ -296,7 +300,7 @@ export default function ABQuickToggle({
               </Box>
             </Box>
 
-            {/* Blend Slider */}
+            {/* Blend Input */}
             <Box sx={{ px: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
@@ -309,26 +313,19 @@ export default function ABQuickToggle({
                   B
                 </Typography>
               </Box>
-              
-              <Slider
+
+              <NumberInput
                 value={localBlend}
-                onChange={handleBlendChange}
-                onChangeCommitted={handleBlendCommit}
+                onChange={(v) => {
+                  handleBlendChange(null as any, v);
+                  handleBlendCommit(null as any, v);
+                }}
                 min={0}
                 max={100}
-                marks={[
-                  { value: 0, label: '' },
-                  { value: 50, label: '' },
-                  { value: 100, label: '' },
-                ]}
-                sx={{
-                  '& .MuiSlider-track': {
-                    background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  },
-                  '& .MuiSlider-rail': {
-                    background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.3)}, ${alpha(theme.palette.secondary.main, 0.3)})`,
-                  },
-                }}
+                step={1}
+                unit="%"
+                size="small"
+                fullWidth
               />
             </Box>
 

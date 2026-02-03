@@ -1,19 +1,16 @@
 /**
- * ChainManagementCard - Compact Chain Management UI
+ * ChainManagementCard - Compact Chain Grid UI
  *
- * Provides all chain management features in a clean, collapsible card:
- * - Create new chains
- * - Activate/deactivate chains
- * - Rename chains
- * - Delete chains
- * - Quick overview stats
+ * Tight grid layout showing all chains with inline lifecycle controls:
+ * - Power (activate/deactivate)
+ * - Rename (inline editing)
+ * - Delete
+ * - Plugin count & status indicators
  */
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ChevronDown,
-  ChevronRight,
   Plus,
   Power,
   Trash2,
@@ -21,7 +18,6 @@ import {
   Check,
   X,
   Loader2,
-  Link2,
   Layers,
 } from 'lucide-react'
 import { chainsApi } from '../../map2/api'
@@ -40,17 +36,14 @@ interface ChainManagementCardProps {
 export function ChainManagementCard({
   selectedChainId,
   onChainSelect,
-  defaultExpanded = false,
 }: ChainManagementCardProps) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
 
-  const [expanded, setExpanded] = useState(defaultExpanded)
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateInput, setShowCreateInput] = useState(false)
   const [newChainName, setNewChainName] = useState('')
   const [editingChainId, setEditingChainId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
 
   // Fetch chains
   const chainsQuery = useQuery<ChainsResponse>({
@@ -60,15 +53,6 @@ export function ChainManagementCard({
   })
 
   const chains = chainsQuery.data?.chains || []
-  const activeChain = chains.find(c => c.is_active)
-  const totalPlugins = chains.reduce((sum, c) => sum + c.plugins.length, 0)
-
-  // Filter chains by search
-  const filteredChains = useMemo(() => {
-    if (!searchQuery.trim()) return chains
-    const q = searchQuery.toLowerCase()
-    return chains.filter(c => c.name.toLowerCase().includes(q))
-  }, [chains, searchQuery])
 
   // Mutations
   const createMutation = useMutation({
@@ -76,7 +60,7 @@ export function ChainManagementCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chains'] })
       setNewChainName('')
-      setShowCreateForm(false)
+      setShowCreateInput(false)
       pushToast('Chain created', 'success')
     },
     onError: () => pushToast('Failed to create chain', 'error'),
@@ -134,13 +118,15 @@ export function ChainManagementCard({
     }
   }
 
-  const handleDelete = (chain: Chain) => {
-    if (confirm(`Delete "${chain.name}"? This cannot be undone.`)) {
+  const handleDelete = (chain: Chain, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm(`Delete "${chain.name}"?`)) {
       deleteMutation.mutate(chain.id)
     }
   }
 
-  const startEditing = (chain: Chain) => {
+  const startEditing = (chain: Chain, e: React.MouseEvent) => {
+    e.stopPropagation()
     setEditingChainId(chain.id)
     setEditingName(chain.name)
   }
@@ -150,218 +136,175 @@ export function ChainManagementCard({
     setEditingName('')
   }
 
+  const togglePower = (chain: Chain, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (chain.is_active) {
+      deactivateMutation.mutate(chain.id)
+    } else {
+      activateMutation.mutate(chain.id)
+    }
+  }
+
   const isPending = createMutation.isPending || activateMutation.isPending ||
     deactivateMutation.isPending || deleteMutation.isPending || renameMutation.isPending
 
   return (
-    <div className="chain-mgmt-card">
-      {/* Header - always visible */}
-      <button
-        className="chain-mgmt-header"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="chain-mgmt-header-left">
-          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          <Layers size={16} />
-          <span className="chain-mgmt-title">Chains</span>
-        </div>
-        <div className="chain-mgmt-header-stats">
-          <span className="chain-mgmt-stat">
-            {chains.length} chain{chains.length !== 1 ? 's' : ''}
-          </span>
-          {activeChain && (
-            <span className="chain-mgmt-active-badge">
-              <Link2 size={12} />
-              {activeChain.name}
-            </span>
-          )}
-        </div>
-      </button>
+    <div className="chains-grid-card">
+      {/* Vertical title on the left */}
+      <div className="chains-grid-title">
+        <Layers size={16} />
+        <span>Chains</span>
+      </div>
 
-      {/* Expanded content */}
-      {expanded && (
-        <div className="chain-mgmt-content">
-          {/* Quick stats */}
-          <div className="chain-mgmt-stats-row">
-            <div className="chain-mgmt-stat-item">
-              <span className="chain-mgmt-stat-value">{chains.length}</span>
-              <span className="chain-mgmt-stat-label">Chains</span>
-            </div>
-            <div className="chain-mgmt-stat-item">
-              <span className="chain-mgmt-stat-value">{totalPlugins}</span>
-              <span className="chain-mgmt-stat-label">Plugins</span>
-            </div>
-            <div className="chain-mgmt-stat-item active">
-              <span className="chain-mgmt-stat-value">{activeChain?.name || '—'}</span>
-              <span className="chain-mgmt-stat-label">Active</span>
-            </div>
+      {/* Grid of chain cells */}
+      <div className="chains-grid">
+        {chainsQuery.isLoading ? (
+          <div className="chains-grid-loading">
+            <Loader2 size={16} className="spin" />
           </div>
-
-          {/* Actions bar */}
-          <div className="chain-mgmt-actions">
-            {!showCreateForm ? (
-              <button
-                className="chain-mgmt-action-btn primary"
-                onClick={() => setShowCreateForm(true)}
+        ) : (
+          <>
+            {chains.map(chain => (
+              <div
+                key={chain.id}
+                className={`chains-grid-cell ${chain.is_active ? 'active' : ''} ${selectedChainId === chain.id ? 'selected' : ''}`}
+                onClick={() => onChainSelect?.(chain.id)}
               >
-                <Plus size={14} />
-                New Chain
-              </button>
-            ) : (
-              <div className="chain-mgmt-create-form">
+                {editingChainId === chain.id ? (
+                  /* Inline rename mode */
+                  <div className="chains-grid-cell-edit">
+                    <input
+                      type="text"
+                      className="chains-grid-input"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => {
+                        e.stopPropagation()
+                        if (e.key === 'Enter') handleRename(chain.id)
+                        if (e.key === 'Escape') cancelEditing()
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      disabled={renameMutation.isPending}
+                    />
+                    <div className="chains-grid-cell-edit-actions">
+                      <button
+                        className="chains-grid-btn confirm"
+                        onClick={(e) => { e.stopPropagation(); handleRename(chain.id) }}
+                        disabled={!editingName.trim() || renameMutation.isPending}
+                      >
+                        {renameMutation.isPending ? <Loader2 size={12} className="spin" /> : <Check size={12} />}
+                      </button>
+                      <button
+                        className="chains-grid-btn"
+                        onClick={(e) => { e.stopPropagation(); cancelEditing() }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Normal cell display */
+                  <>
+                    {/* Top row: Power + Name */}
+                    <div className="chains-grid-cell-top">
+                      <button
+                        className={`chains-grid-btn power ${chain.is_active ? 'on' : ''}`}
+                        onClick={(e) => togglePower(chain, e)}
+                        disabled={isPending}
+                        title={chain.is_active ? 'Deactivate' : 'Activate'}
+                      >
+                        <Power size={12} />
+                      </button>
+                      <span className="chains-grid-cell-name" title={chain.name}>
+                        {chain.name}
+                      </span>
+                    </div>
+
+                    {/* Bottom row: Stats + Actions */}
+                    <div className="chains-grid-cell-bottom">
+                      <div className="chains-grid-cell-stats">
+                        <span className="chains-grid-stat" title="Plugins">
+                          {chain.plugins.length}p
+                        </span>
+                        {chain.is_active && (
+                          <span className="chains-grid-active-indicator" title="Active" />
+                        )}
+                      </div>
+                      <div className="chains-grid-cell-actions">
+                        <button
+                          className="chains-grid-btn"
+                          onClick={(e) => startEditing(chain, e)}
+                          disabled={isPending}
+                          title="Rename"
+                        >
+                          <Edit3 size={11} />
+                        </button>
+                        <button
+                          className="chains-grid-btn danger"
+                          onClick={(e) => handleDelete(chain, e)}
+                          disabled={isPending}
+                          title="Delete"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+
+            {/* Create new chain cell */}
+            {showCreateInput ? (
+              <div className="chains-grid-cell create-mode">
                 <input
                   type="text"
-                  className="chain-mgmt-input"
-                  placeholder="Chain name..."
+                  className="chains-grid-input"
+                  placeholder="Name..."
                   value={newChainName}
                   onChange={(e) => setNewChainName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleCreate()
                     if (e.key === 'Escape') {
-                      setShowCreateForm(false)
+                      setShowCreateInput(false)
                       setNewChainName('')
                     }
                   }}
                   autoFocus
                   disabled={createMutation.isPending}
                 />
-                <button
-                  className="chain-mgmt-icon-btn success"
-                  onClick={handleCreate}
-                  disabled={!newChainName.trim() || createMutation.isPending}
-                  title="Create"
-                >
-                  {createMutation.isPending ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
-                </button>
-                <button
-                  className="chain-mgmt-icon-btn"
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setNewChainName('')
-                  }}
-                  title="Cancel"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-
-            {chains.length > 5 && (
-              <input
-                type="text"
-                className="chain-mgmt-search"
-                placeholder="Filter..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            )}
-          </div>
-
-          {/* Chain list */}
-          <div className="chain-mgmt-list">
-            {chainsQuery.isLoading ? (
-              <div className="chain-mgmt-loading">
-                <Loader2 size={16} className="spin" />
-                Loading chains...
-              </div>
-            ) : filteredChains.length === 0 ? (
-              <div className="chain-mgmt-empty">
-                {searchQuery ? 'No chains match filter' : 'No chains yet'}
+                <div className="chains-grid-create-actions">
+                  <button
+                    className="chains-grid-btn confirm"
+                    onClick={handleCreate}
+                    disabled={!newChainName.trim() || createMutation.isPending}
+                  >
+                    {createMutation.isPending ? <Loader2 size={12} className="spin" /> : <Check size={12} />}
+                  </button>
+                  <button
+                    className="chains-grid-btn"
+                    onClick={() => {
+                      setShowCreateInput(false)
+                      setNewChainName('')
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
               </div>
             ) : (
-              filteredChains.map(chain => (
-                <div
-                  key={chain.id}
-                  className={`chain-mgmt-item ${chain.is_active ? 'active' : ''} ${selectedChainId === chain.id ? 'selected' : ''}`}
-                >
-                  {editingChainId === chain.id ? (
-                    <div className="chain-mgmt-edit-row">
-                      <input
-                        type="text"
-                        className="chain-mgmt-input"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleRename(chain.id)
-                          if (e.key === 'Escape') cancelEditing()
-                        }}
-                        autoFocus
-                        disabled={renameMutation.isPending}
-                      />
-                      <button
-                        className="chain-mgmt-icon-btn success"
-                        onClick={() => handleRename(chain.id)}
-                        disabled={!editingName.trim() || renameMutation.isPending}
-                        title="Save"
-                      >
-                        {renameMutation.isPending ? <Loader2 size={12} className="spin" /> : <Check size={12} />}
-                      </button>
-                      <button
-                        className="chain-mgmt-icon-btn"
-                        onClick={cancelEditing}
-                        title="Cancel"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        className="chain-mgmt-item-info"
-                        onClick={() => onChainSelect?.(chain.id)}
-                        title={`${chain.plugins.length} plugins`}
-                      >
-                        <span className="chain-mgmt-item-name">{chain.name}</span>
-                        <span className="chain-mgmt-item-meta">
-                          {chain.plugins.length}p
-                          {chain.is_active && <span className="chain-mgmt-active-dot" />}
-                        </span>
-                      </div>
-                      <div className="chain-mgmt-item-actions">
-                        {chain.is_active ? (
-                          <button
-                            className="chain-mgmt-icon-btn warn"
-                            onClick={() => deactivateMutation.mutate(chain.id)}
-                            disabled={isPending}
-                            title="Deactivate"
-                          >
-                            <Power size={12} />
-                          </button>
-                        ) : (
-                          <button
-                            className="chain-mgmt-icon-btn success"
-                            onClick={() => activateMutation.mutate(chain.id)}
-                            disabled={isPending}
-                            title="Activate"
-                          >
-                            <Power size={12} />
-                          </button>
-                        )}
-                        <button
-                          className="chain-mgmt-icon-btn"
-                          onClick={() => startEditing(chain)}
-                          disabled={isPending}
-                          title="Rename"
-                        >
-                          <Edit3 size={12} />
-                        </button>
-                        <button
-                          className="chain-mgmt-icon-btn danger"
-                          onClick={() => handleDelete(chain)}
-                          disabled={isPending}
-                          title="Delete"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))
+              <button
+                className="chains-grid-cell add-cell"
+                onClick={() => setShowCreateInput(true)}
+                title="Create new chain"
+              >
+                <Plus size={18} />
+              </button>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

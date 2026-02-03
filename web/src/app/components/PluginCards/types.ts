@@ -19,6 +19,8 @@ export interface PluginCardProps {
   accentColor: string
   disabled?: boolean
   compact?: boolean
+  /** Real-time data for visualizations (gain reduction, meters, etc.) */
+  realtimeData?: PluginRealtimeData
 }
 
 /** Configuration for a plugin card in the registry */

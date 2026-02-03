@@ -42,11 +42,11 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Slider,
   Grid,
   Checkbox,
   LinearProgress,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   Delete as DeleteIcon,
   Add as AddIcon,
@@ -923,15 +923,15 @@ export default function MIDIMapper() {
 
                       {clockConfig.mode === 'internal' && (
                         <Box sx={{ mt: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Tempo: {clockConfig.bpm} BPM
-                          </Typography>
-                          <Slider
+                          <NumberInput
+                            label="Tempo"
                             value={clockConfig.bpm}
-                            onChange={(_, v) => setClockConfig(prev => ({ ...prev, bpm: v as number }))}
+                            onChange={(v) => setClockConfig(prev => ({ ...prev, bpm: v }))}
                             min={40}
                             max={240}
-                            valueLabelDisplay="auto"
+                            step={1}
+                            unit="BPM"
+                            size="small"
                           />
                         </Box>
                       )}

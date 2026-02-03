@@ -20,6 +20,7 @@ import {
 import type { Plugin } from '../../../../map2/types'
 import { getCategoryConfig } from '../types'
 import { BypassSwitch } from './BypassSwitch'
+import { getPluginDescription } from '../../../data/pluginDescriptions'
 
 interface PluginCardShellProps {
   plugin: Plugin
@@ -37,6 +38,7 @@ interface PluginCardShellProps {
   compact?: boolean
   visualization?: ReactNode
   footer?: ReactNode
+  customHeader?: ReactNode
   className?: string
 }
 
@@ -56,11 +58,13 @@ export function PluginCardShell({
   compact = false,
   visualization,
   footer,
+  customHeader,
   className = '',
 }: PluginCardShellProps) {
   const [showMenu, setShowMenu] = useState(false)
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
+  const description = getPluginDescription(plugin.name)
 
   const handleBypassToggle = useCallback(() => {
     onBypassToggle?.(!bypassed)
@@ -150,6 +154,13 @@ export function PluginCardShell({
           )}
         </div>
       </div>
+
+      {/* Description Section */}
+      {description && !compact && (
+        <div className="plugin-card-description">
+          {description}
+        </div>
+      )}
 
       {/* Visualization Section */}
       {visualization && (
@@ -341,6 +352,15 @@ export function PluginCardShell({
           position: fixed;
           inset: 0;
           z-index: 99;
+        }
+
+        .plugin-card-description {
+          padding: 8px 16px;
+          font-size: 11px;
+          color: #888;
+          background: rgba(0, 0, 0, 0.1);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          line-height: 1.4;
         }
 
         .plugin-card-visualization {

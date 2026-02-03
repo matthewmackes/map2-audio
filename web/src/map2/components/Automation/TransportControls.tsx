@@ -10,9 +10,9 @@ import {
   IconButton,
   Tooltip,
   Typography,
-  Slider,
   Box,
 } from '@mui/material';
+import { NumberInput } from '../NumberInput';
 import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
@@ -220,24 +220,20 @@ const TransportControls = memo(({
         </Typography>
       </Stack>
 
-      {/* Timeline scrubber */}
+      {/* Timeline position */}
       {!compact && (
-        <Slider
-          value={currentTime}
-          onChange={(_, value) => onSeek(value as number)}
-          min={0}
-          max={duration || 60}
-          step={0.01}
-          size="small"
-          sx={{
-            flex: 1,
-            mx: 1,
-            '& .MuiSlider-thumb': {
-              width: 12,
-              height: 12,
-            },
-          }}
-        />
+        <Box sx={{ flex: 1, mx: 1 }}>
+          <NumberInput
+            value={currentTime}
+            onChange={(value) => onSeek(value)}
+            min={0}
+            max={duration || 60}
+            step={0.1}
+            unit="s"
+            size="small"
+            fullWidth
+          />
+        </Box>
       )}
     </Stack>
   );

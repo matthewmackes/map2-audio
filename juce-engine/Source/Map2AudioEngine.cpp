@@ -4,7 +4,17 @@
  */
 
 #include "Map2AudioEngine.h"
+
+// RT-SAFE: Use conditional logging that can be disabled for production
+// In release builds, these are no-ops to avoid console I/O in audio context
+#ifndef MAP2_DISABLE_LOGGING
 #include <iostream>
+#define MAP2_LOG(msg) std::cout << msg << std::endl
+#define MAP2_ERR(msg) std::cerr << msg << std::endl
+#else
+#define MAP2_LOG(msg) ((void)0)
+#define MAP2_ERR(msg) ((void)0)
+#endif
 
 namespace map2 {
 
@@ -92,6 +102,14 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     namProcessor_.prepare(sampleRate_, bufferSize_);
     std::cout << "  NAM (Neural Amp Modeler): Available" << std::endl;
 #endif
+
+    // Initialize modulation processors
+    chorus_.prepare(sampleRate_, bufferSize_, 2);
+    phaser_.prepare(sampleRate_, bufferSize_, 2);
+    pitchShifter_.prepare(sampleRate_, bufferSize_, 2);
+    intellifx_.prepare(sampleRate_, bufferSize_, 2);
+    shoegaze_.prepare(sampleRate_, bufferSize_, 2);
+    std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze" << std::endl;
 
     // Set up audio callback
     audioIO_.setProcessCallback([this](const float* const* inputs, int numInputs,
@@ -193,6 +211,12 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     namProcessor_.process(buffer);
 #endif
 
+    // Process modulation effects
+    pitchShifter_.process(buffer);   // Pitch shift first
+    chorus_.process(buffer);          // Then chorus
+    phaser_.process(buffer);          // Then phaser
+    intellifx_.process(buffer);       // IntelliFX 8-voice chorus
+
     // Process cabinet IR (if loaded)
     if (cabinetProcessor_.isIRLoaded()) {
         cabinetProcessor_.process(buffer);
@@ -244,19 +268,8 @@ void Map2AudioEngine::setSampleRate(double rate) {
     if (initialized_) {
         audioIO_.setSampleRate(rate);
         audioGraph_->setSampleRate(rate);
-        spectrumAnalyzer_.prepare(rate);
-        lufsMeter_.prepare(rate, 2);
-        phaseCorrelation_.prepare(rate);
-        cpuMonitor_.prepare(rate, bufferSize_);
-        cabinetProcessor_.prepare(rate, bufferSize_, 2);
-        reverbProcessor_.prepare(rate, bufferSize_, 2);
-        compressor_.prepare(rate, bufferSize_, 2);
-        limiter_.prepare(rate, bufferSize_, 2);
-        gate_.prepare(rate, bufferSize_, 2);
-        eq_.prepare(rate, bufferSize_, 2);
-#ifdef HAS_NAM
-        namProcessor_.prepare(rate, bufferSize_);
-#endif
+        // Fix #4: Use unified prepare method instead of individual calls
+        prepareAllProcessors(rate, bufferSize_, 2);
     }
 }
 
@@ -265,14 +278,41 @@ void Map2AudioEngine::setBufferSize(int size) {
     if (initialized_) {
         audioIO_.setBufferSize(size);
         audioGraph_->setBufferSize(size);
-        cpuMonitor_.prepare(sampleRate_, size);
-        cabinetProcessor_.prepare(sampleRate_, size, 2);
-        reverbProcessor_.prepare(sampleRate_, size, 2);
-        compressor_.prepare(sampleRate_, size, 2);
-        limiter_.prepare(sampleRate_, size, 2);
-        gate_.prepare(sampleRate_, size, 2);
-        eq_.prepare(sampleRate_, size, 2);
+        // Fix #4: Use unified prepare method instead of individual calls
+        prepareAllProcessors(sampleRate_, size, 2);
     }
+}
+
+// Fix #4: Unified processor preparation to avoid redundant calls
+void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, int numChannels) {
+    // Prepare all processors in optimal order
+    // This reduces redundant initialization overhead
+    spectrumAnalyzer_.prepare(sampleRate);
+    lufsMeter_.prepare(sampleRate, numChannels);
+    phaseCorrelation_.prepare(sampleRate);
+    cpuMonitor_.prepare(sampleRate, bufferSize);
+    
+    // Convolution processors
+    cabinetProcessor_.prepare(sampleRate, bufferSize, numChannels);
+    reverbProcessor_.prepare(sampleRate, bufferSize, numChannels);
+    
+    // Dynamics chain
+    compressor_.prepare(sampleRate, bufferSize, numChannels);
+    limiter_.prepare(sampleRate, bufferSize, numChannels);
+    gate_.prepare(sampleRate, bufferSize, numChannels);
+    
+    // EQ
+    eq_.prepare(sampleRate, bufferSize, numChannels);
+    
+#ifdef HAS_NAM
+    namProcessor_.prepare(sampleRate, bufferSize);
+#endif
+    
+    // Modulation effects
+    chorus_.prepare(sampleRate, bufferSize, numChannels);
+    phaser_.prepare(sampleRate, bufferSize, numChannels);
+    pitchShifter_.prepare(sampleRate, bufferSize, numChannels);
+    intellifx_.prepare(sampleRate, bufferSize, numChannels);
 }
 
 void Map2AudioEngine::setAudioDevice(const std::string& device) {
@@ -850,6 +890,752 @@ float Map2AudioEngine::getNAMOutputLevel() const {
 #else
     return -100.0f;
 #endif
+}
+
+// ========================================
+// Chorus Processing
+// ========================================
+
+void Map2AudioEngine::setChorusRate(float hz) {
+    chorus_.setRate(hz);
+}
+
+float Map2AudioEngine::getChorusRate() const {
+    return chorus_.getRate();
+}
+
+void Map2AudioEngine::setChorusDepth(float depth) {
+    chorus_.setDepth(depth);
+}
+
+float Map2AudioEngine::getChorusDepth() const {
+    return chorus_.getDepth();
+}
+
+void Map2AudioEngine::setChorusCentreDelay(float ms) {
+    chorus_.setCentreDelay(ms);
+}
+
+float Map2AudioEngine::getChorusCentreDelay() const {
+    return chorus_.getCentreDelay();
+}
+
+void Map2AudioEngine::setChorusFeedback(float feedback) {
+    chorus_.setFeedback(feedback);
+}
+
+float Map2AudioEngine::getChorusFeedback() const {
+    return chorus_.getFeedback();
+}
+
+void Map2AudioEngine::setChorusMix(float mix) {
+    chorus_.setMix(mix);
+}
+
+float Map2AudioEngine::getChorusMix() const {
+    return chorus_.getMix();
+}
+
+void Map2AudioEngine::setChorusSpread(float spread) {
+    chorus_.setSpread(spread);
+}
+
+float Map2AudioEngine::getChorusSpread() const {
+    return chorus_.getSpread();
+}
+
+void Map2AudioEngine::setChorusBypass(bool bypass) {
+    chorus_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isChorusBypassed() const {
+    return chorus_.isBypassed();
+}
+
+ChorusProcessor::Parameters Map2AudioEngine::getChorusParameters() const {
+    return chorus_.getParameters();
+}
+
+void Map2AudioEngine::setChorusParameters(const ChorusProcessor::Parameters& params) {
+    chorus_.setParameters(params);
+}
+
+ChorusProcessor::Metering Map2AudioEngine::getChorusMetering() const {
+    return chorus_.getMetering();
+}
+
+// ========================================
+// Phaser Processing
+// ========================================
+
+void Map2AudioEngine::setPhaserRate(float hz) {
+    phaser_.setRate(hz);
+}
+
+float Map2AudioEngine::getPhaserRate() const {
+    return phaser_.getRate();
+}
+
+void Map2AudioEngine::setPhaserDepth(float depth) {
+    phaser_.setDepth(depth);
+}
+
+float Map2AudioEngine::getPhaserDepth() const {
+    return phaser_.getDepth();
+}
+
+void Map2AudioEngine::setPhaserCentreFrequency(float hz) {
+    phaser_.setCentreFrequency(hz);
+}
+
+float Map2AudioEngine::getPhaserCentreFrequency() const {
+    return phaser_.getCentreFrequency();
+}
+
+void Map2AudioEngine::setPhaserFeedback(float feedback) {
+    phaser_.setFeedback(feedback);
+}
+
+float Map2AudioEngine::getPhaserFeedback() const {
+    return phaser_.getFeedback();
+}
+
+void Map2AudioEngine::setPhaserMix(float mix) {
+    phaser_.setMix(mix);
+}
+
+float Map2AudioEngine::getPhaserMix() const {
+    return phaser_.getMix();
+}
+
+void Map2AudioEngine::setPhaserBypass(bool bypass) {
+    phaser_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isPhaserBypassed() const {
+    return phaser_.isBypassed();
+}
+
+PhaserProcessor::Parameters Map2AudioEngine::getPhaserParameters() const {
+    return phaser_.getParameters();
+}
+
+void Map2AudioEngine::setPhaserParameters(const PhaserProcessor::Parameters& params) {
+    phaser_.setParameters(params);
+}
+
+PhaserProcessor::Metering Map2AudioEngine::getPhaserMetering() const {
+    return phaser_.getMetering();
+}
+
+// ========================================
+// Pitch Shifter / EVH Harmonizer
+// ========================================
+
+void Map2AudioEngine::setPitchShifterPitchL(float cents) {
+    pitchShifter_.setPitchL(cents);
+}
+
+float Map2AudioEngine::getPitchShifterPitchL() const {
+    return pitchShifter_.getPitchL();
+}
+
+void Map2AudioEngine::setPitchShifterPitchR(float cents) {
+    pitchShifter_.setPitchR(cents);
+}
+
+float Map2AudioEngine::getPitchShifterPitchR() const {
+    return pitchShifter_.getPitchR();
+}
+
+void Map2AudioEngine::setPitchShifterDelayL(float ms) {
+    pitchShifter_.setDelayL(ms);
+}
+
+float Map2AudioEngine::getPitchShifterDelayL() const {
+    return pitchShifter_.getDelayL();
+}
+
+void Map2AudioEngine::setPitchShifterDelayR(float ms) {
+    pitchShifter_.setDelayR(ms);
+}
+
+float Map2AudioEngine::getPitchShifterDelayR() const {
+    return pitchShifter_.getDelayR();
+}
+
+void Map2AudioEngine::setPitchShifterFeedback(float feedback) {
+    pitchShifter_.setFeedback(feedback);
+}
+
+float Map2AudioEngine::getPitchShifterFeedback() const {
+    return pitchShifter_.getFeedback();
+}
+
+void Map2AudioEngine::setPitchShifterMix(float percent) {
+    pitchShifter_.setMix(percent);
+}
+
+float Map2AudioEngine::getPitchShifterMix() const {
+    return pitchShifter_.getMix();
+}
+
+void Map2AudioEngine::setPitchShifterSpread(float percent) {
+    pitchShifter_.setSpread(percent);
+}
+
+float Map2AudioEngine::getPitchShifterSpread() const {
+    return pitchShifter_.getSpread();
+}
+
+void Map2AudioEngine::setPitchShifterPreset(PitchShifterProcessor::Preset preset) {
+    pitchShifter_.setPreset(preset);
+}
+
+PitchShifterProcessor::Preset Map2AudioEngine::getPitchShifterPreset() const {
+    return pitchShifter_.getPreset();
+}
+
+void Map2AudioEngine::setPitchShifterBypass(bool bypass) {
+    pitchShifter_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isPitchShifterBypassed() const {
+    return pitchShifter_.isBypassed();
+}
+
+PitchShifterProcessor::Parameters Map2AudioEngine::getPitchShifterParameters() const {
+    return pitchShifter_.getParameters();
+}
+
+void Map2AudioEngine::setPitchShifterParameters(const PitchShifterProcessor::Parameters& params) {
+    pitchShifter_.setParameters(params);
+}
+
+PitchShifterProcessor::Metering Map2AudioEngine::getPitchShifterMetering() const {
+    return pitchShifter_.getMetering();
+}
+
+// ========================================
+// IntelliFX 8-Voice Chorus
+// ========================================
+
+// Voice parameters
+void Map2AudioEngine::setIntelliFXVoiceLevel(int voice, float dB) {
+    intellifx_.setVoiceLevel(voice, dB);
+}
+
+float Map2AudioEngine::getIntelliFXVoiceLevel(int voice) const {
+    return intellifx_.getVoiceLevel(voice);
+}
+
+void Map2AudioEngine::setIntelliFXVoicePan(int voice, float pan) {
+    intellifx_.setVoicePan(voice, pan);
+}
+
+float Map2AudioEngine::getIntelliFXVoicePan(int voice) const {
+    return intellifx_.getVoicePan(voice);
+}
+
+void Map2AudioEngine::setIntelliFXVoiceDelay(int voice, float ms) {
+    intellifx_.setVoiceDelay(voice, ms);
+}
+
+float Map2AudioEngine::getIntelliFXVoiceDelay(int voice) const {
+    return intellifx_.getVoiceDelay(voice);
+}
+
+void Map2AudioEngine::setIntelliFXVoiceDepth(int voice, float depth) {
+    intellifx_.setVoiceDepth(voice, depth);
+}
+
+float Map2AudioEngine::getIntelliFXVoiceDepth(int voice) const {
+    return intellifx_.getVoiceDepth(voice);
+}
+
+void Map2AudioEngine::setIntelliFXVoiceRate(int voice, float rate) {
+    intellifx_.setVoiceRate(voice, rate);
+}
+
+float Map2AudioEngine::getIntelliFXVoiceRate(int voice) const {
+    return intellifx_.getVoiceRate(voice);
+}
+
+IntelliFX8VoiceChorusProcessor::VoiceParameters
+Map2AudioEngine::getIntelliFXVoiceParameters(int voice) const {
+    return intellifx_.getVoiceParameters(voice);
+}
+
+void Map2AudioEngine::setIntelliFXVoiceParameters(
+    int voice, const IntelliFX8VoiceChorusProcessor::VoiceParameters& params) {
+    intellifx_.setVoiceParameters(voice, params);
+}
+
+// Global mixer
+void Map2AudioEngine::setIntelliFXChorusLevel(float dB) {
+    intellifx_.setChorusLevel(dB);
+}
+
+float Map2AudioEngine::getIntelliFXChorusLevel() const {
+    return intellifx_.getChorusLevel();
+}
+
+void Map2AudioEngine::setIntelliFXDirectLevelL(float dB) {
+    intellifx_.setDirectLevelL(dB);
+}
+
+float Map2AudioEngine::getIntelliFXDirectLevelL() const {
+    return intellifx_.getDirectLevelL();
+}
+
+void Map2AudioEngine::setIntelliFXDirectLevelR(float dB) {
+    intellifx_.setDirectLevelR(dB);
+}
+
+float Map2AudioEngine::getIntelliFXDirectLevelR() const {
+    return intellifx_.getDirectLevelR();
+}
+
+void Map2AudioEngine::setIntelliFXRegenL(float dB) {
+    intellifx_.setRegenL(dB);
+}
+
+float Map2AudioEngine::getIntelliFXRegenL() const {
+    return intellifx_.getRegenL();
+}
+
+void Map2AudioEngine::setIntelliFXRegenR(float dB) {
+    intellifx_.setRegenR(dB);
+}
+
+float Map2AudioEngine::getIntelliFXRegenR() const {
+    return intellifx_.getRegenR();
+}
+
+// HUSH
+void Map2AudioEngine::setIntelliFXHushEnabled(bool enabled) {
+    intellifx_.setHushEnabled(enabled);
+}
+
+bool Map2AudioEngine::isIntelliFXHushEnabled() const {
+    return intellifx_.isHushEnabled();
+}
+
+void Map2AudioEngine::setIntelliFXHushThreshold(float dB) {
+    intellifx_.setHushThreshold(dB);
+}
+
+float Map2AudioEngine::getIntelliFXHushThreshold() const {
+    return intellifx_.getHushThreshold();
+}
+
+void Map2AudioEngine::setIntelliFXHushReleaseRate(float ms) {
+    intellifx_.setHushReleaseRate(ms);
+}
+
+float Map2AudioEngine::getIntelliFXHushReleaseRate() const {
+    return intellifx_.getHushReleaseRate();
+}
+
+IntelliFX8VoiceChorusProcessor::HushParameters
+Map2AudioEngine::getIntelliFXHushParameters() const {
+    return intellifx_.getHushParameters();
+}
+
+void Map2AudioEngine::setIntelliFXHushParameters(
+    const IntelliFX8VoiceChorusProcessor::HushParameters& params) {
+    intellifx_.setHushParameters(params);
+}
+
+// Master control
+void Map2AudioEngine::setIntelliFXBypass(bool bypass) {
+    intellifx_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isIntelliFXBypassed() const {
+    return intellifx_.isBypassed();
+}
+
+// Bulk parameters
+IntelliFX8VoiceChorusProcessor::Parameters
+Map2AudioEngine::getIntelliFXParameters() const {
+    return intellifx_.getParameters();
+}
+
+void Map2AudioEngine::setIntelliFXParameters(
+    const IntelliFX8VoiceChorusProcessor::Parameters& params) {
+    intellifx_.setParameters(params);
+}
+
+// Presets
+int Map2AudioEngine::getIntelliFXNumPresets() {
+    return IntelliFX8VoiceChorusProcessor::getNumPresets();
+}
+
+IntelliFX8VoiceChorusProcessor::PresetInfo
+Map2AudioEngine::getIntelliFXPresetInfo(int index) {
+    return IntelliFX8VoiceChorusProcessor::getPresetInfo(index);
+}
+
+void Map2AudioEngine::loadIntelliFXPreset(int index) {
+    intellifx_.loadPreset(index);
+}
+
+int Map2AudioEngine::getIntelliFXCurrentPreset() const {
+    return intellifx_.getCurrentPreset();
+}
+
+// Metering
+IntelliFX8VoiceChorusProcessor::Metering
+Map2AudioEngine::getIntelliFXMetering() const {
+    return intellifx_.getMetering();
+}
+
+// ========================================
+// Boss XS-1 Polyphonic Pitch Shifter
+// ========================================
+
+void Map2AudioEngine::setBossXS1ShiftAmount(float semitones) {
+    auto params = bossXS1_.getParameters();
+    params.shiftAmount = semitones;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1ShiftAmount() const {
+    return bossXS1_.getParameters().shiftAmount;
+}
+
+void Map2AudioEngine::setBossXS1Balance(float percent) {
+    auto params = bossXS1_.getParameters();
+    params.balance = percent;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1Balance() const {
+    return bossXS1_.getParameters().balance;
+}
+
+void Map2AudioEngine::setBossXS1DetuneMode(bool enabled) {
+    auto params = bossXS1_.getParameters();
+    params.detuneMode = enabled;
+    bossXS1_.setParameters(params);
+}
+
+bool Map2AudioEngine::isBossXS1DetuneMode() const {
+    return bossXS1_.getParameters().detuneMode;
+}
+
+void Map2AudioEngine::setBossXS1DetuneAmount(float cents) {
+    auto params = bossXS1_.getParameters();
+    params.detuneAmount = cents;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1DetuneAmount() const {
+    return bossXS1_.getParameters().detuneAmount;
+}
+
+void Map2AudioEngine::setBossXS1Glide(float ms) {
+    auto params = bossXS1_.getParameters();
+    params.glide = ms;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1Glide() const {
+    return bossXS1_.getParameters().glide;
+}
+
+void Map2AudioEngine::setBossXS1Feedback(float feedback) {
+    auto params = bossXS1_.getParameters();
+    params.feedback = feedback;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1Feedback() const {
+    return bossXS1_.getParameters().feedback;
+}
+
+void Map2AudioEngine::setBossXS1PedalEnabled(bool enabled) {
+    auto params = bossXS1_.getParameters();
+    params.pedalEnabled = enabled;
+    bossXS1_.setParameters(params);
+}
+
+bool Map2AudioEngine::isBossXS1PedalEnabled() const {
+    return bossXS1_.getParameters().pedalEnabled;
+}
+
+void Map2AudioEngine::setBossXS1PedalPosition(float position) {
+    auto params = bossXS1_.getParameters();
+    params.pedalPosition = position;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1PedalPosition() const {
+    return bossXS1_.getParameters().pedalPosition;
+}
+
+void Map2AudioEngine::setBossXS1PedalRange(float minSemitones, float maxSemitones) {
+    auto params = bossXS1_.getParameters();
+    params.pedalMin = minSemitones;
+    params.pedalMax = maxSemitones;
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1PedalMin() const {
+    return bossXS1_.getParameters().pedalMin;
+}
+
+float Map2AudioEngine::getBossXS1PedalMax() const {
+    return bossXS1_.getParameters().pedalMax;
+}
+
+void Map2AudioEngine::setBossXS1Preset(BossXS1PolyShifterProcessor::Preset preset) {
+    bossXS1_.loadPreset(preset);
+}
+
+BossXS1PolyShifterProcessor::Preset Map2AudioEngine::getBossXS1Preset() const {
+    return bossXS1_.getParameters().preset;
+}
+
+void Map2AudioEngine::setBossXS1Bypass(bool bypass) {
+    auto params = bossXS1_.getParameters();
+    params.bypass = bypass;
+    bossXS1_.setParameters(params);
+}
+
+bool Map2AudioEngine::isBossXS1Bypassed() const {
+    return bossXS1_.getParameters().bypass;
+}
+
+BossXS1PolyShifterProcessor::Parameters Map2AudioEngine::getBossXS1Parameters() const {
+    return bossXS1_.getParameters();
+}
+
+void Map2AudioEngine::setBossXS1Parameters(const BossXS1PolyShifterProcessor::Parameters& params) {
+    bossXS1_.setParameters(params);
+}
+
+float Map2AudioEngine::getBossXS1InputLevel() const {
+    return bossXS1_.getInputLevel();
+}
+
+float Map2AudioEngine::getBossXS1OutputLevel() const {
+    return bossXS1_.getOutputLevel();
+}
+
+const char* Map2AudioEngine::getBossXS1PresetName(BossXS1PolyShifterProcessor::Preset preset) {
+    return BossXS1PolyShifterProcessor::getPresetName(preset);
+}
+
+int Map2AudioEngine::getBossXS1NumPresets() {
+    return static_cast<int>(BossXS1PolyShifterProcessor::Preset::NumPresets);
+}
+
+// ========================================
+// ShoeGaze Multi-Effect Processor
+// ========================================
+
+// Primary controls
+void Map2AudioEngine::setShoeGazeAtmosphere(float percent) {
+    shoegaze_.setAtmosphere(percent);
+}
+
+float Map2AudioEngine::getShoeGazeAtmosphere() const {
+    return shoegaze_.getAtmosphere();
+}
+
+void Map2AudioEngine::setShoeGazeDecay(float seconds) {
+    shoegaze_.setDecay(seconds);
+}
+
+float Map2AudioEngine::getShoeGazeDecay() const {
+    return shoegaze_.getDecay();
+}
+
+void Map2AudioEngine::setShoeGazeShimmer(float percent) {
+    shoegaze_.setShimmer(percent);
+}
+
+float Map2AudioEngine::getShoeGazeShimmer() const {
+    return shoegaze_.getShimmer();
+}
+
+void Map2AudioEngine::setShoeGazeShimmerPitch(float semitones) {
+    shoegaze_.setShimmerPitch(semitones);
+}
+
+float Map2AudioEngine::getShoeGazeShimmerPitch() const {
+    return shoegaze_.getShimmerPitch();
+}
+
+void Map2AudioEngine::setShoeGazeModulation(float percent) {
+    shoegaze_.setModulation(percent);
+}
+
+float Map2AudioEngine::getShoeGazeModulation() const {
+    return shoegaze_.getModulation();
+}
+
+void Map2AudioEngine::setShoeGazeModRate(float hz) {
+    shoegaze_.setModRate(hz);
+}
+
+float Map2AudioEngine::getShoeGazeModRate() const {
+    return shoegaze_.getModRate();
+}
+
+void Map2AudioEngine::setShoeGazeDrive(float percent) {
+    shoegaze_.setDrive(percent);
+}
+
+float Map2AudioEngine::getShoeGazeDrive() const {
+    return shoegaze_.getDrive();
+}
+
+void Map2AudioEngine::setShoeGazeDelayTime(float ms) {
+    shoegaze_.setDelayTime(ms);
+}
+
+float Map2AudioEngine::getShoeGazeDelayTime() const {
+    return shoegaze_.getDelayTime();
+}
+
+void Map2AudioEngine::setShoeGazeDelayFeedback(float percent) {
+    shoegaze_.setDelayFeedback(percent);
+}
+
+float Map2AudioEngine::getShoeGazeDelayFeedback() const {
+    return shoegaze_.getDelayFeedback();
+}
+
+void Map2AudioEngine::setShoeGazeDelayMod(float percent) {
+    shoegaze_.setDelayMod(percent);
+}
+
+float Map2AudioEngine::getShoeGazeDelayMod() const {
+    return shoegaze_.getDelayMod();
+}
+
+void Map2AudioEngine::setShoeGazeLowCut(float hz) {
+    shoegaze_.setLowCut(hz);
+}
+
+float Map2AudioEngine::getShoeGazeLowCut() const {
+    return shoegaze_.getLowCut();
+}
+
+void Map2AudioEngine::setShoeGazeHighCut(float hz) {
+    shoegaze_.setHighCut(hz);
+}
+
+float Map2AudioEngine::getShoeGazeHighCut() const {
+    return shoegaze_.getHighCut();
+}
+
+void Map2AudioEngine::setShoeGazeMix(float percent) {
+    shoegaze_.setMix(percent);
+}
+
+float Map2AudioEngine::getShoeGazeMix() const {
+    return shoegaze_.getMix();
+}
+
+void Map2AudioEngine::setShoeGazeStereoWidth(float percent) {
+    shoegaze_.setStereoWidth(percent);
+}
+
+float Map2AudioEngine::getShoeGazeStereoWidth() const {
+    return shoegaze_.getStereoWidth();
+}
+
+// Advanced controls
+void Map2AudioEngine::setShoeGazeReverbDiffusion(float percent) {
+    shoegaze_.setReverbDiffusion(percent);
+}
+
+float Map2AudioEngine::getShoeGazeReverbDiffusion() const {
+    return shoegaze_.getReverbDiffusion();
+}
+
+void Map2AudioEngine::setShoeGazeReverbDamping(float percent) {
+    shoegaze_.setReverbDamping(percent);
+}
+
+float Map2AudioEngine::getShoeGazeReverbDamping() const {
+    return shoegaze_.getReverbDamping();
+}
+
+void Map2AudioEngine::setShoeGazeShimmerFeedback(float percent) {
+    shoegaze_.setShimmerFeedback(percent);
+}
+
+float Map2AudioEngine::getShoeGazeShimmerFeedback() const {
+    return shoegaze_.getShimmerFeedback();
+}
+
+void Map2AudioEngine::setShoeGazeChorusVoices(int voices) {
+    shoegaze_.setChorusVoices(voices);
+}
+
+int Map2AudioEngine::getShoeGazeChorusVoices() const {
+    return shoegaze_.getChorusVoices();
+}
+
+void Map2AudioEngine::setShoeGazeDucking(float percent) {
+    shoegaze_.setDucking(percent);
+}
+
+float Map2AudioEngine::getShoeGazeDucking() const {
+    return shoegaze_.getDucking();
+}
+
+// State control
+void Map2AudioEngine::setShoeGazePreset(ShoeGazeProcessor::Preset preset) {
+    shoegaze_.setPreset(preset);
+}
+
+ShoeGazeProcessor::Preset Map2AudioEngine::getShoeGazePreset() const {
+    return shoegaze_.getPreset();
+}
+
+void Map2AudioEngine::setShoeGazeBypass(bool bypass) {
+    shoegaze_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isShoeGazeBypassed() const {
+    return shoegaze_.isBypassed();
+}
+
+void Map2AudioEngine::setShoeGazeSpillover(bool enabled) {
+    shoegaze_.setSpillover(enabled);
+}
+
+bool Map2AudioEngine::hasShoeGazeSpillover() const {
+    return shoegaze_.hasSpillover();
+}
+
+// Bulk parameters
+ShoeGazeProcessor::Parameters Map2AudioEngine::getShoeGazeParameters() const {
+    return shoegaze_.getParameters();
+}
+
+void Map2AudioEngine::setShoeGazeParameters(const ShoeGazeProcessor::Parameters& params) {
+    shoegaze_.setParameters(params);
+}
+
+// Metering
+ShoeGazeProcessor::Metering Map2AudioEngine::getShoeGazeMetering() const {
+    return shoegaze_.getMetering();
+}
+
+// Preset info
+ShoeGazeProcessor::PresetInfo Map2AudioEngine::getShoeGazePresetInfo(ShoeGazeProcessor::Preset preset) {
+    return ShoeGazeProcessor::getPresetInfo(preset);
+}
+
+int Map2AudioEngine::getShoeGazeNumPresets() {
+    return ShoeGazeProcessor::getNumPresets();
 }
 
 } // namespace map2

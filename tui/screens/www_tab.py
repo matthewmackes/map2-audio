@@ -742,7 +742,13 @@ class WWWTab(ScrollableContainer):
 
     async def _clear_logs(self) -> None:
         """Clear access logs."""
-        self.app.notify("Log clearing not implemented in backend", severity="warning")
+        result = await self.api_client.clear_access_logs()
+        if result.success:
+            self.logs = []
+            self._update_logs_panel()
+            self.app.notify("Logs cleared", severity="information")
+        else:
+            self.app.notify(f"Failed to clear logs: {result.error}", severity="error")
 
     async def on_switch_changed(self, event: Switch.Changed) -> None:
         """Handle switch toggles."""

@@ -1,0 +1,115 @@
+/**
+ * REEVRCard Styles
+ * FabFilter Pro-R inspired reverb interface
+ */
+
+/* Visualization */
+.reevr-visualization {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+  border-radius: 8px;
+}
+
+.reevr-decay-curve {
+  width: 100%;
+  max-width: 260px;
+}
+
+.reevr-space-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Presets */
+.reevr-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+}
+
+.reevr-preset-chip {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.reevr-preset-chip:hover {
+  background: #222;
+  border-color: #444;
+  color: #aaa;
+}
+
+.reevr-preset-chip.active {
+  background: color-mix(in srgb, var(--accent) 20%, #1a1a1a);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Advanced Toggle */
+.reevr-advanced-toggle {
+  border-top: 1px solid #222;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.reevr-advanced-toggle button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.15s ease;
+}
+
+.reevr-advanced-toggle button:hover {
+  color: #999;
+}
+
+.reevr-advanced-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: auto;
+  transition: background 0.15s ease;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .reevr-presets {
+    gap: 4px;
+  }
+
+  .reevr-preset-chip {
+    padding: 4px 8px;
+    font-size: 9px;
+  }
+}

@@ -113,39 +113,45 @@ bool ParameterBridge::queueParameterChange(InstanceId pluginId, const std::strin
 void ParameterBridge::processQueue(std::function<void(const ParameterUpdate&)> handler) {
     ParameterUpdate update;
 
+    // RT-SAFE: Process all queued updates without locks in audio callback
+    // The ring buffer is lock-free, and we defer value caching to avoid blocking
     while (dequeue(update)) {
-        // Update smoother target value
-        {
-            std::lock_guard<std::mutex> lock(smootherMutex_);
+        // Check global smoothing (atomic read - RT-safe)
+        bool globalSmoothing = globalSmoothingEnabled_.load(std::memory_order_relaxed);
+        
+        // Try lock for smoother access - skip if contended (RT-safe)
+        // If lock not available, still apply update immediately
+        std::unique_lock<std::mutex> smootherLock(smootherMutex_, std::try_to_lock);
+        
+        if (smootherLock.owns_lock()) {
             auto key = std::make_pair(update.pluginId, update.paramIndex);
             auto it = smoothedParams_.find(key);
 
             if (it != smoothedParams_.end()) {
-                // Check if smoothing is enabled for this parameter
-                bool useSmoothing = globalSmoothingEnabled_ && it->second.config.enabled;
+                bool useSmoothing = globalSmoothing && it->second.config.enabled;
 
                 if (useSmoothing) {
-                    // Set target for smoothing
                     it->second.smoother.setTargetValue(update.value);
                     it->second.targetValue = update.value;
                 } else {
-                    // Instant change - skip to target
                     it->second.smoother.setCurrentAndTargetValue(update.value);
                     it->second.targetValue = update.value;
-                    // Apply immediately
                     handler(update);
                 }
             } else {
-                // No smoother registered - apply immediately
                 handler(update);
             }
+        } else {
+            // Lock contended - apply immediately without smoothing (RT-safe fallback)
+            handler(update);
         }
 
-        // Update cached value
-        {
-            std::lock_guard<std::mutex> lock(valueMutex_);
+        // Defer value caching - try lock, skip if contended (RT-safe)
+        std::unique_lock<std::mutex> valueLock(valueMutex_, std::try_to_lock);
+        if (valueLock.owns_lock()) {
             parameterValues_[std::make_pair(update.pluginId, update.paramIndex)] = update.value;
         }
+        // If lock not acquired, value will be updated on next successful try
     }
 }
 

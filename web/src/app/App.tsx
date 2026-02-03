@@ -15,7 +15,9 @@ import { GridFlowPage } from './pages/GridFlowPage'
 import { DSPPage } from './pages/DSPPage'
 import { EdirolUA1000Page } from './pages/EdirolUA1000Page'
 import { HoToneJoGGPage } from './pages/HoToneJoGGPage'
-// import { MeteringPage } from './pages/MeteringPage'
+import { MeteringPage } from './pages/MeteringPage'
+import { WelcomePage } from './pages/WelcomePage'
+import { MidiLearnProvider } from './hooks/useMidiLearn'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,26 +36,29 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ToastProvider>
-          <AppShell>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/chains" element={<ChainsPage />} />
-              <Route path="/presets" element={<PresetsPage />} />
-              <Route path="/legacy" element={<LegacyPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/plugins" element={<LV2PluginsPage />} />
-              <Route path="/library" element={<LibraryPage />} />
-              <Route path="/midi" element={<MIDIPage />} />
-              <Route path="/grid" element={<GridFlowPage />} />
-              <Route path="/dsp" element={<DSPPage />} />
-              <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
-              <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
-              {/* <Route path="/metering" element={<MeteringPage />} /> */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AppShell>
-        </ToastProvider>
+        <MidiLearnProvider>
+          <ToastProvider>
+            <AppShell>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/chains" element={<ChainsPage />} />
+                <Route path="/presets" element={<PresetsPage />} />
+                <Route path="/legacy" element={<LegacyPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/plugins" element={<LV2PluginsPage />} />
+                <Route path="/library" element={<LibraryPage />} />
+                <Route path="/midi" element={<MIDIPage />} />
+                <Route path="/grid" element={<GridFlowPage />} />
+                <Route path="/dsp" element={<DSPPage />} />
+                <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
+                <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
+                <Route path="/metering" element={<MeteringPage />} />
+                <Route path="/welcome" element={<WelcomePage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AppShell>
+          </ToastProvider>
+        </MidiLearnProvider>
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

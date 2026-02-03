@@ -17,7 +17,6 @@ import {
   IconButton,
   Button,
   Chip,
-  Slider,
   Select,
   MenuItem,
   FormControl,
@@ -37,6 +36,7 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   PlayArrow as PlayIcon,
   Pause as PauseIcon,
@@ -95,29 +95,28 @@ function LFODialog({ open, parameterId, onClose, onSave }: LFODialogProps) {
       <DialogTitle>Configure LFO</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
-          <Typography gutterBottom>Rate: {rateHz.toFixed(2)} Hz</Typography>
-          <Slider
+          <NumberInput
+            label="Rate"
             value={rateHz}
-            onChange={(_, v) => setRateHz(v as number)}
+            onChange={(v) => setRateHz(v)}
             min={0.1}
             max={20}
             step={0.1}
-            marks={[
-              { value: 0.1, label: '0.1' },
-              { value: 10, label: '10' },
-              { value: 20, label: '20' },
-            ]}
+            unit="Hz"
+            size="small"
           />
         </Box>
 
         <Box sx={{ mt: 3 }}>
-          <Typography gutterBottom>Depth: {(depth * 100).toFixed(0)}%</Typography>
-          <Slider
-            value={depth}
-            onChange={(_, v) => setDepth(v as number)}
+          <NumberInput
+            label="Depth"
+            value={depth * 100}
+            onChange={(v) => setDepth(v / 100)}
             min={0}
-            max={1}
-            step={0.01}
+            max={100}
+            step={1}
+            unit="%"
+            size="small"
           />
         </Box>
 
@@ -178,8 +177,16 @@ function AddPointDialog({ open, parameterId, onClose, onAdd }: AddPointDialogPro
         />
 
         <Box sx={{ mt: 3 }}>
-          <Typography gutterBottom>Value: {(value * 100).toFixed(0)}%</Typography>
-          <Slider value={value} onChange={(_, v) => setValue(v as number)} min={0} max={1} step={0.01} />
+          <NumberInput
+            label="Value"
+            value={value * 100}
+            onChange={(v) => setValue(v / 100)}
+            min={0}
+            max={100}
+            step={1}
+            unit="%"
+            size="small"
+          />
         </Box>
 
         <FormControl fullWidth sx={{ mt: 3 }}>

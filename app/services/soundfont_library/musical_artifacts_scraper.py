@@ -13,6 +13,7 @@ Features:
 """
 
 import logging
+import asyncio
 import aiohttp
 import os
 from typing import List, Optional, Callable, Dict, Any
@@ -141,45 +142,72 @@ class MusicalArtifactsScraper(SFScraperBase):
         artifacts = []
         page = 1
 
+        # Use browser-like headers to avoid Cloudflare blocking
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://musical-artifacts.com/",
+            "Origin": "https://musical-artifacts.com",
+        }
+
+        # Timeout configuration
+        timeout = aiohttp.ClientTimeout(total=30, connect=10)
+
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 while page <= max_pages:
                     await self._rate_limit()
 
                     # Build API URL with filters
                     url = f"{self.API_BASE}?formats={format_filter}&page={page}&order=most_downloaded"
 
-                    headers = {
-                        "Accept": "application/json",
-                        "User-Agent": "MAP2-Audio-SoundFont-Scraper/1.0"
-                    }
+                    # Retry logic for Cloudflare challenges
+                    for attempt in range(3):
+                        try:
+                            async with session.get(url, headers=headers) as response:
+                                if response.status == 403:
+                                    # Cloudflare challenge - log and skip
+                                    logger.warning(f"Musical Artifacts: Cloudflare challenge detected (attempt {attempt + 1}/3)")
+                                    if attempt < 2:
+                                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                                        continue
+                                    else:
+                                        logger.error("Musical Artifacts: Unable to bypass Cloudflare after 3 attempts")
+                                        return artifacts
 
-                    async with session.get(url, headers=headers) as response:
-                        if response.status != 200:
-                            logger.warning(f"API returned {response.status} for page {page}")
-                            break
+                                if response.status != 200:
+                                    logger.warning(f"API returned {response.status} for page {page}")
+                                    return artifacts
 
-                        data = await response.json()
+                                data = await response.json()
 
-                        # Handle both array and object response formats
-                        if isinstance(data, list):
-                            page_artifacts = data
-                        elif isinstance(data, dict):
-                            page_artifacts = data.get('artifacts', data.get('data', []))
-                        else:
-                            break
+                                # Handle both array and object response formats
+                                if isinstance(data, list):
+                                    page_artifacts = data
+                                elif isinstance(data, dict):
+                                    page_artifacts = data.get('artifacts', data.get('data', []))
+                                else:
+                                    return artifacts
 
-                        if not page_artifacts:
-                            break
+                                if not page_artifacts:
+                                    return artifacts
 
-                        artifacts.extend(page_artifacts)
-                        logger.debug(f"Fetched {len(page_artifacts)} {format_filter} artifacts from page {page}")
+                                artifacts.extend(page_artifacts)
+                                logger.debug(f"Fetched {len(page_artifacts)} {format_filter} artifacts from page {page}")
 
-                        # Stop if we got fewer than expected (last page)
-                        if len(page_artifacts) < 20:
-                            break
+                                # Stop if we got fewer than expected (last page)
+                                if len(page_artifacts) < 20:
+                                    return artifacts
 
-                        page += 1
+                                page += 1
+                                break  # Success, move to next page
+
+                        except asyncio.TimeoutError:
+                            logger.warning(f"Timeout fetching page {page} (attempt {attempt + 1}/3)")
+                            if attempt < 2:
+                                await asyncio.sleep(2 ** attempt)
+                            continue
 
         except Exception as e:
             logger.error(f"Error fetching {format_filter} artifacts: {e}")
@@ -329,11 +357,15 @@ class MusicalArtifactsScraper(SFScraperBase):
             self.download_progress[file_info.filename] = status
 
             headers = {
-                "User-Agent": "MAP2-Audio-SoundFont-Scraper/1.0",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Accept": "*/*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://musical-artifacts.com/",
             }
 
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=300, connect=30)  # 5 min for large files
+
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(file_info.url, headers=headers, allow_redirects=True) as response:
                     if response.status != 200:
                         logger.error(f"Download failed: HTTP {response.status} for {file_info.url}")

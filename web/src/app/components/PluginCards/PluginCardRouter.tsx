@@ -8,10 +8,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { pluginsApi } from '../../../map2/api'
+import { pluginsApi, chainsApi } from '../../../map2/api'
 import type { Plugin } from '../../../map2/types'
 import { getPluginCardComponent } from './registry'
-import { getCategoryConfig, type PluginCardProps } from './types'
+import { getCategoryConfig, type PluginCardProps, type PluginRealtimeData } from './types'
+import { usePluginOutput } from '../../hooks/usePluginOutputs'
 
 interface PluginCardRouterProps {
   plugin: Plugin
@@ -20,6 +21,10 @@ interface PluginCardRouterProps {
   compact?: boolean
   /** Force use of a specific template (for testing) */
   forceTemplate?: string
+  /** Chain ID for bypass toggle functionality */
+  chainId?: number
+  /** Callback when bypass state changes */
+  onBypassChange?: (pluginUri: string, bypassed: boolean) => void
 }
 
 /**
@@ -32,6 +37,8 @@ export function PluginCardRouter({
   showAddToChain = true,
   compact = false,
   forceTemplate,
+  chainId,
+  onBypassChange,
 }: PluginCardRouterProps) {
   const queryClient = useQueryClient()
   const catConfig = getCategoryConfig(plugin.category)
@@ -69,11 +76,62 @@ export function PluginCardRouter({
     pluginsApi.flushParameterBatch()
   }, [])
 
+  // Bypass toggle mutation
+  const bypassMutation = useMutation({
+    mutationFn: async (bypass: boolean) => {
+      if (!chainId) throw new Error('No chain context for bypass toggle')
+      return chainsApi.togglePluginBypass(chainId, plugin.uri, bypass)
+    },
+    onSuccess: (_, bypass) => {
+      // Invalidate chain queries to refresh state
+      queryClient.invalidateQueries({ queryKey: ['chains', chainId] })
+      queryClient.invalidateQueries({ queryKey: ['chains'] })
+      onBypassChange?.(plugin.uri, bypass)
+    },
+  })
+
   // Handle bypass toggle
   const handleBypassToggle = useCallback((bypassed: boolean) => {
-    // TODO: Implement bypass toggle via API
-    console.log('Bypass toggle:', bypassed)
-  }, [])
+    if (chainId) {
+      bypassMutation.mutate(bypassed)
+    } else {
+      console.warn('Bypass toggle requires chain context')
+    }
+  }, [chainId, bypassMutation])
+
+  // Get real-time output data for this plugin
+  const pluginOutput = usePluginOutput(plugin.uri)
+
+  // Build real-time data from output ports
+  const realtimeData = useMemo<PluginRealtimeData>(() => {
+    // Find gain reduction port if available
+    const grPort = plugin.ui_info?.output_ports?.find(p => p.designation === 'gain_reduction')
+    const gainReduction = grPort ? (pluginOutput.outputPorts[grPort.index] ?? 0) : undefined
+
+    // Find meter ports for input/output levels
+    const inputMeterPort = plugin.ui_info?.output_ports?.find(
+      p => p.designation === 'meter' && (p.symbol.includes('input') || p.name.toLowerCase().includes('input'))
+    )
+    const outputMeterPort = plugin.ui_info?.output_ports?.find(
+      p => p.designation === 'meter' && (p.symbol.includes('output') || p.name.toLowerCase().includes('output'))
+    )
+
+    return {
+      gainReduction,
+      inputLevel: inputMeterPort ? pluginOutput.outputPorts[inputMeterPort.index] : undefined,
+      outputLevel: outputMeterPort ? pluginOutput.outputPorts[outputMeterPort.index] : undefined,
+      outputPorts: pluginOutput.outputPorts,
+      peaks: Object.fromEntries(
+        Object.entries(pluginOutput.peaks).map(([symbol, data]) => [symbol, {
+          peak: data.peak,
+          rms: data.rms,
+          holdPeak: data.hold_peak,
+          isClipping: data.is_clipping,
+        }])
+      ),
+      connected: pluginOutput.connected,
+    }
+  }, [plugin.uri, plugin.ui_info, pluginOutput])
 
   // Get the card component from registry
   const CardComponent = useMemo(() => {
@@ -90,6 +148,7 @@ export function PluginCardRouter({
     accentColor,
     disabled: false,
     compact,
+    realtimeData,
   }
 
   // Render the appropriate card

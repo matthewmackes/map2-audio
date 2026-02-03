@@ -6,10 +6,19 @@ Coordinate downloading from multiple SoundFont libraries.
 import logging
 import asyncio
 import os
+import zipfile
+import tarfile
+import shutil
 from typing import List, Dict, Optional, Set
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+
+try:
+    import py7zr
+    HAS_7Z_SUPPORT = True
+except ImportError:
+    HAS_7Z_SUPPORT = False
 
 from .scraper_base import SFScraperBase, SFFileInfo
 from .sfzinstruments_scraper import SFZInstrumentsScraper
@@ -276,10 +285,12 @@ class SFDownloadManager:
             if success:
                 # Handle ZIP/archive files
                 is_archive = any(file_info.filename.lower().endswith(ext)
-                               for ext in ['.zip', '.tar.xz', '.tar.bz2', '.tar.gz'])
+                               for ext in ['.zip', '.tar.xz', '.tar.bz2', '.tar.gz', '.tgz', '.7z'])
                 if is_archive:
-                    # TODO: Extract archive and process contents
-                    logger.info(f"Downloaded archive: {file_info.filename}")
+                    # Extract archive and process contents
+                    extract_dir = os.path.dirname(output_path)
+                    extracted = self._extract_archive(output_path, extract_dir)
+                    logger.info(f"Extracted {len(extracted)} files from archive: {file_info.filename}")
 
                 if src_stats:
                     src_stats.downloaded += 1
@@ -344,6 +355,143 @@ class SFDownloadManager:
             } if has_stats else None,
             "sources": sources_progress if sources_progress else None
         }
+
+    def _extract_archive(self, archive_path: str, output_dir: str) -> List[str]:
+        """Extract archive contents and return list of extracted SoundFont files.
+
+        Args:
+            archive_path: Path to the archive file
+            output_dir: Directory to extract to
+
+        Returns:
+            List of extracted SoundFont file paths
+        """
+        extracted_files = []
+        archive_lower = archive_path.lower()
+
+        # Valid SoundFont extensions
+        sf_extensions = {'.sf2', '.sfz', '.sf3'}
+
+        try:
+            if archive_lower.endswith('.zip'):
+                # Extract ZIP file
+                with zipfile.ZipFile(archive_path, 'r') as zf:
+                    for member in zf.namelist():
+                        # Skip directories and hidden files
+                        if member.endswith('/') or member.startswith('__MACOSX'):
+                            continue
+
+                        # Extract the file
+                        member_lower = member.lower()
+                        ext = Path(member).suffix.lower()
+
+                        # Only extract SoundFont files and related assets
+                        if ext in sf_extensions or ext in {'.wav', '.flac', '.ogg', '.aiff', '.aif'}:
+                            # Create subdirectory based on archive name (without extension)
+                            archive_name = Path(archive_path).stem
+                            dest_dir = os.path.join(output_dir, archive_name)
+                            os.makedirs(dest_dir, exist_ok=True)
+
+                            # Extract preserving directory structure
+                            dest_path = os.path.join(dest_dir, os.path.basename(member))
+                            with zf.open(member) as src, open(dest_path, 'wb') as dst:
+                                shutil.copyfileobj(src, dst)
+
+                            if ext in sf_extensions:
+                                extracted_files.append(dest_path)
+                            logger.debug(f"Extracted: {member} -> {dest_path}")
+
+            elif archive_lower.endswith(('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz')):
+                # Determine compression mode
+                if archive_lower.endswith(('.tar.gz', '.tgz')):
+                    mode = 'r:gz'
+                elif archive_lower.endswith('.tar.bz2'):
+                    mode = 'r:bz2'
+                else:
+                    mode = 'r:xz'
+
+                with tarfile.open(archive_path, mode) as tf:
+                    for member in tf.getmembers():
+                        # Skip directories
+                        if member.isdir():
+                            continue
+
+                        member_lower = member.name.lower()
+                        ext = Path(member.name).suffix.lower()
+
+                        # Only extract SoundFont files and related assets
+                        if ext in sf_extensions or ext in {'.wav', '.flac', '.ogg', '.aiff', '.aif'}:
+                            # Create subdirectory based on archive name
+                            archive_name = Path(archive_path).stem
+                            if archive_name.endswith('.tar'):
+                                archive_name = archive_name[:-4]
+                            dest_dir = os.path.join(output_dir, archive_name)
+                            os.makedirs(dest_dir, exist_ok=True)
+
+                            # Extract
+                            dest_path = os.path.join(dest_dir, os.path.basename(member.name))
+                            with tf.extractfile(member) as src:
+                                if src:
+                                    with open(dest_path, 'wb') as dst:
+                                        shutil.copyfileobj(src, dst)
+
+                            if ext in sf_extensions:
+                                extracted_files.append(dest_path)
+                            logger.debug(f"Extracted: {member.name} -> {dest_path}")
+
+            elif archive_lower.endswith('.7z'):
+                # Extract 7z file
+                if not HAS_7Z_SUPPORT:
+                    logger.error("py7zr not installed, cannot extract .7z files")
+                    return []
+
+                # Get archive name for subdirectory
+                archive_name = Path(archive_path).stem
+                dest_dir = os.path.join(output_dir, archive_name)
+                os.makedirs(dest_dir, exist_ok=True)
+
+                with py7zr.SevenZipFile(archive_path, mode='r') as szf:
+                    # Get list of files to extract
+                    names_to_extract = []
+                    for name in szf.getnames():
+                        # Skip directories
+                        if name.endswith('/'):
+                            continue
+                        ext = Path(name).suffix.lower()
+                        # Only extract SoundFont files and related assets
+                        if ext in sf_extensions or ext in {'.wav', '.flac', '.ogg', '.aiff', '.aif'}:
+                            names_to_extract.append(name)
+
+                    # Extract selected files
+                    if names_to_extract:
+                        szf.extract(path=dest_dir, targets=names_to_extract)
+
+                        # Track extracted SoundFont files
+                        for name in names_to_extract:
+                            ext = Path(name).suffix.lower()
+                            dest_path = os.path.join(dest_dir, os.path.basename(name))
+                            # Handle nested paths - files may be extracted in subdirs
+                            full_path = os.path.join(dest_dir, name)
+                            if os.path.exists(full_path) and ext in sf_extensions:
+                                # Move to flat directory structure
+                                if full_path != dest_path:
+                                    shutil.move(full_path, dest_path)
+                                extracted_files.append(dest_path)
+                            elif os.path.exists(dest_path) and ext in sf_extensions:
+                                extracted_files.append(dest_path)
+                            logger.debug(f"Extracted: {name} -> {dest_path}")
+
+            # Remove original archive after successful extraction
+            if extracted_files:
+                os.remove(archive_path)
+                logger.info(f"Extracted {len(extracted_files)} SoundFont files from {archive_path}")
+            else:
+                logger.warning(f"No SoundFont files found in archive: {archive_path}")
+
+        except Exception as e:
+            logger.error(f"Failed to extract archive {archive_path}: {e}")
+
+        return extracted_files
 
     def reset_stats(self) -> None:
         """Reset download stats for a fresh start."""

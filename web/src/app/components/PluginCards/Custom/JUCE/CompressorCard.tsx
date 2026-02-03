@@ -15,6 +15,8 @@
  * - inputLevel, outputLevel: dB peak
  * - gainReduction: dB (positive = reduction)
  * - inputRms, outputRms: dB RMS
+ *
+ * Supports MIDI CC assignment on all parameters.
  */
 
 import { useDynamics } from '../../../../hooks/useDynamics'
@@ -25,6 +27,19 @@ import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { TransferCurve } from '../../Visualizations/TransferCurve'
 import { GainReductionMeter } from '../../../Dynamics/GainReductionMeter'
 import type { PluginCardProps } from '../../types'
+
+// Plugin URI for MIDI mappings
+const COMPRESSOR_URI = 'map2://juce/dynamics/compressor'
+
+// Parameter indices (must match juce_processors.json order)
+const PARAM = {
+  THRESHOLD: 0,
+  RATIO: 1,
+  ATTACK: 2,
+  RELEASE: 3,
+  KNEE: 4,
+  MAKEUP_GAIN: 5,
+}
 
 export function CompressorCard({
   plugin,
@@ -86,6 +101,7 @@ export function CompressorCard({
             onChange={setCompressorThreshold}
             accentColor={accentColor}
             size="medium"
+            midi={{ pluginUri: COMPRESSOR_URI, paramIndex: PARAM.THRESHOLD }}
           />
           <ParameterKnob
             label="Ratio"
@@ -99,6 +115,7 @@ export function CompressorCard({
             valueFormatter={(v) => (v >= 20 ? '∞' : v.toFixed(1))}
             accentColor={accentColor}
             size="medium"
+            midi={{ pluginUri: COMPRESSOR_URI, paramIndex: PARAM.RATIO }}
           />
           <ParameterKnob
             label="Knee"
@@ -111,6 +128,7 @@ export function CompressorCard({
             onChange={setCompressorKnee}
             accentColor={accentColor}
             size="medium"
+            midi={{ pluginUri: COMPRESSOR_URI, paramIndex: PARAM.KNEE }}
           />
         </ParameterRow>
       </ParameterSection>
@@ -130,6 +148,7 @@ export function CompressorCard({
             isLogarithmic
             accentColor={accentColor}
             size="medium"
+            midi={{ pluginUri: COMPRESSOR_URI, paramIndex: PARAM.ATTACK }}
           />
           <ParameterKnob
             label="Release"
@@ -143,6 +162,7 @@ export function CompressorCard({
             isLogarithmic
             accentColor={accentColor}
             size="medium"
+            midi={{ pluginUri: COMPRESSOR_URI, paramIndex: PARAM.RELEASE }}
           />
         </ParameterRow>
       </ParameterSection>
@@ -161,6 +181,7 @@ export function CompressorCard({
             onChange={setCompressorMakeupGain}
             accentColor={accentColor}
             size="medium"
+            midi={{ pluginUri: COMPRESSOR_URI, paramIndex: PARAM.MAKEUP_GAIN }}
           />
           <button
             className={`toggle-btn ${parameters.autoMakeup ? 'active' : ''}`}

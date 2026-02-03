@@ -19,9 +19,12 @@ export interface SignalGridProps {
   onDeletePlugin?: (uri: string) => void
   onReorderPlugins: (pluginUris: string[]) => void
   onAddPlugin?: () => void
+  onAddPluginDirect?: (uri: string) => void
   audioStatus?: AudioInterfaceStatus
   pluginLevels?: Record<string, { in: number; out: number }>
   showEndpoints?: boolean
+  onInputPortSelectClick?: () => void
+  onOutputPortSelectClick?: () => void
 }
 
 export const SignalGrid = memo(function SignalGrid({
@@ -33,9 +36,12 @@ export const SignalGrid = memo(function SignalGrid({
   onDeletePlugin,
   onReorderPlugins,
   onAddPlugin,
+  onAddPluginDirect,
   audioStatus,
   pluginLevels = {},
   showEndpoints = false,
+  onInputPortSelectClick,
+  onOutputPortSelectClick,
 }: SignalGridProps) {
   if (!chain) {
     return (
@@ -55,43 +61,53 @@ export const SignalGrid = memo(function SignalGrid({
   }
 
   return (
-    <div className="signal-grid">
-      {/* Input ChainEndpoint */}
+    <div className="signal-grid" style={{
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    }}>
+      {/* Input ChainEndpoint - Far Left */}
       {showEndpoints && audioStatus && (
-        <div className="signal-grid-endpoint-wrapper">
+        <div className="signal-grid-endpoint-wrapper" style={{ flexShrink: 0 }}>
           <ChainEndpoint
             type="input"
             label="INPUT"
             audioStatus={audioStatus}
-            compact={true}
+            compact={false}
+            onPortSelectClick={onInputPortSelectClick}
           />
         </div>
       )}
 
-      {/* Main signal flow row */}
-      <SignalGridRow
-        rowLabel="In"
-        rowIndex={0}
-        plugins={chain.plugins}
-        pluginMeta={pluginMeta}
-        selectedPluginUri={selectedPluginUri}
-        onPluginSelect={onPluginSelect}
-        onToggleBypass={handleToggleBypass}
-        onDeletePlugin={onDeletePlugin}
-        onReorderPlugins={onReorderPlugins}
-        onAddPlugin={onAddPlugin}
-        isActive={chain.is_active}
-        pluginLevels={pluginLevels}
-      />
+      {/* Main signal flow row - Center, fills available space */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <SignalGridRow
+          rowLabel="In"
+          rowIndex={0}
+          plugins={chain.plugins}
+          pluginMeta={pluginMeta}
+          selectedPluginUri={selectedPluginUri}
+          onPluginSelect={onPluginSelect}
+          onToggleBypass={handleToggleBypass}
+          onDeletePlugin={onDeletePlugin}
+          onReorderPlugins={onReorderPlugins}
+          onAddPlugin={onAddPlugin}
+          onAddPluginDirect={onAddPluginDirect}
+          isActive={chain.is_active}
+          pluginLevels={pluginLevels}
+        />
+      </div>
 
-      {/* Output ChainEndpoint */}
+      {/* Output ChainEndpoint - Far Right */}
       {showEndpoints && audioStatus && (
-        <div className="signal-grid-endpoint-wrapper">
+        <div className="signal-grid-endpoint-wrapper" style={{ flexShrink: 0 }}>
           <ChainEndpoint
             type="output"
             label="OUTPUT"
             audioStatus={audioStatus}
-            compact={true}
+            compact={false}
+            onPortSelectClick={onOutputPortSelectClick}
           />
         </div>
       )}

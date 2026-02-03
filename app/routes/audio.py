@@ -985,5 +985,281 @@ try:
                 pass
             return {"success": False, "buffer_size": buffer_size, "duration_seconds": duration, "xruns": 0, "avg_cpu_load": 0, "peak_cpu_load": 0, "stability_score": 0, "recommendation": f"Test error: {str(e)}"}
 
+    # =========================================================================
+    # Audio Port Routing Endpoints
+    # =========================================================================
+
+    # Store for port routing configuration (persisted in memory, could be extended to DB)
+    _port_routing_config = {
+        "input_ports": [0, 1],  # Default: first stereo pair
+        "output_ports": [0, 1],  # Default: first stereo pair
+    }
+
+    @router.get("/ports")
+    async def get_available_ports() -> Dict[str, Any]:
+        """
+        Get available audio input/output ports on the connected interface.
+
+        Returns:
+            List of input and output ports with their names and indices
+        """
+        service = get_audio_engine()
+
+        if not service.is_available:
+            return {
+                "available": False,
+                "inputs": [],
+                "outputs": [],
+                "error": "Audio engine not available"
+            }
+
+        info = service.get_system_info()
+        input_channels = info.get("input_channels", 2)
+        output_channels = info.get("output_channels", 2)
+        device_name = info.get("alsa_device", "hw:0,0")
+
+        # Generate port lists based on channel counts
+        # For Edirol UA-1000: 10 in, 10 out
+        # For Hotone Jogg: 2 in, 2 out
+        inputs = []
+        outputs = []
+
+        # Define port names for known devices
+        ua1000_inputs = [
+            "Input 1 (Analog)",
+            "Input 2 (Analog)",
+            "Input 3 (Analog)",
+            "Input 4 (Analog)",
+            "S/PDIF L",
+            "S/PDIF R",
+            "ADAT 1",
+            "ADAT 2",
+            "ADAT 3",
+            "ADAT 4",
+        ]
+        ua1000_outputs = [
+            "Output 1 (Main L)",
+            "Output 2 (Main R)",
+            "Output 3",
+            "Output 4",
+            "Output 5",
+            "Output 6",
+            "Output 7",
+            "Output 8",
+            "S/PDIF L",
+            "S/PDIF R",
+        ]
+
+        for i in range(input_channels):
+            if "UA1000" in device_name or input_channels >= 10:
+                name = ua1000_inputs[i] if i < len(ua1000_inputs) else f"Input {i + 1}"
+            else:
+                name = f"Input {i + 1}" if input_channels > 2 else ("Left" if i == 0 else "Right")
+            inputs.append({
+                "index": i,
+                "name": name,
+                "type": "input"
+            })
+
+        for i in range(output_channels):
+            if "UA1000" in device_name or output_channels >= 10:
+                name = ua1000_outputs[i] if i < len(ua1000_outputs) else f"Output {i + 1}"
+            else:
+                name = f"Output {i + 1}" if output_channels > 2 else ("Left" if i == 0 else "Right")
+            outputs.append({
+                "index": i,
+                "name": name,
+                "type": "output"
+            })
+
+        return {
+            "available": True,
+            "device": device_name,
+            "inputs": inputs,
+            "outputs": outputs,
+            "input_count": input_channels,
+            "output_count": output_channels
+        }
+
+    @router.get("/routing")
+    async def get_port_routing() -> Dict[str, Any]:
+        """
+        Get current audio port routing configuration.
+
+        Returns:
+            Currently selected input and output ports
+        """
+        service = get_audio_engine()
+
+        if not service.is_available:
+            return {
+                "available": False,
+                "input_ports": [],
+                "output_ports": [],
+                "error": "Audio engine not available"
+            }
+
+        return {
+            "available": True,
+            "input_ports": _port_routing_config["input_ports"],
+            "output_ports": _port_routing_config["output_ports"]
+        }
+
+    @router.post("/routing")
+    async def set_port_routing(
+        input_ports: List[int] = Query(None, description="Input port indices to use"),
+        output_ports: List[int] = Query(None, description="Output port indices to use")
+    ) -> Dict[str, Any]:
+        """
+        Set audio port routing configuration.
+
+        Args:
+            input_ports: List of input port indices (e.g., [0, 1] for stereo)
+            output_ports: List of output port indices (e.g., [0, 1] for main outputs)
+
+        Returns:
+            Updated routing configuration
+        """
+        global _port_routing_config
+        service = get_audio_engine()
+
+        if not service.is_available:
+            raise HTTPException(status_code=503, detail="Audio engine not available")
+
+        info = service.get_system_info()
+        max_inputs = info.get("input_channels", 2)
+        max_outputs = info.get("output_channels", 2)
+
+        # Validate and update input ports
+        if input_ports is not None:
+            # Validate port indices
+            for port in input_ports:
+                if port < 0 or port >= max_inputs:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid input port {port}. Valid range: 0-{max_inputs - 1}"
+                    )
+            _port_routing_config["input_ports"] = input_ports
+
+            # Apply to engine if supported
+            try:
+                if hasattr(service._engine, 'set_input_channels'):
+                    service._engine.set_input_channels(input_ports)
+            except Exception as e:
+                logger.warning(f"Could not apply input routing to engine: {e}")
+
+        # Validate and update output ports
+        if output_ports is not None:
+            for port in output_ports:
+                if port < 0 or port >= max_outputs:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid output port {port}. Valid range: 0-{max_outputs - 1}"
+                    )
+            _port_routing_config["output_ports"] = output_ports
+
+            # Apply to engine if supported
+            try:
+                if hasattr(service._engine, 'set_output_channels'):
+                    service._engine.set_output_channels(output_ports)
+            except Exception as e:
+                logger.warning(f"Could not apply output routing to engine: {e}")
+
+        return {
+            "success": True,
+            "message": "Port routing updated",
+            "input_ports": _port_routing_config["input_ports"],
+            "output_ports": _port_routing_config["output_ports"]
+        }
+
+    @router.get("/ports/presets")
+    async def get_port_presets() -> Dict[str, Any]:
+        """
+        Get common port routing presets for the connected interface.
+
+        Returns:
+            List of preset routing configurations
+        """
+        service = get_audio_engine()
+
+        if not service.is_available:
+            return {"presets": []}
+
+        info = service.get_system_info()
+        input_channels = info.get("input_channels", 2)
+        output_channels = info.get("output_channels", 2)
+
+        presets = []
+
+        # Always have stereo preset
+        presets.append({
+            "id": "stereo",
+            "name": "Stereo (1-2)",
+            "description": "Standard stereo input/output",
+            "input_ports": [0, 1],
+            "output_ports": [0, 1]
+        })
+
+        # Add mono preset
+        presets.append({
+            "id": "mono",
+            "name": "Mono (1)",
+            "description": "Mono input to stereo output",
+            "input_ports": [0],
+            "output_ports": [0, 1]
+        })
+
+        # Multi-channel presets for interfaces with more ports
+        if input_channels >= 4:
+            presets.append({
+                "id": "inputs_3_4",
+                "name": "Inputs 3-4",
+                "description": "Use inputs 3 and 4",
+                "input_ports": [2, 3],
+                "output_ports": [0, 1]
+            })
+
+        if input_channels >= 6:
+            presets.append({
+                "id": "spdif_in",
+                "name": "S/PDIF Input",
+                "description": "Digital S/PDIF input",
+                "input_ports": [4, 5],
+                "output_ports": [0, 1]
+            })
+
+        if output_channels >= 4:
+            presets.append({
+                "id": "outputs_3_4",
+                "name": "Outputs 3-4",
+                "description": "Route to outputs 3 and 4",
+                "input_ports": [0, 1],
+                "output_ports": [2, 3]
+            })
+
+        if output_channels >= 10:
+            presets.append({
+                "id": "spdif_out",
+                "name": "S/PDIF Output",
+                "description": "Digital S/PDIF output",
+                "input_ports": [0, 1],
+                "output_ports": [8, 9]
+            })
+            presets.append({
+                "id": "all_analog_out",
+                "name": "All Analog Outputs",
+                "description": "Route to all 8 analog outputs",
+                "input_ports": [0, 1],
+                "output_ports": [0, 1, 2, 3, 4, 5, 6, 7]
+            })
+
+        return {
+            "presets": presets,
+            "current": {
+                "input_ports": _port_routing_config["input_ports"],
+                "output_ports": _port_routing_config["output_ports"]
+            }
+        }
+
 except ImportError:
     router = None

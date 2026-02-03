@@ -18,13 +18,13 @@ import {
   InputLabel,
   Switch,
   FormControlLabel,
-  Slider,
   Chip,
   LinearProgress,
   Tooltip,
   Alert,
   CircularProgress,
 } from '@mui/material'
+import { NumberInput } from '../../map2/components/NumberInput'
 import {
   Usb,
   Volume2,
@@ -288,30 +288,120 @@ export function EdirolUA1000Page() {
         </Alert>
       )}
 
-      {/* Status Cards */}
-      <div className="grid four">
-        <StatCard
-          label="Engine Status"
-          value={isRunning ? 'Running' : 'Stopped'}
-          helper={status?.engine ?? 'JUCE Audio Engine'}
-          tone={isRunning ? 'success' : 'warn'}
-        />
-        <StatCard
-          label="Sample Rate"
-          value={status ? `${status.sample_rate / 1000} kHz` : '—'}
-          helper="24-bit resolution"
-        />
-        <StatCard
-          label="Buffer / Latency"
-          value={status ? `${status.buffer_size} smp` : '—'}
-          helper={latency ? `${latency.latency_ms.toFixed(1)} ms` : '—'}
-        />
-        <StatCard
-          label="CPU Load"
-          value={`${(cpuLoad * 100).toFixed(1)}%`}
-          helper={xruns ? `${xruns.total} xruns total` : 'No xruns'}
-          tone={cpuLoad > 0.8 ? 'warn' : 'default'}
-        />
+      {/* Compact Status Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '12px 20px',
+        background: 'linear-gradient(135deg, rgba(20, 30, 50, 0.95), rgba(14, 22, 37, 0.9))',
+        borderRadius: 8,
+        border: `1px solid ${isRunning ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+        flexWrap: 'wrap'
+      }}>
+        {/* Engine Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: isRunning ? '#22c55e' : '#ef4444',
+            boxShadow: isRunning ? '0 0 8px #22c55e' : 'none',
+          }} />
+          <span style={{ fontWeight: 600, color: isRunning ? '#22c55e' : '#ef4444' }}>
+            {isRunning ? 'Running' : 'Stopped'}
+          </span>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+        {/* Sample Rate */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#666' }}>Rate</span>
+          <span style={{ fontWeight: 600, color: '#f2f6ff' }}>
+            {status ? `${status.sample_rate / 1000}kHz` : '—'}
+          </span>
+          <span style={{ fontSize: 10, color: '#555' }}>24-bit</span>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+        {/* Buffer / Latency */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#666' }}>Buffer</span>
+          <span style={{ fontWeight: 600, color: '#f2f6ff' }}>
+            {status ? `${status.buffer_size}` : '—'}
+          </span>
+          <span style={{ fontSize: 10, color: '#555' }}>smp</span>
+          <span style={{ fontSize: 11, color: '#3b82f6', marginLeft: 4 }}>
+            {latency ? `${latency.latency_ms.toFixed(1)}ms` : ''}
+          </span>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+        {/* CPU Load */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#666' }}>CPU</span>
+          <span style={{
+            fontWeight: 600,
+            color: cpuLoad > 0.8 ? '#ef4444' : cpuLoad > 0.5 ? '#f59e0b' : '#22c55e'
+          }}>
+            {(cpuLoad * 100).toFixed(1)}%
+          </span>
+          <div style={{
+            width: 40,
+            height: 4,
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: 2,
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${cpuLoad * 100}%`,
+              height: '100%',
+              background: cpuLoad > 0.8 ? '#ef4444' : cpuLoad > 0.5 ? '#f59e0b' : '#22c55e',
+              transition: 'width 0.1s'
+            }} />
+          </div>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+        {/* Active Channels */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#666' }}>Channels</span>
+          <span style={{ fontWeight: 600, color: '#06b6d4' }}>
+            {juce?.input_channels ?? 10}in/{juce?.output_channels ?? 10}out
+          </span>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+        {/* XRuns */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#666' }}>XRuns</span>
+          <span style={{
+            fontWeight: 600,
+            color: (xruns?.total ?? 0) > 0 ? '#f59e0b' : '#22c55e'
+          }}>
+            {xruns?.total ?? 0}
+          </span>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+        {/* WebSocket Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: wsConnected ? '#22c55e' : '#666',
+          }} />
+          <span style={{ fontSize: 10, color: wsConnected ? '#22c55e' : '#666' }}>
+            {wsConnected ? 'Live' : 'Offline'}
+          </span>
+        </div>
       </div>
 
       {/* Hardware Images */}
@@ -411,27 +501,27 @@ export function EdirolUA1000Page() {
           selectedId={selectedTab}
           setSelectedId={(id) => setSelectedTab(id ?? 'engine')}
         >
-          <TabList className="tab-list" aria-label="UA-1000 sections">
-            <Tab id="engine" className="tab">
-              <Cpu size={16} /> JUCE Engine
+          <TabList className="tab-list" aria-label="UA-1000 sections" style={{ gap: 4, display: 'flex', flexWrap: 'wrap' }}>
+            <Tab id="engine" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <Cpu size={18} /> JUCE Engine
             </Tab>
-            <Tab id="meters" className="tab">
-              <Activity size={16} /> Live Meters
+            <Tab id="meters" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <Activity size={18} /> Live Meters
             </Tab>
-            <Tab id="analog" className="tab">
-              <Volume2 size={16} /> Analog I/O
+            <Tab id="analog" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <Volume2 size={18} /> Analog I/O
             </Tab>
-            <Tab id="digital" className="tab">
-              <Waves size={16} /> Digital I/O
+            <Tab id="digital" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <Waves size={18} /> Digital I/O
             </Tab>
-            <Tab id="midi" className="tab">
-              <Music size={16} /> MIDI
+            <Tab id="midi" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <Music size={18} /> MIDI
             </Tab>
-            <Tab id="health" className="tab">
-              <AlertCircle size={16} /> Health
+            <Tab id="health" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <AlertCircle size={18} /> Health
             </Tab>
-            <Tab id="diagnostics" className="tab">
-              <Wrench size={16} /> Diagnostics
+            <Tab id="diagnostics" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
+              <Wrench size={18} /> Diagnostics
             </Tab>
           </TabList>
 
@@ -1010,8 +1100,16 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
           <div>
             <p className="subtitle">Stereo 1/4" TRS jack on front panel.</p>
             <div style={{ marginTop: 12 }}>
-              <label style={{ fontSize: 12, color: 'var(--text-muted)' }}>Headphone Volume</label>
-              <Slider defaultValue={60} min={0} max={100} valueLabelDisplay="auto" />
+              <NumberInput
+                label="Headphone Volume"
+                value={60}
+                min={0}
+                max={100}
+                step={1}
+                unit="%"
+                size="small"
+                onChange={() => {}}
+              />
             </div>
           </div>
           <div className="flex" style={{ justifyContent: 'center', alignItems: 'center' }}>

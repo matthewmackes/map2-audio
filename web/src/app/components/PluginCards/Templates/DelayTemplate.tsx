@@ -15,7 +15,7 @@ import { DelayTapGrid } from '../Visualizations/DelayTapGrid'
 import type { PluginParameter } from '../../../../map2/types'
 
 // Parameter patterns
-const TIME_PATTERNS = ['time', 'delay', 'length', 'ms']
+const TIME_PATTERNS = ['time', 'delay', 'length', 'ms', 'base']
 const TIME_L_PATTERNS = ['time_l', 'delay_l', 'left', 'time1']
 const TIME_R_PATTERNS = ['time_r', 'delay_r', 'right', 'time2']
 const FEEDBACK_PATTERNS = ['feedback', 'fb', 'regen', 'repeat']

@@ -28,7 +28,6 @@ import {
   Stack,
   Divider,
   Drawer,
-  Slider,
   Switch,
   FormControlLabel,
   Badge,
@@ -77,6 +76,7 @@ import LatencyDisplay, { LatencyBadge } from './LatencyDisplay';
 import LFOQuickButton from './LFOQuickButton';
 import EnvelopeFollowerPanel from './EnvelopeFollowerPanel';
 import ABQuickToggle from './ABQuickToggle';
+import { NumberInput } from './NumberInput';
 
 // Import JUCE integration components
 import { LatencyOverlay, SnapshotBar as EnhancedSnapshotBar } from './ChainBuilder';
@@ -123,31 +123,26 @@ function ParameterControl({ param, value, onChange }: ParameterControlProps) {
     );
   }
 
+  const range = param.max - param.min;
+  const step = range > 100 ? 1 : range > 10 ? 0.1 : 0.01;
+
   return (
     <Box sx={{ px: 2 }}>
-      <Typography variant="caption" gutterBottom>
-        {param.name}
+      <NumberInput
+        label={param.name}
+        value={localValue}
+        min={param.min}
+        max={param.max}
+        step={step}
+        onChange={(v) => {
+          setLocalValue(v);
+          onChange(v);
+        }}
+        size="small"
+      />
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: 10 }}>
+        Range: {param.min.toFixed(1)} - {param.max.toFixed(1)} | Default: {param.default.toFixed(2)}
       </Typography>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Typography variant="caption" sx={{ minWidth: 40, textAlign: 'right' }}>
-          {localValue.toFixed(2)}
-        </Typography>
-        <Slider
-          value={localValue}
-          onChange={handleChange}
-          onChangeCommitted={handleCommit}
-          min={param.min}
-          max={param.max}
-          step={(param.max - param.min) / 100}
-          marks={[
-            { value: param.min, label: param.min.toFixed(1) },
-            { value: param.default, label: 'def' },
-            { value: param.max, label: param.max.toFixed(1) },
-          ]}
-          valueLabelDisplay="auto"
-          size="small"
-        />
-      </Stack>
     </Box>
   );
 }
@@ -243,6 +238,8 @@ export default function ChainBuilder() {
   const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false);
   const [automationCurrentTime, setAutomationCurrentTime] = useState(0);
   const [automationDuration, setAutomationDuration] = useState(60); // 60 seconds default
+  const [automationArmedLanes, setAutomationArmedLanes] = useState<Set<string>>(new Set());
+  const [automationLaneDialogOpen, setAutomationLaneDialogOpen] = useState(false);
 
   // React Flow state
   const [flowNodes, setFlowNodes] = useState<Array<AudioPluginNodeType | DeviceNode>>([]);
@@ -1486,19 +1483,45 @@ export default function ChainBuilder() {
                       onToggleLoop={() => setAutomationLoopEnabled(!automationLoopEnabled)}
                       onSeek={(time) => setAutomationCurrentTime(time)}
                       onAddLane={() => {
-                        // TODO: Open parameter selector dialog for automation lane
-                        // For now, this requires user to select a parameter first
+                        // Open parameter selector dialog for automation lane
+                        setAutomationLaneDialogOpen(true);
                       }}
                       onDeleteLane={(laneId) => {
                         automationApi.deleteLane(laneId).catch(() => {});
+                        // Also remove from armed lanes if present
+                        setAutomationArmedLanes(prev => {
+                          const next = new Set(prev);
+                          next.delete(laneId);
+                          return next;
+                        });
                       }}
-                      onToggleLaneEnabled={(laneId) => {
-                        // Lane enable/disable requires fetching lane, modifying, and updating
-                        // TODO: Implement lane update endpoint in backend
+                      onToggleLaneEnabled={async (laneId) => {
+                        // Fetch lane, toggle enabled, and recreate with same points
+                        try {
+                          const lane = await automationApi.getLane(laneId);
+                          await automationApi.deleteLane(laneId);
+                          await automationApi.createLane({
+                            parameter_id: laneId,
+                            points: lane.points,
+                            enabled: !lane.enabled,
+                            loop_start: lane.loop_start,
+                            loop_end: lane.loop_end,
+                          });
+                        } catch (err) {
+                          setError('Failed to toggle lane enabled state');
+                        }
                       }}
                       onToggleLaneArmed={(laneId) => {
                         // Armed state is local to UI for recording
-                        // TODO: Track armed state locally
+                        setAutomationArmedLanes(prev => {
+                          const next = new Set(prev);
+                          if (next.has(laneId)) {
+                            next.delete(laneId);
+                          } else {
+                            next.add(laneId);
+                          }
+                          return next;
+                        });
                       }}
                       onAddPoint={(laneId, time, value) => {
                         automationApi.addPoint(laneId, time, value).catch(() => {});
@@ -1514,9 +1537,21 @@ export default function ChainBuilder() {
                           automationApi.removePoint(laneId, time).catch(() => {});
                         }
                       }}
-                      onChangeCurve={(laneId, pointId, curve) => {
+                      onChangeCurve={async (laneId, pointId, curve) => {
                         // Curve changes require re-adding the point with new curve type
-                        // TODO: Implement curve update in backend
+                        try {
+                          const lane = await automationApi.getLane(laneId);
+                          // Find the point by ID (which contains the time)
+                          const time = typeof pointId === 'number' ? pointId : parseFloat(pointId);
+                          const point = lane.points.find(p => Math.abs(p.time - time) < 0.001);
+                          if (point) {
+                            // Remove old point and add with new curve
+                            await automationApi.removePoint(laneId, point.time);
+                            await automationApi.addPoint(laneId, point.time, point.value, curve);
+                          }
+                        } catch (err) {
+                          setError('Failed to update curve type');
+                        }
                       }}
                       defaultCollapsed={false}
                       position="bottom"
@@ -1774,6 +1809,70 @@ export default function ChainBuilder() {
           </Box>
         </Box>
       </Drawer>
+
+      {/* Automation Lane Parameter Selector Dialog */}
+      <Dialog
+        open={automationLaneDialogOpen}
+        onClose={() => setAutomationLaneDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add Automation Lane</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select a parameter to automate:
+          </Typography>
+          {selectedChain?.plugins && selectedChain.plugins.length > 0 ? (
+            <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+              {selectedChain.plugins.map((plugin) => (
+                <Box key={plugin.uri} sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    {plugin.name}
+                  </Typography>
+                  <Box sx={{ pl: 2 }}>
+                    {plugin.parameters?.map((param) => {
+                      const paramId = `${plugin.uri}:${param.symbol}`;
+                      return (
+                        <Button
+                          key={param.index}
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          sx={{ mb: 0.5, justifyContent: 'flex-start', textTransform: 'none' }}
+                          onClick={async () => {
+                            try {
+                              await automationApi.createLane({
+                                parameter_id: paramId,
+                                points: [],
+                                enabled: true,
+                              });
+                              setAutomationLaneDialogOpen(false);
+                            } catch (err) {
+                              setError('Failed to create automation lane');
+                            }
+                          }}
+                        >
+                          {param.name}
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                            {param.min.toFixed(1)} - {param.max.toFixed(1)}
+                          </Typography>
+                        </Button>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No plugins in the current chain. Add plugins first to create automation lanes.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAutomationLaneDialogOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
         </>
       )}
     </Box>

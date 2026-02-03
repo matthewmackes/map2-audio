@@ -5,7 +5,43 @@
 #include "JuceAudioIO.h"
 #include <juce_audio_devices/juce_audio_devices.h>
 
+// Fix #10: CPU Core Affinity for audio thread
+#if defined(__linux__)
+#include <pthread.h>
+#include <sched.h>
+#include <unistd.h>
+#endif
+
 namespace map2 {
+
+namespace {
+    // Set CPU affinity for audio thread (Linux only)
+    // Pin to CPU 1 to avoid core 0 (used by kernel/interrupts)
+    void setAudioThreadAffinity() {
+#if defined(__linux__)
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        
+        // Try to pin to core 1, fallback to any core if not available
+        int numCores = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
+        if (numCores > 1) {
+            CPU_SET(1, &cpuset);  // Prefer core 1 (avoid core 0)
+        } else {
+            CPU_SET(0, &cpuset);
+        }
+        
+        pthread_t currentThread = pthread_self();
+        int result = pthread_setaffinity_np(currentThread, sizeof(cpu_set_t), &cpuset);
+        
+        // Set SCHED_FIFO for real-time priority if possible
+        struct sched_param param;
+        param.sched_priority = 80;  // RT priority (1-99, higher = more priority)
+        pthread_setschedparam(currentThread, SCHED_FIFO, &param);
+        
+        (void)result;  // Ignore errors - not critical
+#endif
+    }
+}
 
 JuceAudioIO::JuceAudioIO() {
     // Initialize JUCE message manager if not already done
@@ -301,6 +337,9 @@ void JuceAudioIO::audioDeviceAboutToStart(juce::AudioIODevice* device) {
 
     currentSampleRate_ = device->getCurrentSampleRate();
     currentBufferSize_ = device->getCurrentBufferSizeSamples();
+
+    // Fix #10: Set CPU affinity for the audio callback thread
+    setAudioThreadAffinity();
 
     {
         std::lock_guard<std::mutex> lock(statsMutex_);

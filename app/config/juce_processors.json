@@ -158,6 +158,452 @@
         {"name": "Normalize", "symbol": "normalize", "type": "toggle", "default": true},
         {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
       ]
+    },
+    {
+      "uri": "map2://juce/delay",
+      "name": "Stereo Delay",
+      "category": "Delay",
+      "description": "Professional multi-tap stereo delay with tempo sync, modulation, and ducking",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/delay",
+      "features": ["tap-tempo", "tempo-sync", "multi-tap", "modulation", "ducking", "real-time-metering"],
+      "parameters": [
+        {"name": "Delay L", "symbol": "delay_time_l", "min": 1, "max": 2000, "default": 500, "unit": "ms", "logarithmic": true},
+        {"name": "Delay R", "symbol": "delay_time_r", "min": 1, "max": 2000, "default": 500, "unit": "ms", "logarithmic": true},
+        {"name": "Feedback", "symbol": "feedback", "min": 0, "max": 100, "default": 30, "unit": "%"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Tempo", "symbol": "tempo", "min": 20, "max": 300, "default": 120, "unit": "BPM"},
+        {"name": "Sync L", "symbol": "tempo_sync_l", "type": "enum", "options": ["Off", "1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/1D", "1/2D", "1/4D", "1/8D", "1/16D", "1/1T", "1/2T", "1/4T", "1/8T", "1/16T"], "default": 0},
+        {"name": "Sync R", "symbol": "tempo_sync_r", "type": "enum", "options": ["Off", "1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/1D", "1/2D", "1/4D", "1/8D", "1/16D", "1/1T", "1/2T", "1/4T", "1/8T", "1/16T"], "default": 0},
+        {"name": "Stereo Mode", "symbol": "stereo_mode", "type": "enum", "options": ["Mono", "Stereo", "Ping-Pong", "Dual Mono"], "default": 1},
+        {"name": "Stereo Spread", "symbol": "stereo_spread", "min": 0, "max": 200, "default": 100, "unit": "%"},
+        {"name": "Mod Rate", "symbol": "mod_rate", "min": 0.01, "max": 10, "default": 0.5, "unit": "Hz", "logarithmic": true},
+        {"name": "Mod Depth", "symbol": "mod_depth", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Mod Waveform", "symbol": "mod_waveform", "type": "enum", "options": ["Sine", "Triangle", "Random"], "default": 0},
+        {"name": "Low Cut", "symbol": "low_cut", "min": 20, "max": 2000, "default": 20, "unit": "Hz", "logarithmic": true},
+        {"name": "High Cut", "symbol": "high_cut", "min": 1000, "max": 20000, "default": 12000, "unit": "Hz", "logarithmic": true},
+        {"name": "Filter In Loop", "symbol": "filter_in_loop", "type": "toggle", "default": true},
+        {"name": "Diffusion", "symbol": "diffusion", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Duck Threshold", "symbol": "duck_threshold", "min": -60, "max": 0, "default": -20, "unit": "dB"},
+        {"name": "Duck Amount", "symbol": "duck_amount", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Duck Release", "symbol": "duck_release", "min": 10, "max": 2000, "default": 200, "unit": "ms", "logarithmic": true},
+        {"name": "Output", "symbol": "output_level", "min": -12, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Spillover", "symbol": "spillover", "type": "toggle", "default": true},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "multi_tap": {
+        "count": 4,
+        "taps": [
+          {"name": "Tap 1 Level", "symbol": "tap1_level", "min": 0, "max": 100, "default": 100, "unit": "%"},
+          {"name": "Tap 2 Level", "symbol": "tap2_level", "min": 0, "max": 100, "default": 0, "unit": "%"},
+          {"name": "Tap 2 Ratio", "symbol": "tap2_ratio", "min": 0.1, "max": 1, "default": 0.5},
+          {"name": "Tap 3 Level", "symbol": "tap3_level", "min": 0, "max": 100, "default": 0, "unit": "%"},
+          {"name": "Tap 3 Ratio", "symbol": "tap3_ratio", "min": 0.1, "max": 1, "default": 0.33},
+          {"name": "Tap 4 Level", "symbol": "tap4_level", "min": 0, "max": 100, "default": 0, "unit": "%"},
+          {"name": "Tap 4 Ratio", "symbol": "tap4_ratio", "min": 0.1, "max": 1, "default": 0.25}
+        ]
+      }
+    },
+    {
+      "uri": "map2://juce/modulation/chorus",
+      "name": "Stereo Chorus",
+      "category": "Modulation",
+      "description": "Classic stereo chorus with adjustable depth, rate, and centre delay for rich modulation",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/modulation/chorus",
+      "features": ["real-time-metering", "lfo-visualization"],
+      "parameters": [
+        {"name": "Rate", "symbol": "rate", "min": 0.1, "max": 10, "default": 1.0, "unit": "Hz", "logarithmic": true},
+        {"name": "Depth", "symbol": "depth", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Centre Delay", "symbol": "centre_delay", "min": 1, "max": 30, "default": 7, "unit": "ms"},
+        {"name": "Feedback", "symbol": "feedback", "min": -100, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Spread", "symbol": "spread", "min": 0, "max": 100, "default": 100, "unit": "%"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/modulation/phaser",
+      "name": "6-Stage Phaser",
+      "category": "Modulation",
+      "description": "Classic 6-stage phaser with modulated all-pass filters for sweeping notches",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/modulation/phaser",
+      "features": ["real-time-metering", "lfo-visualization"],
+      "parameters": [
+        {"name": "Rate", "symbol": "rate", "min": 0.05, "max": 5, "default": 0.5, "unit": "Hz", "logarithmic": true},
+        {"name": "Depth", "symbol": "depth", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Centre Frequency", "symbol": "centre_frequency", "min": 100, "max": 10000, "default": 1000, "unit": "Hz", "logarithmic": true},
+        {"name": "Feedback", "symbol": "feedback", "min": -100, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/pitch/shifter",
+      "name": "EVH Harmonizer",
+      "category": "Pitch",
+      "description": "Eventide-style dual pitch shifter with Van Halen song-inspired presets",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/pitch/shifter",
+      "features": ["real-time-metering", "preset-browser", "stereo-visualization"],
+      "parameters": [
+        {"name": "Pitch L", "symbol": "pitch_l", "min": -1200, "max": 1200, "default": 0, "unit": "cents"},
+        {"name": "Pitch R", "symbol": "pitch_r", "min": -1200, "max": 1200, "default": 0, "unit": "cents"},
+        {"name": "Delay L", "symbol": "delay_l", "min": 0, "max": 100, "default": 0, "unit": "ms"},
+        {"name": "Delay R", "symbol": "delay_r", "min": 0, "max": 100, "default": 0, "unit": "ms"},
+        {"name": "Feedback", "symbol": "feedback", "min": 0, "max": 90, "default": 0, "unit": "%"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Spread", "symbol": "spread", "min": 0, "max": 200, "default": 100, "unit": "%"},
+        {"name": "Preset", "symbol": "preset", "type": "enum", "options": [
+          "Manual",
+          "Eruption (VH1 1978)",
+          "Unchained (Fair Warning 1981)",
+          "Little Guitars (Diver Down 1982)",
+          "Mean Street (Fair Warning 1981)",
+          "Drop Dead Legs (1984)",
+          "Panama (1984)",
+          "Cathedral (Diver Down 1982)",
+          "Hot For Teacher (1984)",
+          "Why Can't This Be Love (5150 1986)",
+          "Dreams (5150 1986)",
+          "Finish What Ya Started (OU812 1988)",
+          "Right Now (F.U.C.K. 1991)",
+          "Can't Stop Lovin' You (Balance 1995)",
+          "Humans Being (Twister 1996)"
+        ], "default": 0},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "description": "Van Halen-inspired presets based on documented Eventide H910/H949/H3000 settings",
+        "sources": [
+          "Eventide Audio Forums",
+          "VHLinks.com",
+          "Metropoulos Forum",
+          "Premier Guitar"
+        ],
+        "presets": [
+          {
+            "name": "Manual",
+            "description": "User-defined pitch shift settings"
+          },
+          {
+            "name": "Eruption",
+            "song": "Eruption",
+            "album": "Van Halen",
+            "year": "1978",
+            "description": "Classic VH1 tone - subtle +/-4c detune with 3/6ms delay stagger",
+            "settings": {"pitch_l": 4, "pitch_r": -4, "delay_l": 3, "delay_r": 6, "mix": 40}
+          },
+          {
+            "name": "Unchained",
+            "song": "Unchained",
+            "album": "Fair Warning",
+            "year": "1981",
+            "description": "Punchy H910 detune for the main riff",
+            "settings": {"pitch_l": 4, "pitch_r": -4, "delay_l": 3, "delay_r": 6, "mix": 35}
+          },
+          {
+            "name": "Little Guitars",
+            "song": "Little Guitars",
+            "album": "Diver Down",
+            "year": "1982",
+            "description": "Delicate shimmer for nylon-string intro",
+            "settings": {"pitch_l": 5, "pitch_r": -5, "delay_l": 5, "delay_r": 10, "mix": 30}
+          },
+          {
+            "name": "Mean Street",
+            "song": "Mean Street",
+            "album": "Fair Warning",
+            "year": "1981",
+            "description": "Heavier detune for the slap-tap intro",
+            "settings": {"pitch_l": 7, "pitch_r": -7, "delay_l": 8, "delay_r": 16, "mix": 45}
+          },
+          {
+            "name": "Drop Dead Legs",
+            "song": "Drop Dead Legs",
+            "album": "1984",
+            "year": "1984",
+            "description": "Sub-octave effect - left channel down 12 semitones",
+            "settings": {"pitch_l": -1200, "pitch_r": 0, "delay_l": 0, "delay_r": 0, "mix": 25}
+          },
+          {
+            "name": "Panama",
+            "song": "Panama",
+            "album": "1984",
+            "year": "1984",
+            "description": "Classic H949 detune with staggered delay",
+            "settings": {"pitch_l": 7, "pitch_r": -9, "delay_l": 8, "delay_r": 20, "mix": 40}
+          },
+          {
+            "name": "Cathedral",
+            "song": "Cathedral",
+            "album": "Diver Down",
+            "year": "1982",
+            "description": "Shimmer/echo effect with feedback for ethereal quality",
+            "settings": {"pitch_l": 12, "pitch_r": -12, "delay_l": 80, "delay_r": 100, "feedback": 40, "mix": 50}
+          },
+          {
+            "name": "Hot For Teacher",
+            "song": "Hot For Teacher",
+            "album": "1984",
+            "year": "1984",
+            "description": "Punchy detune for the main riff",
+            "settings": {"pitch_l": 6, "pitch_r": -6, "delay_l": 5, "delay_r": 12, "mix": 35}
+          },
+          {
+            "name": "Why Can't This Be Love",
+            "song": "Why Can't This Be Love",
+            "album": "5150",
+            "year": "1986",
+            "description": "H3000 micropitch - the Sammy era signature sound",
+            "settings": {"pitch_l": 9, "pitch_r": -9, "delay_l": 0, "delay_r": 25, "mix": 45}
+          },
+          {
+            "name": "Dreams",
+            "song": "Dreams",
+            "album": "5150",
+            "year": "1986",
+            "description": "Wide stereo micropitch with longer delay",
+            "settings": {"pitch_l": 9, "pitch_r": -9, "delay_l": 20, "delay_r": 50, "mix": 50}
+          },
+          {
+            "name": "Finish What Ya Started",
+            "song": "Finish What Ya Started",
+            "album": "OU812",
+            "year": "1988",
+            "description": "Clean subtle micropitch for acoustic tones",
+            "settings": {"pitch_l": 6, "pitch_r": -6, "delay_l": 0, "delay_r": 15, "mix": 35}
+          },
+          {
+            "name": "Right Now",
+            "song": "Right Now",
+            "album": "For Unlawful Carnal Knowledge",
+            "year": "1991",
+            "description": "Thick micropitch for bold arena rock sound",
+            "settings": {"pitch_l": 9, "pitch_r": -9, "delay_l": 0, "delay_r": 25, "mix": 50}
+          },
+          {
+            "name": "Can't Stop Lovin' You",
+            "song": "Can't Stop Lovin' You",
+            "album": "Balance",
+            "year": "1995",
+            "description": "Smooth ballad tone with micropitch",
+            "settings": {"pitch_l": 9, "pitch_r": -9, "delay_l": 0, "delay_r": 20, "mix": 40}
+          },
+          {
+            "name": "Humans Being",
+            "song": "Humans Being",
+            "album": "Twister Soundtrack",
+            "year": "1996",
+            "description": "Thick dramatic detune with feedback",
+            "settings": {"pitch_l": 12, "pitch_r": -12, "delay_l": 0, "delay_r": 30, "feedback": 15, "mix": 55}
+          }
+        ]
+      }
+    },
+    {
+      "uri": "map2://juce/modulation/intellifx",
+      "name": "IntelliFX 8-Voice",
+      "category": "Modulation",
+      "description": "Rocktron IntelliFX-style 8-voice multi-chorus with HUSH noise reduction. Each voice can be individually controlled with pan, level, delay, depth, and rate for rich, complex modulation textures.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 9,
+      "is_native": true,
+      "api_base": "/api/engine/modulation/intellifx",
+      "features": ["real-time-metering", "multi-voice-visualization", "preset-browser", "hush-noise-reduction"],
+      "parameters": [
+        {"name": "Voice 1 Level", "symbol": "v1_level", "min": -60, "max": 12, "default": -6, "unit": "dB"},
+        {"name": "Voice 1 Pan", "symbol": "v1_pan", "min": -100, "max": 100, "default": -50, "unit": "%"},
+        {"name": "Voice 1 Delay", "symbol": "v1_delay", "min": 0, "max": 200, "default": 10, "unit": "ms"},
+        {"name": "Voice 1 Depth", "symbol": "v1_depth", "min": 0, "max": 100, "default": 25, "unit": "%"},
+        {"name": "Voice 1 Rate", "symbol": "v1_rate", "min": 0, "max": 254, "default": 40, "unit": "rate"},
+        {"name": "Voice 2 Level", "symbol": "v2_level", "min": -60, "max": 12, "default": -6, "unit": "dB"},
+        {"name": "Voice 2 Pan", "symbol": "v2_pan", "min": -100, "max": 100, "default": -30, "unit": "%"},
+        {"name": "Voice 2 Delay", "symbol": "v2_delay", "min": 0, "max": 200, "default": 15, "unit": "ms"},
+        {"name": "Voice 2 Depth", "symbol": "v2_depth", "min": 0, "max": 100, "default": 25, "unit": "%"},
+        {"name": "Voice 2 Rate", "symbol": "v2_rate", "min": 0, "max": 254, "default": 50, "unit": "rate"},
+        {"name": "Voice 3 Level", "symbol": "v3_level", "min": -60, "max": 12, "default": -6, "unit": "dB"},
+        {"name": "Voice 3 Pan", "symbol": "v3_pan", "min": -100, "max": 100, "default": -10, "unit": "%"},
+        {"name": "Voice 3 Delay", "symbol": "v3_delay", "min": 0, "max": 200, "default": 20, "unit": "ms"},
+        {"name": "Voice 3 Depth", "symbol": "v3_depth", "min": 0, "max": 100, "default": 25, "unit": "%"},
+        {"name": "Voice 3 Rate", "symbol": "v3_rate", "min": 0, "max": 254, "default": 45, "unit": "rate"},
+        {"name": "Voice 4 Level", "symbol": "v4_level", "min": -60, "max": 12, "default": -6, "unit": "dB"},
+        {"name": "Voice 4 Pan", "symbol": "v4_pan", "min": -100, "max": 100, "default": 10, "unit": "%"},
+        {"name": "Voice 4 Delay", "symbol": "v4_delay", "min": 0, "max": 200, "default": 25, "unit": "ms"},
+        {"name": "Voice 4 Depth", "symbol": "v4_depth", "min": 0, "max": 100, "default": 25, "unit": "%"},
+        {"name": "Voice 4 Rate", "symbol": "v4_rate", "min": 0, "max": 254, "default": 55, "unit": "rate"},
+        {"name": "Voice 5 Level", "symbol": "v5_level", "min": -60, "max": 12, "default": -8, "unit": "dB"},
+        {"name": "Voice 5 Pan", "symbol": "v5_pan", "min": -100, "max": 100, "default": 30, "unit": "%"},
+        {"name": "Voice 5 Delay", "symbol": "v5_delay", "min": 0, "max": 200, "default": 30, "unit": "ms"},
+        {"name": "Voice 5 Depth", "symbol": "v5_depth", "min": 0, "max": 100, "default": 20, "unit": "%"},
+        {"name": "Voice 5 Rate", "symbol": "v5_rate", "min": 0, "max": 254, "default": 60, "unit": "rate"},
+        {"name": "Voice 6 Level", "symbol": "v6_level", "min": -60, "max": 12, "default": -8, "unit": "dB"},
+        {"name": "Voice 6 Pan", "symbol": "v6_pan", "min": -100, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Voice 6 Delay", "symbol": "v6_delay", "min": 0, "max": 200, "default": 35, "unit": "ms"},
+        {"name": "Voice 6 Depth", "symbol": "v6_depth", "min": 0, "max": 100, "default": 20, "unit": "%"},
+        {"name": "Voice 6 Rate", "symbol": "v6_rate", "min": 0, "max": 254, "default": 65, "unit": "rate"},
+        {"name": "Voice 7 Level", "symbol": "v7_level", "min": -60, "max": 12, "default": -10, "unit": "dB"},
+        {"name": "Voice 7 Pan", "symbol": "v7_pan", "min": -100, "max": 100, "default": 70, "unit": "%"},
+        {"name": "Voice 7 Delay", "symbol": "v7_delay", "min": 0, "max": 200, "default": 40, "unit": "ms"},
+        {"name": "Voice 7 Depth", "symbol": "v7_depth", "min": 0, "max": 100, "default": 15, "unit": "%"},
+        {"name": "Voice 7 Rate", "symbol": "v7_rate", "min": 0, "max": 254, "default": 70, "unit": "rate"},
+        {"name": "Voice 8 Level", "symbol": "v8_level", "min": -60, "max": 12, "default": -10, "unit": "dB"},
+        {"name": "Voice 8 Pan", "symbol": "v8_pan", "min": -100, "max": 100, "default": 90, "unit": "%"},
+        {"name": "Voice 8 Delay", "symbol": "v8_delay", "min": 0, "max": 200, "default": 45, "unit": "ms"},
+        {"name": "Voice 8 Depth", "symbol": "v8_depth", "min": 0, "max": 100, "default": 15, "unit": "%"},
+        {"name": "Voice 8 Rate", "symbol": "v8_rate", "min": 0, "max": 254, "default": 75, "unit": "rate"},
+        {"name": "Chorus Level", "symbol": "chorus_level", "min": -60, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Direct Level L", "symbol": "direct_level_l", "min": -60, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Direct Level R", "symbol": "direct_level_r", "min": -60, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Regeneration L", "symbol": "regen_l", "min": 0, "max": 100, "default": 30, "unit": "%"},
+        {"name": "Regeneration R", "symbol": "regen_r", "min": 0, "max": 100, "default": 30, "unit": "%"},
+        {"name": "HUSH Enabled", "symbol": "hush_enabled", "type": "toggle", "default": true},
+        {"name": "HUSH Threshold", "symbol": "hush_threshold", "min": -80, "max": 0, "default": -40, "unit": "dB"},
+        {"name": "HUSH Release", "symbol": "hush_release", "min": 10, "max": 1000, "default": 100, "unit": "ms", "logarithmic": true},
+        {"name": "Preset", "symbol": "preset", "type": "enum", "default": 0},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://juce/pitch/boss-xs1",
+      "name": "Boss XS-1 Poly Shifter",
+      "category": "Pitch",
+      "description": "Polyphonic pitch shifter emulating the Boss XS-1 pedal with expression pedal control, detune mode, and 23 professional presets for drop tunings, capo simulation, octave effects, and doubling.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/pitch/boss-xs1",
+      "features": ["real-time-metering", "preset-browser", "expression-pedal", "polyphonic"],
+      "parameters": [
+        {"name": "Shift Amount", "symbol": "shift_amount", "min": -7, "max": 7, "default": 0, "unit": "st"},
+        {"name": "Balance", "symbol": "balance", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Detune Mode", "symbol": "detune_mode", "type": "toggle", "default": false},
+        {"name": "Detune Amount", "symbol": "detune_amount", "min": -20, "max": 20, "default": 20, "unit": "cents"},
+        {"name": "Glide", "symbol": "glide", "min": 0, "max": 100, "default": 0, "unit": "ms"},
+        {"name": "Feedback", "symbol": "feedback", "min": 0, "max": 70, "default": 0, "unit": "%"},
+        {"name": "Pedal Enabled", "symbol": "pedal_enabled", "type": "toggle", "default": false},
+        {"name": "Pedal Position", "symbol": "pedal_position", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Pedal Min", "symbol": "pedal_min", "min": -36, "max": 36, "default": -7, "unit": "st"},
+        {"name": "Pedal Max", "symbol": "pedal_max", "min": -36, "max": 36, "default": 7, "unit": "st"},
+        {"name": "Preset", "symbol": "preset", "type": "enum", "options": [
+          "Manual",
+          "Drop D",
+          "Drop D#",
+          "Half Step Down",
+          "Capo 2nd Fret",
+          "Capo 3rd Fret",
+          "Capo 5th Fret",
+          "Octave Up",
+          "Octave Down",
+          "Octave Up/Down",
+          "Micro Pitch Wide",
+          "Micro Pitch Narrow",
+          "Voice Doubling",
+          "String Doubling",
+          "Pianist Octaves",
+          "Sub Bass",
+          "Sonic Screamer",
+          "Unique Intervals",
+          "Minor Third",
+          "Chord Shift",
+          "Detune Chorus",
+          "Spacey Vibrato",
+          "Robotic Mod"
+        ], "default": 0},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "description": "Boss XS-1 style presets for various pitch shifting applications",
+        "categories": {
+          "tuning": ["Drop D", "Drop D#", "Half Step Down"],
+          "capo": ["Capo 2nd Fret", "Capo 3rd Fret", "Capo 5th Fret"],
+          "octave": ["Octave Up", "Octave Down", "Octave Up/Down", "Sub Bass", "Sonic Screamer"],
+          "doubling": ["Micro Pitch Wide", "Micro Pitch Narrow", "Voice Doubling", "String Doubling", "Pianist Octaves"],
+          "creative": ["Unique Intervals", "Minor Third", "Chord Shift", "Detune Chorus", "Spacey Vibrato", "Robotic Mod"]
+        }
+      }
+    },
+    {
+      "uri": "map2://juce/multieffect/shoegaze",
+      "name": "ShoeGaze",
+      "category": "Multi-Effect",
+      "description": "Wall of sound multi-effect: reverb, shimmer, delay, chorus, and saturation inspired by My Bloody Valentine, Slowdive, and Cocteau Twins",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/shoegaze",
+      "features": ["real-time-metering", "preset-browser", "shimmer", "reverb", "delay", "chorus"],
+      "parameters": [
+        {"name": "Atmosphere", "symbol": "atmosphere", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Decay", "symbol": "decay", "min": 0.5, "max": 30, "default": 4, "unit": "s", "logarithmic": true},
+        {"name": "Shimmer", "symbol": "shimmer", "min": 0, "max": 100, "default": 25, "unit": "%"},
+        {"name": "Shimmer Pitch", "symbol": "shimmer_pitch", "min": -12, "max": 24, "default": 12, "unit": "st"},
+        {"name": "Modulation", "symbol": "modulation", "min": 0, "max": 100, "default": 35, "unit": "%"},
+        {"name": "Mod Rate", "symbol": "mod_rate", "min": 0.1, "max": 5, "default": 0.7, "unit": "Hz", "logarithmic": true},
+        {"name": "Drive", "symbol": "drive", "min": 0, "max": 100, "default": 15, "unit": "%"},
+        {"name": "Delay Time", "symbol": "delay_time", "min": 0, "max": 1000, "default": 200, "unit": "ms", "logarithmic": true},
+        {"name": "Delay Feedback", "symbol": "delay_feedback", "min": 0, "max": 90, "default": 30, "unit": "%"},
+        {"name": "Delay Mod", "symbol": "delay_mod", "min": 0, "max": 100, "default": 20, "unit": "%"},
+        {"name": "Low Cut", "symbol": "low_cut", "min": 20, "max": 2000, "default": 80, "unit": "Hz", "logarithmic": true},
+        {"name": "High Cut", "symbol": "high_cut", "min": 1000, "max": 20000, "default": 8000, "unit": "Hz", "logarithmic": true},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Stereo Width", "symbol": "stereo_width", "min": 0, "max": 200, "default": 150, "unit": "%"},
+        {"name": "Reverb Diffusion", "symbol": "reverb_diffusion", "min": 0, "max": 100, "default": 85, "unit": "%"},
+        {"name": "Reverb Damping", "symbol": "reverb_damping", "min": 0, "max": 100, "default": 40, "unit": "%"},
+        {"name": "Shimmer Feedback", "symbol": "shimmer_feedback", "min": 0, "max": 80, "default": 35, "unit": "%"},
+        {"name": "Chorus Voices", "symbol": "chorus_voices", "min": 1, "max": 6, "default": 4, "type": "integer"},
+        {"name": "Ducking", "symbol": "ducking", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Spillover", "symbol": "spillover", "type": "toggle", "default": true},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "presets": [
+          {"id": "manual", "name": "Manual", "artist": "Custom", "description": "User-defined settings"},
+          {"id": "loveless", "name": "Loveless", "artist": "My Bloody Valentine", "description": "Dense, gliding, otherworldly - Kevin Shields' signature sound"},
+          {"id": "souvlaki", "name": "Souvlaki", "artist": "Slowdive", "description": "Ethereal, washy, dream-like - Rachel Goswell era"},
+          {"id": "treasure", "name": "Treasure", "artist": "Cocteau Twins", "description": "Shimmering, crystal-clear highs - Robin Guthrie's signature"},
+          {"id": "space_age", "name": "Space Age", "artist": "Spiritualized", "description": "Expansive, slowly evolving - Jason Pierce's spacious sound"},
+          {"id": "psychocandy", "name": "Psychocandy", "artist": "Jesus and Mary Chain", "description": "Feedback-drenched noise-gaze"},
+          {"id": "nowhere", "name": "Nowhere", "artist": "Ride", "description": "Swirling, propulsive textures - Mark Gardener's sound"}
+        ]
+      }
     }
   ]
 }

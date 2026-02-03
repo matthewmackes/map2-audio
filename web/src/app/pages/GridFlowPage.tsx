@@ -58,6 +58,7 @@ import {
   ChainEndpoint,
   GridMidiMappingsPanel,
   GridAutomationTimeline,
+  AudioPortSelector,
   getCategoryConfig,
 } from '../components/GridFlow'
 import type { AudioInterfaceStatus, MidiMapping, AutomationLane } from '../components/GridFlow'
@@ -69,6 +70,7 @@ import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { AudioConfigDialog } from '../../map2/components/Audio'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { ChainManagementCard } from '../components/ChainManagementCard'
+import { NumberInput } from '../components/Controls/NumberInput'
 import type { Chain, Plugin, HistoryStatus } from '../../map2/types'
 
 // ============================================================================
@@ -254,6 +256,7 @@ export function GridFlowPage() {
   const [showAudioConfig, setShowAudioConfig] = useState(false)
   const [pluginSearchQuery, setPluginSearchQuery] = useState('')
   const [midiLearnActive, setMidiLearnActive] = useState(false)
+  const [isRefreshingPlugins, setIsRefreshingPlugins] = useState(false)
 
   // Enhanced UI State
   const [detailsPlugin, setDetailsPlugin] = useState<Plugin | null>(null)
@@ -291,6 +294,11 @@ export function GridFlowPage() {
   const [automationCurrentTime, setAutomationCurrentTime] = useState(0)
   const [automationDuration, setAutomationDuration] = useState(60)
   const [automationLanes, setAutomationLanes] = useState<AutomationLane[]>([])
+  const [lanePickerOpen, setLanePickerOpen] = useState(false)
+
+  // Audio Port Selection State
+  const [inputPortSelectorOpen, setInputPortSelectorOpen] = useState(false)
+  const [outputPortSelectorOpen, setOutputPortSelectorOpen] = useState(false)
 
   // Persist state to localStorage
   useEffect(() => {
@@ -347,6 +355,19 @@ export function GridFlowPage() {
     queryKey: ['metrics', 'jack'],
     queryFn: metricsApi.getJack,
     refetchInterval: 2000,
+  })
+
+  // Fetch audio port routing
+  const portsQuery = useQuery({
+    queryKey: ['audio', 'ports'],
+    queryFn: audioApi.getPorts,
+    refetchInterval: 10000,
+  })
+
+  const routingQuery = useQuery({
+    queryKey: ['audio', 'routing'],
+    queryFn: audioApi.getRouting,
+    refetchInterval: 5000,
   })
 
   // CPU metrics hook
@@ -472,12 +493,29 @@ export function GridFlowPage() {
     })
   }, [pluginsQuery.data, pluginSearchQuery, selectedCategory])
 
-  // Group plugins by category for collapsible display
+  // Separate native JUCE processors from LV2 plugins
+  const { nativeProcessors, lv2Plugins } = useMemo(() => {
+    const native: Plugin[] = []
+    const lv2: Plugin[] = []
+
+    filteredPlugins.forEach(p => {
+      // Check if it's a native JUCE processor (URI starts with map2://)
+      if (p.uri.startsWith('map2://')) {
+        native.push(p)
+      } else {
+        lv2.push(p)
+      }
+    })
+
+    return { nativeProcessors: native, lv2Plugins: lv2 }
+  }, [filteredPlugins])
+
+  // Group LV2 plugins by category for collapsible display
   const groupedPlugins = useMemo(() => {
     const groups: Record<string, Plugin[]> = {}
     const favoritesList: Plugin[] = []
 
-    filteredPlugins.forEach(p => {
+    lv2Plugins.forEach(p => {
       if (favoritePlugins.has(p.uri)) favoritesList.push(p)
       const cat = p.category || 'Other'
       if (!groups[cat]) groups[cat] = []
@@ -490,19 +528,39 @@ export function GridFlowPage() {
       return [['Favorites', favoritesList] as [string, Plugin[]], ...sorted]
     }
     return sorted
-  }, [filteredPlugins, favoritePlugins])
+  }, [lv2Plugins, favoritePlugins])
 
   // Compute audio interface status
+  // Get port routing data
+  const portRouting = routingQuery.data
+  const portsInfo = portsQuery.data
+
   const audioInterfaceStatus: AudioInterfaceStatus = useMemo(() => ({
-    deviceName: audioStatus?.engine || 'JACK Audio',
+    deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
     latencyMs: jackMetrics ? (jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000 * 2 : 5.3,
-    channels: 2,
+    channels: portRouting?.input_ports?.length || 2,
     cpuLoad: cpuMetrics.totalCpuPercent,
     xruns: cpuMetrics.xrunCount,
     isRunning: audioStatus?.running ?? true,
-  }), [audioStatus, jackMetrics, cpuMetrics])
+    selectedPorts: portRouting?.input_ports || [],
+    totalPorts: portsInfo?.input_count || 2,
+  }), [audioStatus, jackMetrics, cpuMetrics, portRouting, portsInfo])
+
+  // Create separate output status with output port info
+  const audioOutputStatus: AudioInterfaceStatus = useMemo(() => ({
+    deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
+    sampleRate: jackMetrics?.sample_rate || 48000,
+    bufferSize: jackMetrics?.buffer_size || 256,
+    latencyMs: jackMetrics ? (jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000 * 2 : 5.3,
+    channels: portRouting?.output_ports?.length || 2,
+    cpuLoad: cpuMetrics.totalCpuPercent,
+    xruns: cpuMetrics.xrunCount,
+    isRunning: audioStatus?.running ?? true,
+    selectedPorts: portRouting?.output_ports || [],
+    totalPorts: portsInfo?.output_count || 2,
+  }), [audioStatus, jackMetrics, cpuMetrics, portRouting, portsInfo])
 
   // ============================================================================
   // Mutations
@@ -694,6 +752,11 @@ export function GridFlowPage() {
     setShowPluginBrowser(true)
   }, [])
 
+  const handleAddPluginDirect = useCallback((uri: string) => {
+    if (!currentChain) return
+    addPluginMutation.mutate({ chainId: currentChain.id, pluginUri: uri })
+  }, [currentChain, addPluginMutation])
+
   // Parameter handling
   const handleParameterChange = useCallback((symbol: string, value: number) => {
     if (!selectedPluginMeta || !selectedPluginUri) return
@@ -715,6 +778,23 @@ export function GridFlowPage() {
       bypass: !selectedPlugin.bypassed,
     })
   }, [selectedPlugin, currentChain, bypassMutation])
+
+  // Refresh plugins discovery (force refresh to pick up newly installed plugins)
+  const handleRefreshPlugins = useCallback(async () => {
+    setIsRefreshingPlugins(true)
+    try {
+      // Call API with refresh=true to bypass backend cache
+      await pluginsApi.discover(true)
+      // Invalidate React Query cache to refetch
+      await queryClient.invalidateQueries({ queryKey: ['plugins', 'discover'] })
+      pushToast('Plugin list refreshed', 'success')
+    } catch (err) {
+      console.error('Failed to refresh plugins:', err)
+      pushToast('Failed to refresh plugins', 'error')
+    } finally {
+      setIsRefreshingPlugins(false)
+    }
+  }, [queryClient, pushToast])
 
   // Chain operations
   const handleToggleChainActive = useCallback(() => {
@@ -1082,18 +1162,20 @@ export function GridFlowPage() {
             </div>
           </div>
 
-          {/* Morph slider (when in morph mode) */}
+          {/* Morph value (when in morph mode) */}
           {routing.mode === 'parameter_morph' && (
             <div className="grid-toolbar-morph">
-              <span>Morph</span>
-              <input
-                type="range"
+              <NumberInput
+                label="Morph"
+                value={routing.morphProgress * 100}
                 min={0}
                 max={100}
-                value={routing.morphProgress * 100}
-                onChange={(e) => setMorphProgress(Number(e.target.value) / 100)}
+                step={1}
+                unit="%"
+                onChange={(v) => setMorphProgress(v / 100)}
+                size="small"
+                inline
               />
-              <span>{(routing.morphProgress * 100).toFixed(0)}%</span>
             </div>
           )}
         </div>
@@ -1174,6 +1256,16 @@ export function GridFlowPage() {
         </div>
       </header>
 
+      {/* Chains Grid - below title */}
+      <ChainManagementCard
+        selectedChainId={activeFlow?.chainId}
+        onChainSelect={(chainId) => {
+          if (activeFlow) {
+            updateFlow(activeFlow.id, { chainId })
+          }
+        }}
+      />
+
       {/* Main content area */}
       <main className="grid-flow-main">
         {/* Multi-flow signal grids */}
@@ -1187,30 +1279,20 @@ export function GridFlowPage() {
               <div
                 key={flow.id}
                 className={`grid-flow-slot ${isActive ? 'active' : ''} ${flow.muted ? 'muted' : ''} ${flow.solo ? 'solo' : ''}`}
-                style={{ '--flow-color': flow.color } as React.CSSProperties}
+                style={{ '--flow-color': SLOT_COLORS[index]?.color || flow.color } as React.CSSProperties}
                 onClick={() => setActiveFlowIndex(index)}
               >
-                {/* Flow Header */}
-                <div className="grid-flow-slot-header">
-                  <span className="grid-flow-slot-label">{flow.label}</span>
+                {/* Vertical title on the left */}
+                <div className="grid-flow-slot-title">
+                  <GitBranch size={14} />
+                  <span>Flow</span>
+                </div>
 
-                  {/* Chain selector */}
-                  <select
-                    className="grid-flow-slot-select"
-                    value={flow.chainId ?? ''}
-                    onChange={(e) => {
-                      e.stopPropagation()
-                      updateFlow(flow.id, { chainId: e.target.value ? Number(e.target.value) : null })
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="">Select chain...</option>
-                    {chains.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} {c.is_active ? '●' : ''}
-                      </option>
-                    ))}
-                  </select>
+                {/* Flow content wrapper */}
+                <div className="grid-flow-slot-body">
+                  {/* Flow Header */}
+                  <div className="grid-flow-slot-header">
+                  <span className="grid-flow-slot-label">{SLOT_COLORS[index]?.label || String.fromCharCode(65 + index)}</span>
 
                   {/* Slot info badges */}
                   {flowChain && (
@@ -1227,20 +1309,19 @@ export function GridFlowPage() {
                   )}
 
                   <div className="grid-flow-slot-actions">
-                    {/* Dry/Wet slider */}
-                    <input
-                      type="range"
-                      className="grid-flow-slot-drywet"
-                      min={0}
-                      max={100}
-                      value={flow.dryWetMix}
-                      onChange={(e) => {
-                        e.stopPropagation()
-                        updateFlow(flow.id, { dryWetMix: Number(e.target.value) })
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      title={`Dry/Wet: ${flow.dryWetMix}%`}
-                    />
+                    {/* Dry/Wet input */}
+                    <div onClick={(e) => e.stopPropagation()} title={`Dry/Wet: ${flow.dryWetMix}%`}>
+                      <NumberInput
+                        value={flow.dryWetMix}
+                        min={0}
+                        max={100}
+                        step={1}
+                        unit="%"
+                        onChange={(v) => updateFlow(flow.id, { dryWetMix: v })}
+                        size="small"
+                        showLabel={false}
+                      />
+                    </div>
 
                     {/* Solo button */}
                     <button
@@ -1274,7 +1355,7 @@ export function GridFlowPage() {
                           e.stopPropagation()
                           removeFlow(flow.id)
                         }}
-                        title={`Delete flow ${flow.label}`}
+                        title={`Delete flow ${SLOT_COLORS[index]?.label || String.fromCharCode(65 + index)}`}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -1282,36 +1363,41 @@ export function GridFlowPage() {
                   </div>
                 </div>
 
-                {/* Signal Grid */}
-                <div className="grid-flow-slot-content">
-                  <SignalGrid
-                    chain={flowChain || null}
-                    pluginMeta={pluginMeta}
-                    selectedPluginUri={isActive ? selectedPluginUri : null}
-                    onPluginSelect={(uri) => {
-                      setActiveFlowIndex(index)
-                      handlePluginSelect(uri)
-                    }}
-                    onToggleBypass={handleToggleBypass}
-                    onDeletePlugin={handleDeletePlugin}
-                    onReorderPlugins={handleReorderPlugins}
-                    onAddPlugin={handleAddPlugin}
-                    audioStatus={audioInterfaceStatus}
-                    pluginLevels={pluginLevels}
-                  />
+                  {/* Signal Grid */}
+                  <div className="grid-flow-slot-content">
+                    <SignalGrid
+                      chain={flowChain || null}
+                      pluginMeta={pluginMeta}
+                      selectedPluginUri={isActive ? selectedPluginUri : null}
+                      onPluginSelect={(uri) => {
+                        setActiveFlowIndex(index)
+                        handlePluginSelect(uri)
+                      }}
+                      onToggleBypass={handleToggleBypass}
+                      onDeletePlugin={handleDeletePlugin}
+                      onReorderPlugins={handleReorderPlugins}
+                      onAddPlugin={handleAddPlugin}
+                      onAddPluginDirect={handleAddPluginDirect}
+                      audioStatus={isActive ? audioInterfaceStatus : undefined}
+                      pluginLevels={pluginLevels}
+                      showEndpoints={isActive}
+                      onInputPortSelectClick={() => setInputPortSelectorOpen(true)}
+                      onOutputPortSelectClick={() => setOutputPortSelectorOpen(true)}
+                    />
+                  </div>
                 </div>
               </div>
             )
           })}
-
-          {/* Add Flow Button */}
-          {flowSlots.length < MAX_FLOWS && (
-            <button className="grid-flow-add-btn" onClick={addFlow} title="Add new flow">
-              <Plus size={24} />
-              <span>Add Flow</span>
-            </button>
-          )}
         </div>
+
+        {/* Floating Add Flow Button */}
+        {flowSlots.length < MAX_FLOWS && (
+          <button className="grid-flow-add-btn floating" onClick={addFlow} title="Add new flow">
+            <Plus size={24} />
+            <span>Add Flow</span>
+          </button>
+        )}
 
         {/* Parameter panel */}
         <div className="grid-flow-param-area">
@@ -1321,6 +1407,8 @@ export function GridFlowPage() {
             onParameterChange={handleParameterChange}
             onParameterChangeEnd={handleParameterChangeEnd}
             onToggleBypass={handleToggleSelectedBypass}
+            onRefreshPlugins={handleRefreshPlugins}
+            isRefreshing={isRefreshingPlugins}
           />
 
           {/* Plugin info badges when selected */}
@@ -1373,23 +1461,6 @@ export function GridFlowPage() {
             </div>
           )}
         </div>
-
-        {/* Chains Section */}
-        <section className="grid-flow-chains-section">
-          <div className="grid-flow-section-header">
-            <Layers size={24} />
-            <h2>Chains</h2>
-          </div>
-          <ChainManagementCard
-            selectedChainId={activeFlow?.chainId}
-            onChainSelect={(chainId) => {
-              if (activeFlow) {
-                updateFlow(activeFlow.id, { chainId })
-              }
-            }}
-            defaultExpanded={true}
-          />
-        </section>
       </main>
 
       {/* Plugin Browser Modal */}
@@ -1432,7 +1503,51 @@ export function GridFlowPage() {
             </div>
 
             <div className="grid-flow-modal-list">
-              {/* Grouped by category with collapse/expand */}
+              {/* Core Integrated Capabilities - Always at top, never collapsed */}
+              {nativeProcessors.length > 0 && (
+                <div className="grid-flow-modal-native-section">
+                  <div className="grid-flow-modal-native-header">
+                    <Cpu size={16} />
+                    <span>Core Integrated</span>
+                    <span className="grid-flow-modal-native-badge">Zero Latency</span>
+                  </div>
+                  <div className="grid-flow-modal-native-grid">
+                    {nativeProcessors.map((plugin) => {
+                      const catConfig = getCategoryConfig(plugin.category)
+                      return (
+                        <button
+                          key={plugin.uri}
+                          className="grid-flow-modal-native-item"
+                          onClick={() => {
+                            if (currentChain) {
+                              addPluginMutation.mutate({ chainId: currentChain.id, pluginUri: plugin.uri })
+                            }
+                          }}
+                          style={{ '--accent': catConfig.color } as React.CSSProperties}
+                        >
+                          <span className="grid-flow-modal-native-name">{plugin.name}</span>
+                          <span className="grid-flow-modal-native-category" style={{ color: catConfig.color }}>
+                            {plugin.category}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* LV2 Plugin Library - Grouped by category, all collapsible */}
+              {groupedPlugins.length > 0 && (
+                <div className="grid-flow-modal-lv2-section">
+                  <div className="grid-flow-modal-lv2-header">
+                    <Layers size={14} />
+                    <span>LV2 Plugin Library</span>
+                    <span className="grid-flow-modal-lv2-count">{lv2Plugins.length} plugins</span>
+                  </div>
+                </div>
+              )}
+
+              {/* LV2 Plugins - Grouped by category with collapse/expand */}
               {groupedPlugins.map(([category, plugins]) => {
                 const catConfig = getCategoryConfig(category)
                 const isCollapsed = collapsedCategories.has(category)
@@ -1683,6 +1798,65 @@ export function GridFlowPage() {
         </div>
       )}
 
+      {/* Lane Picker Modal */}
+      {lanePickerOpen && (
+        <div className="grid-flow-modal-overlay" onClick={() => setLanePickerOpen(false)}>
+          <div className="grid-flow-modal lane-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="grid-flow-modal-header">
+              <h2>Add Automation Lane</h2>
+              <button onClick={() => setLanePickerOpen(false)}><X size={20} /></button>
+            </div>
+            <div className="grid-flow-lane-picker-content">
+              <p className="grid-flow-lane-picker-hint">Select a parameter to automate:</p>
+              {currentChain?.plugins && currentChain.plugins.length > 0 ? (
+                <div className="grid-flow-lane-picker-plugins">
+                  {currentChain.plugins.map((plugin: Plugin) => (
+                    <div key={plugin.uri} className="grid-flow-lane-picker-plugin">
+                      <div className="grid-flow-lane-picker-plugin-name">{plugin.name}</div>
+                      <div className="grid-flow-lane-picker-params">
+                        {plugin.parameters?.map((param: { index: number; name: string; symbol: string; min: number; max: number }) => {
+                          const laneColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD']
+                          return (
+                            <button
+                              key={param.index}
+                              className="grid-flow-lane-picker-param"
+                              onClick={() => {
+                                const newLane: AutomationLane = {
+                                  id: `${plugin.uri}:${param.symbol}`,
+                                  parameterName: param.name,
+                                  pluginName: plugin.name,
+                                  pluginUri: plugin.uri,
+                                  parameterSymbol: param.symbol,
+                                  points: [],
+                                  enabled: true,
+                                  armed: false,
+                                  color: laneColors[automationLanes.length % laneColors.length],
+                                }
+                                setAutomationLanes(prev => [...prev, newLane])
+                                setLanePickerOpen(false)
+                              }}
+                            >
+                              {param.name}
+                              <span className="grid-flow-lane-picker-param-range">
+                                {param.min.toFixed(1)} - {param.max.toFixed(1)}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="grid-flow-lane-picker-empty">
+                  No plugins in the active flow. Add plugins first to create automation lanes.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Automation Timeline Bottom Panel */}
       {automationTimelineExpanded && (
         <div className="grid-flow-automation-panel">
@@ -1705,7 +1879,7 @@ export function GridFlowPage() {
             }}
             onToggleLoop={() => setAutomationLoopEnabled(!automationLoopEnabled)}
             onSeek={(time) => setAutomationCurrentTime(time)}
-            onAddLane={() => {/* TODO: Lane picker dialog */}}
+            onAddLane={() => setLanePickerOpen(true)}
             onDeleteLane={(laneId) => setAutomationLanes(prev => prev.filter(l => l.id !== laneId))}
             onToggleLaneEnabled={(laneId) => setAutomationLanes(prev =>
               prev.map(l => l.id === laneId ? { ...l, enabled: !l.enabled } : l)
@@ -1716,6 +1890,27 @@ export function GridFlowPage() {
           />
         </div>
       )}
+
+      {/* Audio Port Selector Modals */}
+      <AudioPortSelector
+        type="input"
+        open={inputPortSelectorOpen}
+        onClose={() => setInputPortSelectorOpen(false)}
+        onPortsChange={() => {
+          queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
+          pushToast('Input ports updated', 'success')
+        }}
+      />
+
+      <AudioPortSelector
+        type="output"
+        open={outputPortSelectorOpen}
+        onClose={() => setOutputPortSelectorOpen(false)}
+        onPortsChange={() => {
+          queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
+          pushToast('Output ports updated', 'success')
+        }}
+      />
 
       {/* Footer Status Bar */}
       <footer className="grid-flow-footer">

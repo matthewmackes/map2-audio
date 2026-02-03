@@ -59,6 +59,15 @@ public:
                        std::function<void(float progress, const std::string& pluginName)> progressCallback = nullptr);
 
     /**
+     * Fix #5: Async plugin scanning - non-blocking, calls completion when done
+     * @param progressCallback Optional callback for progress updates
+     * @param completionCallback Called when scanning is complete
+     */
+    void scanForPluginsAsync(
+        std::function<void(float progress, const std::string& pluginName)> progressCallback = nullptr,
+        std::function<void()> completionCallback = nullptr);
+
+    /**
      * Get list of discovered plugins
      * @param format Filter by format (All for no filter)
      */
@@ -238,6 +247,10 @@ private:
     PluginInfo extractPluginInfo(const juce::PluginDescription& desc) const;
     PluginFormat formatFromString(const juce::String& formatName) const;
     void buildParameterMap(PluginEntry& entry);
+    
+    // Fix #5: Plugin cache management
+    void loadPluginCache();
+    void savePluginCache();
 };
 
 } // namespace map2

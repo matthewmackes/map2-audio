@@ -4,8 +4,13 @@
 
 #include "JucePluginHost.h"
 #include <sstream>
+#include <thread>
+#include <fstream>
 
 namespace map2 {
+
+// Fix #5: Plugin cache file for lazy loading
+static const char* PLUGIN_CACHE_FILE = "/tmp/map2_plugin_cache.xml";
 
 JucePluginHost::JucePluginHost() {
     // Register all available plugin formats
@@ -62,8 +67,31 @@ bool JucePluginHost::initialize(const std::string& searchPaths) {
 #endif
     }
 
+    // Fix #5: Try to load cached plugin list for instant startup
+    loadPluginCache();
+
     initialized_ = true;
     return true;
+}
+
+// Fix #5: Load plugin cache from disk
+void JucePluginHost::loadPluginCache() {
+    juce::File cacheFile(PLUGIN_CACHE_FILE);
+    if (cacheFile.existsAsFile()) {
+        auto xml = juce::XmlDocument::parse(cacheFile);
+        if (xml != nullptr) {
+            knownPlugins_.recreateFromXml(*xml);
+        }
+    }
+}
+
+// Fix #5: Save plugin cache to disk
+void JucePluginHost::savePluginCache() {
+    auto xml = knownPlugins_.createXml();
+    if (xml != nullptr) {
+        juce::File cacheFile(PLUGIN_CACHE_FILE);
+        xml->writeTo(cacheFile);
+    }
 }
 
 void JucePluginHost::shutdown() {
@@ -71,9 +99,30 @@ void JucePluginHost::shutdown() {
 
     std::lock_guard<std::mutex> lock(mutex_);
 
+    // Fix #5: Save plugin cache before shutdown
+    savePluginCache();
+
     // Unload all plugins
     instances_.clear();
     initialized_ = false;
+}
+
+// Fix #5: Async plugin scanning with callback
+void JucePluginHost::scanForPluginsAsync(
+    std::function<void(float, const std::string&)> progressCallback,
+    std::function<void()> completionCallback) {
+    
+    // Launch scan in background thread
+    std::thread([this, progressCallback, completionCallback]() {
+        scanForPlugins(false, progressCallback);
+        
+        // Save cache after scan
+        savePluginCache();
+        
+        if (completionCallback) {
+            completionCallback();
+        }
+    }).detach();
 }
 
 void JucePluginHost::scanForPlugins(bool rescanAll,

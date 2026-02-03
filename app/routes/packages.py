@@ -17,6 +17,8 @@ class InstallRequest(BaseModel):
     """Package installation request"""
     package_name: str
     package_type: str
+    source_url: Optional[str] = None
+    source_path: Optional[str] = None
 
 
 class RemoveRequest(BaseModel):
@@ -149,28 +151,39 @@ async def get_package_info(package_type: str, package_name: str) -> Dict[str, An
 async def install_package(request: InstallRequest) -> Dict[str, Any]:
     """
     Install a package
-    
+
     Request body:
     - package_name: Package name
-    - package_type: Package type (pip, dnf)
-    
+    - package_type: Package type (pip, dnf, lv2, ir_cabinet, ir_reverb, nam)
+    - source_url: Optional URL to download from (for lv2, ir, nam)
+    - source_path: Optional local path to install from (for lv2, ir, nam)
+
     Returns:
         Installation result
     """
     try:
         pkg_type = PackageType(request.package_type)
-        
-        if pkg_type not in [PackageType.SYSTEM_PIP, PackageType.SYSTEM_DNF]:
+
+        # For asset types, require source_url or source_path
+        asset_types = [
+            PackageType.LV2_PLUGIN,
+            PackageType.IR_CABINET,
+            PackageType.IR_REVERB,
+            PackageType.NAM_MODEL
+        ]
+        if pkg_type in asset_types and not (request.source_url or request.source_path):
             raise HTTPException(
                 status_code=400,
-                detail=f"Installation not supported for type: {request.package_type}"
+                detail=f"source_url or source_path required for type: {request.package_type}"
             )
-        
+
         success = await package_manager.install_package(
             request.package_name,
-            pkg_type
+            pkg_type,
+            source_url=request.source_url,
+            source_path=request.source_path
         )
-        
+
         if success:
             return {
                 "status": "success",
@@ -181,7 +194,7 @@ async def install_package(request: InstallRequest) -> Dict[str, Any]:
                 status_code=500,
                 detail=f"Failed to install {request.package_name}"
             )
-        
+
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid package type: {request.package_type}")
     except HTTPException:

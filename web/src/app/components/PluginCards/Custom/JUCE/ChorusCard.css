@@ -1,0 +1,73 @@
+/**
+ * Chorus Card Styles
+ */
+
+.chorus-card-header {
+  display: flex;
+  align-items: center;
+}
+
+.chorus-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary, #fff);
+}
+
+/* Visualization */
+.chorus-visualization {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.chorus-lfo-wave {
+  width: 100%;
+  height: 60px;
+}
+
+.chorus-meters {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  margin-top: 4px;
+}
+
+/* Presets */
+.chorus-presets {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chorus-presets button {
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chorus-presets button:hover {
+  background: rgba(155, 89, 182, 0.2);
+  border-color: #9b59b6;
+  color: var(--text-primary, #fff);
+}
+
+/* Footer */
+.chorus-footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 8px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-secondary, #888);
+}

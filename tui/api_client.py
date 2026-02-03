@@ -1913,6 +1913,10 @@ class MAP2APIClient:
         """Get recent access logs."""
         return await self._request("GET", f"/api/www/logs?limit={limit}&offset={offset}")
 
+    async def clear_access_logs(self) -> APIResult:
+        """Clear access logs."""
+        return await self._request("DELETE", "/api/www/logs")
+
     async def get_websocket_stats(self) -> APIResult:
         """Get WebSocket connection statistics."""
         return await self._request("GET", "/api/www/websocket/stats")

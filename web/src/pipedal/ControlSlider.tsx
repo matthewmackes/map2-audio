@@ -22,7 +22,7 @@
  */
 
 import React, {useEffect} from "react";
-import Slider,{ SliderProps } from "@mui/material/Slider";
+import { NumberInput } from '../map2/components/NumberInput';
 import Typography from "@mui/material/Typography";
 import { PiPedalModelFactory,State } from "./PiPedalModel";
 
@@ -33,7 +33,7 @@ import { PiPedalModelFactory,State } from "./PiPedalModel";
         return `${minute}:${secondLeft < 10 ? `0${secondLeft}` : secondLeft}`;
     }
 
-export interface ControlSliderProps extends SliderProps {
+export interface ControlSliderProps {
     instanceId: number;
     controlKey: string;
     duration: number;
@@ -44,8 +44,8 @@ export interface ControlSliderProps extends SliderProps {
 
 
 function ControlSlider(props: ControlSliderProps) {
-    const { style,instanceId, controlKey, duration, 
-        onPreviewValue, onValueChanged, ...extras} = props;
+    const { style, instanceId, controlKey, duration,
+        onPreviewValue, onValueChanged } = props;
 
     const model = PiPedalModelFactory.getInstance();
 
@@ -72,84 +72,33 @@ function ControlSlider(props: ControlSliderProps) {
         };
     }, [instanceId,controlKey,serverConnected]);
 
+    const currentValue = dragging ? effectiveValue : sliderValue;
+
     return (
-        <div style={{ display: "flex", flexFlow: "column nowrap" }}>
-
-        <Slider
-            {...extras}
-            value={dragging ? effectiveValue : sliderValue}
-            min={0}
-            step={1}
-            max={duration}
-            onChange={(_, val: any) => {
-                let v = parseFloat(val);
-                setDragging(true);
-                setEffectiveValue(v);
-                onPreviewValue(v);
-            }}
-            onChangeCommitted={(_, val: any) => {
-                let v = parseFloat(val);
-                setDragging(false);
-                setSliderValue(v);
-                onValueChanged(v);
-            }}
-            onPointerDown={(e) => {
-                setDragging(true);
-            }}
-            onPointerUp={(e) => {
-                // setDragging(false);
-            }}
-            disabled={duration == 0}
-            sx={(t) => ({
-                width: "100%",
-                color: 'rgba(0,0,0,0.87)',
-                height: 4,
-                '& .MuiSlider-thumb': {
-                    width: 8,
-                    height: 8,
-                    transition: '0.0s',
-                    transitionProperty: 'none',
-                    '&::before': {
-                        boxShadow: '0 2px 12px 0 rgba(0,0,0,0.4)',
-                    },
-                    '&:hover, &.Mui-focusVisible': {
-                        boxShadow: `0px 0px 0px 8px ${'rgb(0 0 0 / 16%)'}`,
-                        ...t.applyStyles('dark', {
-                            boxShadow: `0px 0px 0px 8px ${'rgb(255 255 255 / 16%)'}`,
-                        }),
-                    },
-                    '&.Mui-active': {
-                        width: 20,
-                        height: 20,
-                    },
-                },
-                '& .MuiSlider-rail': {
-                    opacity: 0.28,
-                },
-                '& .MuiSlider-track': {
-                    transition: '0.0s',
-                    transitionProperty: 'none',
-                },
-                ...t.applyStyles('dark', {
-                    color: '#fff',
-                }),
-            })}
-        />
-                <div
-                    style={{
-                        flex: "0 0 auto",
-                        width: "100%",
-                        display: 'flex',
-                        alignItems: 'top',
-                        justifyContent: 'space-between',
-                        marginTop: -4,
+        <div style={{ display: "flex", flexFlow: "column nowrap", ...style }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Typography variant="caption" style={{ minWidth: 50 }}>
+                    {formatDuration(currentValue)}
+                </Typography>
+                <NumberInput
+                    value={currentValue}
+                    min={0}
+                    max={duration}
+                    step={1}
+                    onChange={(v) => {
+                        setDragging(false);
+                        setSliderValue(v);
+                        onValueChanged(v);
                     }}
-                >
-                    <Typography variant="caption">{formatDuration(dragging ? effectiveValue : sliderValue)}</Typography>
-                    <Typography variant="caption">{formatDuration(duration)}</Typography>
-                </div>
+                    disabled={duration === 0}
+                    size="small"
+                    fullWidth
+                />
+                <Typography variant="caption" style={{ minWidth: 50, textAlign: 'right' }}>
+                    {formatDuration(duration)}
+                </Typography>
             </div>
-
+        </div>
     );
 }
 

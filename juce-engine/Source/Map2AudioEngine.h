@@ -26,6 +26,13 @@
 #include "NAMProcessor.h"
 #endif
 
+#include "ChorusProcessor.h"
+#include "PhaserProcessor.h"
+#include "PitchShifterProcessor.h"
+#include "IntelliFX8VoiceChorusProcessor.h"
+#include "BossXS1PolyShifterProcessor.h"
+#include "ShoeGazeProcessor.h"
+
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
 #include <atomic>
@@ -86,6 +93,9 @@ public:
 
     void setBufferSize(int size);
     int getBufferSize() const { return bufferSize_; }
+    
+    // Batch prepare all processors (reduces redundant initialization)
+    void prepareAllProcessors(double sampleRate, int bufferSize, int numChannels);
 
     void setAudioDevice(const std::string& device);
     std::string getAudioDevice() const { return audioDevice_; }
@@ -375,6 +385,240 @@ public:
 #endif
 
     // ========================================
+    // Chorus Processing (NEW)
+    // ========================================
+
+    void setChorusRate(float hz);
+    float getChorusRate() const;
+    void setChorusDepth(float depth);
+    float getChorusDepth() const;
+    void setChorusCentreDelay(float ms);
+    float getChorusCentreDelay() const;
+    void setChorusFeedback(float feedback);
+    float getChorusFeedback() const;
+    void setChorusMix(float mix);
+    float getChorusMix() const;
+    void setChorusSpread(float spread);
+    float getChorusSpread() const;
+    void setChorusBypass(bool bypass);
+    bool isChorusBypassed() const;
+    ChorusProcessor::Parameters getChorusParameters() const;
+    void setChorusParameters(const ChorusProcessor::Parameters& params);
+    ChorusProcessor::Metering getChorusMetering() const;
+    ChorusProcessor& getChorus() { return chorus_; }
+
+    // ========================================
+    // Phaser Processing (NEW)
+    // ========================================
+
+    void setPhaserRate(float hz);
+    float getPhaserRate() const;
+    void setPhaserDepth(float depth);
+    float getPhaserDepth() const;
+    void setPhaserCentreFrequency(float hz);
+    float getPhaserCentreFrequency() const;
+    void setPhaserFeedback(float feedback);
+    float getPhaserFeedback() const;
+    void setPhaserMix(float mix);
+    float getPhaserMix() const;
+    void setPhaserBypass(bool bypass);
+    bool isPhaserBypassed() const;
+    PhaserProcessor::Parameters getPhaserParameters() const;
+    void setPhaserParameters(const PhaserProcessor::Parameters& params);
+    PhaserProcessor::Metering getPhaserMetering() const;
+    PhaserProcessor& getPhaser() { return phaser_; }
+
+    // ========================================
+    // Pitch Shifter / EVH Harmonizer (NEW)
+    // ========================================
+
+    void setPitchShifterPitchL(float cents);
+    float getPitchShifterPitchL() const;
+    void setPitchShifterPitchR(float cents);
+    float getPitchShifterPitchR() const;
+    void setPitchShifterDelayL(float ms);
+    float getPitchShifterDelayL() const;
+    void setPitchShifterDelayR(float ms);
+    float getPitchShifterDelayR() const;
+    void setPitchShifterFeedback(float feedback);
+    float getPitchShifterFeedback() const;
+    void setPitchShifterMix(float percent);
+    float getPitchShifterMix() const;
+    void setPitchShifterSpread(float percent);
+    float getPitchShifterSpread() const;
+    void setPitchShifterPreset(PitchShifterProcessor::Preset preset);
+    PitchShifterProcessor::Preset getPitchShifterPreset() const;
+    void setPitchShifterBypass(bool bypass);
+    bool isPitchShifterBypassed() const;
+    PitchShifterProcessor::Parameters getPitchShifterParameters() const;
+    void setPitchShifterParameters(const PitchShifterProcessor::Parameters& params);
+    PitchShifterProcessor::Metering getPitchShifterMetering() const;
+    PitchShifterProcessor& getPitchShifter() { return pitchShifter_; }
+
+    // ========================================
+    // IntelliFX 8-Voice Chorus (NEW)
+    // ========================================
+
+    // Voice parameters
+    void setIntelliFXVoiceLevel(int voice, float dB);
+    float getIntelliFXVoiceLevel(int voice) const;
+    void setIntelliFXVoicePan(int voice, float pan);
+    float getIntelliFXVoicePan(int voice) const;
+    void setIntelliFXVoiceDelay(int voice, float ms);
+    float getIntelliFXVoiceDelay(int voice) const;
+    void setIntelliFXVoiceDepth(int voice, float depth);
+    float getIntelliFXVoiceDepth(int voice) const;
+    void setIntelliFXVoiceRate(int voice, float rate);
+    float getIntelliFXVoiceRate(int voice) const;
+    IntelliFX8VoiceChorusProcessor::VoiceParameters getIntelliFXVoiceParameters(int voice) const;
+    void setIntelliFXVoiceParameters(int voice, const IntelliFX8VoiceChorusProcessor::VoiceParameters& params);
+
+    // Global mixer
+    void setIntelliFXChorusLevel(float dB);
+    float getIntelliFXChorusLevel() const;
+    void setIntelliFXDirectLevelL(float dB);
+    float getIntelliFXDirectLevelL() const;
+    void setIntelliFXDirectLevelR(float dB);
+    float getIntelliFXDirectLevelR() const;
+    void setIntelliFXRegenL(float dB);
+    float getIntelliFXRegenL() const;
+    void setIntelliFXRegenR(float dB);
+    float getIntelliFXRegenR() const;
+
+    // HUSH
+    void setIntelliFXHushEnabled(bool enabled);
+    bool isIntelliFXHushEnabled() const;
+    void setIntelliFXHushThreshold(float dB);
+    float getIntelliFXHushThreshold() const;
+    void setIntelliFXHushReleaseRate(float ms);
+    float getIntelliFXHushReleaseRate() const;
+    IntelliFX8VoiceChorusProcessor::HushParameters getIntelliFXHushParameters() const;
+    void setIntelliFXHushParameters(const IntelliFX8VoiceChorusProcessor::HushParameters& params);
+
+    // Master control
+    void setIntelliFXBypass(bool bypass);
+    bool isIntelliFXBypassed() const;
+
+    // Bulk parameters
+    IntelliFX8VoiceChorusProcessor::Parameters getIntelliFXParameters() const;
+    void setIntelliFXParameters(const IntelliFX8VoiceChorusProcessor::Parameters& params);
+
+    // Presets
+    static int getIntelliFXNumPresets();
+    static IntelliFX8VoiceChorusProcessor::PresetInfo getIntelliFXPresetInfo(int index);
+    void loadIntelliFXPreset(int index);
+    int getIntelliFXCurrentPreset() const;
+
+    // Metering
+    IntelliFX8VoiceChorusProcessor::Metering getIntelliFXMetering() const;
+
+    // Direct access
+    IntelliFX8VoiceChorusProcessor& getIntelliFX() { return intellifx_; }
+
+    // ========================================
+    // Boss XS-1 Polyphonic Pitch Shifter (NEW)
+    // ========================================
+
+    void setBossXS1ShiftAmount(float semitones);
+    float getBossXS1ShiftAmount() const;
+    void setBossXS1Balance(float percent);
+    float getBossXS1Balance() const;
+    void setBossXS1DetuneMode(bool enabled);
+    bool isBossXS1DetuneMode() const;
+    void setBossXS1DetuneAmount(float cents);
+    float getBossXS1DetuneAmount() const;
+    void setBossXS1Glide(float ms);
+    float getBossXS1Glide() const;
+    void setBossXS1Feedback(float feedback);
+    float getBossXS1Feedback() const;
+    void setBossXS1PedalEnabled(bool enabled);
+    bool isBossXS1PedalEnabled() const;
+    void setBossXS1PedalPosition(float position);
+    float getBossXS1PedalPosition() const;
+    void setBossXS1PedalRange(float minSemitones, float maxSemitones);
+    float getBossXS1PedalMin() const;
+    float getBossXS1PedalMax() const;
+    void setBossXS1Preset(BossXS1PolyShifterProcessor::Preset preset);
+    BossXS1PolyShifterProcessor::Preset getBossXS1Preset() const;
+    void setBossXS1Bypass(bool bypass);
+    bool isBossXS1Bypassed() const;
+    BossXS1PolyShifterProcessor::Parameters getBossXS1Parameters() const;
+    void setBossXS1Parameters(const BossXS1PolyShifterProcessor::Parameters& params);
+    float getBossXS1InputLevel() const;
+    float getBossXS1OutputLevel() const;
+    static const char* getBossXS1PresetName(BossXS1PolyShifterProcessor::Preset preset);
+    static int getBossXS1NumPresets();
+    BossXS1PolyShifterProcessor& getBossXS1() { return bossXS1_; }
+
+    // ========================================
+    // ShoeGaze Multi-Effect Processor (NEW)
+    // ========================================
+
+    // Primary controls
+    void setShoeGazeAtmosphere(float percent);
+    float getShoeGazeAtmosphere() const;
+    void setShoeGazeDecay(float seconds);
+    float getShoeGazeDecay() const;
+    void setShoeGazeShimmer(float percent);
+    float getShoeGazeShimmer() const;
+    void setShoeGazeShimmerPitch(float semitones);
+    float getShoeGazeShimmerPitch() const;
+    void setShoeGazeModulation(float percent);
+    float getShoeGazeModulation() const;
+    void setShoeGazeModRate(float hz);
+    float getShoeGazeModRate() const;
+    void setShoeGazeDrive(float percent);
+    float getShoeGazeDrive() const;
+    void setShoeGazeDelayTime(float ms);
+    float getShoeGazeDelayTime() const;
+    void setShoeGazeDelayFeedback(float percent);
+    float getShoeGazeDelayFeedback() const;
+    void setShoeGazeDelayMod(float percent);
+    float getShoeGazeDelayMod() const;
+    void setShoeGazeLowCut(float hz);
+    float getShoeGazeLowCut() const;
+    void setShoeGazeHighCut(float hz);
+    float getShoeGazeHighCut() const;
+    void setShoeGazeMix(float percent);
+    float getShoeGazeMix() const;
+    void setShoeGazeStereoWidth(float percent);
+    float getShoeGazeStereoWidth() const;
+
+    // Advanced controls
+    void setShoeGazeReverbDiffusion(float percent);
+    float getShoeGazeReverbDiffusion() const;
+    void setShoeGazeReverbDamping(float percent);
+    float getShoeGazeReverbDamping() const;
+    void setShoeGazeShimmerFeedback(float percent);
+    float getShoeGazeShimmerFeedback() const;
+    void setShoeGazeChorusVoices(int voices);
+    int getShoeGazeChorusVoices() const;
+    void setShoeGazeDucking(float percent);
+    float getShoeGazeDucking() const;
+
+    // State control
+    void setShoeGazePreset(ShoeGazeProcessor::Preset preset);
+    ShoeGazeProcessor::Preset getShoeGazePreset() const;
+    void setShoeGazeBypass(bool bypass);
+    bool isShoeGazeBypassed() const;
+    void setShoeGazeSpillover(bool enabled);
+    bool hasShoeGazeSpillover() const;
+
+    // Bulk parameters
+    ShoeGazeProcessor::Parameters getShoeGazeParameters() const;
+    void setShoeGazeParameters(const ShoeGazeProcessor::Parameters& params);
+
+    // Metering
+    ShoeGazeProcessor::Metering getShoeGazeMetering() const;
+
+    // Preset info
+    static ShoeGazeProcessor::PresetInfo getShoeGazePresetInfo(ShoeGazeProcessor::Preset preset);
+    static int getShoeGazeNumPresets();
+
+    // Direct access
+    ShoeGazeProcessor& getShoeGaze() { return shoegaze_; }
+
+    // ========================================
     // Component Access (for advanced use)
     // ========================================
 
@@ -405,6 +649,14 @@ private:
 
     // EQ Processor (NEW)
     FilterProcessor eq_;
+
+    // Modulation Processors (NEW)
+    ChorusProcessor chorus_;
+    PhaserProcessor phaser_;
+    PitchShifterProcessor pitchShifter_;
+    IntelliFX8VoiceChorusProcessor intellifx_;
+    BossXS1PolyShifterProcessor bossXS1_;
+    ShoeGazeProcessor shoegaze_;
 
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)
@@ -439,6 +691,8 @@ private:
     void audioCallback(const float* const* inputs, int numInputs,
                       float* const* outputs, int numOutputs,
                       int numSamples);
+    
+    // Fix #4: Unified processor preparation helper\n    void prepareAllProcessors(double sampleRate, int bufferSize, int numChannels);
 };
 
 } // namespace map2

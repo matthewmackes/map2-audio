@@ -1,0 +1,201 @@
+/**
+ * ShoeGaze Card Styles
+ * Dreamy, ethereal aesthetic for wall-of-sound multi-effect
+ */
+
+/* Header */
+.shoegaze-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.shoegaze-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 50%, #3498db 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shoegaze-card-subtitle {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+}
+
+/* Visualization */
+.shoegaze-visualization {
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(142, 68, 173, 0.1) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(142, 68, 173, 0.2);
+}
+
+.shoegaze-visual-svg {
+  width: 100%;
+  height: 80px;
+  border-radius: 4px;
+}
+
+.shoegaze-visual-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-tertiary, #666);
+  margin-top: 4px;
+  padding: 0 4px;
+  text-transform: uppercase;
+}
+
+/* Preset Section */
+.shoegaze-preset-section {
+  margin-bottom: 12px;
+}
+
+.shoegaze-preset-select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(142, 68, 173, 0.4);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e44ad' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.shoegaze-preset-select:hover {
+  border-color: rgba(142, 68, 173, 0.7);
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.shoegaze-preset-select:focus {
+  outline: none;
+  border-color: #8e44ad;
+  box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2);
+}
+
+.shoegaze-preset-select option {
+  background: #1a1a2e;
+  color: var(--text-primary, #fff);
+}
+
+.shoegaze-preset-info {
+  margin-top: 6px;
+  font-size: 10px;
+  font-style: italic;
+  color: var(--text-secondary, #888);
+  text-align: center;
+}
+
+/* Quick Presets */
+.shoegaze-quick-presets {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.shoegaze-quick-presets button {
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: rgba(142, 68, 173, 0.1);
+  border: 1px solid rgba(142, 68, 173, 0.3);
+  border-radius: 4px;
+  color: var(--text-secondary, #999);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shoegaze-quick-presets button:hover {
+  background: rgba(142, 68, 173, 0.25);
+  border-color: rgba(142, 68, 173, 0.6);
+  color: var(--text-primary, #fff);
+  transform: translateY(-1px);
+}
+
+.shoegaze-quick-presets button.active {
+  background: rgba(142, 68, 173, 0.4);
+  border-color: #8e44ad;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(142, 68, 173, 0.4);
+}
+
+/* Footer */
+.shoegaze-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 12px;
+}
+
+.shoegaze-meter {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: var(--text-secondary, #888);
+}
+
+.shoegaze-cpu {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: var(--text-tertiary, #666);
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+/* Animation for dreamy effect */
+@keyframes shoegaze-shimmer {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+}
+
+.shoegaze-visualization svg circle {
+  animation: shoegaze-shimmer 2s ease-in-out infinite;
+}
+
+.shoegaze-visualization svg circle:nth-child(2n) {
+  animation-delay: 0.3s;
+}
+
+.shoegaze-visualization svg circle:nth-child(3n) {
+  animation-delay: 0.6s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .shoegaze-quick-presets button {
+    padding: 4px 8px;
+    font-size: 9px;
+  }
+
+  .shoegaze-card-title {
+    font-size: 14px;
+  }
+}

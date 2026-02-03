@@ -17,6 +17,13 @@
 #include "DynamicsProcessor.h"
 #include "FilterProcessor.h"
 #include "MidiHandler.h"
+#include "ChorusProcessor.h"
+#include "PhaserProcessor.h"
+#include "PitchShifterProcessor.h"
+#include "DelayProcessor.h"
+#include "IntelliFX8VoiceChorusProcessor.h"
+#include "BossXS1PolyShifterProcessor.h"
+#include "ShoeGazeProcessor.h"
 
 namespace py = pybind11;
 using namespace map2;
@@ -228,6 +235,533 @@ py::dict dynamicsMeteringToDict(const DynamicsProcessor::Metering& m) {
     d["gain_reduction"] = m.gainReduction;
     d["input_rms"] = m.inputRms;
     d["output_rms"] = m.outputRms;
+    return d;
+}
+
+// ========================================
+// Chorus Type Converters
+// ========================================
+
+// Convert ChorusProcessor::Parameters to Python dict
+py::dict chorusParamsToDict(const ChorusProcessor::Parameters& params) {
+    py::dict d;
+    d["rate"] = params.rate;
+    d["depth"] = params.depth;
+    d["centre_delay"] = params.centreDelay;
+    d["feedback"] = params.feedback;
+    d["mix"] = params.mix;
+    d["spread"] = params.spread;
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+// Convert Python dict to ChorusProcessor::Parameters
+ChorusProcessor::Parameters dictToChorusParams(const py::dict& d) {
+    ChorusProcessor::Parameters params;
+    if (d.contains("rate")) params.rate = d["rate"].cast<float>();
+    if (d.contains("depth")) params.depth = d["depth"].cast<float>();
+    if (d.contains("centre_delay")) params.centreDelay = d["centre_delay"].cast<float>();
+    if (d.contains("feedback")) params.feedback = d["feedback"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("spread")) params.spread = d["spread"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+// Convert ChorusProcessor::Metering to Python dict
+py::dict chorusMeteringToDict(const ChorusProcessor::Metering& m) {
+    py::dict d;
+    d["input_level"] = m.inputLevel;
+    d["output_level"] = m.outputLevel;
+    d["lfo_phase"] = m.lfoPhase;
+    return d;
+}
+
+// ========================================
+// Phaser Type Converters
+// ========================================
+
+// Convert PhaserProcessor::Parameters to Python dict
+py::dict phaserParamsToDict(const PhaserProcessor::Parameters& params) {
+    py::dict d;
+    d["rate"] = params.rate;
+    d["depth"] = params.depth;
+    d["centre_frequency"] = params.centreFrequency;
+    d["feedback"] = params.feedback;
+    d["mix"] = params.mix;
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+// Convert Python dict to PhaserProcessor::Parameters
+PhaserProcessor::Parameters dictToPhaserParams(const py::dict& d) {
+    PhaserProcessor::Parameters params;
+    if (d.contains("rate")) params.rate = d["rate"].cast<float>();
+    if (d.contains("depth")) params.depth = d["depth"].cast<float>();
+    if (d.contains("centre_frequency")) params.centreFrequency = d["centre_frequency"].cast<float>();
+    if (d.contains("feedback")) params.feedback = d["feedback"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+// Convert PhaserProcessor::Metering to Python dict
+py::dict phaserMeteringToDict(const PhaserProcessor::Metering& m) {
+    py::dict d;
+    d["input_level"] = m.inputLevel;
+    d["output_level"] = m.outputLevel;
+    d["lfo_phase"] = m.lfoPhase;
+    return d;
+}
+
+// ========================================
+// Pitch Shifter Type Converters
+// ========================================
+
+// Convert PitchShifterProcessor::Preset to string
+std::string pitchPresetToString(PitchShifterProcessor::Preset preset) {
+    switch (preset) {
+        case PitchShifterProcessor::Preset::Manual: return "manual";
+        case PitchShifterProcessor::Preset::Eruption: return "eruption";
+        case PitchShifterProcessor::Preset::Unchained: return "unchained";
+        case PitchShifterProcessor::Preset::LittleGuitars: return "little_guitars";
+        case PitchShifterProcessor::Preset::MeanStreet: return "mean_street";
+        case PitchShifterProcessor::Preset::DropDeadLegs: return "drop_dead_legs";
+        case PitchShifterProcessor::Preset::Panama: return "panama";
+        case PitchShifterProcessor::Preset::Cathedral: return "cathedral";
+        case PitchShifterProcessor::Preset::HotForTeacher: return "hot_for_teacher";
+        case PitchShifterProcessor::Preset::WhyCantThisBeLove: return "why_cant_this_be_love";
+        case PitchShifterProcessor::Preset::Dreams: return "dreams";
+        case PitchShifterProcessor::Preset::FinishWhatYaStarted: return "finish_what_ya_started";
+        case PitchShifterProcessor::Preset::RightNow: return "right_now";
+        case PitchShifterProcessor::Preset::CantStopLovinYou: return "cant_stop_lovin_you";
+        case PitchShifterProcessor::Preset::HumansBeingOuttro: return "humans_being_outtro";
+        default: return "manual";
+    }
+}
+
+// Convert string to PitchShifterProcessor::Preset
+PitchShifterProcessor::Preset stringToPitchPreset(const std::string& str) {
+    if (str == "eruption") return PitchShifterProcessor::Preset::Eruption;
+    if (str == "unchained") return PitchShifterProcessor::Preset::Unchained;
+    if (str == "little_guitars") return PitchShifterProcessor::Preset::LittleGuitars;
+    if (str == "mean_street") return PitchShifterProcessor::Preset::MeanStreet;
+    if (str == "drop_dead_legs") return PitchShifterProcessor::Preset::DropDeadLegs;
+    if (str == "panama") return PitchShifterProcessor::Preset::Panama;
+    if (str == "cathedral") return PitchShifterProcessor::Preset::Cathedral;
+    if (str == "hot_for_teacher") return PitchShifterProcessor::Preset::HotForTeacher;
+    if (str == "why_cant_this_be_love") return PitchShifterProcessor::Preset::WhyCantThisBeLove;
+    if (str == "dreams") return PitchShifterProcessor::Preset::Dreams;
+    if (str == "finish_what_ya_started") return PitchShifterProcessor::Preset::FinishWhatYaStarted;
+    if (str == "right_now") return PitchShifterProcessor::Preset::RightNow;
+    if (str == "cant_stop_lovin_you") return PitchShifterProcessor::Preset::CantStopLovinYou;
+    if (str == "humans_being_outtro") return PitchShifterProcessor::Preset::HumansBeingOuttro;
+    return PitchShifterProcessor::Preset::Manual;
+}
+
+// Convert PitchShifterProcessor::Parameters to Python dict
+py::dict pitchShifterParamsToDict(const PitchShifterProcessor::Parameters& params) {
+    py::dict d;
+    d["pitch_l"] = params.pitchL;
+    d["pitch_r"] = params.pitchR;
+    d["delay_l"] = params.delayL;
+    d["delay_r"] = params.delayR;
+    d["feedback"] = params.feedback;
+    d["mix"] = params.mix;
+    d["spread"] = params.spread;
+    d["preset"] = pitchPresetToString(params.preset);
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+// Convert Python dict to PitchShifterProcessor::Parameters
+PitchShifterProcessor::Parameters dictToPitchShifterParams(const py::dict& d) {
+    PitchShifterProcessor::Parameters params;
+    if (d.contains("pitch_l")) params.pitchL = d["pitch_l"].cast<float>();
+    if (d.contains("pitch_r")) params.pitchR = d["pitch_r"].cast<float>();
+    if (d.contains("delay_l")) params.delayL = d["delay_l"].cast<float>();
+    if (d.contains("delay_r")) params.delayR = d["delay_r"].cast<float>();
+    if (d.contains("feedback")) params.feedback = d["feedback"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("spread")) params.spread = d["spread"].cast<float>();
+    if (d.contains("preset")) params.preset = stringToPitchPreset(d["preset"].cast<std::string>());
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+// Convert PitchShifterProcessor::Metering to Python dict
+py::dict pitchShifterMeteringToDict(const PitchShifterProcessor::Metering& m) {
+    py::dict d;
+    d["input_level_l"] = m.inputLevelL;
+    d["input_level_r"] = m.inputLevelR;
+    d["output_level_l"] = m.outputLevelL;
+    d["output_level_r"] = m.outputLevelR;
+    d["grain_phase"] = m.grainPhase;
+    return d;
+}
+
+// Convert PitchShifterProcessor::PresetInfo to Python dict
+py::dict pitchPresetInfoToDict(const PitchShifterProcessor::PresetInfo& info) {
+    py::dict d;
+    d["name"] = info.name ? std::string(info.name) : "";
+    d["song"] = info.song ? std::string(info.song) : "";
+    d["album"] = info.album ? std::string(info.album) : "";
+    d["year"] = info.year ? std::string(info.year) : "";
+    d["description"] = info.description ? std::string(info.description) : "";
+    return d;
+}
+
+// ========================================
+// IntelliFX 8-Voice Chorus Type Converters
+// ========================================
+
+// Convert IntelliFX8VoiceChorusProcessor::VoiceParameters to Python dict
+py::dict intellifxVoiceParamsToDict(const IntelliFX8VoiceChorusProcessor::VoiceParameters& params) {
+    py::dict d;
+    d["level"] = params.level;
+    d["pan"] = params.pan;
+    d["delay"] = params.delay;
+    d["depth"] = params.depth;
+    d["rate"] = params.rate;
+    return d;
+}
+
+// Convert Python dict to IntelliFX8VoiceChorusProcessor::VoiceParameters
+IntelliFX8VoiceChorusProcessor::VoiceParameters dictToIntelliFXVoiceParams(const py::dict& d) {
+    IntelliFX8VoiceChorusProcessor::VoiceParameters params;
+    if (d.contains("level")) params.level = d["level"].cast<float>();
+    if (d.contains("pan")) params.pan = d["pan"].cast<float>();
+    if (d.contains("delay")) params.delay = d["delay"].cast<float>();
+    if (d.contains("depth")) params.depth = d["depth"].cast<float>();
+    if (d.contains("rate")) params.rate = d["rate"].cast<float>();
+    return params;
+}
+
+// Convert IntelliFX8VoiceChorusProcessor::HushParameters to Python dict
+py::dict intellifxHushParamsToDict(const IntelliFX8VoiceChorusProcessor::HushParameters& params) {
+    py::dict d;
+    d["enabled"] = params.enabled;
+    d["threshold"] = params.threshold;
+    d["release_rate"] = params.releaseRate;
+    return d;
+}
+
+// Convert Python dict to IntelliFX8VoiceChorusProcessor::HushParameters
+IntelliFX8VoiceChorusProcessor::HushParameters dictToIntelliFXHushParams(const py::dict& d) {
+    IntelliFX8VoiceChorusProcessor::HushParameters params;
+    if (d.contains("enabled")) params.enabled = d["enabled"].cast<bool>();
+    if (d.contains("threshold")) params.threshold = d["threshold"].cast<float>();
+    if (d.contains("release_rate")) params.releaseRate = d["release_rate"].cast<float>();
+    return params;
+}
+
+// Convert IntelliFX8VoiceChorusProcessor::Parameters to Python dict
+py::dict intellifxParamsToDict(const IntelliFX8VoiceChorusProcessor::Parameters& params) {
+    py::dict d;
+
+    // Voice parameters array
+    py::list voices;
+    for (int i = 0; i < IntelliFX8VoiceChorusProcessor::NUM_VOICES; ++i) {
+        voices.append(intellifxVoiceParamsToDict(params.voices[i]));
+    }
+    d["voices"] = voices;
+
+    // Global mixer
+    d["chorus_level"] = params.chorusLevel;
+    d["direct_level_l"] = params.directLevelL;
+    d["direct_level_r"] = params.directLevelR;
+    d["regen_l"] = params.regenL;
+    d["regen_r"] = params.regenR;
+
+    // HUSH
+    d["hush"] = intellifxHushParamsToDict(params.hush);
+
+    // Master
+    d["bypass"] = params.bypass;
+
+    return d;
+}
+
+// Convert Python dict to IntelliFX8VoiceChorusProcessor::Parameters
+IntelliFX8VoiceChorusProcessor::Parameters dictToIntelliFXParams(const py::dict& d) {
+    IntelliFX8VoiceChorusProcessor::Parameters params;
+
+    if (d.contains("voices")) {
+        auto voicesList = d["voices"].cast<py::list>();
+        for (size_t i = 0; i < std::min(static_cast<size_t>(IntelliFX8VoiceChorusProcessor::NUM_VOICES),
+                                        voicesList.size()); ++i) {
+            params.voices[i] = dictToIntelliFXVoiceParams(voicesList[i].cast<py::dict>());
+        }
+    }
+
+    if (d.contains("chorus_level")) params.chorusLevel = d["chorus_level"].cast<float>();
+    if (d.contains("direct_level_l")) params.directLevelL = d["direct_level_l"].cast<float>();
+    if (d.contains("direct_level_r")) params.directLevelR = d["direct_level_r"].cast<float>();
+    if (d.contains("regen_l")) params.regenL = d["regen_l"].cast<float>();
+    if (d.contains("regen_r")) params.regenR = d["regen_r"].cast<float>();
+    if (d.contains("hush")) params.hush = dictToIntelliFXHushParams(d["hush"].cast<py::dict>());
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+
+    return params;
+}
+
+// Convert IntelliFX8VoiceChorusProcessor::Metering to Python dict
+py::dict intellifxMeteringToDict(const IntelliFX8VoiceChorusProcessor::Metering& m) {
+    py::dict d;
+    d["input_level_l"] = m.inputLevelL;
+    d["input_level_r"] = m.inputLevelR;
+    d["output_level_l"] = m.outputLevelL;
+    d["output_level_r"] = m.outputLevelR;
+    d["chorus_level_l"] = m.chorusLevelL;
+    d["chorus_level_r"] = m.chorusLevelR;
+    d["hush_gain_reduction"] = m.hushGainReduction;
+
+    py::list lfoPhases;
+    for (int i = 0; i < IntelliFX8VoiceChorusProcessor::NUM_VOICES; ++i) {
+        lfoPhases.append(m.voiceLfoPhases[i]);
+    }
+    d["voice_lfo_phases"] = lfoPhases;
+
+    return d;
+}
+
+// Convert IntelliFX8VoiceChorusProcessor::PresetInfo to Python dict
+py::dict intellifxPresetInfoToDict(const IntelliFX8VoiceChorusProcessor::PresetInfo& info) {
+    py::dict d;
+    d["index"] = info.index;
+    d["name"] = info.name ? std::string(info.name) : "";
+    d["category"] = info.category ? std::string(info.category) : "";
+    d["description"] = info.description ? std::string(info.description) : "";
+    return d;
+}
+
+// ========================================
+// Boss XS-1 Poly Shifter Type Converters
+// ========================================
+
+// Convert BossXS1PolyShifterProcessor::Preset to string
+std::string bossXS1PresetToString(BossXS1PolyShifterProcessor::Preset preset) {
+    switch (preset) {
+        case BossXS1PolyShifterProcessor::Preset::Manual: return "manual";
+        case BossXS1PolyShifterProcessor::Preset::DropD: return "drop_d";
+        case BossXS1PolyShifterProcessor::Preset::DropDSharp: return "drop_d_sharp";
+        case BossXS1PolyShifterProcessor::Preset::HalfStepDown: return "half_step_down";
+        case BossXS1PolyShifterProcessor::Preset::Capo2ndFret: return "capo_2nd_fret";
+        case BossXS1PolyShifterProcessor::Preset::Capo3rdFret: return "capo_3rd_fret";
+        case BossXS1PolyShifterProcessor::Preset::Capo5thFret: return "capo_5th_fret";
+        case BossXS1PolyShifterProcessor::Preset::OctaveUp: return "octave_up";
+        case BossXS1PolyShifterProcessor::Preset::OctaveDown: return "octave_down";
+        case BossXS1PolyShifterProcessor::Preset::OctaveUpDown: return "octave_up_down";
+        case BossXS1PolyShifterProcessor::Preset::MicroPitchWide: return "micro_pitch_wide";
+        case BossXS1PolyShifterProcessor::Preset::MicroPitchNarrow: return "micro_pitch_narrow";
+        case BossXS1PolyShifterProcessor::Preset::VoiceDoubling: return "voice_doubling";
+        case BossXS1PolyShifterProcessor::Preset::StringDoubling: return "string_doubling";
+        case BossXS1PolyShifterProcessor::Preset::PianistOctaves: return "pianist_octaves";
+        case BossXS1PolyShifterProcessor::Preset::SubBass: return "sub_bass";
+        case BossXS1PolyShifterProcessor::Preset::SonicScreamer: return "sonic_screamer";
+        case BossXS1PolyShifterProcessor::Preset::UniqueIntervals: return "unique_intervals";
+        case BossXS1PolyShifterProcessor::Preset::MinorThird: return "minor_third";
+        case BossXS1PolyShifterProcessor::Preset::ChordShift: return "chord_shift";
+        case BossXS1PolyShifterProcessor::Preset::DetuneChorus: return "detune_chorus";
+        case BossXS1PolyShifterProcessor::Preset::SpaceyVibrato: return "spacey_vibrato";
+        case BossXS1PolyShifterProcessor::Preset::RoboticMod: return "robotic_mod";
+        default: return "manual";
+    }
+}
+
+// Convert string to BossXS1PolyShifterProcessor::Preset
+BossXS1PolyShifterProcessor::Preset stringToBossXS1Preset(const std::string& str) {
+    if (str == "drop_d") return BossXS1PolyShifterProcessor::Preset::DropD;
+    if (str == "drop_d_sharp") return BossXS1PolyShifterProcessor::Preset::DropDSharp;
+    if (str == "half_step_down") return BossXS1PolyShifterProcessor::Preset::HalfStepDown;
+    if (str == "capo_2nd_fret") return BossXS1PolyShifterProcessor::Preset::Capo2ndFret;
+    if (str == "capo_3rd_fret") return BossXS1PolyShifterProcessor::Preset::Capo3rdFret;
+    if (str == "capo_5th_fret") return BossXS1PolyShifterProcessor::Preset::Capo5thFret;
+    if (str == "octave_up") return BossXS1PolyShifterProcessor::Preset::OctaveUp;
+    if (str == "octave_down") return BossXS1PolyShifterProcessor::Preset::OctaveDown;
+    if (str == "octave_up_down") return BossXS1PolyShifterProcessor::Preset::OctaveUpDown;
+    if (str == "micro_pitch_wide") return BossXS1PolyShifterProcessor::Preset::MicroPitchWide;
+    if (str == "micro_pitch_narrow") return BossXS1PolyShifterProcessor::Preset::MicroPitchNarrow;
+    if (str == "voice_doubling") return BossXS1PolyShifterProcessor::Preset::VoiceDoubling;
+    if (str == "string_doubling") return BossXS1PolyShifterProcessor::Preset::StringDoubling;
+    if (str == "pianist_octaves") return BossXS1PolyShifterProcessor::Preset::PianistOctaves;
+    if (str == "sub_bass") return BossXS1PolyShifterProcessor::Preset::SubBass;
+    if (str == "sonic_screamer") return BossXS1PolyShifterProcessor::Preset::SonicScreamer;
+    if (str == "unique_intervals") return BossXS1PolyShifterProcessor::Preset::UniqueIntervals;
+    if (str == "minor_third") return BossXS1PolyShifterProcessor::Preset::MinorThird;
+    if (str == "chord_shift") return BossXS1PolyShifterProcessor::Preset::ChordShift;
+    if (str == "detune_chorus") return BossXS1PolyShifterProcessor::Preset::DetuneChorus;
+    if (str == "spacey_vibrato") return BossXS1PolyShifterProcessor::Preset::SpaceyVibrato;
+    if (str == "robotic_mod") return BossXS1PolyShifterProcessor::Preset::RoboticMod;
+    return BossXS1PolyShifterProcessor::Preset::Manual;
+}
+
+// Convert BossXS1PolyShifterProcessor::Parameters to Python dict
+py::dict bossXS1ParamsToDict(const BossXS1PolyShifterProcessor::Parameters& params) {
+    py::dict d;
+    d["shift_amount"] = params.shiftAmount;
+    d["balance"] = params.balance;
+    d["shift_direction"] = params.shiftDirection;
+    d["detune_mode"] = params.detuneMode;
+    d["pedal_momentary"] = params.pedalMomentary;
+    d["pedal_position"] = params.pedalPosition;
+    d["pedal_min"] = params.pedalMin;
+    d["pedal_max"] = params.pedalMax;
+    d["pedal_enabled"] = params.pedalEnabled;
+    d["detune_amount"] = params.detuneAmount;
+    d["glide"] = params.glide;
+    d["feedback"] = params.feedback;
+    d["preset"] = bossXS1PresetToString(params.preset);
+    d["bypass"] = params.bypass;
+    d["active"] = params.active;
+    return d;
+}
+
+// Convert Python dict to BossXS1PolyShifterProcessor::Parameters
+BossXS1PolyShifterProcessor::Parameters dictToBossXS1Params(const py::dict& d) {
+    BossXS1PolyShifterProcessor::Parameters params;
+    if (d.contains("shift_amount")) params.shiftAmount = d["shift_amount"].cast<float>();
+    if (d.contains("balance")) params.balance = d["balance"].cast<float>();
+    if (d.contains("shift_direction")) params.shiftDirection = d["shift_direction"].cast<int>();
+    if (d.contains("detune_mode")) params.detuneMode = d["detune_mode"].cast<bool>();
+    if (d.contains("pedal_momentary")) params.pedalMomentary = d["pedal_momentary"].cast<bool>();
+    if (d.contains("pedal_position")) params.pedalPosition = d["pedal_position"].cast<float>();
+    if (d.contains("pedal_min")) params.pedalMin = d["pedal_min"].cast<float>();
+    if (d.contains("pedal_max")) params.pedalMax = d["pedal_max"].cast<float>();
+    if (d.contains("pedal_enabled")) params.pedalEnabled = d["pedal_enabled"].cast<bool>();
+    if (d.contains("detune_amount")) params.detuneAmount = d["detune_amount"].cast<float>();
+    if (d.contains("glide")) params.glide = d["glide"].cast<float>();
+    if (d.contains("feedback")) params.feedback = d["feedback"].cast<float>();
+    if (d.contains("preset")) params.preset = stringToBossXS1Preset(d["preset"].cast<std::string>());
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    if (d.contains("active")) params.active = d["active"].cast<bool>();
+    return params;
+}
+
+// ========================================
+// ShoeGaze Type Converters
+// ========================================
+
+// Convert ShoeGazeProcessor::Preset to string
+std::string shoegazePresetToString(ShoeGazeProcessor::Preset preset) {
+    switch (preset) {
+        case ShoeGazeProcessor::Preset::Manual: return "manual";
+        case ShoeGazeProcessor::Preset::Loveless: return "loveless";
+        case ShoeGazeProcessor::Preset::Souvlaki: return "souvlaki";
+        case ShoeGazeProcessor::Preset::Treasure: return "treasure";
+        case ShoeGazeProcessor::Preset::SpaceAge: return "space_age";
+        case ShoeGazeProcessor::Preset::Psychocandy: return "psychocandy";
+        case ShoeGazeProcessor::Preset::Nowhere: return "nowhere";
+        default: return "manual";
+    }
+}
+
+// Convert string to ShoeGazeProcessor::Preset
+ShoeGazeProcessor::Preset stringToShoegazePreset(const std::string& str) {
+    if (str == "loveless") return ShoeGazeProcessor::Preset::Loveless;
+    if (str == "souvlaki") return ShoeGazeProcessor::Preset::Souvlaki;
+    if (str == "treasure") return ShoeGazeProcessor::Preset::Treasure;
+    if (str == "space_age") return ShoeGazeProcessor::Preset::SpaceAge;
+    if (str == "psychocandy") return ShoeGazeProcessor::Preset::Psychocandy;
+    if (str == "nowhere") return ShoeGazeProcessor::Preset::Nowhere;
+    return ShoeGazeProcessor::Preset::Manual;
+}
+
+// Convert ShoeGazeProcessor::Parameters to Python dict
+py::dict shoegazeParamsToDict(const ShoeGazeProcessor::Parameters& params) {
+    py::dict d;
+    // Primary controls
+    d["atmosphere"] = params.atmosphere;
+    d["decay"] = params.decay;
+    d["shimmer"] = params.shimmer;
+    d["shimmer_pitch"] = params.shimmerPitch;
+    d["modulation"] = params.modulation;
+    d["mod_rate"] = params.modRate;
+    d["drive"] = params.drive;
+    d["delay_time"] = params.delayTime;
+    d["delay_feedback"] = params.delayFeedback;
+    d["delay_mod"] = params.delayMod;
+    d["low_cut"] = params.lowCut;
+    d["high_cut"] = params.highCut;
+    d["mix"] = params.mix;
+    d["stereo_width"] = params.stereoWidth;
+    // Advanced controls
+    d["reverb_diffusion"] = params.reverbDiffusion;
+    d["reverb_damping"] = params.reverbDamping;
+    d["reverb_size"] = params.reverbSize;
+    d["reverb_mod_depth"] = params.reverbModDepth;
+    d["shimmer_feedback"] = params.shimmerFeedback;
+    d["shimmer_delay"] = params.shimmerDelay;
+    d["chorus_voices"] = params.chorusVoices;
+    d["chorus_spread"] = params.chorusSpread;
+    d["saturation_tone"] = params.saturationTone;
+    d["ducking"] = params.ducking;
+    // State
+    d["preset"] = shoegazePresetToString(params.preset);
+    d["spillover"] = params.spillover;
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+// Convert Python dict to ShoeGazeProcessor::Parameters
+ShoeGazeProcessor::Parameters dictToShoegazeParams(const py::dict& d) {
+    ShoeGazeProcessor::Parameters params;
+    // Primary controls
+    if (d.contains("atmosphere")) params.atmosphere = d["atmosphere"].cast<float>();
+    if (d.contains("decay")) params.decay = d["decay"].cast<float>();
+    if (d.contains("shimmer")) params.shimmer = d["shimmer"].cast<float>();
+    if (d.contains("shimmer_pitch")) params.shimmerPitch = d["shimmer_pitch"].cast<float>();
+    if (d.contains("modulation")) params.modulation = d["modulation"].cast<float>();
+    if (d.contains("mod_rate")) params.modRate = d["mod_rate"].cast<float>();
+    if (d.contains("drive")) params.drive = d["drive"].cast<float>();
+    if (d.contains("delay_time")) params.delayTime = d["delay_time"].cast<float>();
+    if (d.contains("delay_feedback")) params.delayFeedback = d["delay_feedback"].cast<float>();
+    if (d.contains("delay_mod")) params.delayMod = d["delay_mod"].cast<float>();
+    if (d.contains("low_cut")) params.lowCut = d["low_cut"].cast<float>();
+    if (d.contains("high_cut")) params.highCut = d["high_cut"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("stereo_width")) params.stereoWidth = d["stereo_width"].cast<float>();
+    // Advanced controls
+    if (d.contains("reverb_diffusion")) params.reverbDiffusion = d["reverb_diffusion"].cast<float>();
+    if (d.contains("reverb_damping")) params.reverbDamping = d["reverb_damping"].cast<float>();
+    if (d.contains("reverb_size")) params.reverbSize = d["reverb_size"].cast<float>();
+    if (d.contains("reverb_mod_depth")) params.reverbModDepth = d["reverb_mod_depth"].cast<float>();
+    if (d.contains("shimmer_feedback")) params.shimmerFeedback = d["shimmer_feedback"].cast<float>();
+    if (d.contains("shimmer_delay")) params.shimmerDelay = d["shimmer_delay"].cast<float>();
+    if (d.contains("chorus_voices")) params.chorusVoices = d["chorus_voices"].cast<int>();
+    if (d.contains("chorus_spread")) params.chorusSpread = d["chorus_spread"].cast<float>();
+    if (d.contains("saturation_tone")) params.saturationTone = d["saturation_tone"].cast<float>();
+    if (d.contains("ducking")) params.ducking = d["ducking"].cast<float>();
+    // State
+    if (d.contains("preset")) params.preset = stringToShoegazePreset(d["preset"].cast<std::string>());
+    if (d.contains("spillover")) params.spillover = d["spillover"].cast<bool>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+// Convert ShoeGazeProcessor::Metering to Python dict
+py::dict shoegazeMeteringToDict(const ShoeGazeProcessor::Metering& m) {
+    py::dict d;
+    d["input_level_l"] = m.inputLevelL;
+    d["input_level_r"] = m.inputLevelR;
+    d["output_level_l"] = m.outputLevelL;
+    d["output_level_r"] = m.outputLevelR;
+    d["reverb_level_l"] = m.reverbLevelL;
+    d["reverb_level_r"] = m.reverbLevelR;
+    d["shimmer_level"] = m.shimmerLevel;
+    d["saturation_amount"] = m.saturationAmount;
+    d["chorus_lfo_phase"] = m.chorusLfoPhase;
+    d["delay_mod_phase"] = m.delayModPhase;
+    d["ducking_gain"] = m.duckingGain;
+    return d;
+}
+
+// Convert ShoeGazeProcessor::PresetInfo to Python dict
+py::dict shoegazePresetInfoToDict(const ShoeGazeProcessor::PresetInfo& info) {
+    py::dict d;
+    d["name"] = info.name ? std::string(info.name) : "";
+    d["artist"] = info.artist ? std::string(info.artist) : "";
+    d["description"] = info.description ? std::string(info.description) : "";
     return d;
 }
 
@@ -1484,6 +2018,518 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
         .def("get_nam_output_level", &Map2AudioEngine::getNAMOutputLevel,
              "Get NAM output metering level in dB")
+
+        // ========================================
+        // Chorus Processor (NEW)
+        // ========================================
+
+        .def("set_chorus_rate", &Map2AudioEngine::setChorusRate,
+             py::arg("hz"),
+             "Set chorus LFO rate in Hz (0.1 to 10)")
+
+        .def("get_chorus_rate", &Map2AudioEngine::getChorusRate,
+             "Get chorus LFO rate in Hz")
+
+        .def("set_chorus_depth", &Map2AudioEngine::setChorusDepth,
+             py::arg("depth"),
+             "Set chorus depth (0 to 1)")
+
+        .def("get_chorus_depth", &Map2AudioEngine::getChorusDepth,
+             "Get chorus depth")
+
+        .def("set_chorus_centre_delay", &Map2AudioEngine::setChorusCentreDelay,
+             py::arg("ms"),
+             "Set chorus centre delay in ms (1 to 30)")
+
+        .def("get_chorus_centre_delay", &Map2AudioEngine::getChorusCentreDelay,
+             "Get chorus centre delay in ms")
+
+        .def("set_chorus_feedback", &Map2AudioEngine::setChorusFeedback,
+             py::arg("feedback"),
+             "Set chorus feedback (-1 to 1)")
+
+        .def("get_chorus_feedback", &Map2AudioEngine::getChorusFeedback,
+             "Get chorus feedback")
+
+        .def("set_chorus_mix", &Map2AudioEngine::setChorusMix,
+             py::arg("mix"),
+             "Set chorus wet/dry mix (0 to 1)")
+
+        .def("get_chorus_mix", &Map2AudioEngine::getChorusMix,
+             "Get chorus mix")
+
+        .def("set_chorus_spread", &Map2AudioEngine::setChorusSpread,
+             py::arg("spread"),
+             "Set chorus stereo spread (0 to 1)")
+
+        .def("get_chorus_spread", &Map2AudioEngine::getChorusSpread,
+             "Get chorus stereo spread")
+
+        .def("set_chorus_bypass", &Map2AudioEngine::setChorusBypass,
+             py::arg("bypass"),
+             "Bypass chorus processor")
+
+        .def("is_chorus_bypassed", &Map2AudioEngine::isChorusBypassed,
+             "Check if chorus is bypassed")
+
+        .def("get_chorus_parameters", [](const Map2AudioEngine& self) {
+            return chorusParamsToDict(self.getChorusParameters());
+        }, "Get all chorus parameters")
+
+        .def("set_chorus_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setChorusParameters(dictToChorusParams(params));
+        }, py::arg("params"), "Set all chorus parameters at once")
+
+        .def("get_chorus_metering", [](const Map2AudioEngine& self) {
+            return chorusMeteringToDict(self.getChorusMetering());
+        }, "Get chorus metering (input, output, LFO phase)")
+
+        // ========================================
+        // Phaser Processor (NEW)
+        // ========================================
+
+        .def("set_phaser_rate", &Map2AudioEngine::setPhaserRate,
+             py::arg("hz"),
+             "Set phaser LFO rate in Hz (0.05 to 5)")
+
+        .def("get_phaser_rate", &Map2AudioEngine::getPhaserRate,
+             "Get phaser LFO rate in Hz")
+
+        .def("set_phaser_depth", &Map2AudioEngine::setPhaserDepth,
+             py::arg("depth"),
+             "Set phaser depth (0 to 1)")
+
+        .def("get_phaser_depth", &Map2AudioEngine::getPhaserDepth,
+             "Get phaser depth")
+
+        .def("set_phaser_centre_frequency", &Map2AudioEngine::setPhaserCentreFrequency,
+             py::arg("hz"),
+             "Set phaser centre frequency in Hz (100 to 10000)")
+
+        .def("get_phaser_centre_frequency", &Map2AudioEngine::getPhaserCentreFrequency,
+             "Get phaser centre frequency in Hz")
+
+        .def("set_phaser_feedback", &Map2AudioEngine::setPhaserFeedback,
+             py::arg("feedback"),
+             "Set phaser feedback (-1 to 1)")
+
+        .def("get_phaser_feedback", &Map2AudioEngine::getPhaserFeedback,
+             "Get phaser feedback")
+
+        .def("set_phaser_mix", &Map2AudioEngine::setPhaserMix,
+             py::arg("mix"),
+             "Set phaser wet/dry mix (0 to 1)")
+
+        .def("get_phaser_mix", &Map2AudioEngine::getPhaserMix,
+             "Get phaser mix")
+
+        .def("set_phaser_bypass", &Map2AudioEngine::setPhaserBypass,
+             py::arg("bypass"),
+             "Bypass phaser processor")
+
+        .def("is_phaser_bypassed", &Map2AudioEngine::isPhaserBypassed,
+             "Check if phaser is bypassed")
+
+        .def("get_phaser_parameters", [](const Map2AudioEngine& self) {
+            return phaserParamsToDict(self.getPhaserParameters());
+        }, "Get all phaser parameters")
+
+        .def("set_phaser_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setPhaserParameters(dictToPhaserParams(params));
+        }, py::arg("params"), "Set all phaser parameters at once")
+
+        .def("get_phaser_metering", [](const Map2AudioEngine& self) {
+            return phaserMeteringToDict(self.getPhaserMetering());
+        }, "Get phaser metering (input, output, LFO phase)")
+
+        // ========================================
+        // Pitch Shifter / EVH Harmonizer (NEW)
+        // ========================================
+
+        .def("set_pitch_shifter_pitch_l", &Map2AudioEngine::setPitchShifterPitchL,
+             py::arg("cents"),
+             "Set left channel pitch shift in cents (-100 to +100)")
+
+        .def("get_pitch_shifter_pitch_l", &Map2AudioEngine::getPitchShifterPitchL,
+             "Get left channel pitch shift in cents")
+
+        .def("set_pitch_shifter_pitch_r", &Map2AudioEngine::setPitchShifterPitchR,
+             py::arg("cents"),
+             "Set right channel pitch shift in cents (-100 to +100)")
+
+        .def("get_pitch_shifter_pitch_r", &Map2AudioEngine::getPitchShifterPitchR,
+             "Get right channel pitch shift in cents")
+
+        .def("set_pitch_shifter_delay_l", &Map2AudioEngine::setPitchShifterDelayL,
+             py::arg("ms"),
+             "Set left channel delay in ms (0 to 100)")
+
+        .def("get_pitch_shifter_delay_l", &Map2AudioEngine::getPitchShifterDelayL,
+             "Get left channel delay in ms")
+
+        .def("set_pitch_shifter_delay_r", &Map2AudioEngine::setPitchShifterDelayR,
+             py::arg("ms"),
+             "Set right channel delay in ms (0 to 100)")
+
+        .def("get_pitch_shifter_delay_r", &Map2AudioEngine::getPitchShifterDelayR,
+             "Get right channel delay in ms")
+
+        .def("set_pitch_shifter_feedback", &Map2AudioEngine::setPitchShifterFeedback,
+             py::arg("feedback"),
+             "Set pitch shifter feedback (0 to 0.9)")
+
+        .def("get_pitch_shifter_feedback", &Map2AudioEngine::getPitchShifterFeedback,
+             "Get pitch shifter feedback")
+
+        .def("set_pitch_shifter_mix", &Map2AudioEngine::setPitchShifterMix,
+             py::arg("percent"),
+             "Set pitch shifter wet mix (0 to 100%)")
+
+        .def("get_pitch_shifter_mix", &Map2AudioEngine::getPitchShifterMix,
+             "Get pitch shifter mix")
+
+        .def("set_pitch_shifter_spread", &Map2AudioEngine::setPitchShifterSpread,
+             py::arg("percent"),
+             "Set pitch shifter stereo spread (0 to 200%)")
+
+        .def("get_pitch_shifter_spread", &Map2AudioEngine::getPitchShifterSpread,
+             "Get pitch shifter stereo spread")
+
+        .def("set_pitch_shifter_preset", [](Map2AudioEngine& self, const std::string& preset) {
+            self.setPitchShifterPreset(stringToPitchPreset(preset));
+        }, py::arg("preset"), "Set pitch shifter preset by name")
+
+        .def("get_pitch_shifter_preset", [](const Map2AudioEngine& self) {
+            return pitchPresetToString(self.getPitchShifterPreset());
+        }, "Get current pitch shifter preset name")
+
+        .def("set_pitch_shifter_bypass", &Map2AudioEngine::setPitchShifterBypass,
+             py::arg("bypass"),
+             "Bypass pitch shifter processor")
+
+        .def("is_pitch_shifter_bypassed", &Map2AudioEngine::isPitchShifterBypassed,
+             "Check if pitch shifter is bypassed")
+
+        .def("get_pitch_shifter_parameters", [](const Map2AudioEngine& self) {
+            return pitchShifterParamsToDict(self.getPitchShifterParameters());
+        }, "Get all pitch shifter parameters")
+
+        .def("set_pitch_shifter_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setPitchShifterParameters(dictToPitchShifterParams(params));
+        }, py::arg("params"), "Set all pitch shifter parameters at once")
+
+        .def("get_pitch_shifter_metering", [](const Map2AudioEngine& self) {
+            return pitchShifterMeteringToDict(self.getPitchShifterMetering());
+        }, "Get pitch shifter metering (input, output, grain phase)")
+
+        .def("get_pitch_shifter_preset_info", [](const Map2AudioEngine& /*self*/, const std::string& preset) {
+            return pitchPresetInfoToDict(
+                PitchShifterProcessor::getPresetInfo(stringToPitchPreset(preset))
+            );
+        }, py::arg("preset"), "Get preset info (song, album, year, description)")
+
+        .def("get_pitch_shifter_presets", [](const Map2AudioEngine& /*self*/) {
+            py::list result;
+            int numPresets = PitchShifterProcessor::getNumPresets();
+            for (int i = 0; i < numPresets; ++i) {
+                auto preset = static_cast<PitchShifterProcessor::Preset>(i);
+                py::dict d;
+                d["id"] = pitchPresetToString(preset);
+                auto info = PitchShifterProcessor::getPresetInfo(preset);
+                d["name"] = info.name ? std::string(info.name) : "";
+                d["song"] = info.song ? std::string(info.song) : "";
+                d["album"] = info.album ? std::string(info.album) : "";
+                d["year"] = info.year ? std::string(info.year) : "";
+                d["description"] = info.description ? std::string(info.description) : "";
+                result.append(d);
+            }
+            return result;
+        }, "Get all available pitch shifter presets (Van Halen songs)")
+
+        // ========================================
+        // Boss XS-1 Polyphonic Pitch Shifter
+        // ========================================
+
+        .def("set_boss_xs1_shift_amount", &Map2AudioEngine::setBossXS1ShiftAmount,
+             py::arg("semitones"),
+             "Set Boss XS-1 pitch shift amount (-7 to +7 semitones)")
+
+        .def("get_boss_xs1_shift_amount", &Map2AudioEngine::getBossXS1ShiftAmount,
+             "Get Boss XS-1 pitch shift amount")
+
+        .def("set_boss_xs1_balance", &Map2AudioEngine::setBossXS1Balance,
+             py::arg("percent"),
+             "Set Boss XS-1 wet/dry balance (0-100%)")
+
+        .def("get_boss_xs1_balance", &Map2AudioEngine::getBossXS1Balance,
+             "Get Boss XS-1 balance")
+
+        .def("set_boss_xs1_detune_mode", &Map2AudioEngine::setBossXS1DetuneMode,
+             py::arg("enabled"),
+             "Enable Boss XS-1 detune mode (±20 cents instead of semitones)")
+
+        .def("is_boss_xs1_detune_mode", &Map2AudioEngine::isBossXS1DetuneMode,
+             "Check if Boss XS-1 is in detune mode")
+
+        .def("set_boss_xs1_detune_amount", &Map2AudioEngine::setBossXS1DetuneAmount,
+             py::arg("cents"),
+             "Set Boss XS-1 detune amount (±20 cents)")
+
+        .def("get_boss_xs1_detune_amount", &Map2AudioEngine::getBossXS1DetuneAmount,
+             "Get Boss XS-1 detune amount")
+
+        .def("set_boss_xs1_glide", &Map2AudioEngine::setBossXS1Glide,
+             py::arg("ms"),
+             "Set Boss XS-1 glide time (0-100 ms)")
+
+        .def("get_boss_xs1_glide", &Map2AudioEngine::getBossXS1Glide,
+             "Get Boss XS-1 glide time")
+
+        .def("set_boss_xs1_feedback", &Map2AudioEngine::setBossXS1Feedback,
+             py::arg("feedback"),
+             "Set Boss XS-1 feedback (0 to 0.7)")
+
+        .def("get_boss_xs1_feedback", &Map2AudioEngine::getBossXS1Feedback,
+             "Get Boss XS-1 feedback")
+
+        .def("set_boss_xs1_pedal_enabled", &Map2AudioEngine::setBossXS1PedalEnabled,
+             py::arg("enabled"),
+             "Enable Boss XS-1 expression pedal control")
+
+        .def("is_boss_xs1_pedal_enabled", &Map2AudioEngine::isBossXS1PedalEnabled,
+             "Check if Boss XS-1 expression pedal is enabled")
+
+        .def("set_boss_xs1_pedal_position", &Map2AudioEngine::setBossXS1PedalPosition,
+             py::arg("position"),
+             "Set Boss XS-1 expression pedal position (0-100%)")
+
+        .def("get_boss_xs1_pedal_position", &Map2AudioEngine::getBossXS1PedalPosition,
+             "Get Boss XS-1 expression pedal position")
+
+        .def("set_boss_xs1_pedal_range", &Map2AudioEngine::setBossXS1PedalRange,
+             py::arg("min_semitones"), py::arg("max_semitones"),
+             "Set Boss XS-1 expression pedal range")
+
+        .def("get_boss_xs1_pedal_min", &Map2AudioEngine::getBossXS1PedalMin,
+             "Get Boss XS-1 expression pedal min")
+
+        .def("get_boss_xs1_pedal_max", &Map2AudioEngine::getBossXS1PedalMax,
+             "Get Boss XS-1 expression pedal max")
+
+        .def("set_boss_xs1_preset", [](Map2AudioEngine& self, const std::string& preset) {
+            self.setBossXS1Preset(stringToBossXS1Preset(preset));
+        }, py::arg("preset"), "Set Boss XS-1 preset by name")
+
+        .def("get_boss_xs1_preset", [](const Map2AudioEngine& self) {
+            return bossXS1PresetToString(self.getBossXS1Preset());
+        }, "Get current Boss XS-1 preset name")
+
+        .def("set_boss_xs1_bypass", &Map2AudioEngine::setBossXS1Bypass,
+             py::arg("bypass"),
+             "Bypass Boss XS-1 processor")
+
+        .def("is_boss_xs1_bypassed", &Map2AudioEngine::isBossXS1Bypassed,
+             "Check if Boss XS-1 is bypassed")
+
+        .def("get_boss_xs1_parameters", [](const Map2AudioEngine& self) {
+            return bossXS1ParamsToDict(self.getBossXS1Parameters());
+        }, "Get all Boss XS-1 parameters")
+
+        .def("set_boss_xs1_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setBossXS1Parameters(dictToBossXS1Params(params));
+        }, py::arg("params"), "Set all Boss XS-1 parameters at once")
+
+        .def("get_boss_xs1_input_level", &Map2AudioEngine::getBossXS1InputLevel,
+             "Get Boss XS-1 input level (dB)")
+
+        .def("get_boss_xs1_output_level", &Map2AudioEngine::getBossXS1OutputLevel,
+             "Get Boss XS-1 output level (dB)")
+
+        .def("get_boss_xs1_presets", [](const Map2AudioEngine& /*self*/) {
+            py::list result;
+            int numPresets = Map2AudioEngine::getBossXS1NumPresets();
+            for (int i = 0; i < numPresets; ++i) {
+                auto preset = static_cast<BossXS1PolyShifterProcessor::Preset>(i);
+                py::dict d;
+                d["id"] = bossXS1PresetToString(preset);
+                d["name"] = Map2AudioEngine::getBossXS1PresetName(preset);
+                result.append(d);
+            }
+            return result;
+        }, "Get all available Boss XS-1 presets")
+
+        // ========================================
+        // ShoeGaze Multi-Effect Processor
+        // ========================================
+
+        // Primary controls
+        .def("set_shoegaze_atmosphere", &Map2AudioEngine::setShoeGazeAtmosphere,
+             py::arg("percent"),
+             "Set ShoeGaze atmosphere amount (0-100%)")
+        .def("get_shoegaze_atmosphere", &Map2AudioEngine::getShoeGazeAtmosphere,
+             "Get ShoeGaze atmosphere amount")
+
+        .def("set_shoegaze_decay", &Map2AudioEngine::setShoeGazeDecay,
+             py::arg("seconds"),
+             "Set ShoeGaze reverb decay time (0.5-30s)")
+        .def("get_shoegaze_decay", &Map2AudioEngine::getShoeGazeDecay,
+             "Get ShoeGaze reverb decay time")
+
+        .def("set_shoegaze_shimmer", &Map2AudioEngine::setShoeGazeShimmer,
+             py::arg("percent"),
+             "Set ShoeGaze shimmer amount (0-100%)")
+        .def("get_shoegaze_shimmer", &Map2AudioEngine::getShoeGazeShimmer,
+             "Get ShoeGaze shimmer amount")
+
+        .def("set_shoegaze_shimmer_pitch", &Map2AudioEngine::setShoeGazeShimmerPitch,
+             py::arg("semitones"),
+             "Set ShoeGaze shimmer pitch shift (-12 to +24 semitones)")
+        .def("get_shoegaze_shimmer_pitch", &Map2AudioEngine::getShoeGazeShimmerPitch,
+             "Get ShoeGaze shimmer pitch shift")
+
+        .def("set_shoegaze_modulation", &Map2AudioEngine::setShoeGazeModulation,
+             py::arg("percent"),
+             "Set ShoeGaze modulation depth (0-100%)")
+        .def("get_shoegaze_modulation", &Map2AudioEngine::getShoeGazeModulation,
+             "Get ShoeGaze modulation depth")
+
+        .def("set_shoegaze_mod_rate", &Map2AudioEngine::setShoeGazeModRate,
+             py::arg("hz"),
+             "Set ShoeGaze modulation rate (0.1-5 Hz)")
+        .def("get_shoegaze_mod_rate", &Map2AudioEngine::getShoeGazeModRate,
+             "Get ShoeGaze modulation rate")
+
+        .def("set_shoegaze_drive", &Map2AudioEngine::setShoeGazeDrive,
+             py::arg("percent"),
+             "Set ShoeGaze saturation drive (0-100%)")
+        .def("get_shoegaze_drive", &Map2AudioEngine::getShoeGazeDrive,
+             "Get ShoeGaze saturation drive")
+
+        .def("set_shoegaze_delay_time", &Map2AudioEngine::setShoeGazeDelayTime,
+             py::arg("ms"),
+             "Set ShoeGaze delay time (0-1000ms)")
+        .def("get_shoegaze_delay_time", &Map2AudioEngine::getShoeGazeDelayTime,
+             "Get ShoeGaze delay time")
+
+        .def("set_shoegaze_delay_feedback", &Map2AudioEngine::setShoeGazeDelayFeedback,
+             py::arg("percent"),
+             "Set ShoeGaze delay feedback (0-90%)")
+        .def("get_shoegaze_delay_feedback", &Map2AudioEngine::getShoeGazeDelayFeedback,
+             "Get ShoeGaze delay feedback")
+
+        .def("set_shoegaze_delay_mod", &Map2AudioEngine::setShoeGazeDelayMod,
+             py::arg("percent"),
+             "Set ShoeGaze delay modulation/BBD wobble (0-100%)")
+        .def("get_shoegaze_delay_mod", &Map2AudioEngine::getShoeGazeDelayMod,
+             "Get ShoeGaze delay modulation")
+
+        .def("set_shoegaze_low_cut", &Map2AudioEngine::setShoeGazeLowCut,
+             py::arg("hz"),
+             "Set ShoeGaze low cut frequency (20-2000 Hz)")
+        .def("get_shoegaze_low_cut", &Map2AudioEngine::getShoeGazeLowCut,
+             "Get ShoeGaze low cut frequency")
+
+        .def("set_shoegaze_high_cut", &Map2AudioEngine::setShoeGazeHighCut,
+             py::arg("hz"),
+             "Set ShoeGaze high cut frequency (1000-20000 Hz)")
+        .def("get_shoegaze_high_cut", &Map2AudioEngine::getShoeGazeHighCut,
+             "Get ShoeGaze high cut frequency")
+
+        .def("set_shoegaze_mix", &Map2AudioEngine::setShoeGazeMix,
+             py::arg("percent"),
+             "Set ShoeGaze wet/dry mix (0-100%)")
+        .def("get_shoegaze_mix", &Map2AudioEngine::getShoeGazeMix,
+             "Get ShoeGaze wet/dry mix")
+
+        .def("set_shoegaze_stereo_width", &Map2AudioEngine::setShoeGazeStereoWidth,
+             py::arg("percent"),
+             "Set ShoeGaze stereo width (0-200%)")
+        .def("get_shoegaze_stereo_width", &Map2AudioEngine::getShoeGazeStereoWidth,
+             "Get ShoeGaze stereo width")
+
+        // Advanced controls
+        .def("set_shoegaze_reverb_diffusion", &Map2AudioEngine::setShoeGazeReverbDiffusion,
+             py::arg("percent"),
+             "Set ShoeGaze reverb diffusion (0-100%)")
+        .def("get_shoegaze_reverb_diffusion", &Map2AudioEngine::getShoeGazeReverbDiffusion,
+             "Get ShoeGaze reverb diffusion")
+
+        .def("set_shoegaze_reverb_damping", &Map2AudioEngine::setShoeGazeReverbDamping,
+             py::arg("percent"),
+             "Set ShoeGaze reverb damping (0-100%)")
+        .def("get_shoegaze_reverb_damping", &Map2AudioEngine::getShoeGazeReverbDamping,
+             "Get ShoeGaze reverb damping")
+
+        .def("set_shoegaze_shimmer_feedback", &Map2AudioEngine::setShoeGazeShimmerFeedback,
+             py::arg("percent"),
+             "Set ShoeGaze shimmer feedback/spiral (0-80%)")
+        .def("get_shoegaze_shimmer_feedback", &Map2AudioEngine::getShoeGazeShimmerFeedback,
+             "Get ShoeGaze shimmer feedback")
+
+        .def("set_shoegaze_chorus_voices", &Map2AudioEngine::setShoeGazeChorusVoices,
+             py::arg("voices"),
+             "Set ShoeGaze chorus voice count (1-6)")
+        .def("get_shoegaze_chorus_voices", &Map2AudioEngine::getShoeGazeChorusVoices,
+             "Get ShoeGaze chorus voice count")
+
+        .def("set_shoegaze_ducking", &Map2AudioEngine::setShoeGazeDucking,
+             py::arg("percent"),
+             "Set ShoeGaze ducking amount (0-100%)")
+        .def("get_shoegaze_ducking", &Map2AudioEngine::getShoeGazeDucking,
+             "Get ShoeGaze ducking amount")
+
+        // Preset control
+        .def("set_shoegaze_preset", [](Map2AudioEngine& self, const std::string& preset) {
+            self.setShoeGazePreset(stringToShoegazePreset(preset));
+        }, py::arg("preset"), "Set ShoeGaze preset by name")
+
+        .def("get_shoegaze_preset", [](const Map2AudioEngine& self) {
+            return shoegazePresetToString(self.getShoeGazePreset());
+        }, "Get current ShoeGaze preset name")
+
+        // Bypass and spillover
+        .def("set_shoegaze_bypass", &Map2AudioEngine::setShoeGazeBypass,
+             py::arg("bypass"),
+             "Bypass ShoeGaze processor")
+        .def("is_shoegaze_bypassed", &Map2AudioEngine::isShoeGazeBypassed,
+             "Check if ShoeGaze is bypassed")
+
+        .def("set_shoegaze_spillover", &Map2AudioEngine::setShoeGazeSpillover,
+             py::arg("enabled"),
+             "Enable ShoeGaze spillover (tails when bypassed)")
+        .def("has_shoegaze_spillover", &Map2AudioEngine::hasShoeGazeSpillover,
+             "Check if ShoeGaze spillover is enabled")
+
+        // Bulk parameters
+        .def("get_shoegaze_parameters", [](const Map2AudioEngine& self) {
+            return shoegazeParamsToDict(self.getShoeGazeParameters());
+        }, "Get all ShoeGaze parameters")
+
+        .def("set_shoegaze_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setShoeGazeParameters(dictToShoegazeParams(params));
+        }, py::arg("params"), "Set all ShoeGaze parameters at once")
+
+        // Metering
+        .def("get_shoegaze_metering", [](const Map2AudioEngine& self) {
+            return shoegazeMeteringToDict(self.getShoeGazeMetering());
+        }, "Get ShoeGaze metering data")
+
+        // Preset info
+        .def("get_shoegaze_presets", [](const Map2AudioEngine& /*self*/) {
+            py::list result;
+            int numPresets = Map2AudioEngine::getShoeGazeNumPresets();
+            for (int i = 0; i < numPresets; ++i) {
+                auto preset = static_cast<ShoeGazeProcessor::Preset>(i);
+                auto info = Map2AudioEngine::getShoeGazePresetInfo(preset);
+                py::dict d;
+                d["id"] = shoegazePresetToString(preset);
+                d["name"] = info.name ? std::string(info.name) : "";
+                d["artist"] = info.artist ? std::string(info.artist) : "";
+                d["description"] = info.description ? std::string(info.description) : "";
+                result.append(d);
+            }
+            return result;
+        }, "Get all available ShoeGaze presets")
 
         // ========================================
         // Pedalboard State (Legacy Compatibility)

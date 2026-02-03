@@ -32,7 +32,7 @@ import Toolbar from "@mui/material/Toolbar";
 import IconButtonEx from "./IconButtonEx";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Typography from "@mui/material/Typography";
-import Slider, { SliderProps } from "@mui/material/Slider";
+import { NumberInput } from '../map2/components/NumberInput';
 import Checkbox from "@mui/material/Checkbox";
 import TimebaseSelectorDialog from "./TimebaseselectorDialog";
 import Timebase, { TimebaseUnits } from "./Timebase";
@@ -213,113 +213,84 @@ export function formatTime(timebase: Timebase, sampleRate: number, seconds: numb
 
 
 
-interface SliderWithPreviewProps extends SliderProps {
+interface SliderWithPreviewProps {
     style?: React.CSSProperties;
     value: number | number[];
+    min: number;
+    max: number;
+    disabled?: boolean;
     onChange: (event: Event | SyntheticEvent, value: number | number[], thumb?: number) => void;
     onPreview?: (event: Event | SyntheticEvent, value: number | number[], thumb?: number) => void;
     onCommitPreviewValue?: (event: Event | SyntheticEvent, value: number | number[], thumb?: number) => void;
+    valueLabelFormat?: (v: number) => string;
 }
-interface PreviewArguments {
-    newValue: number | number[];
-    thumb?: number;
-};
 
 function SliderWithPreview(props: SliderWithPreviewProps) {
-    const { value, onChange, onPreview, onCommitPreviewValue, style, ...extra } = props;
-    const [previewArguments, setPreviewArguments] =
-        React.useState<PreviewArguments | null>(null);
+    const { value, onChange, onCommitPreviewValue, style, min, max, disabled } = props;
 
-    const [pointerDown, setPointerDown] = React.useState(false);
+    // Handle both single and range values
+    const isSingleValue = !Array.isArray(value);
+    const singleValue = isSingleValue ? (value as number) : 0;
+    const rangeValue = !isSingleValue ? (value as number[]) : [0, 0];
 
-
-    // code to handle a bug in crhome relating to mouseup events, that causes zero values to not be set.
-
-    const handleMouseUp = (e: MouseEvent) => {
-        if (pointerDown && e.button === 0) { // Left mouse button
-            setPointerDown(false);
-            if (previewArguments) {
-                if (onCommitPreviewValue) {
-                    onCommitPreviewValue(e as Event, previewArguments.newValue, previewArguments.thumb);
-                }
-                setPreviewArguments(null);
-            }
-        }
-    };
-
-    useEffect(() => {
-        document.addEventListener('mouseup', handleMouseUp);
-
-        // Cleanup: Remove the event listener when the component unmounts
-        return () => {
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, []); // Re-run effect when tempValue changes to ensure latest value is committed
-
-
-    return (
-        <Slider
-            {...extra}
-            style={style}
-            step={0.0001}
-            value={previewArguments ? previewArguments.newValue : props.value}
-            onChange={(event, newValue, thumb) => {
-                if (pointerDown) {
-                    if (props.onPreview) {
-                        props.onPreview(event, newValue, thumb);
-                    }
-                    setPreviewArguments({ newValue, thumb });
-                } else {
-                    if (props.onChange) {
-                        props.onChange(event, newValue, thumb);
-                    }
-                    return;
-                }
-            }}
-
-            onChangeCommitted={(event, newValue) => {
-                if (pointerDown) {
-                    if (props.onPreview) {
-                        props.onPreview(event as SyntheticEvent, newValue, 0);
-                    }
-                    setPreviewArguments({ newValue: newValue, thumb: 0 });
-                } else {
-                    if (props.onChange) {
-                        props.onChange(event, newValue, 0);
-                    }
-                    return;
-                }
-            }}
-            onMouseDown={(e) => {
-                if (e.button == 0) {
-                    setPointerDown(true);
-                }
-            }}
-            onMouseUp={(e) => {
-                if (e.button == 0) { // Left mouse button   
-                    setPointerDown(false);
-                    if (previewArguments) {
+    if (isSingleValue) {
+        return (
+            <div style={{ ...style, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <NumberInput
+                    value={singleValue}
+                    min={min}
+                    max={max}
+                    step={0.01}
+                    onChange={(v) => {
+                        onChange(new Event('change'), v);
                         if (onCommitPreviewValue) {
-                            onCommitPreviewValue(e, previewArguments.newValue, previewArguments.thumb);
+                            onCommitPreviewValue(new Event('change'), v);
                         }
-                        setPreviewArguments(null);
-                    }
-                }
+                    }}
+                    disabled={disabled}
+                    size="small"
+                    fullWidth
+                />
+            </div>
+        );
+    }
 
-            }}
-            onMouseMove={(e) => {
-                if (pointerDown && previewArguments) {
-                    if (props.onPreview) {
-                        if (e.clientX < 0) // bug in crhrome
-                        {
-                            props.onPreview(e, previewArguments.newValue, previewArguments.thumb);
-
-                        }
+    // Range value - show two inputs
+    return (
+        <div style={{ ...style, display: 'flex', gap: 8, alignItems: 'center', opacity: disabled ? 0.4 : 1 }}>
+            <NumberInput
+                label="Start"
+                value={rangeValue[0]}
+                min={min}
+                max={max}
+                step={0.01}
+                onChange={(v) => {
+                    const newValue = [v, rangeValue[1]];
+                    onChange(new Event('change'), newValue, 0);
+                    if (onCommitPreviewValue) {
+                        onCommitPreviewValue(new Event('change'), newValue, 0);
                     }
-                }
-            }
-            }
-        />
+                }}
+                disabled={disabled}
+                size="small"
+            />
+            <NumberInput
+                label="End"
+                value={rangeValue[1]}
+                min={min}
+                max={max}
+                step={0.01}
+                onChange={(v) => {
+                    const newValue = [rangeValue[0], v];
+                    onChange(new Event('change'), newValue, 1);
+                    if (onCommitPreviewValue) {
+                        onCommitPreviewValue(new Event('change'), newValue, 1);
+                    }
+                }}
+                disabled={disabled}
+                size="small"
+            />
+        </div>
     );
 }
 

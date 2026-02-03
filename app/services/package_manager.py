@@ -503,30 +503,46 @@ class PackageManager:
             logger.error(f"Error scanning NAM models: {e}")
             return []
     
-    async def install_package(self, package_name: str, package_type: PackageType) -> bool:
+    async def install_package(
+        self,
+        package_name: str,
+        package_type: PackageType,
+        source_url: Optional[str] = None,
+        source_path: Optional[str] = None
+    ) -> bool:
         """
         Install a package
-        
+
         Args:
             package_name: Package name
             package_type: Package type
-        
+            source_url: Optional URL to download from (for IR, NAM, LV2)
+            source_path: Optional local path to install from (for IR, NAM, LV2)
+
         Returns:
             True if successful
         """
         pkg_key = f"{package_type.value}:{package_name}"
-        
+
         # Get or create lock
         if pkg_key not in self.operation_locks:
             self.operation_locks[pkg_key] = asyncio.Lock()
-        
+
         async with self.operation_locks[pkg_key]:
             logger.info(f"Installing package: {package_name} ({package_type.value})")
-            
+
             if package_type == PackageType.SYSTEM_PIP:
                 return await self._install_pip_package(package_name)
             elif package_type == PackageType.SYSTEM_DNF:
                 return await self._install_dnf_package(package_name)
+            elif package_type == PackageType.IR_CABINET:
+                return await self._install_ir_file(package_name, "cabinet", source_url, source_path)
+            elif package_type == PackageType.IR_REVERB:
+                return await self._install_ir_file(package_name, "reverb", source_url, source_path)
+            elif package_type == PackageType.NAM_MODEL:
+                return await self._install_nam_model(package_name, source_url, source_path)
+            elif package_type == PackageType.LV2_PLUGIN:
+                return await self._install_lv2_plugin(package_name, source_url, source_path)
             else:
                 logger.warning(f"Install not implemented for type: {package_type.value}")
                 return False
@@ -588,7 +604,203 @@ class PackageManager:
         except Exception as e:
             logger.error(f"Error installing dnf package: {e}")
             return False
-    
+
+    async def _install_ir_file(
+        self,
+        file_name: str,
+        ir_type: str,
+        source_url: Optional[str] = None,
+        source_path: Optional[str] = None
+    ) -> bool:
+        """Install IR file from URL or local path"""
+        try:
+            # Determine target directory
+            if ir_type == "cabinet":
+                target_dir = self.ir_paths[0] / "cabinets"
+            else:
+                target_dir = self.ir_paths[0] / "reverbs"
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            # Ensure file has .wav extension
+            if not file_name.lower().endswith('.wav'):
+                file_name = f"{file_name}.wav"
+            target_path = target_dir / file_name
+
+            if source_url:
+                # Download from URL
+                logger.info(f"Downloading IR file from {source_url}")
+                urllib.request.urlretrieve(source_url, target_path)
+            elif source_path:
+                # Copy from local path
+                src = Path(source_path)
+                if not src.exists():
+                    logger.error(f"Source file not found: {source_path}")
+                    return False
+                shutil.copy2(src, target_path)
+            else:
+                logger.error("No source URL or path provided for IR file")
+                return False
+
+            logger.info(f"Installed IR file: {target_path}")
+
+            # Update package registry
+            pkg_type = PackageType.IR_CABINET if ir_type == "cabinet" else PackageType.IR_REVERB
+            pkg_key = f"{pkg_type.value}:{file_name}"
+            self.packages[pkg_key] = Package(
+                name=file_name,
+                type=pkg_type,
+                status=PackageStatus.INSTALLED,
+                install_path=str(target_path),
+                size_bytes=target_path.stat().st_size,
+                installed_at=datetime.now().isoformat()
+            )
+            self._save_cache()
+            return True
+
+        except Exception as e:
+            logger.error(f"Error installing IR file: {e}")
+            return False
+
+    async def _install_nam_model(
+        self,
+        model_name: str,
+        source_url: Optional[str] = None,
+        source_path: Optional[str] = None
+    ) -> bool:
+        """Install NAM model from URL or local path"""
+        try:
+            target_dir = self.nam_paths[0]
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            # Ensure file has .nam extension
+            if not model_name.lower().endswith('.nam'):
+                model_name = f"{model_name}.nam"
+            target_path = target_dir / model_name
+
+            if source_url:
+                # Download from URL
+                logger.info(f"Downloading NAM model from {source_url}")
+                urllib.request.urlretrieve(source_url, target_path)
+            elif source_path:
+                # Copy from local path
+                src = Path(source_path)
+                if not src.exists():
+                    logger.error(f"Source file not found: {source_path}")
+                    return False
+                shutil.copy2(src, target_path)
+            else:
+                logger.error("No source URL or path provided for NAM model")
+                return False
+
+            logger.info(f"Installed NAM model: {target_path}")
+
+            # Update package registry
+            pkg_key = f"nam:{model_name}"
+            self.packages[pkg_key] = Package(
+                name=model_name,
+                type=PackageType.NAM_MODEL,
+                status=PackageStatus.INSTALLED,
+                install_path=str(target_path),
+                size_bytes=target_path.stat().st_size,
+                installed_at=datetime.now().isoformat(),
+                tags=["nam", "neural-amp", "guitar"]
+            )
+            self._save_cache()
+            return True
+
+        except Exception as e:
+            logger.error(f"Error installing NAM model: {e}")
+            return False
+
+    async def _install_lv2_plugin(
+        self,
+        plugin_name: str,
+        source_url: Optional[str] = None,
+        source_path: Optional[str] = None
+    ) -> bool:
+        """Install LV2 plugin from URL or local path"""
+        try:
+            # LV2 plugins are directories ending in .lv2
+            if not plugin_name.lower().endswith('.lv2'):
+                plugin_name = f"{plugin_name}.lv2"
+
+            # Default LV2 path for user plugins
+            target_base = Path.home() / ".lv2"
+            target_base.mkdir(parents=True, exist_ok=True)
+            target_path = target_base / plugin_name
+
+            if source_url:
+                # Download and extract
+                logger.info(f"Downloading LV2 plugin from {source_url}")
+                import tempfile
+                import tarfile
+                import zipfile
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.tmp') as tmp:
+                    urllib.request.urlretrieve(source_url, tmp.name)
+                    tmp_path = Path(tmp.name)
+
+                    # Determine archive type and extract
+                    if source_url.endswith('.zip'):
+                        with zipfile.ZipFile(tmp_path, 'r') as zf:
+                            # Find the .lv2 directory in the archive
+                            lv2_dirs = [n for n in zf.namelist() if '.lv2/' in n]
+                            if lv2_dirs:
+                                zf.extractall(target_base)
+                    elif source_url.endswith(('.tar.gz', '.tgz', '.tar.xz', '.tar.bz2')):
+                        with tarfile.open(tmp_path) as tf:
+                            tf.extractall(target_base)
+                    else:
+                        # Assume it's a single .so file or similar
+                        if target_path.exists():
+                            shutil.rmtree(target_path)
+                        target_path.mkdir(parents=True)
+                        shutil.copy2(tmp_path, target_path / f"{plugin_name.replace('.lv2', '.so')}")
+
+                    tmp_path.unlink()
+
+            elif source_path:
+                # Copy from local path
+                src = Path(source_path)
+                if not src.exists():
+                    logger.error(f"Source path not found: {source_path}")
+                    return False
+
+                if target_path.exists():
+                    shutil.rmtree(target_path)
+                shutil.copytree(src, target_path)
+
+            else:
+                logger.error("No source URL or path provided for LV2 plugin")
+                return False
+
+            logger.info(f"Installed LV2 plugin: {target_path}")
+
+            # Update package registry
+            pkg_key = f"lv2:{plugin_name}"
+            self.packages[pkg_key] = Package(
+                name=plugin_name,
+                type=PackageType.LV2_PLUGIN,
+                status=PackageStatus.INSTALLED,
+                install_path=str(target_path),
+                installed_at=datetime.now().isoformat(),
+                tags=["lv2", "plugin", "audio"]
+            )
+            self._save_cache()
+
+            # Invalidate plugin discovery cache
+            try:
+                from app.routes.plugins import invalidate_plugin_cache
+                invalidate_plugin_cache()
+            except ImportError:
+                pass
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error installing LV2 plugin: {e}")
+            return False
+
     async def remove_package(self, package_name: str, package_type: PackageType) -> bool:
         """
         Remove a package
@@ -617,6 +829,8 @@ class PackageManager:
                 return await self._remove_ir_file(package_name)
             elif package_type == PackageType.NAM_MODEL:
                 return await self._remove_nam_model(package_name)
+            elif package_type == PackageType.LV2_PLUGIN:
+                return await self._remove_lv2_plugin(package_name)
             else:
                 logger.warning(f"Remove not implemented for type: {package_type.value}")
                 return False
@@ -703,20 +917,56 @@ class PackageManager:
             pkg_key = f"nam:{model_name}"
             if pkg_key not in self.packages:
                 return False
-            
+
             file_path = Path(self.packages[pkg_key].install_path)
             if file_path.exists():
                 file_path.unlink()
                 logger.info(f"Removed NAM model: {file_path}")
-            
+
             del self.packages[pkg_key]
             self._save_cache()
             return True
-            
+
         except Exception as e:
             logger.error(f"Error removing NAM model: {e}")
             return False
-    
+
+    async def _remove_lv2_plugin(self, plugin_name: str) -> bool:
+        """Remove LV2 plugin"""
+        try:
+            pkg_key = f"lv2:{plugin_name}"
+            if pkg_key not in self.packages:
+                # Try with .lv2 extension
+                if not plugin_name.endswith('.lv2'):
+                    pkg_key = f"lv2:{plugin_name}.lv2"
+                if pkg_key not in self.packages:
+                    logger.warning(f"LV2 plugin not found in registry: {plugin_name}")
+                    return False
+
+            plugin_path = Path(self.packages[pkg_key].install_path)
+            if plugin_path.exists():
+                if plugin_path.is_dir():
+                    shutil.rmtree(plugin_path)
+                else:
+                    plugin_path.unlink()
+                logger.info(f"Removed LV2 plugin: {plugin_path}")
+
+            del self.packages[pkg_key]
+            self._save_cache()
+
+            # Invalidate plugin discovery cache
+            try:
+                from app.routes.plugins import invalidate_plugin_cache
+                invalidate_plugin_cache()
+            except ImportError:
+                pass
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error removing LV2 plugin: {e}")
+            return False
+
     def get_package(self, package_name: str, package_type: PackageType) -> Optional[Package]:
         """Get package by name and type"""
         pkg_key = f"{package_type.value}:{package_name}"

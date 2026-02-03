@@ -1,0 +1,326 @@
+/**
+ * EVH Pitch Shifter Card Styles
+ * Van Halen-inspired theme with classic rock aesthetic
+ */
+
+.evh-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.evh-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary, #fff);
+}
+
+.evh-subtitle {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  letter-spacing: 0.5px;
+}
+
+/* Visualization */
+.evh-visualization {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.evh-stereo-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.evh-channel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.evh-channel-label {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.evh-left .evh-channel-label { color: #4ecdc4; }
+.evh-right .evh-channel-label { color: #f59e0b; }
+
+.evh-pitch-indicator {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.evh-delay-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.evh-delay-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+.evh-delay-label {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+}
+
+.evh-center-line {
+  width: 1px;
+  height: 50px;
+  background: linear-gradient(to bottom, transparent, var(--accent, #ff6b35), transparent);
+  opacity: 0.5;
+}
+
+/* Preset Section */
+.evh-preset-section {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.evh-preset-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.evh-preset-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent, #ff6b35);
+}
+
+.evh-preset-name {
+  font-weight: 600;
+  flex: 1;
+  text-align: left;
+}
+
+.evh-preset-song {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  font-style: italic;
+}
+
+.evh-preset-button svg.rotated {
+  transform: rotate(180deg);
+}
+
+.evh-preset-info {
+  display: flex;
+  gap: 16px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+}
+
+.evh-preset-info span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Preset Browser Dropdown */
+.evh-preset-browser {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-elevated, #1a1a1a);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.evh-era-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 107, 53, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent, #ff6b35);
+}
+
+.evh-era-gear {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  font-weight: 400;
+}
+
+.evh-preset-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.evh-preset-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.evh-preset-item.active {
+  background: rgba(255, 107, 53, 0.15);
+  border-left: 3px solid var(--accent, #ff6b35);
+}
+
+.evh-preset-item-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.evh-preset-item-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.evh-preset-item-album {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+}
+
+.evh-preset-item-desc {
+  font-size: 11px;
+  color: var(--text-tertiary, #666);
+}
+
+/* Pitch Controls */
+.evh-pitch-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.evh-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.evh-link-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.evh-link-btn.linked {
+  background: rgba(255, 107, 53, 0.2);
+  border-color: var(--accent, #ff6b35);
+  color: var(--accent, #ff6b35);
+}
+
+/* Quick Pitch Buttons */
+.evh-quick-pitch {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.evh-quick-pitch button {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.evh-quick-pitch button:hover {
+  background: rgba(255, 107, 53, 0.2);
+  border-color: var(--accent, #ff6b35);
+  color: var(--text-primary, #fff);
+}
+
+/* Footer */
+.evh-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 8px;
+}
+
+.evh-metering {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-secondary, #888);
+}
+
+.evh-source-note {
+  font-size: 9px;
+  color: var(--text-tertiary, #555);
+  font-style: italic;
+}
+
+/* Scrollbar for preset browser */
+.evh-preset-browser::-webkit-scrollbar {
+  width: 6px;
+}
+
+.evh-preset-browser::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.evh-preset-browser::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.evh-preset-browser::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

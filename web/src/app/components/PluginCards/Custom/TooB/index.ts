@@ -7,7 +7,7 @@
 // Modulation Effects
 export { CE2ChorusCard } from './CE2ChorusCard'
 export { BF2FlangerCard } from './BF2FlangerCard'
-export { PhaserCard } from './PhaserCard'
+export { PhaserCard as TooBPhaserCard } from './PhaserCard'
 export { TremoloCard } from './TremoloCard'
 
 // Time-Based Effects

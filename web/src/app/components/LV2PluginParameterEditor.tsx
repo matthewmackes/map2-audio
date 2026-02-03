@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { pluginsApi, pluginPresetsApi, chainsApi } from '../../map2/api'
 import { usePluginOutput } from '../hooks/usePluginOutputs'
+import { NumberInput } from './Controls/NumberInput'
 import type { Plugin, PluginParameter, OutputPort } from '../../map2/types'
 
 // Category colors (matching existing system)
@@ -171,8 +172,9 @@ function ParameterControl({
     )
   }
 
-  // Slider control (linear or logarithmic)
-  const sliderPos = valueToSlider(localValue)
+  // Calculate step based on range
+  const range = param.max - param.min
+  const step = range > 100 ? 1 : range > 10 ? 0.1 : 0.01
 
   return (
     <div style={{
@@ -206,94 +208,24 @@ function ParameterControl({
             </span>
           )}
         </span>
-        <span style={{
-          fontSize: 11,
-          color: accentColor,
-          fontWeight: 600,
-          fontFamily: 'monospace',
-          minWidth: 50,
-          textAlign: 'right',
-        }}>
-          {formatValue(localValue)}
-        </span>
       </div>
 
-      {/* Custom slider track */}
-      <div style={{
-        position: 'relative',
-        height: 24,
-        display: 'flex',
-        alignItems: 'center',
-      }}>
-        {/* Track background */}
-        <div style={{
-          position: 'absolute',
-          width: '100%',
-          height: 6,
-          background: 'rgba(0,0,0,0.4)',
-          borderRadius: 3,
-          overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.05)',
-        }}>
-          {/* Fill */}
-          <div style={{
-            width: `${sliderPos}%`,
-            height: '100%',
-            background: `linear-gradient(90deg, ${accentColor}80, ${accentColor})`,
-            borderRadius: 3,
-            boxShadow: `0 0 8px ${accentColor}60`,
-            transition: isDragging ? 'none' : 'width 0.1s ease',
-          }} />
-        </div>
-
-        {/* Native range input (invisible but interactive) */}
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={0.1}
-          value={sliderPos}
-          disabled={disabled}
-          onChange={(e) => {
-            const newSliderPos = parseFloat(e.target.value)
-            const newValue = sliderToValue(newSliderPos)
-            setLocalValue(newValue)
-            onChange(newValue)
-          }}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={() => {
-            setIsDragging(false)
-            onChangeEnd?.()
-          }}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => {
-            setIsDragging(false)
-            onChangeEnd?.()
-          }}
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: 24,
-            opacity: 0,
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            margin: 0,
-          }}
-        />
-
-        {/* Thumb indicator */}
-        <div style={{
-          position: 'absolute',
-          left: `calc(${sliderPos}% - 8px)`,
-          width: 16,
-          height: 16,
-          borderRadius: '50%',
-          background: accentColor,
-          boxShadow: `0 0 10px ${accentColor}80, 0 2px 4px rgba(0,0,0,0.3)`,
-          border: '2px solid #fff',
-          transition: isDragging ? 'none' : 'left 0.1s ease',
-          pointerEvents: 'none',
-        }} />
-      </div>
+      {/* Number input control */}
+      <NumberInput
+        value={localValue}
+        min={param.min}
+        max={param.max}
+        step={step}
+        onChange={(v) => {
+          setLocalValue(v)
+          onChange(v)
+        }}
+        onChangeEnd={onChangeEnd}
+        disabled={disabled}
+        size="small"
+        showLabel={false}
+        valueFormatter={formatValue}
+      />
 
       {/* Min/Max labels */}
       <div style={{

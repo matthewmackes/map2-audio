@@ -19,11 +19,11 @@ import {
   InputLabel,
   Switch,
   FormControlLabel,
-  Slider,
   Chip,
   IconButton,
   Tooltip,
 } from '@mui/material'
+import { NumberInput } from '../../map2/components/NumberInput'
 import {
   Piano,
   Music,
@@ -518,18 +518,26 @@ function MappingDialog({
 
           <div>
             <p className="subtitle" style={{ marginBottom: 8 }}>Value Range</p>
-            <Slider
-              value={[minVal, maxVal]}
-              onChange={(_, value) => {
-                const [min, max] = value as number[]
-                setMinVal(min)
-                setMaxVal(max)
-              }}
-              min={0}
-              max={1}
-              step={0.01}
-              valueLabelDisplay="auto"
-            />
+            <div style={{ display: 'flex', gap: 16 }}>
+              <NumberInput
+                label="Min"
+                value={minVal}
+                onChange={(v) => setMinVal(v)}
+                min={0}
+                max={1}
+                step={0.01}
+                size="small"
+              />
+              <NumberInput
+                label="Max"
+                value={maxVal}
+                onChange={(v) => setMaxVal(v)}
+                min={0}
+                max={1}
+                step={0.01}
+                size="small"
+              />
+            </div>
           </div>
 
           <div className="grid two">

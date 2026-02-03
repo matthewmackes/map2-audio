@@ -1,0 +1,186 @@
+/**
+ * OutotuneCard Styles
+ * Antares Auto-Tune inspired pitch correction interface
+ */
+
+/* Visualization */
+.outotune-visualization {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  background: linear-gradient(180deg, #0d1117 0%, #0a0a0a 100%);
+  border-radius: 8px;
+}
+
+/* Presets */
+.outotune-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+}
+
+.outotune-preset-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.outotune-preset-chip:hover {
+  background: #222;
+  border-color: #444;
+  color: #aaa;
+}
+
+.outotune-preset-chip.active {
+  background: color-mix(in srgb, var(--accent) 20%, #1a1a1a);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Key & Scale Selection */
+.outotune-key-scale {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.outotune-select-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.outotune-select-group label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.outotune-select-group select {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.outotune-select-group select:hover {
+  border-color: #444;
+}
+
+.outotune-select-group select:focus {
+  outline: none;
+  border-color: var(--accent, #00d4aa);
+}
+
+/* Piano Roll */
+.outotune-piano-roll {
+  display: flex;
+  height: 48px;
+  background: #111;
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 4px;
+  gap: 2px;
+}
+
+.outotune-piano-key {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.outotune-piano-key.white {
+  background: #333;
+  color: #666;
+}
+
+.outotune-piano-key.black {
+  background: #1a1a1a;
+  color: transparent;
+  flex: 0.7;
+  height: 65%;
+  margin-top: 0;
+  z-index: 1;
+}
+
+.outotune-piano-key:hover:not(.active) {
+  background: #444;
+}
+
+.outotune-piano-key.active.white {
+  background: var(--accent, #00d4aa);
+  color: #000;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent, #00d4aa) 50%, transparent);
+}
+
+.outotune-piano-key.active.black {
+  background: color-mix(in srgb, var(--accent, #00d4aa) 80%, #000);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #00d4aa) 40%, transparent);
+}
+
+/* Footer */
+.outotune-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 4px 0;
+  margin-top: 8px;
+  border-top: 1px solid #222;
+}
+
+.outotune-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: #555;
+}
+
+.outotune-footer-item svg {
+  opacity: 0.6;
+}
+
+/* Responsive */
+@media (max-width: 360px) {
+  .outotune-key-scale {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .outotune-piano-roll {
+    height: 40px;
+  }
+
+  .outotune-piano-key {
+    font-size: 7px;
+  }
+}

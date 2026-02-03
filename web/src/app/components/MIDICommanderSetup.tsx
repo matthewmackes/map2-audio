@@ -10,7 +10,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
   Chip,
-  Slider,
   Switch,
   FormControlLabel,
   FormControl,
@@ -26,6 +25,7 @@ import {
   StepLabel,
   StepContent,
 } from '@mui/material'
+import { NumberInput } from '../../map2/components/NumberInput'
 import {
   Settings,
   Zap,
@@ -363,21 +363,31 @@ function ExpressionCalibrationPanel({
             </div>
           )}
 
-          {/* Deadzone slider */}
+          {/* Deadzone range */}
           <div style={{ marginBottom: 16 }}>
-            <div className="subtitle" style={{ marginBottom: 4 }}>
-              Deadzone Range: {cal.deadzone_low} - {cal.deadzone_high}
+            <div className="subtitle" style={{ marginBottom: 8 }}>
+              Deadzone Range
             </div>
-            <Slider
-              value={[cal.deadzone_low, cal.deadzone_high]}
-              onChange={(_, value) => {
-                const [low, high] = value as number[]
-                onUpdate({ deadzone_low: low, deadzone_high: high })
-              }}
-              min={0}
-              max={127}
-              valueLabelDisplay="auto"
-            />
+            <div style={{ display: 'flex', gap: 16 }}>
+              <NumberInput
+                label="Low"
+                value={cal.deadzone_low}
+                onChange={(v) => onUpdate({ deadzone_low: v })}
+                min={0}
+                max={127}
+                step={1}
+                size="small"
+              />
+              <NumberInput
+                label="High"
+                value={cal.deadzone_high}
+                onChange={(v) => onUpdate({ deadzone_high: v })}
+                min={0}
+                max={127}
+                step={1}
+                size="small"
+              />
+            </div>
           </div>
 
           {/* Curve type */}

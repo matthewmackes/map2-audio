@@ -84,9 +84,12 @@ class StoragePaths:
         Default: ~/.local/share/map2/soundfonts
         """
         try:
-            return Path(get_config().get("storage.soundfont_user_dir")).expanduser()
-        except (KeyError, AttributeError):
-            return Path("~/.local/share/map2/soundfonts").expanduser()
+            path = get_config().get("storage.soundfont_user_dir")
+            if path:
+                return Path(path).expanduser()
+        except (KeyError, AttributeError, TypeError):
+            pass
+        return Path("~/.local/share/map2/soundfonts").expanduser()
 
     # =========================================================================
     # System Directories (service-writable locations)
@@ -123,9 +126,12 @@ class StoragePaths:
         Default: /var/lib/map2/soundfonts
         """
         try:
-            return Path(get_config().get("storage.soundfont_system_dir"))
-        except (KeyError, AttributeError):
-            return Path("/var/lib/map2/soundfonts")
+            path = get_config().get("storage.soundfont_system_dir")
+            if path:
+                return Path(path)
+        except (KeyError, AttributeError, TypeError):
+            pass
+        return Path("/var/lib/map2/soundfonts")
 
     @staticmethod
     def get_soundfont_download_dir() -> Path:

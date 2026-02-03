@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Slider,
   Typography,
   Select,
   MenuItem,
@@ -25,6 +24,7 @@ import {
   Chip,
   Paper,
 } from '@mui/material';
+import { NumberInput } from './NumberInput';
 import {
   Waves as LFOIcon,
   Close as CloseIcon,
@@ -272,14 +272,15 @@ export default function LFOQuickButton({
                 </Select>
               </FormControl>
             ) : (
-              <Slider
+              <NumberInput
+                label="Rate"
                 value={config.rateHz}
-                onChange={(_, value) => setConfig({ ...config, rateHz: value as number })}
+                onChange={(value) => setConfig({ ...config, rateHz: value })}
                 min={0.01}
                 max={20}
                 step={0.01}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(v) => `${v.toFixed(2)} Hz`}
+                unit="Hz"
+                size="small"
                 sx={{ mt: 1 }}
               />
             )}
@@ -287,17 +288,15 @@ export default function LFOQuickButton({
 
           {/* Depth Control */}
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2">
-              Depth: {(config.depth * 100).toFixed(0)}%
-            </Typography>
-            <Slider
-              value={config.depth}
-              onChange={(_, value) => setConfig({ ...config, depth: value as number })}
+            <NumberInput
+              label="Depth"
+              value={config.depth * 100}
+              onChange={(value) => setConfig({ ...config, depth: value / 100 })}
               min={0}
-              max={1}
-              step={0.01}
-              valueLabelDisplay="auto"
-              valueLabelFormat={(v) => `${(v * 100).toFixed(0)}%`}
+              max={100}
+              step={1}
+              unit="%"
+              size="small"
             />
           </Box>
 

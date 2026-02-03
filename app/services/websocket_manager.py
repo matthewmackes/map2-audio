@@ -1,16 +1,23 @@
 """
 WebSocket Manager - Real-time communication for MAP2 Audio
 Handles WebSocket connections, message broadcasting, and subscription management
+
+Fix #8: Added optional message compression for large payloads
 """
 
 import asyncio
 import json
 import logging
+import gzip
+import base64
 from typing import Dict, Set, Any, Optional, List
 from fastapi import WebSocket
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# Fix #8: Message size threshold for compression (1KB)
+COMPRESSION_THRESHOLD = 1024
 
 
 class WebSocketManager:
@@ -22,9 +29,10 @@ class WebSocketManager:
     - Topic-based subscriptions
     - Selective broadcasting
     - Connection lifecycle management
+    - Fix #8: Optional gzip compression for large messages
     """
     
-    def __init__(self):
+    def __init__(self, enable_compression: bool = True):
         # Active connections: client_id -> WebSocket
         self.active_connections: Dict[str, WebSocket] = {}
 
@@ -40,6 +48,10 @@ class WebSocketManager:
 
         # Lock for thread-safe operations
         self._lock = asyncio.Lock()
+        
+        # Fix #8: Compression settings
+        self.enable_compression = enable_compression
+        self.bytes_saved = 0  # Track compression savings
         
     async def connect(self, websocket: WebSocket, client_id: str) -> None:
         """
@@ -167,8 +179,10 @@ class WebSocketManager:
             
     async def broadcast_json(self, data: Dict[str, Any], topic: Optional[str] = None) -> None:
         """
-        Broadcast a JSON message
+        Broadcast a JSON message with optional compression
 
+        Fix #8: Messages larger than COMPRESSION_THRESHOLD are gzip compressed
+        
         Args:
             data: Dictionary to serialize as JSON
             topic: Optional topic filter
@@ -186,6 +200,20 @@ class WebSocketManager:
                     self.event_history[topic].pop(0)
 
         message = json.dumps(data)
+        
+        # Fix #8: Compress large messages
+        if self.enable_compression and len(message) > COMPRESSION_THRESHOLD:
+            compressed = gzip.compress(message.encode('utf-8'))
+            # Only use compression if it actually reduces size
+            if len(compressed) < len(message):
+                self.bytes_saved += len(message) - len(compressed)
+                # Send as base64-encoded compressed data with header
+                message = json.dumps({
+                    "_compressed": True,
+                    "_encoding": "gzip+base64",
+                    "data": base64.b64encode(compressed).decode('ascii')
+                })
+        
         await self.broadcast(message, topic)
         
     def get_subscribers(self, topic: str) -> List[str]:
@@ -240,7 +268,10 @@ class WebSocketManager:
             "subscriptions_per_topic": {
                 topic: len(clients)
                 for topic, clients in self.subscriptions.items()
-            }
+            },
+            # Fix #8: Include compression stats
+            "compression_enabled": self.enable_compression,
+            "bytes_saved_by_compression": self.bytes_saved
         }
 
 
