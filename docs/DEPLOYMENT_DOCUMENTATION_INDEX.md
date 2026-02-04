@@ -436,6 +436,9 @@ TOTAL                                      ~16,500      68           100+
 - [ ] Setup development environment
 - [ ] Create git branches
 - [ ] Assign tasks to developers
+- [ ] Define node identity format (`AUDIO-NODE-<ID4>`, `CONTROL-NODE-<ID4>`)
+- [ ] Ensure user `mm` exists on all nodes
+- [ ] Establish mutual SSH trust between all nodes (passwordless)
 
 ### Phase 1: Core Infrastructure (Weeks 1-2)
 - [ ] Implement app/config/deployment.py

@@ -130,6 +130,14 @@
 
 ### System Design: Three Deployment Modes
 
+### Node Identity & Trust (Required)
+
+- Audio processing nodes must identify as `AUDIO-NODE-<ID4>`
+- Control plane nodes must identify as `CONTROL-NODE-<ID4>`
+- `<ID4>` is the last 4 characters of a unique system identifier
+- User account `mm` must exist on all nodes
+- Establish mutual SSH trust between all nodes (passwordless)
+
 ```
 ┌────────────────────────────────────────────────────────────────────┐
 │                    MAP2 AUDIO PLATFORM 2.0                         │

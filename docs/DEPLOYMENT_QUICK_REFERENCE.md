@@ -2,7 +2,21 @@
 
 ## What Are We Building?
 
-A **world-class distributed audio platform** where MAP2 can run in three modes:
+A **world-class distributed audio platform** with a **core two-node split**:
+
+- **Audio Node (JUCE)**: real-time DSP, audio I/O, plugins, low-latency processing
+- **Control Node (Services)**: API, web UI, TUI, discovery, routing, database, monitoring
+
+**Node Identity Rules (Required):**
+- Audio processing nodes must advertise as `AUDIO-NODE-<ID4>`
+- Control plane nodes must advertise as `CONTROL-NODE-<ID4>`
+- `<ID4>` = last 4 characters of a unique system identifier
+
+**Access & Trust (Required):**
+- Ensure user account `mm` exists on all nodes
+- Establish SSH trust between all nodes (passwordless, mutual)
+
+MAP2 can still run in three modes, but the **default design center** is the JUCE split:
 
 | Mode | Purpose | Use Case |
 |------|---------|----------|
@@ -14,13 +28,30 @@ A **world-class distributed audio platform** where MAP2 can run in three modes:
 
 ## Architecture at a Glance
 
+**Core Split (JUCE Audio Node + Control Node)**
+
+```
+┌───────────────────────────────┐        ┌──────────────────────────────────┐
+│         AUDIO NODE            │        │          CONTROL NODE            │
+│      (JUCE Processing)        │◄──────►│   (All Other Processing)         │
+├───────────────────────────────┤        ├──────────────────────────────────┤
+│  JUCE Audio Engine            │        │  API Server (FastAPI)            │
+│  Audio I/O (ALSA/JACK)         │        │  Web UI (React)                  │
+│  Plugin Hosting (LV2/VST3)     │        │  TUI Setup Wizard                │
+│  Real-time DSP Graph           │        │  Service Discovery (mDNS)        │
+│  Low-latency processing         │        │  Routing / Gateway               │
+└───────────────────────────────┘        │  Database / Presets              │
+                                         │  Monitoring / Metrics            │
+                                         └──────────────────────────────────┘
+```
+
 ```
 Mode A: All-in-One           Mode B: Backend Server        Mode C: Frontend Server
 ┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
-│  Frontend (3000) │         │  API (8080)      │◄────────│  Web UI (3000)   │
-│  Backend  (8080) │         │  Audio Engine    │         │  Discovery Client│
-│  Audio Engine    │         │  Database        │         │  Cache Layer     │
-│  Database        │         │  mDNS Advertiser │         │  Fallback UI     │
+│  Control + JUCE  │         │  Control Node   │◄────────│  UI/Client Node  │
+│  on same box     │         │  + Audio Node   │         │  (no JUCE)       │
+│  (split inside)  │         │  (split)        │         │  (connects)      │
+│                 │         │  mDNS Advertiser │         │  Cache Layer     │
 └──────────────────┘         │  Metrics (9090)  │         └──────────────────┘
                              └──────────────────┘
 ```
@@ -105,7 +136,7 @@ ServiceRouter:
 3. Show welcome screen
 4. User selects "All-in-One"
 5. Auto-configure:
-   - Hostname: map2-{hostname}
+  - Hostname: CONTROL-NODE-<ID4>
    - Ports: 3000 (web), 8080 (api)
    - Bind to localhost
    - Enable all services
@@ -123,7 +154,7 @@ ServiceRouter:
 3. Show welcome screen
 4. User selects "Backend Server"
 5. Configure:
-   - Node ID: studio-main
+  - Node ID: AUDIO-NODE-<ID4>
    - Bind address: 0.0.0.0
    - API port: 8080
    - Advertise on network
@@ -144,9 +175,9 @@ ServiceRouter:
 4. User selects "Frontend Server"
 5. Start discovery scan
 6. Show found backends:
-   - studio-main (192.168.1.50) ✓ Online
-   - office-system (192.168.1.100) ⚠ Offline
-7. User selects studio-main
+  - AUDIO-NODE-<ID4> (192.168.1.50) ✓ Online
+  - AUDIO-NODE-<ID4> (192.168.1.100) ⚠ Offline
+7. User selects AUDIO-NODE-<ID4>
 8. Test connection
 9. Validate connectivity
 10. Save preference
@@ -163,28 +194,28 @@ ServiceRouter:
 
 ```
 Backend Server announces itself:
-  Service: map2-audio-studio-main._map2-audio-backend._tcp.local
+  Service: AUDIO-NODE-<ID4>._map2-audio-backend._tcp.local
   Port: 8080
   Properties:
     version=2.0.0
     capabilities=audio,midi,plugins
-    node_id=abc-123
+    node_id=<unique_system_id>
     
 Frontend discovers by browsing:
   _map2-audio-backend._tcp.local
-  → Finds "map2-audio-studio-main"
+  → Finds "AUDIO-NODE-<ID4>"
   → Gets IP, port, properties
-  → Can now connect to http://studio-main:8080/api
+  → Can now connect to http://AUDIO-NODE-<ID4>:8080/api
 ```
 
 ### mDNS Service Names
 
 ```
-Backend: map2-audio-{hostname}._map2-audio-backend._tcp.local
-         Example: map2-audio-studio-main._map2-audio-backend._tcp.local
+Backend: AUDIO-NODE-<ID4>._map2-audio-backend._tcp.local
+         Example: AUDIO-NODE-<ID4>._map2-audio-backend._tcp.local
          
-Frontend: map2-frontend-{hostname}._map2-frontend._tcp.local
-          Example: map2-frontend-control-1._map2-frontend._tcp.local
+Frontend: CONTROL-NODE-<ID4>._map2-frontend._tcp.local
+          Example: CONTROL-NODE-<ID4>._map2-frontend._tcp.local
 ```
 
 ---
@@ -232,8 +263,8 @@ Mode C (Frontend Server):
 ```json
 {
   "deployment_mode": "all_in_one",
-  "node_id": "map2-desktop",
-  "hostname": "map2-desktop",
+  "node_id": "CONTROL-NODE-<ID4>",
+  "hostname": "CONTROL-NODE-<ID4>",
   "version": "2.0.0",
   "created_at": "2025-02-04T10:00:00Z",
   "network": {

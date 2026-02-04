@@ -39,6 +39,38 @@ MAP2 Audio Platform becomes a **distributed, composable system** where:
 5. **Enterprise-Grade** - Security, reliability, monitoring, logging
 6. **Network-Aware** - Handles WiFi, Ethernet, disconnections, latency
 
+### Core Two-Node Split (New Design Center)
+
+The **core design** separates real-time JUCE audio processing from all other services:
+
+```
+┌───────────────────────────────┐        ┌──────────────────────────────────┐
+│         AUDIO NODE            │        │          CONTROL NODE            │
+│      (JUCE Processing)        │◄──────►│   (All Other Processing)         │
+├───────────────────────────────┤        ├──────────────────────────────────┤
+│  JUCE Audio Engine            │        │  API Server (FastAPI)            │
+│  Audio I/O (ALSA/JACK)         │        │  Web UI (React)                  │
+│  Plugin Hosting (LV2/VST3)     │        │  TUI Setup Wizard                │
+│  Real-time DSP Graph           │        │  Service Discovery (mDNS)        │
+│  Low-latency processing         │        │  Routing / Gateway               │
+└───────────────────────────────┘        │  Database / Presets              │
+                                         │  Monitoring / Metrics            │
+                                         └──────────────────────────────────┘
+```
+
+This split is the **default topology**. The three deployment modes describe how these two roles are co-located or separated.
+
+### Node Identity & Trust Requirements
+
+**Hostname and Broadcast Identity:**
+- Audio processing nodes must identify as `AUDIO-NODE-<ID4>`
+- Control plane nodes must identify as `CONTROL-NODE-<ID4>`
+- `<ID4>` is derived from the last 4 characters of a unique system identifier
+
+**Accounts & SSH Trust:**
+- Create user `mm` on all nodes
+- Establish mutual SSH trust between all nodes (passwordless)
+
 ---
 
 ## Deployment Modes
@@ -51,21 +83,17 @@ MAP2 Audio Platform becomes a **distributed, composable system** where:
 ┌─────────────────────────────────────┐
 │     MAP2 Audio Platform (All-in-One) │
 ├─────────────────────────────────────┤
-│  Frontend (Port 3000)                │
-│  - Web UI / Web App                  │
+│  CONTROL NODE (Co-located)           │
+│  - Web UI / Web App (Port 3000)      │
 │  - TUI Interface                      │
-│  - Real-time Control                 │
+│  - API + Routing (Port 8080)         │
+│  - Database / Presets                │
 ├─────────────────────────────────────┤
-│  Backend (Port 8080)                 │
-│  - Audio DSP Engine                  │
-│  - Plugin Management                 │
-│  - Database                          │
-│  - WebSocket Server                  │
-├─────────────────────────────────────┤
-│  System Services                      │
-│  - Audio Driver                      │
-│  - MIDI Interface                    │
-│  - Plugin Scanner                    │
+│  AUDIO NODE (JUCE, same host)        │
+│  - JUCE Audio Engine                 │
+│  - Plugin Hosting (LV2/VST3)         │
+│  - Real-time DSP Graph               │
+│  - Audio/MIDI I/O                    │
 └─────────────────────────────────────┘
 
 Latency: < 1ms
@@ -97,34 +125,26 @@ network_mode: local
 
 ---
 
-### Mode B: Backend Server
+### Mode B: Backend Server (Split Nodes)
 
 **Use Case:** Central audio processing node, serving multiple frontends
 
 ```
-┌──────────────────────────────────┐
-│   MAP2 Backend Server             │
-├──────────────────────────────────┤
-│  Backend API (Port 8080)          │
-│  - Audio DSP Engine               │
-│  - Real-time Processing           │
-│  - Plugin Management              │
-│  - Database (master)              │
-│  - WebSocket Server               │
-│  - Service Registry               │
-├──────────────────────────────────┤
-│  System Services                  │
-│  - Audio Hardware Driver          │
-│  - MIDI Interface                 │
-│  - Plugin Scanner                 │
-│  - Metrics Collection             │
-│  - Service Health Monitor         │
-├──────────────────────────────────┤
-│  Network Services                 │
-│  - mDNS Advertiser                │
-│  - Service Discovery Agent        │
-│  - Peer Connector                 │
-└──────────────────────────────────┘
+┌──────────────────────────────────┐        ┌──────────────────────────────────┐
+│     AUDIO NODE (JUCE)             │◄──────►│      CONTROL NODE               │
+├──────────────────────────────────┤        ├──────────────────────────────────┤
+│  JUCE Audio Engine                │        │  API Server (Port 8080)          │
+│  Real-time Processing             │        │  Web UI / TUI (Port 3000)        │
+│  Plugin Hosting (LV2/VST3)         │        │  Database (master)               │
+│  Audio/MIDI I/O                   │        │  WebSocket Server                │
+│  Low-latency DSP Graph            │        │  Service Registry                │
+├──────────────────────────────────┤        ├──────────────────────────────────┤
+│  System Services                  │        │  Network Services                │
+│  - Audio Hardware Driver          │        │  - mDNS Advertiser               │
+│  - MIDI Interface                 │        │  - Discovery Agent               │
+│  - Plugin Scanner                 │        │  - Peer Connector                │
+│  - Metrics Collection             │        │  - Metrics Exporter              │
+└──────────────────────────────────┘        └──────────────────────────────────┘
         ▲           ▲           ▲
         │           │           │
    (network)   (network)   (network)
@@ -383,14 +403,14 @@ All modes advertise their services via mDNS (Multicast DNS) for automatic discov
 #### Backend Services
 
 ```
-Service: map2-audio-{hostname}._map2-audio-backend._tcp.local
+Service: AUDIO-NODE-<ID4>._map2-audio-backend._tcp.local
 Port: 8080
 TXT Records:
   version=2.0.0
-  mode=backend
+  mode=audio_node
   capabilities=audio,plugins,midi
-  node_id={uuid}
-  hostname={hostname}
+  node_id={unique_system_id}
+  hostname=AUDIO-NODE-<ID4>
   api_version=v1
   database=master
 ```
@@ -398,13 +418,13 @@ TXT Records:
 #### Frontend Services
 
 ```
-Service: map2-control-{hostname}._map2-frontend._tcp.local
+Service: CONTROL-NODE-<ID4>._map2-frontend._tcp.local
 Port: 3000
 TXT Records:
   version=2.0.0
-  mode=frontend
-  node_id={uuid}
-  hostname={hostname}
+  mode=control_node
+  node_id={unique_system_id}
+  hostname=CONTROL-NODE-<ID4>
   ui_type=web,tui
 ```
 

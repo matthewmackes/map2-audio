@@ -272,60 +272,68 @@ Connected: 192.168.1.50  │ CPU: 15%  │ Memory: 512MB  │ Latency: 2.3ms  �
 
 ### Screen 1: Launch/Splash
 
+**Enhanced Launch/Splash with Deployment Status**
+
+Shows deployment mode, node identity, cluster peers, and status on boot.
+
 **Code in tui/screens/setup_wizard_screen.py:**
 
 ```python
-class LaunchScreen(Screen):
-    """Welcome and intro screen"""
+class BootSplashScreen(Screen):
+    """Boot splash showing deployment status and cluster info"""
     
-    CSS = """
-    Screen {
-        background: $dark_bg;
-    }
-    
-    #header_box {
-        border: solid $primary_blue;
-        height: 8;
-    }
-    
-    #title {
-        text-align: center;
-        color: $primary_blue;
-        text-style: bold;
-    }
-    
-    #subtitle {
-        text-align: center;
-        color: $text_secondary;
-    }
-    
-    #body {
-        border: solid $border;
-        height: 1fr;
-        padding: 2 3;
-    }
-    
-    #footer {
-        height: 3;
-        border-top: solid $border;
-    }
-    """
-    
-    def render(self):
-        return """
+    async def render(self):
+        config = await self.load_deployment_config()
+        peers = await self.discover_peers()
+        
+        return f"""
         ╔═══════════════════════════════════════════════════════════════╗
-        ║                                                               ║
         ║              🎵 MAP2 AUDIO PLATFORM v2.0                      ║
-        ║           Distributed Deployment Configuration               ║
-        ║                                                               ║
+        ║                    Initializing...                            ║
         ╚═══════════════════════════════════════════════════════════════╝
         
-        Welcome! This is your first time running MAP2. Let's get you
-        set up in just a few minutes.
+        ┌─────────────────────────────────────────────────────────────┐
+        │ DEPLOYMENT MODE                                             │
+        ├─────────────────────────────────────────────────────────────┤
+        │ Type:             {config.mode.upper()}                      │
+        │ This Node:        {config.node_label} ({config.node_type})   │
+        │ System ID:        {config.node_id}                           │
+        └─────────────────────────────────────────────────────────────┘
         
-        Choose your deployment mode:
-        ...
+        ┌─────────────────────────────────────────────────────────────┐
+        │ CLUSTER INFORMATION                                         │
+        ├─────────────────────────────────────────────────────────────┤
+        │ Total Nodes:      {len(peers) + 1}                           │
+        │ Audio Nodes:      {count_audio_nodes(peers)}                 │
+        │ Control Nodes:    {count_control_nodes(peers)}               │
+        └─────────────────────────────────────────────────────────────┘
+        
+        ┌─────────────────────────────────────────────────────────────┐
+        │ PEER NODES                                                  │
+        ├─────────────────────────────────────────────────────────────┤
+        {render_peers(peers)}
+        └─────────────────────────────────────────────────────────────┘
+        
+        ┌─────────────────────────────────────────────────────────────┐
+        │ STATUS                                                      │
+        ├─────────────────────────────────────────────────────────────┤
+        │ ✓ SSH Trust:      Verified                                  │
+        │ ✓ Network:        Connected                                 │
+        │ ✓ Audio Engine:   Running (if AUDIO-NODE)                   │
+        │ ⏳ Services:       Initializing...                           │
+        └─────────────────────────────────────────────────────────────┘
+        
+        [Press any key to continue]
         """
+
+def render_peers(peers):
+    """Render peer list with status"""
+    lines = []
+    for peer in peers:
+        status = "✓ Online" if peer.healthy else "⚠ Offline"
+        icon = "🎵" if peer.type == "AUDIO-NODE" else "⚙️"
+        lines.append(f"│ {icon} {peer.label:25} {status:15}")
+    return "\n".join(lines) if lines else "│ (No other nodes discovered)"
 ```
 
 ### Screen 2: Mode Selection
@@ -388,10 +396,10 @@ class ConfigurationScreen(Screen):
         This device will run both the audio engine and web interface.
         
         ▸ Network Configuration
-          ├─ Hostname:              map2-desktop
+          ├─ Hostname:              CONTROL-NODE-<ID4>
           ├─ Web UI Port:           3000
           ├─ Backend Port:          8080
-          └─ mDNS Advertisement:    [ ON ] • Discoverable as map2-desktop.local
+          └─ mDNS Advertisement:    [ ON ] • Discoverable as CONTROL-NODE-<ID4>.local
         
         ▸ Audio Configuration
           ├─ Audio Device:          [AUTO-DETECT]
@@ -414,9 +422,9 @@ class ConfigurationScreen(Screen):
         Configure this device as a central audio processing server.
         
         ▸ Server Identity
-          ├─ Node ID:               map2-studio-main
-          ├─ Hostname:              studio-main
-          └─ mDNS Name:             map2-audio-studio-main._map2-audio._tcp
+          ├─ Node ID:               AUDIO-NODE-<ID4>
+          ├─ Hostname:              AUDIO-NODE-<ID4>
+          └─ mDNS Name:             AUDIO-NODE-<ID4>._map2-audio._tcp
         
         ▸ Network Binding
           ├─ Bind Address:          [ 0.0.0.0 ] (all interfaces)
@@ -513,7 +521,7 @@ class ValidationScreen(Screen):
         Running pre-flight checks...
         
           ✓ Network interfaces detected       [2 found]
-          ✓ Hostname resolution working       [map2-desktop.local]
+          ✓ Hostname resolution working       [CONTROL-NODE-<ID4>.local]
           ✓ mDNS/Bonjour responding           [online]
           
           [Checking Backend Connectivity...]
@@ -554,7 +562,7 @@ class ReadyScreen(Screen):
         
         ┌─────────────────────────────────────────────────────────────┐
         │ MODE:          All-in-One (Local)                           │
-        │ HOSTNAME:      map2-desktop.local                           │
+        │ HOSTNAME:      CONTROL-NODE-<ID4>.local                      │
         │ WEB UI:        http://localhost:3000                        │
         │ API:           http://localhost:8080                        │
         │ AUDIO:         USB Audio Device (48kHz, stereo)             │
@@ -880,6 +888,147 @@ Input:focus {
 
 ---
 
+## Screen 8: LCD Management (NEW)
+
+**Code in tui/screens/lcd_management_screen.py:**
+
+```python
+class LCDManagementScreen(Screen):
+    """LCD display management and event monitoring"""
+    
+    async def render(self):
+        events = await self.get_recent_events()
+        lcd_content = await self.get_lcd_preview()
+        
+        return f"""
+        ╔═══════════════════════════════════════════════════════════════╗
+        ║ LCD MANAGEMENT - {self.node_label}                     ║
+        ╚═══════════════════════════════════════════════════════════════╝
+        
+        ┌─── LIVE LCD DISPLAY ────────────────────────────────────────┐
+        │                                                             │
+        │ ┌────────────────────────────┐                             │
+        │ │ MAP2 AUDIO PLATFORM        │                             │
+        │ ├────────────────────────────┤                             │
+        │ │ [LOCAL]  🎵 {lcd_content[0]} │                             │
+        │ │ {lcd_content[1]}             │                             │
+        │ │                            │                             │
+        │ │ [REMOTE] ⚙️  {lcd_content[2]}  │                             │
+        │ │ {lcd_content[3]}             │                             │
+        │ └────────────────────────────┘                             │
+        │                                                             │
+        └─────────────────────────────────────────────────────────────┘
+        
+        ┌─── EVENT QUEUE (Next to Display) ──────────────────────────┐
+        │                                                             │
+        {self.render_event_queue(events)}
+        │                                                             │
+        │ [Page 1/3]                                                 │
+        └─────────────────────────────────────────────────────────────┘
+        
+        ┌─── QUICK ACTIONS ───────────────────────────────────────────┐
+        │ [H] History  [F] Filters  [B] Backlight  [E] Event Stats    │
+        │ [T] Test Event  [D] Dismiss All  [P] Pause  [S] Settings   │
+        └─────────────────────────────────────────────────────────────┘
+        
+        Navigation: [←→] Scroll | [↑↓] Pages | [ENTER] Details | [Q] Exit
+        """
+        
+    def render_event_queue(self, events):
+        """Render upcoming events"""
+        lines = []
+        for i, event in enumerate(events[:5]):
+            icon = self.get_severity_icon(event.severity)
+            source = "[LOCAL]" if event.source_node == self.node_id else "[REMOTE]"
+            lines.append(f"│ {icon} {source} {event.title}")
+        return "\n".join(lines)
+        
+    def get_severity_icon(self, severity):
+        """Get icon for event severity"""
+        return {"info": "ℹ️", "warning": "⚠️", "error": "❌", "critical": "🚨"}.get(severity, "•")
+```
+
+### Features
+
+- **Live LCD Preview** - Shows exactly what's on the physical display
+- **Event Queue** - Next 5 events waiting to display
+- **Event Filters** - Toggle local/remote, by type/severity, time range
+- **Event History** - Browse all events (scrollable)
+- **Backlight Control** - Adjust brightness (0-100%)
+- **Test Events** - Send test events to self or other nodes
+- **Statistics** - Event counts and trends
+- **Sound Control** - Enable/disable alert sounds
+
+---
+
+## Screen 9: Cluster LCD Monitoring (NEW)
+
+**Multi-node LCD monitoring from a control node:**
+
+```python
+class ClusterLCDMonitoringScreen(Screen):
+    """Monitor LCD displays across all cluster nodes"""
+    
+    async def render(self):
+        nodes = await self.get_cluster_nodes()
+        
+        return f"""
+        ╔═══════════════════════════════════════════════════════════════╗
+        ║ CLUSTER LCD MONITORING - CONTROL-NODE-{self.id4}             ║
+        ╚═══════════════════════════════════════════════════════════════╝
+        
+        ┌─── CLUSTER EVENT FEED ──────────────────────────────────────┐
+        │                                                             │
+        {self.render_cluster_events()}
+        │                                                             │
+        │ [Page 1/5] [⏳ Live] [↻ Auto-refresh enabled]               │
+        └─────────────────────────────────────────────────────────────┘
+        
+        ┌─── AUDIO NODES ─────────────────────────────────────────────┐
+        │                                                             │
+        {self.render_node_status("AUDIO-NODE")}
+        │                                                             │
+        └─────────────────────────────────────────────────────────────┘
+        
+        ┌─── CONTROL NODES ───────────────────────────────────────────┐
+        │                                                             │
+        {self.render_node_status("CONTROL-NODE")}
+        │                                                             │
+        └─────────────────────────────────────────────────────────────┘
+        
+        [L] Local LCD  [F] Filters  [E] Event History  [S] Statistics
+        """
+        
+    def render_cluster_events(self):
+        """Render events from all nodes"""
+        lines = [
+            "│ 🎵 [LOCAL - AUDIO-NODE-9F4E] 14:23:15",
+            "│    Audio Running | Latency: 5.2ms | CPU: 24%",
+            "│",
+            "│ ⚙️  [REMOTE - CONTROL-NODE-2D7K] 14:23:12",
+            "│    High API Traffic | 150 req/s | CPU: 65%",
+            "│",
+            "│ ❌ [REMOTE - AUDIO-NODE-9F4E] 14:22:45 [CRITICAL]",
+            "│    XRUN ALERT | 3 Audio Dropouts",
+        ]
+        return "\n".join(lines)
+```
+
+---
+
+    height: 1;
+}
+
+Input:focus {
+    border: solid $primary_blue;
+    background: $card_bg;
+}
+```
+
+---
+
 **Document Status:** DESIGN COMPLETE ✓  
 **Last Updated:** February 4, 2025  
-**Next Step:** Begin implementation in tui/screens/
+**Next Step:** Begin implementation in tui/screens/  
+**NEW:** Screens 8 & 9 for LCD Management and Cluster Monitoring
+

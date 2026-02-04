@@ -11,6 +11,13 @@ This document provides a detailed, week-by-week implementation plan to build a w
 ### Goal
 Establish core infrastructure for deployment modes, configuration management, and basic service discovery.
 
+**Core Requirements (New Design Center):**
+- Audio processing nodes must identify as `AUDIO-NODE-<ID4>`
+- Control plane nodes must identify as `CONTROL-NODE-<ID4>`
+- `<ID4>` = last 4 characters of a unique system identifier
+- Ensure user account `mm` exists on all nodes
+- Establish mutual SSH trust between all nodes (passwordless)
+
 ---
 
 ## Week 1: Core Deployment Infrastructure
@@ -78,6 +85,10 @@ class DeploymentConfig:
     
     # Network configuration
     network: NetworkConfig = field(default_factory=NetworkConfig)
+
+    # Identity
+    system_id: str = ""
+    node_label: str = ""  # AUDIO-NODE-<ID4> or CONTROL-NODE-<ID4>
     
     # Database
     database_url: str = "sqlite:///~/.map2/map2.db"
@@ -157,6 +168,7 @@ class DeploymentConfigBuilder:
     @staticmethod
     def all_in_one(hostname: str = "map2-desktop") -> DeploymentConfig:
         """Create all-in-one configuration"""
+        # Derive system_id and ID4 for naming
         config = DeploymentConfig(
             mode=DeploymentMode.ALL_IN_ONE,
             node_id=hostname,
@@ -176,11 +188,14 @@ class DeploymentConfigBuilder:
                 discovery_enabled=False,
             )
         )
+        # Example: CONTROL-NODE-<ID4>
+        config.node_label = "CONTROL-NODE-" + config.node_id[-4:]
         return config
     
     @staticmethod
     def backend_server(hostname: str = "map2-audio-server") -> DeploymentConfig:
         """Create backend server configuration"""
+        # Derive system_id and ID4 for naming
         config = DeploymentConfig(
             mode=DeploymentMode.BACKEND_SERVER,
             node_id=hostname,
@@ -201,11 +216,14 @@ class DeploymentConfigBuilder:
                 discovery_enabled=True,
             )
         )
+        # Example: AUDIO-NODE-<ID4>
+        config.node_label = "AUDIO-NODE-" + config.node_id[-4:]
         return config
     
     @staticmethod
     def frontend_server(hostname: str = "map2-control") -> DeploymentConfig:
         """Create frontend server configuration"""
+        # Derive system_id and ID4 for naming
         config = DeploymentConfig(
             mode=DeploymentMode.FRONTEND_SERVER,
             node_id=hostname,
@@ -219,7 +237,55 @@ class DeploymentConfigBuilder:
                 discovery_enabled=True,
             )
         )
+            # Example: CONTROL-NODE-<ID4>
+            config.node_label = "CONTROL-NODE-" + config.node_id[-4:]
         return config
+
+        ---
+
+        ### Day 2: Identity Derivation & SSH Trust Automation
+
+        **Task 1.2: System ID + Node Label Derivation**
+
+        **Requirement:**
+        - Audio nodes must identify as `AUDIO-NODE-<ID4>`
+        - Control nodes must identify as `CONTROL-NODE-<ID4>`
+        - `<ID4>` derived from last 4 characters of a unique system identifier
+
+        **Recommended System ID Sources (priority order):**
+        1. Machine ID: `/etc/machine-id`
+        2. DMI UUID: `/sys/class/dmi/id/product_uuid`
+        3. MAC address (primary NIC)
+
+        **Pseudo-flow:**
+        ```text
+        system_id = read_first_available([/etc/machine-id, /sys/class/dmi/id/product_uuid, primary_mac])
+        id4 = last_4(system_id)
+        label = AUDIO-NODE-id4 | CONTROL-NODE-id4
+        hostname = label
+        mdns_service_name = f"{label}._map2-audio-backend._tcp.local" (audio)
+        mdns_service_name = f"{label}._map2-frontend._tcp.local" (control)
+        ```
+
+        **Task 1.3: SSH Trust Setup (User `mm`)**
+
+        **Requirement:**
+        - User account `mm` exists on all nodes
+        - Passwordless SSH trust established between all nodes
+
+        **Implementation Steps (automated in setup wizard):**
+        1. Validate `mm` user exists (create if missing)
+        2. Generate SSH keypair for `mm` if absent
+        3. Distribute public key to all discovered peers
+        4. Verify mutual trust with a short connectivity check
+
+        **TUI UX Flow (summary):**
+        ```text
+        • “Create user mm on this node” (auto)
+        • “Generate SSH keypair” (auto)
+        • “Distribute keys to peers” (auto)
+        • “Verify trust” (auto)
+        ```
 ```
 
 **Checklist:**
@@ -980,7 +1046,7 @@ Build the beautiful, world-class setup wizard TUI with all screens, animations, 
 
 ### Key Deliverables
 
-1. **Base Setup Wizard Screen** - Main orchestrator
+1. **Boot Splash Screen** - Deployment mode, node identity, cluster info
 2. **Mode Selection Screen** - Choose deployment mode
 3. **Configuration Screens** - Details for each mode
 4. **Discovery Screen** - List discovered backends
@@ -991,7 +1057,7 @@ Build the beautiful, world-class setup wizard TUI with all screens, animations, 
 
 ```
 SetupWizardApp (main)
-  ├─ LaunchScreen
+  ├─ BootSplashScreen (NEW: shows deployment mode & cluster)
   ├─ ModeSelectionScreen
   ├─ ConfigurationScreen (A/B/C variants)
   ├─ DiscoveryScreen
@@ -1004,12 +1070,19 @@ Supporting Widgets:
   ├─ ProgressBar
   ├─ ConfigurationPanel
   ├─ NetworkPanel
+  ├─ ClusterInfoPanel (NEW: shows peers and node info)
   └─ StatusPanel
 ```
 
 ### Day 11-14: Base Infrastructure & Screens
 
 **Tasks:**
+- [ ] Create `tui/screens/boot_splash_screen.py` with BootSplashScreen
+  - Display deployment mode (MODE A/B/C) boldly
+  - Show this node identity (AUDIO-NODE-<ID4> or CONTROL-NODE-<ID4>)
+  - Display cluster peers with status (✓ Online / ⚠ Offline)
+  - Show cluster statistics (total nodes, audio nodes, control nodes)
+  - Show verification status (SSH trust, network, audio engine)
 - [ ] Create `tui/screens/setup_wizard_base.py` with BaseSetupScreen
 - [ ] Create `tui/screens/setup_wizard_app.py` with SetupWizardApp
 - [ ] Create `tui/screens/mode_selection_screen.py`
@@ -1017,6 +1090,17 @@ Supporting Widgets:
 - [ ] Create `tui/screens/discovery_screen.py`
 - [ ] Create `tui/screens/validation_screen.py`
 - [ ] Create `tui/screens/ready_screen.py`
+- [ ] Create `tui/screens/lcd_management_screen.py` (NEW - LCD Management)
+  - Live LCD display preview (4x20 mockup)
+  - Event queue with next 5 events
+  - Event filters (local/remote, by type/severity)
+  - Backlight control UI
+  - Event history navigation
+  - Test event injection
+- [ ] Create `tui/screens/cluster_lcd_monitoring_screen.py` (NEW - Multi-Node LCD)
+  - View LCD from all cluster nodes
+  - Cluster-wide event feed
+  - Per-node status and event history
 - [ ] Create `tui/screens/status_screen.py`
 - [ ] Create `tui/widgets/status_widgets.py`
 - [ ] Create `tui/styles/setup_wizard.css`
@@ -1033,6 +1117,15 @@ Supporting Widgets:
 - [ ] Optimize performance
 - [ ] Polish animations
 
+**Required UX Enhancements (Added):**
+- [ ] **Smart discovery ranking** (latency + signal + availability) with “Auto‑pick best”
+- [ ] **Guided troubleshooting** with inline auto‑fix actions (firewall, DNS, ports)
+- [ ] **Instant rollback** to last known‑good config on startup failure
+- [ ] **Preflight network test** with estimated control latency before connect
+- [ ] **Zero‑touch SSH trust** (create `mm`, generate keys, distribute, verify)
+- [ ] **Offline fallback mode** using cached presets/UI when audio node is unreachable
+- [ ] **“Explain this” help tips** for every advanced setting
+
 ### Day 19-20: Testing & Documentation
 
 **Tasks:**
@@ -1047,14 +1140,103 @@ Supporting Widgets:
 
 ---
 
-## Phase 3-6: Remaining Implementation
+## Phase 3: Distributed LCD Event System (NEW)
 
-(Similar detailed breakdowns for each phase, including):
+**Goal:** Each node has an LCD display showing local + remote events. Events travel between nodes via WebSocket.
 
-- **Phase 3:** Network configuration automation
-- **Phase 4:** Service routing and fallback
-- **Phase 5:** Integration and testing
-- **Phase 6:** Hardening and documentation
+### Week 5-6: Core LCD Infrastructure
+
+**Tasks:**
+- [ ] Create `app/services/lcd_event_bus.py` - Local event collection
+- [ ] Create `app/services/lcd_event_router.py` - Event routing to peers
+- [ ] Create `app/services/remote_event_aggregator.py` - Collect remote events
+- [ ] Implement LCD hardware driver (`app/drivers/lcd_display.py`)
+- [ ] Create API endpoints: `/api/lcd/events`, `/api/lcd/send`, `/api/lcd/history`
+- [ ] Add event persistence (SQLite: event table)
+- [ ] Implement WebSocket: `/ws/lcd-events` and `/ws/lcd/{nodeId}`
+- [ ] Create event producers:
+  - [ ] Audio engine events (audio running, XRUNs, latency, CPU)
+  - [ ] System health events (CPU, memory, temperature)
+  - [ ] Network status events (connectivity, latency)
+  - [ ] Service status events (API, database)
+  - [ ] User action events (preset loaded, plugin added)
+
+### Week 6-7: TUI LCD Screens
+
+**Tasks:**
+- [ ] Create `tui/screens/lcd_management_screen.py`
+  - Live LCD preview (4x20 mockup)
+  - Real-time event queue display
+  - Event filtering (local/remote, by type/severity)
+  - Backlight brightness control
+  - Event history browser
+  - Test event injection UI
+- [ ] Create `tui/screens/cluster_lcd_monitoring_screen.py`
+  - Multi-node LCD monitoring
+  - Cluster-wide event feed
+  - Per-node LCD status
+  - Event statistics
+- [ ] Integration testing of TUI screens
+
+### Week 7-8: Web UI LCD Dashboard
+
+**Tasks:**
+- [ ] Create `web/src/app/pages/LCDDashboard.tsx`
+  - Real-time event feed (WebSocket)
+  - Event filters and search
+  - Event statistics/charts
+  - Event pinning
+- [ ] Create `web/src/app/pages/NodeLCDPage.tsx`
+  - Per-node LCD emulator
+  - Node health information
+  - Event history for specific node
+- [ ] Create `web/src/app/pages/LCDSettings.tsx`
+  - Backlight schedule
+  - Sound settings
+  - Display preferences
+  - Event filtering options
+- [ ] Create React components:
+  - [ ] LCDEventFeed.tsx
+  - [ ] LCDEmulator.tsx
+  - [ ] LCDStatistics.tsx
+  - [ ] NodeLCDCard.tsx
+  - [ ] LCDControlPanel.tsx
+- [ ] WebSocket hooks for real-time updates
+- [ ] Mobile-responsive design
+
+---
+
+## Phase 4: Advanced Features
+
+---
+
+## Audio Node Management (Control Node Feature)
+
+**Goal:** Control nodes manage AUDIO-NODE health and lifecycle using **standard remote management** with **near‑zero load** on audio nodes.
+
+**Requirements:**
+- Health, status, and uptime of AUDIO-NODEs visible on CONTROL-NODEs
+- Remote reboot/shutdown supported (invoke existing shutdown script)
+- Must use standard OS mechanisms (SSH + systemd), no custom agents on audio nodes
+- No continuous load on audio nodes (polling must be minimal and event-driven where possible)
+
+**Design Approach (Low Overhead):**
+- Use **SSH (existing trust)** for on-demand actions only
+- Health checks via lightweight endpoints already exposed by the audio node
+- For reboot/shutdown: `ssh mm@AUDIO-NODE-<ID4> sudo systemctl poweroff` or `sudo /path/to/shutdown-script`
+- **No resident daemon** on audio node beyond existing services
+
+**Planned Tasks:**
+- [ ] Add Control-Node “Audio Node Management” panel (TUI + Web)
+- [ ] Implement **on-demand** health fetch (CPU, XRUNs, audio running)
+- [ ] Add “Remote Reboot” and “Remote Shutdown” actions
+- [ ] Add confirmation + cooldown safeguards for destructive actions
+- [ ] Log all remote management actions centrally
+
+**Non‑Goals:**
+- No audio streaming over network
+- No agent installation on audio nodes
+- No continuous telemetry beyond existing metrics endpoints
 
 ---
 
@@ -1091,6 +1273,13 @@ Supporting Widgets:
 - [ ] All 6 screens tested with user feedback
 - [ ] Animations smooth and responsive
 - [ ] Error messages clear and helpful
+- [ ] Smart discovery auto‑picks best backend correctly
+- [ ] Auto‑fix troubleshooting resolves common network failures
+- [ ] Rollback restores last known‑good config reliably
+- [ ] Preflight latency estimate shown before connect
+- [ ] SSH trust setup completes without manual steps
+- [ ] Offline fallback mode usable when backend down
+- [ ] “Explain this” tips present on all advanced settings
 
 ### Phase 3
 - [ ] Automatic firewall configuration works
@@ -1103,6 +1292,8 @@ Supporting Widgets:
 - [ ] Request routing works across network
 - [ ] Failover works automatically
 - [ ] Offline cache enables local operation
+- [ ] Control node can view AUDIO-NODE health without continuous load
+- [ ] Remote reboot/shutdown works via SSH/systemd
 
 ### Phase 5
 - [ ] Full integration testing passes
@@ -1114,6 +1305,7 @@ Supporting Widgets:
 - [ ] 99%+ system uptime
 - [ ] All error conditions handled gracefully
 - [ ] Performance benchmarks met
+- [ ] Audio-node management adds no measurable CPU load (<0.5%)
 - [ ] Production-ready release
 
 ---
