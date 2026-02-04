@@ -1,6 +1,14 @@
 /**
- * useMidiLearn Hook
+ * @deprecated This hook is deprecated in favor of the MIDI Mapping Dialog.
+ * MIDI CC mappings are now configured via the dialog accessed from the
+ * plugin card menu (More Options → MIDI Mappings).
  *
+ * This file is kept for backwards compatibility but may be removed in a future version.
+ *
+ * @see MidiMappingDialog - The new table-based MIDI mapping UI
+ * @see useMidiMappingDialog - Hook for managing the dialog state
+ *
+ * Original description:
  * Provides MIDI CC learn/assign functionality for individual parameters.
  * Integrates with the MAP2 MIDI learn backend API.
  */

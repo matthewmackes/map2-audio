@@ -5,7 +5,8 @@
  * Includes note name display and tuner-style visualization.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 interface PitchDisplayProps {
   semitones: number // -24 to +24 typically
@@ -17,6 +18,7 @@ interface PitchDisplayProps {
   accentColor?: string
   showNote?: boolean
   showOctaveIndicator?: boolean
+  compact?: boolean
 }
 
 // Note names
@@ -40,15 +42,28 @@ export function PitchDisplay({
   cents = 0,
   detune = 0,
   formant = 0,
-  width = 200,
-  height = 100,
+  width,
+  height,
   accentColor = '#06b6d4',
   showNote = true,
   showOctaveIndicator = true,
+  compact = false,
 }: PitchDisplayProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 200 / 100,
+    baseOn: 'width',
+    defaultWidth: 200,
+    defaultHeight: 100,
+  })
+
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
   const padding = { top: 12, right: 12, bottom: 12, left: 12 }
-  const displayWidth = width - padding.left - padding.right
-  const displayHeight = height - padding.top - padding.bottom
+  const displayWidth = finalWidth - padding.left - padding.right
+  const displayHeight = finalHeight - padding.top - padding.bottom
 
   // Calculate note from pitch shift
   const noteInfo = useMemo(() => semitonesToNote(semitones, cents), [semitones, cents])
@@ -85,9 +100,10 @@ export function PitchDisplay({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="pitch-display"
     >
       {/* Background */}

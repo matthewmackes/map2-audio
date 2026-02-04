@@ -17,13 +17,28 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { GainReductionMeter } from '../../../Dynamics/GainReductionMeter'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
-export function LimiterCard({
+// Plugin URI for MIDI mappings
+const LIMITER_URI = 'map2://juce/dynamics/limiter'
+
+// Parameter definitions for MIDI mapping dialog
+const LIMITER_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Ceiling', symbol: 'threshold' },
+  { index: 1, name: 'Release', symbol: 'release' },
+]
+
+interface LimiterCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function LimiterCardBase({
   plugin,
   accentColor = '#22c55e',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: LimiterCardProps) {
   const {
     limiter,
     setLimiterThreshold,
@@ -58,6 +73,7 @@ export function LimiterCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setLimiterBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -119,4 +135,8 @@ export function LimiterCard({
   )
 }
 
-export default LimiterCard
+// Export base component for testing
+export { LimiterCardBase as LimiterCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(LimiterCardBase, LIMITER_URI, LIMITER_PARAMS)

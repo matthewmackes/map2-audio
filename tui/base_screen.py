@@ -8,7 +8,7 @@ import logging
 from typing import Any, Dict, Optional, TYPE_CHECKING
 from textual.screen import Screen
 from textual.widget import Widget
-from screen_state import screen_state
+from .screen_state import screen_state
 
 if TYPE_CHECKING:
     from api_client import MAP2APIClient

@@ -12,7 +12,7 @@ from textual.app import ComposeResult
 from textual.reactive import reactive
 from textual import work
 
-from api_client import MAP2APIClient
+from ..api_client import MAP2APIClient
 
 
 class FavoritesTab(Container):

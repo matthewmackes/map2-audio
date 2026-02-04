@@ -5,7 +5,8 @@
  * Shows early reflections pattern and exponential tail decay.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 interface ReverbDecayCurveProps {
   decayTime: number // seconds (RT60)
@@ -16,6 +17,7 @@ interface ReverbDecayCurveProps {
   height?: number
   accentColor?: string
   showGrid?: boolean
+  compact?: boolean
 }
 
 export function ReverbDecayCurve({
@@ -23,14 +25,27 @@ export function ReverbDecayCurve({
   preDelay = 0,
   earlyReflections = 0.7,
   damping = 0.5,
-  width = 280,
-  height = 100,
+  width,
+  height,
   accentColor = '#a855f7',
   showGrid = true,
+  compact = false,
 }: ReverbDecayCurveProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 280 / 100,
+    baseOn: 'width',
+    defaultWidth: 280,
+    defaultHeight: 100,
+  })
+
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
   const padding = { top: 8, right: 12, bottom: 20, left: 8 }
-  const graphWidth = width - padding.left - padding.right
-  const graphHeight = height - padding.top - padding.bottom
+  const graphWidth = finalWidth - padding.left - padding.right
+  const graphHeight = finalHeight - padding.top - padding.bottom
 
   // Time scale: show up to decay time + some margin
   const maxTime = Math.max(decayTime * 1.2, 1)
@@ -115,9 +130,10 @@ export function ReverbDecayCurve({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="reverb-decay-curve"
     >
       {/* Background */}

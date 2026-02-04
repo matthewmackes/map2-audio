@@ -20,7 +20,17 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+
+// Plugin URI for MIDI mappings
+const NAM_URI = 'map2://juce/amp/nam'
+
+// Parameter definitions for MIDI mapping dialog
+const NAM_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Input Gain', symbol: 'inputGain' },
+  { index: 1, name: 'Output Level', symbol: 'outputLevel' },
+]
 
 interface NAMStatus {
   available: boolean
@@ -54,11 +64,16 @@ async function fetchNAMModels(): Promise<NAMModel[]> {
   return data.models || []
 }
 
-export function NAMCard({
+interface NAMCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function NAMCardBase({
   plugin,
   accentColor = '#ff6b6b',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: NAMCardProps) {
   const queryClient = useQueryClient()
   const [showBrowser, setShowBrowser] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -242,6 +257,7 @@ export function NAMCard({
       accentColor={accentColor}
       bypassed={status?.bypass ?? false}
       onBypassToggle={() => setBypass(!status?.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -406,4 +422,8 @@ export function NAMCard({
   )
 }
 
-export default NAMCard
+// Export base component for testing
+export { NAMCardBase as NAMCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(NAMCardBase, NAM_URI, NAM_PARAMS)

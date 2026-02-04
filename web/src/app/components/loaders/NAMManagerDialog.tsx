@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Loader2, RefreshCw, Zap, X, Upload } from 'lucide-react'
+import { Check, Loader2, RefreshCw, Zap, X, Upload, Star } from 'lucide-react'
 import { namApi } from '../../../map2/api'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
@@ -22,6 +22,16 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   const modelsQuery = useQuery<NAMModelsResponse>({
     queryKey: ['nam', 'models'],
     queryFn: () => namApi.listModels(),
+    enabled: open,
+  })
+
+  const featuredQuery = useQuery({
+    queryKey: ['nam', 'featured'],
+    queryFn: () =>
+      fetch('/api/nam/featured').then((r) => {
+        if (!r.ok) throw new Error('Failed to fetch featured models')
+        return r.json()
+      }),
     enabled: open,
   })
 
@@ -56,6 +66,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   })
 
   const models = modelsQuery.data?.models ?? []
+  const featured = featuredQuery.data?.models ?? []
   const activeModel = statusQuery.data?.activeModel
 
   const modelsByType = useMemo(() => {
@@ -130,7 +141,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
       <div
         className="dialog"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 'min(600px, 90vw)' }}
+        style={{ width: 'min(700px, 90vw)' }}
       >
         <div className="flex-between" style={{ marginBottom: 8 }}>
           <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
@@ -188,6 +199,116 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
               <Check size={14} />
               Active: {activeModel}
             </span>
+          </div>
+        )}
+
+        {/* Featured Models Section */}
+        {featured && featured.length > 0 && !search && (
+          <div style={{ marginBottom: 16 }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#f6c452',
+                marginBottom: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Star size={14} fill="#f6c452" />
+              FEATURED TOP AMPS
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              {featured.slice(0, 12).map((model) => {
+                const isActive = model.name === activeModel
+                const isLoading =
+                  loadMutation.isPending && loadMutation.variables === model.name
+                return (
+                  <div
+                    key={model.id}
+                    style={{
+                      padding: 8,
+                      border: isActive
+                        ? '2px solid #4ade80'
+                        : '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      backgroundColor: isActive
+                        ? 'rgba(74, 222, 128, 0.1)'
+                        : 'rgba(255,255,255,0.02)',
+                    }}
+                    onClick={() => loadMutation.mutate(model.name)}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        marginBottom: 4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {model.amp_name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color: '#888',
+                        marginBottom: 6,
+                      }}
+                    >
+                      {model.amp_type}
+                    </div>
+                    {isActive ? (
+                      <div
+                        style={{
+                          fontSize: 10,
+                          padding: '2px 4px',
+                          backgroundColor: '#4ade80',
+                          color: '#000',
+                          borderRadius: 2,
+                          textAlign: 'center',
+                        }}
+                      >
+                        Active
+                      </div>
+                    ) : (
+                      <button
+                        style={{
+                          width: '100%',
+                          padding: '2px 4px',
+                          fontSize: 10,
+                          backgroundColor: isLoading ? '#888' : '#3b82f6',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 2,
+                          cursor: 'pointer',
+                        }}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? '...' : 'Load'}
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <div
+              style={{
+                height: 1,
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                marginBottom: 12,
+              }}
+            />
           </div>
         )}
 

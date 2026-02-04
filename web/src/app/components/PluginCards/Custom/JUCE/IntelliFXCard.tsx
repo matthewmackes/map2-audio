@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
@@ -42,6 +43,25 @@ const GLOBAL_PARAMS = {
   preset: 48,
 }
 
+// Parameter definitions for MIDI mapping dialog (global params + voice 1 as example)
+const INTELLIFX_PARAMS: PluginParamDef[] = [
+  // Voice 1 (most commonly MIDI-mapped)
+  { index: 0, name: 'V1 Level', symbol: 'v1_level' },
+  { index: 1, name: 'V1 Pan', symbol: 'v1_pan' },
+  { index: 2, name: 'V1 Delay', symbol: 'v1_delay' },
+  { index: 3, name: 'V1 Depth', symbol: 'v1_depth' },
+  { index: 4, name: 'V1 Rate', symbol: 'v1_rate' },
+  // Global mixer
+  { index: GLOBAL_PARAMS.chorus_level, name: 'Chorus Level', symbol: 'chorusLevel' },
+  { index: GLOBAL_PARAMS.direct_level_l, name: 'Direct L', symbol: 'directLevelL' },
+  { index: GLOBAL_PARAMS.direct_level_r, name: 'Direct R', symbol: 'directLevelR' },
+  { index: GLOBAL_PARAMS.regen_l, name: 'Regen L', symbol: 'regenL' },
+  { index: GLOBAL_PARAMS.regen_r, name: 'Regen R', symbol: 'regenR' },
+  // HUSH
+  { index: GLOBAL_PARAMS.hush_threshold, name: 'HUSH Threshold', symbol: 'hushThreshold' },
+  { index: GLOBAL_PARAMS.hush_release, name: 'HUSH Release', symbol: 'hushRelease' },
+]
+
 const PRESET_NAMES = [
   'User',
   'Lush',
@@ -61,13 +81,18 @@ const PRESET_NAMES = [
   'Rhythmic',
 ]
 
-export function IntelliFXCard({
+interface IntelliFXCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function IntelliFXCardBase({
   plugin,
   parameterValues,
   onParameterChange,
   accentColor = '#ff6b9d',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: IntelliFXCardProps) {
   const [expandedVoice, setExpandedVoice] = useState<number | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(!compact)
   const [showPresets, setShowPresets] = useState(true)
@@ -178,6 +203,7 @@ export function IntelliFXCard({
       onBypassToggle={() => {
         // Toggle bypass - adjust index based on actual parameter location
       }}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={voiceVisualization}
       compact={compact}
       customHeader={
@@ -367,4 +393,8 @@ export function IntelliFXCard({
   )
 }
 
-export default IntelliFXCard
+// Export base component for testing
+export { IntelliFXCardBase as IntelliFXCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(IntelliFXCardBase, INTELLIFX_URI, INTELLIFX_PARAMS)

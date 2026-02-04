@@ -51,6 +51,9 @@ import {
   PlayCircle,
   ChevronDown,
   ChevronRight,
+  Upload,
+  Globe,
+  Camera,
 } from 'lucide-react'
 import {
   SignalGrid,
@@ -59,19 +62,26 @@ import {
   GridMidiMappingsPanel,
   GridAutomationTimeline,
   AudioPortSelector,
+  FlowSnapshotsPanel,
   getCategoryConfig,
 } from '../components/GridFlow'
 import type { AudioInterfaceStatus, MidiMapping, AutomationLane } from '../components/GridFlow'
-import { chainsApi, pluginsApi, historyApi, audioApi, metricsApi } from '../../map2/api'
+import { chainsApi, pluginsApi, historyApi, audioApi, metricsApi, flowSnapshotsApi } from '../../map2/api'
 import { useToasts } from '../components/Toasts'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
+import { useFlowSnapshots } from '../hooks/useFlowSnapshots'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { AudioConfigDialog } from '../../map2/components/Audio'
 import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { ChainManagementCard } from '../components/ChainManagementCard'
 import { NumberInput } from '../components/Controls/NumberInput'
-import type { Chain, Plugin, HistoryStatus } from '../../map2/types'
+import { ToolbarTooltip } from '../components/GridFlow/ToolbarTooltip'
+import { ContextMenu, type ContextMenuItem } from '../components/GridFlow/ContextMenu'
+import { ConfirmationDialog } from '../components/GridFlow/ConfirmationDialog'
+import { ButtonGroup } from '../components/GridFlow/ButtonGroup'
+import { PresetImportDialog } from '../components/presets/PresetImportDialog'
+import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot } from '../../map2/types'
 
 // ============================================================================
 // Types
@@ -288,6 +298,15 @@ export function GridFlowPage() {
 
   // Automation Timeline State
   const [automationTimelineExpanded, setAutomationTimelineExpanded] = useState(false)
+
+  // Flow Snapshots Panel State
+  const [snapshotsPanelExpanded, setSnapshotsPanelExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('map2_grid_snapshots_panel')
+      return saved !== null ? saved === 'true' : true // Default to expanded
+    } catch { return true }
+  })
+  const [isCreatingFavorite, setIsCreatingFavorite] = useState(false)
   const [automationPlaying, setAutomationPlaying] = useState(false)
   const [automationRecording, setAutomationRecording] = useState(false)
   const [automationLoopEnabled, setAutomationLoopEnabled] = useState(false)
@@ -299,6 +318,71 @@ export function GridFlowPage() {
   // Audio Port Selection State
   const [inputPortSelectorOpen, setInputPortSelectorOpen] = useState(false)
   const [outputPortSelectorOpen, setOutputPortSelectorOpen] = useState(false)
+
+  // ============================================================================
+  // Toolbar Enhancement State
+  // ============================================================================
+
+  // Context Menus
+  const [contextMenu, setContextMenu] = useState<{
+    position: { x: number; y: number }
+    items: ContextMenuItem[]
+  } | null>(null)
+
+  // Undo/Redo Stack Visibility
+  const [showUndoStack, setShowUndoStack] = useState(false)
+  const [showRedoStack, setShowRedoStack] = useState(false)
+
+  // Quick Presets Dropdown
+  const [showQuickPresets, setShowQuickPresets] = useState(false)
+
+  // Preset Import Dialog
+  const [showImportDialog, setShowImportDialog] = useState(false)
+
+  // Routing Preview
+  const [routingPreview, setRoutingPreview] = useState<RoutingMode | null>(null)
+
+  // MIDI Learn Feedback
+  const [lastMidiEvent, setLastMidiEvent] = useState<{ cc: number; value: number } | null>(null)
+
+  // Batch Operations
+  const [batchMode, setBatchMode] = useState(false)
+  const [selectedPluginUris, setSelectedPluginUris] = useState<Set<string>>(new Set())
+
+  // Confirmation Dialog
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    title: string
+    message: string | React.ReactNode
+    variant: 'danger' | 'warning' | 'info'
+    confirmLabel: string
+    cancelLabel: string
+    onConfirm: () => void | Promise<void>
+    onCancel: () => void
+    isLoading: boolean
+  } | null>(null)
+
+  // Toolbar Customization
+  const [toolbarCollapsed, setToolbarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('map2_toolbar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  const [hiddenButtons, setHiddenButtons] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('map2_toolbar_hidden_buttons')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+
+  // Flow Drag-and-Drop
+  const [draggedFlowId, setDraggedFlowId] = useState<string | null>(null)
+  const [dragOverFlowId, setDragOverFlowId] = useState<string | null>(null)
 
   // Persist state to localStorage
   useEffect(() => {
@@ -312,6 +396,27 @@ export function GridFlowPage() {
   useEffect(() => {
     localStorage.setItem('map2_grid_active_v2', String(activeFlowIndex))
   }, [activeFlowIndex])
+
+  // Persist toolbar collapsed state
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_toolbar_collapsed', String(toolbarCollapsed))
+    } catch {}
+  }, [toolbarCollapsed])
+
+  // Persist hidden buttons
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_toolbar_hidden_buttons', JSON.stringify([...hiddenButtons]))
+    } catch {}
+  }, [hiddenButtons])
+
+  // Persist snapshots panel state
+  useEffect(() => {
+    try {
+      localStorage.setItem('map2_grid_snapshots_panel', String(snapshotsPanelExpanded))
+    } catch {}
+  }, [snapshotsPanelExpanded])
 
   // ============================================================================
   // Queries
@@ -379,6 +484,45 @@ export function GridFlowPage() {
   // Plugin output metering hook
   const { outputPorts: pluginOutputPorts, peaks: pluginPeaks, connected: outputsConnected } = usePluginOutputs()
 
+  // Flow snapshots WebSocket hook for MIDI PC triggered loads
+  const { isConnected: snapshotsWsConnected } = useFlowSnapshots({
+    enabled: true,
+    onSnapshotLoaded: useCallback((event) => {
+      // Handle MIDI-triggered snapshot loads
+      if (event.triggered_by === 'midi_pc') {
+        // Restore flow slots
+        setFlowSlots(event.snapshot_data.flowSlots.map(s => ({
+          id: s.id,
+          chainId: s.chainId,
+          label: s.label,
+          color: s.color,
+          muted: s.muted,
+          solo: s.solo,
+          dryWetMix: s.dryWetMix,
+        })))
+
+        // Restore routing
+        setRouting({
+          mode: event.snapshot_data.routing.mode,
+          activeSlotId: event.snapshot_data.routing.activeSlotId,
+          blendPositions: event.snapshot_data.routing.blendPositions,
+          morphProgress: event.snapshot_data.routing.morphProgress,
+          morphSourceSlotId: event.snapshot_data.routing.morphSourceSlotId,
+          morphTargetSlotId: event.snapshot_data.routing.morphTargetSlotId,
+          seriesOrder: event.snapshot_data.routing.seriesOrder,
+        })
+
+        // Restore active flow index
+        setActiveFlowIndex(event.snapshot_data.activeFlowIndex)
+
+        // Invalidate queries to refresh UI
+        queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+
+        pushToast(`Loaded: ${event.snapshot_name} (MIDI PC#${event.program_number})`, 'success')
+      }
+    }, [queryClient, pushToast]),
+  })
+
   // ============================================================================
   // Effects for Enhanced Features
   // ============================================================================
@@ -438,6 +582,138 @@ export function GridFlowPage() {
   const getChainForFlow = useCallback((slot: FlowSlot): Chain | undefined => {
     return chains.find(c => c.id === slot.chainId)
   }, [chains])
+
+  // Flow Snapshots: Capture current state for saving
+  const captureCurrentState = useCallback((): FlowSnapshotData => {
+    const chainSnapshots: Record<string, ChainSnapshot> = {}
+
+    for (const slot of flowSlots) {
+      if (slot.chainId) {
+        const chain = chains.find(c => c.id === slot.chainId)
+        if (chain) {
+          chainSnapshots[String(slot.chainId)] = {
+            name: chain.name,
+            plugins: chain.plugins.map((p, i) => ({
+              uri: p.uri,
+              position: i,
+              bypass: p.bypassed || false,
+              parameters: p.parameters || {},
+            })),
+          }
+        }
+      }
+    }
+
+    return {
+      flowSlots: flowSlots.map(s => ({
+        id: s.id,
+        chainId: s.chainId,
+        label: s.label,
+        color: s.color,
+        muted: s.muted,
+        solo: s.solo,
+        dryWetMix: s.dryWetMix,
+      })),
+      routing: {
+        mode: routing.mode,
+        activeSlotId: routing.activeSlotId,
+        blendPositions: routing.blendPositions,
+        morphProgress: routing.morphProgress,
+        morphSourceSlotId: routing.morphSourceSlotId,
+        morphTargetSlotId: routing.morphTargetSlotId,
+        seriesOrder: routing.seriesOrder,
+      },
+      activeFlowIndex,
+      chains: chainSnapshots,
+    }
+  }, [flowSlots, routing, activeFlowIndex, chains])
+
+  // Flow Snapshots: Quick favorite - auto-create snapshot with timestamp name
+  const handleQuickFavorite = useCallback(async () => {
+    if (isCreatingFavorite) return
+
+    setIsCreatingFavorite(true)
+    try {
+      const now = new Date()
+      const timestamp = now.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).replace(/[/,]/g, '-').replace(/\s+/g, ' ')
+      const name = `Favorite ${timestamp}`
+
+      const currentStateData = captureCurrentState()
+      await flowSnapshotsApi.create({
+        name,
+        description: 'Quick favorite from toolbar',
+        snapshot_data: currentStateData,
+      })
+
+      // Mark as favorite immediately after creation
+      const listResult = await flowSnapshotsApi.list()
+      const newSnapshot = listResult.snapshots.find(s => s.name === name)
+      if (newSnapshot) {
+        await flowSnapshotsApi.update(newSnapshot.id, { is_favorite: true })
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
+      pushToast(`Saved: ${name}`, 'success')
+    } catch (error) {
+      console.error('Failed to create favorite snapshot:', error)
+      pushToast('Failed to save favorite', 'error')
+    } finally {
+      setIsCreatingFavorite(false)
+    }
+  }, [isCreatingFavorite, captureCurrentState, queryClient, pushToast])
+
+  // Flow Snapshots: Handle snapshot loaded (from UI or MIDI PC)
+  // Note: The backend applies plugin parameters and bypass states directly to the engine.
+  // This handler only needs to update frontend UI state.
+  const handleSnapshotLoaded = useCallback((data: FlowSnapshotData) => {
+    // Debug: log incoming snapshot data
+    console.log('[Snapshot Load] Received data:', JSON.stringify({
+      flowSlotsCount: data.flowSlots?.length,
+      flowSlots: data.flowSlots,
+      routing: data.routing,
+      activeFlowIndex: data.activeFlowIndex,
+      chainsCount: Object.keys(data.chains || {}).length,
+    }, null, 2))
+
+    // Restore flow slots
+    const restoredSlots = data.flowSlots.map(s => ({
+      id: s.id,
+      chainId: s.chainId,
+      label: s.label,
+      color: s.color,
+      muted: s.muted,
+      solo: s.solo,
+      dryWetMix: s.dryWetMix,
+    }))
+    console.log('[Snapshot Load] Setting flowSlots:', restoredSlots)
+    setFlowSlots(restoredSlots)
+
+    // Restore routing
+    setRouting({
+      mode: data.routing.mode,
+      activeSlotId: data.routing.activeSlotId,
+      blendPositions: data.routing.blendPositions,
+      morphProgress: data.routing.morphProgress,
+      morphSourceSlotId: data.routing.morphSourceSlotId,
+      morphTargetSlotId: data.routing.morphTargetSlotId,
+      seriesOrder: data.routing.seriesOrder,
+    })
+
+    // Restore active flow index
+    setActiveFlowIndex(data.activeFlowIndex)
+
+    // Refresh chains data to reflect parameter changes applied by backend
+    queryClient.invalidateQueries({ queryKey: ['chains'] })
+
+    pushToast('Flow snapshot loaded', 'success')
+  }, [pushToast, queryClient])
 
   const activeFlow = flowSlots[activeFlowIndex]
   const currentChain = useMemo(() => {
@@ -707,6 +983,28 @@ export function GridFlowPage() {
       setActiveFlowIndex(prev => prev - 1)
     }
   }, [flowSlots, activeFlowIndex])
+
+  const clearFlows = useCallback(() => {
+    // Reset to a single flow (Flow A) with no chain assigned
+    const initialSlot: FlowSlot = {
+      id: `flow-${Date.now()}`,
+      chainId: null,
+      label: SLOT_COLORS[0].label,
+      color: SLOT_COLORS[0].color,
+      muted: false,
+      solo: false,
+      dryWetMix: 100,
+    }
+    setFlowSlots([initialSlot])
+    setActiveFlowIndex(0)
+    setRouting(prev => ({
+      ...prev,
+      activeSlotId: initialSlot.id,
+      seriesOrder: [initialSlot.id],
+      blendPositions: { [initialSlot.id]: 100 },
+    }))
+    pushToast('Flows cleared', 'info')
+  }, [pushToast])
 
   const updateFlow = useCallback((flowId: string, updates: Partial<FlowSlot>) => {
     setFlowSlots(prev => prev.map(f => f.id === flowId ? { ...f, ...updates } : f))
@@ -1061,200 +1359,407 @@ export function GridFlowPage() {
   return (
     <div className="grid-flow-page">
       {/* Unified Header/Toolbar */}
-      <header className="grid-flow-header">
-        {/* Left: Title + Chain Controls */}
-        <div className="grid-flow-header-left">
-          <div className="grid-flow-title">
-            <LayoutGrid size={24} />
-            <h1>Grid Editor</h1>
+      {!toolbarCollapsed && (
+        <header className="grid-flow-header">
+          {/* Left: Title + Chain Controls */}
+          <div className="grid-flow-header-left grid-toolbar-section">
+            <div className="grid-toolbar-section-label">CHAIN & PRESETS</div>
+            <div className="grid-flow-title">
+              <LayoutGrid size={24} />
+              <h1>Grid Editor</h1>
+            </div>
+
+            <div className="grid-header-divider" />
+
+            {/* Chain Controls */}
+            <ToolbarTooltip content="Activate/Deactivate Chain" shortcut={currentChain?.is_active ? '' : ''}>
+              <button
+                className={`grid-header-btn ${currentChain?.is_active ? 'active power' : ''}`}
+                onClick={handleToggleChainActive}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  setContextMenu({
+                    position: { x: e.clientX, y: e.clientY },
+                    items: [
+                      { label: 'Activate', icon: <Power size={14} />, onClick: () => currentChain && activateMutation.mutate(currentChain.id), disabled: !currentChain || currentChain.is_active },
+                      { label: 'Deactivate', icon: <Power size={14} />, onClick: () => currentChain && deactivateMutation.mutate(currentChain.id), disabled: !currentChain || !currentChain.is_active },
+                      { separator: true },
+                      { label: 'Rename', icon: <Info size={14} />, onClick: handleRenameChain, disabled: !currentChain },
+                    ],
+                  })
+                }}
+                disabled={!currentChain}
+              >
+                <Power size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            <ToolbarTooltip content="Save Preset" shortcut="S">
+              <button
+                className="grid-header-btn"
+                onClick={handleSavePreset}
+                disabled={!currentChain}
+              >
+                <Save size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            <ToolbarTooltip content="Load Preset" shortcut="">
+              <button
+                className="grid-header-btn"
+                onClick={() => setShowPresetBrowser(true)}
+              >
+                <FolderOpen size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            <ToolbarTooltip content="Import Preset (FXP, VST3, LV2)" shortcut="">
+              <button
+                className="grid-header-btn"
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Upload size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            <ToolbarTooltip content="Duplicate Chain" shortcut="">
+              <button
+                className="grid-header-btn"
+                onClick={handleDuplicateChain}
+                disabled={!currentChain}
+              >
+                <Copy size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            <div className="grid-header-divider" />
+
+            {/* MIDI Learn */}
+            <MidiLearnButton
+              isActive={midiLearnActive}
+              onToggle={() => setMidiLearnActive(prev => !prev)}
+              position="relative"
+              size="small"
+            />
+
+            {midiLearnActive && (
+              <div className="midi-learn-indicator">
+                <div className="midi-learn-pulse" />
+                <span className="midi-learn-status">
+                  Listening... {lastMidiEvent && `CC ${lastMidiEvent.cc}`}
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="grid-header-divider" />
-
-          {/* Chain Controls */}
-          <button
-            className={`grid-header-btn ${currentChain?.is_active ? 'active power' : ''}`}
-            onClick={handleToggleChainActive}
-            disabled={!currentChain}
-            title={currentChain?.is_active ? 'Deactivate' : 'Activate'}
-          >
-            <Power size={18} />
-          </button>
-
-          <button
-            className="grid-header-btn"
-            onClick={handleSavePreset}
-            disabled={!currentChain}
-            title="Save Preset"
-          >
-            <Save size={18} />
-          </button>
-
-          <button
-            className="grid-header-btn"
-            onClick={() => setShowPresetBrowser(true)}
-            title="Load Preset"
-          >
-            <FolderOpen size={18} />
-          </button>
-
-          <button
-            className="grid-header-btn"
-            onClick={handleDuplicateChain}
-            disabled={!currentChain}
-            title="Duplicate Chain"
-          >
-            <Copy size={18} />
-          </button>
-
-          <div className="grid-header-divider" />
-
-          {/* MIDI Learn */}
-          <MidiLearnButton
-            isActive={midiLearnActive}
-            onToggle={() => setMidiLearnActive(prev => !prev)}
-            position="relative"
-            size="small"
-          />
-        </div>
-
-        {/* Center: Routing */}
-        <div className="grid-flow-header-center">
-          {/* Routing Mode */}
-          <div className="grid-toolbar-routing">
-            <span className="grid-toolbar-routing-label">Routing</span>
-            <div className="grid-toolbar-routing-modes">
-              <button
-                className={`grid-toolbar-route-btn ${routing.mode === 'series' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('series')}
-                title="Series (Sequential)"
-              >
-                <ArrowRightLeft size={14} />
-              </button>
-              <button
-                className={`grid-toolbar-route-btn ${routing.mode === 'parallel_blend' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('parallel_blend')}
-                title="Parallel Blend"
-              >
-                <GitBranch size={14} />
-              </button>
-              <button
-                className={`grid-toolbar-route-btn ${routing.mode === 'ab_switch' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('ab_switch')}
-                title="A/B Switch"
-              >
-                <Shuffle size={14} />
-              </button>
-              <button
-                className={`grid-toolbar-route-btn ${routing.mode === 'parameter_morph' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('parameter_morph')}
-                title="Parameter Morph"
-              >
-                <Settings2 size={14} />
-              </button>
-              <button
-                className={`grid-toolbar-route-btn ${routing.mode === 'sidechain' ? 'active' : ''}`}
-                onClick={() => setRoutingMode('sidechain')}
-                title="Sidechain View"
-              >
-                <Link2 size={14} />
-              </button>
+          {/* Center: Routing */}
+          <div className="grid-flow-header-center grid-toolbar-section">
+            <div className="grid-toolbar-section-label">SIGNAL ROUTING</div>
+            {/* Routing Mode */}
+            <div className="grid-toolbar-routing">
+              <span className="grid-toolbar-routing-label">Routing</span>
+              <div className="grid-toolbar-routing-modes">
+                <ToolbarTooltip content="Series (Sequential)" shortcut="">
+                  <button
+                    className={`grid-toolbar-route-btn ${routing.mode === 'series' ? 'active' : ''}`}
+                    onClick={() => setRoutingMode('series')}
+                    onMouseEnter={() => setRoutingPreview('series')}
+                    onMouseLeave={() => setRoutingPreview(null)}
+                  >
+                    <ArrowRightLeft size={14} />
+                  </button>
+                </ToolbarTooltip>
+                <ToolbarTooltip content="Parallel Blend" shortcut="">
+                  <button
+                    className={`grid-toolbar-route-btn ${routing.mode === 'parallel_blend' ? 'active' : ''}`}
+                    onClick={() => setRoutingMode('parallel_blend')}
+                    onMouseEnter={() => setRoutingPreview('parallel_blend')}
+                    onMouseLeave={() => setRoutingPreview(null)}
+                  >
+                    <GitBranch size={14} />
+                  </button>
+                </ToolbarTooltip>
+                <ToolbarTooltip content="A/B Switch" shortcut="">
+                  <button
+                    className={`grid-toolbar-route-btn ${routing.mode === 'ab_switch' ? 'active' : ''}`}
+                    onClick={() => setRoutingMode('ab_switch')}
+                    onMouseEnter={() => setRoutingPreview('ab_switch')}
+                    onMouseLeave={() => setRoutingPreview(null)}
+                  >
+                    <Shuffle size={14} />
+                  </button>
+                </ToolbarTooltip>
+                <ToolbarTooltip content="Parameter Morph" shortcut="">
+                  <button
+                    className={`grid-toolbar-route-btn ${routing.mode === 'parameter_morph' ? 'active' : ''}`}
+                    onClick={() => setRoutingMode('parameter_morph')}
+                    onMouseEnter={() => setRoutingPreview('parameter_morph')}
+                    onMouseLeave={() => setRoutingPreview(null)}
+                  >
+                    <Settings2 size={14} />
+                  </button>
+                </ToolbarTooltip>
+                <ToolbarTooltip content="Sidechain View" shortcut="">
+                  <button
+                    className={`grid-toolbar-route-btn ${routing.mode === 'sidechain' ? 'active' : ''}`}
+                    onClick={() => setRoutingMode('sidechain')}
+                    onMouseEnter={() => setRoutingPreview('sidechain')}
+                    onMouseLeave={() => setRoutingPreview(null)}
+                  >
+                    <Link2 size={14} />
+                  </button>
+                </ToolbarTooltip>
+              </div>
             </div>
+
+            {/* Flow Selection for A/B Mode */}
+            {routing.mode === 'ab_switch' && (
+              <div className="grid-toolbar-flow-selector">
+                <span className="grid-toolbar-flow-selector-label">Flow:</span>
+                {flowSlots.slice(0, 4).map((slot, idx) => (
+                  <button
+                    key={slot.id}
+                    className={`grid-toolbar-flow-btn ${routing.activeSlotId === slot.id ? 'active' : ''}`}
+                    style={{ '--flow-color': slot.color } as React.CSSProperties}
+                    onClick={() => setRouting(prev => ({ ...prev, activeSlotId: slot.id }))}
+                  >
+                    {SLOT_COLORS[idx]?.label || String.fromCharCode(65 + idx)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Morph value (when in morph mode) */}
+            {routing.mode === 'parameter_morph' && (
+              <div className="grid-toolbar-morph">
+                <div className="grid-toolbar-morph-labels">
+                  <span className="grid-toolbar-morph-label-start">
+                    {routing.morphSourceSlotId
+                      ? flowSlots.find(s => s.id === routing.morphSourceSlotId)?.label
+                      : 'A'}
+                  </span>
+                  <NumberInput
+                    label="Morph"
+                    value={routing.morphProgress * 100}
+                    min={0}
+                    max={100}
+                    step={1}
+                    unit="%"
+                    onChange={(v) => setMorphProgress(v / 100)}
+                    size="small"
+                    inline
+                  />
+                  <span className="grid-toolbar-morph-label-end">
+                    {routing.morphTargetSlotId
+                      ? flowSlots.find(s => s.id === routing.morphTargetSlotId)?.label
+                      : 'B'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Morph value (when in morph mode) */}
-          {routing.mode === 'parameter_morph' && (
-            <div className="grid-toolbar-morph">
-              <NumberInput
-                label="Morph"
-                value={routing.morphProgress * 100}
-                min={0}
-                max={100}
-                step={1}
-                unit="%"
-                onChange={(v) => setMorphProgress(v / 100)}
-                size="small"
-                inline
-              />
+          {/* Right: Actions */}
+          <div className="grid-flow-header-right grid-toolbar-section">
+            <div className="grid-toolbar-section-label">UTILITIES</div>
+            {/* Undo/Redo */}
+            <div className="grid-toolbar-history-wrapper">
+              <ToolbarTooltip content={`${historyStatus?.next_undo || 'Undo'}`} shortcut="Ctrl+Z">
+                <button
+                  className="grid-header-btn"
+                  onClick={() => undoMutation.mutate()}
+                  onMouseEnter={() => setShowUndoStack(true)}
+                  onMouseLeave={() => setShowUndoStack(false)}
+                  disabled={!historyStatus?.can_undo}
+                >
+                  <Undo2 size={18} />
+                </button>
+              </ToolbarTooltip>
+              {showUndoStack && historyStatus?.undo_stack && (
+                <div className="toolbar-history-stack">
+                  <div className="toolbar-history-stack-title">Undo History</div>
+                  {historyStatus.undo_stack.slice(-5).reverse().map((entry, idx) => (
+                    <button
+                      key={idx}
+                      className="toolbar-history-stack-item"
+                      onClick={() => {
+                        for (let i = 0; i <= idx; i++) {
+                          undoMutation.mutate()
+                        }
+                        setShowUndoStack(false)
+                      }}
+                    >
+                      {entry || 'Action'}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+
+            <div className="grid-toolbar-history-wrapper">
+              <ToolbarTooltip content={`${historyStatus?.next_redo || 'Redo'}`} shortcut="Ctrl+Y">
+                <button
+                  className="grid-header-btn"
+                  onClick={() => redoMutation.mutate()}
+                  onMouseEnter={() => setShowRedoStack(true)}
+                  onMouseLeave={() => setShowRedoStack(false)}
+                  disabled={!historyStatus?.can_redo}
+                >
+                  <Redo2 size={18} />
+                </button>
+              </ToolbarTooltip>
+              {showRedoStack && historyStatus?.redo_stack && (
+                <div className="toolbar-history-stack">
+                  <div className="toolbar-history-stack-title">Redo History</div>
+                  {historyStatus.redo_stack.slice(-5).reverse().map((entry, idx) => (
+                    <button
+                      key={idx}
+                      className="toolbar-history-stack-item"
+                      onClick={() => {
+                        for (let i = 0; i <= idx; i++) {
+                          redoMutation.mutate()
+                        }
+                        setShowRedoStack(false)
+                      }}
+                    >
+                      {entry || 'Action'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid-header-divider" />
+
+            {/* Audio Config */}
+            <ToolbarTooltip content="Audio Settings" shortcut="">
+              <button
+                className="grid-header-btn"
+                onClick={() => setShowAudioConfig(true)}
+              >
+                <Sliders size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            {/* Refresh */}
+            <ToolbarTooltip content="Refresh Plugin List" shortcut="">
+              <button
+                className="grid-header-btn"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ['chains'] })
+                  queryClient.invalidateQueries({ queryKey: ['plugins', 'discover'] })
+                }}
+                disabled={chainsQuery.isRefetching || pluginsQuery.isRefetching}
+              >
+                {(chainsQuery.isRefetching || pluginsQuery.isRefetching) ? (
+                  <span className="spin">↻</span>
+                ) : (
+                  <RefreshCw size={18} />
+                )}
+              </button>
+            </ToolbarTooltip>
+
+            <div className="grid-header-divider" />
+
+            {/* MIDI Mappings */}
+            <ToolbarTooltip content="MIDI Mappings" shortcut="">
+              <button
+                className={`grid-header-btn ${midiMappingsPanelOpen ? 'active' : ''}`}
+                onClick={() => setMidiMappingsPanelOpen(!midiMappingsPanelOpen)}
+              >
+                <Music size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            {/* Automation Timeline */}
+            <ToolbarTooltip content="Automation Timeline" shortcut="">
+              <button
+                className={`grid-header-btn ${automationTimelineExpanded ? 'active' : ''}`}
+                onClick={() => setAutomationTimelineExpanded(!automationTimelineExpanded)}
+              >
+                <PlayCircle size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            {/* Quick Favorite (Auto-snapshot) */}
+            <ToolbarTooltip content="Favorite Current State" shortcut="">
+              <button
+                className="grid-header-btn favorite-btn"
+                onClick={handleQuickFavorite}
+                disabled={isCreatingFavorite}
+              >
+                <Star size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            {/* Snapshots Panel Toggle */}
+            <ToolbarTooltip content="Flow Snapshots Panel" shortcut="">
+              <button
+                className={`grid-header-btn ${snapshotsPanelExpanded ? 'active' : ''}`}
+                onClick={() => setSnapshotsPanelExpanded(!snapshotsPanelExpanded)}
+              >
+                <Camera size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            <div className="grid-header-divider" />
+
+            {/* Keyboard Help */}
+            <ToolbarTooltip content="Keyboard Shortcuts" shortcut="?">
+              <button
+                className="grid-header-btn"
+                onClick={() => setShowKeyboardHelp(true)}
+              >
+                <Keyboard size={18} />
+              </button>
+            </ToolbarTooltip>
+
+            {/* Toolbar Collapse */}
+            <ToolbarTooltip content="Collapse Toolbar" shortcut="">
+              <button
+                className="grid-header-btn"
+                onClick={() => setToolbarCollapsed(true)}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </ToolbarTooltip>
+          </div>
+        </header>
+      )}
+
+      {/* Collapsed Toolbar */}
+      {toolbarCollapsed && (
+        <div className="grid-flow-header-collapsed">
+          <button className="grid-flow-header-collapsed-btn" onClick={() => setToolbarCollapsed(false)}>
+            <LayoutGrid size={18} />
+            <span>Show Toolbar</span>
+          </button>
         </div>
+      )}
 
-        {/* Right: Actions */}
-        <div className="grid-flow-header-right">
-          {/* Undo/Redo */}
-          <button
-            className="grid-header-btn"
-            onClick={() => undoMutation.mutate()}
-            disabled={!historyStatus?.can_undo}
-            title={historyStatus?.next_undo || 'Undo'}
-          >
-            <Undo2 size={18} />
-          </button>
-          <button
-            className="grid-header-btn"
-            onClick={() => redoMutation.mutate()}
-            disabled={!historyStatus?.can_redo}
-            title={historyStatus?.next_redo || 'Redo'}
-          >
-            <Redo2 size={18} />
-          </button>
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          items={contextMenu.items}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
 
-          <div className="grid-header-divider" />
-
-          {/* Audio Config */}
-          <button
-            className="grid-header-btn"
-            onClick={() => setShowAudioConfig(true)}
-            title="Audio Settings"
-          >
-            <Sliders size={18} />
-          </button>
-
-          {/* Refresh */}
-          <button
-            className="grid-header-btn"
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['chains'] })
-              queryClient.invalidateQueries({ queryKey: ['plugins'] })
-            }}
-            title="Refresh"
-          >
-            <RefreshCw size={18} />
-          </button>
-
-          <div className="grid-header-divider" />
-
-          {/* MIDI Mappings */}
-          <button
-            className={`grid-header-btn ${midiMappingsPanelOpen ? 'active' : ''}`}
-            onClick={() => setMidiMappingsPanelOpen(!midiMappingsPanelOpen)}
-            title="MIDI Mappings"
-          >
-            <Music size={18} />
-          </button>
-
-          {/* Automation Timeline */}
-          <button
-            className={`grid-header-btn ${automationTimelineExpanded ? 'active' : ''}`}
-            onClick={() => setAutomationTimelineExpanded(!automationTimelineExpanded)}
-            title="Automation Timeline"
-          >
-            <PlayCircle size={18} />
-          </button>
-
-          <div className="grid-header-divider" />
-
-          {/* Keyboard Help */}
-          <button
-            className="grid-header-btn"
-            onClick={() => setShowKeyboardHelp(true)}
-            title="Keyboard Shortcuts (?)"
-          >
-            <Keyboard size={18} />
-          </button>
-        </div>
-      </header>
+      {/* Confirmation Dialog */}
+      {confirmDialog && (
+        <ConfirmationDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
+          confirmLabel={confirmDialog.confirmLabel}
+          cancelLabel={confirmDialog.cancelLabel}
+          isLoading={confirmDialog.isLoading}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={confirmDialog.onCancel}
+        />
+      )}
 
       {/* Chains Grid - below title */}
       <ChainManagementCard
@@ -1264,6 +1769,7 @@ export function GridFlowPage() {
             updateFlow(activeFlow.id, { chainId })
           }
         }}
+        flowSlots={flowSlots}
       />
 
       {/* Main content area */}
@@ -1278,10 +1784,55 @@ export function GridFlowPage() {
             return (
               <div
                 key={flow.id}
-                className={`grid-flow-slot ${isActive ? 'active' : ''} ${flow.muted ? 'muted' : ''} ${flow.solo ? 'solo' : ''}`}
+                className={`grid-flow-slot ${isActive ? 'active' : ''} ${flow.muted ? 'muted' : ''} ${flow.solo ? 'solo' : ''} ${draggedFlowId === flow.id ? 'dragging' : ''} ${dragOverFlowId === flow.id ? 'drag-over' : ''}`}
                 style={{ '--flow-color': SLOT_COLORS[index]?.color || flow.color } as React.CSSProperties}
                 onClick={() => setActiveFlowIndex(index)}
+                draggable
+                onDragStart={(e) => {
+                  setDraggedFlowId(flow.id)
+                  e.dataTransfer.effectAllowed = 'move'
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                  if (draggedFlowId && draggedFlowId !== flow.id) {
+                    setDragOverFlowId(flow.id)
+                  }
+                }}
+                onDragLeave={() => {
+                  setDragOverFlowId(null)
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (!draggedFlowId || draggedFlowId === flow.id) {
+                    setDraggedFlowId(null)
+                    setDragOverFlowId(null)
+                    return
+                  }
+
+                  const draggedIndex = flowSlots.findIndex(s => s.id === draggedFlowId)
+                  const dropIndex = flowSlots.findIndex(s => s.id === flow.id)
+
+                  if (draggedIndex !== -1 && dropIndex !== -1) {
+                    const newSlots = [...flowSlots]
+                    const [draggedSlot] = newSlots.splice(draggedIndex, 1)
+                    newSlots.splice(dropIndex, 0, draggedSlot)
+                    setFlowSlots(newSlots)
+                  }
+
+                  setDraggedFlowId(null)
+                  setDragOverFlowId(null)
+                }}
+                onDragEnd={() => {
+                  setDraggedFlowId(null)
+                  setDragOverFlowId(null)
+                }}
               >
+                {/* Drag Handle */}
+                <div className="grid-flow-slot-drag-handle">
+                  <GripVertical size={16} />
+                </div>
+
                 {/* Vertical title on the left */}
                 <div className="grid-flow-slot-title">
                   <GitBranch size={14} />
@@ -1390,14 +1941,6 @@ export function GridFlowPage() {
             )
           })}
         </div>
-
-        {/* Floating Add Flow Button */}
-        {flowSlots.length < MAX_FLOWS && (
-          <button className="grid-flow-add-btn floating" onClick={addFlow} title="Add new flow">
-            <Plus size={24} />
-            <span>Add Flow</span>
-          </button>
-        )}
 
         {/* Parameter panel */}
         <div className="grid-flow-param-area">
@@ -1630,14 +2173,33 @@ export function GridFlowPage() {
       {/* Preset Browser Modal */}
       {showPresetBrowser && (
         <div className="grid-flow-modal-overlay" onClick={() => setShowPresetBrowser(false)}>
-          <div className="grid-flow-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="grid-flow-modal" onClick={(e) => e.stopPropagation()} style={{ minWidth: '400px' }}>
             <div className="grid-flow-modal-header">
               <h2>Load Preset</h2>
-              <button onClick={() => setShowPresetBrowser(false)}><X size={20} /></button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  className="grid-header-btn"
+                  onClick={() => {
+                    setShowPresetBrowser(false)
+                    setShowImportDialog(true)
+                  }}
+                  title="Import from file (FXP, VST3, LV2, etc.)"
+                  style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Upload size={14} />
+                  <span style={{ fontSize: '0.8rem' }}>Import</span>
+                </button>
+                <button onClick={() => setShowPresetBrowser(false)}><X size={20} /></button>
+              </div>
             </div>
             <div className="grid-flow-modal-list">
               {presets.length === 0 ? (
-                <div className="grid-flow-modal-empty">No presets saved</div>
+                <div className="grid-flow-modal-empty">
+                  <p>No presets saved</p>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '8px' }}>
+                    Press <kbd>S</kbd> to save current chain, or import from file
+                  </p>
+                </div>
               ) : (
                 presets.map((preset) => (
                   <div key={preset.id} className="grid-flow-modal-item preset-item">
@@ -1663,9 +2225,41 @@ export function GridFlowPage() {
                 ))
               )}
             </div>
+            {/* Footer with community link */}
+            <div style={{
+              padding: '12px 16px',
+              borderTop: '1px solid var(--border, #333)',
+              display: 'flex',
+              justifyContent: 'center',
+            }}>
+              <a
+                href="/presets"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: 'var(--accent, #7c3aed)',
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <Globe size={14} />
+                Browse Community Presets
+              </a>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Preset Import Dialog */}
+      <PresetImportDialog
+        isOpen={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImportSuccess={(presetId, name) => {
+          queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
+          pushToast(`Imported "${name}" successfully`, 'success')
+        }}
+      />
 
       {/* Audio Config Dialog */}
       <AudioConfigDialog
@@ -1854,6 +2448,41 @@ export function GridFlowPage() {
           </div>
         </div>
       )}
+
+      {/* Flow Palette - Snapshots + Flow Actions */}
+      <div className="grid-flow-palette">
+        {/* Flow Action Buttons */}
+        <div className="grid-flow-palette-actions">
+          <button
+            className="grid-flow-palette-btn new-flow"
+            onClick={addFlow}
+            disabled={flowSlots.length >= MAX_FLOWS}
+            title="Add new flow"
+          >
+            <Plus size={20} />
+          </button>
+          <button
+            className="grid-flow-palette-btn clear-flows"
+            onClick={() => {
+              if (confirm('Clear all flows and start fresh?')) {
+                clearFlows()
+              }
+            }}
+            disabled={flowSlots.length <= 1}
+            title="Clear all flows"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
+
+        {/* Flow Snapshots Panel */}
+        <FlowSnapshotsPanel
+          currentState={captureCurrentState()}
+          onSnapshotLoaded={handleSnapshotLoaded}
+          expanded={snapshotsPanelExpanded}
+          onToggleExpanded={() => setSnapshotsPanelExpanded(!snapshotsPanelExpanded)}
+        />
+      </div>
 
       {/* Automation Timeline Bottom Panel */}
       {automationTimelineExpanded && (

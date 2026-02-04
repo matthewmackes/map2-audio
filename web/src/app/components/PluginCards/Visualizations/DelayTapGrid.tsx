@@ -5,7 +5,8 @@
  * Shows the decay of repeated echoes over time.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 interface DelayTapGridProps {
   delayTimeL: number // ms
@@ -18,6 +19,7 @@ interface DelayTapGridProps {
   height?: number
   accentColor?: string
   maxTaps?: number
+  compact?: boolean
 }
 
 export function DelayTapGrid({
@@ -27,14 +29,27 @@ export function DelayTapGrid({
   pingPong = false,
   modulationRate,
   modulationDepth,
-  width = 280,
-  height = 80,
+  width,
+  height,
   accentColor = '#45b7d1',
   maxTaps = 8,
+  compact = false,
 }: DelayTapGridProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 280 / 80,
+    baseOn: 'width',
+    defaultWidth: 280,
+    defaultHeight: 80,
+  })
+
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
   const padding = { top: 8, right: 12, bottom: 16, left: 12 }
-  const graphWidth = width - padding.left - padding.right
-  const graphHeight = height - padding.top - padding.bottom
+  const graphWidth = finalWidth - padding.left - padding.right
+  const graphHeight = finalHeight - padding.top - padding.bottom
 
   // Normalize feedback to 0-1 range
   const feedbackNorm = feedback > 1 ? feedback / 100 : feedback
@@ -92,9 +107,10 @@ export function DelayTapGrid({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="delay-tap-grid"
     >
       {/* Background */}

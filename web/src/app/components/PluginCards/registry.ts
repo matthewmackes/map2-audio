@@ -243,22 +243,26 @@ registerPluginPattern(/dist|drive|fuzz|overdrive|saturate|valve|tube/i, {
 
 // ==================== JUCE Native Processors ====================
 // Best-in-class processors built into the C++ audio engine
+// Using default exports to get wrapped components with MIDI dialog
 
-import { CompressorCard } from './Custom/JUCE/CompressorCard'
-import { LimiterCard } from './Custom/JUCE/LimiterCard'
-import { GateCard } from './Custom/JUCE/GateCard'
-import { ParametricEQCard } from './Custom/JUCE/ParametricEQCard'
-import { CabinetIRCard } from './Custom/JUCE/CabinetIRCard'
-import { ReverbIRCard } from './Custom/JUCE/ReverbIRCard'
-import { NAMCard } from './Custom/JUCE/NAMCard'
-import { NativeDelayCard } from './Custom/JUCE/NativeDelayCard'
-import { ChorusCard } from './Custom/JUCE/ChorusCard'
-import { PhaserCard as JUCEPhaserCard } from './Custom/JUCE/PhaserCard'
-import { IntelliFXCard } from './Custom/JUCE/IntelliFXCard'
-import { EVHPitchShifterCard } from './Custom/JUCE/EVHPitchShifterCard'
-import { IntervalShifterCard } from './Custom/JUCE/IntervalShifterCard'
-import { BossXS1Card } from './Custom/JUCE/BossXS1Card'
-import { ShoeGazeCard } from './Custom/JUCE/ShoeGazeCard'
+import CompressorCard from './Custom/JUCE/CompressorCard'
+import LimiterCard from './Custom/JUCE/LimiterCard'
+import GateCard from './Custom/JUCE/GateCard'
+import ParametricEQCard from './Custom/JUCE/ParametricEQCard'
+import CabinetIRCard from './Custom/JUCE/CabinetIRCard'
+import ReverbIRCard from './Custom/JUCE/ReverbIRCard'
+import NAMCard from './Custom/JUCE/NAMCard'
+import NativeDelayCard from './Custom/JUCE/NativeDelayCard'
+import ChorusCard from './Custom/JUCE/ChorusCard'
+import JUCEPhaserCard from './Custom/JUCE/PhaserCard'
+import IntelliFXCard from './Custom/JUCE/IntelliFXCard'
+import EVHPitchShifterCard from './Custom/JUCE/EVHPitchShifterCard'
+import IntervalShifterCard from './Custom/JUCE/IntervalShifterCard'
+import BossXS1Card from './Custom/JUCE/BossXS1Card'
+import ShoeGazeCard from './Custom/JUCE/ShoeGazeCard'
+import LexiLoveCard from './Custom/JUCE/LexiLoveCard'
+import H3000Card from './Custom/JUCE/H3000Card'
+import { EventideH9Card } from './Custom/JUCE/EventideH9Card'
 
 // JUCE Dynamics
 registerPluginCard('map2://juce/dynamics/compressor', {
@@ -328,6 +332,21 @@ registerPluginCard('map2://juce/pitch/boss-xs1', {
 // JUCE Multi-Effect - ShoeGaze (wall of sound)
 registerPluginCard('map2://juce/multieffect/shoegaze', {
   component: ShoeGazeCard,
+})
+
+// JUCE Reverb - Lexi Love (PCM 70 algorithmic reverb)
+registerPluginCard('map2://juce/reverb/pcm70', {
+  component: LexiLoveCard,
+})
+
+// JUCE Pitch - H3000 Ultra-Harmonizer
+registerPluginCard('map2://juce/pitch/h3000', {
+  component: H3000Card,
+})
+
+// JUCE Multi-Effect - Eventide H9
+registerPluginCard('map2://juce/effects/eventide-h9', {
+  component: EventideH9Card,
 })
 
 // ==================== Dragonfly Reverbs ====================

@@ -53,38 +53,117 @@ except ImportError:
     sys.exit(1)
 
 # Import our API client and screens
-from api_client import MAP2APIClient
+from .api_client import MAP2APIClient
 
-# Import new master screens (Phase 2 Refactoring)
+# Import new master screens (Phase 2 Refactoring) - ISOLATED IMPORTS
+# Each screen imported separately to prevent cascade failures
+SCREEN_IMPORT_ERRORS = {}
+
 try:
-    from screens.dashboard_screen import DashboardScreen
-    from screens.chains_manager_screen import ChainsManagerScreen
-    from screens.effects_manager_screen import EffectsManagerScreen
-    from screens.midi_sessions_screen import MIDISessionsScreen
-    from screens.workflow_settings_screen import WorkflowSettingsScreen
-    from screens.settings_screen import SettingsScreen
-    from screens.diagnostics_screen import DiagnosticsScreen
-    from screens.lcd_services_screen import LCDServicesScreen
-    from screens.backup_tab import BackupTab
-    from screens.stage_view_screen import StageViewScreen
-    MASTER_SCREENS_AVAILABLE = True
+    from .screens.dashboard_screen import DashboardScreen
 except ImportError as e:
-    logger.warning(f"Could not import master screens: {e}")
-    MASTER_SCREENS_AVAILABLE = False
+    logger.warning(f"Could not import DashboardScreen: {e}")
     DashboardScreen = None
+    SCREEN_IMPORT_ERRORS['DashboardScreen'] = str(e)
+
+try:
+    from .screens.chains_manager_screen import ChainsManagerScreen
+except ImportError as e:
+    logger.warning(f"Could not import ChainsManagerScreen: {e}")
     ChainsManagerScreen = None
+    SCREEN_IMPORT_ERRORS['ChainsManagerScreen'] = str(e)
+
+try:
+    from .screens.effects_manager_screen import EffectsManagerScreen
+except ImportError as e:
+    logger.warning(f"Could not import EffectsManagerScreen: {e}")
     EffectsManagerScreen = None
+    SCREEN_IMPORT_ERRORS['EffectsManagerScreen'] = str(e)
+
+try:
+    from .screens.midi_sessions_screen import MIDISessionsScreen
+except ImportError as e:
+    logger.warning(f"Could not import MIDISessionsScreen: {e}")
     MIDISessionsScreen = None
+    SCREEN_IMPORT_ERRORS['MIDISessionsScreen'] = str(e)
+
+try:
+    from .screens.workflow_settings_screen import WorkflowSettingsScreen
+except ImportError as e:
+    logger.warning(f"Could not import WorkflowSettingsScreen: {e}")
     WorkflowSettingsScreen = None
+    SCREEN_IMPORT_ERRORS['WorkflowSettingsScreen'] = str(e)
+
+try:
+    from .screens.settings_screen import SettingsScreen
+except ImportError as e:
+    logger.warning(f"Could not import SettingsScreen: {e}")
     SettingsScreen = None
+    SCREEN_IMPORT_ERRORS['SettingsScreen'] = str(e)
+
+try:
+    from .screens.diagnostics_screen import DiagnosticsScreen
+except ImportError as e:
+    logger.warning(f"Could not import DiagnosticsScreen: {e}")
     DiagnosticsScreen = None
+    SCREEN_IMPORT_ERRORS['DiagnosticsScreen'] = str(e)
+
+try:
+    from .screens.lcd_services_screen import LCDServicesScreen
+except ImportError as e:
+    logger.warning(f"Could not import LCDServicesScreen: {e}")
     LCDServicesScreen = None
+    SCREEN_IMPORT_ERRORS['LCDServicesScreen'] = str(e)
+
+try:
+    from .screens.backup_tab import BackupTab
+except ImportError as e:
+    logger.warning(f"Could not import BackupTab: {e}")
     BackupTab = None
+    SCREEN_IMPORT_ERRORS['BackupTab'] = str(e)
+
+try:
+    from .screens.stage_view_screen import StageViewScreen
+except ImportError as e:
+    logger.warning(f"Could not import StageViewScreen: {e}")
     StageViewScreen = None
+    SCREEN_IMPORT_ERRORS['StageViewScreen'] = str(e)
+
+try:
+    from .screens.developer_mode_screen import DeveloperModeScreen
+except ImportError as e:
+    logger.warning(f"Could not import DeveloperModeScreen: {e}")
+    DeveloperModeScreen = None
+    SCREEN_IMPORT_ERRORS['DeveloperModeScreen'] = str(e)
+
+try:
+    from .screens.backend_monitor_screen import BackendMonitorScreen
+except ImportError as e:
+    logger.warning(f"Could not import BackendMonitorScreen: {e}")
+    BackendMonitorScreen = None
+    SCREEN_IMPORT_ERRORS['BackendMonitorScreen'] = str(e)
+
+try:
+    from .screens.test_screen import TestScreen
+except ImportError as e:
+    logger.warning(f"Could not import TestScreen: {e}")
+    TestScreen = None
+    SCREEN_IMPORT_ERRORS['TestScreen'] = str(e)
+
+# Check if at least some screens loaded
+MASTER_SCREENS_AVAILABLE = any([
+    DashboardScreen, ChainsManagerScreen, EffectsManagerScreen,
+    MIDISessionsScreen, WorkflowSettingsScreen, SettingsScreen,
+    DiagnosticsScreen, LCDServicesScreen, BackupTab, StageViewScreen,
+    DeveloperModeScreen, BackendMonitorScreen
+])
+
+if SCREEN_IMPORT_ERRORS:
+    logger.warning(f"Screen import errors: {SCREEN_IMPORT_ERRORS}")
 
 # Fallback to old screens if master screens not available
 if not MASTER_SCREENS_AVAILABLE:
-    from screens import (
+    from .screens import (
         ChainsScreen,
         MIDIScreen,
         PluginLoaderScreen,
@@ -101,22 +180,22 @@ if not MASTER_SCREENS_AVAILABLE:
 
 # Import new improvement modules - WORLD-CLASS ENHANCEMENTS
 try:
-    from status_bar import StatusBar
-    from config import ConfigManager, KeyBindings
-    from error_handler import setup_error_handler
-    from screen_state import screen_state
+    from .status_bar import StatusBar
+    from .config import ConfigManager, KeyBindings
+    from .error_handler import setup_error_handler
+    from .screen_state import screen_state
     
     # Phase 1 Improvements - Quick Wins
-    from command_palette import command_palette, CommandCategory
-    from theme_engine import theme_engine
-    from context_help import context_help
-    from undo_redo import undo_redo
-    from layout_system import layout_system, LayoutMode
+    from .command_palette import command_palette, CommandCategory
+    from .theme_engine import theme_engine
+    from .context_help import context_help
+    from .undo_redo import undo_redo
+    from .layout_system import layout_system, LayoutMode
     
     # Phase 2 Improvements - Advanced Features
-    from performance_monitor import performance_monitor
-    from virtual_renderer import virtual_renderer
-    from resilience_system import resilience_system
+    from .performance_monitor import performance_monitor
+    from .virtual_renderer import virtual_renderer
+    from .resilience_system import resilience_system
     
     IMPROVEMENTS_AVAILABLE = True
 except ImportError as e:
@@ -129,14 +208,15 @@ except ImportError as e:
 
 # Import new UI components - Phase 3 Refactoring
 try:
-    from widgets.stats_panel_widget import StatsPanel
-    from widgets.context_panel_widget import ContextPanelWidget
-    from widgets.breadcrumb_widget import BreadcrumbWidget
-    from widgets.enhanced_status_bar_widget import EnhancedStatusBarWidget
-    from widgets.system_stats_footer import SystemStatsFooter
-    from widgets.api_log_widget import APILogWidget
-    from widgets.landing_dashboard_widget import LandingDashboard
-    from widgets.sidebar_widget import SidebarWidget
+    from .widgets.stats_panel_widget import StatsPanel
+    from .widgets.context_panel_widget import ContextPanelWidget
+    from .widgets.breadcrumb_widget import BreadcrumbWidget
+    from .widgets.enhanced_status_bar_widget import EnhancedStatusBarWidget
+    from .widgets.system_stats_footer import SystemStatsFooter
+    from .widgets.api_log_widget import APILogWidget
+    from .widgets.landing_dashboard_widget import LandingDashboard
+    from .widgets.sidebar_widget import SidebarWidget
+    from .widgets.mode_indicator_widget import ModeIndicatorWidget
     UI_COMPONENTS_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Could not import UI components: {e}")
@@ -148,8 +228,58 @@ except ImportError as e:
     APILogWidget = None
     LandingDashboard = None
     SidebarWidget = None
+    ModeIndicatorWidget = None
     UI_COMPONENTS_AVAILABLE = False
 
+
+
+class FallbackScreen(Static):
+    """
+    Fallback screen displayed when a screen fails to load.
+    Shows helpful error information and suggestions.
+    """
+
+    DEFAULT_CSS = """
+    FallbackScreen {
+        width: 100%;
+        height: 100%;
+        background: $surface;
+        padding: 2;
+    }
+
+    FallbackScreen .error-title {
+        text-style: bold;
+        color: $error;
+        margin-bottom: 1;
+    }
+
+    FallbackScreen .error-details {
+        color: $text-muted;
+        margin-bottom: 2;
+    }
+
+    FallbackScreen .suggestions {
+        color: $text;
+        margin-top: 1;
+    }
+    """
+
+    def __init__(self, tab_name: str, error_message: str, id: str = None):
+        super().__init__(id=id)
+        self.tab_name = tab_name
+        self.error_message = error_message
+
+    def compose(self) -> ComposeResult:
+        yield Label(f"❌ Could not load: {self.tab_name}", classes="error-title")
+        yield Label(f"Error: {self.error_message}", classes="error-details")
+        yield Label(
+            "Suggestions:\n"
+            "  • Press R to refresh\n"
+            "  • Check /tmp/map2_tui.log for details\n"
+            "  • Use arrow keys to try other tabs\n"
+            "  • Press Q to quit and restart",
+            classes="suggestions"
+        )
 
 
 class LRUScreenCache:
@@ -488,9 +618,9 @@ class MAP2AudioTUI(App):
     }
 
     #main-content {
-        width: 1fr;
+        width: 100%;
         height: 1fr;
-        layout: horizontal;
+        layout: vertical;
         border: none;
         padding: 0;
     }
@@ -502,6 +632,7 @@ class MAP2AudioTUI(App):
         border: none;
         padding: 0;
         overflow: auto;
+        layout: vertical;
     }
 
     #context-panel {
@@ -583,9 +714,11 @@ class MAP2AudioTUI(App):
         Binding("8", "goto_tab_7", "LCD", show=True),
         Binding("9", "goto_tab_8", "Backup", show=True),
         Binding("0", "goto_tab_9", "Stage", show=True),
+        Binding("d", "goto_tab_10", "Developer", show=True),
+        Binding("m", "goto_tab_11", "Monitor", show=True),
     ]
 
-    # New simplified screen factory mapping: 10 tabs
+    # New simplified screen factory mapping: 12 tabs
     # Tab 0 uses LandingDashboard as the main landing zone
     SCREEN_FACTORIES = {
         0: (LandingDashboard if UI_COMPONENTS_AVAILABLE and LandingDashboard else DashboardScreen, "dashboard"),
@@ -598,9 +731,11 @@ class MAP2AudioTUI(App):
         7: (LCDServicesScreen, "lcd-services"),
         8: (BackupTab, "backup"),
         9: (StageViewScreen, "stage-view"),
+        10: (DeveloperModeScreen, "developer-mode"),
+        11: (BackendMonitorScreen, "backend-monitor"),
     }
 
-    # New tab names for 10 master screens
+    # New tab names for 12 master screens
     TAB_NAMES = [
         "📊 Dashboard",
         "🎸 Chains",
@@ -612,13 +747,15 @@ class MAP2AudioTUI(App):
         "📺 LCD",
         "💾 Backup",
         "🎤 Stage",
+        "🔧 Developer",
+        "🖥️ Monitor",
     ]
 
     def __init__(self, daemon_mode: bool = False):
         super().__init__()
         self.daemon_mode = daemon_mode
         self.api_client = MAP2APIClient(base_url=API_BASE)
-        self.current_tab = 0
+        self.current_tab = 0  # Start on Dashboard tab by default
 
         # Reorganized to 7 master screens (Phase 2 Refactoring)
         # All features now organized logically into these categories
@@ -633,11 +770,17 @@ class MAP2AudioTUI(App):
         if getattr(self, 'config_error', None):
             self.notify(f"⚠️ Config load error: {self.config_error}", severity="warning", timeout=6)
         """Create main UI layout with proper container nesting."""
-        # Header section - fixed height (just tabs bar, removed empty status/breadcrumb)
+        # Header section - fixed height with mode indicator and tabs
         with Vertical(id="header-section"):
+            # Mode indicator
+            if UI_COMPONENTS_AVAILABLE and ModeIndicatorWidget:
+                yield ModeIndicatorWidget()
+            else:
+                yield Label("MODE", id="mode-placeholder")
+
             # Tab navigation bar - larger and more prominent
             tabs_display = "  |  ".join([
-                f"[{i+1}] {name}"
+                f"[{i+1}] {name}" if i < 9 else f"[{chr(48 + i - 9)}] {name}" if i == 9 else f"[d] {name}"
                 for i, name in enumerate(self.TAB_NAMES)
             ])
             yield Label(
@@ -646,12 +789,13 @@ class MAP2AudioTUI(App):
             )
 
         # Main content area - full width for screen content
-        with Horizontal(id="main-content"):
+        # Changed to Vertical to ensure proper stacking
+        with Vertical(id="main-content"):
             # Content area (full width - no sidebars)
             yield Container(id="content-area")
 
-        # Footer section - API call log (replaces old footer components)
-        with Vertical(id="footer-section"):
+        # Footer section - API call log (hidden by default, toggle with Ctrl+L)
+        with Vertical(id="footer-section", classes="hidden"):
             # Real-time API call log showing all backend requests
             if UI_COMPONENTS_AVAILABLE and APILogWidget:
                 yield APILogWidget(self.api_client)
@@ -662,18 +806,18 @@ class MAP2AudioTUI(App):
                 )
 
     async def on_mount(self) -> None:
-        """Initialize app and show first tab."""
-        self.title = "MAP2 Audio Platform"
-        self.sub_title = "Keys: 1-9 tabs | r refresh | Ctrl+L log | Ctrl+T theme | F1 help | q quit"
+        """Initialize app and show Dashboard tab."""
+        self.title = "MAP2 Audio Platform - Dashboard"
+        self.sub_title = "Keys: ← → tabs | r refresh | Ctrl+L API log | Ctrl+T theme | F1 help | q quit"
 
         # Set Textual Dark theme
         self.theme = "textual-dark"
 
-        # Check API availability before showing first tab
+        # Check API availability
         api_ok = await self.check_api_availability()
         if not api_ok:
             self.notify("Some features may be unavailable until backend is restored.", severity="warning", timeout=8)
-        await self.show_tab(0)
+        await self.show_tab(0)  # Start on Dashboard
 
     async def action_previous_tab(self) -> None:
         """Handle left arrow - previous tab."""
@@ -804,7 +948,7 @@ class MAP2AudioTUI(App):
 ║                                                                       ║
 ╠═══════════════════════════════════════════════════════════════════════╣
 ║  INTERFACE FEATURES                                                   ║
-║    Ctrl+L         Toggle API Call Log (footer)                        ║
+║    Ctrl+L         Toggle API Call Log (hidden by default)             ║
 ║    Ctrl+T         Cycle through color themes                          ║
 ║    Ctrl+Shift+P   Open Command Palette                                ║
 ║    Ctrl+F         Search                                              ║
@@ -868,12 +1012,23 @@ class MAP2AudioTUI(App):
     async def action_goto_tab_9(self) -> None:
         """Go to Stage View tab - Full-screen performance display."""
         await self.show_tab(9)
+    
+    async def action_goto_tab_10(self) -> None:
+        """Go to Developer Mode tab - Build optimization controls."""
+        await self.show_tab(10)
+
+    async def action_goto_tab_11(self) -> None:
+        """Go to Backend Monitor tab - Services health monitoring."""
+        await self.show_tab(11)
 
     def _clear_content_area(self) -> None:
         """Clear the content area."""
-        container = self.query_one("#content-area", Container)
-        for widget in list(container.children):
-            widget.remove()
+        try:
+            content_area = self.query_one("#content-area", Container)
+            for widget in list(content_area.children):
+                widget.remove()
+        except Exception as e:
+            logger.warning(f"Could not clear content area: {e}")
 
     def _create_screen(self, tab_index: int) -> Optional[Any]:
         """
@@ -883,19 +1038,41 @@ class MAP2AudioTUI(App):
             tab_index: Tab index
 
         Returns:
-            New screen instance or None if invalid index
+            New screen instance, FallbackScreen on error, or None if invalid index
         """
         if tab_index not in self.SCREEN_FACTORIES:
-            return None
+            return FallbackScreen(
+                f"Tab {tab_index}",
+                "Invalid tab index",
+                id=f"fallback-{tab_index}"
+            )
 
         screen_class, widget_id = self.SCREEN_FACTORIES[tab_index]
-        
+        tab_name = self.TAB_NAMES[tab_index] if tab_index < len(self.TAB_NAMES) else f"Tab {tab_index}"
+
         # Handle string references for lazy imports
         if isinstance(screen_class, str):
-            from screens import HealthTabScreen
-            screen_class = HealthTabScreen
-        
-        return screen_class(self.api_client, id=widget_id)
+            try:
+                from screens import HealthTabScreen
+                screen_class = HealthTabScreen
+            except ImportError as e:
+                logger.error(f"Failed to import HealthTabScreen: {e}")
+                return FallbackScreen(tab_name, str(e), id=f"fallback-{tab_index}")
+
+        # Check if screen class is available
+        if screen_class is None:
+            # Look up the specific import error
+            screen_class_name = widget_id.replace("-", "_").title().replace("_", "") + "Screen"
+            error_msg = SCREEN_IMPORT_ERRORS.get(screen_class_name, "Screen class not available")
+            logger.error(f"Screen class for tab {tab_index} ({tab_name}) is None: {error_msg}")
+            return FallbackScreen(tab_name, error_msg, id=f"fallback-{tab_index}")
+
+        # Try to create the screen instance
+        try:
+            return screen_class(self.api_client, id=widget_id)
+        except Exception as e:
+            logger.error(f"Failed to instantiate screen for tab {tab_index}: {e}")
+            return FallbackScreen(tab_name, str(e), id=f"fallback-{tab_index}")
 
     async def show_tab(self, tab_index: int, force_refresh: bool = False) -> None:
         """
@@ -935,8 +1112,15 @@ class MAP2AudioTUI(App):
 
         # Mount the screen
         if screen:
-            container = self.query_one("#content-area", Container)
-            await container.mount(screen)
+            try:
+                content_area = self.query_one("#content-area", Container)
+                await content_area.mount(screen)
+                # Refresh to ensure the screen renders
+                content_area.refresh()
+                self.refresh()
+            except Exception as e:
+                logger.error(f"Error mounting screen: {e}", exc_info=True)
+                raise
     
     def _update_tab_display(self) -> None:
         """Update the tab bar to show which tab is active."""
@@ -956,9 +1140,9 @@ class MAP2AudioTUI(App):
     def _show_error_screen(self, message: str) -> None:
         """Show error screen with user-friendly message."""
         try:
-            container = self.query_one("#content-area", Container)
+            content_area = self.query_one("#content-area", Container)
             error_label = Label(f"❌ {message}\n\nPress R to retry or use arrow keys to switch tabs.")
-            container.mount(error_label)
+            content_area.mount(error_label)
         except Exception as e:
             logger.error(f"Failed to show error screen: {e}")
 

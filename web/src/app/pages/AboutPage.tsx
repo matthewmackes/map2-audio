@@ -1,8 +1,109 @@
-import { Github, ExternalLink, Terminal, Check, X, Loader2, Monitor, Plus, Trash2, Shield, Info, Music, Code2, Zap, Server, PenTool, Cpu } from 'lucide-react'
+import { Github, ExternalLink, Info, Music, Code2, Zap, Server, PenTool, Cpu, PanelsTopLeft, Sparkles, Package, AudioLines, Piano, Activity, Sliders, Usb, Palette, ChevronDown, Scale, Database, Globe, Layers, Box, Terminal, FileCode, Headphones, Radio, BookOpen, Shield, Heart, Monitor } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
+import { NavLink } from 'react-router-dom'
+import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
 import { themes, themeOrder, applyTheme, getSavedThemeId, saveCustomTheme, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
+
+// Dragon icon for "hic sunt dracones" menu
+const DragonIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M12 2C10.5 2 9 3 8.5 4.5C8 6 8.5 7.5 9.5 8.5L7 11C6 10.5 4.5 10.5 3.5 11.5C2.5 12.5 2.5 14 3 15L2 16L3 17L4 16C5 16.5 6.5 16.5 7.5 15.5L10 18C9 19 9 20.5 9.5 21.5C10 22.5 11.5 23 13 22.5C14.5 22 15.5 20.5 15.5 19L18.5 16C19.5 17 21 17 22 16C22 14.5 21.5 13 20 12.5L21 10L19.5 9.5L18.5 11C17.5 10.5 16 11 15 12L12.5 9.5C13.5 8.5 14 7 13.5 5.5C13 4 11.5 3 10 3"
+      stroke="#dc2626"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="#dc2626"
+      fillOpacity="0.2"
+    />
+    <circle cx="10" cy="5" r="1" fill="#dc2626" />
+  </svg>
+)
+
+// Items under the "hic sunt dracones" dropdown
+const underTheHoodItems = [
+  // System
+  {
+    to: '/',
+    label: 'Holistic System Overview',
+    icon: Sparkles,
+    description: 'System status & quick actions',
+    color: '#f59e0b'  // Amber
+  },
+  {
+    to: '/presets',
+    label: 'Presets',
+    icon: PanelsTopLeft,
+    description: 'Save & recall your sounds',
+    color: '#22c55e'  // Green
+  },
+  // Content & Plugins
+  {
+    to: '/plugins',
+    label: 'LV2 Plugins',
+    icon: Package,
+    description: 'LV2 plugin manager',
+    color: '#06b6d4',  // Teal
+    dividerBefore: true
+  },
+  {
+    to: '/library',
+    label: 'IR & NAM Library',
+    icon: AudioLines,
+    description: 'Impulse responses & NAM models',
+    color: '#06b6d4'  // Teal
+  },
+  // Audio Processing
+  {
+    to: '/metering',
+    label: 'Metering',
+    icon: Activity,
+    description: 'Audio analysis & monitoring',
+    color: '#37d6c9',  // Cyan-teal
+    dividerBefore: true
+  },
+  {
+    to: '/dsp',
+    label: 'DSP',
+    icon: Sliders,
+    description: 'Dynamics & EQ processors',
+    color: '#ff6644'  // Orange-red
+  },
+  // Control
+  {
+    to: '/midi',
+    label: 'MIDI',
+    icon: Piano,
+    description: 'MIDI mapping & control',
+    color: '#ec4899',  // Pink
+    dividerBefore: true
+  },
+  // Hardware
+  {
+    to: '/lcd',
+    label: 'LCD Display',
+    icon: Monitor,
+    description: 'Hardware LCD configuration',
+    color: '#22c55e',  // Green
+    dividerBefore: true
+  },
+  {
+    to: '/edirol-ua1000',
+    label: 'Edirol UA-1000',
+    icon: Usb,
+    description: 'USB audio interface control',
+    color: '#0066cc'  // Roland blue
+  },
+  {
+    to: '/hotone-jogg',
+    label: 'HoTone JoGG',
+    icon: AudioLines,
+    description: 'HoTone audio interface',
+    color: '#e53935'  // HoTone red
+  },
+]
 
 interface VersionInfo {
   version?: string
@@ -34,9 +135,23 @@ interface ProjectCredit {
   color: string
   icon: React.ReactNode
   role: string
+  license: string
 }
 
-const PROJECTS: ProjectCredit[] = [
+interface LicenseInfo {
+  id: string
+  name: string
+  shortName: string
+  color: string
+  url: string
+  description: string
+  permissions: string[]
+  conditions: string[]
+  limitations: string[]
+}
+
+// Core technologies that power MAP2
+const CORE_PROJECTS: ProjectCredit[] = [
   {
     name: 'JUCE',
     description: 'Cross-platform C++ audio application framework with support for VST, VST3, AU, AUv3, LV2, and AAX plugins',
@@ -44,6 +159,7 @@ const PROJECTS: ProjectCredit[] = [
     color: '#1e40af',
     icon: <Music size={20} />,
     role: 'Audio Engine',
+    license: 'GPLv3 / Commercial',
   },
   {
     name: 'Neural Amp Modeler',
@@ -52,6 +168,7 @@ const PROJECTS: ProjectCredit[] = [
     color: '#7c3aed',
     icon: <Zap size={20} />,
     role: 'AI Amp Modeling',
+    license: 'MIT',
   },
   {
     name: 'LV2',
@@ -60,22 +177,7 @@ const PROJECTS: ProjectCredit[] = [
     color: '#059669',
     icon: <Cpu size={20} />,
     role: 'Plugin Format',
-  },
-  {
-    name: 'FastAPI',
-    description: 'Modern, high-performance Python web framework for building APIs with standard Python type hints',
-    website: 'https://fastapi.tiangolo.com/',
-    color: '#0ea5e9',
-    icon: <Server size={20} />,
-    role: 'Backend API',
-  },
-  {
-    name: 'React',
-    description: 'Open-source JavaScript library for building user interfaces with component-based architecture',
-    website: 'https://react.dev/',
-    color: '#61dbfb',
-    icon: <Code2 size={20} />,
-    role: 'UI Framework',
+    license: 'ISC',
   },
   {
     name: 'Fedora PREEMPT_RT',
@@ -84,15 +186,404 @@ const PROJECTS: ProjectCredit[] = [
     color: '#0b57a4',
     icon: <PenTool size={20} />,
     role: 'Real-time OS',
+    license: 'Various (GPL)',
   },
 ]
 
+// Backend & API technologies
+const BACKEND_PROJECTS: ProjectCredit[] = [
+  {
+    name: 'FastAPI',
+    description: 'Modern, high-performance Python web framework for building APIs with automatic OpenAPI documentation',
+    website: 'https://fastapi.tiangolo.com/',
+    color: '#0ea5e9',
+    icon: <Server size={20} />,
+    role: 'Backend API',
+    license: 'MIT',
+  },
+  {
+    name: 'Uvicorn',
+    description: 'Lightning-fast ASGI server implementation using uvloop and httptools',
+    website: 'https://www.uvicorn.org/',
+    color: '#2dd4bf',
+    icon: <Radio size={20} />,
+    role: 'ASGI Server',
+    license: 'BSD-3-Clause',
+  },
+  {
+    name: 'SQLAlchemy',
+    description: 'Python SQL toolkit and Object-Relational Mapping library for database interactions',
+    website: 'https://www.sqlalchemy.org/',
+    color: '#dc2626',
+    icon: <Database size={20} />,
+    role: 'Database ORM',
+    license: 'MIT',
+  },
+  {
+    name: 'Pydantic',
+    description: 'Data validation and settings management using Python type annotations',
+    website: 'https://docs.pydantic.dev/',
+    color: '#e91e63',
+    icon: <Shield size={20} />,
+    role: 'Data Validation',
+    license: 'MIT',
+  },
+]
+
+// Frontend technologies
+const FRONTEND_PROJECTS: ProjectCredit[] = [
+  {
+    name: 'React',
+    description: 'Open-source JavaScript library for building user interfaces with component-based architecture',
+    website: 'https://react.dev/',
+    color: '#61dbfb',
+    icon: <Code2 size={20} />,
+    role: 'UI Framework',
+    license: 'MIT',
+  },
+  {
+    name: 'Vite',
+    description: 'Next-generation frontend tooling with instant server start and lightning-fast HMR',
+    website: 'https://vitejs.dev/',
+    color: '#646cff',
+    icon: <Zap size={20} />,
+    role: 'Build Tool',
+    license: 'MIT',
+  },
+  {
+    name: 'TypeScript',
+    description: 'Strongly typed programming language that builds on JavaScript with type safety',
+    website: 'https://www.typescriptlang.org/',
+    color: '#3178c6',
+    icon: <FileCode size={20} />,
+    role: 'Type System',
+    license: 'Apache-2.0',
+  },
+  {
+    name: 'Material UI',
+    description: 'React component library implementing Google\'s Material Design with customizable themes',
+    website: 'https://mui.com/',
+    color: '#007fff',
+    icon: <Layers size={20} />,
+    role: 'UI Components',
+    license: 'MIT',
+  },
+  {
+    name: 'React Flow',
+    description: 'Highly customizable library for building node-based editors and interactive diagrams',
+    website: 'https://reactflow.dev/',
+    color: '#ff0072',
+    icon: <Globe size={20} />,
+    role: 'Flow Editor',
+    license: 'MIT',
+  },
+  {
+    name: 'Lucide React',
+    description: 'Beautiful & consistent icon toolkit with 1000+ carefully crafted icons',
+    website: 'https://lucide.dev/',
+    color: '#f56565',
+    icon: <Heart size={20} />,
+    role: 'Icons',
+    license: 'ISC',
+  },
+]
+
+// Audio & DSP libraries
+const AUDIO_PROJECTS: ProjectCredit[] = [
+  {
+    name: 'Eigen',
+    description: 'C++ template library for linear algebra: matrices, vectors, numerical solvers',
+    website: 'https://eigen.tuxfamily.org/',
+    color: '#1f77b4',
+    icon: <Box size={20} />,
+    role: 'Linear Algebra',
+    license: 'MPL-2.0',
+  },
+  {
+    name: 'lilv',
+    description: 'C library to discover, load, and run LV2 plugins with RDF-based metadata',
+    website: 'https://drobilla.net/software/lilv.html',
+    color: '#22c55e',
+    icon: <Package size={20} />,
+    role: 'Plugin Discovery',
+    license: 'ISC',
+  },
+  {
+    name: 'PyTorch',
+    description: 'Open source machine learning framework for neural network training and inference',
+    website: 'https://pytorch.org/',
+    color: '#ee4c2c',
+    icon: <Zap size={20} />,
+    role: 'ML Framework',
+    license: 'BSD-3-Clause',
+  },
+  {
+    name: 'NumPy',
+    description: 'Fundamental package for scientific computing with Python arrays and matrices',
+    website: 'https://numpy.org/',
+    color: '#013243',
+    icon: <Terminal size={20} />,
+    role: 'Numerical Computing',
+    license: 'BSD-3-Clause',
+  },
+  {
+    name: 'SciPy',
+    description: 'Python library for scientific and technical computing with signal processing',
+    website: 'https://scipy.org/',
+    color: '#8caae6',
+    icon: <Activity size={20} />,
+    role: 'Signal Processing',
+    license: 'BSD-3-Clause',
+  },
+  {
+    name: 'python-rtmidi',
+    description: 'Python bindings for RtMidi providing cross-platform real-time MIDI I/O',
+    website: 'https://github.com/SpotlightKid/python-rtmidi',
+    color: '#ec4899',
+    icon: <Piano size={20} />,
+    role: 'MIDI Interface',
+    license: 'MIT',
+  },
+]
+
+// Additional utilities
+const UTILITY_PROJECTS: ProjectCredit[] = [
+  {
+    name: 'nlohmann/json',
+    description: 'Modern C++ JSON library with intuitive syntax and excellent performance',
+    website: 'https://github.com/nlohmann/json',
+    color: '#f5a623',
+    icon: <FileCode size={20} />,
+    role: 'JSON Parser (C++)',
+    license: 'MIT',
+  },
+  {
+    name: 'pybind11',
+    description: 'Seamless operability between C++11 and Python for creating bindings',
+    website: 'https://pybind11.readthedocs.io/',
+    color: '#306998',
+    icon: <Code2 size={20} />,
+    role: 'Python Bindings',
+    license: 'BSD-3-Clause',
+  },
+  {
+    name: 'TanStack Query',
+    description: 'Powerful asynchronous state management for data fetching and caching',
+    website: 'https://tanstack.com/query',
+    color: '#ff4154',
+    icon: <Database size={20} />,
+    role: 'Data Fetching',
+    license: 'MIT',
+  },
+  {
+    name: 'React Router',
+    description: 'Declarative routing library for React applications with nested routes',
+    website: 'https://reactrouter.com/',
+    color: '#ca4245',
+    icon: <Globe size={20} />,
+    role: 'Routing',
+    license: 'MIT',
+  },
+  {
+    name: 'Recharts',
+    description: 'Composable charting library built on React components for data visualization',
+    website: 'https://recharts.org/',
+    color: '#22b5bf',
+    icon: <Activity size={20} />,
+    role: 'Charts',
+    license: 'MIT',
+  },
+  {
+    name: 'Ariakit',
+    description: 'Accessible React component library with unstyled, primitive components',
+    website: 'https://ariakit.org/',
+    color: '#007acc',
+    icon: <Layers size={20} />,
+    role: 'Accessibility',
+    license: 'MIT',
+  },
+]
+
+// License information
+const LICENSES: LicenseInfo[] = [
+  {
+    id: 'mit',
+    name: 'MIT License',
+    shortName: 'MIT',
+    color: '#22c55e',
+    url: 'https://opensource.org/licenses/MIT',
+    description: 'A short and simple permissive license with conditions only requiring preservation of copyright and license notices.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+    conditions: ['License and copyright notice'],
+    limitations: ['Liability', 'Warranty'],
+  },
+  {
+    id: 'apache2',
+    name: 'Apache License 2.0',
+    shortName: 'Apache-2.0',
+    color: '#ef4444',
+    url: 'https://opensource.org/licenses/Apache-2.0',
+    description: 'A permissive license that also provides an express grant of patent rights from contributors.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
+    conditions: ['License and copyright notice', 'State changes'],
+    limitations: ['Liability', 'Warranty', 'Trademark use'],
+  },
+  {
+    id: 'bsd3',
+    name: 'BSD 3-Clause License',
+    shortName: 'BSD-3-Clause',
+    color: '#f59e0b',
+    url: 'https://opensource.org/licenses/BSD-3-Clause',
+    description: 'A permissive license similar to MIT but with a clause restricting use of contributor names.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+    conditions: ['License and copyright notice'],
+    limitations: ['Liability', 'Warranty'],
+  },
+  {
+    id: 'gpl3',
+    name: 'GNU General Public License v3.0',
+    shortName: 'GPLv3',
+    color: '#3b82f6',
+    url: 'https://www.gnu.org/licenses/gpl-3.0.html',
+    description: 'Strong copyleft license requiring source code disclosure and licensing derivatives under the same terms.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
+    conditions: ['License and copyright notice', 'State changes', 'Disclose source', 'Same license'],
+    limitations: ['Liability', 'Warranty'],
+  },
+  {
+    id: 'isc',
+    name: 'ISC License',
+    shortName: 'ISC',
+    color: '#8b5cf6',
+    url: 'https://opensource.org/licenses/ISC',
+    description: 'A permissive license functionally equivalent to MIT but with simplified language.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Private use'],
+    conditions: ['License and copyright notice'],
+    limitations: ['Liability', 'Warranty'],
+  },
+  {
+    id: 'mpl2',
+    name: 'Mozilla Public License 2.0',
+    shortName: 'MPL-2.0',
+    color: '#ec4899',
+    url: 'https://opensource.org/licenses/MPL-2.0',
+    description: 'A weak copyleft license that allows larger works to use different licenses but requires modified files to remain open.',
+    permissions: ['Commercial use', 'Modification', 'Distribution', 'Patent use', 'Private use'],
+    conditions: ['Disclose source (modified files)', 'License and copyright notice', 'Same license (modified files)'],
+    limitations: ['Liability', 'Warranty', 'Trademark use'],
+  },
+]
+
+// Combine all projects for the legacy PROJECTS export
+const PROJECTS: ProjectCredit[] = CORE_PROJECTS
+
 const LINKS = [
-  { label: 'GitHub', url: 'https://github.com', icon: Github },
+  { label: 'GitHub', url: 'https://github.com/matthewmackes/map2-audio', icon: Github },
   { label: 'JUCE', url: 'https://juce.com', icon: ExternalLink },
   { label: 'NAM', url: 'https://www.neuralampmodeler.com', icon: ExternalLink },
   { label: 'LV2', url: 'https://lv2plug.in', icon: ExternalLink },
+  { label: 'FastAPI', url: 'https://fastapi.tiangolo.com', icon: ExternalLink },
+  { label: 'React', url: 'https://react.dev', icon: ExternalLink },
 ]
+
+// Helper component for rendering project cards
+const ProjectCard = ({ project }: { project: ProjectCredit }) => (
+  <a
+    href={project.website}
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      textDecoration: 'none',
+      color: 'inherit',
+      transition: 'all 150ms'
+    }}
+    onMouseEnter={e => {
+      const el = e.currentTarget as HTMLElement
+      el.style.transform = 'translateY(-2px)'
+    }}
+    onMouseLeave={e => {
+      const el = e.currentTarget as HTMLElement
+      el.style.transform = 'translateY(0)'
+    }}
+  >
+    <div
+      style={{
+        padding: 14,
+        background: `linear-gradient(135deg, rgba(15, 20, 35, 0.8) 0%, rgba(15, 20, 35, 0.6) 100%)`,
+        border: `1px solid ${project.color}40`,
+        borderRadius: 8,
+        backdropFilter: 'blur(8px)',
+        cursor: 'pointer',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        transition: 'all 150ms'
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.borderColor = project.color
+        el.style.background = `linear-gradient(135deg, ${project.color}10 0%, ${project.color}05 100%)`
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement
+        el.style.borderColor = `${project.color}40`
+        el.style.background = `linear-gradient(135deg, rgba(15, 20, 35, 0.8) 0%, rgba(15, 20, 35, 0.6) 100%)`
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ color: project.color }}>
+          {project.icon}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: project.color }}>
+            {project.name}
+          </div>
+          <div style={{ fontSize: 10, color: '#888' }}>
+            {project.role}
+          </div>
+        </div>
+        <div style={{
+          fontSize: 9,
+          padding: '2px 6px',
+          background: `${project.color}20`,
+          borderRadius: 4,
+          color: project.color,
+          fontWeight: 500
+        }}>
+          {project.license}
+        </div>
+      </div>
+      <p style={{
+        margin: 0,
+        fontSize: 11,
+        color: '#a1a1aa',
+        lineHeight: '1.4',
+        flex: 1
+      }}>
+        {project.description}
+      </p>
+    </div>
+  </a>
+)
+
+// Helper component for section headers
+const SectionHeader = ({ title, icon, color }: { title: string; icon: React.ReactNode; color: string }) => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: 13,
+    fontWeight: 700,
+    color: color,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  }}>
+    {icon}
+    {title}
+  </div>
+)
 
 export function AboutPage() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
@@ -212,6 +703,7 @@ export function AboutPage() {
       setRateLimitingLoading(false)
     }
   }
+
 
   return (
     <div style={{
@@ -348,7 +840,7 @@ export function AboutPage() {
           </div>
         </div>
 
-        {/* Built With - Full Width */}
+        {/* Core Technologies - Full Width */}
         <div style={{
           gridColumn: 'span 2',
           background: 'rgba(15, 20, 35, 0.6)',
@@ -357,471 +849,413 @@ export function AboutPage() {
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
-          <div style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#f59e0b',
-            marginBottom: 16,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            🏆 Built With Open-Source Technologies
-          </div>
+          <SectionHeader title="Core Technologies" icon={<Cpu size={16} />} color="#f59e0b" />
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 12
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 10
           }}>
-            {PROJECTS.map(project => (
-              <a
-                key={project.name}
-                href={project.website}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  transition: 'all 150ms'
-                }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.transform = 'translateY(-2px)'
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.transform = 'translateY(0)'
-                }}
-              >
-                <div
-                  style={{
-                    padding: 16,
-                    background: `linear-gradient(135deg, rgba(15, 20, 35, 0.8) 0%, rgba(15, 20, 35, 0.6) 100%)`,
-                    border: `1px solid ${project.color}40`,
-                    borderRadius: 8,
-                    backdropFilter: 'blur(8px)',
-                    cursor: 'pointer',
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    transition: 'all 150ms'
-                  }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget as HTMLElement
-                    el.style.borderColor = project.color
-                    el.style.background = `linear-gradient(135deg, ${project.color}10 0%, ${project.color}05 100%)`
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget as HTMLElement
-                    el.style.borderColor = `${project.color}40`
-                    el.style.background = `linear-gradient(135deg, rgba(15, 20, 35, 0.8) 0%, rgba(15, 20, 35, 0.6) 100%)`
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ color: project.color }}>
-                      {project.icon}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: project.color }}>
-                        {project.name}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#888' }}>
-                        {project.role}
-                      </div>
-                    </div>
-                  </div>
-                  <p style={{
-                    margin: 0,
-                    fontSize: 12,
-                    color: '#d4d4d8',
-                    lineHeight: '1.4',
-                    flex: 1
-                  }}>
-                    {project.description}
-                  </p>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    fontSize: 11,
-                    color: project.color,
-                    fontWeight: 500
-                  }}>
-                    Visit Project <ExternalLink size={12} />
-                  </div>
-                </div>
-              </a>
+            {CORE_PROJECTS.map(project => (
+              <ProjectCard key={project.name} project={project} />
             ))}
           </div>
         </div>
-      </div>
 
-      {/* System Configuration Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: 20,
-        marginBottom: 32
-      }}>
-        {/* Welcome Banner */}
+        {/* Backend Technologies */}
         <div style={{
           background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
+          border: '1px solid rgba(14, 165, 233, 0.2)',
           borderRadius: 12,
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
+          <SectionHeader title="Backend & API" icon={<Server size={16} />} color="#0ea5e9" />
           <div style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#3b82f6',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10
           }}>
-            💻 Terminal Welcome Banner
+            {BACKEND_PROJECTS.map(project => (
+              <ProjectCard key={project.name} project={project} />
+            ))}
           </div>
-          <p style={{ fontSize: 12, color: '#888', marginBottom: 12, lineHeight: '1.5' }}>
-            Show a branded welcome message when opening new terminal sessions.
-          </p>
-          <button
-            onClick={toggleWelcomeBanner}
-            disabled={bannerLoading || !welcomeBanner}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: bannerLoading ? 'wait' : 'pointer',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              background: welcomeBanner?.installed ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.15)',
-              color: '#3b82f6',
-              opacity: bannerLoading ? 0.7 : 1,
-              transition: 'all 150ms',
-            }}
-          >
-            {bannerLoading ? (
-              <>
-                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                {welcomeBanner?.installed ? 'Removing...' : 'Installing...'}
-              </>
-            ) : welcomeBanner?.installed ? (
-              <>
-                <X size={14} />
-                Remove
-              </>
-            ) : (
-              <>
-                <Terminal size={14} />
-                Install
-              </>
-            )}
-          </button>
-          {welcomeBanner?.installed && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              color: '#22c55e',
-              marginTop: 8
-            }}>
-              <Check size={12} />
-              Currently installed
-            </div>
-          )}
         </div>
 
-        {/* Boot Splash */}
+        {/* Frontend Technologies */}
         <div style={{
           background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(236, 72, 153, 0.2)',
+          border: '1px solid rgba(97, 219, 251, 0.2)',
           borderRadius: 12,
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
+          <SectionHeader title="Frontend & UI" icon={<Code2 size={16} />} color="#61dbfb" />
           <div style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#ec4899',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10
           }}>
-            🎨 Boot Splash Screen
+            {FRONTEND_PROJECTS.map(project => (
+              <ProjectCard key={project.name} project={project} />
+            ))}
           </div>
-          <p style={{ fontSize: 12, color: '#888', marginBottom: 12, lineHeight: '1.5' }}>
-            Show a branded splash screen during system boot.
-          </p>
-          <button
-            onClick={toggleBootSplash}
-            disabled={splashLoading || !bootSplash}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: splashLoading ? 'wait' : 'pointer',
-              border: '1px solid rgba(236, 72, 153, 0.3)',
-              background: bootSplash?.installed ? 'rgba(236, 72, 153, 0.1)' : 'rgba(236, 72, 153, 0.15)',
-              color: '#ec4899',
-              opacity: splashLoading ? 0.7 : 1,
-              transition: 'all 150ms',
-            }}
-          >
-            {splashLoading ? (
-              <>
-                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                {bootSplash?.installed ? 'Removing...' : 'Installing...'}
-              </>
-            ) : bootSplash?.installed ? (
-              <>
-                <X size={14} />
-                Remove
-              </>
-            ) : (
-              <>
-                <Monitor size={14} />
-                Install
-              </>
-            )}
-          </button>
-          {bootSplash?.installed && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              color: '#22c55e',
-              marginTop: 8
-            }}>
-              <Check size={12} />
-              Currently installed
-            </div>
-          )}
         </div>
 
-        {/* Rate Limiting */}
+        {/* Audio & DSP Libraries - Full Width */}
         <div style={{
-          background: 'rgba(15, 20, 35, 0.6)',
-          border: '1px solid rgba(34, 197, 94, 0.2)',
-          borderRadius: 12,
-          padding: 20,
-          backdropFilter: 'blur(8px)'
-        }}>
-          <div style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#22c55e',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            🛡️ API Rate Limiting
-          </div>
-          <p style={{ fontSize: 12, color: '#888', marginBottom: 12, lineHeight: '1.5' }}>
-            Protect endpoints from excessive requests. Limit per client per minute.
-          </p>
-          <button
-            onClick={toggleRateLimiting}
-            disabled={rateLimitingLoading || !rateLimiting}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: '100%',
-              padding: '10px 16px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: rateLimitingLoading ? 'wait' : 'pointer',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              background: rateLimiting?.enabled ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.05)',
-              color: '#22c55e',
-              opacity: rateLimitingLoading ? 0.7 : 1,
-              transition: 'all 150ms',
-            }}
-          >
-            {rateLimitingLoading ? (
-              <>
-                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                {rateLimiting?.enabled ? 'Disabling...' : 'Enabling...'}
-              </>
-            ) : rateLimiting?.enabled ? (
-              <>
-                <Shield size={14} />
-                Disable
-              </>
-            ) : (
-              <>
-                <Shield size={14} />
-                Enable
-              </>
-            )}
-          </button>
-          {rateLimiting?.enabled && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              color: '#22c55e',
-              marginTop: 8
-            }}>
-              <Check size={12} />
-              Currently enabled
-            </div>
-          )}
-        </div>
-
-        {/* Theme Selection - Full Width or Right Column */}
-        <div style={{
+          gridColumn: 'span 2',
           background: 'rgba(15, 20, 35, 0.6)',
           border: '1px solid rgba(168, 85, 247, 0.2)',
           borderRadius: 12,
           padding: 20,
           backdropFilter: 'blur(8px)'
         }}>
+          <SectionHeader title="Audio & DSP Libraries" icon={<Headphones size={16} />} color="#a855f7" />
           <div style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#a855f7',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 10
           }}>
-            🎭 Theme Selection
+            {AUDIO_PROJECTS.map(project => (
+              <ProjectCard key={project.name} project={project} />
+            ))}
           </div>
-          <select
-            id="theme-selector"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: 8,
-              fontSize: 13,
-              background: 'rgba(168, 85, 247, 0.05)',
-              color: '#fff',
-              border: '1px solid rgba(168, 85, 247, 0.2)',
-              outline: 'none',
-              cursor: 'pointer',
-              marginBottom: 12
-            }}
-            onChange={e => handleThemeChange(e.target.value)}
-            value={currentTheme}
-          >
-            <optgroup label="Built-in Themes">
-              {themeOrder.map(id => (
-                <option key={id} value={id}>{themes[id].name}</option>
-              ))}
-            </optgroup>
-            {Object.keys(customThemes).length > 0 && (
-              <optgroup label="Custom Themes">
-                {Object.values(customThemes).map(theme => (
-                  <option key={theme.id} value={theme.id}>{theme.name}</option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-          <div style={{ fontSize: 11, color: '#888', marginBottom: 12, minHeight: '32px' }}>
-            {getAllThemes()[currentTheme]?.description}
-          </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
-            {customThemes[currentTheme] && (
-              <button
-                onClick={() => handleDeleteCustomTheme(currentTheme)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  background: 'rgba(239, 68, 68, 0.05)',
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  transition: 'all 150ms'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'
-                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'
-                }}
-              >
-                <Trash2 size={12} />
-                Delete Custom Theme
-              </button>
-            )}
-
-            <button
-              onClick={() => setShowThemeCreator(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                width: '100%',
-                padding: '10px 16px',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                background: 'rgba(168, 85, 247, 0.1)',
-                color: '#a855f7',
-                transition: 'all 150ms',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.15)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(168, 85, 247, 0.1)'
-              }}
-            >
-              <Plus size={14} />
-              Create Custom Theme
-            </button>
+        {/* Utilities & Tools - Full Width */}
+        <div style={{
+          gridColumn: 'span 2',
+          background: 'rgba(15, 20, 35, 0.6)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+          borderRadius: 12,
+          padding: 20,
+          backdropFilter: 'blur(8px)'
+        }}>
+          <SectionHeader title="Utilities & Tools" icon={<Package size={16} />} color="#22c55e" />
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 10
+          }}>
+            {UTILITY_PROJECTS.map(project => (
+              <ProjectCard key={project.name} project={project} />
+            ))}
           </div>
         </div>
       </div>
+
+      {/* Licensing Section */}
+      <div style={{
+        marginBottom: 32,
+        background: 'rgba(15, 20, 35, 0.6)',
+        border: '1px solid rgba(139, 92, 246, 0.2)',
+        borderRadius: 12,
+        padding: 24,
+        backdropFilter: 'blur(8px)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 20
+        }}>
+          <Scale size={24} style={{ color: '#8b5cf6' }} />
+          <div>
+            <h2 style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: '#f2f6ff',
+              margin: 0
+            }}>
+              Open Source Licenses
+            </h2>
+            <p style={{
+              fontSize: 12,
+              color: '#888',
+              margin: '4px 0 0'
+            }}>
+              MAP2 is built on open source software. Here are the licenses used by our dependencies.
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 16
+        }}>
+          {LICENSES.map(license => (
+            <div
+              key={license.id}
+              style={{
+                padding: 16,
+                background: 'rgba(10, 15, 25, 0.5)',
+                border: `1px solid ${license.color}30`,
+                borderRadius: 8
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{
+                  padding: '4px 8px',
+                  background: `${license.color}20`,
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: license.color
+                }}>
+                  {license.shortName}
+                </div>
+                <a
+                  href={license.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    fontSize: 12,
+                    color: license.color,
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  {license.name}
+                  <ExternalLink size={10} />
+                </a>
+              </div>
+              <p style={{
+                fontSize: 11,
+                color: '#a1a1aa',
+                lineHeight: '1.5',
+                margin: '0 0 12px'
+              }}>
+                {license.description}
+              </p>
+              <div style={{ display: 'flex', gap: 16, fontSize: 10 }}>
+                <div>
+                  <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 4 }}>Permissions</div>
+                  {license.permissions.slice(0, 3).map(p => (
+                    <div key={p} style={{ color: '#71717a' }}>+ {p}</div>
+                  ))}
+                </div>
+                <div>
+                  <div style={{ color: '#f59e0b', fontWeight: 600, marginBottom: 4 }}>Conditions</div>
+                  {license.conditions.slice(0, 3).map(c => (
+                    <div key={c} style={{ color: '#71717a' }}>= {c}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* MAP2 License Notice */}
+        <div style={{
+          marginTop: 20,
+          padding: 16,
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: 8
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <BookOpen size={16} style={{ color: '#3b82f6' }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>MAP2 License</span>
+          </div>
+          <p style={{
+            fontSize: 12,
+            color: '#d4d4d8',
+            lineHeight: '1.6',
+            margin: 0
+          }}>
+            MAP2 Audio Platform is licensed under the <strong style={{ color: '#22c55e' }}>MIT License</strong>.
+            You are free to use, modify, and distribute this software for personal and commercial purposes.
+            See the LICENSE file in the repository for full terms. Some components (JUCE framework) may require
+            separate licensing for commercial distribution.
+          </p>
+        </div>
+      </div>
+
+      {/* Themes Button */}
+      <div style={{
+        marginBottom: 32,
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <button
+          onClick={() => setShowThemeCreator(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '12px 24px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: 'pointer',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
+            background: 'rgba(168, 85, 247, 0.1)',
+            color: '#a855f7',
+            transition: 'all 150ms'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(168, 85, 247, 0.15)'
+            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(168, 85, 247, 0.1)'
+            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)'
+          }}
+        >
+          <Palette size={16} />
+          Themes
+        </button>
+      </div>
+
 
       {/* Theme Creator Dialog */}
       <ThemeCreatorDialog
         isOpen={showThemeCreator}
         onClose={() => setShowThemeCreator(false)}
         onSave={handleSaveTheme}
+        currentTheme={currentTheme}
+        onThemeChange={handleThemeChange}
+        customThemes={customThemes}
+        onDeleteCustomTheme={handleDeleteCustomTheme}
+        welcomeBanner={welcomeBanner}
+        onToggleWelcomeBanner={toggleWelcomeBanner}
+        bannerLoading={bannerLoading}
+        bootSplash={bootSplash}
+        onToggleBootSplash={toggleBootSplash}
+        splashLoading={splashLoading}
       />
+
+      {/* Open Source Commitment */}
+      <div style={{
+        marginBottom: 32,
+        background: 'rgba(15, 20, 35, 0.6)',
+        border: '1px solid rgba(34, 197, 94, 0.2)',
+        borderRadius: 12,
+        padding: 24,
+        backdropFilter: 'blur(8px)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 16
+        }}>
+          <Heart size={24} style={{ color: '#22c55e' }} />
+          <h2 style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#f2f6ff',
+            margin: 0
+          }}>
+            Open Source Commitment
+          </h2>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: 16
+        }}>
+          <div style={{
+            padding: 16,
+            background: 'rgba(10, 15, 25, 0.5)',
+            borderRadius: 8,
+            border: '1px solid rgba(34, 197, 94, 0.15)'
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', marginBottom: 8 }}>
+              Community Driven
+            </div>
+            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
+              MAP2 is developed with the audio community in mind. Contributions, feedback, and feature requests are welcome.
+            </p>
+          </div>
+
+          <div style={{
+            padding: 16,
+            background: 'rgba(10, 15, 25, 0.5)',
+            borderRadius: 8,
+            border: '1px solid rgba(59, 130, 246, 0.15)'
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6', marginBottom: 8 }}>
+              Transparent Development
+            </div>
+            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
+              All source code is publicly available. Report bugs, suggest features, or contribute directly via GitHub.
+            </p>
+          </div>
+
+          <div style={{
+            padding: 16,
+            background: 'rgba(10, 15, 25, 0.5)',
+            borderRadius: 8,
+            border: '1px solid rgba(168, 85, 247, 0.15)'
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#a855f7', marginBottom: 8 }}>
+              Built on Giants
+            </div>
+            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
+              We stand on the shoulders of incredible open source projects. Thank you to all the developers who make this possible.
+            </p>
+          </div>
+
+          <div style={{
+            padding: 16,
+            background: 'rgba(10, 15, 25, 0.5)',
+            borderRadius: 8,
+            border: '1px solid rgba(245, 158, 11, 0.15)'
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#f59e0b', marginBottom: 8 }}>
+              License Compliance
+            </div>
+            <p style={{ fontSize: 11, color: '#a1a1aa', lineHeight: '1.5', margin: 0 }}>
+              We respect all license requirements and provide proper attribution. Contact us with any licensing questions.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Footer Info */}
       <div style={{
-        marginTop: 32,
-        padding: 16,
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)',
+        padding: 20,
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
         borderRadius: 12,
-        border: '1px solid rgba(59, 130, 246, 0.15)',
-        backdropFilter: 'blur(8px)',
-        fontSize: 12,
-        color: '#888',
-        lineHeight: '1.6'
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        backdropFilter: 'blur(8px)'
       }}>
-        <strong style={{ color: '#3b82f6' }}>MAP2 Audio Platform</strong> — Professional audio processing, DSP control, and real-time monitoring for Linux-based audio workstations.
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 20
+        }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#3b82f6', marginBottom: 8 }}>
+              MAP2 Audio Platform
+            </div>
+            <p style={{
+              fontSize: 12,
+              color: '#888',
+              lineHeight: '1.6',
+              margin: 0,
+              maxWidth: 500
+            }}>
+              Professional audio processing, neural amp modeling, DSP control, and real-time monitoring
+              for Linux-based audio workstations. Built with JUCE, FastAPI, and React.
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>
+              Version {versionInfo?.version || '2.0.0'} · {versionInfo?.build_date || 'Feb 2025'}
+            </div>
+            <div style={{ fontSize: 10, color: '#666' }}>
+              Licensed under MIT · Made with ❤️ for musicians
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Attribution Section */}
@@ -877,6 +1311,106 @@ export function AboutPage() {
             <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>v2.0</div>
           </div>
         </div>
+      </div>
+
+      {/* Advanced Settings Menu (hic sunt dracones) - Bottom Button */}
+      <div style={{
+        marginTop: 32,
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <MenuProvider>
+          <MenuButton
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 20px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: '1px solid rgba(220, 38, 38, 0.3)',
+              background: 'rgba(220, 38, 38, 0.05)',
+              color: '#dc2626',
+              transition: 'all 150ms'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.5)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(220, 38, 38, 0.05)'
+              e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.3)'
+            }}
+            title="Advanced settings & configuration"
+          >
+            <DragonIcon size={16} />
+            <span>hic sunt dracones</span>
+            <ChevronDown size={14} />
+          </MenuButton>
+          <Menu className="menu" gutter={8} style={{ minWidth: 260 }}>
+            {underTheHoodItems.map((item, index) => (
+              <div key={item.to}>
+                {item.dividerBefore && (
+                  <div style={{
+                    height: '1px',
+                    background: 'var(--border)',
+                    margin: '8px 0'
+                  }} />
+                )}
+                <MenuItem
+                  className="menu-item"
+                  render={<NavLink to={item.to} />}
+                >
+                  <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
+                  <div className="menu-item-content">
+                    <span className="menu-item-label">{item.label}</span>
+                    <span className="menu-item-desc">{item.description}</span>
+                  </div>
+                </MenuItem>
+              </div>
+            ))}
+            {rateLimiting && (
+              <>
+                <div style={{
+                  height: '1px',
+                  background: 'var(--border)',
+                  margin: '8px 0'
+                }} />
+                <MenuItem
+                  className="menu-item"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    cursor: rateLimitingLoading ? 'wait' : 'pointer',
+                    opacity: rateLimitingLoading ? 0.7 : 1
+                  }}
+                  onClick={toggleRateLimiting}
+                  disabled={rateLimitingLoading}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>🛡️ Rate Limiting</span>
+                  <input
+                    type="checkbox"
+                    checked={rateLimiting.enabled}
+                    onChange={() => {}}
+                    style={{
+                      cursor: rateLimitingLoading ? 'wait' : 'pointer',
+                      width: 16,
+                      height: 16
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleRateLimiting()
+                    }}
+                  />
+                </MenuItem>
+              </>
+            )}
+          </Menu>
+        </MenuProvider>
       </div>
     </div>
   )

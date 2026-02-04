@@ -45,8 +45,8 @@ class AutomationWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
-        super().__init__()
+    def __init__(self, api_client=None, **kwargs):
+        super().__init__(**kwargs)
         self.api_client = api_client
         self.id = "automation"
         # Data state
@@ -181,7 +181,7 @@ class WorkflowTemplatesWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "workflow-templates"

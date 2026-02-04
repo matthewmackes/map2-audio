@@ -1473,3 +1473,65 @@ async def toggle_rate_limiting(enabled: bool = True) -> Dict[str, Any]:
             "success": False,
             "error": str(e)
         }
+
+@router.get("/docs/list")
+async def list_docs() -> List[Dict[str, str]]:
+    """
+    Get a list of available documentation files.
+
+    Returns:
+        List of documentation files with names
+    """
+    try:
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'docs')
+        
+        if not os.path.exists(docs_path):
+            return []
+        
+        docs = []
+        for filename in sorted(os.listdir(docs_path)):
+            if filename.endswith('.md'):
+                docs.append({'name': filename})
+        
+        return docs
+    except Exception as e:
+        logger.error(f"Error listing docs: {e}")
+        return []
+
+
+@router.get("/docs/{doc_name}")
+async def get_doc(doc_name: str) -> str:
+    """
+    Get the content of a specific documentation file.
+
+    Args:
+        doc_name: The name of the documentation file
+
+    Returns:
+        The content of the markdown file
+
+    Raises:
+        HTTPException: If the file is not found or cannot be read
+    """
+    try:
+        # Security: prevent path traversal
+        if '..' in doc_name or '/' in doc_name or '\\' in doc_name:
+            raise HTTPException(status_code=400, detail="Invalid document name")
+        
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'docs', doc_name)
+        
+        if not os.path.exists(docs_path):
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        if not docs_path.endswith('.md'):
+            raise HTTPException(status_code=400, detail="Only markdown files are allowed")
+        
+        with open(docs_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return content
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading doc {doc_name}: {e}")
+        raise HTTPException(status_code=500, detail="Error reading document")

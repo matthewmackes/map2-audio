@@ -18,13 +18,30 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
-export function GateCard({
+// Plugin URI for MIDI mappings
+const GATE_URI = 'map2://juce/dynamics/gate'
+
+// Parameter definitions for MIDI mapping dialog
+const GATE_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Threshold', symbol: 'threshold' },
+  { index: 1, name: 'Ratio', symbol: 'ratio' },
+  { index: 2, name: 'Attack', symbol: 'attack' },
+  { index: 3, name: 'Release', symbol: 'release' },
+]
+
+interface GateCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function GateCardBase({
   plugin,
   accentColor = '#22c55e',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: GateCardProps) {
   const {
     gate,
     setGateThreshold,
@@ -88,6 +105,7 @@ export function GateCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setGateBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -177,4 +195,8 @@ export function GateCard({
   )
 }
 
-export default GateCard
+// Export base component for testing
+export { GateCardBase as GateCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(GateCardBase, GATE_URI, GATE_PARAMS)

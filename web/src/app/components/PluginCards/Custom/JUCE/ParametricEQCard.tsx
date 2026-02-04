@@ -19,7 +19,49 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { EQCurveDisplay } from '../../Visualizations/EQCurveDisplay'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+
+// Plugin URI for MIDI mappings
+const EQ_URI = 'map2://juce/eq/parametric'
+
+// Parameter definitions for MIDI mapping dialog
+// Output gain + per-band frequency, gain, Q (8 bands × 3 params = 24 + 1 = 25 params)
+const EQ_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Output Gain', symbol: 'outputGain' },
+  // Band 1
+  { index: 1, name: 'Band 1 Frequency', symbol: 'band1_frequency' },
+  { index: 2, name: 'Band 1 Gain', symbol: 'band1_gain' },
+  { index: 3, name: 'Band 1 Q', symbol: 'band1_q' },
+  // Band 2
+  { index: 4, name: 'Band 2 Frequency', symbol: 'band2_frequency' },
+  { index: 5, name: 'Band 2 Gain', symbol: 'band2_gain' },
+  { index: 6, name: 'Band 2 Q', symbol: 'band2_q' },
+  // Band 3
+  { index: 7, name: 'Band 3 Frequency', symbol: 'band3_frequency' },
+  { index: 8, name: 'Band 3 Gain', symbol: 'band3_gain' },
+  { index: 9, name: 'Band 3 Q', symbol: 'band3_q' },
+  // Band 4
+  { index: 10, name: 'Band 4 Frequency', symbol: 'band4_frequency' },
+  { index: 11, name: 'Band 4 Gain', symbol: 'band4_gain' },
+  { index: 12, name: 'Band 4 Q', symbol: 'band4_q' },
+  // Band 5
+  { index: 13, name: 'Band 5 Frequency', symbol: 'band5_frequency' },
+  { index: 14, name: 'Band 5 Gain', symbol: 'band5_gain' },
+  { index: 15, name: 'Band 5 Q', symbol: 'band5_q' },
+  // Band 6
+  { index: 16, name: 'Band 6 Frequency', symbol: 'band6_frequency' },
+  { index: 17, name: 'Band 6 Gain', symbol: 'band6_gain' },
+  { index: 18, name: 'Band 6 Q', symbol: 'band6_q' },
+  // Band 7
+  { index: 19, name: 'Band 7 Frequency', symbol: 'band7_frequency' },
+  { index: 20, name: 'Band 7 Gain', symbol: 'band7_gain' },
+  { index: 21, name: 'Band 7 Q', symbol: 'band7_q' },
+  // Band 8
+  { index: 22, name: 'Band 8 Frequency', symbol: 'band8_frequency' },
+  { index: 23, name: 'Band 8 Gain', symbol: 'band8_gain' },
+  { index: 24, name: 'Band 8 Q', symbol: 'band8_q' },
+]
 
 const FILTER_TYPES = ['peak', 'lowshelf', 'highshelf', 'lowpass', 'highpass', 'bandpass', 'notch', 'allpass']
 
@@ -34,11 +76,16 @@ const FILTER_TYPE_LABELS: Record<string, string> = {
   allpass: 'All Pass',
 }
 
-export function ParametricEQCard({
+interface ParametricEQCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function ParametricEQCardBase({
   plugin,
   accentColor = '#4ecdc4',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: ParametricEQCardProps) {
   const {
     bands,
     outputGain,
@@ -76,6 +123,7 @@ export function ParametricEQCard({
       accentColor={accentColor}
       bypassed={bypass}
       onBypassToggle={() => setBypass(!bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -230,4 +278,8 @@ export function ParametricEQCard({
   )
 }
 
-export default ParametricEQCard
+// Export base component for testing
+export { ParametricEQCardBase as ParametricEQCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(ParametricEQCardBase, EQ_URI, EQ_PARAMS)

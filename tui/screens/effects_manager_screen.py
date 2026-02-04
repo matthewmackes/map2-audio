@@ -45,8 +45,8 @@ class PluginBrowserWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
-        super().__init__()
+    def __init__(self, api_client=None, **kwargs):
+        super().__init__(**kwargs)
         self.api_client = api_client
         self.id = "plugin-browser"
         # Data state
@@ -271,7 +271,7 @@ class GuitarAmplifierWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "guitar-amplifier"
@@ -431,7 +431,7 @@ class SignalRoutingWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "signal-routing"
@@ -558,7 +558,7 @@ class IRAndCabinetsWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "ir-cabinets"

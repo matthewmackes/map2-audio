@@ -24,11 +24,20 @@ import { chainsApi } from '../../map2/api'
 import { useToasts } from './Toasts'
 import type { Chain, ChainsResponse } from '../../map2/types'
 
+interface FlowSlot {
+  id: string
+  chainId: number | null
+  label: string
+  color: string
+}
+
 interface ChainManagementCardProps {
   /** Currently selected chain ID in the flow slots */
   selectedChainId?: number | null
   /** Callback when a chain is selected */
   onChainSelect?: (chainId: number) => void
+  /** Flow slots to show which flows are using each chain */
+  flowSlots?: FlowSlot[]
   /** Whether the card is expanded by default */
   defaultExpanded?: boolean
 }
@@ -36,6 +45,7 @@ interface ChainManagementCardProps {
 export function ChainManagementCard({
   selectedChainId,
   onChainSelect,
+  flowSlots = [],
 }: ChainManagementCardProps) {
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
@@ -220,6 +230,24 @@ export function ChainManagementCard({
                         {chain.name}
                       </span>
                     </div>
+
+                    {/* Flow indicators - show which flows use this chain */}
+                    {(() => {
+                      const flowsUsingChain = flowSlots.filter(f => f.chainId === chain.id)
+                      if (flowsUsingChain.length === 0) return null
+                      return (
+                        <div className="chains-grid-cell-flows">
+                          {flowsUsingChain.map(flow => (
+                            <span
+                              key={flow.id}
+                              className="chains-grid-flow-dot"
+                              style={{ backgroundColor: flow.color }}
+                              title={`Flow: ${flow.label}`}
+                            />
+                          ))}
+                        </div>
+                      )
+                    })()}
 
                     {/* Bottom row: Stats + Actions */}
                     <div className="chains-grid-cell-bottom">

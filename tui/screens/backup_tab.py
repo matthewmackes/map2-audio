@@ -16,10 +16,34 @@ from textual.containers import Container, Horizontal, Vertical, ScrollableContai
 from textual.reactive import reactive
 from textual import work
 
-from api_client import MAP2APIClient
-from modals import ConfirmDialog
-from widgets.ssh_setup_dialog import SSHSetupDialog
-from widgets.ssh_connection_manager import SSHConnectionManager
+# Import newer widgets with fallbacks for older Textual versions
+try:
+    from textual.widgets import SelectionList
+    from textual.widgets.selection_list import Selection
+    SELECTION_LIST_AVAILABLE = True
+except ImportError:
+    SELECTION_LIST_AVAILABLE = False
+    SelectionList = None
+    Selection = None
+
+try:
+    from textual.widgets import Rule
+    RULE_AVAILABLE = True
+except ImportError:
+    RULE_AVAILABLE = False
+    Rule = None
+
+try:
+    from textual.widgets import LoadingIndicator
+    LOADING_AVAILABLE = True
+except ImportError:
+    LOADING_AVAILABLE = False
+    LoadingIndicator = None
+
+from ..api_client import MAP2APIClient
+from ..modals import ConfirmDialog
+from ..widgets.ssh_setup_dialog import SSHSetupDialog
+from ..widgets.ssh_connection_manager import SSHConnectionManager
 
 logger = logging.getLogger(__name__)
 
@@ -297,6 +321,26 @@ class BackupTab(ScrollableContainer):
         border: solid $primary-darken-2;
         background: $surface;
     }
+
+    #restore-components {
+        height: 8;
+        border: solid $accent;
+        background: $surface;
+        margin: 1 0;
+    }
+
+    #restore-components > .selection-list--option-highlighted {
+        background: $accent-darken-1;
+    }
+
+    #restore-components > .selection-list--option-selected {
+        color: $success;
+    }
+
+    .loading-indicator {
+        height: 3;
+        align: center middle;
+    }
     """
 
     def __init__(self, api_client: MAP2APIClient, id: Optional[str] = None):
@@ -310,6 +354,52 @@ class BackupTab(ScrollableContainer):
             "auto_cleanup": True,
             "backup_location": ""
         }
+
+    def _build_restore_card(self) -> Container:
+        """Build restore options card with fallback for older Textual versions."""
+        if SELECTION_LIST_AVAILABLE and SelectionList and Selection:
+            # Use SelectionList for newer Textual versions
+            return Container(
+                Static("[dim]Select components to restore from backup:[/]", classes="section-description"),
+                SelectionList[str](
+                    Selection("🗄️  Database", "database", True),
+                    Selection("📁 User Data", "user_data", True),
+                    Selection("⚙️  Configuration", "config", True),
+                    Selection("🔌 Plugin Settings", "plugins", False),
+                    Selection("🎹 MIDI Mappings", "midi", False),
+                    Selection("📊 Performance Profiles", "profiles", False),
+                    id="restore-components",
+                ),
+                Rule() if RULE_AVAILABLE and Rule else Static("─" * 40),
+                Horizontal(
+                    Button("Restore Selected Backup", id="btn-restore-backup", variant="primary"),
+                    Button("Select All", id="btn-select-all", variant="default"),
+                    Button("Select None", id="btn-select-none", variant="default"),
+                    classes="action-buttons"
+                ),
+                id="card-restore",
+                classes="section-card"
+            )
+        else:
+            # Fallback to Switch widgets for older Textual versions
+            return Container(
+                Static("[dim]Select components to restore from backup:[/]", classes="section-description"),
+                Horizontal(
+                    Label("Database:"),
+                    Switch(id="switch-restore-db", value=True),
+                    Label("User Data:"),
+                    Switch(id="switch-restore-data", value=True),
+                    Label("Config:"),
+                    Switch(id="switch-restore-config", value=True),
+                    classes="settings-row"
+                ),
+                Horizontal(
+                    Button("Restore Selected Backup", id="btn-restore-backup", variant="primary"),
+                    classes="action-buttons"
+                ),
+                id="card-restore",
+                classes="section-card"
+            )
 
     def compose(self) -> ComposeResult:
         # Main Header
@@ -388,24 +478,7 @@ class BackupTab(ScrollableContainer):
         # RIGHT COLUMN - Settings & Tools
         right_column = Vertical(
             # Restore Options Card
-            Container(
-                Static("[dim]Select components to restore from backup:[/]", classes="section-description"),
-                Horizontal(
-                    Label("Database:"),
-                    Switch(id="switch-restore-db", value=True),
-                    Label("User Data:"),
-                    Switch(id="switch-restore-data", value=True),
-                    Label("Config:"),
-                    Switch(id="switch-restore-config", value=True),
-                    classes="settings-row"
-                ),
-                Horizontal(
-                    Button("Restore Selected Backup", id="btn-restore-backup", variant="primary"),
-                    classes="action-buttons"
-                ),
-                id="card-restore",
-                classes="section-card"
-            ),
+            self._build_restore_card(),
             # Lifecycle Settings Card
             Container(
                 Horizontal(
@@ -466,10 +539,10 @@ class BackupTab(ScrollableContainer):
         """Initialize state, load settings and backups."""
         # Initialize API client and SSH manager if not set
         if self.api_client is None:
-            from api_client import MAP2APIClient
+            from ..api_client import MAP2APIClient
             self.api_client = MAP2APIClient()
         if self.ssh_manager is None:
-            from widgets.ssh_connection_manager import SSHConnectionManager
+            from ..widgets.ssh_connection_manager import SSHConnectionManager
             self.ssh_manager = SSHConnectionManager()
         await self._refresh_all()
 
@@ -507,6 +580,30 @@ class BackupTab(ScrollableContainer):
             await self._generate_rebuild_script()
         elif btn_id == "btn-show-skip-list":
             await self._show_skip_list()
+        elif btn_id == "btn-select-all":
+            self._select_all_components()
+        elif btn_id == "btn-select-none":
+            self._select_none_components()
+
+    def _select_all_components(self) -> None:
+        """Select all restore components."""
+        if not SELECTION_LIST_AVAILABLE or not SelectionList:
+            return
+        try:
+            selection_list = self.query_one("#restore-components", SelectionList)
+            selection_list.select_all()
+        except Exception as e:
+            logger.debug(f"Error selecting all: {e}")
+
+    def _select_none_components(self) -> None:
+        """Deselect all restore components."""
+        if not SELECTION_LIST_AVAILABLE or not SelectionList:
+            return
+        try:
+            selection_list = self.query_one("#restore-components", SelectionList)
+            selection_list.deselect_all()
+        except Exception as e:
+            logger.debug(f"Error deselecting all: {e}")
 
     async def _refresh_all(self):
         await self._refresh_status()
@@ -665,23 +762,45 @@ class BackupTab(ScrollableContainer):
         option = backup_list.get_option_at_index(backup_list.highlighted)
         backup_id = option.id
 
-        # Get restore options from switches
-        restore_db = self.query_one("#switch-restore-db", Switch).value
-        restore_data = self.query_one("#switch-restore-data", Switch).value
-        restore_config = self.query_one("#switch-restore-config", Switch).value
+        # Get selected restore components - handles both SelectionList and Switch fallback
+        if SELECTION_LIST_AVAILABLE and SelectionList:
+            try:
+                selection_list = self.query_one("#restore-components", SelectionList)
+                selected = list(selection_list.selected)
+            except Exception:
+                selected = []
+        else:
+            # Fallback to Switch widgets
+            selected = []
+            try:
+                if self.query_one("#switch-restore-db", Switch).value:
+                    selected.append("database")
+                if self.query_one("#switch-restore-data", Switch).value:
+                    selected.append("user_data")
+                if self.query_one("#switch-restore-config", Switch).value:
+                    selected.append("config")
+            except Exception:
+                pass
 
-        if not any([restore_db, restore_data, restore_config]):
+        if not selected:
             self.app.notify("Select at least one component to restore", severity="warning", timeout=3)
             return
 
-        # Build description of what will be restored
-        components = []
-        if restore_db:
-            components.append("Database")
-        if restore_data:
-            components.append("User Data")
-        if restore_config:
-            components.append("Config")
+        # Map selection values to component names for display
+        component_names = {
+            "database": "Database",
+            "user_data": "User Data",
+            "config": "Configuration",
+            "plugins": "Plugin Settings",
+            "midi": "MIDI Mappings",
+            "profiles": "Performance Profiles",
+        }
+        components = [component_names.get(s, s) for s in selected]
+
+        # Determine legacy flags for API compatibility
+        restore_db = "database" in selected
+        restore_data = "user_data" in selected
+        restore_config = "config" in selected
 
         # Confirm restore action
         confirmed = await self.app.push_screen_wait(
@@ -700,7 +819,8 @@ class BackupTab(ScrollableContainer):
                 backup_id=backup_id,
                 restore_database=restore_db,
                 restore_user_data=restore_data,
-                restore_config=restore_config
+                restore_config=restore_config,
+                components=selected  # Pass all selected components
             )
             if result.success:
                 restore_result = result.data.get("result", {})

@@ -6,7 +6,8 @@
  * threshold, ratio, and knee visualization.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 interface TransferCurveProps {
   threshold: number // dB, typically -60 to 0
@@ -30,16 +31,29 @@ export function TransferCurve({
   makeupGain = 0,
   inputLevel,
   outputLevel,
-  width = 200,
-  height = 140,
+  width,
+  height,
   accentColor = '#22c55e',
   showGrid = true,
   minDb = -60,
   maxDb = 0,
 }: TransferCurveProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+
+  // Compute responsive dimensions based on container width
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 200 / 140, // Original aspect ratio (1.43:1)
+    baseOn: 'width',
+    defaultWidth: 200,
+    defaultHeight: 140,
+  })
   const padding = { top: 12, right: 12, bottom: 24, left: 32 }
-  const graphWidth = width - padding.left - padding.right
-  const graphHeight = height - padding.top - padding.bottom
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
+  const graphWidth = finalWidth - padding.left - padding.right
+  const graphHeight = finalHeight - padding.top - padding.bottom
 
   // Convert dB to pixel coordinates
   const dbToX = (db: number) => {
@@ -128,9 +142,10 @@ export function TransferCurve({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="transfer-curve"
     >
       {/* Background */}

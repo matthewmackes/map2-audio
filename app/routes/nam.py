@@ -540,6 +540,170 @@ try:
             "models": models
         }
 
+    # ==================== Featured Amps ====================
+
+    @router.post("/refresh-featured")
+    async def refresh_featured_amps() -> Dict:
+        """Fetch and download featured top 7 amps from TONE3000.
+        
+        This endpoint discovers the top 7 most popular amps on TONE3000
+        and the top 3 variants of each, downloads them, and registers
+        them as featured models in the NAM chooser.
+        
+        Returns:
+            Dict with featured amps download results
+        """
+        try:
+            from app.services.featured_amps_manager import FeaturedAmpsManager
+            import asyncio
+            
+            manager = FeaturedAmpsManager()
+            
+            # Clear existing featured models
+            await manager.clear_featured_models()
+            logger.info("Cleared previous featured models")
+            
+            # Discover and download new featured amps
+            results = await manager.discover_and_download_featured_amps()
+            
+            return {
+                "status": "ok" if results['success'] else "error",
+                "total_downloaded": results['total_downloaded'],
+                "featured_amps": results['featured_amps'],
+                "errors": results['errors']
+            }
+            
+        except Exception as e:
+            logger.error(f"Error refreshing featured amps: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @router.get("/featured")
+    async def get_featured_models(limit: int = Query(21, ge=1, le=100)) -> Dict:
+        """Get featured NAM models for display in chooser.
+        
+        Args:
+            limit: Maximum number of featured models to return
+            
+        Returns:
+            List of featured models sorted by featured_position
+        """
+        try:
+            session = next(get_db())
+            featured = session.query(NAMModel).filter(
+                NAMModel.is_featured == True
+            ).order_by(NAMModel.featured_position).limit(limit).all()
+            session.close()
+            
+            return {
+                "status": "ok",
+                "count": len(featured),
+                "models": [
+                    {
+                        "id": m.id,
+                        "name": m.name,
+                        "amp_name": m.amp_name,
+                        "amp_type": m.amp_type,
+                        "category": m.category,
+                        "featured_position": m.featured_position,
+                        "source_tone3000_id": m.source_tone3000_id,
+                        "tags": m.tags
+                    }
+                    for m in featured
+                ]
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting featured models: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # ==================== Bulk Rename ====================
+
+    @router.post("/bulk-rename/preview")
+    async def preview_bulk_rename() -> Dict:
+        """Preview planned NAM file renames without making changes.
+        
+        Scans the NAM library, enriches metadata from GitHub and database,
+        and shows what files would be renamed and how.
+        
+        Returns:
+            Dict with preview results including:
+            - total_files: Number of NAM files found
+            - renamed_count: How many would be renamed
+            - skipped_count: How many don't have sufficient metadata
+            - failed_count: How many have conflicts
+            - renamed_files: List of planned renames
+            - errors: Any errors encountered
+        """
+        try:
+            from app.services.nam_bulk_renamer import NAMBulkRenamer
+            
+            renamer = NAMBulkRenamer()
+            
+            # Scan library
+            logger.info("Starting bulk rename preview...")
+            files_info = await renamer.scan_library()
+            
+            # Enrich metadata
+            enriched_files = await renamer.enrich_metadata(files_info)
+            
+            # Preview renames (dry_run=True)
+            results = await renamer.preview_renames(enriched_files, dry_run=True)
+            
+            return {
+                "status": "ok",
+                "operation": "dry_run",
+                "results": results
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in bulk rename preview: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @router.post("/bulk-rename/execute")
+    async def execute_bulk_rename() -> Dict:
+        """Execute bulk rename of NAM files to standardized format.
+        
+        WARNING: This operation modifies files and database records.
+        A preview should be run first to verify the changes.
+        
+        Rename format: {Brand}_{Model}_{Type}_[SOURCE-{id}].nam
+        
+        Returns:
+            Dict with execution results including:
+            - renamed_count: Number of files actually renamed
+            - skipped_count: Files without sufficient metadata
+            - failed_count: Files that couldn't be renamed
+            - renamed_files: List of successfully renamed files
+            - errors: Any errors encountered
+        """
+        try:
+            from app.services.nam_bulk_renamer import NAMBulkRenamer
+            
+            renamer = NAMBulkRenamer()
+            
+            # Scan library
+            logger.info("Starting bulk rename execution...")
+            files_info = await renamer.scan_library()
+            
+            # Enrich metadata
+            enriched_files = await renamer.enrich_metadata(files_info)
+            
+            # Execute renames (dry_run=False)
+            results = await renamer.execute_bulk_rename(enriched_files)
+            
+            logger.info(f"Bulk rename complete: {results['renamed_count']} renamed, "
+                       f"{results['skipped_count']} skipped, {results['failed_count']} failed")
+            
+            return {
+                "status": "ok",
+                "operation": "execute",
+                "results": results
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in bulk rename execution: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
 except ImportError as e:
     # Create stub router if dependencies not available
     from fastapi import APIRouter

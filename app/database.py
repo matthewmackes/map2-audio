@@ -231,7 +231,7 @@ class Preset(Base):
 
 class PluginPreset(Base):
     """Individual plugin parameter preset configuration.
-    
+
     Separate from chain presets - stores parameter settings for a single plugin
     to enable easy reuse and favorite management.
     """
@@ -250,12 +250,120 @@ class PluginPreset(Base):
     usage_count = Column(Integer, default=0)  # Track usage frequency
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Composite unique constraint (plugin_uri + name)
     __table_args__ = (
         # Allows multiple presets per plugin but not duplicate names per plugin
         {"sqlite_autoincrement": True},
     )
+
+
+# =============================================================================
+# COMMUNITY PRESET SYSTEM - Open/Permissionless Sharing
+# =============================================================================
+
+class CommunityPreset(Base):
+    """Community-shared preset with ratings, downloads, and cross-platform format support.
+
+    Supports the MAP2 Universal Preset Format (MAP2UPF) for interoperability.
+    Open/permissionless - no authentication required for uploads.
+    """
+    __tablename__ = "community_presets"
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), unique=True, nullable=False, index=True)  # Globally unique ID for sharing
+
+    # Content
+    name = Column(String(255), nullable=False)
+    plugin_uri = Column(String(255), nullable=False, index=True)
+    plugin_name = Column(String(255), nullable=False)
+    plugin_format = Column(String(50), default="lv2")  # lv2, vst3, au, juce
+    parameters = Column(Text, nullable=False)  # JSON: {param_symbol: value, ...}
+    state_chunk = Column(Text, nullable=True)  # Base64-encoded native plugin state (optional)
+
+    # Metadata
+    author_name = Column(String(255), default="Anonymous")
+    author_id = Column(String(100), nullable=True)  # Optional anonymous fingerprint ID
+    description = Column(Text, default="")
+    category = Column(String(100), default="User", index=True)
+    tags = Column(JSON, default=list)
+    license = Column(String(50), default="CC-BY-4.0")  # Creative Commons by default
+
+    # Community metrics
+    download_count = Column(Integer, default=0)
+    rating_sum = Column(Float, default=0.0)  # Sum of all ratings (for average calculation)
+    rating_count = Column(Integer, default=0)  # Number of ratings
+    report_count = Column(Integer, default=0)  # Number of spam/abuse reports
+
+    # Import tracking
+    original_format = Column(String(50), nullable=True)  # Source format if imported (fxp, vstpreset, etc.)
+    source_file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 for deduplication
+
+    # Moderation (light-touch for permissionless model)
+    is_approved = Column(Boolean, default=True)  # Auto-approve by default
+    is_flagged = Column(Boolean, default=False)  # Flagged for review
+    is_hidden = Column(Boolean, default=False)  # Hidden from public but not deleted
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    ratings = relationship("PresetRating", back_populates="preset", cascade="all, delete-orphan")
+
+
+class PresetRating(Base):
+    """Individual user ratings for community presets.
+
+    Uses anonymous device fingerprinting to prevent duplicate ratings
+    while preserving user privacy (no accounts required).
+    """
+    __tablename__ = "preset_ratings"
+
+    id = Column(Integer, primary_key=True)
+    preset_id = Column(Integer, ForeignKey("community_presets.id", ondelete="CASCADE"), nullable=False)
+    user_fingerprint = Column(String(64), nullable=False)  # Anonymous device fingerprint (SHA-256)
+    rating = Column(Integer, nullable=False)  # 1-5 stars
+    review_text = Column(Text, nullable=True)  # Optional review comment
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    preset = relationship("CommunityPreset", back_populates="ratings")
+
+    # Ensure one rating per user per preset
+    __table_args__ = (
+        # UniqueConstraint ensures one rating per fingerprint per preset
+        {"sqlite_autoincrement": True},
+    )
+
+
+class PresetImportHistory(Base):
+    """Track imported preset files for deduplication and provenance.
+
+    Prevents re-importing the same preset file multiple times and
+    maintains a record of where presets originated.
+    """
+    __tablename__ = "preset_import_history"
+
+    id = Column(Integer, primary_key=True)
+    source_file_hash = Column(String(64), unique=True, nullable=False)  # SHA-256 of original file
+    original_filename = Column(String(255), nullable=False)
+    original_format = Column(String(50), nullable=False)  # fxp, fxb, vstpreset, aupreset, etc.
+    file_size_bytes = Column(Integer, default=0)
+
+    # Result tracking
+    converted_preset_id = Column(Integer, ForeignKey("plugin_presets.id", ondelete="SET NULL"), nullable=True)
+    community_preset_id = Column(Integer, ForeignKey("community_presets.id", ondelete="SET NULL"), nullable=True)
+    conversion_success = Column(Boolean, default=True)
+    conversion_errors = Column(Text, nullable=True)  # JSON array of error messages
+
+    # Import metadata
+    target_plugin_uri = Column(String(255), nullable=True)  # Plugin the preset was mapped to
+    parameters_imported = Column(Integer, default=0)  # Number of parameters successfully imported
+
+    # Timestamps
+    import_timestamp = Column(DateTime, default=datetime.utcnow)
 
 
 class ChainPlugin(Base):
@@ -547,6 +655,12 @@ class NAMModel(Base):
     is_favorite = Column(Boolean, default=False)
     rating = Column(Integer, nullable=True)  # 1-5 stars
 
+    # Featured amp tracking
+    is_featured = Column(Boolean, default=False)  # Featured in NAM chooser
+    featured_position = Column(Integer, nullable=True)  # Sort order (0-20 for top 21)
+    source_tone3000_id = Column(String(255), nullable=True)  # TONE3000 model ID
+    source_tone3000_name = Column(String(255), nullable=True)  # TONE3000 model name
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -638,6 +752,44 @@ class SessionBackup(Base):
         # Index for finding latest backup
         {"sqlite_autoincrement": True},
     )
+
+
+# =============================================================================
+# FLOW SNAPSHOTS - Complete GridFlow State Capture
+# =============================================================================
+
+class FlowSnapshot(Base):
+    """Flow Snapshot - complete GridFlowPage state capture.
+
+    Stores the entire flow configuration including slots, routing,
+    and per-slot chain state for instant recall via MIDI Program Change.
+    """
+    __tablename__ = "flow_snapshots"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, default="")
+    tags = Column(JSON, default=list)
+
+    # MIDI Program Change mapping (0-127, unique)
+    program_number = Column(Integer, nullable=True, unique=True)
+    bank_msb = Column(Integer, default=0)  # For >128 snapshots
+    bank_lsb = Column(Integer, default=0)
+
+    # Complete snapshot data (JSON blob)
+    # Contains: flowSlots, routing, activeFlowIndex, chains
+    snapshot_data = Column(Text, nullable=False)
+
+    # State
+    is_active = Column(Boolean, default=False)  # Currently loaded snapshot
+    display_order = Column(Integer, default=0)  # UI ordering
+
+    # User metadata
+    is_favorite = Column(Boolean, default=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # =============================================================================

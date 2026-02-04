@@ -17,7 +17,16 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+
+// Plugin URI for MIDI mappings
+const CABINET_IR_URI = 'map2://juce/ir/cabinet'
+
+// Parameter definitions for MIDI mapping dialog
+const CABINET_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Mix', symbol: 'mix' },
+]
 
 interface IRStatus {
   loaded: string | null
@@ -39,11 +48,16 @@ async function fetchCabinetList(): Promise<Array<{ name: string; size: string }>
   return data.cabinets || []
 }
 
-export function CabinetIRCard({
+interface CabinetIRCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function CabinetIRCardBase({
   plugin,
   accentColor = '#f97316',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: CabinetIRCardProps) {
   const queryClient = useQueryClient()
   const [showBrowser, setShowBrowser] = useState(false)
 
@@ -174,6 +188,7 @@ export function CabinetIRCard({
       accentColor={accentColor}
       bypassed={status?.bypass ?? false}
       onBypassToggle={() => setBypass(!status?.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -265,4 +280,8 @@ export function CabinetIRCard({
   )
 }
 
-export default CabinetIRCard
+// Export base component for testing
+export { CabinetIRCardBase as CabinetIRCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(CabinetIRCardBase, CABINET_IR_URI, CABINET_PARAMS)

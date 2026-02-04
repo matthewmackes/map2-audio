@@ -1,7 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Palette, Check, RotateCcw, Save, Eye, ChevronDown, ChevronRight } from 'lucide-react'
+import { X, Palette, Check, RotateCcw, Save, Eye, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import type { Theme, ThemeColors, ThemeWidgets } from '../theme/types'
-import { applyTheme, getSavedThemeId } from '../theme'
+import { applyTheme, getSavedThemeId, themes, themeOrder, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
+
+interface WelcomeBannerStatus {
+  installed: boolean
+  path?: string
+}
+
+interface BootSplashStatus {
+  installed: boolean
+  theme_exists?: boolean
+  plymouth_installed?: boolean
+  current_theme?: string
+  is_active?: boolean
+}
 
 // Material Design color palettes
 const MATERIAL_PALETTES = {
@@ -151,9 +164,33 @@ interface ThemeCreatorDialogProps {
   isOpen: boolean
   onClose: () => void
   onSave: (theme: Theme) => void
+  currentTheme?: string
+  onThemeChange?: (themeId: string) => void
+  customThemes?: Record<string, Theme>
+  onDeleteCustomTheme?: (themeId: string) => void
+  welcomeBanner?: WelcomeBannerStatus
+  onToggleWelcomeBanner?: () => void
+  bannerLoading?: boolean
+  bootSplash?: BootSplashStatus
+  onToggleBootSplash?: () => void
+  splashLoading?: boolean
 }
 
-export function ThemeCreatorDialog({ isOpen, onClose, onSave }: ThemeCreatorDialogProps) {
+export function ThemeCreatorDialog({
+  isOpen,
+  onClose,
+  onSave,
+  currentTheme: propCurrentTheme,
+  onThemeChange,
+  customThemes: propCustomThemes = {},
+  onDeleteCustomTheme,
+  welcomeBanner,
+  onToggleWelcomeBanner,
+  bannerLoading = false,
+  bootSplash,
+  onToggleBootSplash,
+  splashLoading = false
+}: ThemeCreatorDialogProps) {
   const [themeName, setThemeName] = useState('My Custom Theme')
   const [themeDescription, setThemeDescription] = useState('A custom theme created with the theme editor')
   const [colors, setColors] = useState<ThemeColors>({ ...DEFAULT_COLORS })
@@ -161,17 +198,23 @@ export function ThemeCreatorDialog({ isOpen, onClose, onSave }: ThemeCreatorDial
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     'colors': true,
     'widgets': false,
-    'palette': true
+    'palette': true,
+    'theme-selector': true,
+    'system-config': false
   })
   const [selectedPalette, setSelectedPalette] = useState<string | null>(null)
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null)
   const [previousTheme, setPreviousTheme] = useState<string>('')
+  const [currentTheme, setCurrentTheme] = useState(propCurrentTheme || getSavedThemeId())
+  const [customThemes, setCustomThemes] = useState<Record<string, Theme>>(propCustomThemes)
 
   useEffect(() => {
     if (isOpen) {
       setPreviousTheme(getSavedThemeId())
+      setCurrentTheme(propCurrentTheme || getSavedThemeId())
+      setCustomThemes(propCustomThemes)
     }
-  }, [isOpen])
+  }, [isOpen, propCurrentTheme, propCustomThemes])
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -230,6 +273,25 @@ export function ThemeCreatorDialog({ isOpen, onClose, onSave }: ThemeCreatorDial
   const applyPaletteColor = (color: string, target: keyof ThemeColors) => {
     updateColor(target, color)
     setActiveColorPicker(null)
+  }
+
+  const handleThemeChange = (themeId: string) => {
+    applyTheme(themeId)
+    setCurrentTheme(themeId)
+    onThemeChange?.(themeId)
+  }
+
+  const handleDeleteCustomTheme = (themeId: string) => {
+    if (currentTheme === themeId) {
+      applyTheme('default')
+      setCurrentTheme('default')
+    }
+    onDeleteCustomTheme?.(themeId)
+    setCustomThemes(prev => {
+      const updated = { ...prev }
+      delete updated[themeId]
+      return updated
+    })
   }
 
   if (!isOpen) return null
@@ -309,6 +371,241 @@ export function ThemeCreatorDialog({ isOpen, onClose, onSave }: ThemeCreatorDial
 
         {/* Content */}
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
+          {/* Theme Selector Section */}
+          <div style={{ marginBottom: 20 }}>
+            <button
+              onClick={() => toggleSection('theme-selector')}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 0',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'inherit',
+                fontSize: 14,
+                fontWeight: 600
+              }}
+            >
+              {expandedSections['theme-selector'] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              Theme Selection
+            </button>
+            {expandedSections['theme-selector'] && (
+              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <select
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--border-radius-sm)',
+                    fontSize: 13,
+                    background: 'var(--bg)',
+                    color: 'inherit',
+                    border: '1px solid var(--border)',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                  onChange={e => handleThemeChange(e.target.value)}
+                  value={currentTheme}
+                >
+                  <optgroup label="Built-in Themes">
+                    {themeOrder.map(id => (
+                      <option key={id} value={id}>{themes[id].name}</option>
+                    ))}
+                  </optgroup>
+                  {Object.keys(customThemes).length > 0 && (
+                    <optgroup label="Custom Themes">
+                      {Object.values(customThemes).map(theme => (
+                        <option key={theme.id} value={theme.id}>{theme.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <div style={{ fontSize: 11, color: 'var(--muted)', minHeight: '32px' }}>
+                  {getAllThemes()[currentTheme]?.description}
+                </div>
+                {customThemes[currentTheme] && (
+                  <button
+                    onClick={() => handleDeleteCustomTheme(currentTheme)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '8px 12px',
+                      borderRadius: 'var(--border-radius-sm)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      background: 'rgba(239, 68, 68, 0.05)',
+                      color: '#ef4444',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      transition: 'all 150ms'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'
+                    }}
+                  >
+                    Delete Custom Theme
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* System Configuration Section */}
+          {(welcomeBanner || bootSplash) && (
+            <div style={{ marginBottom: 20 }}>
+              <button
+                onClick={() => toggleSection('system-config')}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 0',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'inherit',
+                  fontSize: 14,
+                  fontWeight: 600
+                }}
+              >
+                {expandedSections['system-config'] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                System Configuration
+              </button>
+              {expandedSections['system-config'] && (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {welcomeBanner && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Terminal Welcome Banner</div>
+                      <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: '1.4' }}>
+                        Show a branded welcome message when opening new terminal sessions.
+                      </p>
+                      <button
+                        onClick={onToggleWelcomeBanner}
+                        disabled={bannerLoading || !welcomeBanner}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          width: '100%',
+                          padding: '10px 16px',
+                          borderRadius: 'var(--border-radius-sm)',
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: bannerLoading ? 'wait' : 'pointer',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          background: welcomeBanner?.installed ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.15)',
+                          color: '#3b82f6',
+                          opacity: bannerLoading ? 0.7 : 1,
+                          transition: 'all 150ms'
+                        }}
+                      >
+                        {bannerLoading ? (
+                          <>
+                            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                            {welcomeBanner?.installed ? 'Removing...' : 'Installing...'}
+                          </>
+                        ) : welcomeBanner?.installed ? (
+                          <>
+                            <X size={14} />
+                            Remove
+                          </>
+                        ) : (
+                          <>
+                            <Check size={14} />
+                            Install
+                          </>
+                        )}
+                      </button>
+                      {welcomeBanner?.installed && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: '#22c55e',
+                          marginTop: 8
+                        }}>
+                          <Check size={12} />
+                          Currently installed
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {bootSplash && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Boot Splash Screen</div>
+                      <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: '1.4' }}>
+                        Show a branded splash screen during system boot.
+                      </p>
+                      <button
+                        onClick={onToggleBootSplash}
+                        disabled={splashLoading || !bootSplash}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          width: '100%',
+                          padding: '10px 16px',
+                          borderRadius: 'var(--border-radius-sm)',
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: splashLoading ? 'wait' : 'pointer',
+                          border: '1px solid rgba(236, 72, 153, 0.3)',
+                          background: bootSplash?.installed ? 'rgba(236, 72, 153, 0.1)' : 'rgba(236, 72, 153, 0.15)',
+                          color: '#ec4899',
+                          opacity: splashLoading ? 0.7 : 1,
+                          transition: 'all 150ms'
+                        }}
+                      >
+                        {splashLoading ? (
+                          <>
+                            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                            {bootSplash?.installed ? 'Removing...' : 'Installing...'}
+                          </>
+                        ) : bootSplash?.installed ? (
+                          <>
+                            <X size={14} />
+                            Remove
+                          </>
+                        ) : (
+                          <>
+                            <Check size={14} />
+                            Install
+                          </>
+                        )}
+                      </button>
+                      {bootSplash?.installed && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: '#22c55e',
+                          marginTop: 8
+                        }}>
+                          <Check size={12} />
+                          Currently installed
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Theme Name & Description */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>

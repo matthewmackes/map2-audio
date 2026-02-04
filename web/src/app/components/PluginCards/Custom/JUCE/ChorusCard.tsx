@@ -10,13 +10,14 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import './ChorusCard.css'
 
 // Plugin URI for MIDI mappings
 const CHORUS_URI = 'map2://juce/modulation/chorus'
 
-// Parameter indices (must match juce_processors.json order)
+// Parameter indices for MIDI CC assignments
 const PARAM = {
   RATE: 0,
   DEPTH: 1,
@@ -24,13 +25,28 @@ const PARAM = {
   FEEDBACK: 3,
   MIX: 4,
   SPREAD: 5,
+} as const
+
+// Parameter definitions for MIDI mapping dialog
+const CHORUS_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Rate', symbol: 'rate' },
+  { index: 1, name: 'Depth', symbol: 'depth' },
+  { index: 2, name: 'Centre Delay', symbol: 'centreDelay' },
+  { index: 3, name: 'Feedback', symbol: 'feedback' },
+  { index: 4, name: 'Mix', symbol: 'mix' },
+  { index: 5, name: 'Stereo Spread', symbol: 'spread' },
+]
+
+interface ChorusCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
 }
 
-export function ChorusCard({
+function ChorusCardBase({
   plugin,
   accentColor = '#9b59b6',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: ChorusCardProps) {
   const {
     parameters,
     metering,
@@ -83,6 +99,7 @@ export function ChorusCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={lfoVisualization}
       compact={compact}
       customHeader={
@@ -201,4 +218,8 @@ export function ChorusCard({
   )
 }
 
-export default ChorusCard
+// Export base component for testing
+export { ChorusCardBase as ChorusCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(ChorusCardBase, CHORUS_URI, CHORUS_PARAMS)

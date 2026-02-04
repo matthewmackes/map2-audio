@@ -1,0 +1,565 @@
+/*
+ * Backend Services Monitoring TUI Styles
+ * ======================================
+ * World-class visual design for service health monitoring.
+ */
+
+/* ============================================
+   Status Colors
+   ============================================ */
+
+/* Health Status Colors */
+.status-healthy {
+    color: #10B981;
+    background: #064E3B;
+}
+
+.status-degraded {
+    color: #F59E0B;
+    background: #78350F;
+}
+
+.status-critical {
+    color: #EF4444;
+    background: #7F1D1D;
+}
+
+.status-offline {
+    color: #6B7280;
+    background: #374151;
+}
+
+/* Circuit Breaker State Colors */
+.cb-closed {
+    color: #10B981;
+}
+
+.cb-open {
+    color: #EF4444;
+}
+
+.cb-half-open {
+    color: #F59E0B;
+}
+
+/* Alert Severity Colors */
+.alert-critical {
+    color: #DC2626;
+    background: #450A0A;
+}
+
+.alert-warning {
+    color: #D97706;
+    background: #451A03;
+}
+
+.alert-info {
+    color: #2563EB;
+    background: #1E3A5F;
+}
+
+/* ============================================
+   Monitoring Header
+   ============================================ */
+
+.monitoring-header {
+    dock: top;
+    height: 3;
+    background: $primary;
+    color: $text;
+    text-style: bold;
+    padding: 0 2;
+    content-align: center middle;
+}
+
+.monitoring-header-title {
+    width: auto;
+    text-style: bold;
+}
+
+.monitoring-header-status {
+    width: auto;
+    margin-left: 2;
+    padding: 0 1;
+    background: #10B981;
+    color: #fff;
+}
+
+.monitoring-header-status.degraded {
+    background: #F59E0B;
+}
+
+.monitoring-header-status.critical {
+    background: #EF4444;
+}
+
+.monitoring-header-uptime {
+    width: auto;
+    margin-left: 2;
+    color: $text-muted;
+}
+
+.monitoring-header-clock {
+    width: auto;
+    margin-left: auto;
+    color: $text;
+}
+
+/* ============================================
+   Service Card Widget
+   ============================================ */
+
+.service-card {
+    width: 100%;
+    height: 5;
+    background: $surface;
+    border: solid $primary;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+.service-card:hover {
+    border: solid $accent;
+}
+
+.service-card:focus {
+    border: double $accent;
+}
+
+.service-card.healthy {
+    border: solid #10B981;
+}
+
+.service-card.degraded {
+    border: solid #F59E0B;
+}
+
+.service-card.critical {
+    border: solid #EF4444;
+}
+
+.service-card.offline {
+    border: solid #6B7280;
+    opacity: 0.7;
+}
+
+.service-card-header {
+    width: 100%;
+    height: 1;
+}
+
+.service-card-name {
+    width: 1fr;
+    text-style: bold;
+}
+
+.service-card-status {
+    width: auto;
+    padding: 0 1;
+}
+
+.service-card-status.healthy {
+    color: #10B981;
+}
+
+.service-card-status.degraded {
+    color: #F59E0B;
+}
+
+.service-card-status.critical {
+    color: #EF4444;
+}
+
+.service-card-status.offline {
+    color: #6B7280;
+}
+
+.service-card-metrics {
+    width: 100%;
+    height: 1;
+    color: $text-muted;
+}
+
+.service-card-bar {
+    width: auto;
+}
+
+.service-card-latency {
+    width: auto;
+    margin-left: 1;
+}
+
+.service-card-uptime {
+    width: auto;
+    margin-left: auto;
+}
+
+.service-card-footer {
+    width: 100%;
+    height: 1;
+    color: $text-muted;
+}
+
+/* ============================================
+   Services Grid
+   ============================================ */
+
+.services-grid {
+    width: 70%;
+    height: 100%;
+    padding: 1;
+    background: $background;
+}
+
+.services-grid-title {
+    width: 100%;
+    height: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.services-container {
+    width: 100%;
+    height: 1fr;
+    layout: grid;
+    grid-size: 2;
+    grid-gutter: 1;
+}
+
+/* ============================================
+   Right Panel
+   ============================================ */
+
+.right-panel {
+    width: 30%;
+    height: 100%;
+    padding: 1;
+    background: $surface;
+    border-left: solid $primary;
+}
+
+/* ============================================
+   Alert List Widget
+   ============================================ */
+
+.alert-list {
+    width: 100%;
+    height: auto;
+    max-height: 10;
+    background: $surface;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+.alert-list-title {
+    width: 100%;
+    height: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.alert-item {
+    width: 100%;
+    height: 2;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+.alert-item.critical {
+    border-left: thick #EF4444;
+    background: #450A0A;
+}
+
+.alert-item.warning {
+    border-left: thick #F59E0B;
+    background: #451A03;
+}
+
+.alert-item.info {
+    border-left: thick #2563EB;
+    background: #1E3A5F;
+}
+
+.alert-severity {
+    width: auto;
+    text-style: bold;
+}
+
+.alert-service {
+    width: auto;
+    margin-left: 1;
+}
+
+.alert-message {
+    width: 100%;
+    color: $text-muted;
+}
+
+/* ============================================
+   Circuit Breaker Widget
+   ============================================ */
+
+.circuit-breaker-panel {
+    width: 100%;
+    height: auto;
+    background: $surface;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+.circuit-breaker-title {
+    width: 100%;
+    height: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.circuit-breaker-status {
+    width: 100%;
+    height: 3;
+    border: solid $primary;
+    padding: 0 1;
+    content-align: center middle;
+}
+
+.circuit-breaker-status.closed {
+    border: solid #10B981;
+    color: #10B981;
+}
+
+.circuit-breaker-status.open {
+    border: solid #EF4444;
+    color: #EF4444;
+}
+
+.circuit-breaker-status.half-open {
+    border: solid #F59E0B;
+    color: #F59E0B;
+}
+
+.circuit-breaker-details {
+    width: 100%;
+    height: auto;
+    color: $text-muted;
+    padding-top: 1;
+}
+
+/* ============================================
+   Metrics Gauge Widget
+   ============================================ */
+
+.metrics-gauge-panel {
+    width: 100%;
+    height: auto;
+    background: $surface;
+    padding: 0 1;
+}
+
+.metrics-gauge-title {
+    width: 100%;
+    height: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.metrics-gauge-row {
+    width: 100%;
+    height: 1;
+    margin-bottom: 1;
+}
+
+.metrics-gauge-label {
+    width: 5;
+}
+
+.metrics-gauge-bar {
+    width: 1fr;
+    margin: 0 1;
+}
+
+.metrics-gauge-value {
+    width: 6;
+    text-align: right;
+}
+
+.metrics-gauge-sparkline {
+    width: 10;
+    margin-left: 1;
+}
+
+/* ============================================
+   Sparkline Widget
+   ============================================ */
+
+.sparkline {
+    width: auto;
+    height: 1;
+    color: $text;
+}
+
+.sparkline.gradient-low {
+    color: #10B981;
+}
+
+.sparkline.gradient-mid {
+    color: #F59E0B;
+}
+
+.sparkline.gradient-high {
+    color: #EF4444;
+}
+
+/* ============================================
+   Dependency Graph
+   ============================================ */
+
+.dependency-graph {
+    width: 100%;
+    height: 1fr;
+    background: $surface;
+    padding: 1;
+}
+
+.dependency-graph-title {
+    width: 100%;
+    height: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.dependency-node {
+    width: auto;
+    padding: 0 1;
+}
+
+.dependency-node.healthy {
+    color: #10B981;
+}
+
+.dependency-node.degraded {
+    color: #F59E0B;
+}
+
+.dependency-node.critical {
+    color: #EF4444;
+}
+
+.dependency-node.offline {
+    color: #6B7280;
+}
+
+/* ============================================
+   Log Stream Widget
+   ============================================ */
+
+.log-stream {
+    width: 100%;
+    height: 1fr;
+    background: $background;
+    padding: 1;
+}
+
+.log-stream-title {
+    width: 100%;
+    height: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.log-entry {
+    width: 100%;
+    height: 1;
+}
+
+.log-timestamp {
+    width: 12;
+    color: $text-muted;
+}
+
+.log-level {
+    width: 8;
+}
+
+.log-level.error {
+    color: #EF4444;
+}
+
+.log-level.warn {
+    color: #F59E0B;
+}
+
+.log-level.info {
+    color: #2563EB;
+}
+
+.log-level.debug {
+    color: #6B7280;
+}
+
+.log-message {
+    width: 1fr;
+}
+
+/* ============================================
+   Monitoring Footer
+   ============================================ */
+
+.monitoring-footer {
+    dock: bottom;
+    height: 1;
+    background: $surface;
+    color: $text-muted;
+    padding: 0 2;
+}
+
+.monitoring-footer-keys {
+    width: 1fr;
+}
+
+.monitoring-footer-ws {
+    width: auto;
+}
+
+.monitoring-footer-ws.connected {
+    color: #10B981;
+}
+
+.monitoring-footer-ws.disconnected {
+    color: #EF4444;
+}
+
+/* ============================================
+   Tabbed Content
+   ============================================ */
+
+.monitoring-tabs {
+    width: 100%;
+    height: 40%;
+    background: $background;
+    border-top: solid $primary;
+}
+
+.monitoring-tab-content {
+    width: 100%;
+    height: 1fr;
+    padding: 1;
+}
+
+/* ============================================
+   Data Table Styling
+   ============================================ */
+
+.monitoring-table {
+    width: 100%;
+    height: 1fr;
+}
+
+.monitoring-table > .datatable--header {
+    background: $primary;
+    color: $text;
+    text-style: bold;
+}
+
+.monitoring-table > .datatable--cursor {
+    background: $accent;
+}

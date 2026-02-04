@@ -966,3 +966,91 @@ export interface PluginDataMessage {
   type: PluginDataMessageType;
   data: PeakData | OutputPortValue | TunerData | SpectrumData;
 }
+
+// ==================== Flow Snapshot Types ====================
+
+/** Flow slot state snapshot */
+export interface FlowSlotSnapshot {
+  id: string;
+  chainId: number | null;
+  label: string;
+  color: string;
+  muted: boolean;
+  solo: boolean;
+  dryWetMix: number;
+}
+
+/** Routing configuration snapshot */
+export interface RoutingConfigSnapshot {
+  mode: 'parallel_blend' | 'ab_switch' | 'series' | 'parameter_morph' | 'sidechain';
+  activeSlotId: string | null;
+  blendPositions: Record<string, number>;
+  morphProgress: number;
+  morphSourceSlotId: string | null;
+  morphTargetSlotId: string | null;
+  seriesOrder: string[];
+}
+
+/** Plugin state within a chain snapshot */
+export interface PluginSnapshot {
+  uri: string;
+  position: number;
+  bypass: boolean;
+  parameters: Record<string, number>;
+}
+
+/** Chain state snapshot */
+export interface ChainSnapshot {
+  name: string;
+  plugins: PluginSnapshot[];
+}
+
+/** Complete flow snapshot data payload */
+export interface FlowSnapshotData {
+  flowSlots: FlowSlotSnapshot[];
+  routing: RoutingConfigSnapshot;
+  activeFlowIndex: number;
+  chains: Record<string, ChainSnapshot>;  // chainId -> ChainSnapshot
+}
+
+/** Flow slot summary for list view */
+export interface FlowSlotSummary {
+  id: string;
+  label: string;
+  color: string;
+  chainId: number | null;
+}
+
+/** Flow snapshot metadata (list view) */
+export interface FlowSnapshot {
+  id: number;
+  name: string;
+  description: string;
+  tags: string[];
+  program_number: number | null;
+  is_active: boolean;
+  is_favorite: boolean;
+  display_order: number;
+  flow_slots: FlowSlotSummary[];
+  created_at: string;
+  updated_at: string;
+}
+
+/** Flow snapshot with full data (detail view) */
+export interface FlowSnapshotDetail extends FlowSnapshot {
+  snapshot_data: FlowSnapshotData;
+}
+
+/** WebSocket event for flow snapshot loaded */
+export interface FlowSnapshotLoadedEvent {
+  type: 'flow_snapshot_loaded';
+  topic: 'flow_snapshots';
+  data: {
+    snapshot_id: number;
+    snapshot_name: string;
+    snapshot_data: FlowSnapshotData;
+    triggered_by?: 'midi_pc' | 'ui';
+    program_number?: number;
+  };
+  timestamp: string;
+}

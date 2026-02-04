@@ -12,9 +12,32 @@ import logging
 import asyncio
 from textual.app import ComposeResult
 from textual.widgets import Static, Label, DataTable, Input
-from textual.containers import Vertical, Horizontal
-from config import config as tui_config
+from textual.containers import Vertical, Horizontal, ScrollableContainer
+from ..config import config as tui_config
 from textual.binding import Binding
+from rich.text import Text
+
+# Import newer widgets with fallbacks for older Textual versions
+try:
+    from textual.widgets import Collapsible
+    COLLAPSIBLE_AVAILABLE = True
+except ImportError:
+    COLLAPSIBLE_AVAILABLE = False
+    Collapsible = None
+
+try:
+    from textual.widgets import Rule
+    RULE_AVAILABLE = True
+except ImportError:
+    RULE_AVAILABLE = False
+    Rule = None
+
+try:
+    from textual.widgets import LoadingIndicator
+    LOADING_AVAILABLE = True
+except ImportError:
+    LOADING_AVAILABLE = False
+    LoadingIndicator = None
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +49,7 @@ class AudioSettingsWidget(Static):
     #audio-settings {
         width: 100%;
         height: auto;
-        background: $panel;
-        border: solid $success;
-        padding: 1 2;
-        margin: 1 0;
+        padding: 0 1;
     }
 
     #audio-settings-table {
@@ -43,10 +63,21 @@ class AudioSettingsWidget(Static):
         height: auto;
         margin: 1 0;
     }
+
+    .audio-loading {
+        height: 3;
+        align: center middle;
+    }
+
+    .audio-status-bar {
+        height: 1;
+        background: $surface;
+        padding: 0 1;
+    }
     """
 
-    def __init__(self, api_client=None):
-        super().__init__()
+    def __init__(self, api_client=None, **kwargs):
+        super().__init__(**kwargs)
         self.api_client = api_client
         self.id = "audio-settings"
         # Data state
@@ -55,28 +86,37 @@ class AudioSettingsWidget(Static):
         self._audio_latency = {}
         self._dsp_status = {}
         self._usb_devices = {}
+        self._loading = True
 
     def compose(self) -> ComposeResult:
         """Compose audio settings with tables."""
-        yield Label("🔊 AUDIO SETTINGS", id="audio-title")
+        yield Label("", id="audio-status-bar", classes="audio-status-bar")
+        if LOADING_AVAILABLE and LoadingIndicator:
+            yield LoadingIndicator(id="audio-loading", classes="audio-loading")
         yield DataTable(id="audio-settings-table")
-        yield Label("Actions:", id="audio-actions-label")
+        if RULE_AVAILABLE and Rule:
+            yield Rule(line_style="heavy")
+        yield Label("⌨️ Keyboard Shortcuts", id="audio-actions-label")
         yield DataTable(id="audio-actions-table")
 
     def _init_tables(self) -> None:
         """Initialize tables with headers."""
-        # Settings table
+        # Settings table with zebra striping
         table = self.query_one("#audio-settings-table", DataTable)
         if not table.columns:
             table.add_columns("Setting", "Value", "Status")
+            table.zebra_stripes = True
+            table.cursor_type = "row"
             table.add_row("Audio Engine", "Loading...", "...")
             table.add_row("Sample Rate", "...", "...")
             table.add_row("Buffer Size", "...", "...")
 
-        # Actions table
+        # Actions table with zebra striping
         actions = self.query_one("#audio-actions-table", DataTable)
         if not actions.columns:
             actions.add_columns("Key", "Action", "Description")
+            actions.zebra_stripes = True
+            actions.cursor_type = "row"
             actions.add_row("S", "Start", "Start audio engine")
             actions.add_row("X", "Stop", "Stop audio engine")
             actions.add_row("t", "Test", "Run audio latency test")
@@ -126,12 +166,30 @@ class AudioSettingsWidget(Static):
     def _update_display(self) -> None:
         """Update the widget display with fetched data."""
         try:
-            # Update title with status
-            running = self._audio_status.get("running", False)
-            status_text = "🟢 Running" if running else "🔴 Stopped"
+            # Hide loading indicator
+            if self._loading:
+                self._loading = False
+                if LOADING_AVAILABLE and LoadingIndicator:
+                    try:
+                        loading = self.query_one("#audio-loading", LoadingIndicator)
+                        loading.display = False
+                    except Exception:
+                        pass
 
-            title = self.query_one("#audio-title", Label)
-            title.update(f"🔊 AUDIO SETTINGS | {status_text}")
+            # Update status bar with live metrics
+            running = self._audio_status.get("running", False)
+            latency = self._audio_latency.get("latency_ms", 0) if isinstance(self._audio_latency, dict) else 0
+            cpu_load = self._pipedal_status.get("cpu_load", 0)
+            xruns = self._pipedal_status.get("xruns", 0)
+
+            status_parts = []
+            status_parts.append("🟢 Running" if running else "🔴 Stopped")
+            status_parts.append(f"Latency: {latency:.1f}ms")
+            status_parts.append(f"CPU: {cpu_load:.0f}%")
+            status_parts.append(f"Xruns: {xruns}")
+
+            status_bar = self.query_one("#audio-status-bar", Label)
+            status_bar.update(" │ ".join(status_parts))
 
             # Update settings table
             table = self.query_one("#audio-settings-table", DataTable)
@@ -198,10 +256,7 @@ class DisplaySettingsWidget(Static):
     #display-settings {
         width: 100%;
         height: auto;
-        background: $panel;
-        border: solid $warning;
-        padding: 1 2;
-        margin: 1 0;
+        padding: 0 1;
     }
 
     #display-settings-table {
@@ -215,6 +270,26 @@ class DisplaySettingsWidget(Static):
         height: auto;
         margin: 1 0;
     }
+
+    .theme-preview {
+        height: 1;
+        background: $surface;
+        padding: 0 1;
+    }
+
+    .refresh-row {
+        height: 3;
+        align: left middle;
+    }
+
+    .refresh-row Label {
+        width: auto;
+        padding-right: 1;
+    }
+
+    .refresh-row Input {
+        width: 10;
+    }
     """
 
     # Available themes from Textual
@@ -226,7 +301,7 @@ class DisplaySettingsWidget(Static):
 
     LAYOUT_MODES = ["Compact", "Normal", "Wide", "Fullscreen", "Sidebar-L", "Sidebar-R"]
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "display-settings"
@@ -235,27 +310,36 @@ class DisplaySettingsWidget(Static):
 
     def compose(self) -> ComposeResult:
         """Compose display settings with tables."""
-        yield Label("🎨 DISPLAY SETTINGS", id="display-title")
+        yield Label("", id="theme-preview", classes="theme-preview")
         yield DataTable(id="display-settings-table")
+        if RULE_AVAILABLE and Rule:
+            yield Rule(line_style="heavy")
         # Inline setting: auto-refresh interval
-        with Horizontal():
-            yield Label("Auto-refresh (s):", id="refresh-interval-label")
+        with Horizontal(classes="refresh-row"):
+            yield Label("⏱️ Auto-refresh interval:")
             yield Input(placeholder=str(tui_config.get("ui.refresh_interval", 10)), id="refresh-interval-input")
-        yield Label("Actions:", id="display-actions-label")
+            yield Label("seconds")
+        if RULE_AVAILABLE and Rule:
+            yield Rule()
+        yield Label("⌨️ Keyboard Shortcuts", id="display-actions-label")
         yield DataTable(id="display-actions-table")
 
     def _init_tables(self) -> None:
         """Initialize tables with headers."""
-        # Settings table
+        # Settings table with zebra striping
         table = self.query_one("#display-settings-table", DataTable)
         if not table.columns:
             table.add_columns("Setting", "Value", "Options")
+            table.zebra_stripes = True
+            table.cursor_type = "row"
 
-        # Actions table
+        # Actions table with zebra striping
         actions = self.query_one("#display-actions-table", DataTable)
         if not actions.columns:
             actions.add_columns("Key", "Action", "Description")
-            actions.add_row("t", "Cycle Theme", "Cycle through available themes")
+            actions.zebra_stripes = True
+            actions.cursor_type = "row"
+            actions.add_row("Ctrl+T", "Cycle Theme", "Cycle through available themes")
             actions.add_row("Alt+1-6", "Layout", "Switch layout mode")
             actions.add_row("R", "Reset", "Reset to default settings")
 
@@ -276,16 +360,16 @@ class DisplaySettingsWidget(Static):
     def _update_display(self) -> None:
         """Update the widget display."""
         try:
-            # Update title
-            title = self.query_one("#display-title", Label)
-            title.update(f"🎨 DISPLAY SETTINGS | Theme: {self._current_theme}")
+            # Update theme preview bar
+            theme_index = self.AVAILABLE_THEMES.index(self._current_theme) + 1 if self._current_theme in self.AVAILABLE_THEMES else 1
+            preview = self.query_one("#theme-preview", Label)
+            preview.update(f"🎨 Theme: {self._current_theme} ({theme_index}/{len(self.AVAILABLE_THEMES)}) │ Layout: {self._current_layout}")
 
             # Update settings table
             table = self.query_one("#display-settings-table", DataTable)
             table.clear()
 
             # Current theme
-            theme_index = self.AVAILABLE_THEMES.index(self._current_theme) + 1 if self._current_theme in self.AVAILABLE_THEMES else 1
             table.add_row("Theme", self._current_theme, f"{theme_index}/{len(self.AVAILABLE_THEMES)} available")
 
             # Layout mode
@@ -337,10 +421,7 @@ class NetworkSettingsWidget(Static):
     #network-settings {
         width: 100%;
         height: auto;
-        background: $panel;
-        border: solid $accent;
-        padding: 1 2;
-        margin: 1 0;
+        padding: 0 1;
     }
 
     #network-settings-table {
@@ -354,9 +435,20 @@ class NetworkSettingsWidget(Static):
         height: auto;
         margin: 1 0;
     }
+
+    .network-status-bar {
+        height: 1;
+        background: $surface;
+        padding: 0 1;
+    }
+
+    .network-loading {
+        height: 3;
+        align: center middle;
+    }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "network-settings"
@@ -365,26 +457,35 @@ class NetworkSettingsWidget(Static):
         self._www_status = {}
         self._www_config = {}
         self._hostname = {}
+        self._loading = True
 
     def compose(self) -> ComposeResult:
         """Compose network settings with tables."""
-        yield Label("🌐 NETWORK SETTINGS", id="network-title")
+        yield Label("", id="network-status-bar", classes="network-status-bar")
+        if LOADING_AVAILABLE and LoadingIndicator:
+            yield LoadingIndicator(id="network-loading", classes="network-loading")
         yield DataTable(id="network-settings-table")
-        yield Label("Actions:", id="network-actions-label")
+        if RULE_AVAILABLE and Rule:
+            yield Rule(line_style="heavy")
+        yield Label("⌨️ Keyboard Shortcuts", id="network-actions-label")
         yield DataTable(id="network-actions-table")
 
     def _init_tables(self) -> None:
         """Initialize tables with headers."""
-        # Settings table
+        # Settings table with zebra striping
         table = self.query_one("#network-settings-table", DataTable)
         if not table.columns:
             table.add_columns("Service", "Address", "Status")
+            table.zebra_stripes = True
+            table.cursor_type = "row"
             table.add_row("Network", "Loading...", "...")
 
-        # Actions table
+        # Actions table with zebra striping
         actions = self.query_one("#network-actions-table", DataTable)
         if not actions.columns:
             actions.add_columns("Key", "Action", "Description")
+            actions.zebra_stripes = True
+            actions.cursor_type = "row"
             actions.add_row("p", "Ping", "Test network connectivity")
             actions.add_row("w", "WiFi Scan", "Scan for WiFi networks")
             actions.add_row("R", "Restart Web", "Restart web server")
@@ -429,12 +530,30 @@ class NetworkSettingsWidget(Static):
     def _update_display(self) -> None:
         """Update the widget display with fetched data."""
         try:
-            # Update title with connection status
-            connected = self._network_status.get("internet_connected", False) or self._network_status.get("connected", False)
-            status_text = "🟢 Connected" if connected else "🔴 Disconnected"
+            # Hide loading indicator
+            if self._loading:
+                self._loading = False
+                if LOADING_AVAILABLE and LoadingIndicator:
+                    try:
+                        loading = self.query_one("#network-loading", LoadingIndicator)
+                        loading.display = False
+                    except Exception:
+                        pass
 
-            title = self.query_one("#network-title", Label)
-            title.update(f"🌐 NETWORK SETTINGS | {status_text}")
+            # Update status bar
+            connected = self._network_status.get("internet_connected", False) or self._network_status.get("connected", False)
+            ip = self._network_status.get("ip_address", "N/A")
+            hostname = self._hostname.get("hostname", "map2-audio") if isinstance(self._hostname, dict) else "map2-audio"
+            ws_count = self._www_status.get("websocket_connections", 0) if isinstance(self._www_status, dict) else 0
+
+            status_parts = []
+            status_parts.append("🟢 Connected" if connected else "🔴 Disconnected")
+            status_parts.append(f"IP: {ip}")
+            status_parts.append(f"Host: {hostname}")
+            status_parts.append(f"WS: {ws_count}")
+
+            status_bar = self.query_one("#network-status-bar", Label)
+            status_bar.update(" │ ".join(status_parts))
 
             # Update settings table
             table = self.query_one("#network-settings-table", DataTable)
@@ -485,10 +604,7 @@ class AdvancedSettingsWidget(Static):
     #advanced-settings {
         width: 100%;
         height: auto;
-        background: $panel;
-        border: solid $primary;
-        padding: 1 2;
-        margin: 1 0;
+        padding: 0 1;
     }
 
     #advanced-settings-table {
@@ -502,9 +618,20 @@ class AdvancedSettingsWidget(Static):
         height: auto;
         margin: 1 0;
     }
+
+    .advanced-status-bar {
+        height: 1;
+        background: $surface;
+        padding: 0 1;
+    }
+
+    .advanced-loading {
+        height: 3;
+        align: center middle;
+    }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "advanced-settings"
@@ -513,26 +640,35 @@ class AdvancedSettingsWidget(Static):
         self._realtime_status = {}
         self._health = {}
         self._metrics = {}
+        self._loading = True
 
     def compose(self) -> ComposeResult:
         """Compose advanced settings with tables."""
-        yield Label("⚙️ ADVANCED SETTINGS", id="advanced-title")
+        yield Label("", id="advanced-status-bar", classes="advanced-status-bar")
+        if LOADING_AVAILABLE and LoadingIndicator:
+            yield LoadingIndicator(id="advanced-loading", classes="advanced-loading")
         yield DataTable(id="advanced-settings-table")
-        yield Label("Actions:", id="advanced-actions-label")
+        if RULE_AVAILABLE and Rule:
+            yield Rule(line_style="heavy")
+        yield Label("⌨️ Keyboard Shortcuts", id="advanced-actions-label")
         yield DataTable(id="advanced-actions-table")
 
     def _init_tables(self) -> None:
         """Initialize tables with headers."""
-        # Settings table
+        # Settings table with zebra striping
         table = self.query_one("#advanced-settings-table", DataTable)
         if not table.columns:
             table.add_columns("Setting", "Value", "Status")
+            table.zebra_stripes = True
+            table.cursor_type = "row"
             table.add_row("DSP Mode", "Loading...", "...")
 
-        # Actions table
+        # Actions table with zebra striping
         actions = self.query_one("#advanced-actions-table", DataTable)
         if not actions.columns:
             actions.add_columns("Key", "Action", "Description")
+            actions.zebra_stripes = True
+            actions.cursor_type = "row"
             actions.add_row("D", "DSP Mode", "Cycle DSP quality mode")
             actions.add_row("c", "Clear Cache", "Clear application cache")
             actions.add_row("R", "Restart Services", "Restart all services")
@@ -577,9 +713,30 @@ class AdvancedSettingsWidget(Static):
     def _update_display(self) -> None:
         """Update the widget display with fetched data."""
         try:
-            # Update title
-            title = self.query_one("#advanced-title", Label)
-            title.update("⚙️ ADVANCED SETTINGS & SYSTEM")
+            # Hide loading indicator
+            if self._loading:
+                self._loading = False
+                if LOADING_AVAILABLE and LoadingIndicator:
+                    try:
+                        loading = self.query_one("#advanced-loading", LoadingIndicator)
+                        loading.display = False
+                    except Exception:
+                        pass
+
+            # Update status bar with system metrics
+            cpu = self._metrics.get("cpu_percent", 0)
+            mem = self._metrics.get("memory_percent", 0)
+            dsp_mode = self._dsp_status.get("quality_mode", "balanced")
+            health_ok = self._health.get("status") == "ok" or self._health.get("healthy", False)
+
+            status_parts = []
+            status_parts.append("🟢 Healthy" if health_ok else "🔴 Issues")
+            status_parts.append(f"CPU: {cpu:.0f}%")
+            status_parts.append(f"MEM: {mem:.0f}%")
+            status_parts.append(f"DSP: {dsp_mode.title()}")
+
+            status_bar = self.query_one("#advanced-status-bar", Label)
+            status_bar.update(" │ ".join(status_parts))
 
             # Update settings table
             table = self.query_one("#advanced-settings-table", DataTable)
@@ -649,6 +806,52 @@ class SettingsScreen(Static):
         layout: vertical;
         overflow: auto;
     }
+
+    #settings-container {
+        width: 100%;
+        height: auto;
+        padding: 1 2;
+    }
+
+    .settings-header {
+        width: 100%;
+        height: 3;
+        background: $primary;
+        color: $text;
+        content-align: center middle;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    Collapsible {
+        margin-bottom: 1;
+        border: round $primary-darken-2;
+    }
+
+    Collapsible.-collapsed {
+        border: round $surface-lighten-2;
+    }
+
+    #audio-collapsible {
+        border: round $success;
+    }
+
+    #display-collapsible {
+        border: round $warning;
+    }
+
+    #network-collapsible {
+        border: round $accent;
+    }
+
+    #advanced-collapsible {
+        border: round $primary;
+    }
+
+    CollapsibleTitle {
+        padding: 1;
+        text-style: bold;
+    }
     """
 
     BINDINGS = [
@@ -656,6 +859,12 @@ class SettingsScreen(Static):
         Binding("T", "test_audio", "Test", show=True),
         Binding("r", "refresh_data", "Refresh", show=True),
         Binding("p", "ping_network", "Ping", show=True),
+        Binding("1", "expand_audio", "Audio", show=False),
+        Binding("2", "expand_display", "Display", show=False),
+        Binding("3", "expand_network", "Network", show=False),
+        Binding("4", "expand_advanced", "Advanced", show=False),
+        Binding("a", "expand_all", "Expand All", show=True),
+        Binding("c", "collapse_all", "Collapse All", show=True),
     ]
 
     def __init__(self, api_client=None, **kwargs):
@@ -663,12 +872,68 @@ class SettingsScreen(Static):
         self.api_client = api_client
 
     def compose(self) -> ComposeResult:
-        """Compose settings widgets."""
-        with Vertical(id="settings-container"):
-            yield AudioSettingsWidget(self.api_client)
-            yield DisplaySettingsWidget(self.api_client)
-            yield NetworkSettingsWidget(self.api_client)
-            yield AdvancedSettingsWidget(self.api_client)
+        """Compose settings widgets with collapsible sections."""
+        with ScrollableContainer(id="settings-container"):
+            yield Label("⚙️ SETTINGS", classes="settings-header")
+
+            if COLLAPSIBLE_AVAILABLE and Collapsible:
+                with Collapsible(title="🔊 Audio Settings", collapsed=False, id="audio-collapsible"):
+                    yield AudioSettingsWidget(self.api_client)
+
+                with Collapsible(title="🎨 Display Settings", collapsed=True, id="display-collapsible"):
+                    yield DisplaySettingsWidget(self.api_client)
+
+                with Collapsible(title="🌐 Network Settings", collapsed=True, id="network-collapsible"):
+                    yield NetworkSettingsWidget(self.api_client)
+
+                with Collapsible(title="⚙️ Advanced Settings", collapsed=True, id="advanced-collapsible"):
+                    yield AdvancedSettingsWidget(self.api_client)
+            else:
+                # Fallback for older Textual versions without Collapsible
+                yield Label("🔊 Audio Settings", classes="section-title")
+                yield AudioSettingsWidget(self.api_client)
+                yield Label("🎨 Display Settings", classes="section-title")
+                yield DisplaySettingsWidget(self.api_client)
+                yield Label("🌐 Network Settings", classes="section-title")
+                yield NetworkSettingsWidget(self.api_client)
+                yield Label("⚙️ Advanced Settings", classes="section-title")
+                yield AdvancedSettingsWidget(self.api_client)
+
+    def action_expand_audio(self) -> None:
+        """Expand audio settings section."""
+        self._toggle_section("audio-collapsible")
+
+    def action_expand_display(self) -> None:
+        """Expand display settings section."""
+        self._toggle_section("display-collapsible")
+
+    def action_expand_network(self) -> None:
+        """Expand network settings section."""
+        self._toggle_section("network-collapsible")
+
+    def action_expand_advanced(self) -> None:
+        """Expand advanced settings section."""
+        self._toggle_section("advanced-collapsible")
+
+    def _toggle_section(self, section_id: str) -> None:
+        """Toggle a collapsible section."""
+        if not COLLAPSIBLE_AVAILABLE or not Collapsible:
+            return
+        try:
+            section = self.query_one(f"#{section_id}", Collapsible)
+            section.collapsed = not section.collapsed
+        except Exception as e:
+            logger.debug(f"Error toggling section {section_id}: {e}")
+
+    def action_expand_all(self) -> None:
+        """Expand all collapsible sections."""
+        for collapsible in self.query("Collapsible"):
+            collapsible.collapsed = False
+
+    def action_collapse_all(self) -> None:
+        """Collapse all collapsible sections."""
+        for collapsible in self.query("Collapsible"):
+            collapsible.collapsed = True
 
     def action_cycle_theme(self) -> None:
         """Cycle through available themes."""

@@ -17,6 +17,7 @@ import { EdirolUA1000Page } from './pages/EdirolUA1000Page'
 import { HoToneJoGGPage } from './pages/HoToneJoGGPage'
 import { MeteringPage } from './pages/MeteringPage'
 import { WelcomePage } from './pages/WelcomePage'
+import { LCDPage } from './pages/LCDPage'
 import { MidiLearnProvider } from './hooks/useMidiLearn'
 
 const queryClient = new QueryClient({
@@ -54,6 +55,7 @@ export function App() {
                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
                 <Route path="/metering" element={<MeteringPage />} />
                 <Route path="/welcome" element={<WelcomePage />} />
+                <Route path="/lcd" element={<LCDPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppShell>

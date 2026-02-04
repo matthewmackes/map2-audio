@@ -63,6 +63,9 @@ import type {
   APIEndpoint,
   AccessLog,
   WebSocketStats,
+  FlowSnapshot,
+  FlowSnapshotDetail,
+  FlowSnapshotData,
 } from './types';
 
 const RAW_API_BASE = (() => {
@@ -2115,6 +2118,118 @@ export const uploadApi = {
     fetchJson<{ types: UploadTypeInfo[] }>(`${API_BASE}/upload/types`),
 }
 
+// ==================== Flow Snapshots API ====================
+
+export const flowSnapshotsApi = {
+  /**
+   * List all flow snapshots (metadata only)
+   */
+  list: () =>
+    fetchJson<{
+      snapshots: FlowSnapshot[];
+      count: number;
+      active_id: number | null;
+    }>(`${API_BASE}/flow-snapshots`),
+
+  /**
+   * Get snapshot with full data
+   */
+  get: (snapshotId: number) =>
+    fetchJson<FlowSnapshotDetail>(`${API_BASE}/flow-snapshots/${snapshotId}`),
+
+  /**
+   * Create a new flow snapshot
+   */
+  create: (request: {
+    name: string;
+    description?: string;
+    tags?: string[];
+    program_number?: number | null;
+    snapshot_data: FlowSnapshotData;
+  }) =>
+    fetchJson<{ status: string; snapshot_id: number; message: string }>(
+      `${API_BASE}/flow-snapshots`,
+      { method: 'POST', body: JSON.stringify(request) }
+    ),
+
+  /**
+   * Update snapshot metadata
+   */
+  update: (
+    snapshotId: number,
+    updates: {
+      name?: string;
+      description?: string;
+      tags?: string[];
+      display_order?: number;
+      is_favorite?: boolean;
+    }
+  ) =>
+    fetchJson<{ status: string; message: string }>(
+      `${API_BASE}/flow-snapshots/${snapshotId}`,
+      { method: 'PATCH', body: JSON.stringify(updates) }
+    ),
+
+  /**
+   * Delete a flow snapshot
+   */
+  delete: (snapshotId: number) =>
+    fetchJson<{ status: string; message: string }>(
+      `${API_BASE}/flow-snapshots/${snapshotId}`,
+      { method: 'DELETE' }
+    ),
+
+  /**
+   * Load/activate a snapshot
+   */
+  load: (snapshotId: number) =>
+    fetchJson<{
+      status: string;
+      snapshot_id: number;
+      name: string;
+      snapshot_data: FlowSnapshotData;
+    }>(`${API_BASE}/flow-snapshots/${snapshotId}/load`, { method: 'POST' }),
+
+  /**
+   * Set or clear MIDI program number
+   */
+  setProgram: (snapshotId: number, programNumber: number | null) =>
+    fetchJson<{
+      status: string;
+      snapshot_id: number;
+      program_number: number | null;
+    }>(
+      `${API_BASE}/flow-snapshots/${snapshotId}/program`,
+      { method: 'POST', body: JSON.stringify({ program_number: programNumber }) }
+    ),
+
+  /**
+   * Duplicate a snapshot
+   */
+  duplicate: (snapshotId: number) =>
+    fetchJson<{ status: string; snapshot_id: number; message: string }>(
+      `${API_BASE}/flow-snapshots/${snapshotId}/duplicate`,
+      { method: 'POST' }
+    ),
+
+  /**
+   * Reorder snapshots
+   */
+  reorder: (snapshotIds: number[]) =>
+    fetchJson<{ status: string; message: string }>(
+      `${API_BASE}/flow-snapshots/reorder`,
+      { method: 'POST', body: JSON.stringify(snapshotIds) }
+    ),
+
+  /**
+   * Get snapshot by MIDI program number
+   */
+  getByProgram: (programNumber: number) =>
+    fetchJson<{ id: number; name: string; program_number: number }>(
+      `${API_BASE}/flow-snapshots/by-program/${programNumber}`
+    ),
+};
+
 // ==================== Export all APIs ====================
 
 export const map2Api = {
@@ -2140,6 +2255,7 @@ export const map2Api = {
   services: servicesApi,
   folders: foldersApi,
   upload: uploadApi,
+  flowSnapshots: flowSnapshotsApi,
 };
 
 export default map2Api;

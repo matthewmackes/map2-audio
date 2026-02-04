@@ -431,15 +431,76 @@ class MIDIService:
         program: int,
         session: AsyncSession
     ) -> Optional[int]:
-        """Handle incoming Program Change - switch to corresponding chain."""
+        """Handle incoming Program Change - check flow snapshots first, then chains."""
+        # First, check if a flow snapshot is mapped to this PC
+        snapshot_loaded = await self._try_load_flow_snapshot_by_program(program, session)
+        if snapshot_loaded:
+            return None  # Signal that snapshot was loaded, not a chain
+
+        # Fall back to chain switching
         chain_id = await self.get_chain_by_program(program, session)
         if chain_id is None:
-            logger.debug(f"No chain mapped to PC#{program}")
+            logger.debug(f"No chain or snapshot mapped to PC#{program}")
             return None
 
         # Activate the chain
         await self.activate_chain(chain_id, session)
         return chain_id
+
+    async def _try_load_flow_snapshot_by_program(
+        self,
+        program: int,
+        session: AsyncSession
+    ) -> bool:
+        """Try to load a flow snapshot by MIDI program number.
+
+        Returns True if a snapshot was found and loaded, False otherwise.
+        """
+        try:
+            from app.database import FlowSnapshot
+            from app.services.websocket_manager import ws_manager
+            import json
+            from sqlalchemy import update
+            from datetime import datetime
+
+            # Check if a flow snapshot is mapped to this program number
+            result = await session.execute(
+                select(FlowSnapshot).filter(FlowSnapshot.program_number == program)
+            )
+            snapshot = result.scalar_one_or_none()
+
+            if not snapshot:
+                return False
+
+            # Clear existing active snapshot
+            await session.execute(
+                update(FlowSnapshot).values(is_active=False)
+            )
+
+            # Mark this snapshot as active
+            snapshot.is_active = True
+            snapshot_data = json.loads(snapshot.snapshot_data)
+
+            # Broadcast WebSocket event for frontend to apply
+            await ws_manager.broadcast_json({
+                "type": "flow_snapshot_loaded",
+                "topic": "flow_snapshots",
+                "data": {
+                    "snapshot_id": snapshot.id,
+                    "snapshot_name": snapshot.name,
+                    "snapshot_data": snapshot_data,
+                    "triggered_by": "midi_pc",
+                    "program_number": program,
+                },
+                "timestamp": datetime.utcnow().isoformat(),
+            }, topic="flow_snapshots")
+
+            logger.info(f"Loaded flow snapshot '{snapshot.name}' via MIDI PC#{program}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error loading flow snapshot by program: {e}")
+            return False
 
     # ==================== Chain Activation ====================
 

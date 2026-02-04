@@ -61,8 +61,8 @@ class MIDIDevicesWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
-        super().__init__()
+    def __init__(self, api_client=None, **kwargs):
+        super().__init__(**kwargs)
         self.api_client = api_client
         self.id = "midi-devices"
         # Data state
@@ -187,7 +187,7 @@ class SessionsWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "sessions"
@@ -311,7 +311,7 @@ class ChainSwitchingWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "chain-switching"
@@ -465,7 +465,7 @@ class ControlMappingWidget(Static):
     }
     """
 
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, **kwargs):
         super().__init__()
         self.api_client = api_client
         self.id = "control-mapping"

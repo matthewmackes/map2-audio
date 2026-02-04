@@ -18,7 +18,16 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { ReverbDecayCurve } from '../../Visualizations/ReverbDecayCurve'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+
+// Plugin URI for MIDI mappings
+const REVERB_IR_URI = 'map2://juce/ir/reverb'
+
+// Parameter definitions for MIDI mapping dialog
+const REVERB_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Mix', symbol: 'mix' },
+]
 
 interface IRStatus {
   loaded: string | null
@@ -44,11 +53,16 @@ async function fetchReverbList(): Promise<Array<{ name: string; size: string }>>
   }))
 }
 
-export function ReverbIRCard({
+interface ReverbIRCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function ReverbIRCardBase({
   plugin,
   accentColor = '#a855f7',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: ReverbIRCardProps) {
   const queryClient = useQueryClient()
   const [showBrowser, setShowBrowser] = useState(false)
 
@@ -152,6 +166,7 @@ export function ReverbIRCard({
       accentColor={accentColor}
       bypassed={status?.bypass ?? false}
       onBypassToggle={() => setBypass(!status?.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -252,4 +267,8 @@ export function ReverbIRCard({
   )
 }
 
-export default ReverbIRCard
+// Export base component for testing
+export { ReverbIRCardBase as ReverbIRCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(ReverbIRCardBase, REVERB_IR_URI, REVERB_PARAMS)

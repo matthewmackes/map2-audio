@@ -24,6 +24,8 @@
 #include "IntelliFX8VoiceChorusProcessor.h"
 #include "BossXS1PolyShifterProcessor.h"
 #include "ShoeGazeProcessor.h"
+#include "LexiLoveProcessor.h"
+#include "H3000Processor.h"
 
 namespace py = pybind11;
 using namespace map2;
@@ -761,6 +763,219 @@ py::dict shoegazePresetInfoToDict(const ShoeGazeProcessor::PresetInfo& info) {
     py::dict d;
     d["name"] = info.name ? std::string(info.name) : "";
     d["artist"] = info.artist ? std::string(info.artist) : "";
+    d["description"] = info.description ? std::string(info.description) : "";
+    return d;
+}
+
+// ========================================
+// LexiLove Type Converters
+// ========================================
+
+// Convert LexiLoveProcessor::Algorithm to string
+std::string lexiAlgorithmToString(LexiLoveProcessor::Algorithm algorithm) {
+    switch (algorithm) {
+        case LexiLoveProcessor::Algorithm::TiledRoom: return "tiled_room";
+        case LexiLoveProcessor::Algorithm::RichPlate: return "rich_plate";
+        case LexiLoveProcessor::Algorithm::ConcertHall: return "concert_hall";
+        case LexiLoveProcessor::Algorithm::SmallRoom: return "small_room";
+        case LexiLoveProcessor::Algorithm::RichChamber: return "rich_chamber";
+        case LexiLoveProcessor::Algorithm::Gymnasium: return "gymnasium";
+        case LexiLoveProcessor::Algorithm::LongHall: return "long_hall";
+        case LexiLoveProcessor::Algorithm::GatedPlate: return "gated_plate";
+        case LexiLoveProcessor::Algorithm::Infinite: return "infinite";
+        default: return "rich_plate";
+    }
+}
+
+// Convert string to LexiLoveProcessor::Algorithm
+LexiLoveProcessor::Algorithm stringToLexiAlgorithm(const std::string& str) {
+    if (str == "tiled_room") return LexiLoveProcessor::Algorithm::TiledRoom;
+    if (str == "rich_plate") return LexiLoveProcessor::Algorithm::RichPlate;
+    if (str == "concert_hall") return LexiLoveProcessor::Algorithm::ConcertHall;
+    if (str == "small_room") return LexiLoveProcessor::Algorithm::SmallRoom;
+    if (str == "rich_chamber") return LexiLoveProcessor::Algorithm::RichChamber;
+    if (str == "gymnasium") return LexiLoveProcessor::Algorithm::Gymnasium;
+    if (str == "long_hall") return LexiLoveProcessor::Algorithm::LongHall;
+    if (str == "gated_plate") return LexiLoveProcessor::Algorithm::GatedPlate;
+    if (str == "infinite") return LexiLoveProcessor::Algorithm::Infinite;
+    return LexiLoveProcessor::Algorithm::RichPlate;
+}
+
+// Convert LexiLoveProcessor::Parameters to Python dict
+py::dict lexiParamsToDict(const LexiLoveProcessor::Parameters& params) {
+    py::dict d;
+    d["algorithm"] = lexiAlgorithmToString(params.algorithm);
+    d["algorithm_index"] = static_cast<int>(params.algorithm);
+    d["pre_delay"] = params.preDelay;
+    d["decay_time"] = params.decayTime;
+    d["diffusion"] = params.diffusion;
+    d["low_decay_mult"] = params.lowDecayMult;
+    d["high_decay_mult"] = params.highDecayMult;
+    d["low_crossover"] = params.lowCrossover;
+    d["high_crossover"] = params.highCrossover;
+    d["early_level"] = params.earlyLevel;
+    d["early_pattern"] = params.earlyPattern;
+    d["mod_depth"] = params.modDepth;
+    d["mod_rate"] = params.modRate;
+    d["mix"] = params.mix;
+    d["high_cut"] = params.highCut;
+    d["low_cut"] = params.lowCut;
+    d["bypass"] = params.bypass;
+    d["spillover"] = params.spillover;
+    return d;
+}
+
+// Convert Python dict to LexiLoveProcessor::Parameters
+LexiLoveProcessor::Parameters dictToLexiParams(const py::dict& d) {
+    LexiLoveProcessor::Parameters params;
+    if (d.contains("algorithm")) params.algorithm = stringToLexiAlgorithm(d["algorithm"].cast<std::string>());
+    if (d.contains("algorithm_index")) params.algorithm = static_cast<LexiLoveProcessor::Algorithm>(d["algorithm_index"].cast<int>());
+    if (d.contains("pre_delay")) params.preDelay = d["pre_delay"].cast<float>();
+    if (d.contains("decay_time")) params.decayTime = d["decay_time"].cast<float>();
+    if (d.contains("diffusion")) params.diffusion = d["diffusion"].cast<float>();
+    if (d.contains("low_decay_mult")) params.lowDecayMult = d["low_decay_mult"].cast<float>();
+    if (d.contains("high_decay_mult")) params.highDecayMult = d["high_decay_mult"].cast<float>();
+    if (d.contains("low_crossover")) params.lowCrossover = d["low_crossover"].cast<float>();
+    if (d.contains("high_crossover")) params.highCrossover = d["high_crossover"].cast<float>();
+    if (d.contains("early_level")) params.earlyLevel = d["early_level"].cast<float>();
+    if (d.contains("early_pattern")) params.earlyPattern = d["early_pattern"].cast<float>();
+    if (d.contains("mod_depth")) params.modDepth = d["mod_depth"].cast<float>();
+    if (d.contains("mod_rate")) params.modRate = d["mod_rate"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("high_cut")) params.highCut = d["high_cut"].cast<float>();
+    if (d.contains("low_cut")) params.lowCut = d["low_cut"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    if (d.contains("spillover")) params.spillover = d["spillover"].cast<bool>();
+    return params;
+}
+
+// Convert LexiLoveProcessor::Metering to Python dict
+py::dict lexiMeteringToDict(const LexiLoveProcessor::Metering& m) {
+    py::dict d;
+    d["input_level_l"] = m.inputLevelL;
+    d["input_level_r"] = m.inputLevelR;
+    d["output_level_l"] = m.outputLevelL;
+    d["output_level_r"] = m.outputLevelR;
+    d["reverb_level_l"] = m.reverbLevelL;
+    d["reverb_level_r"] = m.reverbLevelR;
+    d["early_level"] = m.earlyLevel;
+    d["late_level"] = m.lateLevel;
+    d["mod_lfo_phase"] = m.modLfoPhase;
+    d["current_decay"] = m.currentDecay;
+    return d;
+}
+
+// Convert LexiLoveProcessor::AlgorithmInfo to Python dict
+py::dict lexiAlgorithmInfoToDict(const LexiLoveProcessor::AlgorithmInfo& info) {
+    py::dict d;
+    d["name"] = info.name ? std::string(info.name) : "";
+    d["short_name"] = info.shortName ? std::string(info.shortName) : "";
+    d["description"] = info.description ? std::string(info.description) : "";
+    return d;
+}
+
+// ========================================
+// H3000 Harmonizer Type Converters
+// ========================================
+
+// Convert H3000Processor::Algorithm to string
+std::string h3000AlgorithmToString(H3000Processor::Algorithm algorithm) {
+    switch (algorithm) {
+        case H3000Processor::Algorithm::Micropitch: return "micropitch";
+        case H3000Processor::Algorithm::DualShift: return "dual_shift";
+        case H3000Processor::Algorithm::CrystalEchoes: return "crystal_echoes";
+        case H3000Processor::Algorithm::StereoShift: return "stereo_shift";
+        case H3000Processor::Algorithm::LayeredShift: return "layered_shift";
+        case H3000Processor::Algorithm::SweptCombs: return "swept_combs";
+        case H3000Processor::Algorithm::StutterShift: return "stutter_shift";
+        case H3000Processor::Algorithm::ReversePitch: return "reverse_pitch";
+        case H3000Processor::Algorithm::BandDelays: return "band_delays";
+        case H3000Processor::Algorithm::PatchFactory: return "patch_factory";
+        default: return "micropitch";
+    }
+}
+
+// Convert string to H3000Processor::Algorithm
+H3000Processor::Algorithm stringToH3000Algorithm(const std::string& str) {
+    if (str == "micropitch") return H3000Processor::Algorithm::Micropitch;
+    if (str == "dual_shift") return H3000Processor::Algorithm::DualShift;
+    if (str == "crystal_echoes") return H3000Processor::Algorithm::CrystalEchoes;
+    if (str == "stereo_shift") return H3000Processor::Algorithm::StereoShift;
+    if (str == "layered_shift") return H3000Processor::Algorithm::LayeredShift;
+    if (str == "swept_combs") return H3000Processor::Algorithm::SweptCombs;
+    if (str == "stutter_shift") return H3000Processor::Algorithm::StutterShift;
+    if (str == "reverse_pitch") return H3000Processor::Algorithm::ReversePitch;
+    if (str == "band_delays") return H3000Processor::Algorithm::BandDelays;
+    if (str == "patch_factory") return H3000Processor::Algorithm::PatchFactory;
+    return H3000Processor::Algorithm::Micropitch;
+}
+
+// Convert H3000Processor::Parameters to Python dict
+py::dict h3000ParamsToDict(const H3000Processor::Parameters& params) {
+    py::dict d;
+    d["algorithm"] = h3000AlgorithmToString(static_cast<H3000Processor::Algorithm>(params.algorithm));
+    d["algorithm_index"] = params.algorithm;
+    d["pitch_l"] = params.pitchL;
+    d["pitch_r"] = params.pitchR;
+    d["delay_l"] = params.delayL;
+    d["delay_r"] = params.delayR;
+    d["feedback"] = params.feedback;
+    d["cross_feedback"] = params.crossFeedback;
+    d["mod_depth"] = params.modDepth;
+    d["mod_rate"] = params.modRate;
+    d["low_cut"] = params.lowCut;
+    d["high_cut"] = params.highCut;
+    d["mix"] = params.mix;
+    d["level_l"] = params.levelL;
+    d["level_r"] = params.levelR;
+    d["bypass"] = params.bypass;
+    d["glide"] = params.glide;
+    return d;
+}
+
+// Convert Python dict to H3000Processor::Parameters
+H3000Processor::Parameters dictToH3000Params(const py::dict& d) {
+    H3000Processor::Parameters params;
+    if (d.contains("algorithm")) params.algorithm = static_cast<int>(stringToH3000Algorithm(d["algorithm"].cast<std::string>()));
+    if (d.contains("algorithm_index")) params.algorithm = d["algorithm_index"].cast<int>();
+    if (d.contains("pitch_l")) params.pitchL = d["pitch_l"].cast<float>();
+    if (d.contains("pitch_r")) params.pitchR = d["pitch_r"].cast<float>();
+    if (d.contains("delay_l")) params.delayL = d["delay_l"].cast<float>();
+    if (d.contains("delay_r")) params.delayR = d["delay_r"].cast<float>();
+    if (d.contains("feedback")) params.feedback = d["feedback"].cast<float>();
+    if (d.contains("cross_feedback")) params.crossFeedback = d["cross_feedback"].cast<float>();
+    if (d.contains("mod_depth")) params.modDepth = d["mod_depth"].cast<float>();
+    if (d.contains("mod_rate")) params.modRate = d["mod_rate"].cast<float>();
+    if (d.contains("low_cut")) params.lowCut = d["low_cut"].cast<float>();
+    if (d.contains("high_cut")) params.highCut = d["high_cut"].cast<float>();
+    if (d.contains("mix")) params.mix = d["mix"].cast<float>();
+    if (d.contains("level_l")) params.levelL = d["level_l"].cast<float>();
+    if (d.contains("level_r")) params.levelR = d["level_r"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    if (d.contains("glide")) params.glide = d["glide"].cast<float>();
+    return params;
+}
+
+// Convert H3000Processor::Metering to Python dict
+py::dict h3000MeteringToDict(const H3000Processor::Metering& m) {
+    py::dict d;
+    d["input_level_l"] = m.inputLevelL;
+    d["input_level_r"] = m.inputLevelR;
+    d["output_level_l"] = m.outputLevelL;
+    d["output_level_r"] = m.outputLevelR;
+    d["pitch_l_actual"] = m.pitchLActual;
+    d["pitch_r_actual"] = m.pitchRActual;
+    d["delay_l_actual"] = m.delayLActual;
+    d["delay_r_actual"] = m.delayRActual;
+    d["mod_phase"] = m.modPhase;
+    return d;
+}
+
+// Convert H3000Processor::AlgorithmInfo to Python dict
+py::dict h3000AlgorithmInfoToDict(const H3000Processor::AlgorithmInfo& info) {
+    py::dict d;
+    d["name"] = info.name ? std::string(info.name) : "";
+    d["short_name"] = info.shortName ? std::string(info.shortName) : "";
     d["description"] = info.description ? std::string(info.description) : "";
     return d;
 }
@@ -2530,6 +2745,276 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             }
             return result;
         }, "Get all available ShoeGaze presets")
+
+        // ========================================
+        // Lexi Love PCM 70 Reverb
+        // ========================================
+
+        // Algorithm control
+        .def("set_lexilove_algorithm", [](Map2AudioEngine& self, int index) {
+            self.setLexiLoveAlgorithm(index);
+        }, py::arg("algorithm_index"), "Set Lexi Love algorithm by index (0-8)")
+
+        .def("set_lexilove_algorithm_by_name", [](Map2AudioEngine& self, const std::string& name) {
+            self.setLexiLoveAlgorithm(stringToLexiAlgorithm(name));
+        }, py::arg("algorithm"), "Set Lexi Love algorithm by name")
+
+        .def("get_lexilove_algorithm", &Map2AudioEngine::getLexiLoveAlgorithm,
+             "Get current Lexi Love algorithm index")
+
+        .def("get_lexilove_algorithm_name", [](const Map2AudioEngine& self) {
+            return lexiAlgorithmToString(static_cast<LexiLoveProcessor::Algorithm>(self.getLexiLoveAlgorithm()));
+        }, "Get current Lexi Love algorithm name")
+
+        // Core parameters
+        .def("set_lexilove_pre_delay", &Map2AudioEngine::setLexiLovePreDelay,
+             py::arg("ms"),
+             "Set Lexi Love pre-delay (0-500ms)")
+        .def("get_lexilove_pre_delay", &Map2AudioEngine::getLexiLovePreDelay,
+             "Get Lexi Love pre-delay")
+
+        .def("set_lexilove_decay_time", &Map2AudioEngine::setLexiLoveDecayTime,
+             py::arg("seconds"),
+             "Set Lexi Love decay time (0.5-30s)")
+        .def("get_lexilove_decay_time", &Map2AudioEngine::getLexiLoveDecayTime,
+             "Get Lexi Love decay time")
+
+        .def("set_lexilove_diffusion", &Map2AudioEngine::setLexiLoveDiffusion,
+             py::arg("percent"),
+             "Set Lexi Love diffusion (0-100%)")
+        .def("get_lexilove_diffusion", &Map2AudioEngine::getLexiLoveDiffusion,
+             "Get Lexi Love diffusion")
+
+        .def("set_lexilove_mix", &Map2AudioEngine::setLexiLoveMix,
+             py::arg("percent"),
+             "Set Lexi Love wet/dry mix (0-100%)")
+        .def("get_lexilove_mix", &Map2AudioEngine::getLexiLoveMix,
+             "Get Lexi Love wet/dry mix")
+
+        .def("set_lexilove_high_cut", &Map2AudioEngine::setLexiLoveHighCut,
+             py::arg("hz"),
+             "Set Lexi Love high cut frequency (1000-20000Hz)")
+        .def("get_lexilove_high_cut", &Map2AudioEngine::getLexiLoveHighCut,
+             "Get Lexi Love high cut frequency")
+
+        .def("set_lexilove_low_cut", &Map2AudioEngine::setLexiLoveLowCut,
+             py::arg("hz"),
+             "Set Lexi Love low cut frequency (20-500Hz)")
+        .def("get_lexilove_low_cut", &Map2AudioEngine::getLexiLoveLowCut,
+             "Get Lexi Love low cut frequency")
+
+        // Multi-band decay (Lexicon signature)
+        .def("set_lexilove_low_decay_mult", &Map2AudioEngine::setLexiLoveLowDecayMult,
+             py::arg("mult"),
+             "Set Lexi Love low frequency decay multiplier (0.25-2.0)")
+        .def("get_lexilove_low_decay_mult", &Map2AudioEngine::getLexiLoveLowDecayMult,
+             "Get Lexi Love low frequency decay multiplier")
+
+        .def("set_lexilove_high_decay_mult", &Map2AudioEngine::setLexiLoveHighDecayMult,
+             py::arg("mult"),
+             "Set Lexi Love high frequency decay multiplier (0.25-2.0)")
+        .def("get_lexilove_high_decay_mult", &Map2AudioEngine::getLexiLoveHighDecayMult,
+             "Get Lexi Love high frequency decay multiplier")
+
+        .def("set_lexilove_low_crossover", &Map2AudioEngine::setLexiLoveLowCrossover,
+             py::arg("hz"),
+             "Set Lexi Love low crossover frequency (100-2000Hz)")
+        .def("get_lexilove_low_crossover", &Map2AudioEngine::getLexiLoveLowCrossover,
+             "Get Lexi Love low crossover frequency")
+
+        .def("set_lexilove_high_crossover", &Map2AudioEngine::setLexiLoveHighCrossover,
+             py::arg("hz"),
+             "Set Lexi Love high crossover frequency (2000-15000Hz)")
+        .def("get_lexilove_high_crossover", &Map2AudioEngine::getLexiLoveHighCrossover,
+             "Get Lexi Love high crossover frequency")
+
+        // Early reflections
+        .def("set_lexilove_early_level", &Map2AudioEngine::setLexiLoveEarlyLevel,
+             py::arg("percent"),
+             "Set Lexi Love early reflection level (0-100%)")
+        .def("get_lexilove_early_level", &Map2AudioEngine::getLexiLoveEarlyLevel,
+             "Get Lexi Love early reflection level")
+
+        .def("set_lexilove_early_pattern", &Map2AudioEngine::setLexiLoveEarlyPattern,
+             py::arg("percent"),
+             "Set Lexi Love early reflection pattern/density (0-100%)")
+        .def("get_lexilove_early_pattern", &Map2AudioEngine::getLexiLoveEarlyPattern,
+             "Get Lexi Love early reflection pattern")
+
+        // Modulation (sparkle)
+        .def("set_lexilove_mod_depth", &Map2AudioEngine::setLexiLoveModDepth,
+             py::arg("percent"),
+             "Set Lexi Love modulation depth for sparkle (0-100%)")
+        .def("get_lexilove_mod_depth", &Map2AudioEngine::getLexiLoveModDepth,
+             "Get Lexi Love modulation depth")
+
+        .def("set_lexilove_mod_rate", &Map2AudioEngine::setLexiLoveModRate,
+             py::arg("hz"),
+             "Set Lexi Love modulation rate (0.1-10Hz)")
+        .def("get_lexilove_mod_rate", &Map2AudioEngine::getLexiLoveModRate,
+             "Get Lexi Love modulation rate")
+
+        // State control
+        .def("set_lexilove_bypass", &Map2AudioEngine::setLexiLoveBypass,
+             py::arg("bypass"),
+             "Bypass Lexi Love processor")
+        .def("is_lexilove_bypassed", &Map2AudioEngine::isLexiLoveBypassed,
+             "Check if Lexi Love is bypassed")
+
+        .def("set_lexilove_spillover", &Map2AudioEngine::setLexiLoveSpillover,
+             py::arg("enabled"),
+             "Enable Lexi Love spillover (tails when bypassed)")
+        .def("has_lexilove_spillover", &Map2AudioEngine::hasLexiLoveSpillover,
+             "Check if Lexi Love spillover is enabled")
+
+        // Bulk parameters
+        .def("get_lexilove_parameters", [](const Map2AudioEngine& self) {
+            return lexiParamsToDict(self.getLexiLoveParameters());
+        }, "Get all Lexi Love parameters")
+
+        .def("set_lexilove_parameters", [](Map2AudioEngine& self, const py::dict& params) {
+            self.setLexiLoveParameters(dictToLexiParams(params));
+        }, py::arg("params"), "Set all Lexi Love parameters at once")
+
+        // Metering
+        .def("get_lexilove_metering", [](const Map2AudioEngine& self) {
+            return lexiMeteringToDict(self.getLexiLoveMetering());
+        }, "Get Lexi Love metering data")
+
+        // Algorithm info
+        .def_static("get_lexilove_algorithms", []() {
+            py::list algorithms;
+            int numAlgorithms = Map2AudioEngine::getLexiLoveNumAlgorithms();
+            for (int i = 0; i < numAlgorithms; ++i) {
+                auto info = Map2AudioEngine::getLexiLoveAlgorithmInfo(i);
+                py::dict d = lexiAlgorithmInfoToDict(info);
+                d["index"] = i;
+                d["id"] = lexiAlgorithmToString(static_cast<LexiLoveProcessor::Algorithm>(i));
+                algorithms.append(d);
+            }
+            return algorithms;
+        }, "Get all available Lexi Love algorithms")
+
+        // ========================================
+        // H3000 Ultra-Harmonizer Control
+        // ========================================
+
+        .def("set_h3000_bypass", &Map2AudioEngine::setH3000Bypass,
+             py::arg("bypass"), "Bypass the H3000 processor")
+        .def("is_h3000_bypassed", &Map2AudioEngine::isH3000Bypassed,
+             "Check if H3000 is bypassed")
+
+        // Algorithm selection (string overload)
+        .def("set_h3000_algorithm", [](Map2AudioEngine& self, const std::string& algo) {
+            self.setH3000Algorithm(stringToH3000Algorithm(algo));
+        }, py::arg("algorithm"), "Set H3000 algorithm by name")
+
+        // Algorithm selection (int overload)
+        .def("set_h3000_algorithm", [](Map2AudioEngine& self, int algoIndex) {
+            self.setH3000Algorithm(static_cast<H3000Processor::Algorithm>(algoIndex));
+        }, py::arg("algorithm_index"), "Set H3000 algorithm by index (0-9)")
+
+        .def("get_h3000_algorithm", [](const Map2AudioEngine& self) -> std::string {
+            return h3000AlgorithmToString(static_cast<H3000Processor::Algorithm>(self.getH3000Algorithm()));
+        }, "Get current H3000 algorithm")
+
+        // Pitch parameters
+        .def("set_h3000_pitch_l", &Map2AudioEngine::setH3000PitchL,
+             py::arg("cents"), "Set left pitch shift in cents (-2400 to +2400)")
+        .def("get_h3000_pitch_l", &Map2AudioEngine::getH3000PitchL,
+             "Get left pitch shift in cents")
+        .def("set_h3000_pitch_r", &Map2AudioEngine::setH3000PitchR,
+             py::arg("cents"), "Set right pitch shift in cents (-2400 to +2400)")
+        .def("get_h3000_pitch_r", &Map2AudioEngine::getH3000PitchR,
+             "Get right pitch shift in cents")
+
+        // Delay parameters
+        .def("set_h3000_delay_l", &Map2AudioEngine::setH3000DelayL,
+             py::arg("ms"), "Set left delay time in ms (0-1000)")
+        .def("get_h3000_delay_l", &Map2AudioEngine::getH3000DelayL,
+             "Get left delay time in ms")
+        .def("set_h3000_delay_r", &Map2AudioEngine::setH3000DelayR,
+             py::arg("ms"), "Set right delay time in ms (0-1000)")
+        .def("get_h3000_delay_r", &Map2AudioEngine::getH3000DelayR,
+             "Get right delay time in ms")
+
+        // Feedback parameters
+        .def("set_h3000_feedback", &Map2AudioEngine::setH3000Feedback,
+             py::arg("percent"), "Set feedback amount (0-100)")
+        .def("get_h3000_feedback", &Map2AudioEngine::getH3000Feedback,
+             "Get feedback amount")
+        .def("set_h3000_cross_feedback", &Map2AudioEngine::setH3000CrossFeedback,
+             py::arg("percent"), "Set cross-channel feedback (0-100)")
+        .def("get_h3000_cross_feedback", &Map2AudioEngine::getH3000CrossFeedback,
+             "Get cross-channel feedback")
+
+        // Modulation parameters
+        .def("set_h3000_mod_depth", &Map2AudioEngine::setH3000ModDepth,
+             py::arg("percent"), "Set modulation depth (0-100)")
+        .def("get_h3000_mod_depth", &Map2AudioEngine::getH3000ModDepth,
+             "Get modulation depth")
+        .def("set_h3000_mod_rate", &Map2AudioEngine::setH3000ModRate,
+             py::arg("hz"), "Set modulation rate in Hz (0.1-10)")
+        .def("get_h3000_mod_rate", &Map2AudioEngine::getH3000ModRate,
+             "Get modulation rate in Hz")
+
+        // Filter parameters
+        .def("set_h3000_low_cut", &Map2AudioEngine::setH3000LowCut,
+             py::arg("hz"), "Set low cut frequency in Hz (20-500)")
+        .def("get_h3000_low_cut", &Map2AudioEngine::getH3000LowCut,
+             "Get low cut frequency in Hz")
+        .def("set_h3000_high_cut", &Map2AudioEngine::setH3000HighCut,
+             py::arg("hz"), "Set high cut frequency in Hz (2000-20000)")
+        .def("get_h3000_high_cut", &Map2AudioEngine::getH3000HighCut,
+             "Get high cut frequency in Hz")
+
+        // Levels
+        .def("set_h3000_mix", &Map2AudioEngine::setH3000Mix,
+             py::arg("percent"), "Set wet/dry mix (0-100)")
+        .def("get_h3000_mix", &Map2AudioEngine::getH3000Mix,
+             "Get wet/dry mix")
+        .def("set_h3000_level_l", &Map2AudioEngine::setH3000LevelL,
+             py::arg("percent"), "Set left output level (0-100)")
+        .def("get_h3000_level_l", &Map2AudioEngine::getH3000LevelL,
+             "Get left output level")
+        .def("set_h3000_level_r", &Map2AudioEngine::setH3000LevelR,
+             py::arg("percent"), "Set right output level (0-100)")
+        .def("get_h3000_level_r", &Map2AudioEngine::getH3000LevelR,
+             "Get right output level")
+
+        // Glide (portamento)
+        .def("set_h3000_glide", &Map2AudioEngine::setH3000Glide,
+             py::arg("ms"), "Set pitch glide time in ms (0-1000)")
+        .def("get_h3000_glide", &Map2AudioEngine::getH3000Glide,
+             "Get pitch glide time in ms")
+
+        // Bulk parameters
+        .def("get_h3000_parameters", [](const Map2AudioEngine& self) {
+            return h3000ParamsToDict(self.getH3000Parameters());
+        }, "Get all H3000 parameters")
+
+        .def("set_h3000_parameters", [](Map2AudioEngine& self, const py::dict& params) {
+            self.setH3000Parameters(dictToH3000Params(params));
+        }, py::arg("params"), "Set all H3000 parameters at once")
+
+        // Metering
+        .def("get_h3000_metering", [](const Map2AudioEngine& self) {
+            return h3000MeteringToDict(self.getH3000Metering());
+        }, "Get H3000 metering data")
+
+        // Algorithm info
+        .def_static("get_h3000_algorithms", []() {
+            py::list algorithms;
+            int numAlgorithms = Map2AudioEngine::getH3000NumAlgorithms();
+            for (int i = 0; i < numAlgorithms; ++i) {
+                auto info = Map2AudioEngine::getH3000AlgorithmInfo(i);
+                py::dict d = h3000AlgorithmInfoToDict(info);
+                d["index"] = i;
+                d["id"] = h3000AlgorithmToString(static_cast<H3000Processor::Algorithm>(i));
+                algorithms.append(d);
+            }
+            return algorithms;
+        }, "Get all available H3000 algorithms")
 
         // ========================================
         // Pedalboard State (Legacy Compatibility)

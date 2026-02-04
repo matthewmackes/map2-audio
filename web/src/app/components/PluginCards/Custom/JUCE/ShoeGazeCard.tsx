@@ -6,6 +6,7 @@
  */
 
 import { useShoeGaze, SHOEGAZE_PRESETS } from '../../../../hooks/useShoeGaze'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
@@ -37,6 +38,25 @@ const PARAM = {
   BYPASS: 16,
 }
 
+// Parameter definitions for MIDI mapping dialog
+const SHOEGAZE_PARAMS: PluginParamDef[] = [
+  { index: PARAM.ATMOSPHERE, name: 'Atmosphere', symbol: 'atmosphere' },
+  { index: PARAM.DECAY, name: 'Decay', symbol: 'decay' },
+  { index: PARAM.SHIMMER, name: 'Shimmer', symbol: 'shimmer' },
+  { index: PARAM.SHIMMER_PITCH, name: 'Shimmer Pitch', symbol: 'shimmerPitch' },
+  { index: PARAM.MODULATION, name: 'Modulation', symbol: 'modulation' },
+  { index: PARAM.MOD_RATE, name: 'Mod Rate', symbol: 'modRate' },
+  { index: PARAM.DRIVE, name: 'Drive', symbol: 'drive' },
+  { index: PARAM.DELAY_TIME, name: 'Delay Time', symbol: 'delayTime' },
+  { index: PARAM.DELAY_FEEDBACK, name: 'Delay Feedback', symbol: 'delayFeedback' },
+  { index: PARAM.DELAY_MOD, name: 'Delay Mod', symbol: 'delayMod' },
+  { index: PARAM.LOW_CUT, name: 'Low Cut', symbol: 'lowCut' },
+  { index: PARAM.HIGH_CUT, name: 'High Cut', symbol: 'highCut' },
+  { index: PARAM.MIX, name: 'Mix', symbol: 'mix' },
+  { index: PARAM.STEREO_WIDTH, name: 'Stereo Width', symbol: 'stereoWidth' },
+  { index: PARAM.DUCKING, name: 'Ducking', symbol: 'duckingAmount' },
+]
+
 // Shimmer pitch display helper
 function shimmerPitchLabel(semitones: number): string {
   if (semitones === 0) return '0'
@@ -48,11 +68,16 @@ function shimmerPitchLabel(semitones: number): string {
   return (semitones > 0 ? '+' : '') + semitones + 'st'
 }
 
-export function ShoeGazeCard({
+interface ShoeGazeCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function ShoeGazeCardBase({
   plugin,
   accentColor = '#8e44ad', // Dreamy purple
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: ShoeGazeCardProps) {
   const {
     parameters,
     metering,
@@ -180,6 +205,7 @@ export function ShoeGazeCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={dreamyVisualization}
       compact={compact}
       customHeader={
@@ -457,4 +483,8 @@ export function ShoeGazeCard({
   )
 }
 
-export default ShoeGazeCard
+// Export base component for testing
+export { ShoeGazeCardBase as ShoeGazeCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(ShoeGazeCardBase, SHOEGAZE_URI, SHOEGAZE_PARAMS)

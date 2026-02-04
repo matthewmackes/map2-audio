@@ -639,6 +639,315 @@
           {"id": "nowhere", "name": "Nowhere", "artist": "Ride", "description": "Swirling, propulsive textures - Mark Gardener's sound"}
         ]
       }
+    },
+    {
+      "uri": "map2://juce/reverb/pcm70",
+      "name": "Lexi Love PCM 70",
+      "category": "Reverb",
+      "description": "Lexicon PCM 70 algorithmic reverb emulation with 9 legendary presets including Tiled Room, Rich Plate, Concert Hall, and more. Captures the signature 'depth and sparkle' of the original 1985 unit.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/lexilove",
+      "features": ["real-time-metering", "preset-browser", "multi-band-decay", "early-reflections", "modulation"],
+      "parameters": [
+        {"name": "Algorithm", "symbol": "algorithm", "type": "enum", "options": [
+          "Tiled Room V2.0",
+          "Rich Plate",
+          "Concert Hall",
+          "Small Room",
+          "Rich Chamber",
+          "Gymnasium",
+          "Long Hall",
+          "Gated Plate",
+          "Infinite"
+        ], "default": 1},
+        {"name": "Pre-Delay", "symbol": "pre_delay", "min": 0, "max": 500, "default": 40, "unit": "ms"},
+        {"name": "Decay Time", "symbol": "decay_time", "min": 0.5, "max": 30, "default": 2.5, "unit": "s", "logarithmic": true},
+        {"name": "Diffusion", "symbol": "diffusion", "min": 0, "max": 100, "default": 85, "unit": "%"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 35, "unit": "%"},
+        {"name": "High Cut", "symbol": "high_cut", "min": 1000, "max": 20000, "default": 12000, "unit": "Hz", "logarithmic": true},
+        {"name": "Low Cut", "symbol": "low_cut", "min": 20, "max": 500, "default": 40, "unit": "Hz", "logarithmic": true},
+        {"name": "Low Decay Mult", "symbol": "low_decay_mult", "min": 0.25, "max": 2, "default": 1.0, "unit": "x"},
+        {"name": "High Decay Mult", "symbol": "high_decay_mult", "min": 0.25, "max": 2, "default": 0.8, "unit": "x"},
+        {"name": "Low Crossover", "symbol": "low_crossover", "min": 100, "max": 2000, "default": 500, "unit": "Hz", "logarithmic": true},
+        {"name": "High Crossover", "symbol": "high_crossover", "min": 2000, "max": 15000, "default": 9000, "unit": "Hz", "logarithmic": true},
+        {"name": "Early Level", "symbol": "early_level", "min": 0, "max": 100, "default": 70, "unit": "%"},
+        {"name": "Early Pattern", "symbol": "early_pattern", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Mod Depth", "symbol": "mod_depth", "min": 0, "max": 100, "default": 15, "unit": "%"},
+        {"name": "Mod Rate", "symbol": "mod_rate", "min": 0.1, "max": 10, "default": 0.8, "unit": "Hz", "logarithmic": true},
+        {"name": "Spillover", "symbol": "spillover", "type": "toggle", "default": true},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "description": "Legendary Lexicon PCM 70 presets from 1985",
+        "presets": [
+          {"id": "tiled_room", "name": "Tiled Room V2.0", "description": "The legendary preset with 'spitty' early reflections - lively on drums"},
+          {"id": "rich_plate", "name": "Rich Plate", "description": "Warm vocals - the studio standard for countless recordings"},
+          {"id": "concert_hall", "name": "Concert Hall", "description": "Classic 80s reverb with time variation and sparkle"},
+          {"id": "small_room", "name": "Small Room", "description": "Tight, customizable space for close-mic sounds"},
+          {"id": "rich_chamber", "name": "Rich Chamber", "description": "Warm thick chamber with prominent early reflections"},
+          {"id": "gymnasium", "name": "Gymnasium", "description": "Large acoustic space simulation with long decay"},
+          {"id": "long_hall", "name": "Long Hall", "description": "Extended decay concert hall for ambient textures"},
+          {"id": "gated_plate", "name": "Gated Plate", "description": "Compressed/gated reverb for drums and dramatic effects"},
+          {"id": "infinite", "name": "Infinite", "description": "Special effects and atmospheric textures - near-infinite decay"}
+        ]
+      }
+    },
+    {
+      "uri": "map2://juce/pitch/interval",
+      "name": "Interval Shifter",
+      "category": "Pitch",
+      "description": "Musical interval pitch shifter. Shifts the full instrument up or down by semitones for musical harmonization.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 8,
+      "is_native": true,
+      "api_base": "/api/engine/modulation/pitch-shifter",
+      "features": ["real-time-metering", "preset-browser", "interval-shift"],
+      "parameters": [
+        {"name": "Semitones L", "symbol": "semitones_l", "min": -24, "max": 24, "default": 0, "unit": "st"},
+        {"name": "Semitones R", "symbol": "semitones_r", "min": -24, "max": 24, "default": 0, "unit": "st"},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "description": "Musical interval presets for harmonization",
+        "presets": [
+          {"id": "octave_up", "name": "Octave Up", "description": "Shift up one full octave (+12 semitones)"},
+          {"id": "octave_down", "name": "Octave Down", "description": "Shift down one full octave (-12 semitones)"},
+          {"id": "fifth_up", "name": "Perfect Fifth Up", "description": "Classic harmony interval (+7 semitones)"},
+          {"id": "fourth_up", "name": "Perfect Fourth Up", "description": "Power chord harmony (+5 semitones)"},
+          {"id": "third_major", "name": "Major Third Up", "description": "Major chord harmony (+4 semitones)"},
+          {"id": "third_minor", "name": "Minor Third Up", "description": "Minor chord harmony (+3 semitones)"},
+          {"id": "detune", "name": "Slight Detune", "description": "Subtle thickening effect"},
+          {"id": "harmony_thirds", "name": "Harmony in Thirds", "description": "L: -3st, R: +4st for rich harmony"}
+        ]
+      }
+    },
+    {
+      "uri": "map2://juce/pitch/h3000",
+      "name": "H3000 Ultra-Harmonizer",
+      "category": "Pitch",
+      "description": "Eventide H3000 Ultra-Harmonizer emulation with 10 legendary algorithms. Features dual pitch shifters, modulated delays, and the signature sound that defined studio processing in the late 80s and 90s.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 10,
+      "is_native": true,
+      "api_base": "/api/engine/h3000",
+      "features": ["real-time-metering", "preset-browser", "dual-pitch-shift", "delay", "modulation", "grain-based"],
+      "parameters": [
+        {"name": "Algorithm", "symbol": "algorithm", "type": "enum", "options": [
+          "MicroPitch",
+          "Dual Shift",
+          "Crystal Echoes",
+          "Stereo Shift",
+          "Layered Shift",
+          "Swept Combs",
+          "Stutter Shift",
+          "Reverse Pitch",
+          "Band Delays",
+          "Patch Factory"
+        ], "default": 0},
+        {"name": "Pitch L", "symbol": "pitch_l", "min": -2400, "max": 2400, "default": 0, "unit": "cents"},
+        {"name": "Pitch R", "symbol": "pitch_r", "min": -2400, "max": 2400, "default": 0, "unit": "cents"},
+        {"name": "Delay L", "symbol": "delay_l", "min": 0, "max": 1000, "default": 15, "unit": "ms"},
+        {"name": "Delay R", "symbol": "delay_r", "min": 0, "max": 1000, "default": 20, "unit": "ms"},
+        {"name": "Feedback", "symbol": "feedback", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Cross Feedback", "symbol": "cross_feedback", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Mod Depth", "symbol": "mod_depth", "min": 0, "max": 100, "default": 0, "unit": "%"},
+        {"name": "Mod Rate", "symbol": "mod_rate", "min": 0.1, "max": 10, "default": 0.5, "unit": "Hz", "logarithmic": true},
+        {"name": "Low Cut", "symbol": "low_cut", "min": 20, "max": 500, "default": 80, "unit": "Hz", "logarithmic": true},
+        {"name": "High Cut", "symbol": "high_cut", "min": 2000, "max": 20000, "default": 12000, "unit": "Hz", "logarithmic": true},
+        {"name": "Mix", "symbol": "mix", "min": 0, "max": 100, "default": 50, "unit": "%"},
+        {"name": "Level L", "symbol": "level_l", "min": 0, "max": 100, "default": 100, "unit": "%"},
+        {"name": "Level R", "symbol": "level_r", "min": 0, "max": 100, "default": 100, "unit": "%"},
+        {"name": "Glide", "symbol": "glide", "min": 0, "max": 1000, "default": 0, "unit": "ms"},
+        {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
+      ],
+      "preset_info": {
+        "description": "Legendary Eventide H3000 algorithms from 1988",
+        "presets": [
+          {"id": "micropitch", "name": "MicroPitch", "description": "Subtle pitch detune for stereo widening and ADT effects"},
+          {"id": "dual_shift", "name": "Dual Shift", "description": "Independent left/right pitch shifters with modulation"},
+          {"id": "crystal_echoes", "name": "Crystal Echoes", "description": "Shimmering delays with pitch-shifted feedback"},
+          {"id": "stereo_shift", "name": "Stereo Shift", "description": "Wide stereo field with complementary pitch offsets"},
+          {"id": "layered_shift", "name": "Layered Shift", "description": "Multiple harmonized voices stacked in unison"},
+          {"id": "swept_combs", "name": "Swept Combs", "description": "Modulated comb filters for flanging and metallic effects"},
+          {"id": "stutter_shift", "name": "Stutter Shift", "description": "Glitch-style retriggering with pitch bending"},
+          {"id": "reverse_pitch", "name": "Reverse Pitch", "description": "Reversed grains with pitch manipulation"},
+          {"id": "band_delays", "name": "Band Delays", "description": "Multi-band delay with per-band pitch shifting"},
+          {"id": "patch_factory", "name": "Patch Factory", "description": "Complex multi-effect combinations"}
+        ]
+      }
+    },
+    {
+      "uri": "map2://juce/effects/eventide-h9",
+      "name": "Eventide H9 Multi-Effect",
+      "category": "Effects",
+      "subcategory": "Multi-Effect",
+      "description": "Professional 10-algorithm multi-effect emulating Eventide H9 with RED-on-BLACK LED display. Includes MicroPitch, UltraShift, SmartShift, Transpose, PitchFactor, ReverseDelays, ShimmerVerbs, MotionReverbs, Granular, and Crystallize algorithms.",
+      "author": "MAP2 Audio / Eventide-inspired",
+      "version": "1.0.0",
+      "audio_ports": {
+        "inputs": 2,
+        "outputs": 2
+      },
+      "priority": 25,
+      "is_native": true,
+      "api_base": "/api/engine/effects/h9",
+      "features": [
+        "real-time-algorithm-switching",
+        "red-on-black-led-display",
+        "7-segment-algorithm-indicator",
+        "cpu-metering",
+        "phase-vocoder-pitch-shifting",
+        "granular-synthesis",
+        "advanced-reverbs",
+        "parameter-automation",
+        "state-preservation-on-algorithm-switch"
+      ],
+      "algorithms": [
+        {
+          "index": 0,
+          "name": "MicroPitch",
+          "description": "Detuned copies with smooth LFO modulation for thickened, chorus-like effects",
+          "icon": "micro_pitch"
+        },
+        {
+          "index": 1,
+          "name": "UltraShift",
+          "description": "High-quality STFT pitch shifter with formant correction for natural-sounding shifts",
+          "icon": "ultra_shift"
+        },
+        {
+          "index": 2,
+          "name": "SmartShift",
+          "description": "Intelligent pitch detection and shifting for musical harmony",
+          "icon": "smart_shift"
+        },
+        {
+          "index": 3,
+          "name": "Transpose",
+          "description": "Clean octave and interval transposition with minimum latency",
+          "icon": "transpose"
+        },
+        {
+          "index": 4,
+          "name": "PitchFactor",
+          "description": "Multi-voice pitch-shifted harmonizer up to 4 simultaneous voices",
+          "icon": "pitch_factor"
+        },
+        {
+          "index": 5,
+          "name": "ReverseDelays",
+          "description": "Time-reversed delay with pitch modulation for dramatic effects",
+          "icon": "reverse_delays"
+        },
+        {
+          "index": 6,
+          "name": "ShimmerVerbs",
+          "description": "Classic shimmer reverb: reverb blended with octave-up pitch shift",
+          "icon": "shimmer_verb"
+        },
+        {
+          "index": 7,
+          "name": "MotionReverbs",
+          "description": "Freeverb-based reverb with LFO-modulated reflections for movement",
+          "icon": "motion_verb"
+        },
+        {
+          "index": 8,
+          "name": "Granular",
+          "description": "Pure granular synthesis with pitch shifting and parametric texture control",
+          "icon": "granular"
+        },
+        {
+          "index": 9,
+          "name": "Crystallize",
+          "description": "Fusion of granular synthesis and reverb for crystalline, shimmer-like textures",
+          "icon": "crystallize"
+        }
+      ],
+      "parameters": [
+        {
+          "name": "Algorithm",
+          "symbol": "algorithm_select",
+          "type": "integer",
+          "min": 0,
+          "max": 9,
+          "default": 0,
+          "description": "Select active algorithm (displayed on RED-on-BLACK 7-segment LED)"
+        },
+        {
+          "name": "Input Gain",
+          "symbol": "input_gain",
+          "min": -12,
+          "max": 12,
+          "default": 0,
+          "unit": "dB",
+          "description": "Input signal level"
+        },
+        {
+          "name": "Output Gain",
+          "symbol": "output_gain",
+          "min": -12,
+          "max": 12,
+          "default": 0,
+          "unit": "dB",
+          "description": "Output signal level"
+        },
+        {
+          "name": "Mix",
+          "symbol": "dry_wet_mix",
+          "min": 0,
+          "max": 1,
+          "default": 0.5,
+          "unit": "%",
+          "description": "Dry/Wet blend"
+        },
+        {
+          "name": "Bypass",
+          "symbol": "bypass",
+          "type": "toggle",
+          "default": false
+        }
+      ],
+      "ui_metadata": {
+        "style": "eventide-h9",
+        "display_type": "red_on_black_led",
+        "theme": "black_on_white_accents",
+        "min_width": 800,
+        "min_height": 600,
+        "resizable": true,
+        "algorithm_buttons": 10,
+        "parameter_knobs": 5,
+        "led_segments": 7,
+        "metering": "cpu_and_input_output_levels"
+      },
+      "dsp_pipeline": {
+        "stage_1": "input_gain",
+        "stage_2": "algorithm_processor",
+        "stage_3": "dry_wet_mixer",
+        "stage_4": "output_gain",
+        "stage_5": "metering"
+      },
+      "latency_compensation": {
+        "fft_size": 2048,
+        "hop_size": 1024,
+        "latency_samples": 1024,
+        "auto_enabled": true
+      }
     }
   ]
 }

@@ -43,7 +43,7 @@ class MappingCreateRequest(BaseModel):
     """Request body for creating a MIDI mapping."""
     channel: int = Field(0, ge=0, le=16, description="0=omni, 1-16=specific channel")
     cc: int = Field(..., ge=0, le=127, description="MIDI CC number 0-127")
-    chain_id: int = Field(..., description="Chain ID this mapping belongs to")
+    chain_id: Optional[int] = Field(None, description="Chain ID (null=global, int=per-chain)")
     target_plugin_uri: str = Field(..., description="Target plugin URI")
     target_param_index: int = Field(..., ge=0, description="Parameter index")
     target_param_symbol: str = Field("", description="Parameter symbol for name-based access")
@@ -85,7 +85,7 @@ class CommandCreateRequest(BaseModel):
 
 class LearnStartRequest(BaseModel):
     """Request body for starting MIDI learn mode."""
-    chain_id: int = Field(..., description="Chain ID for the new mapping")
+    chain_id: Optional[int] = Field(None, description="Chain ID (null=global, int=per-chain)")
     plugin_uri: str = Field(..., description="Target plugin URI")
     param_index: int = Field(..., ge=0, description="Parameter index")
     param_symbol: str = Field("", description="Parameter symbol")

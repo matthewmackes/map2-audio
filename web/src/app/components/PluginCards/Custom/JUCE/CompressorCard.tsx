@@ -26,6 +26,7 @@ import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { TransferCurve } from '../../Visualizations/TransferCurve'
 import { GainReductionMeter } from '../../../Dynamics/GainReductionMeter'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 
 // Plugin URI for MIDI mappings
@@ -41,11 +42,26 @@ const PARAM = {
   MAKEUP_GAIN: 5,
 }
 
-export function CompressorCard({
+// Parameter definitions for MIDI mapping dialog
+const COMPRESSOR_PARAMS: PluginParamDef[] = [
+  { index: PARAM.THRESHOLD, name: 'Threshold', symbol: 'threshold' },
+  { index: PARAM.RATIO, name: 'Ratio', symbol: 'ratio' },
+  { index: PARAM.ATTACK, name: 'Attack', symbol: 'attack' },
+  { index: PARAM.RELEASE, name: 'Release', symbol: 'release' },
+  { index: PARAM.KNEE, name: 'Knee', symbol: 'knee' },
+  { index: PARAM.MAKEUP_GAIN, name: 'Makeup Gain', symbol: 'makeupGain' },
+]
+
+interface CompressorCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function CompressorCardBase({
   plugin,
   accentColor = '#22c55e',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: CompressorCardProps) {
   const {
     compressor,
     setCompressorThreshold,
@@ -84,6 +100,7 @@ export function CompressorCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setCompressorBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
     >
@@ -225,4 +242,8 @@ export function CompressorCard({
   )
 }
 
-export default CompressorCard
+// Export base component for testing
+export { CompressorCardBase as CompressorCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(CompressorCardBase, COMPRESSOR_URI, COMPRESSOR_PARAMS)

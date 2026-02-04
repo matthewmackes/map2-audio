@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 interface LFOWaveformProps {
   rate: number // Hz
@@ -15,6 +16,7 @@ interface LFOWaveformProps {
   height?: number
   accentColor?: string
   animated?: boolean
+  compact?: boolean
 }
 
 export function LFOWaveform({
@@ -22,18 +24,31 @@ export function LFOWaveform({
   depth,
   waveform = 'sine',
   phase = 0,
-  width = 200,
-  height = 60,
+  width,
+  height,
   accentColor = '#f59e0b',
   animated = true,
+  compact = false,
 }: LFOWaveformProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 200 / 60,
+    baseOn: 'width',
+    defaultWidth: 200,
+    defaultHeight: 60,
+  })
+
   const [animPhase, setAnimPhase] = useState(0)
   const animationRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(0)
 
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
   const padding = { top: 8, right: 12, bottom: 12, left: 12 }
-  const graphWidth = width - padding.left - padding.right
-  const graphHeight = height - padding.top - padding.bottom
+  const graphWidth = finalWidth - padding.left - padding.right
+  const graphHeight = finalHeight - padding.top - padding.bottom
 
   // Normalize depth to 0-1
   const depthNorm = depth > 1 ? depth / 100 : depth
@@ -104,9 +119,10 @@ export function LFOWaveform({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="lfo-waveform"
     >
       {/* Background */}

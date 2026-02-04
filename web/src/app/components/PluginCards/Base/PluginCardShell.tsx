@@ -16,6 +16,7 @@ import {
   MoreVertical,
   Copy,
   RotateCcw,
+  Sliders,
 } from 'lucide-react'
 import type { Plugin } from '../../../../map2/types'
 import { getCategoryConfig, getCategoryIcon } from '../types'
@@ -32,6 +33,7 @@ interface PluginCardShellProps {
   onLoadPreset?: () => void
   onCopyParams?: () => void
   onResetParams?: () => void
+  onOpenMidiMappings?: () => void
   showPresetControls?: boolean
   showBypass?: boolean
   showMoreMenu?: boolean
@@ -52,6 +54,7 @@ export function PluginCardShell({
   onLoadPreset,
   onCopyParams,
   onResetParams,
+  onOpenMidiMappings,
   showPresetControls = true,
   showBypass = true,
   showMoreMenu = true,
@@ -83,6 +86,8 @@ export function PluginCardShell({
         '--header-padding': '12px 16px',
         '--knob-size': '56px',
         '--font-scale': '1',
+        '--viz-width-base': '280px',
+        '--viz-height-base': '100px',
         containerType: 'inline-size',
         containerName: 'plugin-card',
       } as React.CSSProperties}
@@ -153,6 +158,11 @@ export function PluginCardShell({
               </button>
               {showMenu && (
                 <div className="plugin-card-menu">
+                  {onOpenMidiMappings && (
+                    <button onClick={() => { onOpenMidiMappings(); setShowMenu(false); }}>
+                      <Sliders size={12} /> MIDI Mappings
+                    </button>
+                  )}
                   {onCopyParams && (
                     <button onClick={() => { onCopyParams(); setShowMenu(false); }}>
                       <Copy size={12} /> Copy Parameters
@@ -419,6 +429,8 @@ export function PluginCardShell({
             --header-padding: 6px 10px;
             --knob-size: 36px;
             --font-scale: 0.85;
+            --viz-width-base: 200px;
+            --viz-height-base: 70px;
           }
 
           .plugin-card-header {
@@ -446,6 +458,8 @@ export function PluginCardShell({
             --header-padding: 8px 12px;
             --knob-size: 44px;
             --font-scale: 0.9;
+            --viz-width-base: 240px;
+            --viz-height-base: 85px;
           }
         }
 
@@ -457,6 +471,8 @@ export function PluginCardShell({
             --header-padding: 12px 16px;
             --knob-size: 56px;
             --font-scale: 1;
+            --viz-width-base: 280px;
+            --viz-height-base: 100px;
           }
         }
 
@@ -468,6 +484,8 @@ export function PluginCardShell({
             --header-padding: 14px 18px;
             --knob-size: 64px;
             --font-scale: 1.05;
+            --viz-width-base: 320px;
+            --viz-height-base: 115px;
           }
         }
 
@@ -479,6 +497,8 @@ export function PluginCardShell({
             --header-padding: 16px 20px;
             --knob-size: 72px;
             --font-scale: 1.1;
+            --viz-width-base: 360px;
+            --viz-height-base: 130px;
           }
         }
 
@@ -489,6 +509,8 @@ export function PluginCardShell({
           --header-padding: 8px 12px;
           --knob-size: 40px;
           --font-scale: 0.85;
+          --viz-width-base: 200px;
+          --viz-height-base: 70px;
         }
       `}</style>
     </div>

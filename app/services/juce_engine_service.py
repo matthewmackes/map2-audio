@@ -1719,6 +1719,445 @@ class JuceEngineService(Singleton):
             {"id": "nowhere", "name": "Nowhere", "artist": "Ride", "description": "Swirling, propulsive textures"}
         ]
 
+    # ============================================================
+    # EVH Pitch Shifter / Interval Shifter
+    # ============================================================
+
+    async def set_pitch_shifter_pitch_l(self, cents: float) -> None:
+        """Set pitch shifter left pitch in cents"""
+        if self._engine:
+            self._engine.set_pitch_shifter_pitch_l(cents)
+
+    async def set_pitch_shifter_pitch_r(self, cents: float) -> None:
+        """Set pitch shifter right pitch in cents"""
+        if self._engine:
+            self._engine.set_pitch_shifter_pitch_r(cents)
+
+    async def set_pitch_shifter_delay_l(self, ms: float) -> None:
+        """Set pitch shifter left delay in ms"""
+        if self._engine:
+            self._engine.set_pitch_shifter_delay_l(ms)
+
+    async def set_pitch_shifter_delay_r(self, ms: float) -> None:
+        """Set pitch shifter right delay in ms"""
+        if self._engine:
+            self._engine.set_pitch_shifter_delay_r(ms)
+
+    async def set_pitch_shifter_feedback(self, amount: float) -> None:
+        """Set pitch shifter feedback (0-0.9)"""
+        if self._engine:
+            self._engine.set_pitch_shifter_feedback(amount)
+
+    async def set_pitch_shifter_mix(self, percent: float) -> None:
+        """Set pitch shifter mix (0-100)"""
+        if self._engine:
+            self._engine.set_pitch_shifter_mix(percent)
+
+    async def set_pitch_shifter_spread(self, percent: float) -> None:
+        """Set pitch shifter stereo spread (0-100)"""
+        if self._engine:
+            self._engine.set_pitch_shifter_spread(percent)
+
+    async def set_pitch_shifter_preset(self, preset_index: int) -> None:
+        """Set pitch shifter preset by index"""
+        if self._engine:
+            # Map index to preset name
+            presets = [
+                "manual", "eruption", "unchained", "little_guitars", "mean_street",
+                "drop_dead_legs", "panama", "cathedral", "hot_for_teacher",
+                "why_cant_this_be_love", "dreams", "finish_what_ya_started",
+                "right_now", "cant_stop_lovin_you", "humans_being_outtro"
+            ]
+            if 0 <= preset_index < len(presets):
+                self._engine.set_pitch_shifter_preset(presets[preset_index])
+
+    async def set_pitch_shifter_bypass(self, bypass: bool) -> None:
+        """Set pitch shifter bypass state"""
+        if self._engine:
+            self._engine.set_pitch_shifter_bypass(bypass)
+
+    async def get_pitch_shifter_parameters(self) -> Dict[str, Any]:
+        """Get pitch shifter parameters"""
+        if not self._engine:
+            return {
+                "pitch_l": 0.0, "pitch_r": 0.0,
+                "delay_l": 0.0, "delay_r": 0.0,
+                "feedback": 0.0, "mix": 50.0, "spread": 50.0,
+                "preset": "manual", "bypass": False
+            }
+        params = self._engine.get_pitch_shifter_parameters()
+        return {
+            "pitch_l": params.get("pitch_l", 0.0),
+            "pitch_r": params.get("pitch_r", 0.0),
+            "delay_l": params.get("delay_l", 0.0),
+            "delay_r": params.get("delay_r", 0.0),
+            "feedback": params.get("feedback", 0.0),
+            "mix": params.get("mix", 50.0),
+            "spread": params.get("spread", 50.0),
+            "preset": params.get("preset", "manual"),
+            "bypass": params.get("bypass", False)
+        }
+
+    async def get_pitch_shifter_metering(self) -> Dict[str, float]:
+        """Get pitch shifter metering data"""
+        if not self._engine:
+            return {
+                "input_level_l": -100.0, "input_level_r": -100.0,
+                "output_level_l": -100.0, "output_level_r": -100.0,
+                "pitch_l_actual": 0.0, "pitch_r_actual": 0.0
+            }
+        metering = self._engine.get_pitch_shifter_metering()
+        return {
+            "input_level_l": metering.get("input_level_l", -100.0),
+            "input_level_r": metering.get("input_level_r", -100.0),
+            "output_level_l": metering.get("output_level_l", -100.0),
+            "output_level_r": metering.get("output_level_r", -100.0),
+            "pitch_l_actual": metering.get("pitch_l_actual", 0.0),
+            "pitch_r_actual": metering.get("pitch_r_actual", 0.0)
+        }
+
+    async def get_pitch_shifter_presets(self) -> List[Dict[str, Any]]:
+        """Get pitch shifter presets"""
+        if self._engine:
+            return self._engine.get_pitch_shifter_presets()
+        return []
+
+    # ============================================================
+    # H3000 Ultra-Harmonizer
+    # ============================================================
+
+    async def set_h3000_bypass(self, bypass: bool) -> None:
+        """Set H3000 bypass state"""
+        if self._engine:
+            self._engine.set_h3000_bypass(bypass)
+
+    async def set_h3000_algorithm(self, algorithm_index: int) -> None:
+        """Set H3000 algorithm by index (0-9)"""
+        if self._engine:
+            self._engine.set_h3000_algorithm(algorithm_index)
+
+    async def set_h3000_algorithm_by_name(self, name: str) -> None:
+        """Set H3000 algorithm by name"""
+        if self._engine:
+            # Convert name to algorithm index
+            algorithms = {
+                "micropitch": 0, "dual_shift": 1, "crystal_echoes": 2,
+                "stereo_shift": 3, "layered_shift": 4, "swept_combs": 5,
+                "stutter_shift": 6, "reverse_pitch": 7, "band_delays": 8,
+                "patch_factory": 9
+            }
+            if name in algorithms:
+                self._engine.set_h3000_algorithm(algorithms[name])
+
+    async def set_h3000_pitch_l(self, cents: float) -> None:
+        """Set H3000 left pitch shift in cents (-2400 to +2400)"""
+        if self._engine:
+            self._engine.set_h3000_pitch_l(cents)
+
+    async def set_h3000_pitch_r(self, cents: float) -> None:
+        """Set H3000 right pitch shift in cents (-2400 to +2400)"""
+        if self._engine:
+            self._engine.set_h3000_pitch_r(cents)
+
+    async def set_h3000_delay_l(self, ms: float) -> None:
+        """Set H3000 left delay in milliseconds (0-1000)"""
+        if self._engine:
+            self._engine.set_h3000_delay_l(ms)
+
+    async def set_h3000_delay_r(self, ms: float) -> None:
+        """Set H3000 right delay in milliseconds (0-1000)"""
+        if self._engine:
+            self._engine.set_h3000_delay_r(ms)
+
+    async def set_h3000_feedback(self, percent: float) -> None:
+        """Set H3000 feedback amount (0-100)"""
+        if self._engine:
+            self._engine.set_h3000_feedback(percent)
+
+    async def set_h3000_cross_feedback(self, percent: float) -> None:
+        """Set H3000 cross-channel feedback (0-100)"""
+        if self._engine:
+            self._engine.set_h3000_cross_feedback(percent)
+
+    async def set_h3000_mod_depth(self, percent: float) -> None:
+        """Set H3000 modulation depth (0-100)"""
+        if self._engine:
+            self._engine.set_h3000_mod_depth(percent)
+
+    async def set_h3000_mod_rate(self, hz: float) -> None:
+        """Set H3000 modulation rate in Hz (0.1-10)"""
+        if self._engine:
+            self._engine.set_h3000_mod_rate(hz)
+
+    async def set_h3000_low_cut(self, hz: float) -> None:
+        """Set H3000 low cut frequency (20-500 Hz)"""
+        if self._engine:
+            self._engine.set_h3000_low_cut(hz)
+
+    async def set_h3000_high_cut(self, hz: float) -> None:
+        """Set H3000 high cut frequency (2000-20000 Hz)"""
+        if self._engine:
+            self._engine.set_h3000_high_cut(hz)
+
+    async def set_h3000_mix(self, percent: float) -> None:
+        """Set H3000 wet/dry mix (0-100)"""
+        if self._engine:
+            self._engine.set_h3000_mix(percent)
+
+    async def set_h3000_level_l(self, percent: float) -> None:
+        """Set H3000 left output level (0-100)"""
+        if self._engine:
+            self._engine.set_h3000_level_l(percent)
+
+    async def set_h3000_level_r(self, percent: float) -> None:
+        """Set H3000 right output level (0-100)"""
+        if self._engine:
+            self._engine.set_h3000_level_r(percent)
+
+    async def set_h3000_glide(self, ms: float) -> None:
+        """Set H3000 pitch glide time in ms (0-1000)"""
+        if self._engine:
+            self._engine.set_h3000_glide(ms)
+
+    async def get_h3000_parameters(self) -> Dict[str, Any]:
+        """Get all H3000 parameters"""
+        if not self._engine:
+            return {
+                "algorithm": "micropitch", "algorithm_index": 0,
+                "pitch_l": 0.0, "pitch_r": 0.0,
+                "delay_l": 15.0, "delay_r": 20.0,
+                "feedback": 0.0, "cross_feedback": 0.0,
+                "mod_depth": 0.0, "mod_rate": 0.5,
+                "low_cut": 80.0, "high_cut": 12000.0,
+                "mix": 50.0, "level_l": 100.0, "level_r": 100.0,
+                "glide": 0.0, "bypass": False
+            }
+        params = self._engine.get_h3000_parameters()
+        return {
+            "algorithm": params.get("algorithm", "micropitch"),
+            "algorithm_index": params.get("algorithm_index", 0),
+            "pitch_l": params.get("pitch_l", 0.0),
+            "pitch_r": params.get("pitch_r", 0.0),
+            "delay_l": params.get("delay_l", 15.0),
+            "delay_r": params.get("delay_r", 20.0),
+            "feedback": params.get("feedback", 0.0),
+            "cross_feedback": params.get("cross_feedback", 0.0),
+            "mod_depth": params.get("mod_depth", 0.0),
+            "mod_rate": params.get("mod_rate", 0.5),
+            "low_cut": params.get("low_cut", 80.0),
+            "high_cut": params.get("high_cut", 12000.0),
+            "mix": params.get("mix", 50.0),
+            "level_l": params.get("level_l", 100.0),
+            "level_r": params.get("level_r", 100.0),
+            "glide": params.get("glide", 0.0),
+            "bypass": params.get("bypass", False)
+        }
+
+    async def get_h3000_metering(self) -> Dict[str, float]:
+        """Get H3000 metering data"""
+        if not self._engine:
+            return {
+                "input_level_l": -100.0, "input_level_r": -100.0,
+                "output_level_l": -100.0, "output_level_r": -100.0,
+                "pitch_l_actual": 0.0, "pitch_r_actual": 0.0,
+                "delay_l_actual": 0.0, "delay_r_actual": 0.0,
+                "mod_phase": 0.0
+            }
+        metering = self._engine.get_h3000_metering()
+        return {
+            "input_level_l": metering.get("input_level_l", -100.0),
+            "input_level_r": metering.get("input_level_r", -100.0),
+            "output_level_l": metering.get("output_level_l", -100.0),
+            "output_level_r": metering.get("output_level_r", -100.0),
+            "pitch_l_actual": metering.get("pitch_l_actual", 0.0),
+            "pitch_r_actual": metering.get("pitch_r_actual", 0.0),
+            "delay_l_actual": metering.get("delay_l_actual", 0.0),
+            "delay_r_actual": metering.get("delay_r_actual", 0.0),
+            "mod_phase": metering.get("mod_phase", 0.0)
+        }
+
+    async def get_h3000_algorithms(self) -> List[Dict[str, Any]]:
+        """Get all H3000 algorithm presets"""
+        return [
+            {"index": 0, "id": "micropitch", "name": "MicroPitch", "short_name": "MICRO", "description": "Subtle pitch detune for stereo widening and ADT effects"},
+            {"index": 1, "id": "dual_shift", "name": "Dual Shift", "short_name": "DUAL", "description": "Independent left/right pitch shifters with modulation"},
+            {"index": 2, "id": "crystal_echoes", "name": "Crystal Echoes", "short_name": "CRYST", "description": "Shimmering delays with pitch-shifted feedback"},
+            {"index": 3, "id": "stereo_shift", "name": "Stereo Shift", "short_name": "STERE", "description": "Wide stereo field with complementary pitch offsets"},
+            {"index": 4, "id": "layered_shift", "name": "Layered Shift", "short_name": "LAYER", "description": "Multiple harmonized voices stacked in unison"},
+            {"index": 5, "id": "swept_combs", "name": "Swept Combs", "short_name": "COMB", "description": "Modulated comb filters for flanging and metallic effects"},
+            {"index": 6, "id": "stutter_shift", "name": "Stutter Shift", "short_name": "STUTT", "description": "Glitch-style retriggering with pitch bending"},
+            {"index": 7, "id": "reverse_pitch", "name": "Reverse Pitch", "short_name": "REVRS", "description": "Reversed grains with pitch manipulation"},
+            {"index": 8, "id": "band_delays", "name": "Band Delays", "short_name": "BAND", "description": "Multi-band delay with per-band pitch shifting"},
+            {"index": 9, "id": "patch_factory", "name": "Patch Factory", "short_name": "PATCH", "description": "Complex multi-effect combinations"}
+        ]
+
+    # ============================================================
+    # Lexi Love PCM 70 Reverb
+    # ============================================================
+
+    async def set_lexilove_algorithm(self, algorithm_index: int) -> None:
+        """Set Lexi Love algorithm by index (0-8)"""
+        if self._engine:
+            self._engine.set_lexilove_algorithm(algorithm_index)
+
+    async def set_lexilove_algorithm_by_name(self, name: str) -> None:
+        """Set Lexi Love algorithm by name"""
+        if self._engine:
+            self._engine.set_lexilove_algorithm_by_name(name)
+
+    async def set_lexilove_pre_delay(self, ms: float) -> None:
+        """Set Lexi Love pre-delay in milliseconds"""
+        if self._engine:
+            self._engine.set_lexilove_pre_delay(ms)
+
+    async def set_lexilove_decay_time(self, seconds: float) -> None:
+        """Set Lexi Love decay time (RT60) in seconds"""
+        if self._engine:
+            self._engine.set_lexilove_decay_time(seconds)
+
+    async def set_lexilove_diffusion(self, percent: float) -> None:
+        """Set Lexi Love diffusion amount"""
+        if self._engine:
+            self._engine.set_lexilove_diffusion(percent)
+
+    async def set_lexilove_mix(self, percent: float) -> None:
+        """Set Lexi Love wet/dry mix"""
+        if self._engine:
+            self._engine.set_lexilove_mix(percent)
+
+    async def set_lexilove_high_cut(self, hz: float) -> None:
+        """Set Lexi Love high cut frequency"""
+        if self._engine:
+            self._engine.set_lexilove_high_cut(hz)
+
+    async def set_lexilove_low_cut(self, hz: float) -> None:
+        """Set Lexi Love low cut frequency"""
+        if self._engine:
+            self._engine.set_lexilove_low_cut(hz)
+
+    async def set_lexilove_low_decay_mult(self, mult: float) -> None:
+        """Set Lexi Love low frequency decay multiplier"""
+        if self._engine:
+            self._engine.set_lexilove_low_decay_mult(mult)
+
+    async def set_lexilove_high_decay_mult(self, mult: float) -> None:
+        """Set Lexi Love high frequency decay multiplier"""
+        if self._engine:
+            self._engine.set_lexilove_high_decay_mult(mult)
+
+    async def set_lexilove_low_crossover(self, hz: float) -> None:
+        """Set Lexi Love low crossover frequency"""
+        if self._engine:
+            self._engine.set_lexilove_low_crossover(hz)
+
+    async def set_lexilove_high_crossover(self, hz: float) -> None:
+        """Set Lexi Love high crossover frequency"""
+        if self._engine:
+            self._engine.set_lexilove_high_crossover(hz)
+
+    async def set_lexilove_early_level(self, percent: float) -> None:
+        """Set Lexi Love early reflections level"""
+        if self._engine:
+            self._engine.set_lexilove_early_level(percent)
+
+    async def set_lexilove_early_pattern(self, percent: float) -> None:
+        """Set Lexi Love early reflections pattern density"""
+        if self._engine:
+            self._engine.set_lexilove_early_pattern(percent)
+
+    async def set_lexilove_mod_depth(self, percent: float) -> None:
+        """Set Lexi Love modulation depth (sparkle)"""
+        if self._engine:
+            self._engine.set_lexilove_mod_depth(percent)
+
+    async def set_lexilove_mod_rate(self, hz: float) -> None:
+        """Set Lexi Love modulation rate"""
+        if self._engine:
+            self._engine.set_lexilove_mod_rate(hz)
+
+    async def set_lexilove_bypass(self, bypass: bool) -> None:
+        """Set Lexi Love bypass state"""
+        if self._engine:
+            self._engine.set_lexilove_bypass(bypass)
+
+    async def set_lexilove_spillover(self, enabled: bool) -> None:
+        """Set Lexi Love spillover (tail continues on bypass)"""
+        if self._engine:
+            self._engine.set_lexilove_spillover(enabled)
+
+    async def get_lexilove_parameters(self) -> Dict[str, Any]:
+        """Get all Lexi Love parameters"""
+        if not self._engine:
+            return {
+                "algorithm": 1, "algorithm_name": "rich_plate",
+                "pre_delay": 40.0, "decay_time": 2.5, "diffusion": 85.0,
+                "low_decay_mult": 1.0, "high_decay_mult": 0.8,
+                "low_crossover": 500.0, "high_crossover": 9000.0,
+                "early_level": 70.0, "early_pattern": 50.0,
+                "mod_depth": 15.0, "mod_rate": 0.8,
+                "mix": 35.0, "high_cut": 12000.0, "low_cut": 40.0,
+                "bypass": False, "spillover": True
+            }
+        params = self._engine.get_lexilove_parameters()
+        return {
+            "algorithm_index": params.get("algorithm_index", 1),
+            "algorithm": params.get("algorithm", "rich_plate"),
+            "pre_delay": params.get("pre_delay", 40.0),
+            "decay_time": params.get("decay_time", 2.5),
+            "diffusion": params.get("diffusion", 85.0),
+            "low_decay_mult": params.get("low_decay_mult", 1.0),
+            "high_decay_mult": params.get("high_decay_mult", 0.8),
+            "low_crossover": params.get("low_crossover", 500.0),
+            "high_crossover": params.get("high_crossover", 9000.0),
+            "early_level": params.get("early_level", 70.0),
+            "early_pattern": params.get("early_pattern", 50.0),
+            "mod_depth": params.get("mod_depth", 15.0),
+            "mod_rate": params.get("mod_rate", 0.8),
+            "mix": params.get("mix", 35.0),
+            "high_cut": params.get("high_cut", 12000.0),
+            "low_cut": params.get("low_cut", 40.0),
+            "bypass": params.get("bypass", False),
+            "spillover": params.get("spillover", True)
+        }
+
+    async def get_lexilove_metering(self) -> Dict[str, float]:
+        """Get Lexi Love metering data"""
+        if not self._engine:
+            return {
+                "input_level_l": -100.0, "input_level_r": -100.0,
+                "output_level_l": -100.0, "output_level_r": -100.0,
+                "reverb_level_l": -100.0, "reverb_level_r": -100.0,
+                "early_level": -100.0, "late_level": -100.0,
+                "mod_lfo_phase": 0.0, "current_decay": 2.5
+            }
+        metering = self._engine.get_lexilove_metering()
+        return {
+            "input_level_l": metering.get("input_level_l", -100.0),
+            "input_level_r": metering.get("input_level_r", -100.0),
+            "output_level_l": metering.get("output_level_l", -100.0),
+            "output_level_r": metering.get("output_level_r", -100.0),
+            "reverb_level_l": metering.get("reverb_level_l", -100.0),
+            "reverb_level_r": metering.get("reverb_level_r", -100.0),
+            "early_level": metering.get("early_level", -100.0),
+            "late_level": metering.get("late_level", -100.0),
+            "mod_lfo_phase": metering.get("mod_lfo_phase", 0.0),
+            "current_decay": metering.get("current_decay", 2.5)
+        }
+
+    async def get_lexilove_algorithms(self) -> List[Dict[str, Any]]:
+        """Get all Lexi Love algorithm presets"""
+        return [
+            {"index": 0, "id": "tiled_room", "name": "Tiled Room V2.0", "short_name": "TILED", "description": "Legendary preset with 'spitty' early reflections - lively on drums"},
+            {"index": 1, "id": "rich_plate", "name": "Rich Plate", "short_name": "PLATE", "description": "Warm vocals - the studio standard for countless recordings"},
+            {"index": 2, "id": "concert_hall", "name": "Concert Hall", "short_name": "HALL", "description": "Classic 80s reverb with time variation and sparkle"},
+            {"index": 3, "id": "small_room", "name": "Small Room", "short_name": "SMALL", "description": "Tight, customizable space for close-mic sounds"},
+            {"index": 4, "id": "rich_chamber", "name": "Rich Chamber", "short_name": "CHAMB", "description": "Warm thick chamber with prominent early reflections"},
+            {"index": 5, "id": "gymnasium", "name": "Gymnasium", "short_name": "GYM", "description": "Large acoustic space simulation with long decay"},
+            {"index": 6, "id": "long_hall", "name": "Long Hall", "short_name": "LONG", "description": "Extended decay concert hall for ambient textures"},
+            {"index": 7, "id": "gated_plate", "name": "Gated Plate", "short_name": "GATED", "description": "Compressed/gated reverb for drums and dramatic effects"},
+            {"index": 8, "id": "infinite", "name": "Infinite", "short_name": "INF", "description": "Special effects and atmospheric textures - near-infinite decay"}
+        ]
+
 
 # Singleton accessor using base class
 def get_audio_engine() -> JuceEngineService:

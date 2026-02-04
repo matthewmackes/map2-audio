@@ -32,6 +32,8 @@
 #include "IntelliFX8VoiceChorusProcessor.h"
 #include "BossXS1PolyShifterProcessor.h"
 #include "ShoeGazeProcessor.h"
+#include "LexiLoveProcessor.h"
+#include "H3000Processor.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
@@ -619,6 +621,138 @@ public:
     ShoeGazeProcessor& getShoeGaze() { return shoegaze_; }
 
     // ========================================
+    // Lexi Love PCM 70 Reverb (NEW)
+    // ========================================
+
+    // Algorithm control
+    void setLexiLoveAlgorithm(int algorithmIndex);
+    void setLexiLoveAlgorithm(LexiLoveProcessor::Algorithm algorithm);
+    int getLexiLoveAlgorithm() const;
+
+    // Core parameters
+    void setLexiLovePreDelay(float ms);
+    float getLexiLovePreDelay() const;
+    void setLexiLoveDecayTime(float seconds);
+    float getLexiLoveDecayTime() const;
+    void setLexiLoveDiffusion(float percent);
+    float getLexiLoveDiffusion() const;
+    void setLexiLoveMix(float percent);
+    float getLexiLoveMix() const;
+    void setLexiLoveHighCut(float hz);
+    float getLexiLoveHighCut() const;
+    void setLexiLoveLowCut(float hz);
+    float getLexiLoveLowCut() const;
+
+    // Multi-band decay (Lexicon signature)
+    void setLexiLoveLowDecayMult(float mult);
+    float getLexiLoveLowDecayMult() const;
+    void setLexiLoveHighDecayMult(float mult);
+    float getLexiLoveHighDecayMult() const;
+    void setLexiLoveLowCrossover(float hz);
+    float getLexiLoveLowCrossover() const;
+    void setLexiLoveHighCrossover(float hz);
+    float getLexiLoveHighCrossover() const;
+
+    // Early reflections
+    void setLexiLoveEarlyLevel(float percent);
+    float getLexiLoveEarlyLevel() const;
+    void setLexiLoveEarlyPattern(float percent);
+    float getLexiLoveEarlyPattern() const;
+
+    // Modulation (sparkle)
+    void setLexiLoveModDepth(float percent);
+    float getLexiLoveModDepth() const;
+    void setLexiLoveModRate(float hz);
+    float getLexiLoveModRate() const;
+
+    // State control
+    void setLexiLoveBypass(bool bypass);
+    bool isLexiLoveBypassed() const;
+    void setLexiLoveSpillover(bool enabled);
+    bool hasLexiLoveSpillover() const;
+
+    // Bulk parameters
+    LexiLoveProcessor::Parameters getLexiLoveParameters() const;
+    void setLexiLoveParameters(const LexiLoveProcessor::Parameters& params);
+
+    // Metering
+    LexiLoveProcessor::Metering getLexiLoveMetering() const;
+
+    // Algorithm info
+    static LexiLoveProcessor::AlgorithmInfo getLexiLoveAlgorithmInfo(int algorithmIndex);
+    static int getLexiLoveNumAlgorithms();
+
+    // Direct access
+    LexiLoveProcessor& getLexiLove() { return lexiLove_; }
+
+    // ========================================
+    // H3000 Harmonizer Control
+    // ========================================
+
+    // Algorithm
+    void setH3000Algorithm(int algorithmIndex);
+    void setH3000Algorithm(H3000Processor::Algorithm algorithm);
+    int getH3000Algorithm() const;
+
+    // Pitch
+    void setH3000PitchL(float cents);
+    float getH3000PitchL() const;
+    void setH3000PitchR(float cents);
+    float getH3000PitchR() const;
+
+    // Delay
+    void setH3000DelayL(float ms);
+    float getH3000DelayL() const;
+    void setH3000DelayR(float ms);
+    float getH3000DelayR() const;
+
+    // Feedback
+    void setH3000Feedback(float percent);
+    float getH3000Feedback() const;
+    void setH3000CrossFeedback(float percent);
+    float getH3000CrossFeedback() const;
+
+    // Modulation
+    void setH3000ModDepth(float percent);
+    float getH3000ModDepth() const;
+    void setH3000ModRate(float hz);
+    float getH3000ModRate() const;
+
+    // Filters
+    void setH3000LowCut(float hz);
+    float getH3000LowCut() const;
+    void setH3000HighCut(float hz);
+    float getH3000HighCut() const;
+
+    // Levels
+    void setH3000Mix(float percent);
+    float getH3000Mix() const;
+    void setH3000LevelL(float percent);
+    float getH3000LevelL() const;
+    void setH3000LevelR(float percent);
+    float getH3000LevelR() const;
+
+    // State
+    void setH3000Bypass(bool bypass);
+    bool isH3000Bypassed() const;
+    void setH3000Glide(float ms);
+    float getH3000Glide() const;
+
+    // Bulk parameters
+    H3000Processor::Parameters getH3000Parameters() const;
+    void setH3000Parameters(const H3000Processor::Parameters& params);
+
+    // Metering
+    H3000Processor::Metering getH3000Metering() const;
+
+    // Algorithm info
+    static H3000Processor::AlgorithmInfo getH3000AlgorithmInfo(int algorithmIndex);
+    static int getH3000NumAlgorithms();
+
+    // Direct access
+    H3000Processor& getH3000() { return h3000_; }
+
+    // ========================================
     // Component Access (for advanced use)
     // ========================================
 
@@ -657,6 +791,8 @@ private:
     IntelliFX8VoiceChorusProcessor intellifx_;
     BossXS1PolyShifterProcessor bossXS1_;
     ShoeGazeProcessor shoegaze_;
+    LexiLoveProcessor lexiLove_;
+    H3000Processor h3000_;
 
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)

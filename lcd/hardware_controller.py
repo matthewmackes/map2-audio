@@ -600,11 +600,19 @@ class FT232HController:
 
 
 class I2CScanner:
-    """Scan I2C bus for connected devices."""
+    """Scan I2C bus for connected devices.
+    
+    Supports multiple backends:
+    - smbus2: Native Linux I2C (Raspberry Pi, etc.)
+    - pyftdi: FT232H USB-to-I2C adapter
+    """
+    
+    # Common LCD I2C addresses
+    COMMON_LCD_ADDRESSES = [0x27, 0x3F, 0x20, 0x38, 0x3E]
     
     @staticmethod
     def scan(bus_num: int = 1) -> List[int]:
-        """Scan I2C bus for devices.
+        """Scan native I2C bus for devices.
         
         Args:
             bus_num: I2C bus number (usually 1 for Raspberry Pi)
@@ -621,15 +629,12 @@ class I2CScanner:
         try:
             bus = smbus2.SMBus(bus_num)
             
-            # Common LCD addresses to check
-            common_addresses = [0x27, 0x3F, 0x20, 0x38]
-            
             for addr in range(0x03, 0x78):  # Valid I2C address range
                 try:
                     bus.read_byte(addr)
                     found_addresses.append(addr)
                     
-                    if addr in common_addresses:
+                    if addr in I2CScanner.COMMON_LCD_ADDRESSES:
                         logger.info(f"Found potential LCD at 0x{addr:02X}")
                     else:
                         logger.debug(f"Found I2C device at 0x{addr:02X}")
@@ -644,23 +649,401 @@ class I2CScanner:
         return found_addresses
     
     @staticmethod
+    def scan_ft232h(ft232h_url: str = "ftdi://ftdi:232h/1") -> List[int]:
+        """Scan I2C bus via FT232H USB adapter.
+        
+        Args:
+            ft232h_url: FT232H device URL (default: ftdi://ftdi:232h/1)
+            
+        Returns:
+            List of I2C addresses found
+        """
+        if not HAS_PYFTDI:
+            logger.error("pyftdi not available - cannot scan FT232H")
+            return []
+        
+        found_addresses = []
+        i2c = I2cController()
+        
+        try:
+            i2c.configure(ft232h_url)
+            logger.info(f"FT232H configured for I2C at {i2c.frequency} Hz")
+            
+            for addr in range(0x08, 0x78):  # Valid I2C address range
+                try:
+                    port = i2c.get_port(addr)
+                    port.write([])  # Empty write to probe
+                    found_addresses.append(addr)
+                    
+                    if addr in I2CScanner.COMMON_LCD_ADDRESSES:
+                        logger.info(f"Found potential LCD at 0x{addr:02X} (FT232H)")
+                    else:
+                        logger.debug(f"Found I2C device at 0x{addr:02X} (FT232H)")
+                except Exception:
+                    pass
+            
+        except Exception as e:
+            logger.error(f"FT232H I2C scan failed: {e}")
+        finally:
+            try:
+                i2c.terminate()
+            except Exception:
+                pass
+        
+        return found_addresses
+    
+    @staticmethod
+    def scan_all() -> Dict[str, List[int]]:
+        """Scan all available I2C interfaces (native + USB adapters).
+        
+        Returns:
+            Dict mapping interface name to list of found addresses:
+            {
+                'i2c-1': [0x27, 0x50],
+                'ft232h': [0x27, 0x3F],
+            }
+        """
+        results = {}
+        
+        # Try native I2C buses (0-7)
+        if HAS_SMBUS:
+            import os
+            for bus_num in range(8):
+                if os.path.exists(f"/dev/i2c-{bus_num}"):
+                    try:
+                        addresses = I2CScanner.scan(bus_num)
+                        if addresses:
+                            results[f'i2c-{bus_num}'] = addresses
+                    except Exception as e:
+                        logger.debug(f"Failed to scan i2c-{bus_num}: {e}")
+        
+        # Try FT232H USB adapter
+        if HAS_PYFTDI:
+            try:
+                ft_devices = FT232HScanner.scan(unload_ftdi_sio=False)
+                for i, ft_dev in enumerate(ft_devices):
+                    try:
+                        addresses = I2CScanner.scan_ft232h(ft_dev.url)
+                        if addresses:
+                            key = f'ft232h-{i}' if i > 0 else 'ft232h'
+                            results[key] = addresses
+                    except Exception as e:
+                        logger.debug(f"Failed to scan FT232H {i}: {e}")
+            except Exception as e:
+                logger.debug(f"FT232H enumeration failed: {e}")
+        
+        return results
+    
+    @staticmethod
     def detect_lcds(bus_num: int = 1) -> List[Tuple[int, LCDCapabilities]]:
-        """Detect LCD displays on I2C bus.
+        """Detect LCD displays on native I2C bus.
         
         Returns:
             List of (address, capabilities) tuples
         """
         addresses = I2CScanner.scan(bus_num)
-        common_lcd_addresses = [0x27, 0x3F, 0x20, 0x38]
         
         detected = []
         for addr in addresses:
-            if addr in common_lcd_addresses:
-                # Assume standard 20x2 LCD capabilities
+            if addr in I2CScanner.COMMON_LCD_ADDRESSES:
                 caps = LCDCapabilities(i2c_address=addr)
                 detected.append((addr, caps))
         
         return detected
+    
+    @staticmethod
+    def detect_all_lcds() -> Dict[str, List[Tuple[int, LCDCapabilities]]]:
+        """Detect LCD displays on all available interfaces.
+        
+        Returns:
+            Dict mapping interface name to list of (address, capabilities) tuples
+        """
+        all_interfaces = I2CScanner.scan_all()
+        results = {}
+        
+        for interface, addresses in all_interfaces.items():
+            lcds = []
+            for addr in addresses:
+                if addr in I2CScanner.COMMON_LCD_ADDRESSES:
+                    caps = LCDCapabilities(i2c_address=addr)
+                    lcds.append((addr, caps))
+            if lcds:
+                results[interface] = lcds
+        
+        return results
+
+
+class FT232HLCDController:
+    """LCD controller using FT232H USB-to-I2C adapter with PCF8574 backpack.
+    
+    This controller communicates with HD44780-compatible LCDs through a PCF8574
+    I2C expander connected via an FT232H USB adapter. No kernel drivers needed.
+    
+    PCF8574 bit mapping (directly from datasheet):
+    - P0: RS (Register Select)
+    - P1: RW (Read/Write) - always 0 for write
+    - P2: E (Enable)
+    - P3: Backlight
+    - P4-P7: D4-D7 (4-bit data)
+    """
+    
+    # PCF8574 bit positions for LCD control
+    RS = 0x01  # Register select (0=command, 1=data)
+    RW = 0x02  # Read/Write (always 0 for write)
+    EN = 0x04  # Enable (data latched on falling edge)
+    BL = 0x08  # Backlight
+    
+    # LCD commands
+    LCD_CLEARDISPLAY = 0x01
+    LCD_RETURNHOME = 0x02
+    LCD_ENTRYMODESET = 0x04
+    LCD_DISPLAYCONTROL = 0x08
+    LCD_CURSORSHIFT = 0x10
+    LCD_FUNCTIONSET = 0x20
+    LCD_SETCGRAMADDR = 0x40
+    LCD_SETDDRAMADDR = 0x80
+    
+    # Entry mode flags
+    LCD_ENTRYRIGHT = 0x00
+    LCD_ENTRYLEFT = 0x02
+    LCD_ENTRYSHIFTINCREMENT = 0x01
+    LCD_ENTRYSHIFTDECREMENT = 0x00
+    
+    # Display control flags
+    LCD_DISPLAYON = 0x04
+    LCD_DISPLAYOFF = 0x00
+    LCD_CURSORON = 0x02
+    LCD_CURSOROFF = 0x00
+    LCD_BLINKON = 0x01
+    LCD_BLINKOFF = 0x00
+    
+    # Function set flags
+    LCD_8BITMODE = 0x10
+    LCD_4BITMODE = 0x00
+    LCD_2LINE = 0x08
+    LCD_1LINE = 0x00
+    LCD_5x10DOTS = 0x04
+    LCD_5x8DOTS = 0x00
+    
+    # Row offsets for 20x4 LCD
+    ROW_OFFSETS = [0x00, 0x40, 0x14, 0x54]
+    
+    def __init__(self, address: int = 0x27, ft232h_url: str = "ftdi://ftdi:232h/1",
+                 cols: int = 20, rows: int = 2):
+        """Initialize FT232H LCD controller.
+        
+        Args:
+            address: I2C address of PCF8574 backpack (usually 0x27 or 0x3F)
+            ft232h_url: FT232H device URL
+            cols: Display width in characters
+            rows: Display height in rows
+        """
+        self.address = address
+        self.ft232h_url = ft232h_url
+        self.cols = cols
+        self.rows = rows
+        self.connected = False
+        self.backlight_state = self.BL  # Backlight on by default
+        
+        self._i2c = None
+        self._port = None
+        
+        self._connect()
+    
+    def _connect(self) -> bool:
+        """Connect to LCD via FT232H."""
+        if not HAS_PYFTDI:
+            logger.error("pyftdi not available")
+            return False
+        
+        try:
+            self._i2c = I2cController()
+            self._i2c.configure(self.ft232h_url)
+            self._port = self._i2c.get_port(self.address)
+            
+            # Initialize LCD in 4-bit mode
+            self._init_lcd()
+            
+            self.connected = True
+            logger.info(f"FT232H LCD connected at 0x{self.address:02X}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"FT232H LCD connection failed: {e}")
+            self.connected = False
+            return False
+    
+    def _write_byte(self, data: int):
+        """Write a byte to the PCF8574 with retry logic."""
+        if not self._port:
+            return
+        
+        for attempt in range(3):
+            try:
+                self._port.write([data], relax=True)
+                return
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(0.005)  # 5ms retry delay
+                else:
+                    logger.debug(f"I2C write failed after retries: {e}")
+    
+    def _pulse_enable(self, data: int):
+        """Pulse the enable pin to latch data."""
+        self._write_byte(data | self.EN)
+        time.sleep(0.002)  # 2ms - increased for USB latency
+        self._write_byte(data & ~self.EN)
+        time.sleep(0.001)  # 1ms
+    
+    def _write_4bits(self, data: int):
+        """Write 4 bits to LCD."""
+        self._write_byte(data | self.backlight_state)
+        self._pulse_enable(data | self.backlight_state)
+    
+    def _send(self, data: int, mode: int):
+        """Send data/command to LCD in 4-bit mode.
+        
+        Args:
+            data: Byte to send
+            mode: 0 for command, RS for data
+        """
+        high = (data & 0xF0) | mode
+        low = ((data << 4) & 0xF0) | mode
+        self._write_4bits(high)
+        self._write_4bits(low)
+    
+    def command(self, cmd: int):
+        """Send command to LCD."""
+        self._send(cmd, 0)
+    
+    def write_char(self, char: int):
+        """Write character to LCD."""
+        self._send(char, self.RS)
+    
+    def _init_lcd(self):
+        """Initialize LCD in 4-bit mode."""
+        time.sleep(0.1)  # Wait for LCD to power up (100ms)
+        
+        # Put LCD into 4-bit mode (special init sequence)
+        # These must be sent 3 times with specific delays
+        self._write_4bits(0x30)
+        time.sleep(0.01)  # 10ms
+        self._write_4bits(0x30)
+        time.sleep(0.005)  # 5ms
+        self._write_4bits(0x30)
+        time.sleep(0.005)  # 5ms
+        self._write_4bits(0x20)  # Set to 4-bit mode
+        time.sleep(0.005)  # 5ms
+        
+        # Configure display
+        self.command(self.LCD_FUNCTIONSET | self.LCD_4BITMODE | self.LCD_2LINE | self.LCD_5x8DOTS)
+        time.sleep(0.005)
+        self.command(self.LCD_DISPLAYCONTROL | self.LCD_DISPLAYON | self.LCD_CURSOROFF | self.LCD_BLINKOFF)
+        time.sleep(0.005)
+        self.clear()
+        time.sleep(0.005)
+        self.command(self.LCD_ENTRYMODESET | self.LCD_ENTRYLEFT | self.LCD_ENTRYSHIFTDECREMENT)
+        time.sleep(0.005)
+    
+    def clear(self):
+        """Clear the display."""
+        self.command(self.LCD_CLEARDISPLAY)
+        time.sleep(0.005)  # Clear takes longer
+    
+    def home(self):
+        """Move cursor to home position."""
+        self.command(self.LCD_RETURNHOME)
+        time.sleep(0.005)
+    
+    def set_cursor(self, col: int, row: int):
+        """Set cursor position.
+        
+        Args:
+            col: Column (0-based)
+            row: Row (0-based)
+        """
+        if row >= self.rows:
+            row = self.rows - 1
+        self.command(self.LCD_SETDDRAMADDR | (col + self.ROW_OFFSETS[row]))
+    
+    def write_string(self, text: str):
+        """Write string at current cursor position."""
+        for char in text:
+            self.write_char(ord(char))
+    
+    def write_line(self, line: int, text: str, center: bool = False):
+        """Write text to a specific line.
+        
+        Args:
+            line: Line number (0-based)
+            text: Text to display
+            center: Center the text
+        """
+        if not self.connected:
+            return
+        
+        # Ensure text fits
+        text = text[:self.cols]
+        
+        # Pad to full width
+        if center:
+            padding = (self.cols - len(text)) // 2
+            text = ' ' * padding + text
+        text = text.ljust(self.cols)
+        
+        self.set_cursor(0, line)
+        self.write_string(text)
+    
+    def write_lines(self, lines: List[str]):
+        """Write multiple lines at once."""
+        for i, line in enumerate(lines[:self.rows]):
+            self.write_line(i, line)
+    
+    def backlight(self, on: bool):
+        """Control backlight.
+        
+        Args:
+            on: True to turn on, False to turn off
+        """
+        self.backlight_state = self.BL if on else 0
+        self._write_byte(self.backlight_state)
+    
+    def create_custom_char(self, location: int, charmap: List[int]):
+        """Create a custom character.
+        
+        Args:
+            location: Character location (0-7)
+            charmap: List of 8 bytes defining the character
+        """
+        if location < 0 or location > 7 or len(charmap) != 8:
+            return
+        
+        self.command(self.LCD_SETCGRAMADDR | (location << 3))
+        for byte in charmap:
+            self.write_char(byte)
+    
+    def close(self):
+        """Close connection to LCD."""
+        if self._i2c:
+            try:
+                self.clear()
+                self.backlight(False)
+                self._i2c.terminate()
+            except Exception:
+                pass
+        self.connected = False
+    
+    def get_status(self) -> dict:
+        """Get controller status."""
+        return {
+            'connected': self.connected,
+            'address': f"0x{self.address:02X}",
+            'interface': 'ft232h',
+            'url': self.ft232h_url,
+            'cols': self.cols,
+            'rows': self.rows,
+            'backlight': self.backlight_state > 0
+        }
 
 
 class LCDHardwareController:

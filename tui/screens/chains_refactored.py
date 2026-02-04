@@ -21,9 +21,9 @@ import os
 logger = logging.getLogger(__name__)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from api_client import MAP2APIClient
-from modals import ConfirmDialog, InputDialog, SelectDialog
-from screens.metrics_tab import MetricsTab
+from ..api_client import MAP2APIClient
+from ..modals import ConfirmDialog, InputDialog, SelectDialog
+from .metrics_tab import MetricsTab
 
 
 class EffectBlock(Container):

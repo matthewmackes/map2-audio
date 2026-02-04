@@ -5,7 +5,8 @@
  * and cents deviation with professional needle meter.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 interface TunerDisplayProps {
   detectedPitch: number // Hz (0 = no signal)
@@ -17,6 +18,7 @@ interface TunerDisplayProps {
   height?: number
   accentColor?: string
   showOctave?: boolean
+  compact?: boolean
 }
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -26,10 +28,24 @@ export function TunerDisplay({
   cents = 0,
   noteName = '--',
   confidence = 0,
-  width = 280,
-  height = 120,
+  width,
+  height,
   accentColor = '#00d4aa',
+  compact = false,
 }: TunerDisplayProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 280 / 120,
+    baseOn: 'width',
+    defaultWidth: 280,
+    defaultHeight: 120,
+  })
+
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
+
   // Calculate needle angle (-45° to +45°)
   const needleAngle = useMemo(() => {
     const clampedCents = Math.max(-50, Math.min(50, cents))
@@ -66,15 +82,16 @@ export function TunerDisplay({
     return marks
   }, [])
 
-  const centerX = width / 2
-  const meterY = height * 0.7
-  const radius = Math.min(width, height) * 0.55
+  const centerX = finalWidth / 2
+  const meterY = finalHeight * 0.7
+  const radius = Math.min(finalWidth, finalHeight) * 0.55
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="tuner-display"
     >
       <defs>
@@ -98,7 +115,7 @@ export function TunerDisplay({
       </defs>
 
       {/* Background */}
-      <rect x="0" y="0" width={width} height={height} fill="#0a0a0a" rx="8" />
+      <rect x="0" y="0" width={finalWidth} height={finalHeight} fill="#0a0a0a" rx="8" />
 
       {/* Meter arc background */}
       <path
@@ -189,7 +206,7 @@ export function TunerDisplay({
       {/* Note name display */}
       <text
         x={centerX}
-        y={height * 0.25}
+        y={finalHeight * 0.25}
         fill={confidence > 0.3 ? accentColor : '#444'}
         fontSize="28"
         fontWeight="700"
@@ -204,7 +221,7 @@ export function TunerDisplay({
       {/* Frequency display */}
       <text
         x={centerX}
-        y={height - 12}
+        y={finalHeight - 12}
         fill="#555"
         fontSize="10"
         fontFamily="'JetBrains Mono', monospace"
@@ -215,8 +232,8 @@ export function TunerDisplay({
 
       {/* Cents display */}
       <text
-        x={width - 12}
-        y={height * 0.25}
+        x={finalWidth - 12}
+        y={finalHeight * 0.25}
         fill={statusColor}
         fontSize="12"
         fontWeight="600"

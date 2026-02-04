@@ -269,6 +269,17 @@
   cursor: not-allowed;
 }
 
+/* Full step buttons (±2 semitones) - slightly different color */
+.stepper-buttons button.step-btn {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.stepper-buttons button.step-btn:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: #8b5cf6;
+}
+
 .stepper-value {
   min-width: 40px;
   text-align: center;

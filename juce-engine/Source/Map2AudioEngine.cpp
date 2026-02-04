@@ -109,7 +109,9 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     pitchShifter_.prepare(sampleRate_, bufferSize_, 2);
     intellifx_.prepare(sampleRate_, bufferSize_, 2);
     shoegaze_.prepare(sampleRate_, bufferSize_, 2);
-    std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze" << std::endl;
+    lexiLove_.prepare(sampleRate_, bufferSize_, 2);
+    h3000_.prepare(sampleRate_, bufferSize_, 2);
+    std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000" << std::endl;
 
     // Set up audio callback
     audioIO_.setProcessCallback([this](const float* const* inputs, int numInputs,
@@ -1636,6 +1638,346 @@ ShoeGazeProcessor::PresetInfo Map2AudioEngine::getShoeGazePresetInfo(ShoeGazePro
 
 int Map2AudioEngine::getShoeGazeNumPresets() {
     return ShoeGazeProcessor::getNumPresets();
+}
+
+// ========================================
+// Lexi Love PCM 70 Reverb
+// ========================================
+
+// Algorithm control
+void Map2AudioEngine::setLexiLoveAlgorithm(int algorithmIndex) {
+    lexiLove_.setAlgorithm(algorithmIndex);
+}
+
+void Map2AudioEngine::setLexiLoveAlgorithm(LexiLoveProcessor::Algorithm algorithm) {
+    lexiLove_.setAlgorithm(algorithm);
+}
+
+int Map2AudioEngine::getLexiLoveAlgorithm() const {
+    return static_cast<int>(lexiLove_.getAlgorithm());
+}
+
+// Core parameters
+void Map2AudioEngine::setLexiLovePreDelay(float ms) {
+    lexiLove_.setPreDelay(ms);
+}
+
+float Map2AudioEngine::getLexiLovePreDelay() const {
+    return lexiLove_.getPreDelay();
+}
+
+void Map2AudioEngine::setLexiLoveDecayTime(float seconds) {
+    lexiLove_.setDecayTime(seconds);
+}
+
+float Map2AudioEngine::getLexiLoveDecayTime() const {
+    return lexiLove_.getDecayTime();
+}
+
+void Map2AudioEngine::setLexiLoveDiffusion(float percent) {
+    lexiLove_.setDiffusion(percent);
+}
+
+float Map2AudioEngine::getLexiLoveDiffusion() const {
+    return lexiLove_.getDiffusion();
+}
+
+void Map2AudioEngine::setLexiLoveMix(float percent) {
+    lexiLove_.setMix(percent);
+}
+
+float Map2AudioEngine::getLexiLoveMix() const {
+    return lexiLove_.getMix();
+}
+
+void Map2AudioEngine::setLexiLoveHighCut(float hz) {
+    lexiLove_.setHighCut(hz);
+}
+
+float Map2AudioEngine::getLexiLoveHighCut() const {
+    return lexiLove_.getHighCut();
+}
+
+void Map2AudioEngine::setLexiLoveLowCut(float hz) {
+    lexiLove_.setLowCut(hz);
+}
+
+float Map2AudioEngine::getLexiLoveLowCut() const {
+    return lexiLove_.getLowCut();
+}
+
+// Multi-band decay
+void Map2AudioEngine::setLexiLoveLowDecayMult(float mult) {
+    lexiLove_.setLowDecayMult(mult);
+}
+
+float Map2AudioEngine::getLexiLoveLowDecayMult() const {
+    return lexiLove_.getLowDecayMult();
+}
+
+void Map2AudioEngine::setLexiLoveHighDecayMult(float mult) {
+    lexiLove_.setHighDecayMult(mult);
+}
+
+float Map2AudioEngine::getLexiLoveHighDecayMult() const {
+    return lexiLove_.getHighDecayMult();
+}
+
+void Map2AudioEngine::setLexiLoveLowCrossover(float hz) {
+    lexiLove_.setLowCrossover(hz);
+}
+
+float Map2AudioEngine::getLexiLoveLowCrossover() const {
+    return lexiLove_.getLowCrossover();
+}
+
+void Map2AudioEngine::setLexiLoveHighCrossover(float hz) {
+    lexiLove_.setHighCrossover(hz);
+}
+
+float Map2AudioEngine::getLexiLoveHighCrossover() const {
+    return lexiLove_.getHighCrossover();
+}
+
+// Early reflections
+void Map2AudioEngine::setLexiLoveEarlyLevel(float percent) {
+    lexiLove_.setEarlyLevel(percent);
+}
+
+float Map2AudioEngine::getLexiLoveEarlyLevel() const {
+    return lexiLove_.getEarlyLevel();
+}
+
+void Map2AudioEngine::setLexiLoveEarlyPattern(float percent) {
+    lexiLove_.setEarlyPattern(percent);
+}
+
+float Map2AudioEngine::getLexiLoveEarlyPattern() const {
+    return lexiLove_.getEarlyPattern();
+}
+
+// Modulation
+void Map2AudioEngine::setLexiLoveModDepth(float percent) {
+    lexiLove_.setModDepth(percent);
+}
+
+float Map2AudioEngine::getLexiLoveModDepth() const {
+    return lexiLove_.getModDepth();
+}
+
+void Map2AudioEngine::setLexiLoveModRate(float hz) {
+    lexiLove_.setModRate(hz);
+}
+
+float Map2AudioEngine::getLexiLoveModRate() const {
+    return lexiLove_.getModRate();
+}
+
+// State control
+void Map2AudioEngine::setLexiLoveBypass(bool bypass) {
+    lexiLove_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isLexiLoveBypassed() const {
+    return lexiLove_.isBypassed();
+}
+
+void Map2AudioEngine::setLexiLoveSpillover(bool enabled) {
+    lexiLove_.setSpillover(enabled);
+}
+
+bool Map2AudioEngine::hasLexiLoveSpillover() const {
+    return lexiLove_.hasSpillover();
+}
+
+// Bulk parameters
+LexiLoveProcessor::Parameters Map2AudioEngine::getLexiLoveParameters() const {
+    return lexiLove_.getParameters();
+}
+
+void Map2AudioEngine::setLexiLoveParameters(const LexiLoveProcessor::Parameters& params) {
+    lexiLove_.setParameters(params);
+}
+
+// Metering
+LexiLoveProcessor::Metering Map2AudioEngine::getLexiLoveMetering() const {
+    return lexiLove_.getMetering();
+}
+
+// Algorithm info
+LexiLoveProcessor::AlgorithmInfo Map2AudioEngine::getLexiLoveAlgorithmInfo(int algorithmIndex) {
+    return LexiLoveProcessor::getAlgorithmInfo(algorithmIndex);
+}
+
+int Map2AudioEngine::getLexiLoveNumAlgorithms() {
+    return LexiLoveProcessor::getNumAlgorithms();
+}
+
+// ========================================
+// H3000 Harmonizer Implementation
+// ========================================
+
+// Algorithm
+void Map2AudioEngine::setH3000Algorithm(int algorithmIndex) {
+    h3000_.setAlgorithm(algorithmIndex);
+}
+
+void Map2AudioEngine::setH3000Algorithm(H3000Processor::Algorithm algorithm) {
+    h3000_.setAlgorithm(algorithm);
+}
+
+int Map2AudioEngine::getH3000Algorithm() const {
+    return h3000_.getAlgorithmIndex();
+}
+
+// Pitch
+void Map2AudioEngine::setH3000PitchL(float cents) {
+    h3000_.setPitchL(cents);
+}
+
+float Map2AudioEngine::getH3000PitchL() const {
+    return h3000_.getPitchL();
+}
+
+void Map2AudioEngine::setH3000PitchR(float cents) {
+    h3000_.setPitchR(cents);
+}
+
+float Map2AudioEngine::getH3000PitchR() const {
+    return h3000_.getPitchR();
+}
+
+// Delay
+void Map2AudioEngine::setH3000DelayL(float ms) {
+    h3000_.setDelayL(ms);
+}
+
+float Map2AudioEngine::getH3000DelayL() const {
+    return h3000_.getDelayL();
+}
+
+void Map2AudioEngine::setH3000DelayR(float ms) {
+    h3000_.setDelayR(ms);
+}
+
+float Map2AudioEngine::getH3000DelayR() const {
+    return h3000_.getDelayR();
+}
+
+// Feedback
+void Map2AudioEngine::setH3000Feedback(float percent) {
+    h3000_.setFeedback(percent);
+}
+
+float Map2AudioEngine::getH3000Feedback() const {
+    return h3000_.getFeedback();
+}
+
+void Map2AudioEngine::setH3000CrossFeedback(float percent) {
+    h3000_.setCrossFeedback(percent);
+}
+
+float Map2AudioEngine::getH3000CrossFeedback() const {
+    return h3000_.getCrossFeedback();
+}
+
+// Modulation
+void Map2AudioEngine::setH3000ModDepth(float percent) {
+    h3000_.setModDepth(percent);
+}
+
+float Map2AudioEngine::getH3000ModDepth() const {
+    return h3000_.getModDepth();
+}
+
+void Map2AudioEngine::setH3000ModRate(float hz) {
+    h3000_.setModRate(hz);
+}
+
+float Map2AudioEngine::getH3000ModRate() const {
+    return h3000_.getModRate();
+}
+
+// Filters
+void Map2AudioEngine::setH3000LowCut(float hz) {
+    h3000_.setLowCut(hz);
+}
+
+float Map2AudioEngine::getH3000LowCut() const {
+    return h3000_.getLowCut();
+}
+
+void Map2AudioEngine::setH3000HighCut(float hz) {
+    h3000_.setHighCut(hz);
+}
+
+float Map2AudioEngine::getH3000HighCut() const {
+    return h3000_.getHighCut();
+}
+
+// Levels
+void Map2AudioEngine::setH3000Mix(float percent) {
+    h3000_.setMix(percent);
+}
+
+float Map2AudioEngine::getH3000Mix() const {
+    return h3000_.getMix();
+}
+
+void Map2AudioEngine::setH3000LevelL(float percent) {
+    h3000_.setLevelL(percent);
+}
+
+float Map2AudioEngine::getH3000LevelL() const {
+    return h3000_.getLevelL();
+}
+
+void Map2AudioEngine::setH3000LevelR(float percent) {
+    h3000_.setLevelR(percent);
+}
+
+float Map2AudioEngine::getH3000LevelR() const {
+    return h3000_.getLevelR();
+}
+
+// State
+void Map2AudioEngine::setH3000Bypass(bool bypass) {
+    h3000_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isH3000Bypassed() const {
+    return h3000_.isBypassed();
+}
+
+void Map2AudioEngine::setH3000Glide(float ms) {
+    h3000_.setGlide(ms);
+}
+
+float Map2AudioEngine::getH3000Glide() const {
+    return h3000_.getGlide();
+}
+
+// Bulk parameters
+H3000Processor::Parameters Map2AudioEngine::getH3000Parameters() const {
+    return h3000_.getParameters();
+}
+
+void Map2AudioEngine::setH3000Parameters(const H3000Processor::Parameters& params) {
+    h3000_.setParameters(params);
+}
+
+// Metering
+H3000Processor::Metering Map2AudioEngine::getH3000Metering() const {
+    return h3000_.getMetering();
+}
+
+// Algorithm info
+H3000Processor::AlgorithmInfo Map2AudioEngine::getH3000AlgorithmInfo(int algorithmIndex) {
+    return H3000Processor::getAlgorithmInfo(algorithmIndex);
+}
+
+int Map2AudioEngine::getH3000NumAlgorithms() {
+    return H3000Processor::getNumAlgorithms();
 }
 
 } // namespace map2

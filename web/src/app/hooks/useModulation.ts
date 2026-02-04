@@ -277,14 +277,19 @@ export interface IntervalPreset {
 }
 
 export const INTERVAL_PRESETS: IntervalPreset[] = [
+  // Drop tunings (full steps = 2 semitones each)
+  { name: 'Drop 1 Step', description: '1 full step down (-2st)', semitonesL: -2, semitonesR: -2, mix: 100 },
+  { name: 'Drop 2 Steps', description: '2 full steps down (-4st)', semitonesL: -4, semitonesR: -4, mix: 100 },
+  { name: 'Drop 3 Steps', description: '3 full steps down (-6st)', semitonesL: -6, semitonesR: -6, mix: 100 },
+  { name: 'Drop 4 Steps', description: '4 full steps down (-8st)', semitonesL: -8, semitonesR: -8, mix: 100 },
   // Simple shifts
-  { name: 'Octave Down', description: 'Full octave lower', semitonesL: -12, semitonesR: -12, mix: 100 },
-  { name: 'Octave Up', description: 'Full octave higher', semitonesL: 12, semitonesR: 12, mix: 100 },
-  { name: 'Fifth Up', description: 'Power chord harmony', semitonesL: 7, semitonesR: 7, mix: 50 },
-  { name: 'Fifth Down', description: 'Drop power chord', semitonesL: -5, semitonesR: -5, mix: 50 },
-  { name: 'Fourth Up', description: 'Perfect fourth', semitonesL: 5, semitonesR: 5, mix: 50 },
-  { name: 'Major 3rd Up', description: 'Major harmony', semitonesL: 4, semitonesR: 4, mix: 50 },
-  { name: 'Minor 3rd Up', description: 'Minor harmony', semitonesL: 3, semitonesR: 3, mix: 50 },
+  { name: 'Octave Down', description: 'Full octave lower (-12st)', semitonesL: -12, semitonesR: -12, mix: 100 },
+  { name: 'Octave Up', description: 'Full octave higher (+12st)', semitonesL: 12, semitonesR: 12, mix: 100 },
+  { name: 'Fifth Up', description: 'Power chord harmony (+7st)', semitonesL: 7, semitonesR: 7, mix: 50 },
+  { name: 'Fifth Down', description: 'Drop power chord (-5st)', semitonesL: -5, semitonesR: -5, mix: 50 },
+  { name: 'Fourth Up', description: 'Perfect fourth (+5st)', semitonesL: 5, semitonesR: 5, mix: 50 },
+  { name: 'Major 3rd Up', description: 'Major harmony (+4st)', semitonesL: 4, semitonesR: 4, mix: 50 },
+  { name: 'Minor 3rd Up', description: 'Minor harmony (+3st)', semitonesL: 3, semitonesR: 3, mix: 50 },
   // Stereo harmonies
   { name: '3rd/5th Harmony', description: 'Major chord stereo', semitonesL: 4, semitonesR: 7, mix: 40 },
   { name: 'Octave + 5th', description: 'Rich octave', semitonesL: 12, semitonesR: 7, mix: 50 },

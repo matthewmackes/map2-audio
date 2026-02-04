@@ -30,9 +30,9 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from api_client import MAP2APIClient
-from modals import ConfirmDialog, FormDialog
-from widgets import ActionButton, StatusIndicator, LoadingIndicator
+from ..api_client import MAP2APIClient
+from ..modals import ConfirmDialog, FormDialog
+from ..widgets import ActionButton, StatusIndicator, LoadingIndicator
 
 
 # Curve type options

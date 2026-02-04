@@ -17,7 +17,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from api_client import MAP2APIClient
+from ..api_client import MAP2APIClient
 
 
 class ControlPanel(Container):

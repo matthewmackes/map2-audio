@@ -13,8 +13,39 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { DelayTapGrid } from '../../Visualizations/DelayTapGrid'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import './NativeDelayCard.css'
+
+// Plugin URI for MIDI mappings
+const DELAY_URI = 'map2://juce/delay/stereo'
+
+// Parameter definitions for MIDI mapping dialog
+const DELAY_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Delay Time L', symbol: 'delayTimeL' },
+  { index: 1, name: 'Delay Time R', symbol: 'delayTimeR' },
+  { index: 2, name: 'Feedback', symbol: 'feedback' },
+  { index: 3, name: 'Mix', symbol: 'mix' },
+  { index: 4, name: 'Tempo', symbol: 'tempo' },
+  { index: 5, name: 'Tap 1 Level', symbol: 'tap1Level' },
+  { index: 6, name: 'Tap 2 Level', symbol: 'tap2Level' },
+  { index: 7, name: 'Tap 2 Ratio', symbol: 'tap2Ratio' },
+  { index: 8, name: 'Tap 3 Level', symbol: 'tap3Level' },
+  { index: 9, name: 'Tap 3 Ratio', symbol: 'tap3Ratio' },
+  { index: 10, name: 'Tap 4 Level', symbol: 'tap4Level' },
+  { index: 11, name: 'Tap 4 Ratio', symbol: 'tap4Ratio' },
+  { index: 12, name: 'Stereo Spread', symbol: 'stereoSpread' },
+  { index: 13, name: 'Pan', symbol: 'pan' },
+  { index: 14, name: 'Mod Rate', symbol: 'modRate' },
+  { index: 15, name: 'Mod Depth', symbol: 'modDepth' },
+  { index: 16, name: 'Low Cut', symbol: 'lowCut' },
+  { index: 17, name: 'High Cut', symbol: 'highCut' },
+  { index: 18, name: 'Diffusion', symbol: 'diffusion' },
+  { index: 19, name: 'Duck Threshold', symbol: 'duckThreshold' },
+  { index: 20, name: 'Duck Amount', symbol: 'duckAmount' },
+  { index: 21, name: 'Duck Release', symbol: 'duckRelease' },
+  { index: 22, name: 'Output Level', symbol: 'outputLevel' },
+]
 
 // Common divisions for quick access buttons
 const QUICK_DIVISIONS = [
@@ -26,11 +57,16 @@ const QUICK_DIVISIONS = [
   { index: 10, name: '1/8D' },
 ]
 
-export function NativeDelayCard({
+interface NativeDelayCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function NativeDelayCardBase({
   plugin,
   accentColor = '#45b7d1',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: NativeDelayCardProps) {
   const {
     parameters,
     metering,
@@ -168,6 +204,7 @@ export function NativeDelayCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
       customHeader={
@@ -668,4 +705,8 @@ export function NativeDelayCard({
   )
 }
 
-export default NativeDelayCard
+// Export base component for testing
+export { NativeDelayCardBase as NativeDelayCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(NativeDelayCardBase, DELAY_URI, DELAY_PARAMS)

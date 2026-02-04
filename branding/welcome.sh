@@ -43,6 +43,13 @@ echo -e "${COLOR_TEXT}Professional Real-Time Audio Processing System${COLOR_RESE
 echo -e "${COLOR_DIM}Mackes Audio Platform 1-22-25${COLOR_RESET}"
 echo ""
 
+# Show platform logo info
+if [ -f "$MAP2_HOME/MACKESAUDIOPLATFORM.png" ]; then
+    echo -e "${COLOR_SUCCESS}  ${CHECK} Platform logo: MACKESAUDIOPLATFORM.png${COLOR_RESET}"
+    echo -e "${COLOR_DIM}    Boot splash and branding assets ready${COLOR_RESET}"
+    echo ""
+fi
+
 # ═══════════════════════════════════════════════════════════════════════
 # HARDWARE STATUS
 # ═══════════════════════════════════════════════════════════════════════
@@ -192,6 +199,162 @@ if [ "$SHELL_ENHANCED" = false ]; then
     echo ""
 fi
 
+# ═══════════════════════════════════════════════════════════════════════
+# SHELL COMMANDS / ALIASES
+# ═══════════════════════════════════════════════════════════════════════
+echo -e "${COLOR_ACCENT}${SPEAKER} Quick Commands${COLOR_RESET}"
+echo -e "${COLOR_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${COLOR_RESET}"
+echo -e "  ${COLOR_PRIMARY}map2-restart${COLOR_RESET}      Full stack restart (backend + frontend)"
+echo -e "  ${COLOR_PRIMARY}map2-logs${COLOR_RESET}         Tail both backend and frontend logs"
+echo -e "  ${COLOR_PRIMARY}map2-status${COLOR_RESET}       Show service status"
+echo -e "  ${COLOR_PRIMARY}map2-stop${COLOR_RESET}         Stop all MAP2 services"
+echo ""
+
 # Footer
 echo -e "${COLOR_DIM}Documentation: README.md | API: http://localhost:8080/docs${COLOR_RESET}"
 echo -e "${COLOR_DIM}════════════════════════════════════════════════════════════════════════════${COLOR_RESET}"
+
+# ═══════════════════════════════════════════════════════════════════════
+# DEFINE SHELL FUNCTIONS (available in the current session)
+# ═══════════════════════════════════════════════════════════════════════
+
+# Full stack restart with progress feedback
+map2-restart() {
+    local MAP2_DIR="/home/mm/map2-audio"
+    echo ""
+    echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo -e "\033[0;34m  MAP2 Audio Platform - Full Stack Restart\033[0m"
+    echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo ""
+
+    # Step 1: Stop Backend
+    echo -e "\033[1;33m[1/4]\033[0m Stopping Backend (port 8080)..."
+    local PIDS=$(lsof -t -i :8080 2>/dev/null || true)
+    if [ -n "$PIDS" ]; then
+        echo "      Found PIDs: $PIDS"
+        kill -9 $PIDS 2>/dev/null || true
+        sleep 1
+        echo -e "      \033[0;32m✓ Backend stopped\033[0m"
+    else
+        echo -e "      \033[0;32m✓ Port 8080 already free\033[0m"
+    fi
+
+    # Step 2: Stop Frontend
+    echo -e "\033[1;33m[2/4]\033[0m Stopping Frontend (port 3000)..."
+    PIDS=$(lsof -t -i :3000 2>/dev/null || true)
+    if [ -n "$PIDS" ]; then
+        echo "      Found PIDs: $PIDS"
+        kill -9 $PIDS 2>/dev/null || true
+        sleep 1
+        echo -e "      \033[0;32m✓ Frontend stopped\033[0m"
+    else
+        echo -e "      \033[0;32m✓ Port 3000 already free\033[0m"
+    fi
+
+    # Step 3: Start Backend
+    echo -e "\033[1;33m[3/4]\033[0m Starting Backend (FastAPI)..."
+    cd "$MAP2_DIR"
+    .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8080 > /tmp/map2-backend.log 2>&1 &
+    local BACKEND_PID=$!
+    echo "      PID: $BACKEND_PID"
+    echo "      Waiting for health check..."
+    for i in {1..30}; do
+        if curl -s http://localhost:8080/api/health > /dev/null 2>&1; then
+            echo -e "      \033[0;32m✓ Backend ready\033[0m (http://localhost:8080)"
+            break
+        fi
+        if [ $i -eq 10 ]; then echo "      ... still initializing (10s)"; fi
+        if [ $i -eq 20 ]; then echo "      ... scanning plugins (20s)"; fi
+        if [ $i -eq 30 ]; then
+            echo -e "      \033[0;31m⚠ Backend slow to start\033[0m"
+        fi
+        sleep 1
+    done
+
+    # Step 4: Start Frontend
+    echo -e "\033[1;33m[4/4]\033[0m Starting Frontend (Vite)..."
+    cd "$MAP2_DIR/web"
+    npm run dev -- --host 0.0.0.0 --port 3000 > /tmp/map2-frontend.log 2>&1 &
+    local FRONTEND_PID=$!
+    cd "$MAP2_DIR"
+    echo "      PID: $FRONTEND_PID"
+    echo "      Waiting for Vite build..."
+    for i in {1..20}; do
+        if curl -s http://localhost:3000 > /dev/null 2>&1; then
+            echo -e "      \033[0;32m✓ Frontend ready\033[0m (http://localhost:3000)"
+            break
+        fi
+        if [ $i -eq 10 ]; then echo "      ... compiling TypeScript (10s)"; fi
+        if [ $i -eq 20 ]; then
+            echo -e "      \033[0;31m⚠ Frontend slow to start\033[0m"
+        fi
+        sleep 1
+    done
+
+    echo ""
+    echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo -e "\033[0;32m✓ MAP2 RESTART COMPLETE\033[0m"
+    echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo ""
+    echo -e "  Frontend:  http://localhost:3000"
+    echo -e "  Backend:   http://localhost:8080"
+    echo -e "  API Docs:  http://localhost:8080/docs"
+    echo ""
+}
+
+# Tail both logs
+map2-logs() {
+    echo -e "\033[0;34mTailing MAP2 logs (Ctrl+C to stop)...\033[0m"
+    tail -f /tmp/map2-backend.log /tmp/map2-frontend.log
+}
+
+# Show service status
+map2-status() {
+    echo ""
+    echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo -e "\033[0;34m  MAP2 Service Status\033[0m"
+    echo -e "\033[0;34m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+    echo ""
+
+    # Backend
+    if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null 2>&1; then
+        local BACKEND_PID=$(lsof -t -i :8080 | head -1)
+        echo -e "  \033[0;32m✓\033[0m Backend:   \033[0;32mRunning\033[0m (PID: $BACKEND_PID) - http://localhost:8080"
+    else
+        echo -e "  \033[0;31m✗\033[0m Backend:   \033[0;31mStopped\033[0m"
+    fi
+
+    # Frontend
+    if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+        local FRONTEND_PID=$(lsof -t -i :3000 | head -1)
+        echo -e "  \033[0;32m✓\033[0m Frontend:  \033[0;32mRunning\033[0m (PID: $FRONTEND_PID) - http://localhost:3000"
+    else
+        echo -e "  \033[0;31m✗\033[0m Frontend:  \033[0;31mStopped\033[0m"
+    fi
+    echo ""
+}
+
+# Stop all MAP2 services
+map2-stop() {
+    echo -e "\033[1;33mStopping MAP2 services...\033[0m"
+
+    # Stop backend
+    local PIDS=$(lsof -t -i :8080 2>/dev/null || true)
+    if [ -n "$PIDS" ]; then
+        kill -9 $PIDS 2>/dev/null || true
+        echo -e "  \033[0;32m✓\033[0m Backend stopped"
+    else
+        echo -e "  \033[0;90m○\033[0m Backend already stopped"
+    fi
+
+    # Stop frontend
+    PIDS=$(lsof -t -i :3000 2>/dev/null || true)
+    if [ -n "$PIDS" ]; then
+        kill -9 $PIDS 2>/dev/null || true
+        echo -e "  \033[0;32m✓\033[0m Frontend stopped"
+    else
+        echo -e "  \033[0;90m○\033[0m Frontend already stopped"
+    fi
+
+    echo -e "\033[0;32m✓ All services stopped\033[0m"
+}

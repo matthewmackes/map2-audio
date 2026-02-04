@@ -32,9 +32,9 @@ endif()
 # Options
 option(USE_JUCE_AUDIO "Use JUCE for audio I/O (recommended)" ON)
 option(USE_NAM "Enable Neural Amp Modeler support (RT-safe)" ON)
-option(JUCE_PLUGINHOST_VST3 "Enable VST3 plugin hosting" ON)
-option(JUCE_PLUGINHOST_AU "Enable AudioUnit plugin hosting (macOS)" ON)
-option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" OFF)
+option(JUCE_PLUGINHOST_VST3 "Enable VST3 plugin hosting" OFF)
+option(JUCE_PLUGINHOST_AU "Enable AudioUnit plugin hosting (macOS)" OFF)
+option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" ON)
 option(JUCE_PLUGINHOST_LADSPA "Enable LADSPA plugin hosting" ON)
 
 # ========================================
@@ -152,6 +152,11 @@ set(SOURCES
     Source/BossXS1PolyShifterProcessor.cpp
     Source/BossXS1UI.cpp
     Source/ShoeGazeProcessor.cpp
+    Source/LexiLoveProcessor.cpp
+    Source/H3000Processor.cpp
+    
+    # Eventide H9 Multi-Effect (NEW)
+    Source/EventideH9Processor.cpp
 
     # Existing components (updated)
     Source/MidiHandler.cpp
@@ -202,6 +207,10 @@ set(HEADERS
     Source/BossXS1PolyShifterProcessor.h
     Source/BossXS1UI.h
     Source/ShoeGazeProcessor.h
+    
+    # Eventide H9 Multi-Effect (NEW)
+    Source/EventideH9Processor.h
+    Source/EventideH9UI.h
 
     # Existing components
     Source/MidiHandler.h

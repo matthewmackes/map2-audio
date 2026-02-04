@@ -9,14 +9,32 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import './PhaserCard.css'
 
-export function PhaserCard({
+// Plugin URI for MIDI mappings
+const PHASER_URI = 'map2://juce/modulation/phaser'
+
+// Parameter definitions for MIDI mapping dialog
+const PHASER_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Rate', symbol: 'rate' },
+  { index: 1, name: 'Depth', symbol: 'depth' },
+  { index: 2, name: 'Centre Frequency', symbol: 'centreFrequency' },
+  { index: 3, name: 'Feedback', symbol: 'feedback' },
+  { index: 4, name: 'Mix', symbol: 'mix' },
+]
+
+interface PhaserCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function PhaserCardBase({
   plugin,
   accentColor = '#e74c3c',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: PhaserCardProps) {
   const {
     parameters,
     metering,
@@ -105,6 +123,7 @@ export function PhaserCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={phaserVisualization}
       compact={compact}
       customHeader={
@@ -208,4 +227,8 @@ export function PhaserCard({
   )
 }
 
-export default PhaserCard
+// Export base component for testing
+export { PhaserCardBase as PhaserCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(PhaserCardBase, PHASER_URI, PHASER_PARAMS)

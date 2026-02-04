@@ -5,7 +5,8 @@
  * Adapts to any number of bands from plugin parameters.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
 
 export interface EQBandData {
   frequency: number // Hz
@@ -25,6 +26,7 @@ interface EQCurveDisplayProps {
   interactive?: boolean
   selectedBand?: number | null
   onBandSelect?: (index: number | null) => void
+  compact?: boolean
 }
 
 // Calculate filter response at a given frequency
@@ -87,17 +89,30 @@ function calculateBandResponse(freq: number, band: EQBandData): number {
 export function EQCurveDisplay({
   bands,
   outputGain = 0,
-  width = 320,
-  height = 120,
+  width,
+  height,
   accentColor = '#4ecdc4',
   showGrid = true,
   interactive = false,
   selectedBand = null,
   onBandSelect,
+  compact = false,
 }: EQCurveDisplayProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 320 / 120,
+    baseOn: 'width',
+    defaultWidth: 320,
+    defaultHeight: 120,
+  })
+
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
   const padding = { top: 12, right: 16, bottom: 24, left: 40 }
-  const graphWidth = width - padding.left - padding.right
-  const graphHeight = height - padding.top - padding.bottom
+  const graphWidth = finalWidth - padding.left - padding.right
+  const graphHeight = finalHeight - padding.top - padding.bottom
 
   // Frequency range (logarithmic)
   const minFreq = 20
@@ -161,9 +176,10 @@ export function EQCurveDisplay({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="eq-curve-display"
     >
       {/* Background */}

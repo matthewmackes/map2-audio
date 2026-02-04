@@ -3,21 +3,12 @@
  *
  * Minimal rotary knob inspired by Cortex Control / Neural DSP style.
  * Features: SVG-based, vertical drag for value changes, accent ring, label/value display.
- * Optional MIDI CC learn/assign capability.
+ *
+ * MIDI CC mappings are configured via the MIDI Mapping Dialog
+ * (accessed from the plugin card menu), not per-knob.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { MidiCcBadge } from './MidiCcBadge'
-
-/** MIDI CC configuration for a parameter */
-export interface MidiConfig {
-  /** Plugin URI for MIDI mapping */
-  pluginUri: string
-  /** Parameter index within the plugin */
-  paramIndex: number
-  /** Show badge even when no mapping exists */
-  showWhenEmpty?: boolean
-}
 
 interface ParameterKnobProps {
   label: string
@@ -34,8 +25,15 @@ interface ParameterKnobProps {
   isLogarithmic?: boolean
   valueFormatter?: (value: number) => string
   size?: 'small' | 'medium' | 'large' | 'responsive'
-  /** Optional MIDI CC configuration - enables MIDI learn on this knob */
-  midi?: MidiConfig
+  /**
+   * @deprecated MIDI mappings are now configured via the MIDI Mapping Dialog.
+   * This prop is ignored.
+   */
+  midi?: {
+    pluginUri: string
+    paramIndex: number
+    showWhenEmpty?: boolean
+  }
 }
 
 // Convert linear position (0-1) to value
@@ -319,23 +317,6 @@ export function ParameterKnob({
       </div>
     </div>
   )
-
-  // Wrap with MIDI CC badge if midi config provided
-  if (midi) {
-    return (
-      <div className="param-knob-midi-wrapper" style={{ position: 'relative' }}>
-        {knobElement}
-        <MidiCcBadge
-          pluginUri={midi.pluginUri}
-          paramIndex={midi.paramIndex}
-          paramName={label}
-          position="top-right"
-          size="small"
-          showWhenEmpty={midi.showWhenEmpty}
-        />
-      </div>
-    )
-  }
 
   return knobElement
 }

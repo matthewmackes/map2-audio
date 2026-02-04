@@ -2257,6 +2257,225 @@ class MAP2APIClient:
             "include_settings": True
         })
 
+    # ==================== HEALTH MONITORING ====================
+
+    async def get_health_dashboard(self) -> APIResult:
+        """
+        Get comprehensive health dashboard data.
+
+        Returns combined data for all services, alerts, and metrics
+        in a single request for efficient dashboard rendering.
+        """
+        return await self._request("GET", "/api/health-monitor/dashboard")
+
+    async def get_health_status(self) -> APIResult:
+        """
+        Get overall system health status summary.
+
+        Returns:
+            Health summary with overall status, uptime, and service counts.
+        """
+        return await self._request("GET", "/api/health-monitor/status")
+
+    async def get_health_overall(self) -> APIResult:
+        """
+        Get quick overall health status.
+
+        Lightweight endpoint for status indicators.
+        """
+        return await self._request("GET", "/api/health-monitor/overall")
+
+    async def get_monitored_services(self) -> APIResult:
+        """
+        Get list of all monitored services with their current status.
+
+        Returns:
+            List of services with health metrics.
+        """
+        return await self._request("GET", "/api/health-monitor/services")
+
+    async def get_service_details(self, service_name: str) -> APIResult:
+        """
+        Get detailed information for a specific service.
+
+        Args:
+            service_name: Name of the service (e.g., 'database', 'juce_engine')
+
+        Returns:
+            Detailed service metrics including history.
+        """
+        return await self._request("GET", f"/api/health-monitor/services/{service_name}")
+
+    async def get_service_history(self, service_name: str, hours: int = 24) -> APIResult:
+        """
+        Get historical metrics for a service.
+
+        Args:
+            service_name: Name of the service
+            hours: Number of hours of history to retrieve (default: 24)
+
+        Returns:
+            Time-series health data for the service.
+        """
+        return await self._request(
+            "GET",
+            f"/api/health-monitor/services/{service_name}/history",
+            params={"hours": hours}
+        )
+
+    async def get_active_alerts(self, service_name: Optional[str] = None) -> APIResult:
+        """
+        Get currently active alerts.
+
+        Args:
+            service_name: Optional filter by service name
+
+        Returns:
+            List of active alerts with severity and details.
+        """
+        params = {}
+        if service_name:
+            params["service"] = service_name
+        return await self._request("GET", "/api/health-monitor/alerts", params=params)
+
+    async def get_alert_history(
+        self,
+        severity: Optional[str] = None,
+        limit: int = 100
+    ) -> APIResult:
+        """
+        Get alert history.
+
+        Args:
+            severity: Filter by severity (CRITICAL, WARNING, INFO)
+            limit: Maximum number of alerts to return
+
+        Returns:
+            Historical alert records.
+        """
+        params = {"limit": limit}
+        if severity:
+            params["severity"] = severity
+        return await self._request("GET", "/api/health-monitor/alerts/history", params=params)
+
+    async def get_service_dependencies(self) -> APIResult:
+        """
+        Get service dependency graph.
+
+        Returns:
+            Dependency relationships between services.
+        """
+        return await self._request("GET", "/api/health-monitor/dependencies")
+
+    async def get_health_stats(self) -> APIResult:
+        """
+        Get comprehensive health statistics.
+
+        Returns:
+            Aggregated statistics across all services.
+        """
+        return await self._request("GET", "/api/health-monitor/stats")
+
+    # ==================== SYSTEM METRICS ====================
+
+    async def get_current_metrics(self) -> APIResult:
+        """
+        Get current system metrics snapshot.
+
+        Returns:
+            CPU, memory, disk, and audio metrics.
+        """
+        return await self._request("GET", "/api/metrics/current")
+
+    async def get_cpu_history(self, limit: int = 60) -> APIResult:
+        """
+        Get CPU usage history.
+
+        Args:
+            limit: Number of data points to return
+
+        Returns:
+            Time-series CPU usage data.
+        """
+        return await self._request("GET", "/api/metrics/cpu", params={"limit": limit})
+
+    async def get_memory_history(self, limit: int = 60) -> APIResult:
+        """
+        Get memory usage history.
+
+        Args:
+            limit: Number of data points to return
+
+        Returns:
+            Time-series memory usage data.
+        """
+        return await self._request("GET", "/api/metrics/memory", params={"limit": limit})
+
+    async def get_latency_history(self, limit: int = 60) -> APIResult:
+        """
+        Get audio latency history.
+
+        Args:
+            limit: Number of data points to return
+
+        Returns:
+            Time-series latency data.
+        """
+        return await self._request("GET", "/api/metrics/latency", params={"limit": limit})
+
+    async def get_jack_metrics(self) -> APIResult:
+        """
+        Get JACK audio server metrics.
+
+        Returns:
+            JACK server status and metrics.
+        """
+        return await self._request("GET", "/api/metrics/jack")
+
+    async def get_jack_latency(self) -> APIResult:
+        """
+        Get JACK latency metrics.
+
+        Returns:
+            Latency in frames and milliseconds.
+        """
+        return await self._request("GET", "/api/metrics/jack/latency")
+
+    async def get_metrics_prometheus(self) -> APIResult:
+        """
+        Get metrics in Prometheus format.
+
+        Returns:
+            Prometheus-formatted metrics text.
+        """
+        return await self._request("GET", "/api/metrics/prometheus")
+
+    # ==================== SYSTEM LOGS ====================
+
+    async def get_system_logs(
+        self,
+        level: Optional[str] = None,
+        service: Optional[str] = None,
+        limit: int = 100
+    ) -> APIResult:
+        """
+        Get system logs.
+
+        Args:
+            level: Filter by log level (error, warn, info, debug)
+            service: Filter by service name
+            limit: Maximum number of log entries
+
+        Returns:
+            List of log entries.
+        """
+        params = {"limit": limit}
+        if level:
+            params["level"] = level
+        if service:
+            params["service"] = service
+        return await self._request("GET", "/api/system/logs", params=params)
+
     async def close(self) -> None:
         """Close the API client and cleanup resources."""
         if self._client:

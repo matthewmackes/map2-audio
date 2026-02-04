@@ -256,6 +256,10 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   '6-Stage Phaser': 'Classic 6-stage phaser with modulated all-pass filters for sweeping notches.',
   'IntelliFX 8-Voice': 'Rocktron IntelliFX-style 8-voice multi-chorus with independent voice control and HUSH noise reduction.',
 
+  // MAP2 Native Processors - Effects
+  'Eventide H9': 'Professional multi-effect processor with 10 iconic algorithms: MicroPitch, UltraShift, SmartShift, Transpose, PitchFactor, ReverseDelays, ShimmerVerbs, MotionReverbs, Granular, and Crystallize. Features STFT pitch shifting, granular synthesis, and freeverb reverb architecture.',
+  'Eventide H9 Multi-Effect': 'Professional multi-effect processor with 10 iconic algorithms: MicroPitch, UltraShift, SmartShift, Transpose, PitchFactor, ReverseDelays, ShimmerVerbs, MotionReverbs, Granular, and Crystallize. Features STFT pitch shifting, granular synthesis, and freeverb reverb architecture.',
+
   // GlitchShifter - Airwindows plugin ported to LV2 by Hannes Braun
   'GlitchShifter': 'Granular pitch shifter/harmonizer with intentional glitchy artifacts. Creates smooth or lo-fi pitch-shifted harmonies with adjustable grain tightness and feedback.',
   'Airwindows GlitchShifter': 'Granular pitch shifter/harmonizer with intentional glitchy artifacts. Creates smooth or lo-fi pitch-shifted harmonies with adjustable grain tightness and feedback.',

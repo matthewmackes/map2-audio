@@ -12,18 +12,38 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import './EVHPitchShifterCard.css'
+
+// Plugin URI for MIDI mappings
+const EVH_PITCH_URI = 'map2://juce/pitch/evh'
+
+// Parameter definitions for MIDI mapping dialog
+const EVH_PITCH_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Pitch L', symbol: 'pitchL' },
+  { index: 1, name: 'Pitch R', symbol: 'pitchR' },
+  { index: 2, name: 'Delay L', symbol: 'delayL' },
+  { index: 3, name: 'Delay R', symbol: 'delayR' },
+  { index: 4, name: 'Feedback', symbol: 'feedback' },
+  { index: 5, name: 'Mix', symbol: 'mix' },
+  { index: 6, name: 'Spread', symbol: 'spread' },
+]
 
 // Era groupings for preset browser
 const ROTH_ERA_PRESETS = [1, 2, 3, 4, 5, 6, 7, 8] // 1978-1984
 const HAGAR_ERA_PRESETS = [9, 10, 11, 12, 13, 14] // 1986-1996
 
-export function EVHPitchShifterCard({
+interface EVHPitchShifterCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function EVHPitchShifterCardBase({
   plugin,
   accentColor = '#ff6b35',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: EVHPitchShifterCardProps) {
   const {
     parameters,
     metering,
@@ -113,6 +133,7 @@ export function EVHPitchShifterCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
       customHeader={
@@ -336,4 +357,8 @@ export function EVHPitchShifterCard({
   )
 }
 
-export default EVHPitchShifterCard
+// Export base component for testing
+export { EVHPitchShifterCardBase as EVHPitchShifterCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(EVHPitchShifterCardBase, EVH_PITCH_URI, EVH_PITCH_PARAMS)

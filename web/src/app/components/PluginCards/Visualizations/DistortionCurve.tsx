@@ -4,6 +4,9 @@
  * SVG visualization of distortion/saturation transfer function.
  */
 
+import { useRef } from 'react'
+import { useResponsiveVizSize } from './useResponsiveVizSize'
+
 interface DistortionCurveProps {
   drive: number // 0-1 or 0-100
   type?: 'soft' | 'hard' | 'tube' | 'tape' | 'fuzz'
@@ -12,6 +15,7 @@ interface DistortionCurveProps {
   width?: number
   height?: number
   accentColor?: string
+  compact?: boolean
 }
 
 export function DistortionCurve({
@@ -19,13 +23,26 @@ export function DistortionCurve({
   type = 'soft',
   bias = 0,
   mix = 1,
-  width = 160,
-  height = 100,
+  width,
+  height,
   accentColor = '#ff6b6b',
+  compact = false,
 }: DistortionCurveProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const dimensions = useResponsiveVizSize(svgRef, {
+    width,
+    height,
+    aspectRatio: 160 / 100,
+    baseOn: 'width',
+    defaultWidth: 160,
+    defaultHeight: 100,
+  })
+
+  const finalWidth = dimensions.width
+  const finalHeight = dimensions.height
   const padding = { top: 8, right: 8, bottom: 8, left: 8 }
-  const graphWidth = width - padding.left - padding.right
-  const graphHeight = height - padding.top - padding.bottom
+  const graphWidth = finalWidth - padding.left - padding.right
+  const graphHeight = finalHeight - padding.top - padding.bottom
 
   // Normalize drive to 0-1
   const driveNorm = drive > 1 ? drive / 100 : drive
@@ -95,9 +112,10 @@ export function DistortionCurve({
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      ref={svgRef}
+      width={finalWidth}
+      height={finalHeight}
+      viewBox={`0 0 ${finalWidth} ${finalHeight}`}
       className="distortion-curve"
     >
       {/* Background */}

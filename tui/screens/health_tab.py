@@ -26,7 +26,7 @@ except ImportError:
     print("Error: Required packages not available")
     sys.exit(1)
 
-from api_client import MAP2APIClient
+from ..api_client import MAP2APIClient
 
 
 class HealthTabScreen(Static):

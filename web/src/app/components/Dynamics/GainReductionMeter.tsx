@@ -5,7 +5,8 @@
  * Red bars grow downward from 0 dB to show compression amount.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useResponsiveVizSize } from '../PluginCards/Visualizations/useResponsiveVizSize'
 
 interface GainReductionMeterProps {
   gainReduction: number  // dB (positive value = reduction)
@@ -19,11 +20,22 @@ interface GainReductionMeterProps {
 export function GainReductionMeter({
   gainReduction,
   maxReduction = 24,
-  height = 120,
-  width = 24,
+  height,
+  width,
   showLabel = true,
   showValue = true
 }: GainReductionMeterProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Compute responsive dimensions based on container height (tall aspect ratio)
+  const dimensions = useResponsiveVizSize(containerRef, {
+    width,
+    height,
+    aspectRatio: 24 / 120, // Original aspect ratio (tall: 0.2)
+    baseOn: 'height', // Derive width from height
+    defaultWidth: 24,
+    defaultHeight: 120,
+  })
   // Calculate bar height as percentage
   const barHeight = useMemo(() => {
     const clamped = Math.min(Math.max(gainReduction, 0), maxReduction)
@@ -40,10 +52,10 @@ export function GainReductionMeter({
   }, [maxReduction])
 
   return (
-    <div className="gr-meter" style={{ width: width + 30 }}>
+    <div ref={containerRef} className="gr-meter" style={{ width: dimensions.width + 30 }}>
       {showLabel && <div className="gr-meter-label">GR</div>}
 
-      <div className="gr-meter-container" style={{ height, width }}>
+      <div className="gr-meter-container" style={{ height: dimensions.height, width: dimensions.width }}>
         {/* Scale markers */}
         <div className="gr-meter-scale">
           {markers.map(m => (

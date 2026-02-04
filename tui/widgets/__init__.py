@@ -1,11 +1,12 @@
 """
 TUI Widgets Package
 """
+from typing import Callable
 
-from widgets.sidebar_widget import SidebarWidget
-from widgets.context_panel_widget import ContextPanelWidget
-from widgets.breadcrumb_widget import BreadcrumbWidget
-from widgets.enhanced_status_bar_widget import EnhancedStatusBarWidget
+from .sidebar_widget import SidebarWidget
+from .context_panel_widget import ContextPanelWidget
+from .breadcrumb_widget import BreadcrumbWidget
+from .enhanced_status_bar_widget import EnhancedStatusBarWidget
 
 __all__ = [
     'SidebarWidget',

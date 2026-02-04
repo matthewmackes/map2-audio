@@ -17,17 +17,33 @@ import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
 import './IntervalShifterCard.css'
+
+// Plugin URI for MIDI mappings
+const INTERVAL_SHIFTER_URI = 'map2://juce/pitch/interval'
+
+// Parameter definitions for MIDI mapping dialog
+const INTERVAL_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Semitones L', symbol: 'semitonesL' },
+  { index: 1, name: 'Semitones R', symbol: 'semitonesR' },
+  { index: 2, name: 'Mix', symbol: 'mix' },
+]
 
 // Piano key pattern for visualization
 const PIANO_KEYS = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0] // 0=white, 1=black
 
-export function IntervalShifterCard({
+interface IntervalShifterCardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function IntervalShifterCardBase({
   plugin,
   accentColor = '#8b5cf6',
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: IntervalShifterCardProps) {
   const {
     parameters,
     metering,
@@ -155,6 +171,7 @@ export function IntervalShifterCard({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={renderPianoVisualization()}
       compact={compact}
       customHeader={
@@ -201,9 +218,11 @@ export function IntervalShifterCard({
             <span className="stepper-label">Left</span>
             <div className="stepper-buttons">
               <button onClick={() => handleSemitonesL(-12)} title="-Octave">-12</button>
+              <button onClick={() => handleSemitonesL(-2)} title="-Full Step" className="step-btn">-2</button>
               <button onClick={() => handleSemitonesL(-1)} title="-Semitone">-1</button>
               <span className="stepper-value">{formatSemitones(parameters.semitonesL)}</span>
               <button onClick={() => handleSemitonesL(1)} title="+Semitone">+1</button>
+              <button onClick={() => handleSemitonesL(2)} title="+Full Step" className="step-btn">+2</button>
               <button onClick={() => handleSemitonesL(12)} title="+Octave">+12</button>
             </div>
             <span className="stepper-interval">{getIntervalName(parameters.semitonesL)}</span>
@@ -229,6 +248,12 @@ export function IntervalShifterCard({
                 disabled={linkLR}
               >-12</button>
               <button
+                onClick={() => handleSemitonesR(-2)}
+                title="-Full Step"
+                disabled={linkLR}
+                className="step-btn"
+              >-2</button>
+              <button
                 onClick={() => handleSemitonesR(-1)}
                 title="-Semitone"
                 disabled={linkLR}
@@ -239,6 +264,12 @@ export function IntervalShifterCard({
                 title="+Semitone"
                 disabled={linkLR}
               >+1</button>
+              <button
+                onClick={() => handleSemitonesR(2)}
+                title="+Full Step"
+                disabled={linkLR}
+                className="step-btn"
+              >+2</button>
               <button
                 onClick={() => handleSemitonesR(12)}
                 title="+Octave"
@@ -295,4 +326,8 @@ export function IntervalShifterCard({
   )
 }
 
-export default IntervalShifterCard
+// Export base component for testing
+export { IntervalShifterCardBase as IntervalShifterCard }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(IntervalShifterCardBase, INTERVAL_SHIFTER_URI, INTERVAL_PARAMS)

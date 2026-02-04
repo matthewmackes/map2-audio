@@ -8,12 +8,28 @@
 import { useState, useCallback } from 'react'
 import { ChevronDown, Sliders, Music2, Footprints } from 'lucide-react'
 import { useBossXS1, BOSS_XS1_PRESETS } from '../../../../hooks/useModulation'
+import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
 import './BossXS1Card.css'
+
+// Plugin URI for MIDI mappings
+const BOSS_XS1_URI = 'map2://juce/pitch/boss-xs1'
+
+// Parameter definitions for MIDI mapping dialog
+const BOSS_XS1_PARAMS: PluginParamDef[] = [
+  { index: 0, name: 'Shift Amount', symbol: 'shiftAmount' },
+  { index: 1, name: 'Balance', symbol: 'balance' },
+  { index: 2, name: 'Detune Amount', symbol: 'detuneAmount' },
+  { index: 3, name: 'Glide', symbol: 'glide' },
+  { index: 4, name: 'Feedback', symbol: 'feedback' },
+  { index: 5, name: 'Pedal Position', symbol: 'pedalPosition' },
+  { index: 6, name: 'Pedal Min', symbol: 'pedalMin' },
+  { index: 7, name: 'Pedal Max', symbol: 'pedalMax' },
+]
 
 // Category groupings for preset browser
 const PRESET_CATEGORIES = {
@@ -24,11 +40,16 @@ const PRESET_CATEGORIES = {
   creative: { label: 'Creative', presets: ['unique_intervals', 'minor_third', 'chord_shift', 'detune_chorus', 'spacey_vibrato', 'robotic_mod'] },
 }
 
-export function BossXS1Card({
+interface BossXS1CardProps extends PluginCardProps {
+  onOpenMidiMappings?: () => void
+}
+
+function BossXS1CardBase({
   plugin,
   accentColor = '#ff6600', // Boss orange
   compact = false,
-}: PluginCardProps) {
+  onOpenMidiMappings,
+}: BossXS1CardProps) {
   const {
     parameters,
     metering,
@@ -116,6 +137,7 @@ export function BossXS1Card({
       accentColor={accentColor}
       bypassed={parameters.bypass}
       onBypassToggle={() => setBypass(!parameters.bypass)}
+      onOpenMidiMappings={onOpenMidiMappings}
       visualization={visualization}
       compact={compact}
       customHeader={
@@ -344,4 +366,8 @@ export function BossXS1Card({
   )
 }
 
-export default BossXS1Card
+// Export base component for testing
+export { BossXS1CardBase as BossXS1Card }
+
+// Export wrapped component with MIDI dialog
+export default withMidiDialog(BossXS1CardBase, BOSS_XS1_URI, BOSS_XS1_PARAMS)
