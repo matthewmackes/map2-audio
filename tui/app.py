@@ -42,7 +42,7 @@ from typing import Optional, Dict, Type, Any
 try:
     from textual.app import App, ComposeResult
     from textual.containers import Container, Horizontal, Vertical
-    from textual.widgets import Header, Footer, Label, Static
+    from textual.widgets import Header, Footer, Label, Static, Tree
     from textual.binding import Binding
     from textual.reactive import reactive
     from textual.message import Message
@@ -524,6 +524,7 @@ class MAP2AudioTUI(App):
         self.api_client = MAP2APIClient(base_url=API_BASE)
         self.current_tab = 0
         self._screen_cache = LRUScreenCache(max_size=4)
+        self._nav_nodes: Dict[int, Any] = {}
         self.error_handler = setup_error_handler(self) if setup_error_handler else None
         self._status_bar: Optional[StatusBar] = None
         # Config loading with error notification
@@ -560,19 +561,7 @@ class MAP2AudioTUI(App):
     }
 
     #tabs-bar {
-        width: 100%;
-        height: 5;
-        min-height: 5;
-        background: $accent 30%;
-        color: $text;
-        text-style: bold;
-        padding: 1 2;
-        content-align: center middle;
-        border: thick $accent;
-        border-top: none;
-        border-left: none;
-        border-right: none;
-        overflow: hidden;
+        display: none;
     }
 
     #status-bar {
@@ -617,8 +606,29 @@ class MAP2AudioTUI(App):
         padding: 0;
     }
 
-    #main-content {
+    #body {
         width: 100%;
+        height: 1fr;
+        layout: horizontal;
+    }
+
+    #nav-panel {
+        width: 28;
+        min-width: 24;
+        height: 1fr;
+        background: $surface-darken-1;
+        border-right: thick $accent;
+        padding: 1 0;
+    }
+
+    #nav-tree {
+        width: 100%;
+        height: 1fr;
+        background: $surface-darken-1;
+    }
+
+    #main-content {
+        width: 1fr;
         height: 1fr;
         layout: vertical;
         border: none;
@@ -626,7 +636,7 @@ class MAP2AudioTUI(App):
     }
 
     #content-area {
-        width: 100%;
+        width: 1fr;
         height: 1fr;
         background: $surface;
         border: none;
@@ -770,7 +780,7 @@ class MAP2AudioTUI(App):
         if getattr(self, 'config_error', None):
             self.notify(f"⚠️ Config load error: {self.config_error}", severity="warning", timeout=6)
         """Create main UI layout with proper container nesting."""
-        # Header section - fixed height with mode indicator and tabs
+        # Header section - fixed height with mode indicator
         with Vertical(id="header-section"):
             # Mode indicator
             if UI_COMPONENTS_AVAILABLE and ModeIndicatorWidget:
@@ -778,21 +788,12 @@ class MAP2AudioTUI(App):
             else:
                 yield Label("MODE", id="mode-placeholder")
 
-            # Tab navigation bar - larger and more prominent
-            tabs_display = "  |  ".join([
-                f"[{i+1}] {name}" if i < 9 else f"[{chr(48 + i - 9)}] {name}" if i == 9 else f"[d] {name}"
-                for i, name in enumerate(self.TAB_NAMES)
-            ])
-            yield Label(
-                f"  {tabs_display}  ",
-                id="tabs-bar"
-            )
-
-        # Main content area - full width for screen content
-        # Changed to Vertical to ensure proper stacking
-        with Vertical(id="main-content"):
-            # Content area (full width - no sidebars)
-            yield Container(id="content-area")
+        # Body area with left navigation and content
+        with Horizontal(id="body"):
+            with Vertical(id="nav-panel"):
+                yield Tree("Menu", id="nav-tree")
+            with Vertical(id="main-content"):
+                yield Container(id="content-area")
 
         # Footer section - API call log (hidden by default, toggle with Ctrl+L)
         with Vertical(id="footer-section", classes="hidden"):
@@ -817,7 +818,29 @@ class MAP2AudioTUI(App):
         api_ok = await self.check_api_availability()
         if not api_ok:
             self.notify("Some features may be unavailable until backend is restored.", severity="warning", timeout=8)
+        self._build_nav_tree()
         await self.show_tab(0)  # Start on Dashboard
+
+    def _build_nav_tree(self) -> None:
+        """Build the navigation tree from TAB_NAMES."""
+        try:
+            tree = self.query_one("#nav-tree", Tree)
+            tree.clear()
+            self._nav_nodes.clear()
+
+            root = tree.root
+            root.set_label("Menu")
+            root.expand()
+
+            for i, name in enumerate(self.TAB_NAMES):
+                label = f"[{i+1}] {name}"
+                node = root.add(label, data=i, expand=False)
+                self._nav_nodes[i] = node
+
+            if self.current_tab in self._nav_nodes:
+                tree.select_node(self._nav_nodes[self.current_tab])
+        except Exception as e:
+            logger.debug(f"Could not build nav tree: {e}")
 
     async def action_previous_tab(self) -> None:
         """Handle left arrow - previous tab."""
@@ -1125,17 +1148,19 @@ class MAP2AudioTUI(App):
     def _update_tab_display(self) -> None:
         """Update the tab bar to show which tab is active."""
         try:
-            tabs_display = "  |  ".join([
-                f"[{i+1}] " +
-                ("▶ " if i == self.current_tab else "") +
-                name +
-                (" ◀" if i == self.current_tab else "")
-                for i, name in enumerate(self.TAB_NAMES)
-            ])
-            tabs_label = self.query_one("#tabs-bar", Label)
-            tabs_label.update(f"  {tabs_display}  ")
+            tree = self.query_one("#nav-tree", Tree)
+            if self.current_tab in self._nav_nodes:
+                tree.select_node(self._nav_nodes[self.current_tab])
         except Exception as e:
             logger.debug(f"Could not update tab display: {e}")
+
+    async def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
+        """Handle navigation tree selection."""
+        try:
+            if event.node and isinstance(event.node.data, int):
+                await self.show_tab(event.node.data)
+        except Exception as e:
+            logger.debug(f"Nav tree selection error: {e}")
     
     def _show_error_screen(self, message: str) -> None:
         """Show error screen with user-friendly message."""

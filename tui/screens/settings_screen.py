@@ -721,7 +721,7 @@ class AdvancedSettingsWidget(Static):
         # Prefer environment variable
         mode = os.getenv("MAP2_DEPLOYMENT_MODE")
         if mode:
-            self._deployment_mode = mode.upper()
+            self._deployment_mode = self._normalize_deployment_mode(mode)
             return self._deployment_mode
 
         # Fallback to config file
@@ -731,13 +731,25 @@ class AdvancedSettingsWidget(Static):
                 for line in fh:
                     if line.strip().startswith("DEPLOYMENT_MODE="):
                         _, value = line.split("=", 1)
-                        self._deployment_mode = value.strip().upper()
+                        self._deployment_mode = self._normalize_deployment_mode(value.strip())
                         return self._deployment_mode
         except Exception:
             pass
 
         self._deployment_mode = "UNKNOWN"
         return self._deployment_mode
+
+    @staticmethod
+    def _normalize_deployment_mode(mode: str) -> str:
+        """Normalize deployment mode tokens."""
+        if not mode:
+            return "UNKNOWN"
+        mode = mode.upper().replace("_", "-")
+        if mode in ("ALLINONE", "ALL-IN-ONE"):
+            return "ALL-IN-ONE"
+        if mode == "DEVELOPMENT":
+            return "DEVELOPER"
+        return mode
 
     def cycle_deployment_mode(self) -> None:
         """Cycle deployment mode and persist to config (restart required)."""
@@ -772,6 +784,7 @@ class AdvancedSettingsWidget(Static):
             if not updated:
                 lines.append(f"DEPLOYMENT_MODE={new_mode}\n")
 
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
             with open(config_path, "w", encoding="utf-8") as fh:
                 fh.writelines(lines)
 
@@ -781,11 +794,23 @@ class AdvancedSettingsWidget(Static):
                 timeout=4,
             )
         except Exception as e:
-            self.app.notify(
-                f"Mode set to {new_mode} (restart required). Failed to write config: {e}",
-                severity="error",
-                timeout=6,
-            )
+            # Fallback to user config
+            fallback_path = os.path.expanduser("~/.config/map2/lcd.conf")
+            try:
+                os.makedirs(os.path.dirname(fallback_path), exist_ok=True)
+                with open(fallback_path, "w", encoding="utf-8") as fh:
+                    fh.write(f"DEPLOYMENT_MODE={new_mode}\n")
+                self.app.notify(
+                    f"Mode set to {new_mode}. Restart required. Saved to {fallback_path}",
+                    severity="warning",
+                    timeout=6,
+                )
+            except Exception:
+                self.app.notify(
+                    f"Mode set to {new_mode} (restart required). Failed to write config: {e}",
+                    severity="error",
+                    timeout=6,
+                )
 
         # Refresh display
         self._update_display()

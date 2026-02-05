@@ -122,6 +122,7 @@ class ModeIndicatorWidget(Static):
         try:
             # Get deployment mode from environment variable
             deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "UNKNOWN").upper()
+            deployment_mode = self._normalize_mode(deployment_mode)
             
             if deployment_mode != self.current_mode and self.current_mode != "LOADING":
                 logger.debug(f"Deployment mode changed from {self.current_mode} to {deployment_mode}")
@@ -144,7 +145,7 @@ class ModeIndicatorWidget(Static):
         label.remove_class("error-mode")
         label.remove_class("other-mode")
         
-        if new_mode == "DEVELOPER":
+        if new_mode in ("DEVELOPER", "DEVELOPMENT"):
             label.update("🔴 DEVELOPER")
             label.add_class("developer-mode")
         elif new_mode == "AUDIO-NODE":
@@ -153,6 +154,9 @@ class ModeIndicatorWidget(Static):
         elif new_mode == "CONTROL-NODE":
             label.update("🟢 CONTROL-NODE")
             label.add_class("control-node-mode")
+        elif new_mode == "ALL-IN-ONE":
+            label.update("🟣 ALL-IN-ONE")
+            label.add_class("other-mode")
         elif new_mode == "LOADING":
             label.update("⏳ LOADING")
             label.add_class("loading-mode")
@@ -163,6 +167,18 @@ class ModeIndicatorWidget(Static):
             # Other deployment modes
             label.update(f"▪ {new_mode}")
             label.add_class("other-mode")
+
+    @staticmethod
+    def _normalize_mode(mode: str) -> str:
+        """Normalize deployment mode tokens."""
+        if not mode:
+            return "UNKNOWN"
+        mode = mode.upper().replace("_", "-")
+        if mode == "ALL-IN-ONE" or mode == "ALLINONE":
+            return "ALL-IN-ONE"
+        if mode == "DEVELOPMENT":
+            return "DEVELOPER"
+        return mode
     
     async def on_click(self) -> None:
         """Handle click to navigate to Developer Mode screen."""
