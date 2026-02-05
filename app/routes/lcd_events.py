@@ -334,6 +334,7 @@ async def system_status():
             "connected_peers": peer_count,
             "discovered_peers": len(lcd_manager.mdns_discovery.discovered_peers) 
                                 if lcd_manager.mdns_discovery else 0,
+            "connection_stats": lcd_manager.event_router.get_connection_stats(),
         },
         "timestamp": health['timestamp'],
     }
