@@ -31,6 +31,14 @@ class DatabaseEventProducer:
     
     def __init__(self, event_bus: LCDEventBus):
         self.event_bus = event_bus
+
+    async def start(self):
+        """Start database event producer (no background loop)"""
+        logger.info("Starting Database Event Producer")
+
+    async def stop(self):
+        """Stop database event producer"""
+        logger.info("Stopping Database Event Producer")
     
     async def on_pool_warning(self, available: int, max_size: int):
         """Called when connection pool is low"""

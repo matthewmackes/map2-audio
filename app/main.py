@@ -82,26 +82,70 @@ async def lifespan(app):
         from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
         from app.database import checkpoint_database
         from app.services.lcd_manager import LCDManager
-        from app.services.event_producers import AudioEventProducer, SystemHealthProducer, NetworkEventProducer
+        from app.services.event_producers import (
+            AudioEventProducer,
+            SystemHealthProducer,
+            NetworkEventProducer,
+            PluginEventProducer,
+            DatabaseEventProducer,
+        )
+        from app.services.lcd_event_persistence import LCDEventPersistence, set_lcd_persistence
+        from app.services.mdns_discovery import MDNSPeerDiscovery
+        from app.services.node_identity import NodeIdentity
+        from app.database_session import get_session
         from app.routes.lcd_events import init_lcd_routes
 
-        # Initialize LCD Manager
+        # Initialize LCD Event System
         logger.info("Initializing LCD Event System...")
-        import socket
-        node_id = socket.gethostname()
-        # Derive node label (AUDIO-NODE or CONTROL-NODE will be set properly later)
-        node_label = f"NODE-{node_id[:4].upper()}"
-        lcd_manager = LCDManager(node_id, node_label, use_mock_lcd=True)  # Using mock for now
+        import os
+        deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE").upper()
+        use_mock_lcd = os.getenv("MAP2_USE_MOCK_LCD", "true").lower() in ("1", "true", "yes")
+        api_port = int(os.getenv("MAP2_API_PORT", "8000"))
+
+        identity = NodeIdentity(mode=deployment_mode)
+        node_id = identity.node_id
+        node_label = identity.node_id
+
+        # Persistence layer
+        lcd_persistence = LCDEventPersistence(get_session)
+        set_lcd_persistence(lcd_persistence)
+        await safe_start_service(logger, "LCD Event Persistence", lcd_persistence.start)
+
+        # mDNS discovery
+        mdns_discovery = MDNSPeerDiscovery(node_id, deployment_mode, port=api_port)
+
+        # LCD manager
+        lcd_manager = LCDManager(
+            node_id,
+            node_label,
+            use_mock_lcd=use_mock_lcd,
+            persistence=lcd_persistence,
+            mdns_discovery=mdns_discovery,
+        )
         await safe_start_service(logger, "LCD Manager", lcd_manager.start)
         
         # Initialize event producers
         audio_producer = AudioEventProducer(lcd_manager.event_bus)
         system_producer = SystemHealthProducer(lcd_manager.event_bus)
         network_producer = NetworkEventProducer(lcd_manager.event_bus)
+        plugin_producer = PluginEventProducer(lcd_manager.event_bus)
+        database_producer = DatabaseEventProducer(lcd_manager.event_bus)
+
+        # Wire mDNS discoveries into network monitoring
+        import asyncio
+
+        def _mdns_peer_callback(action: str, peer_node_id: str, info: dict):
+            if action == 'discovered':
+                peer_http = f"http://{info.get('host')}:{info.get('port')}"
+                asyncio.create_task(network_producer.register_peer(peer_node_id, peer_http))
+
+        mdns_discovery.subscribe(_mdns_peer_callback)
         
         await safe_start_service(logger, "Audio Event Producer", audio_producer.start)
         await safe_start_service(logger, "System Health Producer", system_producer.start)
         await safe_start_service(logger, "Network Event Producer", network_producer.start)
+        await safe_start_service(logger, "Plugin Event Producer", plugin_producer.start)
+        await safe_start_service(logger, "Database Event Producer", database_producer.start)
         
         # System startup event
         import time
@@ -140,10 +184,13 @@ async def lifespan(app):
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
         
         # Stop LCD system
+        await safe_stop_service(logger, "Database Event Producer", database_producer.stop)
+        await safe_stop_service(logger, "Plugin Event Producer", plugin_producer.stop)
         await safe_stop_service(logger, "Network Event Producer", network_producer.stop)
         await safe_stop_service(logger, "System Health Producer", system_producer.stop)
         await safe_stop_service(logger, "Audio Event Producer", audio_producer.stop)
         await safe_stop_service(logger, "LCD Manager", lcd_manager.stop)
+        await safe_stop_service(logger, "LCD Event Persistence", lcd_persistence.stop)
         
         # Close database pool
         pool_manager = get_pool_manager()

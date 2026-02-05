@@ -11,7 +11,7 @@ from typing import Optional
 from datetime import datetime
 
 from app.models.lcd_event import LCDEvent
-from app.models.lcd_event_db import LCDEventRecord, LCDEventRepository
+from app.models.lcd_event_db import LCDEventRepository
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,8 @@ class LCDEventPersistence:
     - Query interface for historical data
     """
     
-    def __init__(self, db_session):
-        self.db_session = db_session
-        self.repository = LCDEventRepository(db_session)
+    def __init__(self, session_factory):
+        self.session_factory = session_factory
         
         # Batch writing
         self.event_queue: asyncio.Queue = asyncio.Queue()
@@ -102,10 +101,10 @@ class LCDEventPersistence:
     async def _write_batch(self, events: list):
         """Write batch of events to database"""
         try:
-            for event_dict in events:
-                await self.repository.save_event(event_dict)
-            
-            logger.debug(f"Persisted {len(events)} events to database")
+            async with self.session_factory() as session:
+                repository = LCDEventRepository(session)
+                count = await repository.save_events(events)
+            logger.debug(f"Persisted {count} events to database")
             
         except Exception as e:
             logger.error(f"Error persisting events: {e}")
@@ -130,7 +129,9 @@ class LCDEventPersistence:
                 await asyncio.sleep(3600)  # Every hour
                 
                 # Keep last 24 hours
-                removed = await self.repository.cleanup_expired_events(24)
+                async with self.session_factory() as session:
+                    repository = LCDEventRepository(session)
+                    removed = await repository.cleanup_expired_events(24)
                 if removed > 0:
                     logger.info(f"Cleaned up {removed} expired LCD events")
                     
@@ -142,19 +143,27 @@ class LCDEventPersistence:
     # Query interface
     async def get_recent_events(self, limit: int = 100, **filters):
         """Get recent events with optional filters"""
-        return await self.repository.get_recent_events(limit=limit, **filters)
+        async with self.session_factory() as session:
+            repository = LCDEventRepository(session)
+            return await repository.get_recent_events(limit=limit, **filters)
     
     async def get_events_by_node(self, source_node: str, limit: int = 100):
         """Get events from specific node"""
-        return await self.repository.get_events_by_node(source_node, limit=limit)
+        async with self.session_factory() as session:
+            repository = LCDEventRepository(session)
+            return await repository.get_events_by_node(source_node, limit=limit)
     
     async def get_critical_events(self, limit: int = 50):
         """Get critical severity events"""
-        return await self.repository.get_critical_events(limit=limit)
+        async with self.session_factory() as session:
+            repository = LCDEventRepository(session)
+            return await repository.get_critical_events(limit=limit)
     
     async def get_statistics(self, hours: int = 24):
         """Get event statistics"""
-        return await self.repository.get_event_statistics(hours=hours)
+        async with self.session_factory() as session:
+            repository = LCDEventRepository(session)
+            return await repository.get_event_statistics(hours=hours)
 
 
 # Global persistence instance

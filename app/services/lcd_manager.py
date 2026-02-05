@@ -42,6 +42,8 @@ class LCDManager:
         node_label: str,
         lcd_port: str = "/dev/ttyUSB0",
         use_mock_lcd: bool = False,
+        persistence=None,
+        mdns_discovery=None,
     ):
         self.node_id = node_id
         self.node_label = node_label
@@ -66,6 +68,10 @@ class LCDManager:
         # Background tasks
         self._display_task = None
         self._cleanup_task = None
+
+        # Optional components
+        self.persistence = persistence
+        self.mdns_discovery = mdns_discovery
         
     async def start(self):
         """Start all components"""
@@ -94,6 +100,17 @@ class LCDManager:
         
         # Subscribe to remote events for display
         self.remote_aggregator.subscribe(self._queue_event_for_display)
+
+        # Persist events (local + remote)
+        if self.persistence:
+            self.event_bus.subscribe(self.persistence.persist_event)
+            self.remote_aggregator.subscribe(self.persistence.persist_event)
+
+        # Start mDNS discovery if provided
+        if self.mdns_discovery:
+            await self.mdns_discovery.start()
+            # Connect to peers automatically
+            self.mdns_discovery.subscribe(self._handle_peer_discovery)
         
         # Start display update task
         self._display_task = asyncio.create_task(self._update_display_loop())
@@ -119,6 +136,9 @@ class LCDManager:
         # Stop components
         await self.event_bus.stop()
         await self.event_router.stop()
+
+        if self.mdns_discovery:
+            await self.mdns_discovery.stop()
         
         # Disconnect LCD
         await self.lcd.disconnect()
@@ -218,6 +238,13 @@ class LCDManager:
     async def connect_to_peer(self, node_id: str, node_url: str):
         """Connect to a peer node for event sharing"""
         await self.event_router.connect_to_peer(node_id, node_url)
+
+    def _handle_peer_discovery(self, action: str, node_id: str, info: dict):
+        """Handle peer discovery events"""
+        if action == 'discovered':
+            url = info.get('url')
+            if url:
+                asyncio.create_task(self.connect_to_peer(node_id, url))
     
     async def publish_event(self, event: LCDEvent):
         """Publish event (convenience method)"""

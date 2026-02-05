@@ -16,6 +16,7 @@ import logging
 import json
 
 from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.services.lcd_event_persistence import get_lcd_persistence
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,32 @@ async def get_recent_events(
     if not lcd_manager:
         raise HTTPException(status_code=503, detail="LCD Manager not initialized")
     
-    # Get events based on source
+    persistence = get_lcd_persistence()
+    if persistence:
+        # Pull from database for full history
+        filters = {}
+        if event_type:
+            filters["event_type"] = event_type
+        if severity:
+            filters["severity"] = severity
+
+        if source == "local":
+            filters["source_node"] = lcd_manager.node_label
+            events = await persistence.get_recent_events(limit=limit, **filters)
+        elif source == "remote":
+            events = await persistence.get_recent_events(limit=limit, **filters)
+            events = [e for e in events if e.get("source_node") != lcd_manager.node_label]
+        else:
+            events = await persistence.get_recent_events(limit=limit, **filters)
+        
+        return {
+            "events": events,
+            "total": len(events),
+            "node_id": lcd_manager.node_id,
+            "node_label": lcd_manager.node_label
+        }
+    
+    # Fallback to in-memory events
     if source == "local":
         events = lcd_manager.get_recent_local_events(limit)
     elif source == "remote":
@@ -148,9 +174,19 @@ async def get_event_history(
     if not lcd_manager:
         raise HTTPException(status_code=503, detail="LCD Manager not initialized")
     
-    # TODO: Implement database query for historical events
-    # For now, return recent events from memory
+    persistence = get_lcd_persistence()
+    if persistence:
+        if node_id:
+            events = await persistence.get_events_by_node(node_id, limit=100)
+        else:
+            events = await persistence.get_recent_events(limit=100, hours=hours)
+        return {
+            "events": events,
+            "total": len(events),
+            "hours": hours
+        }
     
+    # Fallback to in-memory history
     if node_id:
         events = lcd_manager.remote_aggregator.get_events_by_node(node_id, limit=100)
     else:
@@ -168,6 +204,19 @@ async def get_event_stats():
     """Get event statistics"""
     if not lcd_manager:
         raise HTTPException(status_code=503, detail="LCD Manager not initialized")
+    
+    persistence = get_lcd_persistence()
+    if persistence:
+        stats = await persistence.get_statistics(hours=24)
+        local_count = stats.get("by_node", {}).get(lcd_manager.node_label, 0)
+        total_count = stats.get("total_events", 0)
+        stats.update({
+            "local_events": local_count,
+            "remote_events": max(total_count - local_count, 0),
+            "active_nodes": lcd_manager.remote_aggregator.get_active_nodes(),
+            "connected_peers": lcd_manager.event_router.get_connected_peers()
+        })
+        return stats
     
     local_events = lcd_manager.get_recent_local_events(100)
     remote_events = lcd_manager.get_recent_remote_events(100)

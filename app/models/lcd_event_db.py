@@ -3,14 +3,11 @@ Database models and schema for LCD events persistence.
 Stores events in SQLite for historical access and analytics.
 """
 
-from sqlalchemy import Column, String, DateTime, Integer, Float, JSON, Index
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy import Column, String, DateTime, Integer, JSON, Index, select, delete
+from app.database import Base
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 from typing import List, Optional
-
-Base = declarative_base()
-
 
 class LCDEventRecord(Base):
     """
@@ -85,7 +82,7 @@ class LCDEventRepository:
     Handles all database operations for event persistence.
     """
     
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
     
     async def save_event(self, event_dict: dict) -> bool:
@@ -115,13 +112,47 @@ class LCDEventRepository:
         except Exception as e:
             await self.session.rollback()
             raise e
+
+    async def save_events(self, events: List[dict]) -> int:
+        """Save a batch of events to database"""
+        if not events:
+            return 0
+
+        try:
+            records = [
+                LCDEventRecord(
+                    event_id=event['event_id'],
+                    timestamp=datetime.fromisoformat(event['timestamp']),
+                    source_node=event['source_node'],
+                    event_type=event['event_type'],
+                    severity=event['severity'],
+                    title=event['title'],
+                    message=event['message'],
+                    icon=event['icon'],
+                    color=event.get('color', 'white'),
+                    sound=int(event.get('sound', False)),
+                    dismiss_auto=int(event.get('dismiss_auto', True)),
+                    broadcast=int(event.get('broadcast', True)),
+                    target_nodes=','.join(event.get('target_nodes', [])),
+                    ttl=event.get('ttl', 300),
+                    context=event.get('context', {})
+                )
+                for event in events
+            ]
+
+            self.session.add_all(records)
+            await self.session.commit()
+            return len(records)
+        except Exception as e:
+            await self.session.rollback()
+            raise e
     
     async def get_event(self, event_id: str) -> Optional[dict]:
         """Get single event by ID"""
-        record = self.session.query(LCDEventRecord).filter(
-            LCDEventRecord.event_id == event_id
-        ).first()
-        
+        result = await self.session.execute(
+            select(LCDEventRecord).where(LCDEventRecord.event_id == event_id)
+        )
+        record = result.scalar_one_or_none()
         return record.to_dict() if record else None
     
     async def get_recent_events(
@@ -133,25 +164,20 @@ class LCDEventRepository:
         severity: Optional[str] = None
     ) -> List[dict]:
         """Get recent events with optional filtering"""
-        query = self.session.query(LCDEventRecord)
-        
-        # Filter by time
         since = datetime.utcnow() - timedelta(hours=hours)
-        query = query.filter(LCDEventRecord.timestamp >= since)
+        stmt = select(LCDEventRecord).where(LCDEventRecord.timestamp >= since)
         
         # Apply optional filters
         if source_node:
-            query = query.filter(LCDEventRecord.source_node == source_node)
+            stmt = stmt.where(LCDEventRecord.source_node == source_node)
         if event_type:
-            query = query.filter(LCDEventRecord.event_type == event_type)
+            stmt = stmt.where(LCDEventRecord.event_type == event_type)
         if severity:
-            query = query.filter(LCDEventRecord.severity == severity)
+            stmt = stmt.where(LCDEventRecord.severity == severity)
         
-        # Order by timestamp descending, limit results
-        records = query.order_by(
-            LCDEventRecord.timestamp.desc()
-        ).limit(limit).all()
-        
+        stmt = stmt.order_by(LCDEventRecord.timestamp.desc()).limit(limit)
+        result = await self.session.execute(stmt)
+        records = result.scalars().all()
         return [r.to_dict() for r in records]
     
     async def get_events_by_node(
@@ -182,24 +208,17 @@ class LCDEventRepository:
     async def delete_old_events(self, hours_to_keep: int = 24) -> int:
         """Delete events older than specified hours"""
         cutoff = datetime.utcnow() - timedelta(hours=hours_to_keep)
-        
-        query = self.session.query(LCDEventRecord).filter(
-            LCDEventRecord.timestamp < cutoff
-        )
-        count = query.delete()
+        stmt = delete(LCDEventRecord).where(LCDEventRecord.timestamp < cutoff)
+        result = await self.session.execute(stmt)
         await self.session.commit()
-        
-        return count
+        return result.rowcount or 0
     
     async def get_event_statistics(self, hours: int = 24) -> dict:
         """Get event statistics for dashboard"""
         since = datetime.utcnow() - timedelta(hours=hours)
-        
-        query = self.session.query(LCDEventRecord).filter(
-            LCDEventRecord.timestamp >= since
-        )
-        
-        records = query.all()
+        stmt = select(LCDEventRecord).where(LCDEventRecord.timestamp >= since)
+        result = await self.session.execute(stmt)
+        records = result.scalars().all()
         
         # Count by type
         by_type = {}

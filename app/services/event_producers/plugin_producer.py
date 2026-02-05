@@ -36,6 +36,14 @@ class PluginEventProducer:
         self.event_bus = event_bus
         self.loaded_plugins: Dict[str, Dict] = {}
         self.cpu_thresholds = {}  # Per-plugin CPU thresholds
+
+    async def start(self):
+        """Start plugin event producer (no background loop)"""
+        logger.info("Starting Plugin Event Producer")
+
+    async def stop(self):
+        """Stop plugin event producer"""
+        logger.info("Stopping Plugin Event Producer")
     
     async def on_plugin_loaded(
         self,
