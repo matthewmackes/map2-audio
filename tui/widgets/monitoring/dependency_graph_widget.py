@@ -432,15 +432,22 @@ class DependencyGraphWidget(Static):
     # Event handlers
     async def on_tree_node_selected(self, event: Tree.NodeSelected) -> None:
         """Handle tree node selection."""
-        if event.node.data:
-            service_name = event.node.data
+        if not event.node.data:
+            return
+        
+        # Handle string data (service name)
+        if not isinstance(event.node.data, str):
+            logger.debug(f"Unexpected node data type: {type(event.node.data)}")
+            return
+        
+        service_name = event.node.data
+        if service_name and service_name in self._nodes:
             self._selected_node = service_name
             self._update_tree_labels()
             self._update_footer()
             self.post_message(self.NodeSelected(
                 service_name,
                 self._nodes.get(service_name)
-            ))
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
@@ -455,7 +462,9 @@ class DependencyGraphWidget(Static):
             selected_label = self.query_one("#selected-label", Label)
             impact_label = self.query_one("#impact-label", Label)
 
-            if self._selected_node and self._selected_node in self._nodes:
+            if (self._selected_node and 
+                isinstance(self._selected_node, str) and 
+                self._selected_node in self._nodes):
                 node = self._nodes[self._selected_node]
 
                 # Selected service info
