@@ -38,6 +38,7 @@ from app.response_models import ErrorResponse
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.middleware.rate_limiting import RateLimitingMiddleware, ENDPOINT_RATE_LIMITS
 from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
+from app.utils.health_metrics import init_health_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,10 @@ async def lifespan(app):
     try:
         # ===== STARTUP =====
         logger.info("Starting MAP2 Audio Platform services...")
+        
+        # Initialize health metrics
+        init_health_metrics()
+        logger.info("Health metrics initialized")
         
         # Initialize database connection pool
         logger.info("Initializing database connection pool...")

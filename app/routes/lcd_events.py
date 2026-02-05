@@ -17,6 +17,9 @@ import json
 
 from app.models.lcd_event import LCDEvent, EventType, EventSeverity
 from app.services.lcd_event_persistence import get_lcd_persistence
+from app.utils.health_metrics import get_health_metrics
+from fastapi.responses import Response
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -283,6 +286,122 @@ async def websocket_events(websocket: WebSocket):
         if lcd_manager:
             lcd_manager.event_bus.unsubscribe(send_event)
             lcd_manager.remote_aggregator.unsubscribe(send_event)
+
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    metrics = get_health_metrics()
+    health = metrics.get_health_status()
+    status_code = 200 if health['status'] == 'healthy' else 503
+    return health, status_code
+
+
+@router.get("/status")
+async def system_status():
+    """Detailed system status and metrics."""
+    if not lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
+    
+    metrics = get_health_metrics()
+    health = metrics.get_health_status()
+    peer_count = len(lcd_manager.event_router.get_connected_peers())
+    
+    return {
+        "system": {
+            "deployment_mode": os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE"),
+            "node_id": lcd_manager.node_id,
+            "node_label": lcd_manager.node_label,
+            "version": "2.0.0-FEB2025",
+        },
+        "uptime": {
+            "seconds": int(health['uptime_seconds']),
+            "human_readable": format_uptime(health['uptime_seconds'])
+        },
+        "components": health['components'],
+        "performance": {
+            "events_processed": health['events_processed'],
+            "events_per_sec": health['events_per_sec'],
+            "latency_ms": health['latency'],
+            "queue_depth": lcd_manager.display_queue.qsize(),
+        },
+        "resources": {
+            "memory": health['memory'],
+            "cpu": health['cpu'],
+            "disk": health['disk'],
+        },
+        "cluster": {
+            "connected_peers": peer_count,
+            "discovered_peers": len(lcd_manager.mdns_discovery.discovered_peers) 
+                                if lcd_manager.mdns_discovery else 0,
+        },
+        "timestamp": health['timestamp'],
+    }
+
+
+@router.get("/metrics")
+async def prometheus_metrics():
+    """Prometheus metrics endpoint for Grafana."""
+    if not lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
+    
+    metrics = get_health_metrics()
+    health = metrics.get_health_status()
+    
+    lines = [
+        "# HELP lcd_events_total Total LCD events processed",
+        "# TYPE lcd_events_total counter",
+        f"lcd_events_total{{node_id=\"{lcd_manager.node_id}\"}} {health['events_processed']}",
+        "",
+        "# HELP lcd_events_per_second Current event rate",
+        "# TYPE lcd_events_per_second gauge",
+        f"lcd_events_per_second{{node_id=\"{lcd_manager.node_id}\"}} {health['events_per_sec']}",
+        "",
+        "# HELP lcd_latency_ms Event processing latency",
+        "# TYPE lcd_latency_ms histogram",
+        f"lcd_latency_min_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency']['min_ms']}",
+        f"lcd_latency_mean_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency']['mean_ms']}",
+        f"lcd_latency_max_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency']['max_ms']}",
+        f"lcd_latency_p95_ms{{node_id=\"{lcd_manager.node_id}\"}} {health['latency'].get('p95_ms', 0)}",
+        "",
+        "# HELP lcd_uptime_seconds System uptime",
+        "# TYPE lcd_uptime_seconds counter",
+        f"lcd_uptime_seconds{{node_id=\"{lcd_manager.node_id}\"}} {int(health['uptime_seconds'])}",
+        "",
+        "# HELP lcd_queue_depth Display queue depth",
+        "# TYPE lcd_queue_depth gauge",
+        f"lcd_queue_depth{{node_id=\"{lcd_manager.node_id}\"}} {lcd_manager.display_queue.qsize()}",
+        "",
+        "# HELP lcd_memory_rss_bytes Process RSS memory",
+        "# TYPE lcd_memory_rss_bytes gauge",
+        f"lcd_memory_rss_bytes{{node_id=\"{lcd_manager.node_id}\"}} {int(health['memory']['process_rss_mb'] * 1024 * 1024)}",
+        "",
+        "# HELP lcd_cpu_percent CPU usage percentage",
+        "# TYPE lcd_cpu_percent gauge",
+        f"lcd_cpu_percent{{node_id=\"{lcd_manager.node_id}\"}} {health['cpu']['process_percent']}",
+        "",
+        "# HELP lcd_connected_peers Number of connected peer nodes",
+        "# TYPE lcd_connected_peers gauge",
+        f"lcd_connected_peers{{node_id=\"{lcd_manager.node_id}\"}} {len(lcd_manager.event_router.get_connected_peers())}",
+    ]
+    
+    metrics_text = "\n".join(lines)
+    return Response(content=metrics_text, media_type="text/plain; charset=utf-8")
+
+
+def format_uptime(seconds: float) -> str:
+    """Format uptime in human-readable form."""
+    d = int(seconds // 86400)
+    h = int((seconds % 86400) // 3600)
+    m = int((seconds % 3600) // 60)
+    s = int(seconds % 60)
+    
+    if d > 0:
+        return f"{d}d {h}h {m}m"
+    elif h > 0:
+        return f"{h}h {m}m {s}s"
+    else:
+        return f"{m}m {s}s"
 
 
 def init_lcd_routes(manager):
