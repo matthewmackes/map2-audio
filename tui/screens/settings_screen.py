@@ -10,6 +10,7 @@ Wired to real API endpoints:
 
 import logging
 import asyncio
+import os
 from textual.app import ComposeResult
 from textual.widgets import Static, Label, DataTable, Input
 from textual.containers import Vertical, Horizontal, ScrollableContainer
@@ -640,6 +641,7 @@ class AdvancedSettingsWidget(Static):
         self._realtime_status = {}
         self._health = {}
         self._metrics = {}
+        self._deployment_mode = None
         self._loading = True
 
     def compose(self) -> ComposeResult:
@@ -670,6 +672,7 @@ class AdvancedSettingsWidget(Static):
             actions.zebra_stripes = True
             actions.cursor_type = "row"
             actions.add_row("D", "DSP Mode", "Cycle DSP quality mode")
+            actions.add_row("M", "Deployment Mode", "Cycle deployment mode (restart required)")
             actions.add_row("c", "Clear Cache", "Clear application cache")
             actions.add_row("R", "Restart Services", "Restart all services")
             actions.add_row("L", "Logs", "View system logs")
@@ -710,6 +713,83 @@ class AdvancedSettingsWidget(Static):
         except Exception as e:
             logger.debug(f"Error fetching advanced settings: {e}")
 
+    def _get_deployment_mode(self) -> str:
+        """Get deployment mode from env or config."""
+        if self._deployment_mode:
+            return self._deployment_mode
+
+        # Prefer environment variable
+        mode = os.getenv("MAP2_DEPLOYMENT_MODE")
+        if mode:
+            self._deployment_mode = mode.upper()
+            return self._deployment_mode
+
+        # Fallback to config file
+        config_path = "/etc/map2/lcd.conf"
+        try:
+            with open(config_path, "r", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.strip().startswith("DEPLOYMENT_MODE="):
+                        _, value = line.split("=", 1)
+                        self._deployment_mode = value.strip().upper()
+                        return self._deployment_mode
+        except Exception:
+            pass
+
+        self._deployment_mode = "UNKNOWN"
+        return self._deployment_mode
+
+    def cycle_deployment_mode(self) -> None:
+        """Cycle deployment mode and persist to config (restart required)."""
+        modes = ["AUDIO-NODE", "CONTROL-NODE", "ALL-IN-ONE", "DEVELOPER"]
+        current = self._get_deployment_mode()
+        try:
+            index = modes.index(current)
+        except ValueError:
+            index = 0
+        new_mode = modes[(index + 1) % len(modes)]
+
+        # Update env for current UI session
+        os.environ["MAP2_DEPLOYMENT_MODE"] = new_mode
+        self._deployment_mode = new_mode
+
+        # Persist to /etc/map2/lcd.conf if possible
+        config_path = "/etc/map2/lcd.conf"
+        try:
+            lines = []
+            updated = False
+            try:
+                with open(config_path, "r", encoding="utf-8") as fh:
+                    for line in fh:
+                        if line.strip().startswith("DEPLOYMENT_MODE="):
+                            lines.append(f"DEPLOYMENT_MODE={new_mode}\n")
+                            updated = True
+                        else:
+                            lines.append(line)
+            except FileNotFoundError:
+                pass
+
+            if not updated:
+                lines.append(f"DEPLOYMENT_MODE={new_mode}\n")
+
+            with open(config_path, "w", encoding="utf-8") as fh:
+                fh.writelines(lines)
+
+            self.app.notify(
+                f"Deployment mode set to {new_mode}. Restart required.",
+                severity="warning",
+                timeout=4,
+            )
+        except Exception as e:
+            self.app.notify(
+                f"Mode set to {new_mode} (restart required). Failed to write config: {e}",
+                severity="error",
+                timeout=6,
+            )
+
+        # Refresh display
+        self._update_display()
+
     def _update_display(self) -> None:
         """Update the widget display with fetched data."""
         try:
@@ -728,12 +808,14 @@ class AdvancedSettingsWidget(Static):
             mem = self._metrics.get("memory_percent", 0)
             dsp_mode = self._dsp_status.get("quality_mode", "balanced")
             health_ok = self._health.get("status") == "ok" or self._health.get("healthy", False)
+            deployment_mode = self._get_deployment_mode()
 
             status_parts = []
             status_parts.append("🟢 Healthy" if health_ok else "🔴 Issues")
             status_parts.append(f"CPU: {cpu:.0f}%")
             status_parts.append(f"MEM: {mem:.0f}%")
             status_parts.append(f"DSP: {dsp_mode.title()}")
+            status_parts.append(f"MODE: {deployment_mode}")
 
             status_bar = self.query_one("#advanced-status-bar", Label)
             status_bar.update(" │ ".join(status_parts))
@@ -746,6 +828,9 @@ class AdvancedSettingsWidget(Static):
             quality_mode = self._dsp_status.get("quality_mode", "balanced")
             target_cpu = self._dsp_status.get("target_cpu_percent", 70)
             table.add_row("DSP Quality", quality_mode.title(), f"Target: {target_cpu}%")
+
+            # Deployment Mode
+            table.add_row("Deployment Mode", deployment_mode, "Press M to change")
 
             # DSP Metrics - API returns utilization_percent
             current_load = self._dsp_status.get("utilization_percent", self._dsp_status.get("current_load_percent", 0))
@@ -859,6 +944,7 @@ class SettingsScreen(Static):
         Binding("T", "test_audio", "Test", show=True),
         Binding("r", "refresh_data", "Refresh", show=True),
         Binding("p", "ping_network", "Ping", show=True),
+        Binding("m", "cycle_deployment_mode", "Mode", show=True),
         Binding("1", "expand_audio", "Audio", show=False),
         Binding("2", "expand_display", "Display", show=False),
         Binding("3", "expand_network", "Network", show=False),
@@ -1010,3 +1096,11 @@ class SettingsScreen(Static):
             self.app.notify("Settings refreshed", severity="information", timeout=2)
         except Exception as e:
             self.app.notify(f"Refresh error: {e}", severity="error", timeout=3)
+
+    def action_cycle_deployment_mode(self) -> None:
+        """Cycle deployment mode (restart required)."""
+        try:
+            widget = self.query_one(AdvancedSettingsWidget)
+            widget.cycle_deployment_mode()
+        except Exception as e:
+            logger.debug(f"Cycle deployment mode action error: {e}")

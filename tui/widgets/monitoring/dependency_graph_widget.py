@@ -448,6 +448,7 @@ class DependencyGraphWidget(Static):
             self.post_message(self.NodeSelected(
                 service_name,
                 self._nodes.get(service_name)
+            ))
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""

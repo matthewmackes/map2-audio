@@ -59,10 +59,10 @@ class ModeIndicatorWidget(Static):
     }
     
     .audio-node-mode {
-        background: $info;
+        background: $accent;
         color: $text;
         text-style: bold;
-        border: solid $info;
+        border: solid $accent;
     }
     
     .control-node-mode {
