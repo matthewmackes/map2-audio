@@ -1,7 +1,7 @@
-"""
-React hook for LCD events WebSocket subscription and state management.
-Handles real-time event streaming from backend.
-"""
+/**
+ * React hook for LCD events WebSocket subscription and state management.
+ * Handles real-time event streaming from backend.
+ */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { LCDEvent } from '../models/lcd_event';

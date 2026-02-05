@@ -1,6 +1,7 @@
-"""Page 1: LCD Event Dashboard
-Main real-time event feed with statistics and filtering.
-"""
+/**
+ * Page 1: LCD Event Dashboard
+ * Main real-time event feed with statistics and filtering.
+ */
 
 import React, { useState } from 'react';
 import { useLCDEvents, useLCDStatistics } from '../hooks/useLCDEvents';

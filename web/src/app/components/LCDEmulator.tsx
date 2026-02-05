@@ -1,4 +1,4 @@
-"""React component for LCD display emulator"""
+/** React component for LCD display emulator */
 
 import React, { useEffect, useState } from 'react';
 import { LCDEvent } from '../models/lcd_event';

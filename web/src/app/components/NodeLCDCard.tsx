@@ -1,4 +1,4 @@
-"""React component for node status card"""
+/** React component for node status card */
 
 import React from 'react';
 

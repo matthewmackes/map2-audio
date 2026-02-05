@@ -1,6 +1,7 @@
-"""Page 2: Per-Node LCD Display
-Monitor individual node LCD displays with detailed status.
-"""
+/**
+ * Page 2: Per-Node LCD Display
+ * Monitor individual node LCD displays with detailed status.
+ */
 
 import React, { useState } from 'react';
 import { useLCDEventHistory } from '../hooks/useLCDEvents';

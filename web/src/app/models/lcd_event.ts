@@ -1,4 +1,4 @@
-"""TypeScript model for LCD Events"""
+/** TypeScript model for LCD Events */
 
 export type EventType = 'audio' | 'system' | 'network' | 'service' | 'user' | 'alert';
 export type EventSeverity = 'info' | 'warning' | 'error' | 'critical';

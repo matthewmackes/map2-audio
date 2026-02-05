@@ -1,4 +1,4 @@
-"""React component for LCD event feed"""
+/** React component for LCD event feed */
 
 import React from 'react';
 import { LCDEvent } from '../models/lcd_event';

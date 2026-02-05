@@ -1,6 +1,7 @@
-"""Page 3: LCD Settings & Configuration
-Configure LCD display settings and event behavior.
-"""
+/**
+ * Page 3: LCD Settings & Configuration
+ * Configure LCD display settings and event behavior.
+ */
 
 import React, { useState } from 'react';
 
