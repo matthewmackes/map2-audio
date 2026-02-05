@@ -81,6 +81,32 @@ async def lifespan(app):
         from app.services.metering_broadcast import start_metering_broadcast, stop_metering_broadcast
         from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
         from app.database import checkpoint_database
+        from app.services.lcd_manager import LCDManager
+        from app.services.event_producers import AudioEventProducer, SystemHealthProducer, NetworkEventProducer
+        from app.routes.lcd_events import init_lcd_routes
+
+        # Initialize LCD Manager
+        logger.info("Initializing LCD Event System...")
+        import socket
+        node_id = socket.gethostname()
+        # Derive node label (AUDIO-NODE or CONTROL-NODE will be set properly later)
+        node_label = f"NODE-{node_id[:4].upper()}"
+        lcd_manager = LCDManager(node_id, node_label, use_mock_lcd=True)  # Using mock for now
+        await safe_start_service(logger, "LCD Manager", lcd_manager.start)
+        
+        # Initialize event producers
+        audio_producer = AudioEventProducer(lcd_manager.event_bus)
+        system_producer = SystemHealthProducer(lcd_manager.event_bus)
+        network_producer = NetworkEventProducer(lcd_manager.event_bus)
+        
+        await safe_start_service(logger, "Audio Event Producer", audio_producer.start)
+        await safe_start_service(logger, "System Health Producer", system_producer.start)
+        await safe_start_service(logger, "Network Event Producer", network_producer.start)
+        
+        # System startup event
+        import time
+        boot_time = time.time() - __import__('psutil').boot_time()
+        await system_producer.on_startup_complete(boot_time)
 
         # Start metrics daemon
         await safe_start_service(logger, "Metrics daemon", start_metrics_daemon)
@@ -112,6 +138,12 @@ async def lifespan(app):
         logger.info("Stopping MAP2 Audio Platform services...")
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
+        
+        # Stop LCD system
+        await safe_stop_service(logger, "Network Event Producer", network_producer.stop)
+        await safe_stop_service(logger, "System Health Producer", system_producer.stop)
+        await safe_stop_service(logger, "Audio Event Producer", audio_producer.stop)
+        await safe_stop_service(logger, "LCD Manager", lcd_manager.stop)
         
         # Close database pool
         pool_manager = get_pool_manager()
@@ -172,6 +204,17 @@ def create_app():
                 logger.info("LCD routes registered")
         except ImportError:
             logger.debug("LCD routes not available")
+        
+        # Register LCD event routes
+        try:
+            from app.routes import lcd_events
+            if lcd_events.router:
+                app.include_router(lcd_events.router)
+                # Initialize with LCD manager
+                init_lcd_routes(lcd_manager)
+                logger.info("LCD event routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load LCD event routes: {e}")
 
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
