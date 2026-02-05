@@ -1906,6 +1906,14 @@ class ChainTreeWidget(Tree):
         if node.data is None:
             return
 
+        # Handle string data (from dependency graph)
+        if isinstance(node.data, str):
+            return
+        
+        # Handle dict data (from chain tree)
+        if not isinstance(node.data, dict):
+            return
+
         data_type = node.data.get("type")
 
         if data_type == "chain":
