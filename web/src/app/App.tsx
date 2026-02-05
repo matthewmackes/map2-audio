@@ -18,6 +18,9 @@ import { HoToneJoGGPage } from './pages/HoToneJoGGPage'
 import { MeteringPage } from './pages/MeteringPage'
 import { WelcomePage } from './pages/WelcomePage'
 import { LCDPage } from './pages/LCDPage'
+import { LCDDashboardPage } from './pages/LCDDashboardPage'
+import { NodeLCDPage } from './pages/NodeLCDPage'
+import { LCDSettingsPage } from './pages/LCDSettingsPage'
 import { MidiLearnProvider } from './hooks/useMidiLearn'
 
 const queryClient = new QueryClient({
@@ -56,6 +59,9 @@ export function App() {
                 <Route path="/metering" element={<MeteringPage />} />
                 <Route path="/welcome" element={<WelcomePage />} />
                 <Route path="/lcd" element={<LCDPage />} />
+                <Route path="/lcd-dashboard" element={<LCDDashboardPage />} />
+                <Route path="/lcd-nodes" element={<NodeLCDPage />} />
+                <Route path="/lcd-settings" element={<LCDSettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppShell>

@@ -77,6 +77,27 @@ const underTheHoodItems = [
     description: 'LCD screen management & alerts',
     color: '#22c55e'  // Green
   },
+  {
+    to: '/lcd-dashboard',
+    label: 'LCD Dashboard',
+    icon: Monitor,
+    description: 'Real-time LCD event feed',
+    color: '#22c55e'  // Green
+  },
+  {
+    to: '/lcd-nodes',
+    label: 'LCD Nodes',
+    icon: Monitor,
+    description: 'Per-node LCD views',
+    color: '#22c55e'  // Green
+  },
+  {
+    to: '/lcd-settings',
+    label: 'LCD Settings',
+    icon: Monitor,
+    description: 'Display configuration',
+    color: '#22c55e'  // Green
+  },
 ]
 
 // Main navigation items (left side, top-level)
