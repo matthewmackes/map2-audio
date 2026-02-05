@@ -121,14 +121,22 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         
         return "unknown"
     
-    def _get_limits(self, path: str) -> Tuple[int, int]:
-        """Get rate limits for endpoint."""
+    def _get_limits(self, path: str, method: str = "GET") -> Tuple[int, int]:
+        """Get rate limits for endpoint with method awareness."""
+        # Check method-specific match (e.g., "POST:/api/lcd/events")
+        method_specific_key = f"{method}:{path}"
+        if method_specific_key in self.endpoint_limits:
+            return self.endpoint_limits[method_specific_key]
+        
         # Check exact match
         if path in self.endpoint_limits:
             return self.endpoint_limits[path]
         
         # Check prefix match
         for pattern, limits in self.endpoint_limits.items():
+            # Skip method-specific patterns in prefix matching
+            if ":" in pattern:
+                continue
             if path.startswith(pattern):
                 return limits
         
@@ -178,7 +186,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
 
         # Get client ID and limits
         client_id = self._get_client_id(request)
-        limit, window = self._get_limits(request.url.path)
+        limit, window = self._get_limits(request.url.path, request.method)
 
         # Get token bucket
         bucket = self._get_bucket(client_id, limit, window)
@@ -198,6 +206,14 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
                     "retry_after": retry_after,
                 }
             )
+            
+            # Track violation in health metrics
+            try:
+                from app.utils.health_metrics import get_health_metrics
+                metrics = get_health_metrics()
+                metrics.record_rate_limit_violation(request.url.path)
+            except Exception:
+                pass  # Don't fail if metrics unavailable
 
             # Return 429 Too Many Requests
             return Response(
@@ -233,4 +249,15 @@ ENDPOINT_RATE_LIMITS = {
     "/api/audio/start": (5, 60),        # 5 audio starts per minute
     "/api/system/": (30, 60),           # 30 system calls per minute
     "/api/backup/create": (1, 300),     # 1 backup every 5 minutes
+    
+    # LCD Event System rate limits
+    "/api/lcd/events": (100, 60),       # 100 event queries per minute
+    "/api/lcd/history": (30, 60),       # 30 history queries per minute
+    "/api/lcd/stats": (60, 60),         # 60 stats queries per minute
+    "/api/lcd/status": (120, 60),       # 120 status queries per minute (monitoring)
+    "/api/lcd/health": (300, 60),       # 300 health checks per minute (load balancers)
+    "/api/lcd/metrics": (120, 60),      # 120 Prometheus scrapes per minute
+    
+    # LCD Event Creation (stricter to prevent storms)
+    "POST:/api/lcd/events": (50, 60),   # 50 event creations per minute per client
 }

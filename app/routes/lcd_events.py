@@ -384,6 +384,10 @@ async def prometheus_metrics():
         "# HELP lcd_connected_peers Number of connected peer nodes",
         "# TYPE lcd_connected_peers gauge",
         f"lcd_connected_peers{{node_id=\"{lcd_manager.node_id}\"}} {len(lcd_manager.event_router.get_connected_peers())}",
+        "",
+        "# HELP lcd_rate_limit_violations_total Total rate limit violations",
+        "# TYPE lcd_rate_limit_violations_total counter",
+        f"lcd_rate_limit_violations_total{{node_id=\"{lcd_manager.node_id}\"}} {health['rate_limits']['total_violations']}",
     ]
     
     metrics_text = "\n".join(lines)

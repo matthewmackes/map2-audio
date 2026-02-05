@@ -32,6 +32,10 @@ class HealthMetrics:
         self.events_last_minute = deque(maxlen=60)
         self.latencies = deque(maxlen=1000)
         
+        # Rate limit tracking
+        self.rate_limit_violations = 0
+        self.rate_limit_violations_by_endpoint = {}
+        
         # Component status
         self.components_status = {
             'event_bus': False,
@@ -46,6 +50,13 @@ class HealthMetrics:
         self.events_last_minute.append(time.time())
         if latency_ms > 0:
             self.latencies.append(latency_ms)
+    
+    def record_rate_limit_violation(self, endpoint: str):
+        """Record rate limit violation."""
+        self.rate_limit_violations += 1
+        if endpoint not in self.rate_limit_violations_by_endpoint:
+            self.rate_limit_violations_by_endpoint[endpoint] = 0
+        self.rate_limit_violations_by_endpoint[endpoint] += 1
     
     def get_uptime_seconds(self) -> float:
         """Get uptime in seconds."""
@@ -133,6 +144,10 @@ class HealthMetrics:
             'cpu': self.get_cpu_info(),
             'disk': self.get_disk_info(),
             'latency': self.get_latency_stats(),
+            'rate_limits': {
+                'total_violations': self.rate_limit_violations,
+                'by_endpoint': self.rate_limit_violations_by_endpoint,
+            },
         }
 
 
