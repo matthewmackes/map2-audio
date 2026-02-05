@@ -218,6 +218,20 @@ class DatabasePoolManager(Singleton):
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
             return False
+
+    async def ensure_tables_created(self) -> None:
+        """Create tables using shared Base metadata (idempotent)."""
+        if not self._initialized or not self._engine:
+            logger.warning("Database pool not initialized; cannot create tables")
+            return
+
+        try:
+            from app.database import Base
+            async with self._engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables ensured")
+        except Exception as e:
+            logger.error(f"Failed to create database tables: {e}")
     
     def get_stats(self) -> dict:
         """Get connection pool statistics."""

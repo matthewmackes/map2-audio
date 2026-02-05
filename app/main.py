@@ -60,6 +60,7 @@ async def lifespan(app):
             "sqlite+aiosqlite:///data/map2.db",
             ConnectionPoolConfig(pool_size=10, max_overflow=20)
         )
+        await safe_start_service(logger, "Database tables", pool_manager.ensure_tables_created)
         
         # Validate audio engine configuration BEFORE starting services
         logger.info("Validating audio engine configuration...")
