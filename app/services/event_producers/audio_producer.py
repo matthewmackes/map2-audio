@@ -16,7 +16,7 @@ from datetime import datetime
 import psutil
 
 from app.services.lcd_event_bus import LCDEventBus, create_audio_event, create_alert_event
-from app.models.lcd_event import EventSeverity
+from app.lcd_models.lcd_event import EventSeverity
 
 logger = logging.getLogger(__name__)
 

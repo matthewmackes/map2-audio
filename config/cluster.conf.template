@@ -1,0 +1,467 @@
+# MAP2 Audio Cluster Manager - Default Configuration
+# 
+# This is the default configuration template for cluster management.
+# Copy to /etc/map2/cluster.conf and customize for your deployment.
+#
+# Format: INI with sections and key=value pairs
+# Override: Set environment variables with MAP2_ prefix (e.g., MAP2_CLUSTER_NAME=my-cluster)
+#
+# Generated: February 5, 2026
+
+# =============================================================================
+# CLUSTER IDENTITY
+# =============================================================================
+[cluster]
+# Cluster name
+name = map2-cluster
+
+# Unique node identifier (generated if empty)
+node_id = 
+
+# Node role: MANAGEMENT-NODE, AUDIO-NODE, or STANDBY-NODE
+node_role = MANAGEMENT-NODE
+
+# Configuration version
+version = 1.0.0
+
+# Environment: production, staging, development
+environment = production
+
+
+# =============================================================================
+# DIRECTORIES AND PATHS
+# =============================================================================
+[paths]
+# Data directory (cluster database, backups)
+data_dir = /var/lib/map2
+
+# Configuration directory (settings, certificates, SSH keys)
+config_dir = /etc/map2
+
+# Log directory
+log_dir = /var/log/map2
+
+# Backup storage directory
+backup_dir = /var/lib/map2/backups
+
+# Database file path
+database_path = /var/lib/map2/database/cluster.db
+
+# SSL/TLS certificate directory
+ssl_dir = /etc/map2/ssl
+
+# Scripts directory
+scripts_dir = /opt/map2/scripts
+
+
+# =============================================================================
+# API SERVER
+# =============================================================================
+[server]
+# Bind address (0.0.0.0 = all interfaces)
+host = 0.0.0.0
+
+# API port
+port = 8080
+
+# Number of worker processes
+workers = 4
+
+# Request timeout (seconds)
+timeout = 30
+
+# Keep-alive timeout (seconds)
+keep_alive = 5
+
+# Enable CORS
+enable_cors = false
+
+
+# =============================================================================
+# DATABASE
+# =============================================================================
+[database]
+# Backend: sqlite or postgresql
+backend = sqlite
+
+# Database file path (for SQLite)
+path = /var/lib/map2/database/cluster.db
+
+# Connection pool size
+pool_size = 5
+
+# Maximum pool overflow
+max_overflow = 10
+
+# SQL echo (debug)
+echo = false
+
+# Use WAL mode for SQLite (recommended)
+use_wal = true
+
+# Enable automatic backups
+backup_enabled = true
+
+# Backup interval (seconds)
+backup_interval = 3600
+
+
+# =============================================================================
+# TLS/SSL SECURITY
+# =============================================================================
+[ssl]
+# Enable TLS encryption
+enabled = true
+
+# Certificate Authority cert path
+ca_cert_path = /etc/map2/ssl/ca-cert.pem
+
+# Node certificate path
+cert_path = /etc/map2/ssl/node-cert.pem
+
+# Node private key path
+key_path = /etc/map2/ssl/node-key.pem
+
+# Certificate verification: CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
+verify_mode = CERT_REQUIRED
+
+# Renew certificate at this % of lifetime (0-100)
+cert_renewal_threshold = 80
+
+# Minimum TLS version
+min_tls_version = TLSv1.2
+
+# Cipher suite
+ciphers = HIGH:!aNULL:!MD5
+
+
+# =============================================================================
+# CLUSTER MANAGEMENT
+# =============================================================================
+[cluster_management]
+# Health check interval (seconds)
+health_check_interval = 30
+
+# Health check timeout (seconds)
+health_check_timeout = 5
+
+# Health score threshold (0-100, below = unhealthy)
+health_score_threshold = 50
+
+# Metrics aggregation interval (seconds)
+metrics_aggregation_interval = 60
+
+# Metrics retention (days)
+metrics_retention_days = 7
+
+# Failover timeout (seconds)
+failover_timeout = 30
+
+# Failover max retries
+failover_max_retries = 3
+
+# State replication interval (seconds)
+state_replication_interval = 300
+
+# Replication retry interval (seconds)
+replication_retry_interval = 30
+
+# Replication max retries
+replication_max_retries = 5
+
+# Node discovery interval (seconds)
+discovery_interval = 60
+
+# Node discovery TTL (seconds)
+discovery_ttl = 3600
+
+# Maximum nodes in cluster
+max_nodes = 50
+
+# Node timeout without heartbeat (seconds)
+node_timeout = 300
+
+
+# =============================================================================
+# PACKAGE UPDATES
+# =============================================================================
+[updates]
+# Update strategy: staged, rolling, canary, immediate
+strategy = staged
+
+# Enable updates
+enabled = true
+
+# Enable scheduled updates
+schedule_enabled = true
+
+# Cron schedule (Sunday 3 AM)
+schedule_cron = 0 3 * * 0
+
+# Nodes to update per hour during stagger
+stagger_rate = 2
+
+# Stagger interval (seconds) between groups
+stagger_interval = 1800
+
+# Run pre-update validation
+pre_update_validation = true
+
+# Run post-update validation
+post_update_validation = true
+
+# Rollback on failure
+rollback_on_failure = true
+
+# Allow dry-run updates
+dry_run_enabled = true
+
+
+# =============================================================================
+# BACKUP AND DISASTER RECOVERY
+# =============================================================================
+[backup]
+# Enable backups
+enabled = true
+
+# Backup schedule (daily at 2 AM)
+schedule_cron = 0 2 * * *
+
+# Retention (days)
+retention_days = 30
+
+# Include database in backup
+include_database = true
+
+# Include presets in backup
+include_presets = true
+
+# Include configuration in backup
+include_config = true
+
+# Compression: gzip, bzip2, none
+backup_compression = gzip
+
+# Backup location
+backup_location = /var/lib/map2/backups
+
+# Number of backups to keep
+backup_retention_count = 10
+
+# Verify backup integrity after creation
+verify_after_backup = true
+
+
+# =============================================================================
+# NETWORK TOPOLOGY
+# =============================================================================
+[network]
+# Topology update interval (seconds)
+topology_update_interval = 60
+
+# Enable mesh topology testing
+topology_mesh_enabled = true
+
+# Latency threshold (milliseconds) for alerts
+latency_threshold_ms = 100
+
+# Jitter threshold (milliseconds)
+latency_jitter_threshold_ms = 50
+
+# Packet loss threshold (%)
+packet_loss_threshold_percent = 1.0
+
+# Preferred network interface
+# preferred_interface = eth0
+
+# Enable multicast
+multicast_enabled = true
+
+# Multicast group
+multicast_group = 239.255.76.50
+
+# Multicast port
+multicast_port = 5353
+
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+[logging]
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+level = INFO
+
+# Log format
+format = %%(asctime)s - %%(name)s - %%(levelname)s - %%(message)s
+
+# Date format
+date_format = %%Y-%%m-%%d %%H:%%M:%%S
+
+# Enable file logging
+file_enabled = true
+
+# Log file path
+file_path = /var/log/map2/cluster.log
+
+# Maximum log file size (bytes)
+file_max_bytes = 104857600
+
+# Number of backup log files
+file_backup_count = 10
+
+# Enable console logging
+console_enabled = true
+
+# Console log level
+console_level = INFO
+
+# Enable syslog
+syslog_enabled = true
+
+# Syslog facility
+syslog_facility = LOCAL0
+
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+[security]
+# Require API key authentication
+require_api_key = true
+
+# API key rotation (days)
+api_key_rotation_days = 90
+
+# Enable RBAC
+rbac_enabled = true
+
+# Default role for new users
+default_role = viewer
+
+# Enable audit logging
+audit_logging_enabled = true
+
+# Audit log retention (days)
+audit_retention_days = 90
+
+# Enable rate limiting
+rate_limiting_enabled = true
+
+# Rate limit requests
+rate_limit_requests = 1000
+
+# Rate limit window (seconds)
+rate_limit_window = 60
+
+
+# =============================================================================
+# EVENTS
+# =============================================================================
+[events]
+# Enable event logging
+event_logging_enabled = true
+
+# Event retention (days)
+event_retention_days = 7
+
+# Log node events
+log_node_events = true
+
+# Log update events
+log_update_events = true
+
+# Log configuration events
+log_config_events = true
+
+# Log health events
+log_health_events = true
+
+# Log failover events
+log_failover_events = true
+
+
+# =============================================================================
+# ALERTS
+# =============================================================================
+[alerts]
+# Enable alerting
+enabled = true
+
+# Send email alerts
+email_enabled = false
+
+# Email recipients (comma-separated)
+# email_recipients = admin@example.com,ops@example.com
+
+# Alert on node down
+alert_on_node_down = true
+
+# Alert on low health
+alert_on_low_health = true
+
+# Alert on update failure
+alert_on_update_failure = true
+
+# Alert on backup failure
+alert_on_backup_failure = true
+
+# Low health threshold (0-100)
+low_health_threshold = 30
+
+
+# =============================================================================
+# PERFORMANCE TUNING
+# =============================================================================
+[performance]
+# Database cache size
+db_cache_size = 10000
+
+# Database query timeout (seconds)
+db_query_timeout = 30
+
+# Maximum memory usage (MB)
+max_memory_usage_mb = 512
+
+# Memory cleanup interval (seconds)
+memory_cleanup_interval = 300
+
+# Enable caching
+cache_enabled = true
+
+# Cache TTL (seconds)
+cache_ttl = 300
+
+
+# =============================================================================
+# AUDIO
+# =============================================================================
+[audio]
+# Enable audio device detection
+device_detection_enabled = true
+
+# Audio device detection interval (seconds)
+device_detection_interval = 300
+
+# Collect audio metrics
+collect_audio_metrics = true
+
+# Audio metrics interval (seconds)
+audio_metrics_interval = 60
+
+# Monitor DSP load
+monitor_dsp_load = true
+
+# DSP load threshold (%)
+dsp_load_threshold_percent = 80
+
+# Monitor xruns (buffer underruns)
+monitor_xruns = true
+
+# Xrun alert threshold
+xrun_alert_threshold = 100
+
+# Enable JACK audio server
+jack_enabled = true
+
+# Default JACK server
+jack_default_server = default

@@ -59,10 +59,10 @@ The plugin will appear in VST3 plugin browsers automatically.
 
 ```bash
 # Scan for VST3 plugins
-curl -X POST http://localhost:8000/api/vst3/refresh
+curl -X POST http://localhost:8080/api/vst3/refresh
 
 # List TAL plugins
-curl -s http://localhost:8000/api/vst3/plugins | jq '.plugins[] | select(.name | contains("TAL"))'
+curl -s http://localhost:8080/api/vst3/plugins | jq '.plugins[] | select(.name | contains("TAL"))'
 ```
 
 ## Quick Start Guide
@@ -189,7 +189,7 @@ ls -la /usr/lib/vst/ | grep TAL
 ls -la /usr/lib/vst3/TAL-Reverb-3.vst3/
 
 # Refresh VST3 cache in MAP2
-curl -X POST http://localhost:8000/api/vst3/refresh
+curl -X POST http://localhost:8080/api/vst3/refresh
 ```
 
 **For VST2:**

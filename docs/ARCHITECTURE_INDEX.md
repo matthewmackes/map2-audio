@@ -234,7 +234,7 @@ python3 -c "from app.services.audio_engine_validator import validate_audio_engin
 
 ### Audio Issues
 1. Read [VIRTUAL_SIGNAL_CHAIN_ARCHITECTURE.md](VIRTUAL_SIGNAL_CHAIN_ARCHITECTURE.md) Section 10 (Recommendations)
-2. Check JUCE engine status: `http://localhost:8000/api/engine/status`
+2. Check JUCE engine status: `http://localhost:8080/api/engine/status`
 3. Review logs for XRun events
 
 ### Code Questions

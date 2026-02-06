@@ -83,16 +83,16 @@
 
 4. **Refresh VST3 Cache in MAP2**
    ```bash
-   curl -X POST http://localhost:8000/api/vst3/refresh
+   curl -X POST http://localhost:8080/api/vst3/refresh
    ```
 
 5. **Load in MAP2**
    ```bash
    # List available VST3 plugins
-   curl -s http://localhost:8000/api/vst3/plugins | jq '.plugins[] | select(.name | contains("Graillon"))'
+   curl -s http://localhost:8080/api/vst3/plugins | jq '.plugins[] | select(.name | contains("Graillon"))'
    
    # Load Graillon
-   curl -X POST "http://localhost:8000/api/vst3/load?uri=vst3://auburnsounds.graillon"
+   curl -X POST "http://localhost:8080/api/vst3/load?uri=vst3://auburnsounds.graillon"
    ```
 
 ### Option 2: Use the VST3PluginLoader UI
@@ -227,12 +227,12 @@ sudo dnf install -y autotalent-lv2
 # Refresh MAP2 plugin cache
 echo ""
 echo "Refreshing MAP2 plugin cache..."
-curl -X POST http://localhost:8000/api/plugins/lv2/refresh
+curl -X POST http://localhost:8080/api/plugins/lv2/refresh
 
 # List newly installed plugins
 echo ""
 echo "Newly installed vocal processing plugins:"
-curl -s http://localhost:8000/api/plugins/lv2 | jq -r '.plugins[] | select(.name | test("Comp|Gate|EQ|Auto|Tune|Pitch")) | "\(.name) - \(.uri)"'
+curl -s http://localhost:8080/api/plugins/lv2 | jq -r '.plugins[] | select(.name | test("Comp|Gate|EQ|Auto|Tune|Pitch")) | "\(.name) - \(.uri)"'
 
 echo ""
 echo "✅ Installation complete!"

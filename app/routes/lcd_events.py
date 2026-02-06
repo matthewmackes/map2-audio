@@ -10,12 +10,12 @@ REST API and WebSocket endpoints for LCD event system:
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 import json
 
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 from app.services.lcd_event_persistence import get_lcd_persistence
 from app.utils.health_metrics import get_health_metrics
 from fastapi.responses import Response
@@ -337,6 +337,32 @@ async def system_status():
             "connection_stats": lcd_manager.event_router.get_connection_stats(),
         },
         "timestamp": health['timestamp'],
+    }
+
+
+@router.get("/peers")
+async def peer_status() -> Dict[str, Any]:
+    """Return discovered peers and connection stats for cluster UI."""
+    if not lcd_manager:
+        raise HTTPException(status_code=503, detail="LCD Manager not initialized")
+
+    discovery_enabled = lcd_manager.mdns_discovery is not None
+    discovered = lcd_manager.mdns_discovery.get_discovered_peers() if discovery_enabled else {}
+    discovered_list = [
+        {"node_id": node_id, **info} for node_id, info in discovered.items()
+    ]
+
+    return {
+        "system": {
+            "deployment_mode": os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE"),
+            "node_id": lcd_manager.node_id,
+            "node_label": lcd_manager.node_label,
+        },
+        "discovery": {
+            "enabled": discovery_enabled,
+            "discovered_peers": discovered_list,
+        },
+        "connections": lcd_manager.event_router.get_connection_stats(),
     }
 
 

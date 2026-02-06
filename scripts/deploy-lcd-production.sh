@@ -169,7 +169,7 @@ LCD_ADDRESS=0x27
 
 # API Configuration
 API_HOST=0.0.0.0
-API_PORT=8000
+API_PORT=8080
 
 # WebSocket
 WS_PATH=/api/lcd/ws/events
@@ -214,6 +214,6 @@ echo "  2. Check status: sudo systemctl status map2-lcd"
 echo "  3. View logs: sudo journalctl -u map2-lcd -f"
 echo "  4. Configure cluster: ssh-copy-id $MAP2_USER@<peer-node>"
 echo
-echo "Web UI: http://localhost:8000"
-echo "API: http://localhost:8000/api/lcd"
-echo "WebSocket: ws://localhost:8000/api/lcd/ws/events"
+echo "Web UI: http://localhost:3000"
+echo "API: http://localhost:8080/api/lcd"
+echo "WebSocket: ws://localhost:8080/api/lcd/ws/events"

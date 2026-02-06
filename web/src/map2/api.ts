@@ -73,8 +73,11 @@ const RAW_API_BASE = (() => {
   const envBase = import.meta.env.VITE_API_BASE as string | undefined
   if (envBase) return envBase
 
-  // If running on localhost, use /api proxy
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const isFrontendPort = window.location.port === '3000'
+
+  // If running on localhost or on the frontend dev port, use /api proxy
+  if (isLocalhost || isFrontendPort) {
     return '/api'
   }
 
@@ -198,9 +201,15 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   if (!response.ok) {
     let body: unknown;
     try {
-      body = await response.json();
+      // Read as text first, then try to parse as JSON
+      const text = await response.text();
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = text;
+      }
     } catch {
-      body = await response.text();
+      body = response.statusText;
     }
     throw new ApiError(response.status, response.statusText, body);
   }

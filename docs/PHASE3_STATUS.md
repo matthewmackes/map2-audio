@@ -317,9 +317,9 @@ pytest tests/test_connection_pool.py::TestConnectionPoolManager -v
 python -m uvicorn app.main:app --reload
 
 # Test endpoints
-curl http://localhost:8000/api/connection-pool/status
-curl http://localhost:8000/api/connection-pool/metrics
-curl http://localhost:8000/api/connection-pool/summary
+curl http://localhost:8080/api/connection-pool/status
+curl http://localhost:8080/api/connection-pool/metrics
+curl http://localhost:8080/api/connection-pool/summary
 ```
 
 ---

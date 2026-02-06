@@ -14,7 +14,7 @@ import asyncio
 from datetime import datetime
 import json
 
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 from app.services.lcd_event_bus import LCDEventBus, create_audio_event
 from app.services.lcd_event_router import LCDEventRouter
 from app.services.remote_event_aggregator import RemoteEventAggregator

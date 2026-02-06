@@ -1,0 +1,171 @@
+/* Pymth Boot Splash - Mackes Audio Platform
+ * Plymouth Theme with startup progress indicator
+ */
+
+// Screen dimensions
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+
+// Colors matching Mackes Audio Platform branding
+color.dark_bg = [0.06, 0.08, 0.14, 1.0];        // Dark background
+color.orange = [1.0, 0.55, 0.27, 1.0];           // Orange (#ff8c43)
+color.orange_dark = [0.88, 0.40, 0.16, 1.0];     // Darker orange (#e06629)
+color.grid_dark = [0.15, 0.20, 0.35, 1.0];       // Grid pattern color
+color.text = [0.95, 0.96, 1.0, 1.0];             // Light text
+color.text_muted = [0.53, 0.53, 0.58, 0.8];      // Muted text
+color.progress_bg = [0.20, 0.25, 0.40, 0.6];     // Progress background
+color.progress_fill = [1.0, 0.55, 0.27, 0.9];    // Progress fill
+
+// Setup background
+background = Image.CreateFormatted(screen_width, screen_height, "rgb");
+background.Fill(color.dark_bg[0], color.dark_bg[1], color.dark_bg[2], color.dark_bg[3]);
+
+// Draw subtle grid pattern in background
+for (i = 0; i < screen_width; i += 120) {
+    background.DrawLine(i, 0, i, screen_height, color.grid_dark[0], color.grid_dark[1], color.grid_dark[2], color.grid_dark[3] * 0.2);
+}
+for (i = 0; i < screen_height; i += 120) {
+    background.DrawLine(0, i, screen_width, i, color.grid_dark[0], color.grid_dark[1], color.grid_dark[2], color.grid_dark[3] * 0.2);
+}
+
+// Logo/Title area
+logo_x = screen_width / 2;
+logo_y = screen_height / 3;
+
+// Create orange grid squares (4x4) representing the logo
+grid_size = 40;
+grid_spacing = 8;
+grid_start_x = logo_x - ((grid_size * 2) + grid_spacing) / 2;
+grid_start_y = logo_y - ((grid_size * 2) + grid_spacing) / 2;
+
+for (row = 0; row < 2; row++) {
+    for (col = 0; col < 2; col++) {
+        x = grid_start_x + (col * (grid_size + grid_spacing));
+        y = grid_start_y + (row * (grid_size + grid_spacing));
+        background.DrawRectangle(x, y, x + grid_size, y + grid_size,
+                                color.orange[0], color.orange[1], color.orange[2], color.orange[3] * 0.8);
+    }
+}
+
+// Title text
+background.DrawString("Mackes Audio Platform", "DejaVu Sans",
+                     logo_x - 180, logo_y + 100,
+                     color.text[0], color.text[1], color.text[2], color.text[3]);
+
+// Progress bar dimensions
+progress_width = 400;
+progress_height = 8;
+progress_x = screen_width / 2 - progress_width / 2;
+progress_y = screen_height * 0.75;
+
+// Text positioning
+status_x = screen_width / 2;
+status_y = screen_height * 0.70;
+percentage_x = screen_width / 2;
+percentage_y = screen_height * 0.82;
+
+// Progress value (0.0 to 1.0)
+progress = 0.0;
+boot_progress = 0.0;
+
+// Animation function for smooth progress
+fun refresh_callback(duration) {
+    // Smooth progress animation
+    progress = progress + (duration * 0.3);
+    if (progress > 1.0) {
+        progress = 1.0;
+    }
+
+    // Create a new background for this frame
+    window_image = Image.CreateFormatted(screen_width, screen_height, "rgb");
+    window_image.Fill(color.dark_bg[0], color.dark_bg[1], color.dark_bg[2], color.dark_bg[3]);
+
+    // Redraw grid pattern
+    for (i = 0; i < screen_width; i += 120) {
+        window_image.DrawLine(i, 0, i, screen_height, color.grid_dark[0], color.grid_dark[1], color.grid_dark[2], color.grid_dark[3] * 0.2);
+    }
+    for (i = 0; i < screen_height; i += 120) {
+        window_image.DrawLine(0, i, screen_width, i, color.grid_dark[0], color.grid_dark[1], color.grid_dark[2], color.grid_dark[3] * 0.2);
+    }
+
+    // Draw logo
+    for (row = 0; row < 2; row++) {
+        for (col = 0; col < 2; col++) {
+            x = grid_start_x + (col * (grid_size + grid_spacing));
+            y = grid_start_y + (row * (grid_size + grid_spacing));
+            window_image.DrawRectangle(x, y, x + grid_size, y + grid_size,
+                                      color.orange[0], color.orange[1], color.orange[2], color.orange[3] * 0.8);
+        }
+    }
+
+    // Draw title
+    window_image.DrawString("Mackes Audio Platform", "DejaVu Sans",
+                           logo_x - 180, logo_y + 100,
+                           color.text[0], color.text[1], color.text[2], color.text[3]);
+
+    // Draw progress bar background
+    window_image.DrawRectangle(progress_x, progress_y,
+                              progress_x + progress_width, progress_y + progress_height,
+                              color.progress_bg[0], color.progress_bg[1], color.progress_bg[2], color.progress_bg[3]);
+
+    // Draw progress bar fill
+    fill_width = progress_width * boot_progress;
+    if (fill_width > 0) {
+        window_image.DrawRectangle(progress_x, progress_y,
+                                  progress_x + fill_width, progress_y + progress_height,
+                                  color.progress_fill[0], color.progress_fill[1], color.progress_fill[2], color.progress_fill[3]);
+    }
+
+    // Draw status text
+    window_image.DrawString("Initializing system...", "DejaVu Sans",
+                           status_x - 80, status_y,
+                           color.text_muted[0], color.text_muted[1], color.text_muted[2], color.text_muted[3]);
+
+    // Draw percentage text
+    percentage_text = Math.Int(boot_progress * 100) + "%";
+    window_image.DrawString(percentage_text, "DejaVu Sans Bold",
+                           percentage_x - 15, percentage_y,
+                           color.orange[0], color.orange[1], color.orange[2], color.orange[3]);
+
+    Window.SetImage(window_image);
+}
+
+// Handle boot progress updates from Plymouth
+fun boot_progress_callback(duration) {
+    if (Plymouth.GetBootProgress() != boot_progress) {
+        boot_progress = Plymouth.GetBootProgress();
+    }
+}
+
+// Update progress based on messages
+Plymouth.SetRefreshFunction(refresh_callback);
+Plymouth.SetBootProgressFunction(boot_progress_callback);
+
+// Handle different message types
+fun display_message_callback(message) {
+    if (message == "fsck-progress") {
+        status_text = "Checking filesystems...";
+    }
+    else if (message == "fsck-pass") {
+        status_text = "Filesystem check complete";
+    }
+    else if (message == "network-up") {
+        status_text = "Network online";
+    }
+    else if (message == "plymouth-system-ready") {
+        status_text = "System ready";
+    }
+    else if (message == "boot-finished") {
+        status_text = "Boot complete";
+        boot_progress = 1.0;
+    }
+}
+
+Plymouth.SetMessageFunction(display_message_callback);
+
+// Quit animation when boot completes
+fun quit_callback() {
+    boot_progress = 1.0;
+}
+
+Plymouth.SetQuitFunction(quit_callback);

@@ -226,7 +226,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8080,
         reload=True,
         log_level="info"
     )
@@ -240,7 +240,7 @@ python main.py
 
 **Output:**
 ```
-INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Uvicorn running on http://0.0.0.0:8080
 INFO:     Application startup complete
 ```
 
@@ -248,36 +248,36 @@ INFO:     Application startup complete
 
 **Option 1: Browser (Interactive Docs)**
 ```
-http://localhost:8000/docs
+http://localhost:8080/docs
 ```
 
 **Option 2: cURL**
 ```bash
 # Create chain
-curl -X POST "http://localhost:8000/api/v1/chains" \
+curl -X POST "http://localhost:8080/api/v1/chains" \
   -H "Content-Type: application/json" \
   -d '{"name":"My Chain","effects":["eq","comp"]}'
 
 # List chains
-curl "http://localhost:8000/api/v1/chains"
+curl "http://localhost:8080/api/v1/chains"
 
 # Get specific chain
-curl "http://localhost:8000/api/v1/chains/{chain_id}"
+curl "http://localhost:8080/api/v1/chains/{chain_id}"
 
 # Update chain
-curl -X PUT "http://localhost:8000/api/v1/chains/{chain_id}" \
+curl -X PUT "http://localhost:8080/api/v1/chains/{chain_id}" \
   -H "Content-Type: application/json" \
   -d '{"name":"Updated Name"}'
 
 # Delete chain
-curl -X DELETE "http://localhost:8000/api/v1/chains/{chain_id}"
+curl -X DELETE "http://localhost:8080/api/v1/chains/{chain_id}"
 ```
 
 **Option 3: Python SDK**
 ```python
 import requests
 
-base_url = "http://localhost:8000"
+base_url = "http://localhost:8080"
 
 # Create
 response = requests.post(

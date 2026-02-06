@@ -74,10 +74,10 @@ sudo journalctl -u map2-lcd -f
 sudo scripts/test-lcd-hardware.sh /dev/ttyUSB0
 
 # Check API
-curl http://localhost:8000/api/lcd/events
+curl http://localhost:8080/api/lcd/events
 
 # Connect WebSocket
-wscat -c ws://localhost:8000/api/lcd/ws/events
+wscat -c ws://localhost:8080/api/lcd/ws/events
 ```
 
 ## Multi-Node Clustering
@@ -117,8 +117,8 @@ ssh_trust_required=true
 
 [peers]
 # Peer node configuration (auto-discovered via mDNS)
-; peer_1=AUDIO-NODE-A1B2:audio-node-1.local:8000
-; peer_2=CONTROL-NODE-C3D4:control-node.local:8000
+; peer_1=AUDIO-NODE-A1B2:audio-node-1.local:8080
+; peer_2=CONTROL-NODE-C3D4:control-node.local:8080
 ```
 
 mDNS auto-discovery handles peer detection. No manual configuration needed if zeroconf is installed.
@@ -128,7 +128,7 @@ mDNS auto-discovery handles peer detection. No manual configuration needed if ze
 Check event aggregation:
 ```bash
 # On AUDIO-NODE
-curl http://localhost:8000/api/lcd/stats
+curl http://localhost:8080/api/lcd/stats
 
 # Should show:
 # - local_events: N
@@ -138,7 +138,7 @@ curl http://localhost:8000/api/lcd/stats
 
 Watch event broadcast:
 ```bash
-wscat -c ws://localhost:8000/api/lcd/ws/events
+wscat -c ws://localhost:8080/api/lcd/ws/events
 
 # Events from all nodes should appear
 ```
@@ -216,12 +216,12 @@ sudo systemctl restart map2-lcd
 
 ```bash
 # Export events to CSV
-curl "http://localhost:8000/api/lcd/events?limit=1000" | jq '.events' > events.json
+curl "http://localhost:8080/api/lcd/events?limit=1000" | jq '.events' > events.json
 
 # Or via API
 python3 << 'EOF'
 import requests
-events = requests.get("http://localhost:8000/api/lcd/history?hours=24").json()
+events = requests.get("http://localhost:8080/api/lcd/history?hours=24").json()
 import csv
 with open('events.csv', 'w') as f:
     writer = csv.DictWriter(f, fieldnames=events[0].keys())
@@ -294,20 +294,20 @@ sudo journalctl -u map2-lcd --since "2 hours ago"
 
 ```bash
 # API health
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 
 # Database health
-curl http://localhost:8000/api/lcd/stats
+curl http://localhost:8080/api/lcd/stats
 
 # Event production rate
-curl http://localhost:8000/api/lcd/stats | jq '.event_rate'
+curl http://localhost:8080/api/lcd/stats | jq '.event_rate'
 ```
 
 ### Metrics
 
 Enable Prometheus metrics:
 ```bash
-curl http://localhost:8000/metrics
+curl http://localhost:8080/metrics
 ```
 
 ## Security
@@ -334,13 +334,13 @@ EOF
 On Control Node:
 ```bash
 # Allow only audio nodes
-sudo firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.100" port protocol="tcp" port="8000" accept'
+sudo firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.100" port protocol="tcp" port="8080" accept'
 ```
 
 On Audio Nodes:
 ```bash
 # Block external access
-sudo firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24" port protocol="tcp" port="8000" accept' --permanent
+sudo firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24" port protocol="tcp" port="8080" accept' --permanent
 ```
 
 ## Troubleshooting
@@ -353,7 +353,7 @@ sudo journalctl -u map2-lcd -n 100
 
 # Common issues:
 # - Permission denied: sudo chown -R map2:map2 /var/lib/map2
-# - Port in use: sudo lsof -i :8000
+# - Port in use: sudo lsof -i :8080
 # - DB locked: rm /var/lib/map2/map2.db-wal
 ```
 
@@ -361,13 +361,13 @@ sudo journalctl -u map2-lcd -n 100
 
 ```bash
 # Check event bus
-curl http://localhost:8000/api/lcd/events
+curl http://localhost:8080/api/lcd/events
 
 # Check producers
 sudo journalctl -u map2-lcd | grep "Producer"
 
 # Test event creation
-curl -X POST http://localhost:8000/api/lcd/events \
+curl -X POST http://localhost:8080/api/lcd/events \
   -H "Content-Type: application/json" \
   -d '{"title":"Test","message":"works"}'
 ```
@@ -376,7 +376,7 @@ curl -X POST http://localhost:8000/api/lcd/events \
 
 ```bash
 # Check discovered peers
-curl http://localhost:8000/api/lcd/stats | jq '.active_nodes'
+curl http://localhost:8080/api/lcd/stats | jq '.active_nodes'
 
 # Verify mDNS
 avahi-browse -r _map2-node._tcp
@@ -389,7 +389,7 @@ ssh map2@peer-node "systemctl status map2-lcd"
 
 ```bash
 # Check event rate
-curl http://localhost:8000/api/lcd/stats | jq '.'
+curl http://localhost:8080/api/lcd/stats | jq '.'
 
 # Reduce batch frequency
 # Edit /etc/map2/lcd.conf:
@@ -450,7 +450,7 @@ sudo systemctl status map2-lcd
 - [ ] Network: Cluster nodes can reach each other (ping test)
 - [ ] SSH: Trust established between all nodes
 - [ ] Database: Backups configured and tested
-- [ ] Firewall: Ports 8000-8002 restricted appropriately
+- [ ] Firewall: Ports 8080-8082 restricted appropriately
 - [ ] Systemd: Service enabled and starts on reboot
 - [ ] Monitoring: Journalctl logs being collected
 - [ ] Capacity: Disk space monitored for /var/lib/map2
@@ -459,7 +459,7 @@ sudo systemctl status map2-lcd
 
 ## Next Steps
 
-1. **Web Dashboard**: Access at http://your-node:8000/lcd-dashboard
+1. **Web Dashboard**: Access at http://your-node:3000/lcd-dashboard
 2. **MIDI Integration**: Configure MIDI events in LV2 plugin chain
 3. **Custom Events**: Write event producers for application-specific monitoring
 4. **Advanced Clustering**: Set up event replication and consensus
@@ -470,5 +470,5 @@ sudo systemctl status map2-lcd
 For issues:
 1. Check logs: `sudo journalctl -u map2-lcd -f`
 2. Run hardware test: `sudo scripts/test-lcd-hardware.sh`
-3. Verify API: `curl http://localhost:8000/api/lcd/health`
+3. Verify API: `curl http://localhost:8080/api/lcd/health`
 4. Check database: `sqlite3 /var/lib/map2/map2.db ".tables"`

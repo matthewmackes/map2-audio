@@ -60,7 +60,10 @@ const API_BASE = (() => {
   if (typeof window === 'undefined') return '/api'
   const envBase = (import.meta as any).env?.VITE_API_BASE as string | undefined
   if (envBase) return envBase
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const isFrontendPort = window.location.port === '3000'
+
+  if (isLocalhost || isFrontendPort) {
     return '/api'
   }
   return `http://${window.location.hostname}:8080/api`

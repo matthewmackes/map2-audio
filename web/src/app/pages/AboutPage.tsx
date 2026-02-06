@@ -103,6 +103,15 @@ const underTheHoodItems = [
     description: 'HoTone audio interface',
     color: '#e53935'  // HoTone red
   },
+  // Cluster Management
+  {
+    to: '/cluster-dashboard',
+    label: 'Cluster Dashboard',
+    icon: Server,
+    description: 'Multi-node cluster monitoring & simulation',
+    color: '#00d4ff',  // Cyan
+    dividerBefore: true
+  },
 ]
 
 interface VersionInfo {
@@ -605,7 +614,7 @@ export function AboutPage() {
     fetch('/api/version')
       .then(r => r.json())
       .then(setVersionInfo)
-      .catch(() => setVersionInfo({ version: '2.0.0', build_date: 'Feb 2025' }))
+      .catch(() => setVersionInfo({ version: '3.1.0', build_date: 'Feb 2025' }))
 
     // Check welcome banner status
     fetch('/api/system/welcome-banner')
@@ -1249,7 +1258,7 @@ export function AboutPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>
-              Version {versionInfo?.version || '2.0.0'} · {versionInfo?.build_date || 'Feb 2025'}
+              Version {versionInfo?.version || '3.1.0'} · {versionInfo?.build_date || 'Feb 2025'}
             </div>
             <div style={{ fontSize: 10, color: '#666' }}>
               Licensed under MIT · Made with ❤️ for musicians
@@ -1308,7 +1317,7 @@ export function AboutPage() {
           }}>
             <div style={{ fontSize: 24, marginBottom: 4 }}>🎵</div>
             <div style={{ fontSize: 10, color: '#a855f7', fontWeight: 600 }}>PLATFORM</div>
-            <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>v2.0</div>
+            <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>v3.1</div>
           </div>
         </div>
       </div>

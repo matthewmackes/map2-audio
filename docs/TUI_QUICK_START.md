@@ -140,7 +140,7 @@ python3 --version
 pip list | grep textual
 
 # Check if backend is running
-curl http://localhost:8000/api/health
+curl http://localhost:8080/api/health
 ```
 
 ### No controls visible

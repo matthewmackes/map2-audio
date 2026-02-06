@@ -160,7 +160,7 @@ import json
 async def test_websocket():
     try:
         # This will fail if server isn't running, which is OK
-        async with websockets.connect("ws://localhost:8000/api/lcd/ws/events", timeout=2) as ws:
+        async with websockets.connect("ws://localhost:8080/api/lcd/ws/events", timeout=2) as ws:
             print("\033[0;32m✓ WebSocket connected\033[0m")
             # Don't wait for events, just confirm connection
     except ConnectionRefusedError:

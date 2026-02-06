@@ -20,7 +20,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # Default API endpoint
-DEFAULT_API_BASE = "http://localhost:8000"
+DEFAULT_API_BASE = "http://localhost:8080"
 
 
 def truncate(text: str, width: int) -> str:

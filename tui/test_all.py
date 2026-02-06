@@ -52,6 +52,7 @@ runner.add_test("Import MIDISessionsScreen", lambda: __import__('screens.midi_se
 runner.add_test("Import WorkflowSettingsScreen", lambda: __import__('screens.workflow_settings_screen', fromlist=['WorkflowSettingsScreen']))
 runner.add_test("Import SettingsScreen", lambda: __import__('screens.settings_screen', fromlist=['SettingsScreen']))
 runner.add_test("Import DiagnosticsScreen", lambda: __import__('screens.diagnostics_screen', fromlist=['DiagnosticsScreen']))
+runner.add_test("Import ClusterModeScreen", lambda: __import__('screens.cluster_mode_screen', fromlist=['ClusterModeScreen']))
 runner.add_test("Import status_bar", lambda: __import__('status_bar'))
 runner.add_test("Import config", lambda: __import__('config'))
 runner.add_test("Import widgets", lambda: __import__('widgets'))
@@ -70,6 +71,7 @@ from screens.midi_sessions_screen import MIDISessionsScreen
 from screens.workflow_settings_screen import WorkflowSettingsScreen
 from screens.settings_screen import SettingsScreen
 from screens.diagnostics_screen import DiagnosticsScreen
+from screens.cluster_mode_screen import ClusterModeScreen
 
 api_client = MAP2APIClient()
 
@@ -101,6 +103,10 @@ def test_diagnostics():
     s = DiagnosticsScreen(api_client, id="diagnostics")
     assert s.api_client is not None
 
+def test_cluster_mode():
+    s = ClusterModeScreen(api_client, id="cluster-mode")
+    assert s.api_client is not None
+
 runner = TestRunner()
 runner.add_test("DashboardScreen instantiation", test_dashboard)
 runner.add_test("ChainsManagerScreen instantiation", test_chains)
@@ -109,6 +115,7 @@ runner.add_test("MIDISessionsScreen instantiation", test_midi)
 runner.add_test("WorkflowSettingsScreen instantiation", test_workflow)
 runner.add_test("SettingsScreen instantiation", test_settings)
 runner.add_test("DiagnosticsScreen instantiation", test_diagnostics)
+runner.add_test("ClusterModeScreen instantiation", test_cluster_mode)
 
 runner.run_all()
 

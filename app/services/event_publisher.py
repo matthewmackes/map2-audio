@@ -19,6 +19,7 @@ class EventType(str, Enum):
     CHAIN_DELETED = "chain_deleted"
     CHAIN_RENAMED = "chain_renamed"
     CHAIN_ACTIVATED = "chain_activated"
+    CHAIN_DEACTIVATED = "chain_deactivated"
 
     # Plugin events
     PLUGIN_ADDED = "plugin_added"

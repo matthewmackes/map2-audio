@@ -30,7 +30,7 @@ async def system_status():
     """Detailed system status"""
     return {
         "deployment_mode": os.getenv("MAP2_DEPLOYMENT_MODE"),
-        "version": "2.0.0-FEB2025",
+        "version": "3.0.0-FEB2026",
         "components": {
             "event_bus": bus.is_running(),
             "lcd_display": lcd.is_connected(),
@@ -278,11 +278,11 @@ spec:
       - name: map2-lcd
         image: map2/lcd:latest
         ports:
-        - containerPort: 8000
+        - containerPort: 8080
         livenessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8080
 ```
 
 **Effort**: 2-3 hours
@@ -326,7 +326,7 @@ If completing all outstanding tasks:
 ```bash
 sudo scripts/deploy-lcd-production.sh AUDIO-NODE
 sudo systemctl start map2-lcd
-open http://localhost:8000/lcd-dashboard
+open http://localhost:3000/lcd-dashboard
 ```
 
 ## 🎯 Recommendation

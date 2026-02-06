@@ -107,32 +107,32 @@ echo ""
 
 # Check if MAP2 backend is running
 echo "Checking MAP2 Audio backend..."
-if curl -s http://localhost:8000/api/health &>/dev/null; then
+if curl -s http://localhost:8080/api/health &>/dev/null; then
     echo "✅ Backend is running"
     echo ""
     echo "Refreshing plugin cache..."
     
     # Refresh LV2 plugin cache
-    if curl -s -X POST http://localhost:8000/api/plugins/lv2/refresh &>/dev/null; then
+    if curl -s -X POST http://localhost:8080/api/plugins/lv2/refresh &>/dev/null; then
         echo "✅ Plugin cache refreshed"
         
         # Count plugins
         echo ""
         echo "Checking plugin discovery..."
-        PLUGIN_COUNT=$(curl -s http://localhost:8000/api/plugins/lv2 | jq -r '.plugins | length' 2>/dev/null)
+        PLUGIN_COUNT=$(curl -s http://localhost:8080/api/plugins/lv2 | jq -r '.plugins | length' 2>/dev/null)
         if [ ! -z "$PLUGIN_COUNT" ]; then
             echo "📊 Total LV2 plugins available: $PLUGIN_COUNT"
         fi
     else
         echo "⚠️  Could not refresh cache. Try manually:"
-        echo "   curl -X POST http://localhost:8000/api/plugins/lv2/refresh"
+        echo "   curl -X POST http://localhost:8080/api/plugins/lv2/refresh"
     fi
 else
     echo "⚠️  Backend not running. Start it with:"
     echo "   cd /home/mm/map2-audio && ./start_all_services.sh"
     echo ""
     echo "Then refresh plugins:"
-    echo "   curl -X POST http://localhost:8000/api/plugins/lv2/refresh"
+    echo "   curl -X POST http://localhost:8080/api/plugins/lv2/refresh"
 fi
 
 echo ""

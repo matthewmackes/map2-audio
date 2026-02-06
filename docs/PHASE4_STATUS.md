@@ -246,16 +246,16 @@ print(f"Success rate: {metrics.success_rate:.1f}%")
 
 ```bash
 # Get queue status
-curl http://localhost:8000/api/request-queue/status
+curl http://localhost:8080/api/request-queue/status
 
 # Get health
-curl http://localhost:8000/api/request-queue/health
+curl http://localhost:8080/api/request-queue/health
 
 # Get dead letter queue
-curl http://localhost:8000/api/request-queue/dead-letter
+curl http://localhost:8080/api/request-queue/dead-letter
 
 # Requeue specific request
-curl -X POST http://localhost:8000/api/request-queue/requeue/{request_id}
+curl -X POST http://localhost:8080/api/request-queue/requeue/{request_id}
 ```
 
 ---

@@ -298,7 +298,7 @@ monitor.alert_rules.append(custom_rule)
 ### JavaScript Client Example
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8000/api/health-monitor/ws');
+const ws = new WebSocket('ws://localhost:8080/api/health-monitor/ws');
 
 ws.onmessage = (event) => {
     const message = JSON.parse(event.data);
@@ -359,12 +359,12 @@ pytest tests/test_health_monitor.py::TestHealthMonitorBasics -v
 python -m uvicorn app.main:app --reload
 
 # Test endpoints
-curl http://localhost:8000/api/health-monitor/status
-curl http://localhost:8000/api/health-monitor/services
-curl http://localhost:8000/api/health-monitor/alerts
+curl http://localhost:8080/api/health-monitor/status
+curl http://localhost:8080/api/health-monitor/services
+curl http://localhost:8080/api/health-monitor/alerts
 
 # WebSocket test
-wscat -c ws://localhost:8000/api/health-monitor/ws
+wscat -c ws://localhost:8080/api/health-monitor/ws
 ```
 
 ---

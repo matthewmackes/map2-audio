@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List, Deque
 from collections import deque
 
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 
 logger = logging.getLogger(__name__)
 

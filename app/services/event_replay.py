@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Callable
 import asyncio
 
-from app.models.lcd_event import LCDEvent
+from app.lcd_models.lcd_event import LCDEvent
 
 logger = logging.getLogger(__name__)
 

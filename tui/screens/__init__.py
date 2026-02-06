@@ -4,6 +4,18 @@ Interactive TUI Screens for MAP2 Audio Platform
 Uses lazy imports to speed up TUI startup - screens are only loaded when first accessed.
 """
 
+# Cluster screens
+try:
+    from .cluster_node_dashboard import ClusterNodeDashboard, NodeMetricsPanel
+    from .flow_assignment_matrix import FlowAssignmentMatrix, MatrixCell, CellData
+    from .node_recommendation_screen import NodeRecommendationScreen
+    from .failover_controller_screen import FailoverControllerScreen
+    from .cluster_diagnostics_screen import ClusterDiagnosticsScreen
+    from .help_screen import HelpScreen
+    from .batch_operations_screen import BatchOperationsScreen
+except ImportError:
+    pass
+
 __all__ = [
     'ChainsScreen',
     'ChainsScreenRefactored',
@@ -18,6 +30,16 @@ __all__ = [
     'BackupTab',
     'ControlPanelScreen',
     'HealthTabScreen',
+    'ClusterNodeDashboard',
+    'NodeMetricsPanel',
+    'FlowAssignmentMatrix',
+    'MatrixCell',
+    'CellData',
+    'NodeRecommendationScreen',
+    'FailoverControllerScreen',
+    'ClusterDiagnosticsScreen',
+    'HelpScreen',
+    'BatchOperationsScreen',
     'AutomationTab',
     'NetworkTab',
     'WWWTab',

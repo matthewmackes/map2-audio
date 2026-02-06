@@ -1,0 +1,26 @@
+[Unit]
+Description=MAP2 Audio Platform Boot Manager
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network-online.target
+Wants=network-online.target
+Before=map2-backend.service map2-web.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+Group=root
+
+# Read deployment config from user home
+Environment="HOME=/home/mm"
+
+# Execute boot manager
+ExecStart=/bin/bash /home/mm/map2-audio/scripts/map2-boot-manager.sh
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-boot-manager
+
+[Install]
+WantedBy=multi-user.target

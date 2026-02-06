@@ -47,7 +47,7 @@ class UIConfig:
 @dataclass
 class AppConfig:
     """Main application configuration."""
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str = "http://localhost:8080"
     api_timeout: int = 30
     log_level: str = "INFO"
     keybindings: KeyBindings = None

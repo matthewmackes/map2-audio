@@ -144,6 +144,13 @@ except ImportError as e:
     SCREEN_IMPORT_ERRORS['BackendMonitorScreen'] = str(e)
 
 try:
+    from .screens.cluster_mode_screen import ClusterModeScreen
+except ImportError as e:
+    logger.warning(f"Could not import ClusterModeScreen: {e}")
+    ClusterModeScreen = None
+    SCREEN_IMPORT_ERRORS['ClusterModeScreen'] = str(e)
+
+try:
     from .screens.test_screen import TestScreen
 except ImportError as e:
     logger.warning(f"Could not import TestScreen: {e}")
@@ -155,7 +162,7 @@ MASTER_SCREENS_AVAILABLE = any([
     DashboardScreen, ChainsManagerScreen, EffectsManagerScreen,
     MIDISessionsScreen, WorkflowSettingsScreen, SettingsScreen,
     DiagnosticsScreen, LCDServicesScreen, BackupTab, StageViewScreen,
-    DeveloperModeScreen, BackendMonitorScreen
+    DeveloperModeScreen, BackendMonitorScreen, ClusterModeScreen
 ])
 
 if SCREEN_IMPORT_ERRORS:
@@ -233,11 +240,15 @@ except ImportError as e:
 
 
 
+import time
+
 class FallbackScreen(Static):
     """
     Fallback screen displayed when a screen fails to load.
     Shows helpful error information and suggestions.
     """
+    
+    _instance_counter = 0
 
     DEFAULT_CSS = """
     FallbackScreen {
@@ -265,7 +276,10 @@ class FallbackScreen(Static):
     """
 
     def __init__(self, tab_name: str, error_message: str, id: str = None):
-        super().__init__(id=id)
+        # Generate unique ID if provided ID could conflict
+        FallbackScreen._instance_counter += 1
+        unique_id = f"{id or 'fallback'}-{FallbackScreen._instance_counter}"
+        super().__init__(id=unique_id)
         self.tab_name = tab_name
         self.error_message = error_message
 
@@ -737,6 +751,7 @@ class MAP2AudioTUI(App):
         Binding("0", "goto_tab_9", "Stage", show=True),
         Binding("d", "goto_tab_10", "Developer", show=True),
         Binding("m", "goto_tab_11", "Monitor", show=True),
+        Binding("c", "goto_tab_12", "Cluster", show=True),
     ]
 
     # New simplified screen factory mapping: 12 tabs
@@ -754,6 +769,7 @@ class MAP2AudioTUI(App):
         9: (StageViewScreen, "stage-view"),
         10: (DeveloperModeScreen, "developer-mode"),
         11: (BackendMonitorScreen, "backend-monitor"),
+        12: (ClusterModeScreen, "cluster-mode"),
     }
 
     # New tab names for 12 master screens
@@ -770,6 +786,7 @@ class MAP2AudioTUI(App):
         "🎤 Stage",
         "🔧 Developer",
         "🖥️ Monitor",
+        "🛰️ Cluster",
     ]
 
     def __init__(self, daemon_mode: bool = False):
@@ -792,16 +809,13 @@ class MAP2AudioTUI(App):
         if getattr(self, 'config_error', None):
             self.notify(f"⚠️ Config load error: {self.config_error}", severity="warning", timeout=6)
         """Create main UI layout with proper container nesting."""
-        # Header section - fixed height with mode indicator + menu
+        # Header section - fixed height with mode indicator
         with Vertical(id="header-section"):
             # Mode indicator
             if UI_COMPONENTS_AVAILABLE and ModeIndicatorWidget:
                 yield ModeIndicatorWidget()
             else:
                 yield Label("MODE", id="mode-placeholder")
-
-            # Horizontal menu list
-            yield Label("", id="tabs-bar")
 
         # Body area with left nav and content
         with Horizontal(id="body"):
@@ -1055,12 +1069,17 @@ class MAP2AudioTUI(App):
         """Go to Backend Monitor tab - Services health monitoring."""
         await self.show_tab(11)
 
-    def _clear_content_area(self) -> None:
-        """Clear the content area."""
+    async def action_goto_tab_12(self) -> None:
+        """Go to Cluster Mode tab - Deployment & discovery control."""
+        await self.show_tab(12)
+
+    async def _clear_content_area(self) -> None:
+        """Clear the content area, properly removing all widgets."""
         try:
             content_area = self.query_one("#content-area", Container)
-            for widget in list(content_area.children):
-                widget.remove()
+            children = list(content_area.children)
+            for widget in children:
+                await widget.remove()
         except Exception as e:
             logger.warning(f"Could not clear content area: {e}")
 
@@ -1117,7 +1136,7 @@ class MAP2AudioTUI(App):
             force_refresh: If True, recreate the screen instance
         """
         self.current_tab = tab_index
-        self._clear_content_area()
+        await self._clear_content_area()
         self._update_tab_display()
 
         # If force refresh, remove from cache
@@ -1157,18 +1176,8 @@ class MAP2AudioTUI(App):
                 raise
     
     def _update_tab_display(self) -> None:
-        """Update the tab bar to show which tab is active."""
+        """Update navigation selection when tab changes."""
         try:
-            tabs_display = "  |  ".join([
-                f"[{i+1}] " +
-                ("▶ " if i == self.current_tab else "") +
-                name +
-                (" ◀" if i == self.current_tab else "")
-                for i, name in enumerate(self.TAB_NAMES)
-            ])
-            tabs_label = self.query_one("#tabs-bar", Label)
-            tabs_label.update(f"  {tabs_display}  ")
-
             nav_list = self.query_one("#nav-list", ListView)
             nav_list.index = self.current_tab
         except Exception as e:

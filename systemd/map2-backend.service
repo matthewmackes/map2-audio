@@ -1,8 +1,8 @@
 [Unit]
-Description=Mackes Audio Platform 2 FEB2025 - Unified Service Orchestrator
+Description=MAP2 Audio Platform Backend API
 Documentation=https://github.com/matthewmackes/map2-audio
-After=network.target sound.target
-Wants=sound.target
+After=network.target sound.target map2-boot-manager.service
+Wants=sound.target map2-boot-manager.service
 
 [Service]
 Type=notify
@@ -14,6 +14,7 @@ Environment="PYTHONPATH=/home/mm/map2-audio"
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
 Environment="MAP2_ENABLE_LCD=false"
 Environment="MAP2_LCD_SIMULATION=false"
+EnvironmentFile=-/etc/map2/environment
 
 # Start the unified orchestrator via FastAPI
 ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
@@ -45,7 +46,7 @@ LimitNOFILE=65536
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /tmp
+ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /home/mm/.map2 /tmp /etc/map2
 
 [Install]
 WantedBy=multi-user.target

@@ -10,11 +10,11 @@ services:
     environment:
       MAP2_DEPLOYMENT_MODE: AUDIO-NODE
       MAP2_NODE_ID: AUDIO-NODE-A1B2
-      MAP2_API_PORT: 8001
+      MAP2_API_PORT: 8080
       MAP2_USE_MOCK_LCD: "true"
       MAP2_DATABASE_URL: sqlite+aiosqlite:///data/map2.db
     ports:
-      - "8001:8000"
+      - "8080:8080"
     volumes:
       - ./data/audio-1:/data
       - ./logs/audio-1:/var/log/map2
@@ -24,7 +24,7 @@ services:
       - setup
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -38,11 +38,11 @@ services:
     environment:
       MAP2_DEPLOYMENT_MODE: CONTROL-NODE
       MAP2_NODE_ID: CONTROL-NODE-C3D4
-      MAP2_API_PORT: 8002
+      MAP2_API_PORT: 8080
       MAP2_USE_MOCK_LCD: "true"
       MAP2_DATABASE_URL: sqlite+aiosqlite:///data/map2.db
     ports:
-      - "8002:8000"
+      - "8081:8080"
     volumes:
       - ./data/control-1:/data
       - ./logs/control-1:/var/log/map2
@@ -52,7 +52,7 @@ services:
       - setup
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 3

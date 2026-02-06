@@ -271,16 +271,16 @@ for name, m in metrics.items():
 
 ```bash
 # Get system health
-curl http://localhost:8000/api/features/health
+curl http://localhost:8080/api/features/health
 
 # Get core features
-curl http://localhost:8000/api/features/core-features
+curl http://localhost:8080/api/features/core-features
 
 # Get availability report
-curl http://localhost:8000/api/features/availability-report
+curl http://localhost:8080/api/features/availability-report
 
 # Check specific feature
-curl http://localhost:8000/api/features/payment
+curl http://localhost:8080/api/features/payment
 ```
 
 ---

@@ -155,7 +155,7 @@ async def get_audio_status():
 
 @router.get("/plugins")
 async def list_plugins():
-    """List all available LV2 plugins"""
+    """List all available plugins (JUCE native + LV2)"""
     service = get_audio_engine()
     
     if not service.is_available:
@@ -166,7 +166,15 @@ async def list_plugins():
         if not success:
             raise HTTPException(status_code=500, detail="Failed to initialize engine")
     
-    plugins = await service.list_plugins()
+    # Get JUCE native processors
+    from app.routes.plugins import _get_juce_processors
+    juce_processors = _get_juce_processors()
+    
+    # Get LV2 plugins
+    lv2_plugins = await service.list_plugins()
+    
+    # Combine both - JUCE processors first as they are preferred
+    plugins = juce_processors + lv2_plugins
     
     return {
         "plugins": plugins,

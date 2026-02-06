@@ -9,7 +9,7 @@ Power-Failure Resilience:
 - Connection pragma enforcement on each connection
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, create_engine, event, text
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, create_engine, event, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, Session
 from sqlalchemy.engine import Engine
@@ -863,6 +863,80 @@ class MIDILearnState(Base):
     learned_channel = Column(Integer, nullable=True)
     learned_cc = Column(Integer, nullable=True)
     completed_at = Column(DateTime, nullable=True)
+
+
+# =============================================================================
+# CLUSTER FLOW ASSIGNMENTS - Multi-Node Management
+# =============================================================================
+
+class FlowAssignment(Base):
+    """Maps a flow to a specific node (primary or standby)."""
+    __tablename__ = "flow_assignments"
+
+    id = Column(Integer, primary_key=True)
+    flow_id = Column(String(64), unique=True, nullable=False)
+    chain_id = Column(Integer, nullable=False)
+    assigned_node_id = Column(String(128), nullable=False)
+    assignment_type = Column(String(20), default="primary")  # primary | standby
+    assignment_strategy = Column(String(20), default="manual")  # manual | pinned
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_flow_assignments_node_id", "assigned_node_id"),
+        Index("idx_flow_assignments_flow_id", "flow_id"),
+    )
+
+
+class FlowDeployment(Base):
+    """Tracks deployment status for a flow across the cluster."""
+    __tablename__ = "flow_deployments"
+
+    id = Column(Integer, primary_key=True)
+    flow_id = Column(String(64), nullable=False)
+    primary_node_id = Column(String(128), nullable=False)
+    standby_node_ids = Column(JSON, default=list)
+    deployment_status = Column(String(20), default="deploying")  # deploying | active | failed
+    deployment_timestamp = Column(DateTime, default=datetime.utcnow)
+    last_failover_time = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("idx_flow_deployments_flow_id", "flow_id"),
+        Index("idx_flow_deployments_primary_node", "primary_node_id"),
+    )
+
+
+class NodeCapability(Base):
+    """Cached node hardware capabilities for placement decisions."""
+    __tablename__ = "node_capabilities"
+
+    id = Column(Integer, primary_key=True)
+    node_id = Column(String(128), unique=True, nullable=False)
+    cpu_cores = Column(Integer, default=0)
+    memory_gb = Column(Integer, default=0)
+    has_gpu = Column(Boolean, default=False)
+    gpu_name = Column(String(255), nullable=True)
+    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class FlowDeploymentHistory(Base):
+    """Audit log of flow deployment events."""
+    __tablename__ = "flow_deployment_history"
+
+    id = Column(Integer, primary_key=True)
+    flow_id = Column(String(64), nullable=False)
+    from_node_id = Column(String(128), nullable=True)
+    to_node_id = Column(String(128), nullable=False)
+    action = Column(String(20), nullable=False)  # deployed | moved | failed_over
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("idx_flow_deployment_history_flow_id", "flow_id"),
+        Index("idx_flow_deployment_history_to_node", "to_node_id"),
+    )
 
 
 # =============================================================================

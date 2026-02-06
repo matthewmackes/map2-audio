@@ -309,7 +309,7 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8000,
+        port=8080,
         reload=True,  # Development mode
         log_level="info"
     )
@@ -321,9 +321,9 @@ python api/run.py
 ```
 
 **Access:**
-- API: http://localhost:8000
-- Interactive Docs: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- API: http://localhost:8080
+- Interactive Docs: http://localhost:8080/docs
+- ReDoc: http://localhost:8080/redoc
 
 ---
 
@@ -633,7 +633,7 @@ from datetime import datetime
 class MAP2AudioClient:
     """Python SDK for MAP2 Audio API"""
     
-    def __init__(self, base_url: str = "http://localhost:8000", api_key: str = None):
+    def __init__(self, base_url: str = "http://localhost:8080", api_key: str = None):
         self.base_url = base_url
         self.api_key = api_key
         self.headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
@@ -687,7 +687,7 @@ class MAP2AudioClient:
 
 # Usage example
 if __name__ == "__main__":
-    client = MAP2AudioClient("http://localhost:8000")
+    client = MAP2AudioClient("http://localhost:8080")
     
     # Create chain
     chain = client.create_chain(
@@ -710,7 +710,7 @@ if __name__ == "__main__":
 
 ## Base URL
 ```
-http://localhost:8000/api/v1
+http://localhost:8080/api/v1
 ```
 
 ## Authentication
@@ -779,7 +779,7 @@ def send_to_slack(chain_name, event_type):
 
 # Register webhook
 requests.post(
-    "http://localhost:8000/api/v1/webhooks",
+    "http://localhost:8080/api/v1/webhooks",
     json={
         "url": webhook_url,
         "event_type": "chain.created"
@@ -798,7 +798,7 @@ def backup_chains_to_github(token, repo_name):
     repo = g.get_user().get_repo(repo_name)
     
     # Get all chains
-    chains = requests.get("http://localhost:8000/api/v1/chains").json()
+    chains = requests.get("http://localhost:8080/api/v1/chains").json()
     
     # Backup to GitHub
     for chain in chains:
@@ -825,13 +825,13 @@ def handle_load_preset(ack, body):
     
     # Find preset via API
     presets = requests.get(
-        f"http://localhost:8000/api/v1/presets?name={preset_name}"
+        f"http://localhost:8080/api/v1/presets?name={preset_name}"
     ).json()
     
     if presets:
         preset = presets[0]
         # Load preset
-        requests.post(f"http://localhost:8000/api/v1/presets/{preset['id']}/load")
+        requests.post(f"http://localhost:8080/api/v1/presets/{preset['id']}/load")
         
         app.client.chat_postMessage(
             channel=body["channel_id"],

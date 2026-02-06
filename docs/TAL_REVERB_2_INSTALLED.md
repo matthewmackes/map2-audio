@@ -53,10 +53,10 @@ Since MAP2 has VST3 support through the VST3PluginLoader component:
 ### Via API (VST3)
 ```bash
 # Scan for VST3 plugins (if not already done)
-curl -X POST http://localhost:8000/api/vst3/refresh
+curl -X POST http://localhost:8080/api/vst3/refresh
 
 # List TAL plugins
-curl -s http://localhost:8000/api/vst3/plugins | jq '.plugins[] | select(.name | contains("TAL"))'
+curl -s http://localhost:8080/api/vst3/plugins | jq '.plugins[] | select(.name | contains("TAL"))'
 ```
 
 ## Quick Start Guide
@@ -162,7 +162,7 @@ ls -la /usr/lib/vst/libTAL-Reverb-2.so
 ls -la /usr/lib/vst3/TAL-Reverb-2.vst3/
 
 # Refresh VST3 cache in MAP2
-curl -X POST http://localhost:8000/api/vst3/refresh
+curl -X POST http://localhost:8080/api/vst3/refresh
 ```
 
 **For VST2:**

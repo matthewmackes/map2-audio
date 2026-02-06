@@ -19,7 +19,7 @@ from app.services.lcd_event_bus import LCDEventBus
 from app.services.lcd_event_router import LCDEventRouter
 from app.services.remote_event_aggregator import RemoteEventAggregator
 from app.drivers.lcd_display import LCDDisplay, MockLCDDisplay
-from app.models.lcd_event import LCDEvent
+from app.lcd_models.lcd_event import LCDEvent
 
 logger = logging.getLogger(__name__)
 

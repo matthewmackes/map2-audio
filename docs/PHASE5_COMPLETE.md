@@ -482,8 +482,8 @@ result = await manager.execute_feature("payment", amount=100)
 
 ### Monitor System
 ```bash
-curl http://localhost:8000/api/features/health
-curl http://localhost:8000/api/features/availability-report
+curl http://localhost:8080/api/features/health
+curl http://localhost:8080/api/features/availability-report
 ```
 
 ---

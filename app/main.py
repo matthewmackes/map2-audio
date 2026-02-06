@@ -68,15 +68,19 @@ async def lifespan(app):
         await safe_start_service(logger, "Database tables", pool_manager.ensure_tables_created)
         
         # Validate audio engine configuration BEFORE starting services
-        logger.info("Validating audio engine configuration...")
-        from app.services.audio_engine_validator import validate_audio_engine
-        if not validate_audio_engine():
-            log_and_raise_critical(
-                logger, 
-                "Audio engine configuration validation failed! "
-                "Fix configuration errors before starting. "
-                "See logs above for details."
-            )
+        import os
+        if os.getenv("MAP2_TEST_MODE", "false").lower() in ("1", "true", "yes"):
+            logger.info("Skipping audio engine validation in test mode")
+        else:
+            logger.info("Validating audio engine configuration...")
+            from app.services.audio_engine_validator import validate_audio_engine
+            if not validate_audio_engine():
+                log_and_raise_critical(
+                    logger, 
+                    "Audio engine configuration validation failed! "
+                    "Fix configuration errors before starting. "
+                    "See logs above for details."
+                )
         
         from app.services.metrics_daemon import start_metrics_daemon, stop_metrics_daemon
         from app.services.service_orchestrator import get_orchestrator
@@ -101,12 +105,23 @@ async def lifespan(app):
         from app.database_session import get_session
         from app.routes.lcd_events import init_lcd_routes
 
+        # Initialize deployment configuration
+        logger.info("Initializing deployment configuration...")
+        from app.deployment.deployment import initialize_deployment_config, get_deployment_config
+        import os
+        
+        # Set initial mode from environment
+        deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE").upper()
+        
+        # Initialize config (will create ~/.map2/deployment.json if not exists)
+        initialize_deployment_config()
+        deployment_config = get_deployment_config()
+        logger.info(f"Deployment mode: {deployment_config.mode.value}")
+        
         # Initialize LCD Event System
         logger.info("Initializing LCD Event System...")
-        import os
-        deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE").upper()
         use_mock_lcd = os.getenv("MAP2_USE_MOCK_LCD", "true").lower() in ("1", "true", "yes")
-        api_port = int(os.getenv("MAP2_API_PORT", "8000"))
+        api_port = int(os.getenv("MAP2_API_PORT", "8080"))
 
         identity = NodeIdentity(mode=deployment_mode)
         node_id = identity.node_id
@@ -209,7 +224,10 @@ async def lifespan(app):
         await safe_stop_service(logger, "Database checkpoint", checkpoint_database)
         logger.info("✅ Shutdown complete")
     except Exception as e:
-        log_and_raise_critical(logger, "Error in application lifespan", e)
+        import traceback
+        logger.critical(f"FATAL: Application lifespan error: {type(e).__name__}: {e}")
+        logger.critical(f"Full traceback:\n{traceback.format_exc()}")
+        raise
 
 
 def create_app():
@@ -236,7 +254,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'flow_snapshots']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'flow_snapshots', 'cluster_flows', 'flow_failover']
 
         for route_name in route_modules:
             try:
@@ -282,6 +300,42 @@ def create_app():
                 logger.info("Monitoring routes registered")
         except Exception as e:
             logger.warning(f"Failed to load monitoring routes: {e}")
+        
+        # Register deployment routes
+        try:
+            from app.routes import deployment
+            if deployment.router:
+                app.include_router(deployment.router)
+                logger.info("Deployment routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load deployment routes: {e}")
+        
+        # Register SSH trust routes
+        try:
+            from app.routes import ssh_trust
+            if ssh_trust.router:
+                app.include_router(ssh_trust.router)
+                logger.info("SSH trust routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load SSH trust routes: {e}")
+        
+        # Register peer discovery routes
+        try:
+            from app.routes import peer_discovery
+            if peer_discovery.router:
+                app.include_router(peer_discovery.router)
+                logger.info("Peer discovery routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load peer discovery routes: {e}")
+        
+        # Register deployment health routes
+        try:
+            from app.routes import deployment_health
+            if deployment_health.router:
+                app.include_router(deployment_health.router)
+                logger.info("Deployment health routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load deployment health routes: {e}")
 
         # Static files directory - check for web/dist first (Vite build), then static
         project_root = os.path.dirname(os.path.dirname(__file__))

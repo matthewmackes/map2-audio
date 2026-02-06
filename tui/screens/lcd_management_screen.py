@@ -19,7 +19,7 @@ from rich.progress import Progress, BarColumn, TextColumn
 from rich.text import Text
 from rich.console import Console
 
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 
 
 class LCDManagementScreen:
@@ -256,7 +256,7 @@ class LCDManagementScreen:
     
     async def _send_test_event(self):
         """Send a test event"""
-        from app.models.lcd_event import LCDEvent
+        from app.lcd_models.lcd_event import LCDEvent
         import uuid
         
         test_event = LCDEvent(

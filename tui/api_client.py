@@ -1454,6 +1454,10 @@ class MAP2APIClient:
         """Get LCD system status."""
         return await self._request("GET", "/api/lcd/status")
 
+    async def get_lcd_peers(self) -> APIResult:
+        """Get cluster peer discovery and connection status."""
+        return await self._request("GET", "/api/lcd/peers")
+
     async def set_lcd_page(self, page: str) -> APIResult:
         """Set the current LCD page."""
         return await self._request("POST", "/api/lcd/page", json={"page": page})
@@ -2475,6 +2479,79 @@ class MAP2APIClient:
         if service:
             params["service"] = service
         return await self._request("GET", "/api/system/logs", params=params)
+
+    # ============================================================
+    # Deployment Mode Management
+    # ============================================================
+
+    async def get_deployment_mode(self) -> APIResult:
+        """
+        Get current deployment mode.
+
+        Returns:
+            Current mode and description.
+        """
+        return await self._request("GET", "/api/deployment/mode")
+
+    async def set_deployment_mode(self, mode: str) -> APIResult:
+        """
+        Set deployment mode.
+
+        Args:
+            mode: One of ALL-IN-ONE, AUDIO-NODE, CONTROL-NODE, FRONTEND-ONLY
+
+        Returns:
+            New mode and description.
+        """
+        return await self._request("POST", "/api/deployment/mode", json={"mode": mode})
+
+    async def get_deployment_status(self) -> APIResult:
+        """
+        Get deployment status including service policies.
+
+        Returns:
+            Full deployment configuration and service states.
+        """
+        return await self._request("GET", "/api/deployment/status")
+
+    async def get_health_status(self) -> APIResult:
+        """
+        Get overall deployment health status.
+
+        Returns:
+            Overall health status with pass/fail/warn counts.
+        """
+        return await self._request("GET", "/api/deployment/health/status")
+
+    async def get_health_checks(self) -> APIResult:
+        """
+        Get individual deployment health check results.
+
+        Returns:
+            List of health check results with remediation info.
+        """
+        return await self._request("GET", "/api/deployment/health/checks")
+
+    async def get_readiness_checklist(self) -> APIResult:
+        """
+        Get readiness checklist for current mode.
+
+        Returns:
+            List of requirements with status.
+        """
+        return await self._request("GET", "/api/deployment/health/readiness")
+
+    async def run_remediation(self, action: str) -> APIResult:
+        """
+        Run a remediation action.
+
+        Args:
+            action: One of restart-mdns, restart-ssh, regenerate-keys, etc.
+
+        Returns:
+            Result of remediation action.
+        """
+        return await self._request("POST", f"/api/deployment/remediation/{action}")
 
     async def close(self) -> None:
         """Close the API client and cleanup resources."""

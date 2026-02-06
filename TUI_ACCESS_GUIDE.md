@@ -65,7 +65,7 @@ python -m app.tui.main
 Access from any browser:
 
 ```
-http://localhost:8000/tui
+http://localhost:8080/tui
 ```
 
 This provides a web-based terminal emulator with the same TUI experience.
@@ -188,7 +188,7 @@ Local Node: AUDIO-NODE-A1B2
 ├─ Status: RUNNING
 ├─ Uptime: 2d 14h 23m
 ├─ Mode: AUDIO-NODE
-├─ IP: 192.168.1.100:8000
+├─ IP: 192.168.1.100:8080
 └─ SSH Fingerprint: SHA256:abc123...
 
 Connected Peers:
@@ -197,7 +197,7 @@ Connected Peers:
     ├─ Status: Connected
     ├─ Latency: 2.3ms
     ├─ Queued Events: 0
-    ├─ IP: 192.168.1.101:8000
+    ├─ IP: 192.168.1.101:8080
     ├─ Last Sync: 100ms ago
     └─ SSH: Trusted
 
@@ -205,7 +205,7 @@ Connected Peers:
     ├─ Status: Connected
     ├─ Latency: 1.8ms
     ├─ Queued Events: 0
-    ├─ IP: 192.168.1.102:8000
+    ├─ IP: 192.168.1.102:8080
     ├─ Last Sync: 50ms ago
     └─ SSH: Trusted
 
@@ -417,7 +417,7 @@ ssh -X user@audio-node.local ./tui.sh
 
 ```bash
 # Access from any browser
-open http://audio-node.local:8000/tui
+open http://audio-node.local:8080/tui
 
 # Works on mobile and desktop
 # Real-time updates via WebSocket
@@ -431,8 +431,8 @@ open http://audio-node.local:8000/tui
 ssh -J user@bastion user@audio-node ./tui.sh
 
 # Or with tunneling
-ssh -L 8000:audio-node:8000 user@bastion
-open http://localhost:8000/tui
+ssh -L 8080:audio-node:8080 user@bastion
+open http://localhost:8080/tui
 ```
 
 ## TUI Configuration
@@ -488,10 +488,10 @@ python -m app.tui.main --debug
 
 ```bash
 # Verify event producers are active
-curl http://localhost:8000/api/lcd/stats
+curl http://localhost:8080/api/lcd/stats
 
 # Check WebSocket connection
-wscat -c ws://localhost:8000/api/lcd/ws/events
+wscat -c ws://localhost:8080/api/lcd/ws/events
 
 # Verify database has events
 sqlite3 /var/lib/map2/map2.db "SELECT COUNT(*) FROM lcd_events"

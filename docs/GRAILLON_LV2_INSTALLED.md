@@ -55,7 +55,7 @@ The full version adds:
 ### 2. Via API
 ```bash
 # Load Graillon (Stereo)
-curl -X POST "http://localhost:8000/api/plugins/load" \
+curl -X POST "http://localhost:8080/api/plugins/load" \
   -H "Content-Type: application/json" \
   -d '{
     "uri": "https://www.auburnsounds.com/products/Graillon.html40733133#stereo"

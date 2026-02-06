@@ -381,8 +381,9 @@ export class Map2WebSocket {
 export function createWebSocketClient(baseUrl?: string): Map2WebSocket {
   // Determine WebSocket URL from current location
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const host = baseUrl || window.location.hostname;
-  const port = baseUrl ? '' : ':8080'; // Default to backend port
+  const isFrontendPort = window.location.port === '3000';
+  const host = baseUrl || (isFrontendPort ? window.location.host : window.location.hostname);
+  const port = (baseUrl || isFrontendPort) ? '' : ':8080'; // Default to backend port
   const url = `${protocol}//${host}${port}/ws/v1`;
 
   return new Map2WebSocket({ url });

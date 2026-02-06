@@ -5,7 +5,7 @@
 ### 1. Backend Infrastructure
 - ✅ Fixed all Python syntax errors and imports
 - ✅ Fixed SQLAlchemy async engine configuration
-- ✅ Backend running successfully on port 8000
+- ✅ Backend running successfully on port 8080
 - ✅ All routes loading correctly
 
 ### 2. VST3 Plugin Discovery
@@ -33,15 +33,15 @@
 ### Working Features
 ```bash
 # Backend Status
-curl http://localhost:8000/api/health
+curl http://localhost:8080/api/health
 # Returns: {"status":"healthy", ...}
 
 # VST3 Plugins
-curl http://localhost:8000/api/vst3/plugins
+curl http://localhost:8080/api/vst3/plugins
 # Returns: 3 plugins
 
 # Parameter Info (Current Implementation)
-curl http://localhost:8000/api/vst3/plugin/lsp-plugins/parameters
+curl http://localhost:8080/api/vst3/plugin/lsp-plugins/parameters
 # Returns: {
 #   "uri": "lsp-plugins",
 #   "parameters": [],
@@ -206,7 +206,7 @@ def load_vst3_parameters(plugin_path: str) -> List[Dict[str, Any]]:
 
 **Overall Status:** ✅ OPERATIONAL
 
-- **Backend:** Running (port 8000)
+- **Backend:** Running (port 8080)
 - **VST3 Discovery:** Working
 - **Preset System:** Full featured (26/26 tests passing)
 - **Parameter Loading:** Infrastructure ready, awaiting JUCE integration
@@ -217,16 +217,16 @@ def load_vst3_parameters(plugin_path: str) -> List[Dict[str, Any]]:
 
 ```bash
 # 1. Backend is running
-curl http://localhost:8000/api/health
+curl http://localhost:8080/api/health
 
 # 2. List VST3 plugins
-curl http://localhost:8000/api/vst3/plugins | jq '.plugins[].name'
+curl http://localhost:8080/api/vst3/plugins | jq '.plugins[].name'
 
 # 3. Get plugin info
-curl 'http://localhost:8000/api/vst3/plugin?uri=vst3://lsp-plugins' | jq '.'
+curl 'http://localhost:8080/api/vst3/plugin?uri=vst3://lsp-plugins' | jq '.'
 
 # 4. Check parameter status
-curl http://localhost:8000/api/vst3/plugin/lsp-plugins/parameters | jq '.'
+curl http://localhost:8080/api/vst3/plugin/lsp-plugins/parameters | jq '.'
 ```
 
 ## 📝 Notes

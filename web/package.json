@@ -1,8 +1,8 @@
 {
   "name": "mackes-audio-platform-2-web",
   "private": true,
-  "version": "2.0.0-FEB2025",
-  "description": "Mackes Audio Platform 2 FEB2025 - Professional Guitar Effects Processor Web Interface",
+  "version": "3.0.0-FEB2026",
+  "description": "Mackes Audio Platform 3.0 FEB2026 (Multinode) - Professional Guitar Effects Processor Web Interface with Cluster Management",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",

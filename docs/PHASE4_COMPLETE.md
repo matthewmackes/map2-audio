@@ -416,8 +416,8 @@ async def call_api():
 
 ### Monitor Queue
 ```bash
-curl http://localhost:8000/api/request-queue/status
-curl http://localhost:8000/api/request-queue/health
+curl http://localhost:8080/api/request-queue/status
+curl http://localhost:8080/api/request-queue/health
 ```
 
 ---

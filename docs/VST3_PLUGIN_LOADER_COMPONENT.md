@@ -170,8 +170,8 @@ This is handled automatically when you add the plugin to the chain.
 Ensure the backend is running with VST3 support:
 
 ```bash
-# Backend should be running on port 8000
-curl http://localhost:8000/api/vst3/plugins
+# Backend should be running on port 8080
+curl http://localhost:8080/api/vst3/plugins
 ```
 
 ### VST3 Plugin Installation

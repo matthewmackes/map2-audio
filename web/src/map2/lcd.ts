@@ -175,7 +175,10 @@ const API_BASE = (() => {
   const envBase = import.meta.env.VITE_API_BASE as string | undefined;
   if (envBase) return envBase.endsWith('/') ? envBase.slice(0, -1) : envBase;
 
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const isFrontendPort = window.location.port === '3000';
+
+  if (isLocalhost || isFrontendPort) {
     return '/api';
   }
 

@@ -1,0 +1,90 @@
+name: Cluster Tests
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-asyncio pytest-cov pytest-timeout
+        pip install httpx textual websockets
+        pip install -e .
+    
+    - name: Run unit tests
+      run: |
+        pytest tui/tests/test_cluster_widgets.py -v --cov=tui.widgets --cov-report=xml
+    
+    - name: Run API client tests
+      run: |
+        pytest tui/tests/test_cluster_api_client.py -v --cov=tui.cluster_api_client --cov-report=xml
+    
+    - name: Run all tests with coverage
+      run: |
+        pytest tui/tests/ -v --cov=tui --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Test results
+      if: always()
+      run: |
+        echo "Test suite completed"
+        echo "Check logs for details"
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy
+    
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 tui --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        flake8 tui --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting
+      run: |
+        black --check tui || true
+    
+    - name: Check import sorting
+      run: |
+        isort --check-only tui || true
+    
+    - name: Type checking
+      run: |
+        mypy tui --ignore-missing-imports || true

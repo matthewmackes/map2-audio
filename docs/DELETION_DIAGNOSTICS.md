@@ -67,7 +67,7 @@ After the plugin is "deleted" (before refresh), does the frontend show it remove
 ### Step 6: Verify with GET /chains/{chain_id}
 Immediately after deletion, try:
 ```bash
-curl http://localhost:8000/api/chains/<chain_id>
+curl http://localhost:8080/api/chains/<chain_id>
 ```
 
 Does the plugin still appear in the plugins list? 

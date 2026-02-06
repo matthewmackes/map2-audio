@@ -29,7 +29,7 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
     Returns:
         List of processor definitions in plugin format
     """
-    config_path = Path(__file__).parent.parent / "config" / "juce_processors.json"
+    config_path = Path(__file__).parent.parent / "deployment" / "juce_processors.json"
 
     if not config_path.exists():
         logger.warning(f"JUCE processors config not found: {config_path}")

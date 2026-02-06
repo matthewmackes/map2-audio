@@ -14,7 +14,7 @@ from unittest.mock import Mock, AsyncMock, patch
 import aiohttp
 
 from app.services.lcd_event_router import LCDEventRouter
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 from datetime import datetime
 
 

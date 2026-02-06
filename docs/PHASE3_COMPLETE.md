@@ -335,7 +335,7 @@ response = await client.get("/users")
 
 ### Monitor
 ```bash
-curl http://localhost:8000/api/connection-pool/summary
+curl http://localhost:8080/api/connection-pool/summary
 ```
 
 ---

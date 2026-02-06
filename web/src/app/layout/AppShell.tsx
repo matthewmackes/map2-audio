@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X } from 'lucide-react'
+import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X, Server } from 'lucide-react'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -97,6 +97,13 @@ const underTheHoodItems = [
     icon: Monitor,
     description: 'Display configuration',
     color: '#22c55e'  // Green
+  },
+  {
+    to: '/cluster-dashboard',
+    label: 'Cluster Dashboard',
+    icon: Server,
+    description: 'Multi-node cluster monitoring & simulation',
+    color: '#00d4ff'  // Cyan
   },
 ]
 

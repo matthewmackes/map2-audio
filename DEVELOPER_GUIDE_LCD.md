@@ -33,7 +33,7 @@ app = create_app()
 
 ```bash
 # Create a test event via API
-curl -X POST http://localhost:8000/api/lcd/events \
+curl -X POST http://localhost:8080/api/lcd/events \
   -H "Content-Type: application/json" \
   -d '{
     "title": "TEST EVENT",
@@ -48,7 +48,7 @@ curl -X POST http://localhost:8000/api/lcd/events \
 
 ```bash
 # Connect to WebSocket and watch events
-wscat -c ws://localhost:8000/api/lcd/ws/events
+wscat -c ws://localhost:8080/api/lcd/ws/events
 
 # Should see events flowing in real-time as JSON objects
 ```
@@ -249,7 +249,7 @@ from pathlib import Path
 
 async def test_websocket():
     # Connect to WebSocket
-    uri = "ws://localhost:8000/api/lcd/ws/events"
+    uri = "ws://localhost:8080/api/lcd/ws/events"
     
     async with websockets.connect(uri) as websocket:
         # Listen for events
@@ -437,7 +437,7 @@ import websockets
 
 async def check_ws():
     try:
-        async with websockets.connect("ws://localhost:8000/api/lcd/ws/events") as ws:
+        async with websockets.connect("ws://localhost:8080/api/lcd/ws/events") as ws:
             print("WebSocket connected!")
     except Exception as e:
         print(f"Connection failed: {e}")

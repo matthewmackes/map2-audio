@@ -121,13 +121,13 @@ Input → Gate → Compressor → EQ → Pitch Correction → Reverb/Delay → O
 ### Via API
 ```bash
 # List all plugins
-curl -s http://localhost:8000/api/plugins/lv2
+curl -s http://localhost:8080/api/plugins/lv2
 
 # Search for specific plugin
-curl -s http://localhost:8000/api/plugins/lv2 | jq '.plugins[] | select(.name | contains("Gate"))'
+curl -s http://localhost:8080/api/plugins/lv2 | jq '.plugins[] | select(.name | contains("Gate"))'
 
 # Load a plugin
-curl -X POST "http://localhost:8000/api/plugins/load" \
+curl -X POST "http://localhost:8080/api/plugins/load" \
   -H "Content-Type: application/json" \
   -d '{"uri": "http://calf.sourceforge.net/plugins/Gate"}'
 ```
@@ -188,7 +188,7 @@ lv2ls | grep zam
 
 1. **Refresh plugin cache:**
    ```bash
-   curl -X POST http://localhost:8000/api/plugins/lv2/refresh
+   curl -X POST http://localhost:8080/api/plugins/lv2/refresh
    ```
 
 2. **Check LV2_PATH:**

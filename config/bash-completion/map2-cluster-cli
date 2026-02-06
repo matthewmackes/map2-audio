@@ -1,0 +1,67 @@
+#!/bin/bash
+# Bash completion script for map2-cluster-cli
+
+_map2_cluster_cli_completions() {
+    local cur prev opts
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    # Main commands
+    local commands="status nodes update backup config events"
+    
+    # Sub-commands
+    local nodes_cmds="list info reboot"
+    local update_cmds="status schedule execute"
+    local backup_cmds="status create restore"
+    local config_cmds="view set"
+    local events_cmds="view"
+    
+    # If completing first argument, show main commands
+    if [ $COMP_CWORD -eq 1 ]; then
+        COMPREPLY=($(compgen -W "$commands" -- "$cur"))
+        return 0
+    fi
+    
+    # Handle sub-commands based on first argument
+    local cmd="${COMP_WORDS[1]}"
+    
+    case "$cmd" in
+        nodes)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=($(compgen -W "$nodes_cmds" -- "$cur"))
+            elif [ $COMP_CWORD -eq 3 ] && [ "${COMP_WORDS[2]}" = "info" ]; then
+                # Add node ID completion here
+                local nodes=$(map2-cluster-cli nodes list 2>/dev/null | awk 'NR>2 {print $1}' | grep -v "^$")
+                COMPREPLY=($(compgen -W "$nodes" -- "$cur"))
+            fi
+            ;;
+        update)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=($(compgen -W "$update_cmds" -- "$cur"))
+            fi
+            ;;
+        backup)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=($(compgen -W "$backup_cmds" -- "$cur"))
+            fi
+            ;;
+        config)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=($(compgen -W "$config_cmds" -- "$cur"))
+            fi
+            ;;
+        events)
+            if [ $COMP_CWORD -eq 2 ]; then
+                COMPREPLY=($(compgen -W "$events_cmds" -- "$cur"))
+            elif [[ "$prev" == "--limit" ]] || [[ "$prev" == "--type" ]]; then
+                # For options that take arguments
+                if [[ "$prev" == "--type" ]]; then
+                    local types="update node.joined node.left node.health backup.completed update.started"
+                    COMPREPLY=($(compgen -W "$types" -- "$cur"))
+                fi
+            fi
+            ;;
+    esac
+}
+
+complete -o bashdefault -o default -o nospace -F _map2_cluster_cli_completions map2-cluster-cli

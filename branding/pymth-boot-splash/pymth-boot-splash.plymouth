@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Pymth Boot Splash
+Description=Mackes Audio Platform boot splash with progress indicator
+ModuleType=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/pymth-boot-splash
+ScriptFile=/usr/share/plymouth/themes/pymth-boot-splash/pymth-boot-splash.script

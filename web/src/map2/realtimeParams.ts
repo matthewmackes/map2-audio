@@ -50,9 +50,13 @@ export class RTParameterClient {
       ? (window.location.protocol === 'https:' ? 'wss:' : 'ws:')
       : 'ws:';
     const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const frontendPort = typeof window !== 'undefined' ? window.location.port === '3000' : false;
+    const hostWithPort = typeof window !== 'undefined' ? window.location.host : host;
+    const baseHost = frontendPort ? hostWithPort : host;
+    const portSuffix = frontendPort ? '' : ':8080';
 
     this.config = {
-      url: config.url || `${protocol}//${host}:8080/ws/rt`,
+      url: config.url || `${protocol}//${baseHost}${portSuffix}/ws/rt`,
       useBinary: config.useBinary ?? false,
       reconnect: config.reconnect ?? true,
       reconnectDelay: config.reconnectDelay ?? 1000,

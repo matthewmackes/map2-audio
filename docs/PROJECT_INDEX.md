@@ -132,13 +132,13 @@ cat app/services/circuit_breaker.py
 ### 4. Monitor System
 ```bash
 # Get system health
-curl http://localhost:8000/api/system-health
+curl http://localhost:8080/api/system-health
 
 # Get feature availability
-curl http://localhost:8000/api/features/health
+curl http://localhost:8080/api/features/health
 
 # Get performance metrics
-curl http://localhost:8000/api/health/comprehensive-report
+curl http://localhost:8080/api/health/comprehensive-report
 ```
 
 ---

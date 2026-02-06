@@ -261,36 +261,22 @@ class LandingDashboard(Static):
     }
 
     .chains-section {
-        width: 2fr;
+        width: 100%;
         height: 100%;
         layout: horizontal;
         padding: 0;
     }
 
     .info-section {
-        width: 1fr;
-        height: 100%;
-        layout: vertical;
-        padding: 0 1;
+        display: none;
     }
 
     .audio-levels-panel {
-        width: 100%;
-        height: auto;
-        background: $panel;
-        border: solid $secondary;
-        padding: 1;
-        margin-bottom: 1;
+        display: none;
     }
 
     .audio-levels-title {
-        width: 100%;
-        height: 2;
-        background: $secondary;
-        color: $text;
-        text-style: bold;
-        padding: 0 1;
-        margin-bottom: 1;
+        display: none;
     }
 
     .system-panel {
@@ -313,21 +299,11 @@ class LandingDashboard(Static):
     }
 
     .loaded-panel {
-        width: 100%;
-        height: 1fr;
-        background: $panel;
-        border: solid $success;
-        padding: 1;
+        display: none;
     }
 
     .loaded-title {
-        width: 100%;
-        height: 2;
-        background: $success;
-        color: $text;
-        text-style: bold;
-        padding: 0 1;
-        margin-bottom: 1;
+        display: none;
     }
 
     .stat-row {
@@ -380,27 +356,17 @@ class LandingDashboard(Static):
         yield Label("MAP2 AUDIO PLATFORM - DASHBOARD", classes="dashboard-title")
 
         with Horizontal(classes="dashboard-main"):
-            # Left side: Two chain panels
+            # Six chain panels (A, B, C, D, E, F)
             with Horizontal(classes="chains-section"):
-                yield ChainPanel("CHAIN A", chain_id=0, api_client=self.api_client, id="chain-a-panel")
-                yield ChainPanel("CHAIN B", chain_id=1, api_client=self.api_client, id="chain-b-panel")
-
-            # Right side: Audio levels and loaded items
-            with Vertical(classes="info-section"):
-                # Audio Levels Panel
-                with Vertical(classes="audio-levels-panel"):
-                    yield Label("AUDIO LEVELS", classes="audio-levels-title")
-                    yield AudioMeter("Input", id="input-meter")
-                    yield AudioMeter("Output", id="output-meter")
-
-                # Currently Loaded Panel
-                with Vertical(classes="loaded-panel"):
-                    yield Label("CURRENTLY LOADED", classes="loaded-title")
-                    yield DataTable(id="loaded-table")
+                yield ChainPanel("Flow A", chain_id=0, api_client=self.api_client, id="chain-a-panel")
+                yield ChainPanel("Flow B", chain_id=1, api_client=self.api_client, id="chain-b-panel")
+                yield ChainPanel("Flow C", chain_id=2, api_client=self.api_client, id="chain-c-panel")
+                yield ChainPanel("Flow D", chain_id=3, api_client=self.api_client, id="chain-d-panel")
+                yield ChainPanel("Flow E", chain_id=4, api_client=self.api_client, id="chain-e-panel")
+                yield ChainPanel("Flow F", chain_id=5, api_client=self.api_client, id="chain-f-panel")
 
     async def on_mount(self) -> None:
         """Initialize and start refresh loop."""
-        self._init_loaded_table()
         await self._refresh_all()
         self._refresh_task = self.set_interval(2.0, self._refresh_all)  # Adjusted type hint to match Timer
 
@@ -422,14 +388,8 @@ class LandingDashboard(Static):
             return
 
         try:
-            # Run all fetches in parallel
-            await asyncio.gather(
-                self._fetch_chains(),
-                self._fetch_audio_levels(),
-                self._fetch_system_stats(),
-                self._fetch_loaded_items(),
-                return_exceptions=True
-            )
+            # Fetch chains data only (removed audio levels, system stats, and loaded items)
+            await self._fetch_chains()
             self._update_display()
         except Exception as e:
             logger.debug(f"Dashboard refresh error: {e}")
@@ -444,39 +404,35 @@ class LandingDashboard(Static):
             result = await self.api_client.list_chains()
             if result.success and result.data:
                 chains = result.data if isinstance(result.data, list) else result.data.get("chains", [])
-                self._chains = chains[:2]  # Take first two chains for A/B
+                self._chains = chains[:6]  # Take first six chains for A/B/C/D/E/F
 
-                # Update chain panels
-                chain_a = self._chains[0] if len(self._chains) > 0 else None
-                chain_b = self._chains[1] if len(self._chains) > 1 else None
+                # Get plugins for each chain and update panels
+                chain_labels = ["chain-a-panel", "chain-b-panel", "chain-c-panel", "chain-d-panel", "chain-e-panel", "chain-f-panel"]
+                
+                for idx, (chain_label, chain) in enumerate(zip(chain_labels, self._chains)):
+                    if chain:
+                        chain_id = chain.get("id")
+                        plugins = []
+                        if chain_id is not None:
+                            detail = await self.api_client.get_chain(chain_id)
+                            if detail.success and detail.data:
+                                plugins = detail.data.get("plugins", [])
 
-                # Get plugins for each chain
-                plugins_a = []
-                plugins_b = []
-
-                if chain_a:
-                    chain_a_id = chain_a.get("id")
-                    if chain_a_id is not None:
-                        detail = await self.api_client.get_chain(chain_a_id)
-                        if detail.success and detail.data:
-                            plugins_a = detail.data.get("plugins", [])
-
-                if chain_b:
-                    chain_b_id = chain_b.get("id")
-                    if chain_b_id is not None:
-                        detail = await self.api_client.get_chain(chain_b_id)
-                        if detail.success and detail.data:
-                            plugins_b = detail.data.get("plugins", [])
-
-                # Update panels
-                try:
-                    panel_a = self.query_one("#chain-a-panel", ChainPanel)
-                    panel_a.update_chain(chain_a, plugins_a)
-
-                    panel_b = self.query_one("#chain-b-panel", ChainPanel)
-                    panel_b.update_chain(chain_b, plugins_b)
-                except Exception:
-                    pass
+                        # Update the corresponding panel
+                        try:
+                            panel = self.query_one(f"#{chain_label}", ChainPanel)
+                            panel.update_chain(chain, plugins)
+                        except Exception:
+                            pass
+                
+                # Clear any remaining panels if fewer than 6 chains exist
+                for idx in range(len(self._chains), 6):
+                    chain_label = chain_labels[idx]
+                    try:
+                        panel = self.query_one(f"#{chain_label}", ChainPanel)
+                        panel.update_chain(None, [])
+                    except Exception:
+                        pass
 
         except Exception as e:
             logger.debug(f"Error fetching chains: {e}")
@@ -615,40 +571,7 @@ class LandingDashboard(Static):
     def _update_display(self) -> None:
         """Update all display elements."""
         try:
-            # Update CPU
-            cpu_label = self.query_one("#cpu-value", Label)
-            cpu_class = "stat-good" if self.cpu_percent < 50 else "stat-warn" if self.cpu_percent < 80 else "stat-bad"
-            cpu_label.update(f"{self.cpu_percent:.1f}%")
-            cpu_label.remove_class("stat-good", "stat-warn", "stat-bad")
-            cpu_label.add_class(cpu_class)
-
-            # Update Memory
-            mem_label = self.query_one("#mem-value", Label)
-            mem_class = "stat-good" if self.mem_percent < 70 else "stat-warn" if self.mem_percent < 85 else "stat-bad"
-            mem_label.update(f"{self.mem_percent:.1f}%")
-            mem_label.remove_class("stat-good", "stat-warn", "stat-bad")
-            mem_label.add_class(mem_class)
-
-            # Update DSP
-            dsp_label = self.query_one("#dsp-value", Label)
-            dsp_class = "stat-good" if self.dsp_load < 50 else "stat-warn" if self.dsp_load < 80 else "stat-bad"
-            dsp_label.update(f"{self.dsp_load:.1f}%")
-            dsp_label.remove_class("stat-good", "stat-warn", "stat-bad")
-            dsp_label.add_class(dsp_class)
-
-            # Update Latency
-            lat_label = self.query_one("#latency-value", Label)
-            lat_class = "stat-good" if self.latency_ms < 10 else "stat-warn" if self.latency_ms < 20 else "stat-bad"
-            lat_label.update(f"{self.latency_ms:.1f} ms")
-            lat_label.remove_class("stat-good", "stat-warn", "stat-bad")
-            lat_label.add_class(lat_class)
-
-            # Update loaded items table
-            table = self.query_one("#loaded-table", DataTable)
-            table.clear()
-            for item in self._loaded_items:
-                status_icon = "🟢" if item["status"] in ("Loaded", "Active") else "⚪"
-                table.add_row(item["type"], item["name"], f"{status_icon} {item['status']}")
-
+            # Chains are updated in _fetch_chains, no additional display updates needed
+            pass
         except Exception as e:
             logger.debug(f"Error updating display: {e}")

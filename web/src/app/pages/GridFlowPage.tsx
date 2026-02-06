@@ -63,6 +63,9 @@ import {
   GridAutomationTimeline,
   AudioPortSelector,
   FlowSnapshotsPanel,
+  ClusterDashboard,
+  FlowAssignmentMatrix,
+  FlowAssignmentDialog,
   getCategoryConfig,
 } from '../components/GridFlow'
 import type { AudioInterfaceStatus, MidiMapping, AutomationLane } from '../components/GridFlow'
@@ -264,6 +267,8 @@ export function GridFlowPage() {
   const [showPluginBrowser, setShowPluginBrowser] = useState(false)
   const [showPresetBrowser, setShowPresetBrowser] = useState(false)
   const [showAudioConfig, setShowAudioConfig] = useState(false)
+  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false)
+  const [selectedFlowForAssignment, setSelectedFlowForAssignment] = useState<FlowSlot | null>(null)
   const [pluginSearchQuery, setPluginSearchQuery] = useState('')
   const [midiLearnActive, setMidiLearnActive] = useState(false)
   const [isRefreshingPlugins, setIsRefreshingPlugins] = useState(false)
@@ -473,6 +478,16 @@ export function GridFlowPage() {
     queryKey: ['audio', 'routing'],
     queryFn: audioApi.getRouting,
     refetchInterval: 5000,
+  })
+
+  const clusterNodesQuery = useQuery({
+    queryKey: ['cluster', 'nodes'],
+    queryFn: async () => {
+      const res = await fetch('/api/cluster/nodes')
+      if (!res.ok) throw new Error('Failed to load cluster nodes')
+      return res.json()
+    },
+    refetchInterval: 2000,
   })
 
   // CPU metrics hook
@@ -1009,6 +1024,44 @@ export function GridFlowPage() {
   const updateFlow = useCallback((flowId: string, updates: Partial<FlowSlot>) => {
     setFlowSlots(prev => prev.map(f => f.id === flowId ? { ...f, ...updates } : f))
   }, [])
+
+  const openAssignmentDialog = useCallback((flow: FlowSlot) => {
+    setSelectedFlowForAssignment(flow)
+    setAssignmentDialogOpen(true)
+  }, [])
+
+  const handleAssignFlow = useCallback(async (nodeId: string, redundancyEnabled: boolean) => {
+    if (!selectedFlowForAssignment) return
+    if (!selectedFlowForAssignment.chainId) {
+      pushToast('Assign a chain to this flow first', 'error')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/cluster/flows/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flow_id: selectedFlowForAssignment.id,
+          node_id: nodeId,
+          chain_id: selectedFlowForAssignment.chainId,
+          redundancy_enabled: redundancyEnabled,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Assignment failed')
+      }
+
+      pushToast('Flow assigned successfully', 'success')
+      setAssignmentDialogOpen(false)
+      setSelectedFlowForAssignment(null)
+      queryClient.invalidateQueries({ queryKey: ['cluster', 'flow-assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['cluster', 'nodes'] })
+    } catch (error) {
+      pushToast('Failed to assign flow', 'error')
+    }
+  }, [selectedFlowForAssignment, pushToast, queryClient])
 
   // Routing
   const setRoutingMode = useCallback((mode: RoutingMode) => {
@@ -1774,6 +1827,9 @@ export function GridFlowPage() {
 
       {/* Main content area */}
       <main className="grid-flow-main">
+        <ClusterDashboard />
+        <FlowAssignmentMatrix />
+
         {/* Multi-flow signal grids */}
         <div className="grid-flow-slots">
           {flowSlots.map((flow, index) => {
@@ -1873,6 +1929,18 @@ export function GridFlowPage() {
                         showLabel={false}
                       />
                     </div>
+
+                    {/* Assign button */}
+                    <button
+                      className="grid-flow-slot-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openAssignmentDialog(flow)
+                      }}
+                      title="Assign flow to node"
+                    >
+                      <Link2 size={14} />
+                    </button>
 
                     {/* Solo button */}
                     <button
@@ -2259,6 +2327,15 @@ export function GridFlowPage() {
           queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
           pushToast(`Imported "${name}" successfully`, 'success')
         }}
+      />
+
+      <FlowAssignmentDialog
+        isOpen={assignmentDialogOpen}
+        flowId={selectedFlowForAssignment?.id ?? null}
+        chainId={selectedFlowForAssignment?.chainId ?? null}
+        availableNodes={clusterNodesQuery.data?.nodes ?? []}
+        onAssign={handleAssignFlow}
+        onCancel={() => setAssignmentDialogOpen(false)}
       />
 
       {/* Audio Config Dialog */}

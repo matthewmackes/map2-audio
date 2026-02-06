@@ -21,7 +21,7 @@ from pathlib import Path
 
 from app.services.lcd_manager import LCDManager
 from app.services.lcd_event_bus import LCDEventBus
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 
 
 class LCDPerformanceBenchmark:

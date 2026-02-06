@@ -19,6 +19,13 @@ try:
         name: str = None
         is_active: bool = None
 
+    class ChainDeployRequest(BaseModel):
+        chain_id: int
+        chain_name: str
+        plugins: List[dict] = []
+        mode: str = "active"  # active | standby
+        activate: bool = True
+
     def validate_chain_name(name: str) -> bool:
         """Validate chain name (1-256 characters)."""
         return name and isinstance(name, str) and 1 <= len(name) <= 256
@@ -114,6 +121,20 @@ try:
         if result is None:
             raise HTTPException(status_code=404, detail="Chain not found")
         return result
+
+    @router.get("/{chain_id}/analysis")
+    async def get_chain_analysis(chain_id: int):
+        """Get estimated resource requirements for a chain."""
+        from app.database import get_session
+        from app.services.chain_analyzer import ChainAnalyzer
+
+        async with get_session() as session:
+            analyzer = ChainAnalyzer(ChainService(session))
+            analysis = await analyzer.analyze_chain(chain_id)
+
+        if analysis is None:
+            raise HTTPException(status_code=404, detail="Chain not found")
+        return analysis
 
     @router.post("/{chain_id}/plugins")
     async def add_plugin_to_chain(chain_id: int, plugin_uri: str = Query(..., description="Plugin URI string")):
@@ -326,7 +347,15 @@ try:
             success = await service.deactivate_chain(chain_id)
             if not success:
                 raise HTTPException(status_code=404, detail="Chain not found")
-            return {"status": "deactivated", "chain_id": chain_id}
+
+        # Publish chain deactivation event AFTER session commits
+        await event_publisher.publish(
+            "chain_updates",
+            EventType.CHAIN_DEACTIVATED,
+            {"chain_id": chain_id}
+        )
+
+        return {"status": "deactivated", "chain_id": chain_id}
 
     @router.delete("/{chain_id}")
     async def delete_chain(chain_id: int):
@@ -434,6 +463,28 @@ try:
             if not preset_id:
                 raise HTTPException(status_code=404, detail="Chain not found or save failed")
             return {"status": "preset_saved", "preset_id": preset_id, "name": preset_name}
+
+    # ==================== CLUSTER DEPLOYMENT ====================
+
+    @router.post("/deploy")
+    async def deploy_chain(request: ChainDeployRequest):
+        """Deploy a chain configuration to this node (cluster use).
+
+        This endpoint is called by the management node to load a chain
+        on a target audio node. For now it returns success and should be
+        integrated with the audio engine in Phase 1.4+.
+        """
+        if request.chain_id is None:
+            raise HTTPException(status_code=400, detail="chain_id required")
+
+        return {
+            "status": "accepted",
+            "chain_id": request.chain_id,
+            "chain_name": request.chain_name,
+            "plugin_count": len(request.plugins),
+            "mode": request.mode,
+            "activate": request.activate,
+        }
 
     # ==================== TEMPLATES (DEMO PEDALBOARDS) ====================
 

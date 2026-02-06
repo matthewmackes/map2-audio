@@ -10,8 +10,8 @@ import logging
 from typing import Optional
 from datetime import datetime
 
-from app.models.lcd_event import LCDEvent
-from app.models.lcd_event_db import LCDEventRepository
+from app.lcd_models.lcd_event import LCDEvent
+from app.lcd_models.lcd_event_db import LCDEventRepository
 
 logger = logging.getLogger(__name__)
 

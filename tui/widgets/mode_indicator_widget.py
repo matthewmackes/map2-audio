@@ -13,7 +13,7 @@ Features:
 import asyncio
 import logging
 import os
-from typing import Optional
+from typing import Optional, Dict, Any
 from textual.widgets import Static, Label
 from textual.reactive import reactive
 from textual.binding import Binding
@@ -105,6 +105,8 @@ class ModeIndicatorWidget(Static):
         super().__init__(**kwargs)
         self.id = "mode-indicator"
         self._refresh_task: Optional[asyncio.Task] = None
+        self._health_status: Dict[str, Any] = {}
+        self._deployment_status: Dict[str, Any] = {}
         
     def compose(self):
         yield Label("LOADING", id="mode-label", classes="mode-indicator loading-mode")
@@ -118,17 +120,39 @@ class ModeIndicatorWidget(Static):
         self.set_interval(5.0, self._refresh_mode)
     
     async def _refresh_mode(self) -> None:
-        """Refresh current deployment mode status."""
+        """Refresh current deployment mode status and cluster health."""
         try:
-            # Get deployment mode from environment variable
-            deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "UNKNOWN").upper()
-            deployment_mode = self._normalize_mode(deployment_mode)
-            
+            deployment_mode = None
+
+            # Prefer API if available
+            if hasattr(self.app, "api_client") and self.app.api_client:
+                if hasattr(self.app.api_client, "get_deployment_mode"):
+                    result = await self.app.api_client.get_deployment_mode()
+                    if getattr(result, "success", False) and result.data:
+                        deployment_mode = result.data.get("mode")
+
+                # Fetch health and deployment status
+                if hasattr(self.app.api_client, "get_health_status"):
+                    health_result = await self.app.api_client.get_health_status()
+                    if getattr(health_result, "success", False) and health_result.data:
+                        self._health_status = health_result.data
+
+                if hasattr(self.app.api_client, "get_deployment_status"):
+                    deploy_result = await self.app.api_client.get_deployment_status()
+                    if getattr(deploy_result, "success", False) and deploy_result.data:
+                        self._deployment_status = deploy_result.data
+
+            # Fallback to environment variable
+            if not deployment_mode:
+                deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "UNKNOWN")
+
+            deployment_mode = self._normalize_mode(str(deployment_mode).upper())
+
             if deployment_mode != self.current_mode and self.current_mode != "LOADING":
                 logger.debug(f"Deployment mode changed from {self.current_mode} to {deployment_mode}")
-            
+
             self.current_mode = deployment_mode
-            
+
         except Exception as e:
             logger.warning(f"Failed to refresh mode indicator: {e}")
             self.current_mode = "ERROR"
@@ -145,17 +169,20 @@ class ModeIndicatorWidget(Static):
         label.remove_class("error-mode")
         label.remove_class("other-mode")
         
+        # Build status string
+        status_text = self._build_status_text(new_mode)
+        
         if new_mode in ("DEVELOPER", "DEVELOPMENT"):
-            label.update("🔴 DEVELOPER")
+            label.update(f"🔴 {status_text}")
             label.add_class("developer-mode")
         elif new_mode == "AUDIO-NODE":
-            label.update("🔵 AUDIO-NODE")
+            label.update(f"🔵 {status_text}")
             label.add_class("audio-node-mode")
         elif new_mode == "CONTROL-NODE":
-            label.update("🟢 CONTROL-NODE")
+            label.update(f"🟢 {status_text}")
             label.add_class("control-node-mode")
         elif new_mode == "ALL-IN-ONE":
-            label.update("🟣 ALL-IN-ONE")
+            label.update(f"🟣 {status_text}")
             label.add_class("other-mode")
         elif new_mode == "LOADING":
             label.update("⏳ LOADING")
@@ -165,8 +192,35 @@ class ModeIndicatorWidget(Static):
             label.add_class("error-mode")
         else:
             # Other deployment modes
-            label.update(f"▪ {new_mode}")
+            label.update(f"▪ {status_text}")
             label.add_class("other-mode")
+    
+    def _build_status_text(self, mode: str) -> str:
+        """Build status text with health and service info."""
+        status_parts = [mode]
+        
+        # Add health status
+        if self._health_status:
+            overall = self._health_status.get("overall_status", "unknown")
+            passed = self._health_status.get("checks_passed", 0)
+            failed = self._health_status.get("checks_failed", 0)
+            
+            if overall == "healthy":
+                status_parts.append(f"[green]✓{passed}[/green]")
+            elif overall == "degraded":
+                warned = self._health_status.get("checks_warned", 0)
+                status_parts.append(f"[yellow]⚠{warned}[/yellow]")
+            elif overall == "unhealthy":
+                status_parts.append(f"[red]✗{failed}[/red]")
+        
+        # Add service count
+        if self._deployment_status and isinstance(self._deployment_status, dict):
+            services = self._deployment_status.get("services", [])
+            running = sum(1 for s in services if s.get("status") == "running")
+            if services:
+                status_parts.append(f"[blue]{running}/{len(services)}svc[/blue]")
+        
+        return " ".join(status_parts)
 
     @staticmethod
     def _normalize_mode(mode: str) -> str:

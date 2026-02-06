@@ -42,7 +42,7 @@ HARDWARE LAYER
 └──────────────────────────────┘    └──────────────────────────────┘
          ↑                                    ↑
          │ PCM/MIDI (real-time)              │ HTTP/WebSocket (soft real-time)
-         │ 44.1kHz, 16-bit                   │ 8000/api/lcd
+         │ 44.1kHz, 16-bit                   │ 8080/api/lcd
          │                                   │
          └───────────────────┬───────────────┘
                              │
@@ -194,7 +194,7 @@ Audio Node 1          Control Node         Audio Node 2
      │
      │ WebSocket Connect (with backoff)
      ├─────────────────────────────────────────→│
-     │ ws://audio-2:8000/api/lcd/ws/events      │
+   │ ws://audio-2:8080/api/lcd/ws/events      │
      │←─────────────────────────────────────────┤
      │ Connection established                   │
      │

@@ -14,7 +14,7 @@ import aiohttp
 from datetime import datetime
 
 from app.services.lcd_event_bus import LCDEventBus, create_system_event
-from app.models.lcd_event import EventType, EventSeverity
+from app.lcd_models.lcd_event import EventType, EventSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ class NetworkEventProducer:
             "context": {"peer_node": node_id}
         }
         
-        from app.models.lcd_event import LCDEvent
+        from app.lcd_models.lcd_event import LCDEvent
         await self.event_bus.publish(LCDEvent(**event))
         
         logger.info(f"Peer connected: {node_id}")
@@ -140,7 +140,7 @@ class NetworkEventProducer:
             "context": {"peer_node": node_id}
         }
         
-        from app.models.lcd_event import LCDEvent
+        from app.lcd_models.lcd_event import LCDEvent
         await self.event_bus.publish(LCDEvent(**event))
         
         logger.warning(f"Peer disconnected: {node_id}")

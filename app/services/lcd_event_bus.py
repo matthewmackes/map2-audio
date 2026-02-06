@@ -13,7 +13,7 @@ from collections import deque
 from datetime import datetime
 import uuid
 
-from app.models.lcd_event import LCDEvent, EventType, EventSeverity
+from app.lcd_models.lcd_event import LCDEvent, EventType, EventSeverity
 
 logger = logging.getLogger(__name__)
 

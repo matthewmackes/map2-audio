@@ -140,7 +140,7 @@ class ServiceManager:
                 import aiohttp
                 services = {
                     'backend': await self._check_service_health('http://localhost:8080/api/health'),
-                    'frontend': await self._check_service_health('http://localhost:3001'),
+                    'frontend': await self._check_service_health('http://localhost:3000'),
                     'audio_engine': await self._check_service_health('http://localhost:8080/api/engine/status')
                 }
             except ImportError:
@@ -325,7 +325,7 @@ class ServiceManager:
         # Check external services
         external_status = {
             'backend': await self._check_service_health('http://localhost:8080/api/health'),
-            'frontend': await self._check_service_health('http://localhost:3001'),
+            'frontend': await self._check_service_health('http://localhost:3000'),
             'audio_engine': await self._check_service_health('http://localhost:8080/api/engine/status')
         }
         

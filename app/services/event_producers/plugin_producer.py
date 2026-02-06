@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from app.services.lcd_event_bus import LCDEventBus, create_audio_event
-from app.models.lcd_event import EventType, EventSeverity
+from app.lcd_models.lcd_event import EventType, EventSeverity
 
 logger = logging.getLogger(__name__)
 

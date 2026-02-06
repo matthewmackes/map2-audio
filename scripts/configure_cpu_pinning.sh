@@ -133,7 +133,7 @@ Environment="PYTHONUNBUFFERED=1"
 ExecStartPre=/usr/bin/taskset -c 1 /bin/true
 
 # Main audio process on CPU2-3 (audio processing cores)
-ExecStart=/usr/bin/taskset -c 2,3 /usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+ExecStart=/usr/bin/taskset -c 2,3 /usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
 
 # Real-time scheduling
 CPUSchedulingPolicy=fifo

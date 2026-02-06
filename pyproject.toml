@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mackes-audio-platform-2"
-version = "2.0.0-FEB2025"
-description = "Mackes Audio Platform 2 FEB2025 - Professional real-time audio processing with LV2 plugins, MIDI routing, and dual LCD monitoring"
+version = "3.0.0-FEB2026"
+description = "Mackes Audio Platform 3.0 FEB2026 (Multinode) - Professional real-time audio processing with LV2 plugins, MIDI routing, dual LCD monitoring, and distributed cluster capabilities"
 authors = [{name = "Matthew Mackes", email = "audio@mackesaudio.com"}]
 requires-python = ">=3.10"
 license = {text = "MIT"}
