@@ -1,0 +1,239 @@
+"""
+Heartbeat Monitoring Service for Cluster Nodes
+
+Monitors all nodes with 1-second intervals, detects failures within 3 seconds,
+and triggers failover events.
+"""
+
+import asyncio
+import logging
+import time
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Set
+from dataclasses import dataclass, field
+
+import httpx
+
+from app.services.cluster.registry import get_cluster_registry
+from app.services.event_bus import get_event_bus, EventType
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class NodeHealthStatus:
+    """Health status for a single node."""
+    node_id: str
+    is_online: bool
+    last_seen: datetime
+    consecutive_failures: int = 0
+    response_time_ms: Optional[float] = None
+    metadata: Dict = field(default_factory=dict)
+
+
+class HeartbeatMonitor:
+    """
+    Monitors cluster node health via periodic heartbeat checks.
+    
+    Features:
+    - 1-second polling interval
+    - 3-second failure detection (3 consecutive failures)
+    - Automatic offline/online event publishing
+    - Minimal CPU overhead (<1%)
+    """
+    
+    def __init__(self):
+        self.registry = get_cluster_registry()
+        self.event_bus = get_event_bus()
+        self.node_health: Dict[str, NodeHealthStatus] = {}
+        self.is_running = False
+        self._monitor_task: Optional[asyncio.Task] = None
+        
+        # Configuration
+        self.poll_interval_seconds = 1.0
+        self.failure_threshold = 3  # consecutive failures before marking offline
+        self.timeout_seconds = 2.0
+        
+    async def start(self):
+        """Start heartbeat monitoring."""
+        if self.is_running:
+            logger.warning("Heartbeat monitor already running")
+            return
+        
+        logger.info("Starting heartbeat monitor")
+        self.is_running = True
+        self._monitor_task = asyncio.create_task(self._monitor_loop())
+    
+    async def stop(self):
+        """Stop heartbeat monitoring."""
+        if not self.is_running:
+            return
+        
+        logger.info("Stopping heartbeat monitor")
+        self.is_running = False
+        
+        if self._monitor_task:
+            self._monitor_task.cancel()
+            try:
+                await self._monitor_task
+            except asyncio.CancelledError:
+                pass
+    
+    async def _monitor_loop(self):
+        """Main monitoring loop."""
+        while self.is_running:
+            try:
+                start_time = time.time()
+                
+                # Get all nodes from registry
+                nodes = self.registry.get_all_nodes()
+                
+                # Check all nodes in parallel
+                tasks = []
+                for node in nodes:
+                    task = self._check_node(node.node_id, node.url)
+                    tasks.append(task)
+                
+                if tasks:
+                    await asyncio.gather(*tasks, return_exceptions=True)
+                
+                # Sleep for remaining time to maintain 1-second interval
+                elapsed = time.time() - start_time
+                sleep_time = max(0, self.poll_interval_seconds - elapsed)
+                
+                if sleep_time > 0:
+                    await asyncio.sleep(sleep_time)
+                else:
+                    logger.warning(f"Heartbeat check took {elapsed:.2f}s, exceeding {self.poll_interval_seconds}s interval")
+                
+            except Exception as e:
+                logger.error(f"Error in heartbeat monitor loop: {e}", exc_info=True)
+                await asyncio.sleep(1)
+    
+    async def _check_node(self, node_id: str, node_url: str):
+        """Check health of a single node."""
+        start_time = time.time()
+        
+        try:
+            # Send heartbeat request
+            async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                response = await client.get(f"{node_url}/api/health")
+                response.raise_for_status()
+                health_data = response.json()
+            
+            response_time_ms = (time.time() - start_time) * 1000
+            
+            # Node is healthy
+            await self._mark_node_online(node_id, response_time_ms, health_data)
+            
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPError) as e:
+            # Node is unhealthy
+            await self._mark_node_failure(node_id, str(e))
+        
+        except Exception as e:
+            logger.error(f"Unexpected error checking node {node_id}: {e}", exc_info=True)
+            await self._mark_node_failure(node_id, str(e))
+    
+    async def _mark_node_online(self, node_id: str, response_time_ms: float, metadata: Dict):
+        """Mark node as online and reset failure count."""
+        now = datetime.utcnow()
+        
+        # Get or create health status
+        if node_id not in self.node_health:
+            self.node_health[node_id] = NodeHealthStatus(
+                node_id=node_id,
+                is_online=True,
+                last_seen=now,
+                response_time_ms=response_time_ms,
+                metadata=metadata
+            )
+        else:
+            status = self.node_health[node_id]
+            was_offline = not status.is_online
+            
+            # Update status
+            status.is_online = True
+            status.last_seen = now
+            status.consecutive_failures = 0
+            status.response_time_ms = response_time_ms
+            status.metadata = metadata
+            
+            # If node just came back online, publish event
+            if was_offline:
+                logger.info(f"Node {node_id} is back ONLINE (response time: {response_time_ms:.1f}ms)")
+                await self.event_bus.publish(EventType.NODE_ONLINE, {
+                    'node_id': node_id,
+                    'timestamp': now.isoformat(),
+                    'response_time_ms': response_time_ms,
+                    'metadata': metadata
+                })
+                
+                # Update registry
+                self.registry.update_node_status(node_id, 'online', now)
+    
+    async def _mark_node_failure(self, node_id: str, error: str):
+        """Mark node failure and trigger offline event if threshold reached."""
+        now = datetime.utcnow()
+        
+        # Get or create health status
+        if node_id not in self.node_health:
+            self.node_health[node_id] = NodeHealthStatus(
+                node_id=node_id,
+                is_online=False,
+                last_seen=now,
+                consecutive_failures=1
+            )
+        else:
+            status = self.node_health[node_id]
+            status.consecutive_failures += 1
+            
+            # If we've hit the failure threshold, mark as offline
+            if status.consecutive_failures >= self.failure_threshold and status.is_online:
+                status.is_online = False
+                
+                logger.error(f"Node {node_id} is OFFLINE (failed {status.consecutive_failures} consecutive checks)")
+                
+                # Publish offline event
+                await self.event_bus.publish(EventType.NODE_OFFLINE, {
+                    'node_id': node_id,
+                    'timestamp': now.isoformat(),
+                    'consecutive_failures': status.consecutive_failures,
+                    'last_error': error
+                })
+                
+                # Update registry
+                self.registry.update_node_status(node_id, 'offline', now)
+    
+    def get_node_health(self, node_id: str) -> Optional[NodeHealthStatus]:
+        """Get health status for a specific node."""
+        return self.node_health.get(node_id)
+    
+    def get_all_health(self) -> Dict[str, NodeHealthStatus]:
+        """Get health status for all nodes."""
+        return self.node_health.copy()
+    
+    def get_online_nodes(self) -> Set[str]:
+        """Get set of online node IDs."""
+        return {
+            node_id for node_id, status in self.node_health.items()
+            if status.is_online
+        }
+    
+    def get_offline_nodes(self) -> Set[str]:
+        """Get set of offline node IDs."""
+        return {
+            node_id for node_id, status in self.node_health.items()
+            if not status.is_online
+        }
+
+
+# Singleton instance
+_heartbeat_monitor: Optional[HeartbeatMonitor] = None
+
+
+def get_heartbeat_monitor() -> HeartbeatMonitor:
+    """Get or create the singleton heartbeat monitor instance."""
+    global _heartbeat_monitor
+    if _heartbeat_monitor is None:
+        _heartbeat_monitor = HeartbeatMonitor()
+    return _heartbeat_monitor

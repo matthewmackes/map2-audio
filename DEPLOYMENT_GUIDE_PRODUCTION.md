@@ -399,23 +399,45 @@ curl http://localhost:8080/api/lcd/stats | jq '.'
 # EVENT_RETENTION_HOURS=12 (from 24)
 ```
 
-## Docker Deployment
+## Multi-Node Testing (Native Process Deployment)
 
-For testing/development:
+For integration testing with multiple nodes on a single machine:
 
 ```bash
-# Start multi-node cluster
-docker-compose -f docker-compose.lcd.yml up -d
+# Start Audio Node 1 on port 8001
+MAP2_DEPLOYMENT_MODE=AUDIO-NODE \
+  MAP2_NODE_ID=AUDIO-NODE-1 \
+  MAP2_HTTP_PORT=8001 \
+  MAP2_WS_PORT=9001 \
+  nohup python -m app.main > /tmp/node1.log 2>&1 &
+
+# Start Control Node on port 8002
+MAP2_DEPLOYMENT_MODE=CONTROL-NODE \
+  MAP2_NODE_ID=CONTROL-NODE \
+  MAP2_HTTP_PORT=8002 \
+  MAP2_WS_PORT=9002 \
+  nohup python -m app.main > /tmp/node2.log 2>&1 &
 
 # View logs
-docker-compose -f docker-compose.lcd.yml logs -f
+tail -f /tmp/node1.log
+tail -f /tmp/node2.log
 
 # Access nodes:
 # - Audio Node 1: http://localhost:8001
 # - Control Node: http://localhost:8002
 
-# Stop
-docker-compose -f docker-compose.lcd.yml down
+# Stop nodes
+killall python
+```
+
+For persistent multi-node testing, create systemd service files in `/etc/systemd/system/`:
+- `map2-lcd-audio1.service` (port 8001)
+- `map2-lcd-control.service` (port 8002)
+
+Then use:
+```bash
+sudo systemctl start map2-lcd-audio1 map2-lcd-control
+sudo systemctl status map2-lcd-audio1 map2-lcd-control
 ```
 
 ## Upgrade Procedure

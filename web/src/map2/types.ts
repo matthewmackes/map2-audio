@@ -1054,3 +1054,184 @@ export interface FlowSnapshotLoadedEvent {
   };
   timestamp: string;
 }
+
+// ==================== PipeWire Audio Server ====================
+
+export interface PipeWireDaemonInfo {
+  running: boolean;
+  version: string;
+  name: string;
+  hostname: string;
+  cookie: string;
+  uptime_seconds: number;
+}
+
+export interface PipeWireDeviceInfo {
+  id: number;
+  name: string;
+  nick: string;
+  driver: string;
+  bus: string;
+  media_class: string;
+  is_default: boolean;
+  properties: Record<string, any>;
+}
+
+export interface PipeWireNodeInfo {
+  id: number;
+  name: string;
+  nick: string;
+  description: string;
+  media_class: string;
+  device_id: number | null;
+  sample_rate: number | null;
+  channels: number;
+  format: string;
+  volume: number;
+  muted: boolean;
+  is_driver: boolean;
+  is_default: boolean;
+  state: string;
+  properties: Record<string, any>;
+}
+
+export interface PipeWireStreamInfo {
+  id: number;
+  client_name: string;
+  client_pid: number;
+  media_name: string;
+  direction: string;
+  state: string;
+  channels: number;
+  sample_rate: number | null;
+}
+
+export interface PipeWireLinkInfo {
+  id: number;
+  output_node: number;
+  output_port: string;
+  input_node: number;
+  input_port: string;
+  state: string;
+}
+
+export interface PipeWireSettings {
+  clock_rate: number;
+  clock_force_rate: number;
+  clock_quantum: number;
+  clock_force_quantum: number;
+  clock_min_quantum: number;
+  clock_max_quantum: number;
+  clock_allowed_rates: number[];
+}
+
+export interface PipeWireAlert {
+  type: string;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+}
+
+export interface PipeWireMetrics {
+  daemon: PipeWireDaemonInfo;
+  settings: PipeWireSettings;
+  default_sink: PipeWireNodeInfo | null;
+  default_source: PipeWireNodeInfo | null;
+  devices: PipeWireDeviceInfo[];
+  nodes: PipeWireNodeInfo[];
+  streams: PipeWireStreamInfo[];
+  links: PipeWireLinkInfo[];
+  client_count: number;
+  xruns: number;
+  graph_latency_ms: number;
+  driver_latency_ms: number;
+  total_latency_ms: number;
+  alerts: PipeWireAlert[];
+  timestamp: string;
+}
+// ==================== Host Machine Page Types ====================
+
+export interface HostMachineInfo {
+  manufacturer: string;
+  product_name: string;
+  system_uuid: string;
+  bios_version: string;
+  bios_date: string;
+  chassis_type: string;
+  cpu_model: string;
+  cpu_cores: number;
+  cpu_threads: number;
+  cpu_frequency_mhz: number;
+  total_memory_mb: number;
+  kernel_version: string;
+  hostname: string;
+}
+
+export interface DiskInfo {
+  device: string;
+  mount_point: string;
+  total_gb: number;
+  used_gb: number;
+  available_gb: number;
+  use_percent: number;
+}
+
+export interface SMARTData {
+  device: string;
+  model: string;
+  serial: string;
+  status: 'passing' | 'failing' | 'unknown';
+  temperature_celsius: number;
+  power_on_hours: number;
+  estimated_lifespan_percent: number;
+  last_test_date?: string;
+  warnings?: string[];
+}
+
+export interface DiskHealthData {
+  disks: DiskInfo[];
+  smart_data: SMARTData[];
+  total_storage_gb: number;
+  total_used_gb: number;
+  overall_health: 'excellent' | 'good' | 'warning' | 'critical';
+}
+
+export interface Fan {
+  name: string;
+  rpm?: number;
+  status: 'normal' | 'slow' | 'stopped' | 'unknown';
+}
+
+export interface PowerInfo {
+  input_voltage?: number;
+  current_load_percent?: number;
+  power_status: 'connected' | 'battery' | 'unknown';
+}
+
+export interface SystemHealthOverview {
+  cpu_temp_celsius: number;
+  max_temp_celsius: number;
+  cpu_usage_percent: number;
+  memory_usage_percent: number;
+  fans: Fan[];
+  power: PowerInfo;
+  overall_health: 'excellent' | 'good' | 'warning' | 'critical';
+  health_details: {
+    temperature_status: string;
+    fan_status: string;
+    power_status: string;
+  };
+}
+
+export interface BrandingAssets {
+  manufacturer: string;
+  logo_url: string;
+  logo_fallback: string;
+  product_image_url: string;
+  marketing_name: string;
+  product_name: string;
+  support_url: string;
+  warranty_status: string;
+  brand_color: string;
+  sff_optimized: boolean;
+  error?: string;
+}

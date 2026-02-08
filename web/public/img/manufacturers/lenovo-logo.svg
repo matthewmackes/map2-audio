@@ -1,0 +1,10 @@
+<svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lenovo Logo -->
+  <rect width="200" height="60" fill="white" opacity="0"/>
+  <g transform="translate(10, 10)">
+    <!-- Lenovo Red Logo -->
+    <text x="0" y="28" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#E4001B">
+      LENOVO
+    </text>
+  </g>
+</svg>

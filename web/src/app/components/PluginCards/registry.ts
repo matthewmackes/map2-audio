@@ -263,10 +263,19 @@ import ShoeGazeCard from './Custom/JUCE/ShoeGazeCard'
 import LexiLoveCard from './Custom/JUCE/LexiLoveCard'
 import H3000Card from './Custom/JUCE/H3000Card'
 import { EventideH9Card } from './Custom/JUCE/EventideH9Card'
+import Peavey5150Card from './Custom/JUCE/Peavey5150Card'
+import TweedBassmanCard from './Custom/JUCE/TweedBassmanCard'
+import PassionFXCard from './Custom/JUCE/PassionFXCard'
+import CelestialCompressorCard from './Custom/JUCE/CelestialCompressorCard'
 
 // JUCE Dynamics
 registerPluginCard('map2://juce/dynamics/compressor', {
   component: CompressorCard,
+})
+
+// JUCE Dynamics - Celestial Compressor (50 artist presets with gear imagery)
+registerPluginCard('map2://juce/dynamics/celestial', {
+  component: CelestialCompressorCard,
 })
 
 registerPluginCard('map2://juce/dynamics/limiter', {
@@ -347,6 +356,21 @@ registerPluginCard('map2://juce/pitch/h3000', {
 // JUCE Multi-Effect - Eventide H9
 registerPluginCard('map2://juce/effects/eventide-h9', {
   component: EventideH9Card,
+})
+
+// JUCE Amplifier - Peavey 5150 Block Letter
+registerPluginCard('map2://juce/amp/peavey5150', {
+  component: Peavey5150Card,
+})
+
+// JUCE Amplifier - Tweed Bassman 5F6-A
+registerPluginCard('map2://juce/amp/tweedbassman', {
+  component: TweedBassmanCard,
+})
+
+// JUCE Multi-Effect - PassionFX (Steve Vai Passion & Warfare)
+registerPluginCard('map2://juce/multieffect/passionfx', {
+  component: PassionFXCard,
 })
 
 // ==================== Dragonfly Reverbs ====================

@@ -46,7 +46,8 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                     "lufs",             # LUFS loudness levels (10fps)
                     "cpu",              # CPU metrics (2fps)
                     "phase",            # Stereo phase correlation
-                    "latency"           # Latency updates
+                    "latency",          # Latency updates
+                    "pipewire"          # PipeWire audio server metrics (2fps)
                 ],
                 "supported_actions": ["subscribe", "unsubscribe", "ping", "get"]
             }

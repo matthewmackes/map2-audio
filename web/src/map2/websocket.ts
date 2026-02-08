@@ -24,7 +24,9 @@ export type WebSocketTopic =
   | 'lufs'
   | 'cpu'
   | 'phase'
-  | 'latency';
+  | 'latency'
+  // PipeWire audio server
+  | 'pipewire';
 
 export type ConnectionStatus =
   | 'disconnected'

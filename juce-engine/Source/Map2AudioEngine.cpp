@@ -111,7 +111,10 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     shoegaze_.prepare(sampleRate_, bufferSize_, 2);
     lexiLove_.prepare(sampleRate_, bufferSize_, 2);
     h3000_.prepare(sampleRate_, bufferSize_, 2);
-    std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000" << std::endl;
+    peavey5150_.prepare(sampleRate_, bufferSize_, 2);
+    tweedBassman_.prepare(sampleRate_, bufferSize_, 2);
+    passionFX_.prepare(sampleRate_, bufferSize_, 2);
+    std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX" << std::endl;
 
     // Set up audio callback
     audioIO_.setProcessCallback([this](const float* const* inputs, int numInputs,
@@ -1978,6 +1981,317 @@ H3000Processor::AlgorithmInfo Map2AudioEngine::getH3000AlgorithmInfo(int algorit
 
 int Map2AudioEngine::getH3000NumAlgorithms() {
     return H3000Processor::getNumAlgorithms();
+}
+
+// ========================================
+// Peavey 5150 Block Letter Amp Simulator
+// ========================================
+
+// Preamp controls
+void Map2AudioEngine::setPeavey5150PreGain(float value) {
+    peavey5150_.setPreGain(value);
+}
+
+float Map2AudioEngine::getPeavey5150PreGain() const {
+    return peavey5150_.getPreGain();
+}
+
+void Map2AudioEngine::setPeavey5150PostGain(float value) {
+    peavey5150_.setPostGain(value);
+}
+
+float Map2AudioEngine::getPeavey5150PostGain() const {
+    return peavey5150_.getPostGain();
+}
+
+// Tone stack
+void Map2AudioEngine::setPeavey5150Low(float value) {
+    peavey5150_.setLow(value);
+}
+
+float Map2AudioEngine::getPeavey5150Low() const {
+    return peavey5150_.getLow();
+}
+
+void Map2AudioEngine::setPeavey5150Mid(float value) {
+    peavey5150_.setMid(value);
+}
+
+float Map2AudioEngine::getPeavey5150Mid() const {
+    return peavey5150_.getMid();
+}
+
+void Map2AudioEngine::setPeavey5150High(float value) {
+    peavey5150_.setHigh(value);
+}
+
+float Map2AudioEngine::getPeavey5150High() const {
+    return peavey5150_.getHigh();
+}
+
+// Power amp
+void Map2AudioEngine::setPeavey5150Presence(float value) {
+    peavey5150_.setPresence(value);
+}
+
+float Map2AudioEngine::getPeavey5150Presence() const {
+    return peavey5150_.getPresence();
+}
+
+void Map2AudioEngine::setPeavey5150Resonance(float value) {
+    peavey5150_.setResonance(value);
+}
+
+float Map2AudioEngine::getPeavey5150Resonance() const {
+    return peavey5150_.getResonance();
+}
+
+void Map2AudioEngine::setPeavey5150Bias(float value) {
+    peavey5150_.setBias(value);
+}
+
+float Map2AudioEngine::getPeavey5150Bias() const {
+    return peavey5150_.getBias();
+}
+
+// Switches
+void Map2AudioEngine::setPeavey5150Bright(bool on) {
+    peavey5150_.setBright(on);
+}
+
+bool Map2AudioEngine::getPeavey5150Bright() const {
+    return peavey5150_.getBright();
+}
+
+// State
+void Map2AudioEngine::setPeavey5150Preset(Peavey5150Processor::Preset preset) {
+    peavey5150_.setPreset(preset);
+}
+
+Peavey5150Processor::Preset Map2AudioEngine::getPeavey5150Preset() const {
+    return peavey5150_.getPreset();
+}
+
+void Map2AudioEngine::setPeavey5150Bypass(bool bypass) {
+    peavey5150_.setBypass(bypass);
+}
+
+bool Map2AudioEngine::isPeavey5150Bypassed() const {
+    return peavey5150_.isBypassed();
+}
+
+// Bulk parameters
+Peavey5150Processor::Parameters Map2AudioEngine::getPeavey5150Parameters() const {
+    return peavey5150_.getParameters();
+}
+
+void Map2AudioEngine::setPeavey5150Parameters(const Peavey5150Processor::Parameters& params) {
+    peavey5150_.setParameters(params);
+}
+
+// Metering
+Peavey5150Processor::Metering Map2AudioEngine::getPeavey5150Metering() const {
+    return peavey5150_.getMetering();
+}
+
+// Preset info
+Peavey5150Processor::PresetInfo Map2AudioEngine::getPeavey5150PresetInfo(Peavey5150Processor::Preset preset) {
+    return Peavey5150Processor::getPresetInfo(preset);
+}
+
+int Map2AudioEngine::getPeavey5150NumPresets() {
+    return Peavey5150Processor::getNumPresets();
+}
+
+// ========================================
+// Tweed Bassman 5F6-A Amplifier Simulator
+// ========================================
+
+// Channel
+void Map2AudioEngine::setTweedBassmanChannelMode(int mode) { tweedBassman_.setChannelMode(mode); }
+int Map2AudioEngine::getTweedBassmanChannelMode() const { return tweedBassman_.getChannelMode(); }
+void Map2AudioEngine::setTweedBassmanNormalVolume(float v) { tweedBassman_.setNormalVolume(v); }
+float Map2AudioEngine::getTweedBassmanNormalVolume() const { return tweedBassman_.getNormalVolume(); }
+void Map2AudioEngine::setTweedBassmanBrightVolume(float v) { tweedBassman_.setBrightVolume(v); }
+float Map2AudioEngine::getTweedBassmanBrightVolume() const { return tweedBassman_.getBrightVolume(); }
+void Map2AudioEngine::setTweedBassmanBrightCap(bool on) { tweedBassman_.setBrightCap(on); }
+bool Map2AudioEngine::getTweedBassmanBrightCap() const { return tweedBassman_.getBrightCap(); }
+
+// Preamp
+void Map2AudioEngine::setTweedBassmanV1TubeType(int type) { tweedBassman_.setV1TubeType(type); }
+int Map2AudioEngine::getTweedBassmanV1TubeType() const { return tweedBassman_.getV1TubeType(); }
+void Map2AudioEngine::setTweedBassmanCathodeBypass(bool on) { tweedBassman_.setCathodeBypass(on); }
+bool Map2AudioEngine::getTweedBassmanCathodeBypass() const { return tweedBassman_.getCathodeBypass(); }
+void Map2AudioEngine::setTweedBassmanCathodeBias(int mode) { tweedBassman_.setCathodeBias(mode); }
+int Map2AudioEngine::getTweedBassmanCathodeBias() const { return tweedBassman_.getCathodeBias(); }
+
+// Tone
+void Map2AudioEngine::setTweedBassmanTreble(float v) { tweedBassman_.setTreble(v); }
+float Map2AudioEngine::getTweedBassmanTreble() const { return tweedBassman_.getTreble(); }
+void Map2AudioEngine::setTweedBassmanMid(float v) { tweedBassman_.setMid(v); }
+float Map2AudioEngine::getTweedBassmanMid() const { return tweedBassman_.getMid(); }
+void Map2AudioEngine::setTweedBassmanBass(float v) { tweedBassman_.setBass(v); }
+float Map2AudioEngine::getTweedBassmanBass() const { return tweedBassman_.getBass(); }
+void Map2AudioEngine::setTweedBassmanRawSwitch(bool on) { tweedBassman_.setRawSwitch(on); }
+bool Map2AudioEngine::getTweedBassmanRawSwitch() const { return tweedBassman_.getRawSwitch(); }
+
+// Master
+void Map2AudioEngine::setTweedBassmanMasterVolume(float v) { tweedBassman_.setMasterVolume(v); }
+float Map2AudioEngine::getTweedBassmanMasterVolume() const { return tweedBassman_.getMasterVolume(); }
+
+// Power amp
+void Map2AudioEngine::setTweedBassmanPresence(float v) { tweedBassman_.setPresence(v); }
+float Map2AudioEngine::getTweedBassmanPresence() const { return tweedBassman_.getPresence(); }
+void Map2AudioEngine::setTweedBassmanNFBMode(int mode) { tweedBassman_.setNFBMode(mode); }
+int Map2AudioEngine::getTweedBassmanNFBMode() const { return tweedBassman_.getNFBMode(); }
+void Map2AudioEngine::setTweedBassmanPowerTubeType(int type) { tweedBassman_.setPowerTubeType(type); }
+int Map2AudioEngine::getTweedBassmanPowerTubeType() const { return tweedBassman_.getPowerTubeType(); }
+void Map2AudioEngine::setTweedBassmanBiasMode(int mode) { tweedBassman_.setBiasMode(mode); }
+int Map2AudioEngine::getTweedBassmanBiasMode() const { return tweedBassman_.getBiasMode(); }
+void Map2AudioEngine::setTweedBassmanRectifierType(int type) { tweedBassman_.setRectifierType(type); }
+int Map2AudioEngine::getTweedBassmanRectifierType() const { return tweedBassman_.getRectifierType(); }
+
+// Output
+void Map2AudioEngine::setTweedBassmanOutputLevel(float dB) { tweedBassman_.setOutputLevel(dB); }
+float Map2AudioEngine::getTweedBassmanOutputLevel() const { return tweedBassman_.getOutputLevel(); }
+void Map2AudioEngine::setTweedBassmanCabinetEnabled(bool on) { tweedBassman_.setCabinetEnabled(on); }
+bool Map2AudioEngine::getTweedBassmanCabinetEnabled() const { return tweedBassman_.getCabinetEnabled(); }
+void Map2AudioEngine::setTweedBassmanCabinetIR(int index) { tweedBassman_.setCabinetIR(index); }
+int Map2AudioEngine::getTweedBassmanCabinetIR() const { return tweedBassman_.getCabinetIR(); }
+
+// State
+void Map2AudioEngine::setTweedBassmanPreset(TweedBassmanProcessor::Preset preset) { tweedBassman_.setPreset(preset); }
+TweedBassmanProcessor::Preset Map2AudioEngine::getTweedBassmanPreset() const { return tweedBassman_.getPreset(); }
+void Map2AudioEngine::setTweedBassmanBypass(bool bypass) { tweedBassman_.setBypass(bypass); }
+bool Map2AudioEngine::isTweedBassmanBypassed() const { return tweedBassman_.isBypassed(); }
+
+// Bulk
+TweedBassmanProcessor::Parameters Map2AudioEngine::getTweedBassmanParameters() const { return tweedBassman_.getParameters(); }
+void Map2AudioEngine::setTweedBassmanParameters(const TweedBassmanProcessor::Parameters& params) { tweedBassman_.setParameters(params); }
+
+// Metering
+TweedBassmanProcessor::Metering Map2AudioEngine::getTweedBassmanMetering() const { return tweedBassman_.getMetering(); }
+
+// Preset info
+TweedBassmanProcessor::PresetInfo Map2AudioEngine::getTweedBassmanPresetInfo(TweedBassmanProcessor::Preset preset) {
+    return TweedBassmanProcessor::getPresetInfo(preset);
+}
+
+int Map2AudioEngine::getTweedBassmanNumPresets() {
+    return TweedBassmanProcessor::getNumPresets();
+}
+
+// ========================================
+// PassionFX Multi-Effect Processor
+// ========================================
+
+// NoiseGate
+void Map2AudioEngine::setPassionFXGateEnabled(bool enabled) { passionFX_.setNoiseGateEnabled(enabled); }
+void Map2AudioEngine::setPassionFXGateThreshold(float dB) { passionFX_.setNoiseGateThreshold(dB); }
+void Map2AudioEngine::setPassionFXGateRelease(float ms) { passionFX_.setNoiseGateRelease(ms); }
+
+// Compressor
+void Map2AudioEngine::setPassionFXCompEnabled(bool enabled) { passionFX_.setCompressorEnabled(enabled); }
+void Map2AudioEngine::setPassionFXCompThreshold(float dB) { passionFX_.setCompressorThreshold(dB); }
+void Map2AudioEngine::setPassionFXCompRatio(float ratio) { passionFX_.setCompressorRatio(ratio); }
+void Map2AudioEngine::setPassionFXCompAttack(float ms) { passionFX_.setCompressorAttack(ms); }
+void Map2AudioEngine::setPassionFXCompRelease(float ms) { passionFX_.setCompressorRelease(ms); }
+void Map2AudioEngine::setPassionFXCompGlassy(bool glassy) { passionFX_.setCompressorGlassy(glassy); }
+
+// Wah
+void Map2AudioEngine::setPassionFXWahEnabled(bool enabled) { passionFX_.setWahEnabled(enabled); }
+void Map2AudioEngine::setPassionFXWahMode(int mode) { passionFX_.setWahMode(mode); }
+void Map2AudioEngine::setPassionFXWahPosition(float position) { passionFX_.setWahPosition(position); }
+void Map2AudioEngine::setPassionFXWahQ(float q) { passionFX_.setWahQ(q); }
+
+// Phaser
+void Map2AudioEngine::setPassionFXPhaserEnabled(bool enabled) { passionFX_.setPhaserEnabled(enabled); }
+void Map2AudioEngine::setPassionFXPhaserRate(float hz) { passionFX_.setPhaserRate(hz); }
+void Map2AudioEngine::setPassionFXPhaserDepth(float depth) { passionFX_.setPhaserDepth(depth); }
+void Map2AudioEngine::setPassionFXPhaserStages(int stages) { passionFX_.setPhaserStages(stages); }
+void Map2AudioEngine::setPassionFXPhaserFeedback(float feedback) { passionFX_.setPhaserFeedback(feedback); }
+
+// Chorus
+void Map2AudioEngine::setPassionFXChorusEnabled(bool enabled) { passionFX_.setChorusEnabled(enabled); }
+void Map2AudioEngine::setPassionFXChorusRate(float hz) { passionFX_.setChorusRate(hz); }
+void Map2AudioEngine::setPassionFXChorusDepth(float depth) { passionFX_.setChorusDepth(depth); }
+void Map2AudioEngine::setPassionFXChorusVoices(int voices) { passionFX_.setChorusVoices(voices); }
+void Map2AudioEngine::setPassionFXChorusMix(float mix) { passionFX_.setChorusMix(mix); }
+
+// PitchShifter
+void Map2AudioEngine::setPassionFXPitchEnabled(bool enabled) { passionFX_.setPitchShifterEnabled(enabled); }
+void Map2AudioEngine::setPassionFXPitchSemitones(float semitones) { passionFX_.setPitchShifterSemitones(semitones); }
+void Map2AudioEngine::setPassionFXPitchMix(float mix) { passionFX_.setPitchShifterMix(mix); }
+
+// Harmonizer
+void Map2AudioEngine::setPassionFXHarmEnabled(bool enabled) { passionFX_.setHarmonizerEnabled(enabled); }
+void Map2AudioEngine::setPassionFXHarmVoice1(float semitones) { passionFX_.setHarmonizerVoice1(semitones); }
+void Map2AudioEngine::setPassionFXHarmVoice2(float semitones) { passionFX_.setHarmonizerVoice2(semitones); }
+void Map2AudioEngine::setPassionFXHarmDetune(float cents) { passionFX_.setHarmonizerDetune(cents); }
+void Map2AudioEngine::setPassionFXHarmMix(float mix) { passionFX_.setHarmonizerMix(mix); }
+
+// Delay
+void Map2AudioEngine::setPassionFXDelayEnabled(bool enabled) { passionFX_.setDelayEnabled(enabled); }
+void Map2AudioEngine::setPassionFXDelayTimeL(float ms) { passionFX_.setDelayTimeL(ms); }
+void Map2AudioEngine::setPassionFXDelayTimeR(float ms) { passionFX_.setDelayTimeR(ms); }
+void Map2AudioEngine::setPassionFXDelayFeedback(float feedback) { passionFX_.setDelayFeedback(feedback); }
+void Map2AudioEngine::setPassionFXDelayMix(float mix) { passionFX_.setDelayMix(mix); }
+void Map2AudioEngine::setPassionFXDelayFreeze(bool freeze) { passionFX_.setDelayFreeze(freeze); }
+void Map2AudioEngine::setPassionFXDelayPitchShiftL(float semitones) { passionFX_.setDelayPitchShiftL(semitones); }
+void Map2AudioEngine::setPassionFXDelayPitchShiftR(float semitones) { passionFX_.setDelayPitchShiftR(semitones); }
+
+// Reverb
+void Map2AudioEngine::setPassionFXReverbEnabled(bool enabled) { passionFX_.setReverbEnabled(enabled); }
+void Map2AudioEngine::setPassionFXReverbType(int type) { passionFX_.setReverbType(type); }
+void Map2AudioEngine::setPassionFXReverbDecay(float seconds) { passionFX_.setReverbDecay(seconds); }
+void Map2AudioEngine::setPassionFXReverbShimmerAmount(float amount) { passionFX_.setReverbShimmerAmount(amount); }
+void Map2AudioEngine::setPassionFXReverbShimmerInterval(float semitones) { passionFX_.setReverbShimmerInterval(semitones); }
+void Map2AudioEngine::setPassionFXReverbMix(float mix) { passionFX_.setReverbMix(mix); }
+void Map2AudioEngine::setPassionFXReverbFreeze(bool freeze) { passionFX_.setReverbFreeze(freeze); }
+
+// EQ
+void Map2AudioEngine::setPassionFXEqEnabled(bool enabled) { passionFX_.setEqEnabled(enabled); }
+void Map2AudioEngine::setPassionFXEqLowGain(float dB) { passionFX_.setEqLowGain(dB); }
+void Map2AudioEngine::setPassionFXEqMidGain(float dB) { passionFX_.setEqMidGain(dB); }
+void Map2AudioEngine::setPassionFXEqHighGain(float dB) { passionFX_.setEqHighGain(dB); }
+void Map2AudioEngine::setPassionFXEqTilt(float tilt) { passionFX_.setEqTilt(tilt); }
+
+// Exciter
+void Map2AudioEngine::setPassionFXExciterEnabled(bool enabled) { passionFX_.setExciterEnabled(enabled); }
+void Map2AudioEngine::setPassionFXExciterWarmth(float warmth) { passionFX_.setExciterWarmth(warmth); }
+void Map2AudioEngine::setPassionFXExciterPresence(float presence) { passionFX_.setExciterPresence(presence); }
+void Map2AudioEngine::setPassionFXExciterAir(float air) { passionFX_.setExciterAir(air); }
+
+// Tremolo
+void Map2AudioEngine::setPassionFXTremEnabled(bool enabled) { passionFX_.setTremoloEnabled(enabled); }
+void Map2AudioEngine::setPassionFXTremRate(float hz) { passionFX_.setTremoloRate(hz); }
+void Map2AudioEngine::setPassionFXTremDepth(float depth) { passionFX_.setTremoloDepth(depth); }
+void Map2AudioEngine::setPassionFXTremWaveform(int waveform) { passionFX_.setTremoloWaveform(waveform); }
+
+// Global
+void Map2AudioEngine::setPassionFXMix(float mix) { passionFX_.setGlobalMix(mix); }
+void Map2AudioEngine::setPassionFXOutputLevel(float dB) { passionFX_.setOutputLevel(dB); }
+
+// State
+void Map2AudioEngine::setPassionFXPreset(PassionFXProcessor::Preset preset) { passionFX_.setPreset(preset); }
+PassionFXProcessor::Preset Map2AudioEngine::getPassionFXPreset() const { return passionFX_.getPreset(); }
+void Map2AudioEngine::setPassionFXBypass(bool bypass) { passionFX_.setBypass(bypass); }
+bool Map2AudioEngine::isPassionFXBypassed() const { return passionFX_.isBypassed(); }
+
+// Bulk parameters
+PassionFXProcessor::Parameters Map2AudioEngine::getPassionFXParameters() const { return passionFX_.getParameters(); }
+void Map2AudioEngine::setPassionFXParameters(const PassionFXProcessor::Parameters& params) { passionFX_.setParameters(params); }
+
+// Metering
+PassionFXProcessor::Metering Map2AudioEngine::getPassionFXMetering() const { return passionFX_.getMetering(); }
+
+// Preset info
+PassionFXProcessor::PresetInfo Map2AudioEngine::getPassionFXPresetInfo(PassionFXProcessor::Preset preset) {
+    return PassionFXProcessor::getPresetInfo(preset);
+}
+
+int Map2AudioEngine::getPassionFXNumPresets() {
+    return PassionFXProcessor::getNumPresets();
 }
 
 } // namespace map2

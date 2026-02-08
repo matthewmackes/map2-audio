@@ -234,6 +234,100 @@ class FlowOrchestrator:
         await self.save_deployment(deployment)
         return True
 
+    async def get_flows_on_node(self, node_id: str) -> List[Dict]:
+        """Get all flows assigned to a specific node."""
+        flows = []
+        for flow_id, deployment in self.active_deployments.items():
+            if deployment.primary_assignment.assigned_node_id == node_id:
+                flows.append({
+                    'id': flow_id,
+                    'chain_id': deployment.chain_id,
+                    'primary_node_id': deployment.primary_assignment.assigned_node_id,
+                    'standby_node_id': deployment.standby_assignments[0].assigned_node_id if deployment.standby_assignments else None,
+                    'is_deployed': deployment.is_deployed
+                })
+        return flows
+    
+    async def promote_standby_to_primary(self, flow_id: str, standby_node_id: str) -> bool:
+        """Promote a standby assignment to primary."""
+        deployment = self.active_deployments.get(flow_id)
+        if not deployment:
+            return False
+        
+        # Find the standby assignment
+        standby = None
+        for s in deployment.standby_assignments:
+            if s.assigned_node_id == standby_node_id:
+                standby = s
+                deployment.standby_assignments.remove(s)
+                break
+        
+        if not standby:
+            return False
+        
+        # Update deployment
+        deployment.primary_assignment = standby
+        await self.save_deployment(deployment)
+        return True
+    
+    async def activate_flow_on_node(self, flow_id: str, node_id: str) -> bool:
+        """Send activation command to node to activate a flow."""
+        node = self.registry.get_node(node_id)
+        if not node:
+            return False
+        
+        hostname = node.get("hostname") or node.get("ip_address") or node_id
+        url = f"http://{hostname}:8080/api/flows/{flow_id}/activate"
+        
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(
+                    url, timeout=aiohttp.ClientTimeout(total=10)
+                ) as resp:
+                    return resp.status == 200
+            except Exception as e:
+                logger.error(f"Failed to activate flow {flow_id} on node {node_id}: {e}")
+                return False
+    
+    async def select_best_node(self, flow: Dict, available_nodes: set) -> str:
+        """Select the best available node for a flow."""
+        # Simple strategy: pick first available
+        # In production, would evaluate CPU, memory, latency, etc.
+        if not available_nodes:
+            raise ValueError("No available nodes")
+        
+        best_node = list(available_nodes)[0]
+        node = self.registry.get_node(best_node)
+        
+        # Prefer nodes with lower CPU load
+        best_cpu = 100
+        for node_id in available_nodes:
+            node = self.registry.get_node(node_id)
+            if node and node.get('cpu_load', 100) < best_cpu:
+                best_cpu = node.get('cpu_load', 100)
+                best_node = node_id
+        
+        return best_node
+    
+    async def assign_flow(self, flow_id: str, node_id: str) -> bool:
+        """Assign a flow to a node."""
+        deployment = self.active_deployments.get(flow_id)
+        if not deployment:
+            return False
+        
+        # Update the primary assignment
+        old_primary = deployment.primary_assignment
+        deployment.primary_assignment = FlowAssignmentInfo(
+            flow_id=flow_id,
+            chain_id=deployment.chain_id,
+            assigned_node_id=node_id,
+            assignment_type='primary',
+            reason=f'Reassigned from {old_primary.assigned_node_id}'
+        )
+        
+        await self.save_deployment(deployment)
+        return True
+
     async def _promote_standby_node(self, node_id: str, flow_id: str) -> bool:
         """Request standby node to promote flow to active."""
         node = self.registry.get_node(node_id)

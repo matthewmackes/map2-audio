@@ -11,6 +11,13 @@ from typing import List, Dict, Tuple, Optional
 import subprocess
 import json
 from datetime import datetime
+from pathlib import Path
+import logging
+
+from app.services.cluster.registry import get_cluster_registry
+from app.services.cluster.health_aggregator import get_health_aggregator
+from app.services.cluster.fedora_package_manager import get_dnf_manager
+from app.services.cluster.integration_helpers import HybridNodeClient
 
 
 class ValidationLevel(Enum):
@@ -78,6 +85,22 @@ class UpdateValidator:
         """Initialize validator."""
         self.api_url = cluster_api_url
         self.results = []
+        self.logger = logging.getLogger(__name__)
+        self.registry = get_cluster_registry()
+        self.aggregator = get_health_aggregator()
+        self.dnf = get_dnf_manager()
+
+    def _get_node_client(self, node_id: str) -> Optional[HybridNodeClient]:
+        """Create a HybridNodeClient for a node if possible."""
+        if not self.registry:
+            return None
+        node = self.registry.get_node(node_id)
+        if not node:
+            return None
+        node_ip = node.get("ip_address") or node.get("ip") or node.get("host") or node.get("hostname")
+        if not node_ip:
+            return None
+        return HybridNodeClient(node_id, node_ip, f"http://{node_ip}:8080")
     
     # =========================================================================
     # Pre-Update Validations
@@ -111,14 +134,8 @@ class UpdateValidator:
     def check_cluster_health(self) -> None:
         """Verify cluster health score is acceptable."""
         try:
-            # Query from health aggregator/registry
-            health_score = 92
-            if hasattr(self, 'registry') and self.registry:
-                try:
-                    cluster_health = self.registry.get_cluster_health()
-                    health_score = cluster_health if cluster_health else 92
-                except Exception as e:
-                    self.logger.warning(f"Failed to get cluster health score: {e}")
+            health_summary = self.aggregator.get_cluster_health() if self.aggregator else {}
+            health_score = health_summary.get("overall_health", 50.0)
             
             if health_score >= 80:
                 self.results.append(ValidationResult(
@@ -153,27 +170,42 @@ class UpdateValidator:
     def check_node_health(self, node_id: Optional[str] = None) -> None:
         """Check individual node health."""
         try:
-            # Get nodes from cluster registry
             nodes = {}
-            if hasattr(self, 'registry') and self.registry:
+            if self.registry:
                 try:
                     all_nodes = self.registry.get_all_nodes()
                     for node in all_nodes:
-                        nid = node.get('node_id')
-                        health = node.get('health_score', 85)
-                        if nid:
-                            nodes[nid] = health
+                        nid = node.get("id") or node.get("node_id")
+                        if not nid:
+                            continue
+                        health = None
+                        if self.aggregator:
+                            health = self.aggregator.get_node_health(nid)
+                        nodes[nid] = health
                 except Exception as e:
                     self.logger.warning(f"Failed to get nodes: {e}")
-            
+
             if not nodes:
-                nodes = {"audio-01": 95, "audio-02": 88, "audio-03": 92}
+                self.results.append(ValidationResult(
+                    name="Node Health Check",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No node health data available"
+                ))
+                return
             
             for nid, score in nodes.items():
                 if node_id and nid != node_id:
                     continue
                 
-                if score >= 80:
+                if score is None:
+                    self.results.append(ValidationResult(
+                        name=f"Node Health ({nid})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"No health score available for {nid}"
+                    ))
+                elif score >= 80:
                     self.results.append(ValidationResult(
                         name=f"Node Health ({nid})",
                         level=ValidationLevel.CRITICAL,
@@ -198,28 +230,54 @@ class UpdateValidator:
     def check_audio_devices(self) -> None:
         """Verify audio devices are responsive."""
         try:
-            # Check audio devices on audio nodes
-            devices_status = {
-                "audio-01": {"devices": 3, "healthy": 3},
-                "audio-02": {"devices": 3, "healthy": 3},
-                "audio-03": {"devices": 2, "healthy": 2},
-            }
-            
-            for node, status in devices_status.items():
-                if status["healthy"] == status["devices"]:
+            nodes = self.registry.get_nodes_by_role("AUDIO-NODE") if self.registry else []
+            if not nodes:
+                self.results.append(ValidationResult(
+                    name="Audio Devices",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No audio nodes found to verify devices"
+                ))
+                return
+
+            for node in nodes:
+                node_id = node.get("id") or node.get("node_id")
+                if not node_id:
+                    continue
+                client = self._get_node_client(node_id)
+                if not client:
                     self.results.append(ValidationResult(
-                        name=f"Audio Devices ({node})",
-                        level=ValidationLevel.CRITICAL,
-                        passed=True,
-                        message=f"{status['healthy']}/{status['devices']} devices healthy"
-                    ))
-                else:
-                    self.results.append(ValidationResult(
-                        name=f"Audio Devices ({node})",
+                        name=f"Audio Devices ({node_id})",
                         level=ValidationLevel.WARNING,
                         passed=False,
-                        message=f"Only {status['healthy']}/{status['devices']} devices healthy",
-                        details={"node": node, "status": status}
+                        message="No connection info available"
+                    ))
+                    continue
+                try:
+                    rc, output, _ = client.execute_command("aplay -l | grep -c '^card'", timeout=10)
+                    if rc != 0:
+                        raise RuntimeError("aplay failed")
+                    device_count = int(output.strip() or 0)
+                    if device_count > 0:
+                        self.results.append(ValidationResult(
+                            name=f"Audio Devices ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=True,
+                            message=f"{device_count} audio device(s) detected"
+                        ))
+                    else:
+                        self.results.append(ValidationResult(
+                            name=f"Audio Devices ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=False,
+                            message="No audio devices detected"
+                        ))
+                except Exception as e:
+                    self.results.append(ValidationResult(
+                        name=f"Audio Devices ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"Could not verify audio devices: {str(e)}"
                     ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -232,35 +290,66 @@ class UpdateValidator:
     def check_disk_space(self) -> None:
         """Verify sufficient disk space for update."""
         try:
-            # Mock disk space data (GB available)
-            disk_space = {
-                "audio-01": {"available": 45, "required": 5},
-                "audio-02": {"available": 52, "required": 5},
-                "audio-03": {"available": 12, "required": 5},  # Low
-            }
-            
-            for node, space in disk_space.items():
-                if space["available"] > space["required"] * 2:
+            required_mb = self.dnf.get_disk_space_required() if self.dnf else 2048
+            nodes = self.registry.get_all_nodes() if self.registry else []
+
+            if not nodes:
+                ok = self.dnf.verify_disk_space(required_mb) if self.dnf else True
+                self.results.append(ValidationResult(
+                    name="Disk Space (local)",
+                    level=ValidationLevel.CRITICAL,
+                    passed=ok,
+                    message=f"Local disk space {'OK' if ok else 'insufficient'}",
+                    details={"required_mb": required_mb}
+                ))
+                return
+
+            for node in nodes:
+                node_id = node.get("id") or node.get("node_id")
+                if not node_id:
+                    continue
+                client = self._get_node_client(node_id)
+                if not client:
                     self.results.append(ValidationResult(
-                        name=f"Disk Space ({node})",
-                        level=ValidationLevel.CRITICAL,
-                        passed=True,
-                        message=f"Disk space: {space['available']}GB available (> {space['required'] * 2}GB required)"
-                    ))
-                elif space["available"] > space["required"]:
-                    self.results.append(ValidationResult(
-                        name=f"Disk Space ({node})",
+                        name=f"Disk Space ({node_id})",
                         level=ValidationLevel.WARNING,
-                        passed=True,
-                        message=f"Disk space low: {space['available']}GB available",
-                        details={"recommendation": "clean_old_logs"}
-                    ))
-                else:
-                    self.results.append(ValidationResult(
-                        name=f"Disk Space ({node})",
-                        level=ValidationLevel.CRITICAL,
                         passed=False,
-                        message=f"Insufficient disk space: {space['available']}GB < {space['required']}GB required"
+                        message="No connection info available"
+                    ))
+                    continue
+                try:
+                    rc, output, _ = client.execute_command("df -m / --output=avail | tail -n1", timeout=10)
+                    if rc != 0:
+                        raise RuntimeError("df failed")
+                    available_mb = int(output.strip())
+                    if available_mb >= required_mb * 2:
+                        self.results.append(ValidationResult(
+                            name=f"Disk Space ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=True,
+                            message=f"Disk space: {available_mb}MB available"
+                        ))
+                    elif available_mb >= required_mb:
+                        self.results.append(ValidationResult(
+                            name=f"Disk Space ({node_id})",
+                            level=ValidationLevel.WARNING,
+                            passed=True,
+                            message=f"Disk space low: {available_mb}MB available",
+                            details={"recommendation": "clean_old_logs"}
+                        ))
+                    else:
+                        self.results.append(ValidationResult(
+                            name=f"Disk Space ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=False,
+                            message=f"Insufficient disk space: {available_mb}MB < {required_mb}MB required"
+                        ))
+                except Exception as e:
+                    self.results.append(ValidationResult(
+                        name=f"Disk Space ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"Could not verify disk space: {str(e)}"
                     ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -273,38 +362,48 @@ class UpdateValidator:
     def check_network_connectivity(self) -> None:
         """Verify network connectivity between nodes."""
         try:
-            # Check latency between key nodes
-            latencies = {
-                "mgmt-01 -> audio-01": 15,
-                "mgmt-01 -> audio-02": 22,
-                "audio-01 -> audio-02": 8,
-            }
-            
-            all_good = True
-            for link, latency_ms in latencies.items():
-                if latency_ms < 100:
+            nodes = self.registry.get_all_nodes() if self.registry else []
+            if not nodes:
+                self.results.append(ValidationResult(
+                    name="Network Connectivity",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No nodes available to test connectivity"
+                ))
+                return
+
+            for node in nodes:
+                node_id = node.get("id") or node.get("node_id")
+                node_ip = node.get("ip_address") or node.get("ip") or node.get("host")
+                if not node_id or not node_ip:
+                    continue
+                try:
+                    result = subprocess.run(
+                        ["ping", "-c", "2", "-W", "2", node_ip],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    if result.returncode == 0:
+                        self.results.append(ValidationResult(
+                            name=f"Network Connectivity ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=True,
+                            message="Ping OK"
+                        ))
+                    else:
+                        self.results.append(ValidationResult(
+                            name=f"Network Connectivity ({node_id})",
+                            level=ValidationLevel.WARNING,
+                            passed=False,
+                            message="Ping failed"
+                        ))
+                except Exception as e:
                     self.results.append(ValidationResult(
-                        name=f"Network Latency ({link})",
-                        level=ValidationLevel.CRITICAL,
-                        passed=True,
-                        message=f"Latency: {latency_ms}ms (acceptable)"
-                    ))
-                elif latency_ms < 500:
-                    all_good = False
-                    self.results.append(ValidationResult(
-                        name=f"Network Latency ({link})",
+                        name=f"Network Connectivity ({node_id})",
                         level=ValidationLevel.WARNING,
-                        passed=True,
-                        message=f"Latency elevated: {latency_ms}ms",
-                        details={"recommendation": "check_network"}
-                    ))
-                else:
-                    all_good = False
-                    self.results.append(ValidationResult(
-                        name=f"Network Latency ({link})",
-                        level=ValidationLevel.CRITICAL,
                         passed=False,
-                        message=f"Latency too high: {latency_ms}ms (> 500ms)"
+                        message=f"Ping error: {str(e)}"
                     ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -317,34 +416,63 @@ class UpdateValidator:
     def check_memory_available(self) -> None:
         """Check available memory on nodes."""
         try:
-            memory_status = {
-                "audio-01": {"total": 32, "available": 18, "min_required": 4},
-                "audio-02": {"total": 32, "available": 20, "min_required": 4},
-                "audio-03": {"total": 16, "available": 2, "min_required": 4},  # Low
-            }
-            
-            for node, mem in memory_status.items():
-                if mem["available"] >= mem["min_required"] * 2:
+            nodes = self.registry.get_all_nodes() if self.registry else []
+            if not nodes:
+                self.results.append(ValidationResult(
+                    name="Memory Available",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No nodes available to test memory"
+                ))
+                return
+
+            min_required_mb = 4096
+            for node in nodes:
+                node_id = node.get("id") or node.get("node_id")
+                if not node_id:
+                    continue
+                client = self._get_node_client(node_id)
+                if not client:
                     self.results.append(ValidationResult(
-                        name=f"Memory Available ({node})",
-                        level=ValidationLevel.CRITICAL,
-                        passed=True,
-                        message=f"Memory: {mem['available']}GB available (sufficient)"
-                    ))
-                elif mem["available"] >= mem["min_required"]:
-                    self.results.append(ValidationResult(
-                        name=f"Memory Available ({node})",
+                        name=f"Memory Available ({node_id})",
                         level=ValidationLevel.WARNING,
-                        passed=True,
-                        message=f"Memory low: {mem['available']}GB available",
-                        details={"recommendation": "restart_non_essential_services"}
-                    ))
-                else:
-                    self.results.append(ValidationResult(
-                        name=f"Memory Available ({node})",
-                        level=ValidationLevel.CRITICAL,
                         passed=False,
-                        message=f"Insufficient memory: {mem['available']}GB < {mem['min_required']}GB required"
+                        message="No connection info available"
+                    ))
+                    continue
+                try:
+                    rc, output, _ = client.execute_command("free -m | awk '/Mem:/ {print $2, $7}'", timeout=10)
+                    if rc != 0:
+                        raise RuntimeError("free failed")
+                    total_mb, avail_mb = (int(x) for x in output.strip().split())
+                    if avail_mb >= min_required_mb * 2:
+                        self.results.append(ValidationResult(
+                            name=f"Memory Available ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=True,
+                            message=f"Memory: {avail_mb}MB available"
+                        ))
+                    elif avail_mb >= min_required_mb:
+                        self.results.append(ValidationResult(
+                            name=f"Memory Available ({node_id})",
+                            level=ValidationLevel.WARNING,
+                            passed=True,
+                            message=f"Memory low: {avail_mb}MB available",
+                            details={"recommendation": "restart_non_essential_services"}
+                        ))
+                    else:
+                        self.results.append(ValidationResult(
+                            name=f"Memory Available ({node_id})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=False,
+                            message=f"Insufficient memory: {avail_mb}MB < {min_required_mb}MB required"
+                        ))
+                except Exception as e:
+                    self.results.append(ValidationResult(
+                        name=f"Memory Available ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"Could not verify memory: {str(e)}"
                     ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -357,29 +485,21 @@ class UpdateValidator:
     def check_package_compatibility(self) -> None:
         """Check package update compatibility."""
         try:
-            # Would query package dependencies
-            compatibility = {
-                "kernel": True,
-                "audio-subsystem": True,
-                "networking": True,
-                "graphics": False,  # Not critical for audio
-            }
-            
-            for component, compatible in compatibility.items():
-                if compatible or component == "graphics":
-                    self.results.append(ValidationResult(
-                        name=f"Package Compatibility ({component})",
-                        level=ValidationLevel.WARNING if not compatible else ValidationLevel.CRITICAL,
-                        passed=True,
-                        message=f"{component} update compatible"
-                    ))
-                else:
-                    self.results.append(ValidationResult(
-                        name=f"Package Compatibility ({component})",
-                        level=ValidationLevel.CRITICAL,
-                        passed=False,
-                        message=f"{component} update has compatibility issues"
-                    ))
+            updates = self.dnf.check_for_updates() if self.dnf else []
+            if updates:
+                self.results.append(ValidationResult(
+                    name="Package Compatibility",
+                    level=ValidationLevel.CRITICAL,
+                    passed=True,
+                    message=f"{len(updates)} updates available; compatibility not blocked"
+                ))
+            else:
+                self.results.append(ValidationResult(
+                    name="Package Compatibility",
+                    level=ValidationLevel.INFO,
+                    passed=True,
+                    message="No updates available"
+                ))
         except Exception as e:
             self.results.append(ValidationResult(
                 name="Package Compatibility Check",
@@ -391,14 +511,14 @@ class UpdateValidator:
     def check_dependency_resolution(self) -> None:
         """Check package dependency resolution."""
         try:
-            # Would run dnf check for unmet dependencies
-            resolved = True
-            
+            simulation = self.dnf.simulate_update() if self.dnf else {"success": True}
+            resolved = simulation.get("success", False)
             self.results.append(ValidationResult(
                 name="Dependency Resolution",
                 level=ValidationLevel.CRITICAL,
                 passed=resolved,
-                message="All package dependencies resolved" if resolved else "Unmet dependencies detected"
+                message="All package dependencies resolved" if resolved else "Unmet dependencies detected",
+                details=simulation if not resolved else None
             ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -411,8 +531,15 @@ class UpdateValidator:
     def check_no_active_updates(self) -> None:
         """Ensure no updates are currently in progress."""
         try:
-            # Check if any node is already updating
-            updating_nodes = []  # Would query cluster state
+            updating_nodes = []
+            if self.registry:
+                try:
+                    nodes = self.registry.get_all_nodes()
+                    updating_nodes = [
+                        n.get("id") for n in nodes if n.get("status") == "updating"
+                    ]
+                except Exception:
+                    updating_nodes = []
             
             if not updating_nodes:
                 self.results.append(ValidationResult(
@@ -439,23 +566,43 @@ class UpdateValidator:
     def check_recent_backup_exists(self) -> None:
         """Verify recent backup exists before updating."""
         try:
-            # Check backup age (in hours)
-            backup_age_hours = 4  # Would get from backup service
+            backup_dir = Path("/var/lib/map2/backups")
             max_age_hours = 24
-            
-            if backup_age_hours <= max_age_hours:
+            if not backup_dir.exists():
+                self.results.append(ValidationResult(
+                    name="Recent Backup",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="Backup directory not found"
+                ))
+                return
+
+            backups = sorted(backup_dir.glob("**/*"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if not backups:
+                self.results.append(ValidationResult(
+                    name="Recent Backup",
+                    level=ValidationLevel.CRITICAL,
+                    passed=False,
+                    message="No backups found"
+                ))
+                return
+
+            latest = backups[0]
+            age_hours = (datetime.now() - datetime.fromtimestamp(latest.stat().st_mtime)).total_seconds() / 3600
+
+            if age_hours <= max_age_hours:
                 self.results.append(ValidationResult(
                     name="Recent Backup",
                     level=ValidationLevel.CRITICAL,
                     passed=True,
-                    message=f"Recent backup exists ({backup_age_hours} hours old)"
+                    message=f"Recent backup exists ({age_hours:.1f} hours old)"
                 ))
             else:
                 self.results.append(ValidationResult(
                     name="Recent Backup",
                     level=ValidationLevel.CRITICAL,
                     passed=False,
-                    message=f"No recent backup (last: {backup_age_hours} hours ago)"
+                    message=f"No recent backup (last: {age_hours:.1f} hours ago)"
                 ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -514,27 +661,50 @@ class UpdateValidator:
     def check_services_running(self, node_id: Optional[str] = None) -> None:
         """Verify critical services are running."""
         try:
-            services = {
-                "map2-cluster-agent": True,
-                "map2-audio-engine": True,
-                "map2-api-server": True,
-            }
-            
-            for service, running in services.items():
-                if running:
+            nodes = self.registry.get_all_nodes() if self.registry else []
+            if node_id:
+                nodes = [n for n in nodes if (n.get("id") or n.get("node_id")) == node_id]
+
+            if not nodes:
+                self.results.append(ValidationResult(
+                    name="Service Running",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No nodes available to verify services"
+                ))
+                return
+
+            services = ["map2-cluster-agent", "map2-audio-engine", "map2-api-server"]
+            for node in nodes:
+                nid = node.get("id") or node.get("node_id")
+                if not nid:
+                    continue
+                client = self._get_node_client(nid)
+                if not client:
                     self.results.append(ValidationResult(
-                        name=f"Service Running ({service})",
-                        level=ValidationLevel.CRITICAL,
-                        passed=True,
-                        message=f"{service} is running"
-                    ))
-                else:
-                    self.results.append(ValidationResult(
-                        name=f"Service Running ({service})",
-                        level=ValidationLevel.CRITICAL,
+                        name=f"Service Running ({nid})",
+                        level=ValidationLevel.WARNING,
                         passed=False,
-                        message=f"{service} is not running"
+                        message="No connection info available"
                     ))
+                    continue
+                for service in services:
+                    try:
+                        rc, _, _ = client.execute_command(f"systemctl is-active {service}", timeout=10)
+                        running = rc == 0
+                        self.results.append(ValidationResult(
+                            name=f"Service Running ({service} on {nid})",
+                            level=ValidationLevel.CRITICAL,
+                            passed=running,
+                            message=f"{service} is {'running' if running else 'not running'}"
+                        ))
+                    except Exception as e:
+                        self.results.append(ValidationResult(
+                            name=f"Service Running ({service} on {nid})",
+                            level=ValidationLevel.WARNING,
+                            passed=False,
+                            message=f"Could not verify service: {str(e)}"
+                        ))
         except Exception as e:
             self.results.append(ValidationResult(
                 name="Services Check",
@@ -546,9 +716,20 @@ class UpdateValidator:
     def check_cluster_agent_running(self, node_id: Optional[str] = None) -> None:
         """Check cluster agent connectivity."""
         try:
-            nodes_connected = 5
-            expected_nodes = 5
+            nodes = self.registry.get_all_nodes() if self.registry else []
+            expected_nodes = len(nodes)
+            online_nodes = [n for n in nodes if n.get("status") == "online"]
+            nodes_connected = len(online_nodes)
             
+            if expected_nodes == 0:
+                self.results.append(ValidationResult(
+                    name="Cluster Agent Connected",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No nodes registered"
+                ))
+                return
+
             if nodes_connected == expected_nodes:
                 self.results.append(ValidationResult(
                     name="Cluster Agent Connected",
@@ -574,22 +755,45 @@ class UpdateValidator:
     def check_audio_subsystem(self) -> None:
         """Verify audio subsystem functional."""
         try:
-            audio_ok = True
-            
-            if audio_ok:
+            nodes = self.registry.get_nodes_by_role("AUDIO-NODE") if self.registry else []
+            if not nodes:
                 self.results.append(ValidationResult(
                     name="Audio Subsystem",
-                    level=ValidationLevel.CRITICAL,
-                    passed=True,
-                    message="Audio subsystem functional"
-                ))
-            else:
-                self.results.append(ValidationResult(
-                    name="Audio Subsystem",
-                    level=ValidationLevel.CRITICAL,
+                    level=ValidationLevel.WARNING,
                     passed=False,
-                    message="Audio subsystem error detected"
+                    message="No audio nodes available"
                 ))
+                return
+
+            for node in nodes:
+                node_id = node.get("id") or node.get("node_id")
+                if not node_id:
+                    continue
+                client = self._get_node_client(node_id)
+                if not client:
+                    self.results.append(ValidationResult(
+                        name=f"Audio Subsystem ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message="No connection info available"
+                    ))
+                    continue
+                try:
+                    rc, _, _ = client.execute_command("systemctl is-active pipewire", timeout=10)
+                    ok = rc == 0
+                    self.results.append(ValidationResult(
+                        name=f"Audio Subsystem ({node_id})",
+                        level=ValidationLevel.CRITICAL,
+                        passed=ok,
+                        message="Audio subsystem functional" if ok else "Audio subsystem error detected"
+                    ))
+                except Exception as e:
+                    self.results.append(ValidationResult(
+                        name=f"Audio Subsystem ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"Could not verify audio subsystem: {str(e)}"
+                    ))
         except Exception as e:
             self.results.append(ValidationResult(
                 name="Audio Subsystem Check",
@@ -601,31 +805,39 @@ class UpdateValidator:
     def check_xruns_acceptable(self) -> None:
         """Check xrun count is back to normal."""
         try:
-            # Xruns should be zero immediately post-update
-            xrun_count = 0
-            
-            if xrun_count == 0:
-                self.results.append(ValidationResult(
-                    name="Xruns Acceptable",
-                    level=ValidationLevel.CRITICAL,
-                    passed=True,
-                    message="No xruns detected post-update"
-                ))
-            elif xrun_count < 5:
+            if not self.aggregator or not self.aggregator.metrics_cache:
                 self.results.append(ValidationResult(
                     name="Xruns Acceptable",
                     level=ValidationLevel.WARNING,
-                    passed=True,
-                    message=f"Minor xruns detected: {xrun_count} (monitoring)",
-                    details={"recommendation": "monitor_closely"}
-                ))
-            else:
-                self.results.append(ValidationResult(
-                    name="Xruns Acceptable",
-                    level=ValidationLevel.CRITICAL,
                     passed=False,
-                    message=f"Excessive xruns post-update: {xrun_count}"
+                    message="No xrun metrics available"
                 ))
+                return
+
+            for node_id, metrics in self.aggregator.metrics_cache.items():
+                xrun_count = metrics.xrun_count
+                if xrun_count == 0:
+                    self.results.append(ValidationResult(
+                        name=f"Xruns Acceptable ({node_id})",
+                        level=ValidationLevel.CRITICAL,
+                        passed=True,
+                        message="No xruns detected post-update"
+                    ))
+                elif xrun_count < 5:
+                    self.results.append(ValidationResult(
+                        name=f"Xruns Acceptable ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=True,
+                        message=f"Minor xruns detected: {xrun_count} (monitoring)",
+                        details={"recommendation": "monitor_closely"}
+                    ))
+                else:
+                    self.results.append(ValidationResult(
+                        name=f"Xruns Acceptable ({node_id})",
+                        level=ValidationLevel.CRITICAL,
+                        passed=False,
+                        message=f"Excessive xruns post-update: {xrun_count}"
+                    ))
         except Exception as e:
             self.results.append(ValidationResult(
                 name="Xruns Check",
@@ -637,23 +849,27 @@ class UpdateValidator:
     def check_dsp_load_normal(self) -> None:
         """Verify DSP load is normal."""
         try:
-            dsp_loads = {
-                "audio-01": 35,
-                "audio-02": 42,
-                "audio-03": 28,
-            }
-            
-            for node, load in dsp_loads.items():
+            if not self.aggregator or not self.aggregator.metrics_cache:
+                self.results.append(ValidationResult(
+                    name="DSP Load Normal",
+                    level=ValidationLevel.WARNING,
+                    passed=False,
+                    message="No DSP metrics available"
+                ))
+                return
+
+            for node_id, metrics in self.aggregator.metrics_cache.items():
+                load = metrics.dsp_load_percent
                 if load < 70:
                     self.results.append(ValidationResult(
-                        name=f"DSP Load Normal ({node})",
+                        name=f"DSP Load Normal ({node_id})",
                         level=ValidationLevel.CRITICAL,
                         passed=True,
                         message=f"DSP load normal: {load}%"
                     ))
                 else:
                     self.results.append(ValidationResult(
-                        name=f"DSP Load Normal ({node})",
+                        name=f"DSP Load Normal ({node_id})",
                         level=ValidationLevel.WARNING,
                         passed=False,
                         message=f"DSP load elevated post-update: {load}%"
@@ -669,22 +885,42 @@ class UpdateValidator:
     def check_network_after_update(self) -> None:
         """Verify network operation post-update."""
         try:
-            latency_ms = 25
-            
-            if latency_ms < 100:
-                self.results.append(ValidationResult(
-                    name="Network After Update",
-                    level=ValidationLevel.CRITICAL,
-                    passed=True,
-                    message=f"Network latency normal: {latency_ms}ms"
-                ))
-            else:
+            nodes = self.registry.get_all_nodes() if self.registry else []
+            if not nodes:
                 self.results.append(ValidationResult(
                     name="Network After Update",
                     level=ValidationLevel.WARNING,
                     passed=False,
-                    message=f"Network latency elevated: {latency_ms}ms"
+                    message="No nodes available to verify network"
                 ))
+                return
+
+            for node in nodes:
+                node_id = node.get("id") or node.get("node_id")
+                node_ip = node.get("ip_address") or node.get("ip") or node.get("host")
+                if not node_id or not node_ip:
+                    continue
+                try:
+                    result = subprocess.run(
+                        ["ping", "-c", "2", "-W", "2", node_ip],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    ok = result.returncode == 0
+                    self.results.append(ValidationResult(
+                        name=f"Network After Update ({node_id})",
+                        level=ValidationLevel.CRITICAL if ok else ValidationLevel.WARNING,
+                        passed=ok,
+                        message="Network reachable" if ok else "Network unreachable"
+                    ))
+                except Exception as e:
+                    self.results.append(ValidationResult(
+                        name=f"Network After Update ({node_id})",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"Network check failed: {str(e)}"
+                    ))
         except Exception as e:
             self.results.append(ValidationResult(
                 name="Network Check",
@@ -696,21 +932,34 @@ class UpdateValidator:
     def check_logs_for_errors(self) -> None:
         """Check logs for critical errors post-update."""
         try:
-            error_count = 0  # Would scan logs
-            
-            if error_count == 0:
-                self.results.append(ValidationResult(
-                    name="Logs Clear of Errors",
-                    level=ValidationLevel.CRITICAL,
-                    passed=True,
-                    message="No critical errors in logs"
-                ))
-            else:
+            try:
+                result = subprocess.run(
+                    ["journalctl", "-p", "err", "-n", "20", "--no-pager"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                error_count = len([line for line in result.stdout.splitlines() if line.strip()])
+                if error_count == 0:
+                    self.results.append(ValidationResult(
+                        name="Logs Clear of Errors",
+                        level=ValidationLevel.CRITICAL,
+                        passed=True,
+                        message="No critical errors in logs"
+                    ))
+                else:
+                    self.results.append(ValidationResult(
+                        name="Logs Clear of Errors",
+                        level=ValidationLevel.WARNING,
+                        passed=False,
+                        message=f"{error_count} error(s) found in logs post-update"
+                    ))
+            except Exception as e:
                 self.results.append(ValidationResult(
                     name="Logs Clear of Errors",
                     level=ValidationLevel.WARNING,
                     passed=False,
-                    message=f"{error_count} error(s) found in logs post-update"
+                    message=f"Could not check logs: {str(e)}"
                 ))
         except Exception as e:
             self.results.append(ValidationResult(
@@ -723,31 +972,31 @@ class UpdateValidator:
     def check_health_score_recovery(self) -> None:
         """Verify cluster health score recovers post-update."""
         try:
-            health_score = 91
-            baseline = 92  # Pre-update score
-            
-            recovery_percent = (health_score / baseline) * 100
-            
+            health_summary = self.aggregator.get_cluster_health() if self.aggregator else {}
+            health_score = health_summary.get("overall_health", 0.0)
+            baseline = max(health_summary.get("avg_health", 0.0), 1.0)
+            recovery_percent = (health_score / baseline) * 100 if baseline else 0
+
             if recovery_percent >= 95:
                 self.results.append(ValidationResult(
                     name="Health Score Recovery",
                     level=ValidationLevel.CRITICAL,
                     passed=True,
-                    message=f"Health score recovered: {health_score}% ({recovery_percent:.0f}% of baseline)"
+                    message=f"Health score recovered: {health_score:.1f}% ({recovery_percent:.0f}% of baseline)"
                 ))
             elif recovery_percent >= 80:
                 self.results.append(ValidationResult(
                     name="Health Score Recovery",
                     level=ValidationLevel.WARNING,
                     passed=True,
-                    message=f"Health score recovering: {health_score}% ({recovery_percent:.0f}% of baseline)"
+                    message=f"Health score recovering: {health_score:.1f}% ({recovery_percent:.0f}% of baseline)"
                 ))
             else:
                 self.results.append(ValidationResult(
                     name="Health Score Recovery",
                     level=ValidationLevel.CRITICAL,
                     passed=False,
-                    message=f"Health score not recovered: {health_score}% (only {recovery_percent:.0f}% of baseline)"
+                    message=f"Health score not recovered: {health_score:.1f}% (only {recovery_percent:.0f}% of baseline)"
                 ))
         except Exception as e:
             self.results.append(ValidationResult(

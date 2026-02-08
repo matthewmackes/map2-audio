@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Settings, Zap, BarChart3, Eye, Activity, GitBranch, FileText, RefreshCw } from 'lucide-react'
+import { Settings, Zap, BarChart3, Eye, Activity, GitBranch, FileText, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
 import { ClusterOverviewTabEnhanced } from '../components/ClusterDashboard/ClusterOverviewTabEnhanced'
@@ -9,6 +9,9 @@ import { MetricsDashboardTab } from '../components/ClusterDashboard/MetricsDashb
 import { LiveEventsTab } from '../components/ClusterDashboard/LiveEventsTab'
 import { FlowManagementTab } from '../components/ClusterDashboard/FlowManagementTab'
 import { ReportingTab } from '../components/ClusterDashboard/ReportingTab'
+import { UpdatesTab } from '../components/ClusterDashboard/UpdatesTab'
+import { OnboardingWizard } from '../components/OnboardingWizard'
+import { UpdateProgressViewer } from '../components/UpdateProgressViewer'
 
 interface DashboardTab {
   id: string
@@ -25,11 +28,14 @@ const DASHBOARD_TABS: DashboardTab[] = [
   { id: 'events', label: 'Events', icon: <GitBranch size={18} />, description: 'Live event stream' },
   { id: 'flows', label: 'Flows', icon: <GitBranch size={18} />, description: 'Flow distribution' },
   { id: 'reports', label: 'Reports', icon: <FileText size={18} />, description: 'Export & analysis' },
+  { id: 'updates', label: 'Updates', icon: <ShieldCheck size={18} />, description: 'System and cluster updates' },
 ]
 
 export function ClusterDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [simulationMode, setSimulationMode] = useState(false)
+  const [showWizard, setShowWizard] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
 
   // Fetch deployment mode to show appropriate message
   const { data: deploymentMode } = useQuery({
@@ -112,6 +118,20 @@ export function ClusterDashboardPage() {
             >
               <RefreshCw size={14} />
             </button>
+            <button
+              onClick={() => setShowWizard(true)}
+              className="btn btn-sm"
+              title="Run onboarding wizard"
+            >
+              🧙 Wizard
+            </button>
+            <button
+              onClick={() => setShowProgress(true)}
+              className="btn btn-sm"
+              title="View update progress"
+            >
+              📊 Progress
+            </button>
             <label
               style={{
                 display: 'flex',
@@ -176,6 +196,52 @@ export function ClusterDashboardPage() {
         ))}
       </div>
 
+      {/* Modals */}
+      {showWizard && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20,
+            overflowY: 'auto',
+          }}
+        >
+          <OnboardingWizard onComplete={() => setShowWizard(false)} />
+        </div>
+      )}
+
+      {showProgress && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20,
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ width: '100%', maxWidth: 1200, position: 'relative' }}>
+            <button
+              onClick={() => setShowProgress(false)}
+              className="btn btn-sm"
+              style={{ position: 'absolute', top: 0, right: 0 }}
+            >
+              ✕ Close
+            </button>
+            <UpdateProgressViewer />
+          </div>
+        </div>
+      )}
+
       {/* Content Area */}
       <div className="dashboard-content" style={{ flex: 1 }}>
         {isAllInOne && activeTab !== 'overview' && (
@@ -203,6 +269,7 @@ export function ClusterDashboardPage() {
         {activeTab === 'events' && <LiveEventsTab />}
         {activeTab === 'flows' && <FlowManagementTab />}
         {activeTab === 'reports' && <ReportingTab />}
+        {activeTab === 'updates' && <UpdatesTab />}
       </div>
     </div>
   )

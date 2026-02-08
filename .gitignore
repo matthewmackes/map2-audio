@@ -41,3 +41,6 @@ dist/
 .idea/
 .vscode/
 .vs/
+
+# Generated/local drum content (do not commit)
+data/drums/generated/

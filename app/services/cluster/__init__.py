@@ -93,6 +93,9 @@ class ClusterNodeMetadata:
     dsp_load_percent: float = 0.0
     xrun_count: int = 0
     uptime_seconds: int = 0
+    # Audio path information (populated on demand)
+    audio_path: Optional[Dict] = None  # NodeAudioPath as dict
+    last_audio_path_update: Optional[str] = None
 
 
 @dataclass

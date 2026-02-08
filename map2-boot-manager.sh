@@ -266,6 +266,81 @@ check_system_resources() {
     log_info "Disk Space: $disk_available available in $MAP2_DIR"
 }
 
+disable_selinux() {
+    log_header "Configuring SELinux"
+
+    # Check if SELinux is installed
+    if ! command -v getenforce &> /dev/null; then
+        log_success "SELinux not installed - no action needed"
+        return 0
+    fi
+
+    # Get current SELinux status
+    local selinux_status=$(getenforce 2>/dev/null || echo "error")
+
+    case "$selinux_status" in
+        "Disabled")
+            log_success "SELinux already disabled - persistent setting confirmed"
+            return 0
+            ;;
+        "Permissive")
+            log_warning "SELinux in permissive mode - converting to disabled"
+            ;;
+        "Enforcing")
+            log_warning "SELinux enforcing - disabling now"
+            # Temporarily set to permissive for immediate effect
+            if [ -f /etc/selinux/config ]; then
+                setenforce 0 2>/dev/null || log_warning "Cannot set permissive mode (may need root)"
+            fi
+            ;;
+        *)
+            log_warning "SELinux status unknown: $selinux_status"
+            return 1
+            ;;
+    esac
+
+    # Permanently disable SELinux by updating config file
+    if [ -f /etc/selinux/config ]; then
+        log_info "Updating /etc/selinux/config for permanent disabling..."
+        
+        # Backup original config
+        if [ ! -f /etc/selinux/config.backup ]; then
+            cp /etc/selinux/config /etc/selinux/config.backup 2>/dev/null || \
+                log_warning "Could not backup SELinux config (may need root)"
+        fi
+        
+        # Update SELINUX setting to disabled
+        if sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config 2>/dev/null; then
+            log_success "Updated /etc/selinux/config: SELINUX=disabled"
+            
+            # Verify the change
+            if grep -q "^SELINUX=disabled" /etc/selinux/config; then
+                log_success "Verified: SELINUX=disabled in config file"
+            else
+                log_error "Failed to verify SELINUX=disabled in config"
+                return 1
+            fi
+        else
+            log_warning "Could not update /etc/selinux/config (may need root privileges)"
+            log_info "Manual fix required: Edit /etc/selinux/config and set SELINUX=disabled"
+            return 1
+        fi
+    else
+        log_warning "/etc/selinux/config not found - SELinux may not be installed"
+    fi
+
+    # Set immediate mode to permissive if enforcing
+    if [ "$selinux_status" = "Enforcing" ]; then
+        if setenforce 0 2>/dev/null; then
+            log_success "Immediately set SELinux to permissive mode"
+        else
+            log_warning "Could not set permissive mode (requires root - will take effect on reboot)"
+        fi
+    fi
+
+    return 0
+}
+
 initialize_database() {
     log_header "Initializing Database"
 
@@ -431,7 +506,8 @@ main() {
     # Initialize
     initialize_logging
 
-    # Run all checks
+    # Run all checks and configurations
+    disable_selinux
     create_directories
     check_prerequisites
     check_system_resources

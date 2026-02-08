@@ -2158,6 +2158,607 @@ class JuceEngineService(Singleton):
             {"index": 8, "id": "infinite", "name": "Infinite", "short_name": "INF", "description": "Special effects and atmospheric textures - near-infinite decay"}
         ]
 
+    # ============================================================
+    # Peavey 5150 Block Letter Amp Simulator
+    # ============================================================
+
+    async def set_peavey5150_bypass(self, bypass: bool) -> None:
+        """Set Peavey 5150 bypass state"""
+        if self._engine:
+            self._engine.set_peavey5150_bypass(bypass)
+
+    async def set_peavey5150_pre_gain(self, value: float) -> None:
+        """Set Peavey 5150 preamp gain (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_pre_gain(value)
+
+    async def set_peavey5150_post_gain(self, value: float) -> None:
+        """Set Peavey 5150 master volume (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_post_gain(value)
+
+    async def set_peavey5150_low(self, value: float) -> None:
+        """Set Peavey 5150 bass tone (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_low(value)
+
+    async def set_peavey5150_mid(self, value: float) -> None:
+        """Set Peavey 5150 mid tone (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_mid(value)
+
+    async def set_peavey5150_high(self, value: float) -> None:
+        """Set Peavey 5150 treble tone (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_high(value)
+
+    async def set_peavey5150_presence(self, value: float) -> None:
+        """Set Peavey 5150 presence (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_presence(value)
+
+    async def set_peavey5150_resonance(self, value: float) -> None:
+        """Set Peavey 5150 resonance (0-10)"""
+        if self._engine:
+            self._engine.set_peavey5150_resonance(value)
+
+    async def set_peavey5150_bright(self, on: bool) -> None:
+        """Set Peavey 5150 bright switch"""
+        if self._engine:
+            self._engine.set_peavey5150_bright(on)
+
+    async def set_peavey5150_bias(self, value: float) -> None:
+        """Set Peavey 5150 power tube bias (0-10, 0=cold stock)"""
+        if self._engine:
+            self._engine.set_peavey5150_bias(value)
+
+    async def set_peavey5150_preset(self, preset_name: str) -> None:
+        """Set Peavey 5150 preset by name"""
+        if self._engine:
+            self._engine.set_peavey5150_preset(preset_name)
+
+    async def get_peavey5150_parameters(self) -> Dict[str, Any]:
+        """Get all Peavey 5150 parameters"""
+        if not self._engine:
+            return {
+                "pre_gain": 5.0, "post_gain": 3.0,
+                "low": 5.0, "mid": 5.0, "high": 5.0,
+                "presence": 5.0, "resonance": 5.0,
+                "bright": False, "bias": 3.0,
+                "preset": 0, "preset_name": "manual",
+                "bypass": False
+            }
+        params = self._engine.get_peavey5150_parameters()
+        return {
+            "pre_gain": params.get("pre_gain", 5.0),
+            "post_gain": params.get("post_gain", 3.0),
+            "low": params.get("low", 5.0),
+            "mid": params.get("mid", 5.0),
+            "high": params.get("high", 5.0),
+            "presence": params.get("presence", 5.0),
+            "resonance": params.get("resonance", 5.0),
+            "bright": params.get("bright", False),
+            "bias": params.get("bias", 3.0),
+            "preset": params.get("preset", 0),
+            "preset_name": params.get("preset_name", "manual"),
+            "bypass": params.get("bypass", False)
+        }
+
+    async def get_peavey5150_metering(self) -> Dict[str, float]:
+        """Get Peavey 5150 metering data"""
+        if not self._engine:
+            return {
+                "input_level": -100.0, "output_level": -100.0,
+                "preamp_level": -100.0, "power_level": -100.0,
+                "supply_sag": 1.0, "cpu_load": 0.0
+            }
+        metering = self._engine.get_peavey5150_metering()
+        return {
+            "input_level": metering.get("input_level", -100.0),
+            "output_level": metering.get("output_level", -100.0),
+            "preamp_level": metering.get("preamp_level", -100.0),
+            "power_level": metering.get("power_level", -100.0),
+            "supply_sag": metering.get("supply_sag", 1.0),
+            "cpu_load": metering.get("cpu_load", 0.0)
+        }
+
+    async def get_peavey5150_presets(self) -> List[Dict[str, str]]:
+        """Get all available Peavey 5150 presets"""
+        return [
+            {"id": "manual", "name": "Manual", "description": "User-defined settings"},
+            {"id": "brown_sound", "name": "Brown Sound", "description": "Classic Van Halen studio tone"},
+            {"id": "pantera_scoop", "name": "Pantera Scoop", "description": "Scooped mids, high gain, cold bias"},
+            {"id": "modern_metal", "name": "Modern Metal", "description": "Maximum gain, cold bias, high presence"},
+            {"id": "hard_rock", "name": "Hard Rock", "description": "Medium gain, bumped mids, warm power"},
+            {"id": "crunch", "name": "Crunch", "description": "Low gain, bright switch, touch sensitive"}
+        ]
+
+    # ============================================================
+    # Tweed Bassman 5F6-A Amplifier Simulator
+    # ============================================================
+
+    async def set_tweedbassman_bypass(self, bypass: bool) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_bypass(bypass)
+
+    async def set_tweedbassman_channel_mode(self, mode: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_channel_mode(mode)
+
+    async def set_tweedbassman_normal_volume(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_normal_volume(value)
+
+    async def set_tweedbassman_bright_volume(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_bright_volume(value)
+
+    async def set_tweedbassman_bright_cap(self, on: bool) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_bright_cap(on)
+
+    async def set_tweedbassman_v1_tube_type(self, type: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_v1_tube_type(type)
+
+    async def set_tweedbassman_cathode_bypass(self, on: bool) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_cathode_bypass(on)
+
+    async def set_tweedbassman_cathode_bias(self, mode: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_cathode_bias(mode)
+
+    async def set_tweedbassman_treble(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_treble(value)
+
+    async def set_tweedbassman_mid(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_mid(value)
+
+    async def set_tweedbassman_bass(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_bass(value)
+
+    async def set_tweedbassman_raw_switch(self, on: bool) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_raw_switch(on)
+
+    async def set_tweedbassman_master_volume(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_master_volume(value)
+
+    async def set_tweedbassman_presence(self, value: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_presence(value)
+
+    async def set_tweedbassman_nfb_mode(self, mode: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_nfb_mode(mode)
+
+    async def set_tweedbassman_power_tube_type(self, type: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_power_tube_type(type)
+
+    async def set_tweedbassman_bias_mode(self, mode: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_bias_mode(mode)
+
+    async def set_tweedbassman_rectifier_type(self, type: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_rectifier_type(type)
+
+    async def set_tweedbassman_output_level(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_output_level(dB)
+
+    async def set_tweedbassman_cabinet_enabled(self, on: bool) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_cabinet_enabled(on)
+
+    async def set_tweedbassman_cabinet_ir(self, index: int) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_cabinet_ir(index)
+
+    async def set_tweedbassman_preset(self, preset_name: str) -> None:
+        if self._engine:
+            self._engine.set_tweedbassman_preset(preset_name)
+
+    async def get_tweedbassman_parameters(self) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "channel_mode": 0, "normal_volume": 5.0, "bright_volume": 5.0, "bright_cap": True,
+                "v1_tube_type": 0, "cathode_bypass": False, "cathode_bias": 0,
+                "treble": 5.0, "mid": 5.0, "bass": 5.0, "raw_switch": False,
+                "master_volume": 5.0, "presence": 5.0, "nfb_mode": 0,
+                "power_tube_type": 0, "bias_mode": 0, "rectifier_type": 0,
+                "output_level": 0.0, "cabinet_enabled": True, "cabinet_ir": 0,
+                "preset": 0, "preset_name": "manual", "bypass": False
+            }
+        params = self._engine.get_tweedbassman_parameters()
+        return {
+            "channel_mode": params.get("channel_mode", 0),
+            "normal_volume": params.get("normal_volume", 5.0),
+            "bright_volume": params.get("bright_volume", 5.0),
+            "bright_cap": params.get("bright_cap", True),
+            "v1_tube_type": params.get("v1_tube_type", 0),
+            "cathode_bypass": params.get("cathode_bypass", False),
+            "cathode_bias": params.get("cathode_bias", 0),
+            "treble": params.get("treble", 5.0),
+            "mid": params.get("mid", 5.0),
+            "bass": params.get("bass", 5.0),
+            "raw_switch": params.get("raw_switch", False),
+            "master_volume": params.get("master_volume", 5.0),
+            "presence": params.get("presence", 5.0),
+            "nfb_mode": params.get("nfb_mode", 0),
+            "power_tube_type": params.get("power_tube_type", 0),
+            "bias_mode": params.get("bias_mode", 0),
+            "rectifier_type": params.get("rectifier_type", 0),
+            "output_level": params.get("output_level", 0.0),
+            "cabinet_enabled": params.get("cabinet_enabled", True),
+            "cabinet_ir": params.get("cabinet_ir", 0),
+            "preset": params.get("preset", 0),
+            "preset_name": params.get("preset_name", "manual"),
+            "bypass": params.get("bypass", False)
+        }
+
+    async def get_tweedbassman_metering(self) -> Dict[str, float]:
+        if not self._engine:
+            return {
+                "input_level": -100.0, "output_level": -100.0,
+                "preamp_level": -100.0, "power_level": -100.0,
+                "supply_sag": 1.0, "cpu_load": 0.0
+            }
+        metering = self._engine.get_tweedbassman_metering()
+        return {
+            "input_level": metering.get("input_level", -100.0),
+            "output_level": metering.get("output_level", -100.0),
+            "preamp_level": metering.get("preamp_level", -100.0),
+            "power_level": metering.get("power_level", -100.0),
+            "supply_sag": metering.get("supply_sag", 1.0),
+            "cpu_load": metering.get("cpu_load", 0.0)
+        }
+
+    async def get_tweedbassman_presets(self) -> List[Dict[str, str]]:
+        return [
+            {"id": "manual", "name": "Manual", "description": "User-defined settings"},
+            {"id": "stock_5f6a", "name": "Stock 5F6-A", "description": "All stock, clean to edge of breakup"},
+            {"id": "cranked_tweed", "name": "Cranked Tweed", "description": "Classic pushed Bassman"},
+            {"id": "blues_breakup", "name": "Blues Breakup", "description": "Warm, touch-sensitive"},
+            {"id": "country_clean", "name": "Country Clean", "description": "Sparkly headroom"},
+            {"id": "jumped_dirty", "name": "Jumped & Dirty", "description": "Fat overdriven tone"},
+            {"id": "high_gain_mod", "name": "High Gain Mod", "description": "Hot-rodded preamp"},
+            {"id": "neil_young", "name": "Neil Young", "description": "Ragged, searing leads"},
+            {"id": "tweed_deluxe", "name": "Tweed Deluxe", "description": "Simulates 5E3 character"},
+            {"id": "jtm45_flavor", "name": "JTM45 Flavor", "description": "Marshall-esque"},
+            {"id": "sag_monster", "name": "Sag Monster", "description": "Maximum compression/bloom"},
+            {"id": "pedal_platform", "name": "Pedal Platform", "description": "Maximum clean headroom"},
+            {"id": "bright_chimey", "name": "Bright & Chimey", "description": "Fender sparkle"},
+            {"id": "srv_tone", "name": "SRV Tone", "description": "Thick Texas blues"},
+            {"id": "recording_di", "name": "Recording DI", "description": "Balanced, mix-ready"},
+        ]
+
+    # ============================================================
+    # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
+    # ============================================================
+
+    async def set_passionfx_bypass(self, bypass: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_bypass(bypass)
+
+    async def set_passionfx_gate_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_gate_enabled(enabled)
+
+    async def set_passionfx_gate_threshold(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_gate_threshold(dB)
+
+    async def set_passionfx_gate_release(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_gate_release(ms)
+
+    async def set_passionfx_comp_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_comp_enabled(enabled)
+
+    async def set_passionfx_comp_threshold(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_comp_threshold(dB)
+
+    async def set_passionfx_comp_ratio(self, ratio: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_comp_ratio(ratio)
+
+    async def set_passionfx_comp_attack(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_comp_attack(ms)
+
+    async def set_passionfx_comp_release(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_comp_release(ms)
+
+    async def set_passionfx_comp_glassy(self, glassy: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_comp_glassy(glassy)
+
+    async def set_passionfx_wah_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_wah_enabled(enabled)
+
+    async def set_passionfx_wah_mode(self, mode: int) -> None:
+        if self._engine:
+            self._engine.set_passionfx_wah_mode(mode)
+
+    async def set_passionfx_wah_position(self, position: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_wah_position(position)
+
+    async def set_passionfx_wah_q(self, q: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_wah_q(q)
+
+    async def set_passionfx_phaser_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_phaser_enabled(enabled)
+
+    async def set_passionfx_phaser_rate(self, hz: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_phaser_rate(hz)
+
+    async def set_passionfx_phaser_depth(self, depth: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_phaser_depth(depth)
+
+    async def set_passionfx_phaser_stages(self, stages: int) -> None:
+        if self._engine:
+            self._engine.set_passionfx_phaser_stages(stages)
+
+    async def set_passionfx_phaser_feedback(self, feedback: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_phaser_feedback(feedback)
+
+    async def set_passionfx_chorus_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_chorus_enabled(enabled)
+
+    async def set_passionfx_chorus_rate(self, hz: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_chorus_rate(hz)
+
+    async def set_passionfx_chorus_depth(self, depth: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_chorus_depth(depth)
+
+    async def set_passionfx_chorus_voices(self, voices: int) -> None:
+        if self._engine:
+            self._engine.set_passionfx_chorus_voices(voices)
+
+    async def set_passionfx_chorus_mix(self, mix: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_chorus_mix(mix)
+
+    async def set_passionfx_pitch_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_pitch_enabled(enabled)
+
+    async def set_passionfx_pitch_semitones(self, semitones: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_pitch_semitones(semitones)
+
+    async def set_passionfx_pitch_mix(self, mix: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_pitch_mix(mix)
+
+    async def set_passionfx_harm_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_harm_enabled(enabled)
+
+    async def set_passionfx_harm_voice1_interval(self, semitones: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_harm_voice1_interval(semitones)
+
+    async def set_passionfx_harm_voice2_interval(self, semitones: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_harm_voice2_interval(semitones)
+
+    async def set_passionfx_harm_detune_cents(self, cents: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_harm_detune_cents(cents)
+
+    async def set_passionfx_harm_mix(self, mix: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_harm_mix(mix)
+
+    async def set_passionfx_delay_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_enabled(enabled)
+
+    async def set_passionfx_delay_time_l(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_time_l(ms)
+
+    async def set_passionfx_delay_time_r(self, ms: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_time_r(ms)
+
+    async def set_passionfx_delay_feedback(self, feedback: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_feedback(feedback)
+
+    async def set_passionfx_delay_mix(self, mix: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_mix(mix)
+
+    async def set_passionfx_delay_freeze(self, freeze: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_freeze(freeze)
+
+    async def set_passionfx_delay_pitch_shift_l(self, semitones: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_pitch_shift_l(semitones)
+
+    async def set_passionfx_delay_pitch_shift_r(self, semitones: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_delay_pitch_shift_r(semitones)
+
+    async def set_passionfx_reverb_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_enabled(enabled)
+
+    async def set_passionfx_reverb_type(self, rtype: int) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_type(rtype)
+
+    async def set_passionfx_reverb_decay(self, seconds: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_decay(seconds)
+
+    async def set_passionfx_reverb_shimmer_amount(self, amount: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_shimmer_amount(amount)
+
+    async def set_passionfx_reverb_shimmer_interval(self, semitones: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_shimmer_interval(semitones)
+
+    async def set_passionfx_reverb_mix(self, mix: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_mix(mix)
+
+    async def set_passionfx_reverb_freeze(self, freeze: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_reverb_freeze(freeze)
+
+    async def set_passionfx_eq_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_eq_enabled(enabled)
+
+    async def set_passionfx_eq_low_gain(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_eq_low_gain(dB)
+
+    async def set_passionfx_eq_mid_gain(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_eq_mid_gain(dB)
+
+    async def set_passionfx_eq_high_gain(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_eq_high_gain(dB)
+
+    async def set_passionfx_eq_tilt(self, tilt: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_eq_tilt(tilt)
+
+    async def set_passionfx_exciter_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_exciter_enabled(enabled)
+
+    async def set_passionfx_exciter_warmth(self, warmth: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_exciter_warmth(warmth)
+
+    async def set_passionfx_exciter_presence(self, presence: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_exciter_presence(presence)
+
+    async def set_passionfx_exciter_air(self, air: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_exciter_air(air)
+
+    async def set_passionfx_trem_enabled(self, enabled: bool) -> None:
+        if self._engine:
+            self._engine.set_passionfx_trem_enabled(enabled)
+
+    async def set_passionfx_trem_rate(self, hz: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_trem_rate(hz)
+
+    async def set_passionfx_trem_depth(self, depth: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_trem_depth(depth)
+
+    async def set_passionfx_trem_waveform(self, waveform: int) -> None:
+        if self._engine:
+            self._engine.set_passionfx_trem_waveform(waveform)
+
+    async def set_passionfx_mix(self, mix: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_mix(mix)
+
+    async def set_passionfx_output_level(self, dB: float) -> None:
+        if self._engine:
+            self._engine.set_passionfx_output_level(dB)
+
+    async def set_passionfx_preset(self, preset_name: str) -> None:
+        if self._engine:
+            self._engine.set_passionfx_preset(preset_name)
+
+    async def get_passionfx_parameters(self) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "gate_enabled": False, "gate_threshold": -40.0, "gate_release": 100.0,
+                "comp_enabled": False, "comp_threshold": -20.0, "comp_ratio": 4.0,
+                "comp_attack": 10.0, "comp_release": 100.0, "comp_glassy": False,
+                "wah_enabled": False, "wah_mode": 0, "wah_position": 0.5, "wah_q": 5.0,
+                "phaser_enabled": False, "phaser_rate": 0.5, "phaser_depth": 0.5,
+                "phaser_stages": 4, "phaser_feedback": 0.3,
+                "chorus_enabled": False, "chorus_rate": 0.8, "chorus_depth": 0.5,
+                "chorus_voices": 3, "chorus_mix": 0.5,
+                "pitch_enabled": False, "pitch_semitones": 0.0, "pitch_mix": 0.5,
+                "harm_enabled": False, "harm_voice1_interval": 4.0, "harm_voice2_interval": 7.0,
+                "harm_detune_cents": 5.0, "harm_mix": 0.5,
+                "delay_enabled": False, "delay_time_l": 375.0, "delay_time_r": 500.0,
+                "delay_feedback": 0.35, "delay_mix": 0.4, "delay_freeze": False,
+                "delay_pitch_shift_l": 0.0, "delay_pitch_shift_r": 0.0,
+                "reverb_enabled": False, "reverb_type": 0, "reverb_decay": 2.5,
+                "reverb_shimmer_amount": 0.0, "reverb_shimmer_interval": 12.0,
+                "reverb_mix": 0.3, "reverb_freeze": False,
+                "eq_enabled": False, "eq_low_gain": 0.0, "eq_mid_gain": 0.0,
+                "eq_high_gain": 0.0, "eq_tilt": 0.0,
+                "exciter_enabled": False, "exciter_warmth": 0.0,
+                "exciter_presence": 0.0, "exciter_air": 0.0,
+                "trem_enabled": False, "trem_rate": 5.0, "trem_depth": 0.5, "trem_waveform": 0,
+                "mix": 1.0, "output_level": 0.0,
+                "preset": 0, "preset_name": "manual", "bypass": False
+            }
+        return dict(self._engine.get_passionfx_parameters())
+
+    async def get_passionfx_metering(self) -> Dict[str, float]:
+        if not self._engine:
+            return {
+                "input_level_l": -100.0, "input_level_r": -100.0,
+                "output_level_l": -100.0, "output_level_r": -100.0,
+                "gate_gain": 1.0, "comp_gain_reduction": 0.0,
+                "reverb_level_l": -100.0, "reverb_level_r": -100.0,
+                "delay_level_l": -100.0, "delay_level_r": -100.0,
+                "phaser_lfo_phase": 0.0, "tremolo_lfo_phase": 0.0,
+                "wah_position": 0.5
+            }
+        return dict(self._engine.get_passionfx_metering())
+
+    async def get_passionfx_presets(self) -> List[Dict[str, str]]:
+        if self._engine:
+            return [dict(p) for p in self._engine.get_passionfx_presets()]
+        return [
+            {"id": "manual", "name": "Manual", "track": "", "description": "User-defined settings"},
+            {"id": "liberty", "name": "Liberty", "track": "Track 1", "description": "Soaring clean lead"},
+            {"id": "erotic_nightmares", "name": "Erotic Nightmares", "track": "Track 2", "description": "Aggressive dark"},
+            {"id": "the_animal", "name": "The Animal", "track": "Track 3", "description": "Raw primal overdrive"},
+            {"id": "answers", "name": "Answers", "track": "Track 4", "description": "Emotional ballad shimmer"},
+            {"id": "the_riddle", "name": "The Riddle", "track": "Track 5", "description": "Mysterious phased"},
+            {"id": "ballerina_12_24", "name": "Ballerina 12/24", "track": "Track 6", "description": "Delicate harmonics"},
+            {"id": "for_the_love_of_god", "name": "For the Love of God", "track": "Track 7", "description": "Epic sustain & reverb"},
+            {"id": "the_audience_is_listening", "name": "The Audience Is Listening", "track": "Track 8", "description": "Wah-heavy funk"},
+            {"id": "i_would_love_to", "name": "I Would Love To", "track": "Track 9", "description": "Lush chorus & delay"},
+            {"id": "blue_powder", "name": "Blue Powder", "track": "Track 10", "description": "Jazzy clean warm"},
+            {"id": "greasy_kids_stuff", "name": "Greasy Kid's Stuff", "track": "Track 11", "description": "Funky wah tremolo"},
+            {"id": "alien_water_kiss", "name": "Alien Water Kiss", "track": "Track 12", "description": "Pitch-shifted ambient"},
+            {"id": "sisters", "name": "Sisters", "track": "Track 13", "description": "Harmonized lead"},
+            {"id": "love_secrets", "name": "Love Secrets", "track": "Track 14", "description": "Shredding with tight delay"}
+        ]
+
 
 # Singleton accessor using base class
 def get_audio_engine() -> JuceEngineService:

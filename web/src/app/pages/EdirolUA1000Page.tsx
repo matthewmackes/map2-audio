@@ -61,7 +61,8 @@ import {
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
-import { audioApi, diagnosticsApi } from '../../map2/api'
+import { audioApi, diagnosticsApi, pipewireApi } from '../../map2/api'
+import { usePipeWire } from '../hooks/usePipeWire'
 import type { AudioStatus } from '../../map2/types'
 import type { AudioHealth, XrunStats, BufferPreset, JuceMetrics, DiagnosticResult, FullDiagnosticResult } from '../../map2/api'
 
@@ -90,6 +91,7 @@ export function EdirolUA1000Page() {
   const queryClient = useQueryClient()
   const [selectedTab, setSelectedTab] = useState('engine')
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
+  const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
 
   // Real-time WebSocket data
   const [meterData, setMeterData] = useState<MeterData>({ input_left: 0, input_right: 0, output_left: 0, output_right: 0 })
@@ -237,7 +239,7 @@ export function EdirolUA1000Page() {
     <div className="stack">
       <PageHeader
         title="Edirol UA-1000"
-        subtitle="Hi-Speed USB 2.0 Audio Interface - Connected to JUCE Audio Engine"
+        subtitle="Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine"
         icon={<Usb size={32} style={{ color: '#3b82f6' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
@@ -726,18 +728,65 @@ function JuceEngineTab({
         </div>
       </div>
 
+      {/* PipeWire Audio Server Status */}
+      <div className="card" style={{ padding: 16 }}>
+        <h4 style={{ marginBottom: 16 }}>PipeWire Audio Server</h4>
+        <div className="grid two" style={{ gap: 16 }}>
+          {/* PipeWire Status Metrics */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: pw.isDaemonRunning ? '#22c55e' : '#ef4444',
+                boxShadow: pw.isDaemonRunning ? '0 0 8px #22c55e' : 'none',
+              }} />
+              <span style={{ fontWeight: 600 }}>{pw.isDaemonRunning ? 'Running' : 'Offline'}</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div className="flex-between"><span>Daemon</span><span style={{ color: '#fff' }}>{pw.daemonVersion || 'N/A'}</span></div>
+              <div className="flex-between"><span>Sample Rate</span><span style={{ color: '#fff' }}>{(pw.effectiveRate / 1000).toFixed(0)} kHz</span></div>
+              <div className="flex-between"><span>Quantum</span><span style={{ color: '#fff' }}>{pw.effectiveQuantum} smp</span></div>
+              <div className="flex-between"><span>Latency</span><span style={{ color: pw.isHighLatency ? '#f59e0b' : '#22c55e' }}>{pw.totalLatencyMs.toFixed(1)} ms</span></div>
+              <div className="flex-between"><span>Devices</span><span style={{ color: '#fff' }}>{pw.devices.length} connected</span></div>
+              <div className="flex-between"><span>XRuns</span><span style={{ color: pw.hasXruns ? '#f59e0b' : '#22c55e' }}>{pw.xruns}</span></div>
+            </div>
+          </div>
+
+          {/* PipeWire Description & UA-1000 Relationship */}
+          <div>
+            <div style={{ background: 'rgba(100,181,246,0.1)', padding: 12, borderRadius: 6, border: '1px solid rgba(100,181,246,0.3)' }}>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <strong style={{ color: '#64b5f6' }}>PipeWire Integration:</strong>
+                <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 18, fontSize: 11, color: '#ccc' }}>
+                  <li><strong>Device Router</strong> — Discovers and manages your Edirol UA-1000 USB device in the audio graph</li>
+                  <li><strong>Buffer Management</strong> — Negotiates quantum (buffer period) between UA-1000 hardware and JUCE engine</li>
+                  <li><strong>Latency Control</strong> — Real-time adjustment of graph latency; visible in meters above</li>
+                  <li><strong>XRun Detection</strong> — Monitors buffer underruns that cause audio dropouts or clicks</li>
+                  <li><strong>WirePlumber</strong> — Automatic device policy engine; handles hot-plug and multi-device scenarios</li>
+                </ul>
+              </div>
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 8, padding: 8, background: 'var(--bg-tertiary)', borderRadius: 4 }}>
+              📌 <strong>UA-1000 Path:</strong> USB device → PipeWire graph → JUCE engine → Audio processing → UA-1000 outputs
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Signal Flow */}
       <div className="card" style={{ padding: 16 }}>
-        <h4 style={{ marginBottom: 16 }}>Signal Flow</h4>
+        <h4 style={{ marginBottom: 16 }}>Signal Flow Architecture</h4>
         <div style={{
           background: 'var(--bg-secondary)',
           borderRadius: 8,
           padding: 24,
           textAlign: 'center',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1100, margin: '0 auto', flexWrap: 'wrap', gap: 8 }}>
             {/* UA-1000 */}
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', minWidth: 120 }}>
               <div style={{
                 background: '#0066cc',
                 color: '#fff',
@@ -745,25 +794,54 @@ function JuceEngineTab({
                 borderRadius: 4,
                 marginBottom: 8,
                 fontWeight: 600,
+                fontSize: 13,
               }}>
                 Edirol UA-1000
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {juce?.input_channels ?? 10} In / {juce?.output_channels ?? 10} Out
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                USB Device<br/>{juce?.input_channels ?? 10}×{juce?.output_channels ?? 10} I/O
               </div>
             </div>
 
-            {/* Arrow */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>USB 2.0</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: 80, height: 2, background: status?.running ? '#22c55e' : 'var(--border)' }} />
-                <div style={{ borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: `8px solid ${status?.running ? '#22c55e' : 'var(--border)'}` }} />
+            {/* Arrow USB */}
+            <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', minWidth: 70 }}>
+              <div style={{ fontSize: 9, color: '#64b5f6', marginBottom: 4, fontWeight: 500 }}>USB 2.0</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 50, height: 2, background: pw.isDaemonRunning ? '#22c55e' : 'var(--border)' }} />
+                <div style={{ borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: `6px solid ${pw.isDaemonRunning ? '#22c55e' : 'var(--border)'}` }} />
+              </div>
+            </div>
+
+            {/* PipeWire */}
+            <div style={{ textAlign: 'center', minWidth: 130 }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: 4,
+                marginBottom: 8,
+                fontWeight: 600,
+                fontSize: 13,
+                border: `2px solid ${pw.isDaemonRunning ? '#a78bfa' : '#666'}`,
+              }}>
+                PipeWire
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                Audio Server<br/>{pw.effectiveQuantum}smp @ {(pw.effectiveRate/1000).toFixed(0)}kHz
+              </div>
+            </div>
+
+            {/* Arrow Graph */}
+            <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', minWidth: 70 }}>
+              <div style={{ fontSize: 9, color: '#a78bfa', marginBottom: 4, fontWeight: 500 }}>Graph Routing</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 50, height: 2, background: pw.isDaemonRunning ? '#a78bfa' : 'var(--border)' }} />
+                <div style={{ borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: `6px solid ${pw.isDaemonRunning ? '#a78bfa' : 'var(--border)'}` }} />
               </div>
             </div>
 
             {/* JUCE Engine */}
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', minWidth: 120 }}>
               <div style={{
                 background: status?.running ? '#22c55e' : '#666',
                 color: '#fff',
@@ -771,25 +849,26 @@ function JuceEngineTab({
                 borderRadius: 4,
                 marginBottom: 8,
                 fontWeight: 600,
+                fontSize: 13,
               }}>
                 JUCE Engine
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {status?.plugin_count ?? 0} plugins loaded
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                Audio Processor<br/>{status?.plugin_count ?? 0} plugins active
               </div>
             </div>
 
-            {/* Arrow */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Processed</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: 80, height: 2, background: status?.running ? '#3b82f6' : 'var(--border)' }} />
-                <div style={{ borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: `8px solid ${status?.running ? '#3b82f6' : 'var(--border)'}` }} />
+            {/* Arrow Output */}
+            <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', minWidth: 70 }}>
+              <div style={{ fontSize: 9, color: '#3b82f6', marginBottom: 4, fontWeight: 500 }}>Processed Audio</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 50, height: 2, background: status?.running ? '#3b82f6' : 'var(--border)' }} />
+                <div style={{ borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: `6px solid ${status?.running ? '#3b82f6' : 'var(--border)'}` }} />
               </div>
             </div>
 
             {/* Output */}
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', minWidth: 120 }}>
               <div style={{
                 background: '#3b82f6',
                 color: '#fff',
@@ -797,14 +876,23 @@ function JuceEngineTab({
                 borderRadius: 4,
                 marginBottom: 8,
                 fontWeight: 600,
+                fontSize: 13,
               }}>
                 Audio Output
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {juce?.output_channels ?? 10} channels available
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                Speakers/Monitors<br/>{juce?.output_channels ?? 10} channels out
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Architecture Notes */}
+        <div style={{ marginTop: 16, padding: 12, background: 'rgba(167,139,250,0.1)', borderRadius: 6, border: '1px solid rgba(167,139,250,0.2)', fontSize: 11, color: '#ccc', lineHeight: 1.5 }}>
+          <strong style={{ color: '#a78bfa' }}>How it Works:</strong> PipeWire manages the complete audio graph, connecting your UA-1000 USB device to the JUCE audio engine.
+          PipeWire handles buffer synchronization, sample rate negotiation, and latency compensation automatically.
+          The quantum (buffer) and latency values above are PipeWire's current settings.
+          If latency is high or you experience XRuns, adjust the quantum via the <a href="/pipewire" style={{ color: '#a78bfa' }}>PipeWire dashboard</a>.
         </div>
       </div>
     </div>

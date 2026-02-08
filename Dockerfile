@@ -1,3 +1,12 @@
+# ⚠️ DEPRECATED: Docker Support Removed
+# 
+# This Dockerfile is deprecated and no longer maintained. MAP2 Audio now uses native systemd deployment.
+# 
+# See: NATIVE_DEPLOYMENT_GUIDE.md for current deployment instructions.
+# 
+# For historical reference only - do not use.
+# ---
+
 # MAP2 Audio Platform - Backend
 FROM python:3.11-slim
 

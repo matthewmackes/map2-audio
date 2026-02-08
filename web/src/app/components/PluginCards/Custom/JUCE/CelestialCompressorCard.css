@@ -1,0 +1,379 @@
+/* ============================================================
+   Celestial Compressor Card
+   Hardware studio gallery aesthetic with warm amber accents
+   ============================================================ */
+
+/* ---- Header ---- */
+.celestial-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.celestial-card-title {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #d4a574 0%, #e8c49a 40%, #d4a574 60%, #b8885a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+}
+
+.celestial-card-subtitle {
+  font-size: 9px;
+  color: #666;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ---- Visualization / Gear Image Area ---- */
+.celestial-visualization {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 8px;
+  border-radius: 8px;
+  background: radial-gradient(ellipse at center, rgba(30, 25, 20, 0.95) 0%, rgba(10, 10, 15, 0.98) 100%);
+  overflow: hidden;
+}
+
+.celestial-visualization::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.celestial-visualization svg {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  transition: opacity 0.3s ease;
+}
+
+/* Ambient glow behind gear - changes per topology */
+.celestial-gear-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 100px;
+  border-radius: 50%;
+  opacity: 0.15;
+  filter: blur(40px);
+  pointer-events: none;
+  transition: background 0.5s ease;
+}
+
+/* ---- Preset Info Bar ---- */
+.celestial-preset-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(212, 165, 116, 0.06);
+  border-radius: 6px;
+  border: 1px solid rgba(212, 165, 116, 0.1);
+  margin: 8px 0;
+  min-height: 52px;
+}
+
+.celestial-preset-info-empty {
+  color: #555;
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+}
+
+.celestial-preset-artist {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e8c49a;
+  white-space: nowrap;
+}
+
+.celestial-preset-year {
+  font-size: 10px;
+  color: #888;
+  font-family: monospace;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.celestial-preset-topology {
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.celestial-preset-confidence {
+  font-size: 9px;
+  color: #888;
+  padding: 2px 6px;
+  border: 1px solid #333;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.celestial-preset-description {
+  font-size: 10px;
+  color: #777;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+
+.celestial-preset-albums {
+  font-size: 9px;
+  color: #555;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* ---- Era Tabs ---- */
+.celestial-era-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 0;
+}
+
+.celestial-era-tab {
+  flex: 1;
+  padding: 6px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #666;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.celestial-era-tab:hover {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.celestial-era-tab.active {
+  color: #d4a574;
+  border-bottom-color: #d4a574;
+}
+
+.celestial-era-count {
+  font-size: 8px;
+  color: #555;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 4px;
+  border-radius: 8px;
+}
+
+.celestial-era-tab.active .celestial-era-count {
+  color: #d4a574;
+  background: rgba(212, 165, 116, 0.15);
+}
+
+/* ---- Artist Buttons ---- */
+.celestial-artist-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.celestial-artist-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--artist-border, transparent);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.celestial-artist-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.celestial-artist-btn.active {
+  background: rgba(var(--artist-topo-color-rgb, 212, 165, 116), 0.08);
+  border-color: var(--artist-topo-color, #d4a574);
+  box-shadow: 0 0 12px rgba(212, 165, 116, 0.1);
+}
+
+.celestial-artist-btn-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.celestial-artist-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.celestial-artist-btn.active .celestial-artist-name {
+  color: #e8c49a;
+}
+
+.celestial-artist-year {
+  font-size: 9px;
+  color: #666;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.celestial-artist-btn-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.celestial-topology-pill {
+  font-size: 8px;
+  font-weight: 700;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.celestial-confidence-badge {
+  font-size: 8px;
+  color: #666;
+  font-weight: 600;
+}
+
+/* ---- Artist Grid Container ---- */
+.celestial-artist-grid {
+  margin: 4px 0;
+}
+
+/* ---- Gear Name Label ---- */
+.celestial-gear-label {
+  text-align: center;
+  margin-top: 6px;
+}
+
+.celestial-gear-name {
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ---- Footer ---- */
+.celestial-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid #222;
+  margin-top: 8px;
+  font-size: 10px;
+  color: #555;
+  font-family: monospace;
+}
+
+.celestial-footer span {
+  transition: color 0.15s;
+}
+
+.celestial-footer .celestial-meter-gr {
+  color: #d4a574;
+  font-weight: 600;
+}
+
+/* ---- Responsive via container queries ---- */
+@container plugin-card (max-width: 400px) {
+  .celestial-card-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  .celestial-artist-buttons {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    max-height: 150px;
+  }
+
+  .celestial-preset-info {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .celestial-preset-description {
+    display: none;
+  }
+}
+
+@container plugin-card (min-width: 600px) {
+  .celestial-card-title {
+    font-size: 16px;
+  }
+
+  .celestial-artist-buttons {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    max-height: 240px;
+  }
+
+  .celestial-preset-artist {
+    font-size: 16px;
+  }
+}
+
+@container plugin-card (min-width: 800px) {
+  .celestial-artist-buttons {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .celestial-card-title {
+    font-size: 18px;
+    letter-spacing: 6px;
+  }
+}
+
+/* ---- Topology accent animations ---- */
+@keyframes celestial-pulse {
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.2; }
+}
+
+.celestial-gear-glow {
+  animation: celestial-pulse 4s ease-in-out infinite;
+}

@@ -322,3 +322,63 @@ class BatchOperationResponse(BaseModel):
     successful: int
     failed: int
     results: List[BatchOperationResult]
+
+# ==================== Host Machine Info ====================
+
+class DiskInfo(BaseModel):
+    """Disk health information."""
+    name: str
+    model: str
+    size_gb: float
+    health_status: str  # "healthy", "warning", "critical"
+    temperature_c: Optional[float] = None
+    used_percent: float
+    smart_status: Optional[str] = None
+    reallocated_sectors: Optional[int] = None
+    uncorrectable_errors: Optional[int] = None
+    power_on_hours: Optional[int] = None
+    estimated_lifespan_percent: Optional[float] = None
+
+
+class HostMachineInfo(BaseModel):
+    """Host machine hardware information."""
+    manufacturer: str  # "dell", "lenovo", "hp", "other"
+    model: str
+    product_name: str
+    serial_number: Optional[str] = None
+    bios_version: Optional[str] = None
+    bios_date: Optional[str] = None
+    system_uuid: Optional[str] = None
+    chassis_type: Optional[str] = None
+    cpu_model: str
+    cpu_cores: int
+    cpu_threads: int
+    cpu_frequency_ghz: Optional[float] = None
+    ram_total_gb: float
+    motherboard: Optional[str] = None
+    firmware_version: Optional[str] = None
+
+
+class DiskHealthData(BaseModel):
+    """Disk health data."""
+    disks: List[DiskInfo]
+    last_updated: datetime = Field(default_factory=datetime.now)
+
+
+class SystemHealthOverview(BaseModel):
+    """System health overview."""
+    overall_health: str  # "excellent", "good", "warning", "critical"
+    last_updated: datetime = Field(default_factory=datetime.now)
+    temperature: Optional[Dict[str, Any]] = None
+    power: Optional[Dict[str, Any]] = None
+    fans: Optional[List[Dict[str, Any]]] = None
+
+
+class BrandingAssets(BaseModel):
+    """Manufacturer branding assets."""
+    manufacturer: str
+    logo_url: str
+    product_image_url: str
+    marketing_name: str
+    support_url: str
+    warranty_status: Optional[str] = None

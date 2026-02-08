@@ -14,7 +14,8 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tantml:invoke>
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
   LayoutGrid,
   Search,
@@ -281,6 +282,9 @@ export function GridFlowPage() {
   const [draggedPluginUri, setDraggedPluginUri] = useState<string | null>(null)
   const [dragOverPluginUri, setDragOverPluginUri] = useState<string | null>(null)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
+  
+  // Special settings for plugin filtering
+  const { settings: specialSettings } = useSpecialSettings()
 
   // Category Filtering State
   const [selectedCategory, setSelectedCategory] = useState<string>(() => {
@@ -785,21 +789,29 @@ export function GridFlowPage() {
   }, [pluginsQuery.data, pluginSearchQuery, selectedCategory])
 
   // Separate native JUCE processors from LV2 plugins
+  // Filter out hidden plugins based on Special settings
   const { nativeProcessors, lv2Plugins } = useMemo(() => {
     const native: Plugin[] = []
     const lv2: Plugin[] = []
+    
+    // Get list of hidden plugin URIs from Special settings
+    const hiddenPlugins = specialSettings?.hiddenPlugins || []
+    const hiddenSet = new Set(hiddenPlugins)
 
     filteredPlugins.forEach(p => {
       // Check if it's a native JUCE processor (URI starts with map2://)
       if (p.uri.startsWith('map2://')) {
-        native.push(p)
+        // Only include if not in hidden list
+        if (!hiddenSet.has(p.uri)) {
+          native.push(p)
+        }
       } else {
         lv2.push(p)
       }
     })
 
     return { nativeProcessors: native, lv2Plugins: lv2 }
-  }, [filteredPlugins])
+  }, [filteredPlugins, specialSettings])
 
   // Group LV2 plugins by category for collapsible display
   const groupedPlugins = useMemo(() => {

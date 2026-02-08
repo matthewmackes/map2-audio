@@ -1,0 +1,183 @@
+name: Test RPM Installation & Updates
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - 'app/**'
+      - '.github/workflows/test-rpm.yml'
+  workflow_dispatch:
+
+jobs:
+  test-rpm-installation:
+    name: Test RPM Install on Fedora 40
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:40
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install build dependencies
+        run: |
+          dnf install -y \
+            rpm-build \
+            python3-devel \
+            python3-pip \
+            nodejs \
+            npm \
+            git \
+            make
+            
+      - name: Build RPM locally
+        run: |
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
+          
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+          VERSION=${VERSION#v}
+          
+          git archive \
+            --format=tar.gz \
+            --prefix="map2-audio-${VERSION}/" \
+            -o ~/rpmbuild/SOURCES/map2-audio-${VERSION}.tar.gz \
+            HEAD
+            
+          cp packaging/map2-audio.spec ~/rpmbuild/SPECS/
+          sed -i "s/^Version:.*/Version:        ${VERSION}/" ~/rpmbuild/SPECS/map2-audio.spec
+          sed -i "s/^Release:.*/Release:        1%{?dist}/" ~/rpmbuild/SPECS/map2-audio.spec
+          
+          rpmbuild \
+            -ba \
+            --define "_topdir ~/rpmbuild" \
+            --define "dist .fc40" \
+            ~/rpmbuild/SPECS/map2-audio.spec
+            
+          ls -lh ~/rpmbuild/RPMS/x86_64/
+          
+      - name: Install test dependencies
+        run: |
+          dnf install -y \
+            python3-fastapi \
+            python3-uvicorn \
+            python3-pydantic \
+            pipewire \
+            jack-audio-connection-kit \
+            systemd
+            
+      - name: Install built RPM
+        run: |
+          RPM=$(find ~/rpmbuild/RPMS/x86_64 -name "map2-audio-*.rpm" | head -1)
+          echo "Installing: $RPM"
+          dnf install -y "$RPM"
+          
+      - name: Verify package installation
+        run: |
+          echo "=== Package Info ==="
+          rpm -qi map2-audio
+          
+          echo "=== Package Files ==="
+          rpm -ql map2-audio | head -30
+          
+          echo "=== Systemd Units ==="
+          ls -la /usr/lib/systemd/system/map2-*.service
+          
+      - name: Verify directory structure
+        run: |
+          echo "=== Application Directory ==="
+          ls -la /opt/map2/
+          
+          echo "=== Config Directory ==="
+          ls -la /etc/map2/ 2>/dev/null || echo "Config dir not yet initialized"
+          
+          echo "=== Services Installed ==="
+          systemctl list-unit-files | grep map2
+          
+      - name: Test Python modules
+        run: |
+          python3 -c "import sys; sys.path.insert(0, '/opt/map2'); from app.main import app; print('✓ Main app imports successfully')"
+          
+  test-git-updater:
+    name: Test Git Updater Functionality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Test git updater module
+        run: |
+          python3 << 'EOF'
+          import sys
+          sys.path.insert(0, '.')
+          
+          from app.services.cluster.map2_git_updater import MAP2GitUpdater
+          
+          updater = MAP2GitUpdater(".")
+          print("✓ Git updater instantiated")
+          
+          # Test repository validation
+          import asyncio
+          async def test():
+              is_repo = await updater._validate_repository()
+              print(f"✓ Repository validation: {is_repo}")
+              
+              commit = await updater.get_current_commit()
+              print(f"✓ Current commit: {commit}")
+              
+              branch = await updater.get_current_branch()
+              print(f"✓ Current branch: {branch}")
+          
+          asyncio.run(test())
+          EOF
+          
+      - name: Test hybrid update manager
+        run: |
+          python3 << 'EOF'
+          import sys
+          sys.path.insert(0, '.')
+          
+          from app.services.cluster.hybrid_update_manager import (
+              HybridUpdateManager,
+              HybridUpdateConfig,
+              UpdateMode
+          )
+          
+          config = HybridUpdateConfig(
+              mode=UpdateMode.AUTO,
+              app_path="."
+          )
+          
+          manager = HybridUpdateManager(config)
+          print(f"✓ Hybrid manager instantiated: mode={manager.mode}")
+          
+          version = manager.get_current_version()
+          print(f"✓ Current version: {version}")
+          EOF
+
+  lint:
+    name: Lint Spec File
+    runs-on: fedora:40
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install rpmlint
+        run: |
+          dnf install -y rpmlint
+          
+      - name: Lint spec file
+        continue-on-error: true
+        run: |
+          rpmlint packaging/map2-audio.spec

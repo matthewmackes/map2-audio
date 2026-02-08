@@ -5,6 +5,9 @@ import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
 import { themes, themeOrder, applyTheme, getSavedThemeId, saveCustomTheme, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
+import { PasswordDialog } from '../components/PasswordDialog'
+import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 // Dragon icon for "hic sunt dracones" menu
 const DragonIcon = ({ size = 16 }: { size?: number }) => (
@@ -605,6 +608,11 @@ export function AboutPage() {
   const [showThemeCreator, setShowThemeCreator] = useState(false)
   const [customThemes, setCustomThemes] = useState<Record<string, Theme>>({})
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
+  
+  // Special settings state
+  const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
+  const [showSpecialSettings, setShowSpecialSettings] = useState(false)
 
   const refreshCustomThemes = useCallback(() => {
     setCustomThemes(getCustomThemes())
@@ -711,6 +719,27 @@ export function AboutPage() {
     } finally {
       setRateLimitingLoading(false)
     }
+  }
+
+  // Special mode handlers
+  const handleSpecialClick = () => {
+    if (specialSettings?.enabled) {
+      // Unchecking - disable immediately
+      updateSpecialSettings({ enabled: false })
+    } else {
+      // Checking - require password first
+      setShowPasswordDialog(true)
+    }
+  }
+
+  const handlePasswordSuccess = () => {
+    setShowPasswordDialog(false)
+    setShowSpecialSettings(true)
+  }
+
+  const handleSettingsSave = async (settings: { enabled: boolean; hiddenPlugins: string[]; menuLocation: 'top-nav' | 'mobile-only' | 'hidden' }) => {
+    await updateSpecialSettings(settings)
+    setShowSpecialSettings(false)
   }
 
 
@@ -1418,9 +1447,59 @@ export function AboutPage() {
                 </MenuItem>
               </>
             )}
+            {specialSettings !== null && (
+              <>
+                <div style={{
+                  height: '1px',
+                  background: 'var(--border)',
+                  margin: '8px 0'
+                }} />
+                <MenuItem
+                  className="menu-item"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={handleSpecialClick}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>✨ Special</span>
+                  <input
+                    type="checkbox"
+                    checked={specialSettings.enabled}
+                    onChange={() => {}}
+                    style={{
+                      cursor: 'pointer',
+                      width: 16,
+                      height: 16
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSpecialClick()
+                    }}
+                  />
+                </MenuItem>
+              </>
+            )}
           </Menu>
         </MenuProvider>
       </div>
+
+      {/* Password Dialog */}
+      <PasswordDialog
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+        onSuccess={handlePasswordSuccess}
+      />
+
+      {/* Special Settings Dialog */}
+      <SpecialSettingsDialog
+        isOpen={showSpecialSettings}
+        onClose={() => setShowSpecialSettings(false)}
+        onSave={handleSettingsSave}
+      />
     </div>
   )
 }

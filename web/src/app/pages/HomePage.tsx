@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Home, Gauge, PanelsTopLeft, Plug2, Workflow, Share2, CheckCircle, XCircle, Copy } from 'lucide-react'
+import { Home, Gauge, PanelsTopLeft, Plug2, Workflow, Share2, CheckCircle, XCircle, Copy, Radio } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { CPUStatusOverview } from '../components/CPUStatusOverview'
 import { PlatformCapabilities } from '../components/PlatformCapabilities'
 import { SystemArchitectureFlow } from '../components/SystemArchitectureFlow'
+import { usePipeWire } from '../hooks/usePipeWire'
 
 interface NetworkShareStatus {
   smb_enabled: boolean
@@ -29,6 +30,7 @@ export function HomePage() {
   const [networkStatus, setNetworkStatus] = useState<NetworkShareStatus | null>(null)
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
   const [cpuBrand, setCpuBrand] = useState<CpuBrandInfo | null>(null)
+  const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
 
   useEffect(() => {
     fetch('/folders/network-shares')
@@ -117,6 +119,16 @@ export function HomePage() {
       )}
 
       <div className="stat-grid">
+        <StatCard
+          label="PipeWire"
+          value={
+            <div className="flex" style={{ gap: 8 }}>
+              <Radio size={18} style={{ color: pw.isDaemonRunning ? '#a78bfa' : '#ef4444' }} />
+              <span>{pw.isDaemonRunning ? `${pw.totalLatencyMs.toFixed(1)}ms` : 'Offline'}</span>
+            </div>
+          }
+          helper={pw.isDaemonRunning ? `v${pw.daemonVersion} • ${pw.effectiveQuantum}smp @ ${(pw.effectiveRate/1000).toFixed(0)}kHz` : 'Daemon not running'}
+        />
         <StatCard
           label="Chains"
           value={<div className="flex" style={{ gap: 8 }}><Workflow size={18} /><span>Ready</span></div>}

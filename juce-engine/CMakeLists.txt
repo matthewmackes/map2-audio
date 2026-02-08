@@ -158,6 +158,15 @@ set(SOURCES
     # Eventide H9 Multi-Effect (NEW)
     Source/EventideH9Processor.cpp
 
+    # Peavey 5150 Block Letter Amp Simulator (NEW)
+    Source/Peavey5150Processor.cpp
+
+    # Tweed Bassman 5F6-A Amplifier Simulator
+    Source/TweedBassmanProcessor.cpp
+
+    # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
+    Source/PassionFXProcessor.cpp
+
     # Existing components (updated)
     Source/MidiHandler.cpp
     Source/VuMeter.cpp
@@ -211,6 +220,15 @@ set(HEADERS
     # Eventide H9 Multi-Effect (NEW)
     Source/EventideH9Processor.h
     Source/EventideH9UI.h
+
+    # Peavey 5150 Block Letter Amp Simulator (NEW)
+    Source/Peavey5150Processor.h
+
+    # Tweed Bassman 5F6-A Amplifier Simulator
+    Source/TweedBassmanProcessor.h
+
+    # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
+    Source/PassionFXProcessor.h
 
     # Existing components
     Source/MidiHandler.h

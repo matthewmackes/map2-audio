@@ -218,7 +218,7 @@ class UpdateRollbackManager:
             
             # Step 3: Restore config files
             try:
-                self._restore_config_files(snapshot.config_files)
+                self._restore_config_files(snapshot.snapshot_id, snapshot.config_files)
                 steps_completed.append("restore_configs")
             except Exception as e:
                 errors.append(f"Failed to restore configs: {str(e)}")
@@ -508,14 +508,28 @@ class UpdateRollbackManager:
             except subprocess.CalledProcessError as e:
                 logger.warning(f"Failed to downgrade {package_name}: {e}")
     
-    def _restore_config_files(self, config_files: List[str]) -> None:
+    def _restore_config_files(self, snapshot_id: str, config_files: List[str]) -> None:
         """Restore configuration files from backup."""
         logger.info("Restoring configuration files")
-        
+
+        backup_dir = self.snapshot_dir / snapshot_id / "configs"
+        if not backup_dir.exists():
+            logger.warning(f"Config backup directory not found: {backup_dir}")
+            return
+
         for config_file in config_files:
-            # Find backed up version
-            # (Simplified - would need to look in snapshot directory)
-            logger.info(f"Would restore {config_file}")
+            try:
+                source = backup_dir / Path(config_file).name
+                if not source.exists():
+                    logger.warning(f"Backup not found for {config_file}: {source}")
+                    continue
+
+                target_path = Path(config_file)
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                subprocess.run(["cp", "-a", str(source), str(target_path)], check=True)
+                logger.info(f"Restored {config_file} from {source}")
+            except Exception as e:
+                logger.warning(f"Failed to restore {config_file}: {e}")
     
     def _restore_database(self, backup_path: str) -> None:
         """Restore database from backup."""

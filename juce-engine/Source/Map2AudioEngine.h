@@ -34,6 +34,9 @@
 #include "ShoeGazeProcessor.h"
 #include "LexiLoveProcessor.h"
 #include "H3000Processor.h"
+#include "Peavey5150Processor.h"
+#include "TweedBassmanProcessor.h"
+#include "PassionFXProcessor.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
@@ -753,6 +756,243 @@ public:
     H3000Processor& getH3000() { return h3000_; }
 
     // ========================================
+    // Peavey 5150 Block Letter Amp Simulator (NEW)
+    // ========================================
+
+    // Preamp controls
+    void setPeavey5150PreGain(float value);
+    float getPeavey5150PreGain() const;
+    void setPeavey5150PostGain(float value);
+    float getPeavey5150PostGain() const;
+
+    // Tone stack
+    void setPeavey5150Low(float value);
+    float getPeavey5150Low() const;
+    void setPeavey5150Mid(float value);
+    float getPeavey5150Mid() const;
+    void setPeavey5150High(float value);
+    float getPeavey5150High() const;
+
+    // Power amp
+    void setPeavey5150Presence(float value);
+    float getPeavey5150Presence() const;
+    void setPeavey5150Resonance(float value);
+    float getPeavey5150Resonance() const;
+    void setPeavey5150Bias(float value);
+    float getPeavey5150Bias() const;
+
+    // Switches
+    void setPeavey5150Bright(bool on);
+    bool getPeavey5150Bright() const;
+
+    // State
+    void setPeavey5150Preset(Peavey5150Processor::Preset preset);
+    Peavey5150Processor::Preset getPeavey5150Preset() const;
+    void setPeavey5150Bypass(bool bypass);
+    bool isPeavey5150Bypassed() const;
+
+    // Bulk parameters
+    Peavey5150Processor::Parameters getPeavey5150Parameters() const;
+    void setPeavey5150Parameters(const Peavey5150Processor::Parameters& params);
+
+    // Metering
+    Peavey5150Processor::Metering getPeavey5150Metering() const;
+
+    // Preset info
+    static Peavey5150Processor::PresetInfo getPeavey5150PresetInfo(Peavey5150Processor::Preset preset);
+    static int getPeavey5150NumPresets();
+
+    // Direct access
+    Peavey5150Processor& getPeavey5150() { return peavey5150_; }
+
+    // ========================================
+    // Tweed Bassman 5F6-A Amplifier Simulator
+    // ========================================
+
+    // Channel
+    void setTweedBassmanChannelMode(int mode);
+    int getTweedBassmanChannelMode() const;
+    void setTweedBassmanNormalVolume(float v);
+    float getTweedBassmanNormalVolume() const;
+    void setTweedBassmanBrightVolume(float v);
+    float getTweedBassmanBrightVolume() const;
+    void setTweedBassmanBrightCap(bool on);
+    bool getTweedBassmanBrightCap() const;
+
+    // Preamp
+    void setTweedBassmanV1TubeType(int type);
+    int getTweedBassmanV1TubeType() const;
+    void setTweedBassmanCathodeBypass(bool on);
+    bool getTweedBassmanCathodeBypass() const;
+    void setTweedBassmanCathodeBias(int mode);
+    int getTweedBassmanCathodeBias() const;
+
+    // Tone
+    void setTweedBassmanTreble(float v);
+    float getTweedBassmanTreble() const;
+    void setTweedBassmanMid(float v);
+    float getTweedBassmanMid() const;
+    void setTweedBassmanBass(float v);
+    float getTweedBassmanBass() const;
+    void setTweedBassmanRawSwitch(bool on);
+    bool getTweedBassmanRawSwitch() const;
+
+    // Master
+    void setTweedBassmanMasterVolume(float v);
+    float getTweedBassmanMasterVolume() const;
+
+    // Power amp
+    void setTweedBassmanPresence(float v);
+    float getTweedBassmanPresence() const;
+    void setTweedBassmanNFBMode(int mode);
+    int getTweedBassmanNFBMode() const;
+    void setTweedBassmanPowerTubeType(int type);
+    int getTweedBassmanPowerTubeType() const;
+    void setTweedBassmanBiasMode(int mode);
+    int getTweedBassmanBiasMode() const;
+    void setTweedBassmanRectifierType(int type);
+    int getTweedBassmanRectifierType() const;
+
+    // Output
+    void setTweedBassmanOutputLevel(float dB);
+    float getTweedBassmanOutputLevel() const;
+    void setTweedBassmanCabinetEnabled(bool on);
+    bool getTweedBassmanCabinetEnabled() const;
+    void setTweedBassmanCabinetIR(int index);
+    int getTweedBassmanCabinetIR() const;
+
+    // State
+    void setTweedBassmanPreset(TweedBassmanProcessor::Preset preset);
+    TweedBassmanProcessor::Preset getTweedBassmanPreset() const;
+    void setTweedBassmanBypass(bool bypass);
+    bool isTweedBassmanBypassed() const;
+
+    // Bulk parameters
+    TweedBassmanProcessor::Parameters getTweedBassmanParameters() const;
+    void setTweedBassmanParameters(const TweedBassmanProcessor::Parameters& params);
+
+    // Metering
+    TweedBassmanProcessor::Metering getTweedBassmanMetering() const;
+
+    // Preset info
+    static TweedBassmanProcessor::PresetInfo getTweedBassmanPresetInfo(TweedBassmanProcessor::Preset preset);
+    static int getTweedBassmanNumPresets();
+
+    // Direct access
+    TweedBassmanProcessor& getTweedBassman() { return tweedBassman_; }
+
+    // ========================================
+    // PassionFX Multi-Effect Processor (Steve Vai Passion & Warfare)
+    // ========================================
+
+    // NoiseGate
+    void setPassionFXGateEnabled(bool enabled);
+    void setPassionFXGateThreshold(float dB);
+    void setPassionFXGateRelease(float ms);
+
+    // Compressor
+    void setPassionFXCompEnabled(bool enabled);
+    void setPassionFXCompThreshold(float dB);
+    void setPassionFXCompRatio(float ratio);
+    void setPassionFXCompAttack(float ms);
+    void setPassionFXCompRelease(float ms);
+    void setPassionFXCompGlassy(bool glassy);
+
+    // Wah
+    void setPassionFXWahEnabled(bool enabled);
+    void setPassionFXWahMode(int mode);
+    void setPassionFXWahPosition(float position);
+    void setPassionFXWahQ(float q);
+
+    // Phaser
+    void setPassionFXPhaserEnabled(bool enabled);
+    void setPassionFXPhaserRate(float hz);
+    void setPassionFXPhaserDepth(float depth);
+    void setPassionFXPhaserStages(int stages);
+    void setPassionFXPhaserFeedback(float feedback);
+
+    // Chorus
+    void setPassionFXChorusEnabled(bool enabled);
+    void setPassionFXChorusRate(float hz);
+    void setPassionFXChorusDepth(float depth);
+    void setPassionFXChorusVoices(int voices);
+    void setPassionFXChorusMix(float mix);
+
+    // PitchShifter
+    void setPassionFXPitchEnabled(bool enabled);
+    void setPassionFXPitchSemitones(float semitones);
+    void setPassionFXPitchMix(float mix);
+
+    // Harmonizer
+    void setPassionFXHarmEnabled(bool enabled);
+    void setPassionFXHarmVoice1(float semitones);
+    void setPassionFXHarmVoice2(float semitones);
+    void setPassionFXHarmDetune(float cents);
+    void setPassionFXHarmMix(float mix);
+
+    // Delay
+    void setPassionFXDelayEnabled(bool enabled);
+    void setPassionFXDelayTimeL(float ms);
+    void setPassionFXDelayTimeR(float ms);
+    void setPassionFXDelayFeedback(float feedback);
+    void setPassionFXDelayMix(float mix);
+    void setPassionFXDelayFreeze(bool freeze);
+    void setPassionFXDelayPitchShiftL(float semitones);
+    void setPassionFXDelayPitchShiftR(float semitones);
+
+    // Reverb
+    void setPassionFXReverbEnabled(bool enabled);
+    void setPassionFXReverbType(int type);
+    void setPassionFXReverbDecay(float seconds);
+    void setPassionFXReverbShimmerAmount(float amount);
+    void setPassionFXReverbShimmerInterval(float semitones);
+    void setPassionFXReverbMix(float mix);
+    void setPassionFXReverbFreeze(bool freeze);
+
+    // EQ
+    void setPassionFXEqEnabled(bool enabled);
+    void setPassionFXEqLowGain(float dB);
+    void setPassionFXEqMidGain(float dB);
+    void setPassionFXEqHighGain(float dB);
+    void setPassionFXEqTilt(float tilt);
+
+    // Exciter
+    void setPassionFXExciterEnabled(bool enabled);
+    void setPassionFXExciterWarmth(float warmth);
+    void setPassionFXExciterPresence(float presence);
+    void setPassionFXExciterAir(float air);
+
+    // Tremolo
+    void setPassionFXTremEnabled(bool enabled);
+    void setPassionFXTremRate(float hz);
+    void setPassionFXTremDepth(float depth);
+    void setPassionFXTremWaveform(int waveform);
+
+    // Global
+    void setPassionFXMix(float mix);
+    void setPassionFXOutputLevel(float dB);
+
+    // State
+    void setPassionFXPreset(PassionFXProcessor::Preset preset);
+    PassionFXProcessor::Preset getPassionFXPreset() const;
+    void setPassionFXBypass(bool bypass);
+    bool isPassionFXBypassed() const;
+
+    // Bulk parameters
+    PassionFXProcessor::Parameters getPassionFXParameters() const;
+    void setPassionFXParameters(const PassionFXProcessor::Parameters& params);
+
+    // Metering
+    PassionFXProcessor::Metering getPassionFXMetering() const;
+
+    // Preset info
+    static PassionFXProcessor::PresetInfo getPassionFXPresetInfo(PassionFXProcessor::Preset preset);
+    static int getPassionFXNumPresets();
+
+    // Direct access
+    PassionFXProcessor& getPassionFX() { return passionFX_; }
+
+    // ========================================
     // Component Access (for advanced use)
     // ========================================
 
@@ -793,6 +1033,9 @@ private:
     ShoeGazeProcessor shoegaze_;
     LexiLoveProcessor lexiLove_;
     H3000Processor h3000_;
+    Peavey5150Processor peavey5150_;
+    TweedBassmanProcessor tweedBassman_;
+    PassionFXProcessor passionFX_;
 
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)

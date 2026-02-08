@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Activity, AlertCircle, CheckCircle, Database, Radio, Server, Zap, Workflow, Cpu, MemoryStick, Gauge } from 'lucide-react'
+import { Activity, AlertCircle, CheckCircle, Database, Radio, Server, Zap, Workflow, Cpu, MemoryStick, Gauge, AudioLines } from 'lucide-react'
 
 interface ComponentDetails {
   description: string
@@ -35,6 +35,12 @@ interface SystemHealth {
     status: 'healthy' | 'warning' | 'critical'
     message: string
     clients?: number
+    details?: ComponentDetails
+  }
+  pipeWire: {
+    status: 'healthy' | 'warning' | 'critical'
+    message: string
+    latencyMs?: number
     details?: ComponentDetails
   }
 }
@@ -99,6 +105,15 @@ export function SystemArchitectureFlow() {
         components: ['REST Endpoints', 'WebSocket Server', 'Event Publisher', 'Performance Monitor'],
       }
     },
+    pipeWire: {
+      status: 'healthy',
+      message: 'Audio server initializing...',
+      latencyMs: 0,
+      details: {
+        description: 'PipeWire audio server — graph routing, latency control, device management',
+        components: ['PipeWire Daemon', 'WirePlumber', 'ALSA Backend', 'Graph Router'],
+      }
+    },
   })
 
   const [perfData, setPerfData] = useState<PerformanceData>({
@@ -123,7 +138,7 @@ export function SystemArchitectureFlow() {
     const fetchHealth = async () => {
       try {
         // Fetch multiple endpoints in parallel for comprehensive status
-        const [configRes, testRes, pluginsRes, perfRes, pluginPerfRes, alertsRes, namRes] = await Promise.all([
+        const [configRes, testRes, pluginsRes, perfRes, pluginPerfRes, alertsRes, namRes, pwRes] = await Promise.all([
           fetch('/api/system/core-config').catch(() => null),
           fetch('/api/system-tests/test/juce-engine/latest').catch(() => null),
           fetch('/api/plugins/discovered').catch(() => null),
@@ -131,6 +146,7 @@ export function SystemArchitectureFlow() {
           fetch('/api/performance/plugins').catch(() => null),
           fetch('/api/performance/alerts').catch(() => null),
           fetch('/api/nam/status').catch(() => null),
+          fetch('/api/pipewire/status').catch(() => null),
         ])
 
         const config = configRes?.ok ? await configRes.json() : null
@@ -140,6 +156,7 @@ export function SystemArchitectureFlow() {
         const pluginStats = pluginPerfRes?.ok ? await pluginPerfRes.json() : null
         const alerts = alertsRes?.ok ? await alertsRes.json() : null
         const namStatus = namRes?.ok ? await namRes.json() : null
+        const pwData = pwRes?.ok ? await pwRes.json() : null
 
         // Update performance data
         if (perf) {
@@ -246,6 +263,30 @@ export function SystemArchitectureFlow() {
                 { label: 'Alerts', value: `${alerts?.count || 0} active` },
                 { label: 'Underruns', value: `${perf?.buffer_underruns || 0}` },
                 { label: 'CPU Track', value: 'Per-plugin' },
+              ],
+            },
+          },
+          pipeWire: {
+            status: pwData?.daemon?.running
+              ? (pwData.alerts?.some((a: any) => a.severity === 'error') ? 'critical'
+                : pwData.alerts?.some((a: any) => a.severity === 'warning') ? 'warning' : 'healthy')
+              : 'critical',
+            message: pwData?.daemon?.running
+              ? `v${pwData.daemon.version} • ${pwData.devices?.length || 0} dev • ${pwData.total_latency_ms?.toFixed(1) || '?'}ms • ${pwData.xruns || 0} xruns`
+              : 'PipeWire daemon not running',
+            latencyMs: pwData?.total_latency_ms || 0,
+            details: {
+              description: 'PipeWire audio server — real-time graph routing and device management',
+              components: ['PipeWire Daemon', 'WirePlumber', 'ALSA Backend', 'Graph Router'],
+              metrics: [
+                { label: 'Version', value: pwData?.daemon?.version || 'N/A' },
+                { label: 'Sample Rate', value: `${pwData?.settings?.clock_rate || 48000} Hz` },
+                { label: 'Quantum', value: `${pwData?.settings?.clock_force_quantum || pwData?.settings?.clock_quantum || 1024}` },
+                { label: 'Latency', value: `${pwData?.total_latency_ms?.toFixed(1) || 'N/A'} ms` },
+                { label: 'Devices', value: `${pwData?.devices?.length || 0}` },
+                { label: 'Streams', value: `${pwData?.streams?.length || 0}` },
+                { label: 'Links', value: `${pwData?.links?.length || 0}` },
+                { label: 'XRuns', value: `${pwData?.xruns || 0}` },
               ],
             },
           },
@@ -410,6 +451,7 @@ export function SystemArchitectureFlow() {
   const pluginHostColor = getStatusColor(health.pluginHost.status)
   const midiSequencerColor = getStatusColor(health.midiSequencer.status)
   const webAPIColor = getStatusColor(health.webAPI.status)
+  const pipeWireColor = getStatusColor(health.pipeWire.status)
 
   return (
     <div className="card">
@@ -547,6 +589,9 @@ export function SystemArchitectureFlow() {
 
       {/* Parallel Systems */}
       <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+        {/* PipeWire Audio Server */}
+        {renderHealthBlock(AudioLines, 'PipeWire', health.pipeWire, pipeWireColor, 'pipeWire')}
+
         {/* MIDI Sequencer */}
         {renderHealthBlock(Database, 'MIDI Sequencer', health.midiSequencer, midiSequencerColor, 'midiSequencer')}
 
@@ -596,9 +641,14 @@ export function SystemArchitectureFlow() {
       {/* Architecture Description */}
       <div style={{ marginTop: 16, padding: 12, background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
         <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6 }}>
-          <strong style={{ color: '#fff' }}>Signal Flow:</strong> Audio enters through real-time hardware interfaces, processed by the Audio Engine
-          running on dedicated CPU cores with SCHED_FIFO priority scheduling. The Latency Compensator ensures phase alignment across all processing stages.
-          Audio flows through the DSP Graph with A/B chain morphing support for smooth preset transitions via real-time parameter interpolation.
+          <strong style={{ color: '#fff' }}>Signal Flow:</strong> Audio enters through PipeWire, the primary audio server managing device routing,
+          buffer quantums, and sample rate negotiation. PipeWire feeds the JUCE Audio Engine running on dedicated CPU cores with SCHED_FIFO priority.
+          Audio flows through the DSP Graph with A/B chain morphing for smooth preset transitions via real-time parameter interpolation.
+          <br />
+          <br />
+          <strong style={{ color: '#fff' }}>Audio Server:</strong> PipeWire provides the audio graph infrastructure — device enumeration, port linking,
+          latency management, and XRun detection. The quantum (buffer period) and sample rate are adjustable in real-time via the PipeWire dashboard.
+          WirePlumber handles session policy and automatic device routing.
           <br />
           <br />
           <strong style={{ color: '#fff' }}>Plugin Processing:</strong> The Plugin Host supports LV2 plugins via lilv, Neural Amp Models (NAM) with optional 
@@ -607,8 +657,8 @@ export function SystemArchitectureFlow() {
           <br />
           <br />
           <strong style={{ color: '#fff' }}>Monitoring:</strong> The Performance Monitor maintains up to 1 hour of historical metrics with configurable 
-          resolution. Alerts are generated for high CPU/memory usage, buffer underruns, and latency spikes. Click any component above to view its 
-          internal subsystems and real-time metrics.
+          resolution. PipeWire metrics (latency, XRuns, graph topology) are broadcast in real-time via WebSocket. Click any component above to view 
+          its internal subsystems and real-time metrics.
           <br />
           <br />
           <strong style={{ color: '#fff' }}>Status Legend:</strong>{' '}

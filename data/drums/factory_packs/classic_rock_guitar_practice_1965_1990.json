@@ -1,0 +1,538 @@
+{
+  "pack_id": "classic_rock_guitar_practice_1965_1990",
+  "name": "Classic Rock Guitar Practice (1965–1990)",
+  "version": 1,
+  "description": "100 guitar-practice-focused classic-rock arrangements (sectioned verse/chorus/bridge/solo) using MAP2 Practice styles. These are style-based practice templates (not song-exact transcriptions).",
+  "license": "CC0-1.0",
+  "source": "MAP2 factory practice pack",
+  "entries": [
+    {
+      "id": "crgp_001",
+      "name": "British Invasion Backbeat",
+      "year_range": [1965, 1967],
+      "default_bpm": 132,
+      "bpm_range": [110, 160],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_8",
+      "variation_default": 0.35,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.25},
+        {"name": "verse", "bars": 8, "variation": 0.30},
+        {"name": "chorus", "bars": 8, "variation": 0.45, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.32},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "bridge", "bars": 8, "variation": 0.40},
+        {"name": "chorus", "bars": 8, "variation": 0.52, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.38}
+      ],
+      "tags": ["guitar", "classic-rock", "60s", "practice", "straight-8"]
+    },
+    {
+      "id": "crgp_002",
+      "name": "Garage Rock Push",
+      "year_range": [1966, 1969],
+      "default_bpm": 148,
+      "bpm_range": [130, 190],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_8",
+      "variation_default": 0.45,
+      "sections": [
+        {"name": "intro", "bars": 2, "variation": 0.35},
+        {"name": "verse", "bars": 8, "variation": 0.42},
+        {"name": "chorus", "bars": 8, "variation": 0.55, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.44},
+        {"name": "chorus", "bars": 8, "variation": 0.58, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.50, "fill": true}
+      ],
+      "tags": ["guitar", "classic-rock", "60s", "practice", "up-tempo"]
+    },
+    {
+      "id": "crgp_003",
+      "name": "Early Hard Rock Stomp",
+      "year_range": [1968, 1971],
+      "default_bpm": 116,
+      "bpm_range": [90, 150],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_16",
+      "variation_default": 0.40,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.28},
+        {"name": "verse", "bars": 8, "variation": 0.35},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.36},
+        {"name": "chorus", "bars": 8, "variation": 0.50, "fill": true},
+        {"name": "solo", "bars": 8, "variation": 0.52, "fill": true},
+        {"name": "chorus", "bars": 8, "variation": 0.55, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.45}
+      ],
+      "tags": ["guitar", "classic-rock", "early-hard-rock", "practice", "straight-16"]
+    },
+    {
+      "id": "crgp_004",
+      "name": "Blues Shuffle (Practice Standard)",
+      "year_range": [1965, 1975],
+      "default_bpm": 104,
+      "bpm_range": [70, 150],
+      "time_signature": "12/8",
+      "feel": "shuffle",
+      "style_id": "shuffle_blues",
+      "variation_default": 0.40,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.25},
+        {"name": "verse", "bars": 12, "variation": 0.35},
+        {"name": "chorus", "bars": 12, "variation": 0.45, "fill": true},
+        {"name": "bridge", "bars": 8, "variation": 0.40},
+        {"name": "solo", "bars": 12, "variation": 0.50, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.35}
+      ],
+      "tags": ["guitar", "blues", "shuffle", "practice", "12-8"]
+    },
+    {
+      "id": "crgp_005",
+      "name": "Stadium Rock Anthem",
+      "year_range": [1976, 1983],
+      "default_bpm": 96,
+      "bpm_range": [75, 120],
+      "time_signature": "4/4",
+      "feel": "half_time",
+      "style_id": "rock_8",
+      "variation_default": 0.38,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.20},
+        {"name": "verse", "bars": 8, "variation": 0.30},
+        {"name": "chorus", "bars": 8, "variation": 0.42, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.32},
+        {"name": "chorus", "bars": 8, "variation": 0.45, "fill": true},
+        {"name": "bridge", "bars": 8, "variation": 0.40},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "outro", "bars": 8, "variation": 0.44, "fill": true}
+      ],
+      "tags": ["guitar", "classic-rock", "arena", "practice", "half-time"]
+    },
+    {
+      "id": "crgp_006",
+      "name": "70s Rock Straight 16 Groove",
+      "year_range": [1972, 1979],
+      "default_bpm": 124,
+      "bpm_range": [100, 160],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_16",
+      "variation_default": 0.45,
+      "sections": [
+        {"name": "intro", "bars": 2, "variation": 0.28},
+        {"name": "verse", "bars": 8, "variation": 0.40},
+        {"name": "prechorus", "bars": 4, "variation": 0.45},
+        {"name": "chorus", "bars": 8, "variation": 0.58, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.42},
+        {"name": "chorus", "bars": 8, "variation": 0.60, "fill": true},
+        {"name": "solo", "bars": 8, "variation": 0.62, "fill": true},
+        {"name": "chorus", "bars": 8, "variation": 0.62, "fill": true}
+      ],
+      "tags": ["guitar", "classic-rock", "70s", "practice", "straight-16"]
+    },
+    {
+      "id": "crgp_007",
+      "name": "Funk-Rock Tight 16ths",
+      "year_range": [1973, 1982],
+      "default_bpm": 108,
+      "bpm_range": [85, 135],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "funk_16",
+      "variation_default": 0.42,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.25},
+        {"name": "verse", "bars": 8, "variation": 0.35},
+        {"name": "chorus", "bars": 8, "variation": 0.45, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.36},
+        {"name": "bridge", "bars": 8, "variation": 0.40},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.42}
+      ],
+      "tags": ["guitar", "funk-rock", "practice", "tight"]
+    },
+    {
+      "id": "crgp_008",
+      "name": "Reggae One-Drop (Guitar Skank)",
+      "year_range": [1972, 1980],
+      "default_bpm": 74,
+      "bpm_range": [60, 90],
+      "time_signature": "4/4",
+      "feel": "reggae",
+      "style_id": "reggae_1drop",
+      "variation_default": 0.30,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.15},
+        {"name": "verse", "bars": 16, "variation": 0.25},
+        {"name": "chorus", "bars": 8, "variation": 0.30, "fill": true},
+        {"name": "verse", "bars": 16, "variation": 0.26},
+        {"name": "bridge", "bars": 8, "variation": 0.28},
+        {"name": "chorus", "bars": 8, "variation": 0.34, "fill": true},
+        {"name": "outro", "bars": 8, "variation": 0.26}
+      ],
+      "tags": ["guitar", "reggae", "practice", "one-drop"]
+    },
+    {
+      "id": "crgp_009",
+      "name": "Jazz Swing (Guitar Comping)",
+      "year_range": [1965, 1990],
+      "default_bpm": 160,
+      "bpm_range": [120, 220],
+      "time_signature": "4/4",
+      "feel": "swing",
+      "style_id": "jazz_swing",
+      "variation_default": 0.35,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.20},
+        {"name": "verse", "bars": 16, "variation": 0.30},
+        {"name": "bridge", "bars": 8, "variation": 0.35},
+        {"name": "solo", "bars": 16, "variation": 0.40, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.28}
+      ],
+      "tags": ["guitar", "jazz", "practice", "swing"]
+    },
+    {
+      "id": "crgp_010",
+      "name": "80s Pop-Rock Four-on-the-Floor",
+      "year_range": [1980, 1990],
+      "default_bpm": 122,
+      "bpm_range": [105, 145],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "pop_4onfloor",
+      "variation_default": 0.35,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.18},
+        {"name": "verse", "bars": 8, "variation": 0.28},
+        {"name": "chorus", "bars": 8, "variation": 0.38, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.30},
+        {"name": "chorus", "bars": 8, "variation": 0.40, "fill": true},
+        {"name": "bridge", "bars": 8, "variation": 0.36},
+        {"name": "chorus", "bars": 8, "variation": 0.42, "fill": true}
+      ],
+      "tags": ["guitar", "pop-rock", "80s", "practice", "4otf"]
+    },
+
+    {
+      "id": "crgp_011",
+      "name": "Classic Rock Midtempo Backbeat A",
+      "year_range": [1970, 1974],
+      "default_bpm": 112,
+      "bpm_range": [90, 140],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_8",
+      "variation_default": 0.33,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.18},
+        {"name": "verse", "bars": 8, "variation": 0.28},
+        {"name": "chorus", "bars": 8, "variation": 0.38, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.28},
+        {"name": "bridge", "bars": 8, "variation": 0.35},
+        {"name": "chorus", "bars": 8, "variation": 0.42, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.30}
+      ],
+      "tags": ["guitar", "classic-rock", "70s", "practice", "midtempo"]
+    },
+    {
+      "id": "crgp_012",
+      "name": "Classic Rock Midtempo Backbeat B",
+      "year_range": [1970, 1976],
+      "default_bpm": 118,
+      "bpm_range": [95, 150],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_16",
+      "variation_default": 0.40,
+      "sections": [
+        {"name": "intro", "bars": 2, "variation": 0.20},
+        {"name": "verse", "bars": 8, "variation": 0.34},
+        {"name": "chorus", "bars": 8, "variation": 0.46, "fill": true},
+        {"name": "solo", "bars": 8, "variation": 0.52, "fill": true},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.38}
+      ],
+      "tags": ["guitar", "classic-rock", "70s", "practice"]
+    },
+
+    {
+      "id": "crgp_013",
+      "name": "Southern Rock Trainbeat (Straight)",
+      "year_range": [1973, 1979],
+      "default_bpm": 138,
+      "bpm_range": [120, 175],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_8",
+      "variation_default": 0.42,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.22},
+        {"name": "verse", "bars": 8, "variation": 0.35},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.36},
+        {"name": "chorus", "bars": 8, "variation": 0.50, "fill": true},
+        {"name": "solo", "bars": 16, "variation": 0.55, "fill": true},
+        {"name": "outro", "bars": 8, "variation": 0.45, "fill": true}
+      ],
+      "tags": ["guitar", "southern-rock", "practice", "up-tempo"]
+    },
+
+    {
+      "id": "crgp_014",
+      "name": "Punk-Adjacent Fast 8ths",
+      "year_range": [1976, 1983],
+      "default_bpm": 186,
+      "bpm_range": [170, 220],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_8",
+      "variation_default": 0.55,
+      "sections": [
+        {"name": "intro", "bars": 2, "variation": 0.35},
+        {"name": "verse", "bars": 8, "variation": 0.50},
+        {"name": "chorus", "bars": 8, "variation": 0.62, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.52},
+        {"name": "chorus", "bars": 8, "variation": 0.64, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.58, "fill": true}
+      ],
+      "tags": ["guitar", "late-70s", "practice", "fast"]
+    },
+
+    {
+      "id": "crgp_015",
+      "name": "New Wave Tight Pop-Rock",
+      "year_range": [1978, 1985],
+      "default_bpm": 142,
+      "bpm_range": [120, 170],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "pop_4onfloor",
+      "variation_default": 0.38,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.20},
+        {"name": "verse", "bars": 8, "variation": 0.30},
+        {"name": "chorus", "bars": 8, "variation": 0.40, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.30},
+        {"name": "bridge", "bars": 8, "variation": 0.36},
+        {"name": "chorus", "bars": 8, "variation": 0.42, "fill": true}
+      ],
+      "tags": ["guitar", "new-wave", "practice", "tight"]
+    },
+
+    {
+      "id": "crgp_016",
+      "name": "Metal Tight Double-Kick (Practice)",
+      "year_range": [1983, 1990],
+      "default_bpm": 168,
+      "bpm_range": [140, 210],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "metal_doublekick",
+      "variation_default": 0.45,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.30},
+        {"name": "verse", "bars": 8, "variation": 0.42},
+        {"name": "chorus", "bars": 8, "variation": 0.55, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.45},
+        {"name": "bridge", "bars": 8, "variation": 0.50, "fill": true},
+        {"name": "chorus", "bars": 8, "variation": 0.58, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.52}
+      ],
+      "tags": ["guitar", "metal", "80s", "practice", "double-kick"]
+    },
+
+    {
+      "id": "crgp_017",
+      "name": "Ballad Power Chorus (Half-Time Lift)",
+      "year_range": [1978, 1990],
+      "default_bpm": 72,
+      "bpm_range": [60, 90],
+      "time_signature": "4/4",
+      "feel": "half_time",
+      "style_id": "rock_8",
+      "variation_default": 0.28,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.12},
+        {"name": "verse", "bars": 8, "variation": 0.18},
+        {"name": "chorus", "bars": 8, "variation": 0.30, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.18},
+        {"name": "chorus", "bars": 8, "variation": 0.32, "fill": true},
+        {"name": "bridge", "bars": 8, "variation": 0.26},
+        {"name": "chorus", "bars": 8, "variation": 0.34, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.22}
+      ],
+      "tags": ["guitar", "ballad", "practice", "half-time"]
+    },
+
+    {
+      "id": "crgp_018",
+      "name": "Boogie Rock (Right-Hand Workout)",
+      "year_range": [1971, 1980],
+      "default_bpm": 156,
+      "bpm_range": [130, 190],
+      "time_signature": "4/4",
+      "feel": "shuffle",
+      "style_id": "shuffle_blues",
+      "variation_default": 0.48,
+      "sections": [
+        {"name": "intro", "bars": 2, "variation": 0.30},
+        {"name": "verse", "bars": 12, "variation": 0.42},
+        {"name": "chorus", "bars": 8, "variation": 0.52, "fill": true},
+        {"name": "verse", "bars": 12, "variation": 0.44},
+        {"name": "solo", "bars": 12, "variation": 0.58, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.50}
+      ],
+      "tags": ["guitar", "boogie", "practice", "shuffle"]
+    },
+
+    {
+      "id": "crgp_019",
+      "name": "Rock w/ Stops (Tight Hits)",
+      "year_range": [1970, 1988],
+      "default_bpm": 128,
+      "bpm_range": [100, 170],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_16",
+      "variation_default": 0.44,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.25},
+        {"name": "verse", "bars": 8, "variation": 0.38},
+        {"name": "chorus", "bars": 8, "variation": 0.50, "fill": true},
+        {"name": "breakdown", "bars": 4, "variation": 0.30},
+        {"name": "chorus", "bars": 8, "variation": 0.52, "fill": true},
+        {"name": "outro", "bars": 4, "variation": 0.45, "fill": true}
+      ],
+      "tags": ["guitar", "practice", "tight", "stops"]
+    },
+
+    {
+      "id": "crgp_020",
+      "name": "Late 80s Rock Groove (Bright Hats)",
+      "year_range": [1986, 1990],
+      "default_bpm": 132,
+      "bpm_range": [115, 170],
+      "time_signature": "4/4",
+      "feel": "straight",
+      "style_id": "rock_16",
+      "variation_default": 0.42,
+      "sections": [
+        {"name": "intro", "bars": 4, "variation": 0.22},
+        {"name": "verse", "bars": 8, "variation": 0.35},
+        {"name": "chorus", "bars": 8, "variation": 0.48, "fill": true},
+        {"name": "verse", "bars": 8, "variation": 0.36},
+        {"name": "chorus", "bars": 8, "variation": 0.50, "fill": true},
+        {"name": "solo", "bars": 8, "variation": 0.54, "fill": true},
+        {"name": "chorus", "bars": 8, "variation": 0.52, "fill": true}
+      ],
+      "tags": ["guitar", "80s", "practice", "bright"]
+    },
+
+    {"id":"crgp_021","name":"60s Straight 8 (Palm-Mute Practice)","year_range":[1967,1969],"default_bpm":140,"bpm_range":[110,175],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.34,"sections":[{"name":"intro","bars":2,"variation":0.20},{"name":"verse","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"bridge","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"outro","bars":4,"variation":0.34}],"tags":["guitar","practice","60s","straight-8"]},
+    {"id":"crgp_022","name":"Late 60s Psychedelic Rock (Loose)","year_range":[1968,1970],"default_bpm":92,"bpm_range":[70,120],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.15},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"solo","bars":8,"variation":0.36,"fill":true},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","60s","psychedelic"]},
+    {"id":"crgp_023","name":"70s Riff Rock (Downstrokes)","year_range":[1971,1975],"default_bpm":126,"bpm_range":[100,160],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.43,"sections":[{"name":"intro","bars":2,"variation":0.22},{"name":"verse","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.50,"fill":true},{"name":"verse","bars":8,"variation":0.38},{"name":"bridge","bars":8,"variation":0.46,"fill":true},{"name":"chorus","bars":8,"variation":0.52,"fill":true}],"tags":["guitar","practice","70s","riff","straight-16"]},
+    {"id":"crgp_024","name":"70s Midtempo Shuffle (Blues-Rock)","year_range":[1972,1978],"default_bpm":120,"bpm_range":[90,160],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.44,"sections":[{"name":"intro","bars":4,"variation":0.24},{"name":"verse","bars":12,"variation":0.38},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"solo","bars":12,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.50,"fill":true},{"name":"outro","bars":4,"variation":0.40}],"tags":["guitar","practice","70s","shuffle"]},
+    {"id":"crgp_025","name":"70s Funk-Rock (Chord Stabs)","year_range":[1974,1980],"default_bpm":102,"bpm_range":[80,130],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.38,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":8,"variation":0.30},{"name":"prechorus","bars":4,"variation":0.34},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"bridge","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.46,"fill":true}],"tags":["guitar","practice","70s","funk-rock"]},
+    {"id":"crgp_026","name":"70s Arena Rock (Big 2&4)","year_range":[1976,1982],"default_bpm":88,"bpm_range":[70,115],"time_signature":"4/4","feel":"half_time","style_id":"rock_8","variation_default":0.30,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"bridge","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"outro","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","arena","half-time"]},
+    {"id":"crgp_027","name":"Reggae-Rock Crossover (Skank)","year_range":[1977,1984],"default_bpm":78,"bpm_range":[65,95],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.32,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":16,"variation":0.26},{"name":"chorus","bars":8,"variation":0.32,"fill":true},{"name":"verse","bars":16,"variation":0.26},{"name":"bridge","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.34,"fill":true}],"tags":["guitar","practice","reggae","crossover"]},
+    {"id":"crgp_028","name":"Jazz-Rock Swing (Comping)","year_range":[1970,1985],"default_bpm":172,"bpm_range":[130,230],"time_signature":"4/4","feel":"swing","style_id":"jazz_swing","variation_default":0.36,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":16,"variation":0.30},{"name":"bridge","bars":8,"variation":0.34},{"name":"solo","bars":16,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.32},{"name":"outro","bars":4,"variation":0.26}],"tags":["guitar","practice","jazz-rock","swing"]},
+    {"id":"crgp_029","name":"80s Straight 16 (Tight Chorus Lift)","year_range":[1981,1986],"default_bpm":136,"bpm_range":[115,170],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.40,"sections":[{"name":"intro","bars":4,"variation":0.20},{"name":"verse","bars":8,"variation":0.32},{"name":"prechorus","bars":4,"variation":0.36},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"solo","bars":8,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.50,"fill":true}],"tags":["guitar","practice","80s","straight-16"]},
+    {"id":"crgp_030","name":"80s Pop-Rock (Verse Light, Chorus Big)","year_range":[1982,1990],"default_bpm":120,"bpm_range":[100,150],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"verse","bars":8,"variation":0.26},{"name":"bridge","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.40,"fill":true}],"tags":["guitar","practice","80s","pop-rock"]},
+
+    {"id":"crgp_031","name":"Metal Gallop Trainer (Moderate)","year_range":[1982,1988],"default_bpm":154,"bpm_range":[130,190],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.38,"sections":[{"name":"intro","bars":4,"variation":0.22},{"name":"verse","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"bridge","bars":8,"variation":0.44,"fill":true},{"name":"solo","bars":8,"variation":0.50,"fill":true},{"name":"chorus","bars":8,"variation":0.48,"fill":true}],"tags":["guitar","practice","metal","trainer"]},
+    {"id":"crgp_032","name":"Metal Gallop Trainer (Fast)","year_range":[1983,1990],"default_bpm":186,"bpm_range":[160,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.50,"sections":[{"name":"intro","bars":2,"variation":0.28},{"name":"verse","bars":8,"variation":0.46},{"name":"chorus","bars":8,"variation":0.58,"fill":true},{"name":"breakdown","bars":4,"variation":0.40},{"name":"solo","bars":8,"variation":0.62,"fill":true},{"name":"chorus","bars":8,"variation":0.60,"fill":true}],"tags":["guitar","practice","metal","fast"]},
+
+    {"id":"crgp_033","name":"Country-Rock Straight 8 (Driving)","year_range":[1969,1978],"default_bpm":156,"bpm_range":[135,190],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.36,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"solo","bars":8,"variation":0.46,"fill":true},{"name":"chorus","bars":8,"variation":0.44,"fill":true}],"tags":["guitar","practice","driving","straight-8"]},
+    {"id":"crgp_034","name":"Power-Pop Crunch (Bright)","year_range":[1977,1984],"default_bpm":168,"bpm_range":[150,210],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.46,"sections":[{"name":"intro","bars":2,"variation":0.22},{"name":"verse","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.56,"fill":true},{"name":"verse","bars":8,"variation":0.40},{"name":"bridge","bars":8,"variation":0.48},{"name":"chorus","bars":8,"variation":0.58,"fill":true}],"tags":["guitar","practice","power-pop","bright"]},
+    {"id":"crgp_035","name":"Hard Rock Groove (Swinging 16 Feel)","year_range":[1978,1986],"default_bpm":106,"bpm_range":[85,135],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.36,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"solo","bars":8,"variation":0.46,"fill":true},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"outro","bars":4,"variation":0.34}],"tags":["guitar","practice","hard-rock"]},
+
+    {"id":"crgp_036","name":"Blues-Rock Slow Shuffle (Feel)","year_range":[1968,1978],"default_bpm":76,"bpm_range":[55,95],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.30,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":12,"variation":0.26},{"name":"chorus","bars":12,"variation":0.34,"fill":true},{"name":"solo","bars":12,"variation":0.40,"fill":true},{"name":"chorus","bars":12,"variation":0.36,"fill":true},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","slow","shuffle"]},
+    {"id":"crgp_037","name":"Funk 16 (Muting + Chops)","year_range":[1975,1983],"default_bpm":96,"bpm_range":[80,120],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.36,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"bridge","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"outro","bars":4,"variation":0.32}],"tags":["guitar","practice","funk","muting"]},
+    {"id":"crgp_038","name":"Straight 8 w/ Sparse Verse",
+      "year_range":[1969,1982],"default_bpm":114,"bpm_range":[90,150],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.30,
+      "sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.38,"fill":true}],
+      "tags":["guitar","practice","dynamic","verse-chorus"]},
+
+    {"id":"crgp_039","name":"Straight 16 (Palm-Mute Chug)","year_range":[1980,1990],"default_bpm":148,"bpm_range":[120,190],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.46,"sections":[{"name":"intro","bars":2,"variation":0.24},{"name":"verse","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.56,"fill":true},{"name":"breakdown","bars":4,"variation":0.38},{"name":"chorus","bars":8,"variation":0.58,"fill":true},{"name":"outro","bars":4,"variation":0.46}],"tags":["guitar","practice","chug","straight-16"]},
+    {"id":"crgp_040","name":"Pop 4OTF (Practice Clean)","year_range":[1980,1990],"default_bpm":128,"bpm_range":[110,155],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.30,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.24},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"verse","bars":8,"variation":0.24},{"name":"bridge","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.36,"fill":true}],"tags":["guitar","practice","pop","clean"]},
+
+    {"id":"crgp_041","name":"1965–1970 Straight 8 Backbeat 1","year_range":[1965,1970],"default_bpm":124,"bpm_range":[100,160],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.32,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.28},{"name":"bridge","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.42,"fill":true}],"tags":["guitar","practice","60s"]},
+    {"id":"crgp_042","name":"1965–1970 Straight 8 Backbeat 2","year_range":[1965,1970],"default_bpm":146,"bpm_range":[120,190],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.40,"sections":[{"name":"intro","bars":2,"variation":0.20},{"name":"verse","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.50,"fill":true},{"name":"verse","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.52,"fill":true}],"tags":["guitar","practice","60s","uptempo"]},
+
+    {"id":"crgp_043","name":"1970s Classic Rock Backbeat 1","year_range":[1970,1979],"default_bpm":110,"bpm_range":[85,140],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.30,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.24},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"verse","bars":8,"variation":0.24},{"name":"solo","bars":8,"variation":0.40,"fill":true},{"name":"chorus","bars":8,"variation":0.38,"fill":true}],"tags":["guitar","practice","70s"]},
+    {"id":"crgp_044","name":"1970s Classic Rock Backbeat 2","year_range":[1970,1979],"default_bpm":128,"bpm_range":[100,165],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.40,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"bridge","bars":8,"variation":0.44,"fill":true},{"name":"solo","bars":8,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.50,"fill":true}],"tags":["guitar","practice","70s","straight-16"]},
+
+    {"id":"crgp_045","name":"1970s Shuffle Rock 1","year_range":[1970,1979],"default_bpm":132,"bpm_range":[105,175],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.46,"sections":[{"name":"intro","bars":2,"variation":0.22},{"name":"verse","bars":12,"variation":0.38},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"solo","bars":12,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.50,"fill":true},{"name":"outro","bars":4,"variation":0.40}],"tags":["guitar","practice","70s","shuffle"]},
+    {"id":"crgp_046","name":"1970s Funk-Rock 1","year_range":[1970,1979],"default_bpm":104,"bpm_range":[85,130],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.36,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"bridge","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"outro","bars":4,"variation":0.30}],"tags":["guitar","practice","70s","funk"]},
+
+    {"id":"crgp_047","name":"1980s Rock 16 (Tight Verse/Big Chorus) 1","year_range":[1980,1990],"default_bpm":144,"bpm_range":[120,185],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.42,"sections":[{"name":"intro","bars":4,"variation":0.20},{"name":"verse","bars":8,"variation":0.32},{"name":"chorus","bars":8,"variation":0.50,"fill":true},{"name":"verse","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.52,"fill":true}],"tags":["guitar","practice","80s","tight"]},
+    {"id":"crgp_048","name":"1980s Rock 8 (Open Hats) 1","year_range":[1980,1990],"default_bpm":132,"bpm_range":[110,170],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.38,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"bridge","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"outro","bars":4,"variation":0.36}],"tags":["guitar","practice","80s","open-hats"]},
+
+    {"id":"crgp_049","name":"1980s Metal (Moderate Double Kick) 1","year_range":[1983,1990],"default_bpm":162,"bpm_range":[140,205],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.42,"sections":[{"name":"intro","bars":4,"variation":0.24},{"name":"verse","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.52,"fill":true},{"name":"bridge","bars":8,"variation":0.50,"fill":true},{"name":"solo","bars":8,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.54,"fill":true}],"tags":["guitar","practice","80s","metal"]},
+
+    {"id":"crgp_050","name":"1980s Pop-Rock 4OTF 2","year_range":[1982,1990],"default_bpm":118,"bpm_range":[100,145],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.32,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.34,"fill":true}],"tags":["guitar","practice","80s","pop"]},
+
+    {"id":"crgp_051","name":"Classic Rock Practice Arrangement 51","year_range":[1965,1990],"default_bpm":120,"bpm_range":[90,160],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.33,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"bridge","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.42,"fill":true},{"name":"chorus","bars":8,"variation":0.40,"fill":true}],"tags":["guitar","practice","arrangement"]},
+    {"id":"crgp_052","name":"Classic Rock Practice Arrangement 52","year_range":[1965,1990],"default_bpm":138,"bpm_range":[110,180],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.40,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.32},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"verse","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.48,"fill":true}],"tags":["guitar","practice","arrangement"]},
+    {"id":"crgp_053","name":"Classic Rock Practice Arrangement 53","year_range":[1965,1990],"default_bpm":104,"bpm_range":[75,140],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.36,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":12,"variation":0.30},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"bridge","bars":8,"variation":0.36},{"name":"solo","bars":12,"variation":0.48,"fill":true},{"name":"outro","bars":4,"variation":0.32}],"tags":["guitar","practice","shuffle","arrangement"]},
+    {"id":"crgp_054","name":"Classic Rock Practice Arrangement 54","year_range":[1965,1990],"default_bpm":96,"bpm_range":[75,125],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"bridge","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"outro","bars":4,"variation":0.28}],"tags":["guitar","practice","funk","arrangement"]},
+    {"id":"crgp_055","name":"Classic Rock Practice Arrangement 55","year_range":[1965,1990],"default_bpm":160,"bpm_range":[130,220],"time_signature":"4/4","feel":"swing","style_id":"jazz_swing","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":16,"variation":0.28},{"name":"bridge","bars":8,"variation":0.32},{"name":"solo","bars":16,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","swing","arrangement"]},
+    {"id":"crgp_056","name":"Classic Rock Practice Arrangement 56","year_range":[1965,1990],"default_bpm":126,"bpm_range":[105,155],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.32,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.34,"fill":true}],"tags":["guitar","practice","pop","arrangement"]},
+    {"id":"crgp_057","name":"Classic Rock Practice Arrangement 57","year_range":[1965,1990],"default_bpm":78,"bpm_range":[65,95],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":16,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":16,"variation":0.24},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","reggae","arrangement"]},
+    {"id":"crgp_058","name":"Classic Rock Practice Arrangement 58","year_range":[1965,1990],"default_bpm":176,"bpm_range":[150,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.44,"sections":[{"name":"intro","bars":4,"variation":0.22},{"name":"verse","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.52,"fill":true},{"name":"bridge","bars":8,"variation":0.50,"fill":true},{"name":"solo","bars":8,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.54,"fill":true}],"tags":["guitar","practice","metal","arrangement"]},
+
+    {"id":"crgp_059","name":"Classic Rock Practice Arrangement 59","year_range":[1965,1990],"default_bpm":116,"bpm_range":[90,150],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.30,"sections":[{"name":"intro","bars":2,"variation":0.16},{"name":"verse","bars":8,"variation":0.24},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"bridge","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"outro","bars":4,"variation":0.28}],"tags":["guitar","practice","arrangement"]},
+    {"id":"crgp_060","name":"Classic Rock Practice Arrangement 60","year_range":[1965,1990],"default_bpm":142,"bpm_range":[115,185],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.42,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":8,"variation":0.32},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"verse","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.54,"fill":true},{"name":"chorus","bars":8,"variation":0.50,"fill":true}],"tags":["guitar","practice","arrangement"]},
+
+    {"id":"crgp_061","name":"Classic Rock Practice Arrangement 61","year_range":[1965,1990],"default_bpm":108,"bpm_range":[80,150],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.40,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":12,"variation":0.32},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"solo","bars":12,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"outro","bars":4,"variation":0.34}],"tags":["guitar","practice","shuffle"]},
+    {"id":"crgp_062","name":"Classic Rock Practice Arrangement 62","year_range":[1965,1990],"default_bpm":100,"bpm_range":[80,130],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"bridge","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"outro","bars":4,"variation":0.30}],"tags":["guitar","practice","funk"]},
+    {"id":"crgp_063","name":"Classic Rock Practice Arrangement 63","year_range":[1965,1990],"default_bpm":164,"bpm_range":[135,230],"time_signature":"4/4","feel":"swing","style_id":"jazz_swing","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":16,"variation":0.28},{"name":"bridge","bars":8,"variation":0.32},{"name":"solo","bars":16,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","swing"]},
+    {"id":"crgp_064","name":"Classic Rock Practice Arrangement 64","year_range":[1965,1990],"default_bpm":124,"bpm_range":[105,155],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.36,"fill":true}],"tags":["guitar","practice","pop"]},
+    {"id":"crgp_065","name":"Classic Rock Practice Arrangement 65","year_range":[1965,1990],"default_bpm":78,"bpm_range":[65,95],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":16,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":16,"variation":0.24},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","reggae"]},
+    {"id":"crgp_066","name":"Classic Rock Practice Arrangement 66","year_range":[1965,1990],"default_bpm":170,"bpm_range":[145,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.44,"sections":[{"name":"intro","bars":4,"variation":0.22},{"name":"verse","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.54,"fill":true},{"name":"bridge","bars":8,"variation":0.52,"fill":true},{"name":"solo","bars":8,"variation":0.58,"fill":true},{"name":"chorus","bars":8,"variation":0.56,"fill":true}],"tags":["guitar","practice","metal"]},
+
+    {"id":"crgp_067","name":"Classic Rock Practice Arrangement 67","year_range":[1965,1990],"default_bpm":116,"bpm_range":[90,150],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.30,"sections":[{"name":"intro","bars":2,"variation":0.16},{"name":"verse","bars":8,"variation":0.24},{"name":"chorus","bars":8,"variation":0.36,"fill":true},{"name":"bridge","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"outro","bars":4,"variation":0.28}],"tags":["guitar","practice","arrangement"]},
+    {"id":"crgp_068","name":"Classic Rock Practice Arrangement 68","year_range":[1965,1990],"default_bpm":142,"bpm_range":[115,185],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.42,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":8,"variation":0.32},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"verse","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.54,"fill":true},{"name":"chorus","bars":8,"variation":0.50,"fill":true}],"tags":["guitar","practice","arrangement"]},
+
+    {"id":"crgp_069","name":"Classic Rock Practice Arrangement 69","year_range":[1965,1990],"default_bpm":108,"bpm_range":[80,150],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.40,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":12,"variation":0.32},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"solo","bars":12,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"outro","bars":4,"variation":0.34}],"tags":["guitar","practice","shuffle"]},
+    {"id":"crgp_070","name":"Classic Rock Practice Arrangement 70","year_range":[1965,1990],"default_bpm":100,"bpm_range":[80,130],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"bridge","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"outro","bars":4,"variation":0.30}],"tags":["guitar","practice","funk"]},
+
+    {"id":"crgp_071","name":"Classic Rock Practice Arrangement 71","year_range":[1965,1990],"default_bpm":164,"bpm_range":[135,230],"time_signature":"4/4","feel":"swing","style_id":"jazz_swing","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":16,"variation":0.28},{"name":"bridge","bars":8,"variation":0.32},{"name":"solo","bars":16,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","swing"]},
+    {"id":"crgp_072","name":"Classic Rock Practice Arrangement 72","year_range":[1965,1990],"default_bpm":124,"bpm_range":[105,155],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.36,"fill":true}],"tags":["guitar","practice","pop"]},
+    {"id":"crgp_073","name":"Classic Rock Practice Arrangement 73","year_range":[1965,1990],"default_bpm":78,"bpm_range":[65,95],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":16,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":16,"variation":0.24},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","reggae"]},
+    {"id":"crgp_074","name":"Classic Rock Practice Arrangement 74","year_range":[1965,1990],"default_bpm":170,"bpm_range":[145,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.44,"sections":[{"name":"intro","bars":4,"variation":0.22},{"name":"verse","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.54,"fill":true},{"name":"bridge","bars":8,"variation":0.52,"fill":true},{"name":"solo","bars":8,"variation":0.58,"fill":true},{"name":"chorus","bars":8,"variation":0.56,"fill":true}],"tags":["guitar","practice","metal"]},
+
+    {"id":"crgp_075","name":"Classic Rock Practice Arrangement 75","year_range":[1965,1990],"default_bpm":112,"bpm_range":[85,150],"time_signature":"4/4","feel":"half_time","style_id":"rock_8","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.20},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":8,"variation":0.20},{"name":"bridge","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","half-time"]},
+    {"id":"crgp_076","name":"Classic Rock Practice Arrangement 76","year_range":[1965,1990],"default_bpm":152,"bpm_range":[125,200],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.42,"sections":[{"name":"intro","bars":2,"variation":0.20},{"name":"verse","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.52,"fill":true},{"name":"bridge","bars":8,"variation":0.46,"fill":true},{"name":"chorus","bars":8,"variation":0.54,"fill":true},{"name":"outro","bars":4,"variation":0.44}],"tags":["guitar","practice","uptempo"]},
+    {"id":"crgp_077","name":"Classic Rock Practice Arrangement 77","year_range":[1965,1990],"default_bpm":136,"bpm_range":[110,180],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.40,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.32},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"bridge","bars":8,"variation":0.44,"fill":true},{"name":"solo","bars":8,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.48,"fill":true}],"tags":["guitar","practice","straight-16"]},
+    {"id":"crgp_078","name":"Classic Rock Practice Arrangement 78","year_range":[1965,1990],"default_bpm":92,"bpm_range":[70,120],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.24,"sections":[{"name":"intro","bars":4,"variation":0.10},{"name":"verse","bars":8,"variation":0.18},{"name":"chorus","bars":8,"variation":0.28,"fill":true},{"name":"bridge","bars":8,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"outro","bars":4,"variation":0.20}],"tags":["guitar","practice","slow"]},
+    {"id":"crgp_079","name":"Classic Rock Practice Arrangement 79","year_range":[1965,1990],"default_bpm":148,"bpm_range":[120,195],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"verse","bars":8,"variation":0.26},{"name":"bridge","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.40,"fill":true}],"tags":["guitar","practice","pop","uptempo"]},
+    {"id":"crgp_080","name":"Classic Rock Practice Arrangement 80","year_range":[1965,1990],"default_bpm":84,"bpm_range":[65,105],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.30,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":16,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":16,"variation":0.24},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","reggae"]},
+
+    {"id":"crgp_081","name":"Classic Rock Practice Arrangement 81","year_range":[1965,1990],"default_bpm":168,"bpm_range":[140,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.46,"sections":[{"name":"intro","bars":4,"variation":0.24},{"name":"verse","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.56,"fill":true},{"name":"breakdown","bars":4,"variation":0.44},{"name":"solo","bars":8,"variation":0.60,"fill":true},{"name":"chorus","bars":8,"variation":0.58,"fill":true}],"tags":["guitar","practice","metal"]},
+    {"id":"crgp_082","name":"Classic Rock Practice Arrangement 82","year_range":[1965,1990],"default_bpm":156,"bpm_range":[130,205],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.46,"sections":[{"name":"intro","bars":2,"variation":0.22},{"name":"verse","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.54,"fill":true},{"name":"bridge","bars":8,"variation":0.50,"fill":true},{"name":"solo","bars":8,"variation":0.58,"fill":true},{"name":"chorus","bars":8,"variation":0.56,"fill":true}],"tags":["guitar","practice","fast","straight-16"]},
+    {"id":"crgp_083","name":"Classic Rock Practice Arrangement 83","year_range":[1965,1990],"default_bpm":132,"bpm_range":[110,175],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.36,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.30},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"bridge","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.48,"fill":true}],"tags":["guitar","practice","steady"]},
+    {"id":"crgp_084","name":"Classic Rock Practice Arrangement 84","year_range":[1965,1990],"default_bpm":120,"bpm_range":[90,160],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.42,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":12,"variation":0.34},{"name":"chorus","bars":8,"variation":0.44,"fill":true},{"name":"solo","bars":12,"variation":0.54,"fill":true},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"outro","bars":4,"variation":0.36}],"tags":["guitar","practice","shuffle"]},
+    {"id":"crgp_085","name":"Classic Rock Practice Arrangement 85","year_range":[1965,1990],"default_bpm":102,"bpm_range":[80,130],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.36,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"bridge","bars":8,"variation":0.38},{"name":"chorus","bars":8,"variation":0.42,"fill":true},{"name":"outro","bars":4,"variation":0.30}],"tags":["guitar","practice","funk"]},
+    {"id":"crgp_086","name":"Classic Rock Practice Arrangement 86","year_range":[1965,1990],"default_bpm":168,"bpm_range":[135,230],"time_signature":"4/4","feel":"swing","style_id":"jazz_swing","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":16,"variation":0.28},{"name":"bridge","bars":8,"variation":0.32},{"name":"solo","bars":16,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","swing"]},
+    {"id":"crgp_087","name":"Classic Rock Practice Arrangement 87","year_range":[1965,1990],"default_bpm":126,"bpm_range":[105,155],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.36,"fill":true}],"tags":["guitar","practice","pop"]},
+    {"id":"crgp_088","name":"Classic Rock Practice Arrangement 88","year_range":[1965,1990],"default_bpm":78,"bpm_range":[65,95],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":16,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":16,"variation":0.24},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","reggae"]},
+    {"id":"crgp_089","name":"Classic Rock Practice Arrangement 89","year_range":[1965,1990],"default_bpm":174,"bpm_range":[145,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.46,"sections":[{"name":"intro","bars":4,"variation":0.24},{"name":"verse","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.56,"fill":true},{"name":"bridge","bars":8,"variation":0.52,"fill":true},{"name":"solo","bars":8,"variation":0.60,"fill":true},{"name":"chorus","bars":8,"variation":0.58,"fill":true}],"tags":["guitar","practice","metal"]},
+    {"id":"crgp_090","name":"Classic Rock Practice Arrangement 90","year_range":[1965,1990],"default_bpm":110,"bpm_range":[85,150],"time_signature":"4/4","feel":"half_time","style_id":"rock_8","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.20},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":8,"variation":0.20},{"name":"bridge","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","half-time"]},
+
+    {"id":"crgp_091","name":"Classic Rock Practice Arrangement 91","year_range":[1965,1990],"default_bpm":150,"bpm_range":[120,200],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.40,"sections":[{"name":"intro","bars":2,"variation":0.20},{"name":"verse","bars":8,"variation":0.34},{"name":"chorus","bars":8,"variation":0.50,"fill":true},{"name":"bridge","bars":8,"variation":0.46,"fill":true},{"name":"solo","bars":8,"variation":0.54,"fill":true},{"name":"chorus","bars":8,"variation":0.52,"fill":true}],"tags":["guitar","practice","uptempo"]},
+    {"id":"crgp_092","name":"Classic Rock Practice Arrangement 92","year_range":[1965,1990],"default_bpm":136,"bpm_range":[110,180],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.40,"sections":[{"name":"intro","bars":2,"variation":0.18},{"name":"verse","bars":8,"variation":0.32},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"bridge","bars":8,"variation":0.44,"fill":true},{"name":"solo","bars":8,"variation":0.52,"fill":true},{"name":"chorus","bars":8,"variation":0.48,"fill":true}],"tags":["guitar","practice","straight-16"]},
+    {"id":"crgp_093","name":"Classic Rock Practice Arrangement 93","year_range":[1965,1990],"default_bpm":116,"bpm_range":[90,160],"time_signature":"12/8","feel":"shuffle","style_id":"shuffle_blues","variation_default":0.44,"sections":[{"name":"intro","bars":4,"variation":0.18},{"name":"verse","bars":12,"variation":0.34},{"name":"chorus","bars":8,"variation":0.46,"fill":true},{"name":"solo","bars":12,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.48,"fill":true},{"name":"outro","bars":4,"variation":0.36}],"tags":["guitar","practice","shuffle"]},
+    {"id":"crgp_094","name":"Classic Rock Practice Arrangement 94","year_range":[1965,1990],"default_bpm":98,"bpm_range":[80,130],"time_signature":"4/4","feel":"straight","style_id":"funk_16","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.14},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"bridge","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.40,"fill":true},{"name":"outro","bars":4,"variation":0.30}],"tags":["guitar","practice","funk"]},
+    {"id":"crgp_095","name":"Classic Rock Practice Arrangement 95","year_range":[1965,1990],"default_bpm":160,"bpm_range":[135,230],"time_signature":"4/4","feel":"swing","style_id":"jazz_swing","variation_default":0.34,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":16,"variation":0.28},{"name":"bridge","bars":8,"variation":0.32},{"name":"solo","bars":16,"variation":0.40,"fill":true},{"name":"verse","bars":8,"variation":0.30},{"name":"outro","bars":4,"variation":0.24}],"tags":["guitar","practice","swing"]},
+    {"id":"crgp_096","name":"Classic Rock Practice Arrangement 96","year_range":[1965,1990],"default_bpm":126,"bpm_range":[105,155],"time_signature":"4/4","feel":"straight","style_id":"pop_4onfloor","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":8,"variation":0.22},{"name":"chorus","bars":8,"variation":0.34,"fill":true},{"name":"verse","bars":8,"variation":0.22},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.36,"fill":true}],"tags":["guitar","practice","pop"]},
+    {"id":"crgp_097","name":"Classic Rock Practice Arrangement 97","year_range":[1965,1990],"default_bpm":78,"bpm_range":[65,95],"time_signature":"4/4","feel":"reggae","style_id":"reggae_1drop","variation_default":0.28,"sections":[{"name":"intro","bars":4,"variation":0.12},{"name":"verse","bars":16,"variation":0.24},{"name":"chorus","bars":8,"variation":0.30,"fill":true},{"name":"verse","bars":16,"variation":0.24},{"name":"bridge","bars":8,"variation":0.28},{"name":"chorus","bars":8,"variation":0.32,"fill":true}],"tags":["guitar","practice","reggae"]},
+    {"id":"crgp_098","name":"Classic Rock Practice Arrangement 98","year_range":[1965,1990],"default_bpm":174,"bpm_range":[145,220],"time_signature":"4/4","feel":"straight","style_id":"metal_doublekick","variation_default":0.46,"sections":[{"name":"intro","bars":4,"variation":0.24},{"name":"verse","bars":8,"variation":0.40},{"name":"chorus","bars":8,"variation":0.56,"fill":true},{"name":"bridge","bars":8,"variation":0.52,"fill":true},{"name":"solo","bars":8,"variation":0.60,"fill":true},{"name":"chorus","bars":8,"variation":0.58,"fill":true}],"tags":["guitar","practice","metal"]},
+    {"id":"crgp_099","name":"Classic Rock Practice Arrangement 99","year_range":[1965,1990],"default_bpm":148,"bpm_range":[120,195],"time_signature":"4/4","feel":"straight","style_id":"rock_16","variation_default":0.44,"sections":[{"name":"intro","bars":2,"variation":0.22},{"name":"verse","bars":8,"variation":0.36},{"name":"chorus","bars":8,"variation":0.52,"fill":true},{"name":"breakdown","bars":4,"variation":0.40},{"name":"solo","bars":8,"variation":0.56,"fill":true},{"name":"chorus","bars":8,"variation":0.54,"fill":true}],"tags":["guitar","practice","arrangement"]},
+    {"id":"crgp_100","name":"Classic Rock Practice Arrangement 100","year_range":[1965,1990],"default_bpm":120,"bpm_range":[90,160],"time_signature":"4/4","feel":"straight","style_id":"rock_8","variation_default":0.33,"sections":[{"name":"intro","bars":4,"variation":0.16},{"name":"verse","bars":8,"variation":0.26},{"name":"chorus","bars":8,"variation":0.38,"fill":true},{"name":"bridge","bars":8,"variation":0.34},{"name":"solo","bars":8,"variation":0.42,"fill":true},{"name":"chorus","bars":8,"variation":0.40,"fill":true}],"tags":["guitar","practice","arrangement"]}
+  ]
+}

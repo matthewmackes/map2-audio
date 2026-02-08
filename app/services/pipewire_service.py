@@ -1,0 +1,784 @@
+"""
+PipeWire Audio Server Integration Service
+
+Primary audio server monitoring and control for the MAP2 Audio Platform.
+Wraps PipeWire CLI tools (pw-dump, pw-metadata, wpctl) to provide:
+- Daemon health monitoring
+- Audio graph topology (devices, nodes, streams, links)
+- Quantum (buffer) and sample rate control
+- Volume/mute control per node
+- XRun detection and latency reporting
+- Real-time WebSocket broadcasting
+- Alerting for audio infrastructure failures
+"""
+
+import asyncio
+import json
+import logging
+import os
+import re
+import shutil
+import time
+from dataclasses import dataclass, field, asdict
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
+
+# Environment for PipeWire CLI tools (must reach user session daemon)
+_PW_ENV = {
+    "XDG_RUNTIME_DIR": os.environ.get("XDG_RUNTIME_DIR", "/run/user/1000"),
+    "PATH": "/usr/bin:/usr/local/bin:/bin",
+    "HOME": os.environ.get("HOME", "/home/mm"),
+}
+
+# Tool availability flags (checked once at import)
+HAS_PW_DUMP = shutil.which("pw-dump") is not None
+HAS_PW_METADATA = shutil.which("pw-metadata") is not None
+HAS_WPCTL = shutil.which("wpctl") is not None
+
+
+# ============================================================================
+# Data Classes
+# ============================================================================
+
+@dataclass
+class PipeWireDaemonInfo:
+    running: bool = False
+    version: str = ""
+    name: str = ""
+    hostname: str = ""
+    cookie: str = ""
+    uptime_seconds: float = 0.0
+
+
+@dataclass
+class PipeWireDeviceInfo:
+    id: int = 0
+    name: str = ""
+    nick: str = ""
+    driver: str = ""
+    bus: str = ""
+    media_class: str = ""
+    is_default: bool = False
+    properties: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class PipeWireNodeInfo:
+    id: int = 0
+    name: str = ""
+    nick: str = ""
+    description: str = ""
+    media_class: str = ""
+    device_id: Optional[int] = None
+    sample_rate: Optional[int] = None
+    channels: int = 0
+    format: str = ""
+    volume: float = 1.0
+    muted: bool = False
+    is_driver: bool = False
+    is_default: bool = False
+    state: str = ""
+    properties: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class PipeWireStreamInfo:
+    id: int = 0
+    client_name: str = ""
+    client_pid: int = 0
+    media_name: str = ""
+    direction: str = ""
+    state: str = ""
+    channels: int = 0
+    sample_rate: Optional[int] = None
+
+
+@dataclass
+class PipeWireLinkInfo:
+    id: int = 0
+    output_node: int = 0
+    output_port: str = ""
+    input_node: int = 0
+    input_port: str = ""
+    state: str = ""
+
+
+@dataclass
+class PipeWireSettings:
+    clock_rate: int = 48000
+    clock_force_rate: int = 0
+    clock_quantum: int = 1024
+    clock_force_quantum: int = 0
+    clock_min_quantum: int = 32
+    clock_max_quantum: int = 2048
+    clock_allowed_rates: List[int] = field(default_factory=lambda: [48000])
+
+
+@dataclass
+class PipeWireMetrics:
+    daemon: PipeWireDaemonInfo = field(default_factory=PipeWireDaemonInfo)
+    settings: PipeWireSettings = field(default_factory=PipeWireSettings)
+    default_sink: Optional[PipeWireNodeInfo] = None
+    default_source: Optional[PipeWireNodeInfo] = None
+    devices: List[PipeWireDeviceInfo] = field(default_factory=list)
+    nodes: List[PipeWireNodeInfo] = field(default_factory=list)
+    streams: List[PipeWireStreamInfo] = field(default_factory=list)
+    links: List[PipeWireLinkInfo] = field(default_factory=list)
+    client_count: int = 0
+    xruns: int = 0
+    graph_latency_ms: float = 0.0
+    driver_latency_ms: float = 0.0
+    total_latency_ms: float = 0.0
+    alerts: List[Dict[str, str]] = field(default_factory=list)
+    timestamp: str = ""
+
+
+# ============================================================================
+# PipeWire Service
+# ============================================================================
+
+class PipeWireService:
+    """Primary PipeWire audio server monitoring and control service."""
+
+    def __init__(self):
+        self._start_time = time.monotonic()
+        self._last_xrun_count = 0
+        self._broadcast_task: Optional[asyncio.Task] = None
+        self._cached_snapshot: Optional[PipeWireMetrics] = None
+        self._cache_time: float = 0.0
+        self._cache_ttl: float = 1.0  # seconds
+
+    # ---------------------------------------------------------------
+    # Subprocess helpers
+    # ---------------------------------------------------------------
+
+    async def _run_cmd(self, cmd: List[str], timeout: float = 5.0) -> str:
+        """Run a subprocess command and return stdout."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=_PW_ENV,
+            )
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(), timeout=timeout
+            )
+            if proc.returncode != 0:
+                logger.debug(f"Command {cmd[0]} returned {proc.returncode}: {stderr.decode().strip()}")
+            return stdout.decode()
+        except asyncio.TimeoutError:
+            logger.warning(f"Command {cmd[0]} timed out after {timeout}s")
+            return ""
+        except FileNotFoundError:
+            logger.debug(f"Command not found: {cmd[0]}")
+            return ""
+        except Exception as e:
+            logger.debug(f"Command {cmd[0]} error: {e}")
+            return ""
+
+    async def _run_cmd_json(self, cmd: List[str], timeout: float = 5.0) -> Any:
+        """Run a subprocess command and parse JSON output."""
+        output = await self._run_cmd(cmd, timeout)
+        if not output.strip():
+            return []
+        try:
+            return json.loads(output)
+        except json.JSONDecodeError as e:
+            logger.debug(f"JSON parse error from {cmd[0]}: {e}")
+            return []
+
+    # ---------------------------------------------------------------
+    # Daemon status
+    # ---------------------------------------------------------------
+
+    async def check_daemon(self) -> PipeWireDaemonInfo:
+        """Check PipeWire daemon status by parsing wpctl status header."""
+        info = PipeWireDaemonInfo()
+
+        if not HAS_WPCTL:
+            return info
+
+        output = await self._run_cmd(["wpctl", "status"])
+        if not output:
+            return info
+
+        # First line: PipeWire 'pipewire-0' [1.4.9, mm@MAP2-TESTBED, cookie:3716221001]
+        first_line = output.split("\n")[0].strip()
+        m = re.match(
+            r"PipeWire\s+'([^']+)'\s+\[([^,]+),\s*([^@]+)@([^,]+),\s*cookie:(\d+)\]",
+            first_line,
+        )
+        if m:
+            info.running = True
+            info.name = m.group(1)
+            info.version = m.group(2)
+            info.hostname = m.group(4)
+            info.cookie = m.group(5)
+            info.uptime_seconds = time.monotonic() - self._start_time
+
+        return info
+
+    # ---------------------------------------------------------------
+    # wpctl status parser
+    # ---------------------------------------------------------------
+
+    async def _parse_wpctl_status(self) -> Dict[str, Any]:
+        """Parse wpctl status into structured sections.
+
+        wpctl uses tree-drawing characters (├─ └─ │) and the format is:
+        PipeWire 'pipewire-0' [1.4.9, ...]
+         └─ Clients:
+                32. WirePlumber    [1.4.9, ...]
+        Audio
+         ├─ Devices:
+         │      47. EDIROL UA-1000    [alsa]
+         ├─ Sinks:
+         │  *   54. EDIROL UA-1000    [vol: 1.00]
+         └─ Streams:
+                51. PipeWire ALSA [python3.14]
+                     85. monitor_FR   (sub-port, deeper indent)
+        """
+        output = await self._run_cmd(["wpctl", "status"])
+        if not output:
+            return {}
+
+        result: Dict[str, Any] = {
+            "clients": [],
+            "devices": [],
+            "sinks": [],
+            "sources": [],
+            "streams": [],
+        }
+
+        current_section = None
+        current_top_level = None  # "Audio" or "Video" or None
+
+        # Strip tree chars from a line for cleaner parsing
+        def strip_tree(line: str) -> str:
+            return re.sub(r"[│├└─┬┼┤┘┐┌┏┗┃┠┣┛┓]", " ", line)
+
+        # Entry pattern: optional *, digits, dot, name, optional [info]
+        entry_re = re.compile(r"(\*?)\s*(\d+)\.\s+(.+?)(?:\s+\[(.+)\])?\s*$")
+
+        for raw_line in output.split("\n"):
+            clean = strip_tree(raw_line)
+            stripped = clean.strip()
+
+            if not stripped:
+                continue
+
+            # Top-level section markers
+            if stripped == "Audio":
+                current_top_level = "Audio"
+                continue
+            elif stripped == "Video":
+                current_top_level = "Video"
+                current_section = None
+                continue
+            elif stripped == "Settings":
+                current_top_level = "Settings"
+                current_section = None
+                continue
+
+            # Sub-section headers
+            if "Clients:" in stripped:
+                current_section = "clients"
+                continue
+            elif "Devices:" in stripped and current_top_level == "Audio":
+                current_section = "devices"
+                continue
+            elif "Sinks:" in stripped:
+                current_section = "sinks"
+                continue
+            elif "Sources:" in stripped:
+                current_section = "sources"
+                continue
+            elif "Filters:" in stripped:
+                current_section = None  # skip filters
+                continue
+            elif "Streams:" in stripped and current_top_level == "Audio":
+                current_section = "streams"
+                continue
+
+            if current_section is None or current_top_level == "Video":
+                continue
+
+            # For streams: only match top-level entries (not sub-ports)
+            # Sub-ports have much deeper indentation
+            m = entry_re.search(stripped)
+            if not m:
+                continue
+
+            # Determine indentation level from cleaned line
+            indent = len(clean) - len(clean.lstrip())
+
+            # In streams section, sub-ports are at indent ~13
+            # while top-level stream entries are at indent ~8
+            if current_section == "streams" and indent > 10:
+                continue  # skip sub-port entries
+
+            is_default = m.group(1) == "*"
+            obj_id = int(m.group(2))
+            name = m.group(3).strip()
+            info_str = m.group(4) or ""
+
+            entry = {
+                "id": obj_id,
+                "name": name,
+                "info": info_str,
+                "is_default": is_default,
+            }
+            result[current_section].append(entry)
+
+        return result
+
+    # ---------------------------------------------------------------
+    # Devices and nodes
+    # ---------------------------------------------------------------
+
+    async def get_devices(self) -> List[PipeWireDeviceInfo]:
+        """Get audio devices from PipeWire."""
+        status = await self._parse_wpctl_status()
+        devices = []
+
+        for entry in status.get("devices", []):
+            dev = PipeWireDeviceInfo(
+                id=entry["id"],
+                name=entry["name"],
+                nick=entry["name"],
+                media_class="Audio/Device",
+                is_default=entry["is_default"],
+            )
+            # Extract driver hint from info bracket
+            if entry["info"]:
+                dev.driver = entry["info"]
+
+            devices.append(dev)
+
+        return devices
+
+    async def get_nodes(self) -> List[PipeWireNodeInfo]:
+        """Get sink and source nodes from PipeWire."""
+        status = await self._parse_wpctl_status()
+        nodes = []
+
+        for section, media_class in [("sinks", "Audio/Sink"), ("sources", "Audio/Source")]:
+            for entry in status.get(section, []):
+                node = PipeWireNodeInfo(
+                    id=entry["id"],
+                    name=entry["name"],
+                    nick=entry["name"],
+                    description=entry["name"],
+                    media_class=media_class,
+                    is_default=entry["is_default"],
+                )
+                # Parse volume from info: "vol: 1.00" or "vol: 1.00 MUTED"
+                info = entry.get("info", "")
+                vol_m = re.search(r"vol:\s*([\d.]+)", info)
+                if vol_m:
+                    node.volume = float(vol_m.group(1))
+                if "MUTED" in info:
+                    node.muted = True
+
+                nodes.append(node)
+
+        return nodes
+
+    async def get_streams(self) -> List[PipeWireStreamInfo]:
+        """Get active audio streams from PipeWire."""
+        status = await self._parse_wpctl_status()
+        streams = []
+
+        for entry in status.get("streams", []):
+            stream = PipeWireStreamInfo(
+                id=entry["id"],
+                client_name=entry["name"],
+                media_name=entry["name"],
+            )
+            # Extract PID from name like "PipeWire ALSA [python3.14]"
+            pid_m = re.search(r"\[([^\]]+)\]", entry["name"])
+            if pid_m:
+                proc_name = pid_m.group(1)
+                stream.media_name = proc_name
+
+            streams.append(stream)
+
+        return streams
+
+    async def get_clients(self) -> List[Dict[str, Any]]:
+        """Get connected PipeWire clients."""
+        status = await self._parse_wpctl_status()
+        return [
+            {"id": c["id"], "name": c["name"], "info": c["info"]}
+            for c in status.get("clients", [])
+        ]
+
+    # ---------------------------------------------------------------
+    # Links (requires pw-dump)
+    # ---------------------------------------------------------------
+
+    async def get_links(self) -> List[PipeWireLinkInfo]:
+        """Get port connections from PipeWire graph."""
+        if not HAS_PW_DUMP:
+            return []
+
+        dump = await self._run_cmd_json(["pw-dump"])
+        if not isinstance(dump, list):
+            return []
+
+        links = []
+        for obj in dump:
+            if obj.get("type") != "PipeWire:Interface:Link":
+                continue
+            info = obj.get("info", {})
+            props = info.get("props", {})
+            links.append(PipeWireLinkInfo(
+                id=obj.get("id", 0),
+                output_node=props.get("link.output.node", 0),
+                output_port=str(props.get("link.output.port", "")),
+                input_node=props.get("link.input.node", 0),
+                input_port=str(props.get("link.input.port", "")),
+                state=info.get("state", ""),
+            ))
+
+        return links
+
+    # ---------------------------------------------------------------
+    # Settings (requires pw-metadata)
+    # ---------------------------------------------------------------
+
+    async def get_settings(self) -> PipeWireSettings:
+        """Get current PipeWire clock settings."""
+        settings = PipeWireSettings()
+
+        if not HAS_PW_METADATA:
+            return settings
+
+        output = await self._run_cmd(["pw-metadata", "-n", "settings"])
+        if not output:
+            return settings
+
+        # Parse lines like: update: id:0 key:'clock.rate' value:'48000' type:''
+        for line in output.split("\n"):
+            m = re.search(r"key:'([^']+)'\s+value:'([^']*)'", line)
+            if not m:
+                continue
+            key, value = m.group(1), m.group(2)
+
+            if key == "clock.rate":
+                settings.clock_rate = int(value) if value else 48000
+            elif key == "clock.force-rate":
+                settings.clock_force_rate = int(value) if value else 0
+            elif key == "clock.quantum":
+                settings.clock_quantum = int(value) if value else 1024
+            elif key == "clock.force-quantum":
+                settings.clock_force_quantum = int(value) if value else 0
+            elif key == "clock.min-quantum":
+                settings.clock_min_quantum = int(value) if value else 32
+            elif key == "clock.max-quantum":
+                settings.clock_max_quantum = int(value) if value else 2048
+            elif key == "clock.allowed-rates":
+                # Value like "[ 48000 ]" or "[ 44100 48000 96000 ]"
+                rates_m = re.findall(r"\d+", value)
+                if rates_m:
+                    settings.clock_allowed_rates = [int(r) for r in rates_m]
+
+        return settings
+
+    async def set_quantum(self, quantum: int) -> bool:
+        """Set PipeWire DSP quantum (buffer period size).
+
+        Valid values: powers of 2 between min_quantum and max_quantum.
+        Set to 0 to return to automatic/default.
+        """
+        if not HAS_PW_METADATA:
+            logger.error("pw-metadata not available - cannot set quantum")
+            return False
+
+        # Validate
+        if quantum != 0 and (quantum < 16 or quantum > 8192):
+            logger.error(f"Invalid quantum {quantum}: must be 0 or 16-8192")
+            return False
+
+        output = await self._run_cmd([
+            "pw-metadata", "-n", "settings", "0",
+            "clock.force-quantum", str(quantum),
+        ])
+        logger.info(f"Set PipeWire quantum to {quantum}")
+        return True
+
+    async def set_rate(self, rate: int) -> bool:
+        """Set PipeWire forced sample rate.
+
+        Set to 0 to return to automatic.
+        """
+        if not HAS_PW_METADATA:
+            logger.error("pw-metadata not available - cannot set rate")
+            return False
+
+        valid_rates = [0, 44100, 48000, 88200, 96000, 176400, 192000]
+        if rate not in valid_rates:
+            logger.error(f"Invalid rate {rate}: must be one of {valid_rates}")
+            return False
+
+        output = await self._run_cmd([
+            "pw-metadata", "-n", "settings", "0",
+            "clock.force-rate", str(rate),
+        ])
+        logger.info(f"Set PipeWire sample rate to {rate}")
+        return True
+
+    # ---------------------------------------------------------------
+    # Volume / mute (wpctl)
+    # ---------------------------------------------------------------
+
+    async def get_volume(self, node_id: int) -> Dict[str, Any]:
+        """Get volume and mute state for a node."""
+        output = await self._run_cmd(["wpctl", "get-volume", str(node_id)])
+        # Output: "Volume: 1.000000" or "Volume: 1.000000 [MUTED]"
+        result = {"volume": 1.0, "muted": False}
+        if output:
+            vol_m = re.search(r"Volume:\s*([\d.]+)", output)
+            if vol_m:
+                result["volume"] = float(vol_m.group(1))
+            result["muted"] = "[MUTED]" in output
+        return result
+
+    async def set_volume(self, node_id: int, volume: float) -> bool:
+        """Set volume for a node (0.0 to 1.5)."""
+        volume = max(0.0, min(1.5, volume))
+        await self._run_cmd(["wpctl", "set-volume", str(node_id), f"{volume:.2f}"])
+        return True
+
+    async def set_mute(self, node_id: int, mute: bool) -> bool:
+        """Set mute state for a node."""
+        await self._run_cmd(["wpctl", "set-mute", str(node_id), "1" if mute else "0"])
+        return True
+
+    # ---------------------------------------------------------------
+    # XRun detection (from pw-dump driver stats)
+    # ---------------------------------------------------------------
+
+    async def _get_driver_xruns(self) -> int:
+        """Get xrun count from PipeWire driver nodes."""
+        if not HAS_PW_DUMP:
+            return 0
+
+        dump = await self._run_cmd_json(["pw-dump"])
+        if not isinstance(dump, list):
+            return 0
+
+        total_xruns = 0
+        for obj in dump:
+            if obj.get("type") != "PipeWire:Interface:Node":
+                continue
+            info = obj.get("info", {})
+            props = info.get("props", {})
+            # Driver nodes have "node.driver" = true
+            if props.get("node.driver"):
+                # xruns tracked in info.params if available
+                params = info.get("params", {})
+                for p in params.get("ProcessLatency", []):
+                    xruns = p.get("xrun", p.get("xrun-count", 0))
+                    if isinstance(xruns, (int, float)):
+                        total_xruns += int(xruns)
+
+        return total_xruns
+
+    # ---------------------------------------------------------------
+    # Latency computation
+    # ---------------------------------------------------------------
+
+    def _compute_latency(self, settings: PipeWireSettings) -> Dict[str, float]:
+        """Compute latency from PipeWire settings."""
+        rate = settings.clock_rate if settings.clock_rate > 0 else 48000
+        quantum = settings.clock_force_quantum if settings.clock_force_quantum > 0 else settings.clock_quantum
+
+        graph_ms = (quantum / rate) * 1000.0
+
+        # Driver latency is typically 1 additional quantum for USB
+        driver_ms = graph_ms
+
+        return {
+            "graph_latency_ms": round(graph_ms, 3),
+            "driver_latency_ms": round(driver_ms, 3),
+            "total_latency_ms": round(graph_ms + driver_ms, 3),
+        }
+
+    # ---------------------------------------------------------------
+    # Full graph snapshot
+    # ---------------------------------------------------------------
+
+    async def get_graph_snapshot(self) -> PipeWireMetrics:
+        """Get a complete PipeWire metrics snapshot.
+
+        Results are cached for _cache_ttl seconds to avoid excessive subprocess calls.
+        """
+        now = time.monotonic()
+        if self._cached_snapshot and (now - self._cache_time) < self._cache_ttl:
+            return self._cached_snapshot
+
+        daemon = await self.check_daemon()
+        if not daemon.running:
+            return PipeWireMetrics(
+                daemon=daemon,
+                timestamp=datetime.now().isoformat(),
+                alerts=[{"type": "pipewire_daemon_down", "severity": "error",
+                         "message": "PipeWire daemon is not running"}],
+            )
+
+        # Gather all data concurrently
+        settings_task = self.get_settings()
+        nodes_task = self.get_nodes()
+        devices_task = self.get_devices()
+        streams_task = self.get_streams()
+        links_task = self.get_links()
+        clients_task = self.get_clients()
+        xruns_task = self._get_driver_xruns()
+
+        settings, nodes, devices, streams, links, clients, xruns = await asyncio.gather(
+            settings_task, nodes_task, devices_task, streams_task,
+            links_task, clients_task, xruns_task,
+        )
+
+        latency = self._compute_latency(settings)
+
+        # Find default sink/source
+        default_sink = next((n for n in nodes if n.media_class == "Audio/Sink" and n.is_default), None)
+        default_source = next((n for n in nodes if n.media_class == "Audio/Source" and n.is_default), None)
+
+        # Check for alerts
+        alerts = self._check_alerts(daemon, devices, streams, xruns, latency["total_latency_ms"])
+
+        metrics = PipeWireMetrics(
+            daemon=daemon,
+            settings=settings,
+            default_sink=default_sink,
+            default_source=default_source,
+            devices=devices,
+            nodes=nodes,
+            streams=streams,
+            links=links,
+            client_count=len(clients),
+            xruns=xruns,
+            graph_latency_ms=latency["graph_latency_ms"],
+            driver_latency_ms=latency["driver_latency_ms"],
+            total_latency_ms=latency["total_latency_ms"],
+            alerts=alerts,
+            timestamp=datetime.now().isoformat(),
+        )
+
+        self._cached_snapshot = metrics
+        self._cache_time = now
+        return metrics
+
+    # ---------------------------------------------------------------
+    # Alerting
+    # ---------------------------------------------------------------
+
+    def _check_alerts(
+        self,
+        daemon: PipeWireDaemonInfo,
+        devices: List[PipeWireDeviceInfo],
+        streams: List[PipeWireStreamInfo],
+        xruns: int,
+        total_latency_ms: float,
+    ) -> List[Dict[str, str]]:
+        """Check for PipeWire alert conditions."""
+        alerts = []
+
+        if not daemon.running:
+            alerts.append({
+                "type": "pipewire_daemon_down",
+                "severity": "error",
+                "message": "PipeWire daemon is not running",
+            })
+
+        if not devices:
+            alerts.append({
+                "type": "pipewire_device_disconnected",
+                "severity": "error",
+                "message": "No audio devices detected in PipeWire",
+            })
+
+        if total_latency_ms > 20.0:
+            alerts.append({
+                "type": "pipewire_high_latency",
+                "severity": "warning",
+                "message": f"Total audio latency is {total_latency_ms:.1f}ms",
+            })
+
+        if xruns > self._last_xrun_count:
+            new_xruns = xruns - self._last_xrun_count
+            alerts.append({
+                "type": "pipewire_xrun",
+                "severity": "warning",
+                "message": f"{new_xruns} new PipeWire XRun(s) detected (total: {xruns})",
+            })
+            self._last_xrun_count = xruns
+
+        if not streams:
+            alerts.append({
+                "type": "pipewire_no_streams",
+                "severity": "info",
+                "message": "No active audio streams in PipeWire",
+            })
+
+        return alerts
+
+    # ---------------------------------------------------------------
+    # WebSocket broadcasting
+    # ---------------------------------------------------------------
+
+    async def start_broadcast(self, ws_manager, interval: float = 2.0):
+        """Start periodic PipeWire metrics broadcast via WebSocket."""
+        if self._broadcast_task and not self._broadcast_task.done():
+            return
+        self._broadcast_task = asyncio.create_task(
+            self._broadcast_loop(ws_manager, interval)
+        )
+        logger.info(f"PipeWire broadcast started (interval={interval}s)")
+
+    async def stop_broadcast(self):
+        """Stop the broadcast loop."""
+        if self._broadcast_task and not self._broadcast_task.done():
+            self._broadcast_task.cancel()
+            try:
+                await self._broadcast_task
+            except asyncio.CancelledError:
+                pass
+            self._broadcast_task = None
+            logger.info("PipeWire broadcast stopped")
+
+    async def _broadcast_loop(self, ws_manager, interval: float):
+        """Periodic broadcast of PipeWire metrics."""
+        while True:
+            try:
+                metrics = await self.get_graph_snapshot()
+                await ws_manager.broadcast_json({
+                    "type": "pipewire_metrics",
+                    "data": asdict(metrics),
+                }, topic="pipewire")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.debug(f"PipeWire broadcast error: {e}")
+            await asyncio.sleep(interval)
+
+
+# ============================================================================
+# Global singleton
+# ============================================================================
+
+_pipewire_service: Optional[PipeWireService] = None
+
+
+def get_pipewire_service() -> PipeWireService:
+    """Get or create the global PipeWire service instance."""
+    global _pipewire_service
+    if _pipewire_service is None:
+        _pipewire_service = PipeWireService()
+    return _pipewire_service

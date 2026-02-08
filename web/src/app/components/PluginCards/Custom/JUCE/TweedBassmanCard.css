@@ -1,0 +1,361 @@
+/**
+ * Tweed Bassman 5F6-A Card Styles
+ * Warm tweed aesthetic with amber/gold accents
+ * Inspired by the 1958 Fender Bassman circuit schematic
+ * Colors: #1A1610 bg, #2A2418 panel, #D4A847 gold accent, #8B7355 tweed
+ */
+
+/* Header */
+.bassman-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.bassman-card-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #D4A847;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(212, 168, 71, 0.3);
+}
+
+.bassman-card-subtitle {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #8B7355;
+  text-transform: uppercase;
+}
+
+/* Schematic Visualization - Amp circuit diagram */
+.bassman-schematic {
+  padding: 8px 10px;
+  background: linear-gradient(180deg, #0D0B08 0%, #1A1610 50%, #0D0B08 100%);
+  border-radius: 6px;
+  border: 1px solid #3A3228;
+  position: relative;
+  overflow: hidden;
+}
+
+.bassman-schematic::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #3A3228 50%, transparent 100%);
+}
+
+.bassman-schematic-svg {
+  width: 100%;
+  height: 100px;
+}
+
+.bassman-schematic-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #8B7355;
+  margin-top: 4px;
+  padding: 0 2px;
+  text-transform: uppercase;
+}
+
+/* Section Panels */
+.bassman-section {
+  background: #1A1610;
+  border-radius: 6px;
+  border: 1px solid #3A3228;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.bassman-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #D4A847;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #3A3228;
+}
+
+/* Preset Selector */
+.bassman-preset-section {
+  margin-bottom: 10px;
+}
+
+.bassman-preset-select {
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: #0D0B08;
+  border: 1px solid #3A3228;
+  border-radius: 4px;
+  color: #E0D8C8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23D4A847' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.bassman-preset-select:hover {
+  border-color: #D4A847;
+  background-color: #1A1610;
+}
+
+.bassman-preset-select:focus {
+  outline: none;
+  border-color: #D4A847;
+  box-shadow: 0 0 0 2px rgba(212, 168, 71, 0.15);
+}
+
+.bassman-preset-select option {
+  background: #0D0B08;
+  color: #E0D8C8;
+}
+
+.bassman-preset-info {
+  margin-top: 4px;
+  font-size: 10px;
+  font-style: italic;
+  color: #8B7355;
+  text-align: center;
+}
+
+/* Combo Select (tube type, channel, etc.) */
+.bassman-combo {
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #0D0B08;
+  border: 1px solid #3A3228;
+  border-radius: 3px;
+  color: #E0D8C8;
+  cursor: pointer;
+  appearance: none;
+  min-width: 80px;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.bassman-combo:hover {
+  border-color: #D4A847;
+}
+
+.bassman-combo:focus {
+  outline: none;
+  border-color: #D4A847;
+}
+
+/* Toggle Switch */
+.bassman-toggle {
+  padding: 5px 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #3A3228;
+  background: #1A1610;
+  color: #8B7355;
+}
+
+.bassman-toggle.active {
+  background: rgba(212, 168, 71, 0.2);
+  border-color: #D4A847;
+  color: #D4A847;
+  box-shadow: 0 0 10px rgba(212, 168, 71, 0.2);
+}
+
+.bassman-toggle:hover {
+  border-color: #8B7355;
+  color: #E0D8C8;
+}
+
+/* Mod Panel */
+.bassman-mods-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px;
+  background: #0D0B08;
+  border: 1px solid #3A3228;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.bassman-mod-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.bassman-mod-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #8B7355;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Quick Presets */
+.bassman-quick-presets {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #2A2418;
+}
+
+.bassman-quick-presets button {
+  padding: 3px 8px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(212, 168, 71, 0.06);
+  border: 1px solid #3A3228;
+  border-radius: 3px;
+  color: #8B7355;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.bassman-quick-presets button:hover {
+  background: rgba(212, 168, 71, 0.15);
+  border-color: #8B7355;
+  color: #E0D8C8;
+}
+
+.bassman-quick-presets button.active {
+  background: rgba(212, 168, 71, 0.25);
+  border-color: #D4A847;
+  color: #D4A847;
+  box-shadow: 0 0 6px rgba(212, 168, 71, 0.3);
+}
+
+/* Footer */
+.bassman-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #2A2418;
+  margin-top: 10px;
+}
+
+.bassman-meter {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: #8B7355;
+}
+
+.bassman-sag {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: #D4A847;
+  padding: 2px 6px;
+  background: rgba(212, 168, 71, 0.08);
+  border-radius: 3px;
+}
+
+.bassman-cpu {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: #8B7355;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+}
+
+/* Tube glow animation */
+@keyframes bassman-tube-glow {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(2px);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(3px);
+  }
+}
+
+.bassman-schematic .tube-glow {
+  animation: bassman-tube-glow 4s ease-in-out infinite;
+}
+
+.bassman-schematic .tube-glow:nth-child(2) {
+  animation-delay: 0.7s;
+}
+
+.bassman-schematic .tube-glow:nth-child(3) {
+  animation-delay: 1.4s;
+}
+
+/* Signal flow line pulse */
+@keyframes bassman-signal-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.bassman-signal-line {
+  stroke-dasharray: 4 2;
+  animation: bassman-signal-flow 2s linear infinite;
+}
+
+/* Channel indicator */
+.bassman-channel-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+}
+
+.bassman-channel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3A3228;
+  transition: all 0.2s ease;
+}
+
+.bassman-channel-dot.active {
+  background: #D4A847;
+  box-shadow: 0 0 6px rgba(212, 168, 71, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .bassman-card-title {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .bassman-mods-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .bassman-quick-presets button {
+    padding: 2px 6px;
+    font-size: 7px;
+  }
+}

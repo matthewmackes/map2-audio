@@ -29,10 +29,68 @@ from app.services.cluster.distributed_event_bus import get_event_bus, EventType
 from app.services.cluster.node_lifecycle import get_lifecycle_manager
 from app.services.cluster.disaster_recovery import get_disaster_recovery
 from app.services.cluster.network_topology import get_topology_monitor
+from app.services.cluster.config_manager import get_config_manager
+from app.services.cluster.deployment_manager import get_deployment_manager
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/cluster", tags=["cluster"])
+
+
+# ============================================================================
+# Cluster Setup & Onboarding
+# ============================================================================
+
+@router.post("/setup")
+async def setup_cluster(request: dict):
+    """
+    Complete cluster setup from onboarding wizard.
+    
+    Payload includes:
+    - deployment_mode
+    - cluster_name
+    - discovered_nodes
+    - network configuration
+    - certificate mode
+    """
+    try:
+        # Apply deployment mode
+        deployment_mgr = get_deployment_manager()
+        
+        mode = request.get("deployment_mode", "all-in-one")
+        await deployment_mgr.set_mode(mode)
+        
+        # Register discovered nodes
+        registry = get_cluster_registry()
+        for node in request.get("discovered_nodes", []):
+            registry.register_node(
+                node_id=node.get("node_id", node.get("hostname")),
+                metadata={
+                    "hostname": node.get("hostname"),
+                    "ip_address": node.get("ip_address"),
+                    "role": node.get("role", "worker"),
+                },
+            )
+        
+        # Update cluster config
+        config_mgr = get_config_manager()
+        config_mgr.update_config({
+            "cluster_name": request.get("cluster_name"),
+            "management_ip": request.get("management_ip"),
+            "network_interface": request.get("network_interface"),
+            "api_port": request.get("api_port"),
+            "enable_mdns": request.get("enable_mdns"),
+            "enable_tls": request.get("enable_tls"),
+        })
+        
+        return {
+            "status": "ok",
+            "message": "Cluster setup complete",
+            "mode": mode,
+            "nodes_registered": len(request.get("discovered_nodes", [])),
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Setup failed: {e}")
 
 
 # ============================================================================
@@ -307,15 +365,14 @@ async def trigger_node_update(node_id: str, dry_run: bool = False) -> Dict:
                 detail=f"Node {node_id} not found",
             )
 
-        # TODO: Implement actual update triggering
-        # This would integrate with the update orchestrator
-
+        scheduler = get_update_scheduler()
+        result = await scheduler.update_single_node(node_id=node_id, dry_run=dry_run)
         return {
-            "status": "ok",
+            "status": result.get("status", "ok"),
             "node_id": node_id,
             "action": "update_triggered" if not dry_run else "dry_run_requested",
             "timestamp": datetime.utcnow().isoformat(),
-            "note": "Update orchestration will be implemented in Task 10",
+            "result": result,
         }
 
     except HTTPException:

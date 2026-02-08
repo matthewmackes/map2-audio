@@ -63,6 +63,10 @@ import type {
   APIEndpoint,
   AccessLog,
   WebSocketStats,
+  HostMachineInfo,
+  DiskHealthData,
+  SystemHealthOverview,
+  BrandingAssets,
   FlowSnapshot,
   FlowSnapshotDetail,
   FlowSnapshotData,
@@ -1580,6 +1584,15 @@ export const systemApi = {
       `${API_BASE}/system/reinstall-branding`,
       { method: 'POST' }
     ),
+
+  // Host Machine Page APIs
+  getHostMachineInfo: () => fetchJson<HostMachineInfo>(`${API_BASE}/system/host-machine-info`),
+
+  getDiskHealth: () => fetchJson<DiskHealthData>(`${API_BASE}/system/disk-health`),
+
+  getHealthOverview: () => fetchJson<SystemHealthOverview>(`${API_BASE}/system/health-overview`),
+
+  getBrandingAssets: () => fetchJson<BrandingAssets>(`${API_BASE}/system/branding-assets`),
 };
 
 // ==================== Health API ====================
@@ -2239,6 +2252,74 @@ export const flowSnapshotsApi = {
     ),
 };
 
+// ==================== PipeWire Audio Server ====================
+
+export const pipewireApi = {
+  /** Full PipeWire graph snapshot — daemon, devices, nodes, streams, links, latency, alerts */
+  getStatus: () =>
+    fetchJson<import('./types').PipeWireMetrics>(`${API_BASE}/pipewire/status`),
+
+  /** PipeWire daemon info */
+  getDaemon: () =>
+    fetchJson<import('./types').PipeWireDaemonInfo>(`${API_BASE}/pipewire/daemon`),
+
+  /** List audio devices */
+  getDevices: () =>
+    fetchJson<{ devices: import('./types').PipeWireDeviceInfo[] }>(`${API_BASE}/pipewire/devices`),
+
+  /** List sink/source nodes */
+  getNodes: () =>
+    fetchJson<{ nodes: import('./types').PipeWireNodeInfo[] }>(`${API_BASE}/pipewire/nodes`),
+
+  /** List active streams */
+  getStreams: () =>
+    fetchJson<{ streams: import('./types').PipeWireStreamInfo[] }>(`${API_BASE}/pipewire/streams`),
+
+  /** List graph links */
+  getLinks: () =>
+    fetchJson<{ links: import('./types').PipeWireLinkInfo[] }>(`${API_BASE}/pipewire/links`),
+
+  /** List connected clients */
+  getClients: () =>
+    fetchJson<{ clients: { id: number; name: string; info: string }[] }>(`${API_BASE}/pipewire/clients`),
+
+  /** Get clock settings */
+  getSettings: () =>
+    fetchJson<import('./types').PipeWireSettings>(`${API_BASE}/pipewire/settings`),
+
+  /** Get latency breakdown */
+  getLatency: () =>
+    fetchJson<{ graph_latency_ms: number; driver_latency_ms: number; total_latency_ms: number; settings: import('./types').PipeWireSettings }>(`${API_BASE}/pipewire/latency`),
+
+  /** Set DSP quantum (buffer period). 0 = automatic. */
+  setQuantum: (quantum: number) =>
+    fetchJson<{ success: boolean; quantum: number; settings: import('./types').PipeWireSettings }>(
+      `${API_BASE}/pipewire/quantum`, { method: 'POST', body: JSON.stringify({ quantum }) }
+    ),
+
+  /** Set forced sample rate. 0 = automatic. */
+  setRate: (rate: number) =>
+    fetchJson<{ success: boolean; rate: number; settings: import('./types').PipeWireSettings }>(
+      `${API_BASE}/pipewire/rate`, { method: 'POST', body: JSON.stringify({ rate }) }
+    ),
+
+  /** Get volume/mute for a node */
+  getVolume: (nodeId: number) =>
+    fetchJson<{ node_id: number; volume: number; muted: boolean }>(`${API_BASE}/pipewire/volume/${nodeId}`),
+
+  /** Set volume for a node */
+  setVolume: (nodeId: number, volume: number) =>
+    fetchJson<{ success: boolean; node_id: number; volume: number }>(
+      `${API_BASE}/pipewire/volume`, { method: 'POST', body: JSON.stringify({ node_id: nodeId, volume }) }
+    ),
+
+  /** Set mute state for a node */
+  setMute: (nodeId: number, mute: boolean) =>
+    fetchJson<{ success: boolean; node_id: number; mute: boolean }>(
+      `${API_BASE}/pipewire/mute`, { method: 'POST', body: JSON.stringify({ node_id: nodeId, mute }) }
+    ),
+};
+
 // ==================== Export all APIs ====================
 
 export const map2Api = {
@@ -2265,6 +2346,7 @@ export const map2Api = {
   folders: foldersApi,
   upload: uploadApi,
   flowSnapshots: flowSnapshotsApi,
+  pipewire: pipewireApi,
 };
 
 export default map2Api;

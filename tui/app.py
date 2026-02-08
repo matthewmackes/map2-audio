@@ -151,6 +151,27 @@ except ImportError as e:
     SCREEN_IMPORT_ERRORS['ClusterModeScreen'] = str(e)
 
 try:
+    from .screens.system_update_screen import SystemUpdateScreen
+except ImportError as e:
+    logger.warning(f"Could not import SystemUpdateScreen: {e}")
+    SystemUpdateScreen = None
+    SCREEN_IMPORT_ERRORS['SystemUpdateScreen'] = str(e)
+
+try:
+    from .screens.onboarding_wizard_screen import OnboardingWizardScreen
+except ImportError as e:
+    logger.warning(f"Could not import OnboardingWizardScreen: {e}")
+    OnboardingWizardScreen = None
+    SCREEN_IMPORT_ERRORS['OnboardingWizardScreen'] = str(e)
+
+try:
+    from .screens.update_progress_screen import UpdateProgressScreen
+except ImportError as e:
+    logger.warning(f"Could not import UpdateProgressScreen: {e}")
+    UpdateProgressScreen = None
+    SCREEN_IMPORT_ERRORS['UpdateProgressScreen'] = str(e)
+
+try:
     from .screens.test_screen import TestScreen
 except ImportError as e:
     logger.warning(f"Could not import TestScreen: {e}")
@@ -752,6 +773,9 @@ class MAP2AudioTUI(App):
         Binding("d", "goto_tab_10", "Developer", show=True),
         Binding("m", "goto_tab_11", "Monitor", show=True),
         Binding("c", "goto_tab_12", "Cluster", show=True),
+        Binding("u", "goto_tab_13", "Updates", show=True),
+        Binding("w", "show_wizard", "Wizard", show=True),
+        Binding("p", "show_progress", "Progress", show=False),
     ]
 
     # New simplified screen factory mapping: 12 tabs
@@ -770,6 +794,7 @@ class MAP2AudioTUI(App):
         10: (DeveloperModeScreen, "developer-mode"),
         11: (BackendMonitorScreen, "backend-monitor"),
         12: (ClusterModeScreen, "cluster-mode"),
+        13: (SystemUpdateScreen, "system-updates"),
     }
 
     # New tab names for 12 master screens
@@ -787,6 +812,7 @@ class MAP2AudioTUI(App):
         "🔧 Developer",
         "🖥️ Monitor",
         "🛰️ Cluster",
+        "🔄 Updates",
     ]
 
     def __init__(self, daemon_mode: bool = False):
@@ -1072,6 +1098,24 @@ class MAP2AudioTUI(App):
     async def action_goto_tab_12(self) -> None:
         """Go to Cluster Mode tab - Deployment & discovery control."""
         await self.show_tab(12)
+
+    async def action_goto_tab_13(self) -> None:
+        """Go to System Updates tab."""
+        await self.show_tab(13)
+
+    async def action_show_wizard(self) -> None:
+        """Show onboarding wizard."""
+        if OnboardingWizardScreen:
+            self.push_screen(OnboardingWizardScreen())
+        else:
+            self.notify("Onboarding wizard not available", severity="warning", timeout=3)
+
+    async def action_show_progress(self) -> None:
+        """Show update progress viewer."""
+        if UpdateProgressScreen:
+            self.push_screen(UpdateProgressScreen())
+        else:
+            self.notify("Progress viewer not available", severity="warning", timeout=3)
 
     async def _clear_content_area(self) -> None:
         """Clear the content area, properly removing all widgets."""

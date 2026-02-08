@@ -1,0 +1,31 @@
+[Unit]
+Description=MAP2 Audio Platform - Frontend Web Service
+After=map2-backend.service
+Wants=map2-backend.service
+
+[Service]
+Type=simple
+User=map2
+Group=map2
+WorkingDirectory=/opt/map2/web
+ExecStart=/usr/bin/python3 -m http.server --directory /opt/map2/web/dist 3000
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-frontend
+
+# Security
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/log/map2
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=32768
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

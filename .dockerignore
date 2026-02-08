@@ -1,3 +1,12 @@
+# ⚠️ DEPRECATED: .dockerignore - Docker Support Removed
+# 
+# This file is deprecated and no longer maintained. MAP2 Audio now uses native systemd deployment.
+# 
+# See: NATIVE_DEPLOYMENT_GUIDE.md for current deployment instructions.
+# 
+# For historical reference only.
+# ---
+
 # .dockerignore for MAP2 Audio Platform
 
 # Python

@@ -211,6 +211,62 @@ class FedoraDNFManager:
                 "error": str(e),
             }
 
+    def apply_updates(
+        self,
+        packages: Optional[List[str]] = None,
+        dry_run: bool = False,
+        refresh: bool = True,
+    ) -> Dict:
+        """
+        Apply package updates using dnf.
+
+        Args:
+            packages: Optional list of specific packages to update (None = all)
+            dry_run: If true, only simulate update
+            refresh: If true, run dnf with --refresh
+
+        Returns:
+            Dictionary with execution results
+        """
+        if dry_run:
+            return self.simulate_update(packages=packages)
+
+        try:
+            self.logger.info("Applying package updates...")
+
+            cmd = ["dnf", "update", "-y"]
+            if refresh:
+                cmd.append("--refresh")
+            if packages:
+                cmd.extend(packages)
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+
+            return {
+                "success": result.returncode == 0,
+                "returncode": result.returncode,
+                "stdout": result.stdout[-2000:] if result.stdout else "",
+                "stderr": result.stderr[-2000:] if result.stderr else "",
+            }
+
+        except subprocess.TimeoutExpired:
+            self.logger.error("DNF update timed out")
+            return {
+                "success": False,
+                "error": "Timeout during update",
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to apply updates: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
     def get_disk_space_required(self) -> int:
         """
         Estimate disk space required for updates (in MB).

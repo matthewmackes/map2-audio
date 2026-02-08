@@ -981,6 +981,405 @@ py::dict h3000AlgorithmInfoToDict(const H3000Processor::AlgorithmInfo& info) {
 }
 
 // ========================================
+// Peavey 5150 Converters
+// ========================================
+
+std::string peavey5150PresetToString(Peavey5150Processor::Preset preset) {
+    switch (preset) {
+        case Peavey5150Processor::Preset::Manual: return "manual";
+        case Peavey5150Processor::Preset::BrownSound: return "brown_sound";
+        case Peavey5150Processor::Preset::PanteraScoop: return "pantera_scoop";
+        case Peavey5150Processor::Preset::ModernMetal: return "modern_metal";
+        case Peavey5150Processor::Preset::HardRock: return "hard_rock";
+        case Peavey5150Processor::Preset::Crunch: return "crunch";
+        default: return "manual";
+    }
+}
+
+Peavey5150Processor::Preset stringToPeavey5150Preset(const std::string& str) {
+    if (str == "brown_sound") return Peavey5150Processor::Preset::BrownSound;
+    if (str == "pantera_scoop") return Peavey5150Processor::Preset::PanteraScoop;
+    if (str == "modern_metal") return Peavey5150Processor::Preset::ModernMetal;
+    if (str == "hard_rock") return Peavey5150Processor::Preset::HardRock;
+    if (str == "crunch") return Peavey5150Processor::Preset::Crunch;
+    return Peavey5150Processor::Preset::Manual;
+}
+
+py::dict peavey5150ParamsToDict(const Peavey5150Processor::Parameters& params) {
+    py::dict d;
+    d["pre_gain"] = params.preGain;
+    d["post_gain"] = params.postGain;
+    d["low"] = params.low;
+    d["mid"] = params.mid;
+    d["high"] = params.high;
+    d["presence"] = params.presence;
+    d["resonance"] = params.resonance;
+    d["bright"] = params.bright;
+    d["bias"] = params.bias;
+    d["preset"] = static_cast<int>(params.preset);
+    d["preset_name"] = peavey5150PresetToString(params.preset);
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+Peavey5150Processor::Parameters dictToPeavey5150Params(const py::dict& d) {
+    Peavey5150Processor::Parameters params;
+    if (d.contains("pre_gain")) params.preGain = d["pre_gain"].cast<float>();
+    if (d.contains("post_gain")) params.postGain = d["post_gain"].cast<float>();
+    if (d.contains("low")) params.low = d["low"].cast<float>();
+    if (d.contains("mid")) params.mid = d["mid"].cast<float>();
+    if (d.contains("high")) params.high = d["high"].cast<float>();
+    if (d.contains("presence")) params.presence = d["presence"].cast<float>();
+    if (d.contains("resonance")) params.resonance = d["resonance"].cast<float>();
+    if (d.contains("bright")) params.bright = d["bright"].cast<bool>();
+    if (d.contains("bias")) params.bias = d["bias"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+py::dict peavey5150MeteringToDict(const Peavey5150Processor::Metering& m) {
+    py::dict d;
+    d["input_level"] = m.inputLevel;
+    d["output_level"] = m.outputLevel;
+    d["preamp_level"] = m.preampLevel;
+    d["power_level"] = m.powerLevel;
+    d["supply_sag"] = m.supplySag;
+    d["cpu_load"] = m.cpuLoad;
+    return d;
+}
+
+// ========================================
+// Tweed Bassman 5F6-A Converters
+// ========================================
+
+std::string tweedBassmanPresetToString(TweedBassmanProcessor::Preset preset) {
+    switch (preset) {
+        case TweedBassmanProcessor::Preset::Manual: return "manual";
+        case TweedBassmanProcessor::Preset::Stock5F6A: return "stock_5f6a";
+        case TweedBassmanProcessor::Preset::CrankedTweed: return "cranked_tweed";
+        case TweedBassmanProcessor::Preset::BluesBreakup: return "blues_breakup";
+        case TweedBassmanProcessor::Preset::CountryClean: return "country_clean";
+        case TweedBassmanProcessor::Preset::JumpedDirty: return "jumped_dirty";
+        case TweedBassmanProcessor::Preset::HighGainMod: return "high_gain_mod";
+        case TweedBassmanProcessor::Preset::NeilYoung: return "neil_young";
+        case TweedBassmanProcessor::Preset::TweedDeluxe: return "tweed_deluxe";
+        case TweedBassmanProcessor::Preset::JTM45Flavor: return "jtm45_flavor";
+        case TweedBassmanProcessor::Preset::SagMonster: return "sag_monster";
+        case TweedBassmanProcessor::Preset::PedalPlatform: return "pedal_platform";
+        case TweedBassmanProcessor::Preset::BrightChimey: return "bright_chimey";
+        case TweedBassmanProcessor::Preset::SRVTone: return "srv_tone";
+        case TweedBassmanProcessor::Preset::RecordingDI: return "recording_di";
+        default: return "manual";
+    }
+}
+
+TweedBassmanProcessor::Preset stringToTweedBassmanPreset(const std::string& str) {
+    if (str == "stock_5f6a") return TweedBassmanProcessor::Preset::Stock5F6A;
+    if (str == "cranked_tweed") return TweedBassmanProcessor::Preset::CrankedTweed;
+    if (str == "blues_breakup") return TweedBassmanProcessor::Preset::BluesBreakup;
+    if (str == "country_clean") return TweedBassmanProcessor::Preset::CountryClean;
+    if (str == "jumped_dirty") return TweedBassmanProcessor::Preset::JumpedDirty;
+    if (str == "high_gain_mod") return TweedBassmanProcessor::Preset::HighGainMod;
+    if (str == "neil_young") return TweedBassmanProcessor::Preset::NeilYoung;
+    if (str == "tweed_deluxe") return TweedBassmanProcessor::Preset::TweedDeluxe;
+    if (str == "jtm45_flavor") return TweedBassmanProcessor::Preset::JTM45Flavor;
+    if (str == "sag_monster") return TweedBassmanProcessor::Preset::SagMonster;
+    if (str == "pedal_platform") return TweedBassmanProcessor::Preset::PedalPlatform;
+    if (str == "bright_chimey") return TweedBassmanProcessor::Preset::BrightChimey;
+    if (str == "srv_tone") return TweedBassmanProcessor::Preset::SRVTone;
+    if (str == "recording_di") return TweedBassmanProcessor::Preset::RecordingDI;
+    return TweedBassmanProcessor::Preset::Manual;
+}
+
+py::dict tweedBassmanParamsToDict(const TweedBassmanProcessor::Parameters& params) {
+    py::dict d;
+    d["channel_mode"] = params.channelMode;
+    d["normal_volume"] = params.normalVolume;
+    d["bright_volume"] = params.brightVolume;
+    d["bright_cap"] = params.brightCap;
+    d["v1_tube_type"] = params.v1TubeType;
+    d["cathode_bypass"] = params.cathodeBypass;
+    d["cathode_bias"] = params.cathodeBias;
+    d["treble"] = params.treble;
+    d["mid"] = params.mid;
+    d["bass"] = params.bass;
+    d["raw_switch"] = params.rawSwitch;
+    d["master_volume"] = params.masterVolume;
+    d["presence"] = params.presence;
+    d["nfb_mode"] = params.nfbMode;
+    d["power_tube_type"] = params.powerTubeType;
+    d["bias_mode"] = params.biasMode;
+    d["rectifier_type"] = params.rectifierType;
+    d["output_level"] = params.outputLevel;
+    d["cabinet_enabled"] = params.cabinetEnabled;
+    d["cabinet_ir"] = params.cabinetIR;
+    d["preset"] = static_cast<int>(params.preset);
+    d["preset_name"] = tweedBassmanPresetToString(params.preset);
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+TweedBassmanProcessor::Parameters dictToTweedBassmanParams(const py::dict& d) {
+    TweedBassmanProcessor::Parameters params;
+    if (d.contains("channel_mode")) params.channelMode = d["channel_mode"].cast<int>();
+    if (d.contains("normal_volume")) params.normalVolume = d["normal_volume"].cast<float>();
+    if (d.contains("bright_volume")) params.brightVolume = d["bright_volume"].cast<float>();
+    if (d.contains("bright_cap")) params.brightCap = d["bright_cap"].cast<bool>();
+    if (d.contains("v1_tube_type")) params.v1TubeType = d["v1_tube_type"].cast<int>();
+    if (d.contains("cathode_bypass")) params.cathodeBypass = d["cathode_bypass"].cast<bool>();
+    if (d.contains("cathode_bias")) params.cathodeBias = d["cathode_bias"].cast<int>();
+    if (d.contains("treble")) params.treble = d["treble"].cast<float>();
+    if (d.contains("mid")) params.mid = d["mid"].cast<float>();
+    if (d.contains("bass")) params.bass = d["bass"].cast<float>();
+    if (d.contains("raw_switch")) params.rawSwitch = d["raw_switch"].cast<bool>();
+    if (d.contains("master_volume")) params.masterVolume = d["master_volume"].cast<float>();
+    if (d.contains("presence")) params.presence = d["presence"].cast<float>();
+    if (d.contains("nfb_mode")) params.nfbMode = d["nfb_mode"].cast<int>();
+    if (d.contains("power_tube_type")) params.powerTubeType = d["power_tube_type"].cast<int>();
+    if (d.contains("bias_mode")) params.biasMode = d["bias_mode"].cast<int>();
+    if (d.contains("rectifier_type")) params.rectifierType = d["rectifier_type"].cast<int>();
+    if (d.contains("output_level")) params.outputLevel = d["output_level"].cast<float>();
+    if (d.contains("cabinet_enabled")) params.cabinetEnabled = d["cabinet_enabled"].cast<bool>();
+    if (d.contains("cabinet_ir")) params.cabinetIR = d["cabinet_ir"].cast<int>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+py::dict tweedBassmanMeteringToDict(const TweedBassmanProcessor::Metering& m) {
+    py::dict d;
+    d["input_level"] = m.inputLevel;
+    d["output_level"] = m.outputLevel;
+    d["preamp_level"] = m.preampLevel;
+    d["power_level"] = m.powerLevel;
+    d["supply_sag"] = m.supplySag;
+    d["cpu_load"] = m.cpuLoad;
+    return d;
+}
+
+// ========================================
+// PassionFX Multi-Effect Converters
+// ========================================
+
+std::string passionfxPresetToString(PassionFXProcessor::Preset preset) {
+    switch (preset) {
+        case PassionFXProcessor::Preset::Manual: return "manual";
+        case PassionFXProcessor::Preset::Liberty: return "liberty";
+        case PassionFXProcessor::Preset::EroticNightmares: return "erotic_nightmares";
+        case PassionFXProcessor::Preset::TheAnimal: return "the_animal";
+        case PassionFXProcessor::Preset::Answers: return "answers";
+        case PassionFXProcessor::Preset::TheRiddle: return "the_riddle";
+        case PassionFXProcessor::Preset::Ballerina1224: return "ballerina_12_24";
+        case PassionFXProcessor::Preset::ForTheLoveOfGod: return "for_the_love_of_god";
+        case PassionFXProcessor::Preset::TheAudienceIsListening: return "the_audience_is_listening";
+        case PassionFXProcessor::Preset::IWouldLoveTo: return "i_would_love_to";
+        case PassionFXProcessor::Preset::BluePowder: return "blue_powder";
+        case PassionFXProcessor::Preset::GreasyKidsStuff: return "greasy_kids_stuff";
+        case PassionFXProcessor::Preset::AlienWaterKiss: return "alien_water_kiss";
+        case PassionFXProcessor::Preset::Sisters: return "sisters";
+        case PassionFXProcessor::Preset::LoveSecrets: return "love_secrets";
+        default: return "manual";
+    }
+}
+
+PassionFXProcessor::Preset stringToPassionfxPreset(const std::string& str) {
+    if (str == "liberty") return PassionFXProcessor::Preset::Liberty;
+    if (str == "erotic_nightmares") return PassionFXProcessor::Preset::EroticNightmares;
+    if (str == "the_animal") return PassionFXProcessor::Preset::TheAnimal;
+    if (str == "answers") return PassionFXProcessor::Preset::Answers;
+    if (str == "the_riddle") return PassionFXProcessor::Preset::TheRiddle;
+    if (str == "ballerina_12_24") return PassionFXProcessor::Preset::Ballerina1224;
+    if (str == "for_the_love_of_god") return PassionFXProcessor::Preset::ForTheLoveOfGod;
+    if (str == "the_audience_is_listening") return PassionFXProcessor::Preset::TheAudienceIsListening;
+    if (str == "i_would_love_to") return PassionFXProcessor::Preset::IWouldLoveTo;
+    if (str == "blue_powder") return PassionFXProcessor::Preset::BluePowder;
+    if (str == "greasy_kids_stuff") return PassionFXProcessor::Preset::GreasyKidsStuff;
+    if (str == "alien_water_kiss") return PassionFXProcessor::Preset::AlienWaterKiss;
+    if (str == "sisters") return PassionFXProcessor::Preset::Sisters;
+    if (str == "love_secrets") return PassionFXProcessor::Preset::LoveSecrets;
+    return PassionFXProcessor::Preset::Manual;
+}
+
+py::dict passionfxParamsToDict(const PassionFXProcessor::Parameters& params) {
+    py::dict d;
+    // Gate
+    d["gate_enabled"] = params.noiseGateEnabled;
+    d["gate_threshold"] = params.noiseGateThreshold;
+    d["gate_release"] = params.noiseGateRelease;
+    // Comp
+    d["comp_enabled"] = params.compressorEnabled;
+    d["comp_threshold"] = params.compressorThreshold;
+    d["comp_ratio"] = params.compressorRatio;
+    d["comp_attack"] = params.compressorAttack;
+    d["comp_release"] = params.compressorRelease;
+    d["comp_glassy"] = params.compressorGlassy;
+    // Wah
+    d["wah_enabled"] = params.wahEnabled;
+    d["wah_mode"] = params.wahMode;
+    d["wah_position"] = params.wahPosition;
+    d["wah_q"] = params.wahQ;
+    // Phaser
+    d["phaser_enabled"] = params.phaserEnabled;
+    d["phaser_rate"] = params.phaserRate;
+    d["phaser_depth"] = params.phaserDepth;
+    d["phaser_stages"] = params.phaserStages;
+    d["phaser_feedback"] = params.phaserFeedback;
+    // Chorus
+    d["chorus_enabled"] = params.chorusEnabled;
+    d["chorus_rate"] = params.chorusRate;
+    d["chorus_depth"] = params.chorusDepth;
+    d["chorus_voices"] = params.chorusVoices;
+    d["chorus_mix"] = params.chorusMix;
+    // PitchShifter
+    d["pitch_enabled"] = params.pitchShifterEnabled;
+    d["pitch_semitones"] = params.pitchShifterSemitones;
+    d["pitch_mix"] = params.pitchShifterMix;
+    // Harmonizer
+    d["harm_enabled"] = params.harmonizerEnabled;
+    d["harm_voice1_interval"] = params.harmonizerVoice1;
+    d["harm_voice2_interval"] = params.harmonizerVoice2;
+    d["harm_detune_cents"] = params.harmonizerDetune;
+    d["harm_mix"] = params.harmonizerMix;
+    // Delay
+    d["delay_enabled"] = params.delayEnabled;
+    d["delay_time_l"] = params.delayTimeL;
+    d["delay_time_r"] = params.delayTimeR;
+    d["delay_feedback"] = params.delayFeedback;
+    d["delay_mix"] = params.delayMix;
+    d["delay_freeze"] = params.delayFreeze;
+    d["delay_pitch_shift_l"] = params.delayPitchShiftL;
+    d["delay_pitch_shift_r"] = params.delayPitchShiftR;
+    // Reverb
+    d["reverb_enabled"] = params.reverbEnabled;
+    d["reverb_type"] = params.reverbType;
+    d["reverb_decay"] = params.reverbDecay;
+    d["reverb_shimmer_amount"] = params.reverbShimmerAmount;
+    d["reverb_shimmer_interval"] = params.reverbShimmerInterval;
+    d["reverb_mix"] = params.reverbMix;
+    d["reverb_freeze"] = params.reverbFreeze;
+    // EQ
+    d["eq_enabled"] = params.eqEnabled;
+    d["eq_low_gain"] = params.eqLowGain;
+    d["eq_mid_gain"] = params.eqMidGain;
+    d["eq_high_gain"] = params.eqHighGain;
+    d["eq_tilt"] = params.eqTilt;
+    // Exciter
+    d["exciter_enabled"] = params.exciterEnabled;
+    d["exciter_warmth"] = params.exciterWarmth;
+    d["exciter_presence"] = params.exciterPresence;
+    d["exciter_air"] = params.exciterAir;
+    // Tremolo
+    d["trem_enabled"] = params.tremoloEnabled;
+    d["trem_rate"] = params.tremoloRate;
+    d["trem_depth"] = params.tremoloDepth;
+    d["trem_waveform"] = params.tremoloWaveform;
+    // Global
+    d["mix"] = params.globalMix;
+    d["output_level"] = params.outputLevel;
+    d["preset"] = static_cast<int>(params.preset);
+    d["preset_name"] = passionfxPresetToString(params.preset);
+    d["bypass"] = params.bypass;
+    return d;
+}
+
+PassionFXProcessor::Parameters dictToPassionfxParams(const py::dict& d) {
+    PassionFXProcessor::Parameters params;
+    // Gate
+    if (d.contains("gate_enabled")) params.noiseGateEnabled = d["gate_enabled"].cast<bool>();
+    if (d.contains("gate_threshold")) params.noiseGateThreshold = d["gate_threshold"].cast<float>();
+    if (d.contains("gate_release")) params.noiseGateRelease = d["gate_release"].cast<float>();
+    // Comp
+    if (d.contains("comp_enabled")) params.compressorEnabled = d["comp_enabled"].cast<bool>();
+    if (d.contains("comp_threshold")) params.compressorThreshold = d["comp_threshold"].cast<float>();
+    if (d.contains("comp_ratio")) params.compressorRatio = d["comp_ratio"].cast<float>();
+    if (d.contains("comp_attack")) params.compressorAttack = d["comp_attack"].cast<float>();
+    if (d.contains("comp_release")) params.compressorRelease = d["comp_release"].cast<float>();
+    if (d.contains("comp_glassy")) params.compressorGlassy = d["comp_glassy"].cast<bool>();
+    // Wah
+    if (d.contains("wah_enabled")) params.wahEnabled = d["wah_enabled"].cast<bool>();
+    if (d.contains("wah_mode")) params.wahMode = d["wah_mode"].cast<int>();
+    if (d.contains("wah_position")) params.wahPosition = d["wah_position"].cast<float>();
+    if (d.contains("wah_q")) params.wahQ = d["wah_q"].cast<float>();
+    // Phaser
+    if (d.contains("phaser_enabled")) params.phaserEnabled = d["phaser_enabled"].cast<bool>();
+    if (d.contains("phaser_rate")) params.phaserRate = d["phaser_rate"].cast<float>();
+    if (d.contains("phaser_depth")) params.phaserDepth = d["phaser_depth"].cast<float>();
+    if (d.contains("phaser_stages")) params.phaserStages = d["phaser_stages"].cast<int>();
+    if (d.contains("phaser_feedback")) params.phaserFeedback = d["phaser_feedback"].cast<float>();
+    // Chorus
+    if (d.contains("chorus_enabled")) params.chorusEnabled = d["chorus_enabled"].cast<bool>();
+    if (d.contains("chorus_rate")) params.chorusRate = d["chorus_rate"].cast<float>();
+    if (d.contains("chorus_depth")) params.chorusDepth = d["chorus_depth"].cast<float>();
+    if (d.contains("chorus_voices")) params.chorusVoices = d["chorus_voices"].cast<int>();
+    if (d.contains("chorus_mix")) params.chorusMix = d["chorus_mix"].cast<float>();
+    // PitchShifter
+    if (d.contains("pitch_enabled")) params.pitchShifterEnabled = d["pitch_enabled"].cast<bool>();
+    if (d.contains("pitch_semitones")) params.pitchShifterSemitones = d["pitch_semitones"].cast<float>();
+    if (d.contains("pitch_mix")) params.pitchShifterMix = d["pitch_mix"].cast<float>();
+    // Harmonizer
+    if (d.contains("harm_enabled")) params.harmonizerEnabled = d["harm_enabled"].cast<bool>();
+    if (d.contains("harm_voice1_interval")) params.harmonizerVoice1 = d["harm_voice1_interval"].cast<float>();
+    if (d.contains("harm_voice2_interval")) params.harmonizerVoice2 = d["harm_voice2_interval"].cast<float>();
+    if (d.contains("harm_detune_cents")) params.harmonizerDetune = d["harm_detune_cents"].cast<float>();
+    if (d.contains("harm_mix")) params.harmonizerMix = d["harm_mix"].cast<float>();
+    // Delay
+    if (d.contains("delay_enabled")) params.delayEnabled = d["delay_enabled"].cast<bool>();
+    if (d.contains("delay_time_l")) params.delayTimeL = d["delay_time_l"].cast<float>();
+    if (d.contains("delay_time_r")) params.delayTimeR = d["delay_time_r"].cast<float>();
+    if (d.contains("delay_feedback")) params.delayFeedback = d["delay_feedback"].cast<float>();
+    if (d.contains("delay_mix")) params.delayMix = d["delay_mix"].cast<float>();
+    if (d.contains("delay_freeze")) params.delayFreeze = d["delay_freeze"].cast<bool>();
+    if (d.contains("delay_pitch_shift_l")) params.delayPitchShiftL = d["delay_pitch_shift_l"].cast<float>();
+    if (d.contains("delay_pitch_shift_r")) params.delayPitchShiftR = d["delay_pitch_shift_r"].cast<float>();
+    // Reverb
+    if (d.contains("reverb_enabled")) params.reverbEnabled = d["reverb_enabled"].cast<bool>();
+    if (d.contains("reverb_type")) params.reverbType = d["reverb_type"].cast<int>();
+    if (d.contains("reverb_decay")) params.reverbDecay = d["reverb_decay"].cast<float>();
+    if (d.contains("reverb_shimmer_amount")) params.reverbShimmerAmount = d["reverb_shimmer_amount"].cast<float>();
+    if (d.contains("reverb_shimmer_interval")) params.reverbShimmerInterval = d["reverb_shimmer_interval"].cast<float>();
+    if (d.contains("reverb_mix")) params.reverbMix = d["reverb_mix"].cast<float>();
+    if (d.contains("reverb_freeze")) params.reverbFreeze = d["reverb_freeze"].cast<bool>();
+    // EQ
+    if (d.contains("eq_enabled")) params.eqEnabled = d["eq_enabled"].cast<bool>();
+    if (d.contains("eq_low_gain")) params.eqLowGain = d["eq_low_gain"].cast<float>();
+    if (d.contains("eq_mid_gain")) params.eqMidGain = d["eq_mid_gain"].cast<float>();
+    if (d.contains("eq_high_gain")) params.eqHighGain = d["eq_high_gain"].cast<float>();
+    if (d.contains("eq_tilt")) params.eqTilt = d["eq_tilt"].cast<float>();
+    // Exciter
+    if (d.contains("exciter_enabled")) params.exciterEnabled = d["exciter_enabled"].cast<bool>();
+    if (d.contains("exciter_warmth")) params.exciterWarmth = d["exciter_warmth"].cast<float>();
+    if (d.contains("exciter_presence")) params.exciterPresence = d["exciter_presence"].cast<float>();
+    if (d.contains("exciter_air")) params.exciterAir = d["exciter_air"].cast<float>();
+    // Tremolo
+    if (d.contains("trem_enabled")) params.tremoloEnabled = d["trem_enabled"].cast<bool>();
+    if (d.contains("trem_rate")) params.tremoloRate = d["trem_rate"].cast<float>();
+    if (d.contains("trem_depth")) params.tremoloDepth = d["trem_depth"].cast<float>();
+    if (d.contains("trem_waveform")) params.tremoloWaveform = d["trem_waveform"].cast<int>();
+    // Global
+    if (d.contains("mix")) params.globalMix = d["mix"].cast<float>();
+    if (d.contains("output_level")) params.outputLevel = d["output_level"].cast<float>();
+    if (d.contains("bypass")) params.bypass = d["bypass"].cast<bool>();
+    return params;
+}
+
+py::dict passionfxMeteringToDict(const PassionFXProcessor::Metering& m) {
+    py::dict d;
+    d["input_level_l"] = m.inputLevelL;
+    d["input_level_r"] = m.inputLevelR;
+    d["output_level_l"] = m.outputLevelL;
+    d["output_level_r"] = m.outputLevelR;
+    d["gate_gain"] = m.gateGain;
+    d["comp_gain_reduction"] = m.compressorGainReduction;
+    d["reverb_level_l"] = m.reverbLevelL;
+    d["reverb_level_r"] = m.reverbLevelR;
+    d["delay_level_l"] = m.delayLevelL;
+    d["delay_level_r"] = m.delayLevelR;
+    d["phaser_lfo_phase"] = m.phaserLfoPhase;
+    d["tremolo_lfo_phase"] = m.tremoloLfoPhase;
+    d["wah_position"] = m.wahPosition;
+    return d;
+}
+
+// ========================================
 // Filter/EQ Type Converters
 // ========================================
 
@@ -3015,6 +3414,352 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             }
             return algorithms;
         }, "Get all available H3000 algorithms")
+
+        // ========================================
+        // Peavey 5150 Block Letter Amp Simulator
+        // ========================================
+
+        // Preamp controls
+        .def("set_peavey5150_pre_gain", &Map2AudioEngine::setPeavey5150PreGain,
+             py::arg("value"),
+             "Set Peavey 5150 preamp gain (0-10)")
+        .def("get_peavey5150_pre_gain", &Map2AudioEngine::getPeavey5150PreGain,
+             "Get Peavey 5150 preamp gain")
+
+        .def("set_peavey5150_post_gain", &Map2AudioEngine::setPeavey5150PostGain,
+             py::arg("value"),
+             "Set Peavey 5150 master volume (0-10)")
+        .def("get_peavey5150_post_gain", &Map2AudioEngine::getPeavey5150PostGain,
+             "Get Peavey 5150 master volume")
+
+        // Tone stack
+        .def("set_peavey5150_low", &Map2AudioEngine::setPeavey5150Low,
+             py::arg("value"),
+             "Set Peavey 5150 bass tone (0-10)")
+        .def("get_peavey5150_low", &Map2AudioEngine::getPeavey5150Low,
+             "Get Peavey 5150 bass tone")
+
+        .def("set_peavey5150_mid", &Map2AudioEngine::setPeavey5150Mid,
+             py::arg("value"),
+             "Set Peavey 5150 mid tone (0-10)")
+        .def("get_peavey5150_mid", &Map2AudioEngine::getPeavey5150Mid,
+             "Get Peavey 5150 mid tone")
+
+        .def("set_peavey5150_high", &Map2AudioEngine::setPeavey5150High,
+             py::arg("value"),
+             "Set Peavey 5150 treble tone (0-10)")
+        .def("get_peavey5150_high", &Map2AudioEngine::getPeavey5150High,
+             "Get Peavey 5150 treble tone")
+
+        // Power amp
+        .def("set_peavey5150_presence", &Map2AudioEngine::setPeavey5150Presence,
+             py::arg("value"),
+             "Set Peavey 5150 presence (0-10)")
+        .def("get_peavey5150_presence", &Map2AudioEngine::getPeavey5150Presence,
+             "Get Peavey 5150 presence")
+
+        .def("set_peavey5150_resonance", &Map2AudioEngine::setPeavey5150Resonance,
+             py::arg("value"),
+             "Set Peavey 5150 resonance (0-10)")
+        .def("get_peavey5150_resonance", &Map2AudioEngine::getPeavey5150Resonance,
+             "Get Peavey 5150 resonance")
+
+        .def("set_peavey5150_bias", &Map2AudioEngine::setPeavey5150Bias,
+             py::arg("value"),
+             "Set Peavey 5150 power tube bias (0-10, 0=cold stock)")
+        .def("get_peavey5150_bias", &Map2AudioEngine::getPeavey5150Bias,
+             "Get Peavey 5150 power tube bias")
+
+        // Switches
+        .def("set_peavey5150_bright", &Map2AudioEngine::setPeavey5150Bright,
+             py::arg("on"),
+             "Set Peavey 5150 bright switch")
+        .def("get_peavey5150_bright", &Map2AudioEngine::getPeavey5150Bright,
+             "Get Peavey 5150 bright switch state")
+
+        // State
+        .def("set_peavey5150_preset", [](Map2AudioEngine& self, const std::string& preset) {
+            self.setPeavey5150Preset(stringToPeavey5150Preset(preset));
+        }, py::arg("preset"), "Set Peavey 5150 preset by name")
+
+        .def("get_peavey5150_preset", [](const Map2AudioEngine& self) {
+            return peavey5150PresetToString(self.getPeavey5150Preset());
+        }, "Get current Peavey 5150 preset name")
+
+        .def("set_peavey5150_bypass", &Map2AudioEngine::setPeavey5150Bypass,
+             py::arg("bypass"),
+             "Bypass Peavey 5150 processor")
+        .def("is_peavey5150_bypassed", &Map2AudioEngine::isPeavey5150Bypassed,
+             "Check if Peavey 5150 is bypassed")
+
+        // Bulk parameters
+        .def("get_peavey5150_parameters", [](const Map2AudioEngine& self) {
+            return peavey5150ParamsToDict(self.getPeavey5150Parameters());
+        }, "Get all Peavey 5150 parameters")
+
+        .def("set_peavey5150_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setPeavey5150Parameters(dictToPeavey5150Params(params));
+        }, py::arg("params"), "Set all Peavey 5150 parameters at once")
+
+        // Metering
+        .def("get_peavey5150_metering", [](const Map2AudioEngine& self) {
+            return peavey5150MeteringToDict(self.getPeavey5150Metering());
+        }, "Get Peavey 5150 metering data")
+
+        // Preset info
+        .def("get_peavey5150_presets", [](const Map2AudioEngine& /*self*/) {
+            py::list result;
+            int numPresets = Map2AudioEngine::getPeavey5150NumPresets();
+            for (int i = 0; i < numPresets; ++i) {
+                auto preset = static_cast<Peavey5150Processor::Preset>(i);
+                auto info = Map2AudioEngine::getPeavey5150PresetInfo(preset);
+                py::dict d;
+                d["id"] = peavey5150PresetToString(preset);
+                d["name"] = info.name ? std::string(info.name) : "";
+                d["description"] = info.description ? std::string(info.description) : "";
+                result.append(d);
+            }
+            return result;
+        }, "Get all available Peavey 5150 presets")
+
+        // ========================================
+        // Tweed Bassman 5F6-A Amplifier Simulator
+        // ========================================
+
+        // Channel
+        .def("set_tweedbassman_channel_mode", &Map2AudioEngine::setTweedBassmanChannelMode, py::arg("mode"),
+             "Set channel mode (0=Normal, 1=Bright, 2=Jumped)")
+        .def("get_tweedbassman_channel_mode", &Map2AudioEngine::getTweedBassmanChannelMode)
+        .def("set_tweedbassman_normal_volume", &Map2AudioEngine::setTweedBassmanNormalVolume, py::arg("value"))
+        .def("get_tweedbassman_normal_volume", &Map2AudioEngine::getTweedBassmanNormalVolume)
+        .def("set_tweedbassman_bright_volume", &Map2AudioEngine::setTweedBassmanBrightVolume, py::arg("value"))
+        .def("get_tweedbassman_bright_volume", &Map2AudioEngine::getTweedBassmanBrightVolume)
+        .def("set_tweedbassman_bright_cap", &Map2AudioEngine::setTweedBassmanBrightCap, py::arg("on"))
+        .def("get_tweedbassman_bright_cap", &Map2AudioEngine::getTweedBassmanBrightCap)
+
+        // Preamp
+        .def("set_tweedbassman_v1_tube_type", &Map2AudioEngine::setTweedBassmanV1TubeType, py::arg("type"),
+             "Set V1 tube (0=12AY7, 1=12AX7, 2=5751, 3=12AT7)")
+        .def("get_tweedbassman_v1_tube_type", &Map2AudioEngine::getTweedBassmanV1TubeType)
+        .def("set_tweedbassman_cathode_bypass", &Map2AudioEngine::setTweedBassmanCathodeBypass, py::arg("on"))
+        .def("get_tweedbassman_cathode_bypass", &Map2AudioEngine::getTweedBassmanCathodeBypass)
+        .def("set_tweedbassman_cathode_bias", &Map2AudioEngine::setTweedBassmanCathodeBias, py::arg("mode"),
+             "Set cathode bias (0=Hot/820, 1=Normal/1.5k, 2=Cool/2.7k)")
+        .def("get_tweedbassman_cathode_bias", &Map2AudioEngine::getTweedBassmanCathodeBias)
+
+        // Tone
+        .def("set_tweedbassman_treble", &Map2AudioEngine::setTweedBassmanTreble, py::arg("value"))
+        .def("get_tweedbassman_treble", &Map2AudioEngine::getTweedBassmanTreble)
+        .def("set_tweedbassman_mid", &Map2AudioEngine::setTweedBassmanMid, py::arg("value"))
+        .def("get_tweedbassman_mid", &Map2AudioEngine::getTweedBassmanMid)
+        .def("set_tweedbassman_bass", &Map2AudioEngine::setTweedBassmanBass, py::arg("value"))
+        .def("get_tweedbassman_bass", &Map2AudioEngine::getTweedBassmanBass)
+        .def("set_tweedbassman_raw_switch", &Map2AudioEngine::setTweedBassmanRawSwitch, py::arg("on"))
+        .def("get_tweedbassman_raw_switch", &Map2AudioEngine::getTweedBassmanRawSwitch)
+
+        // Master
+        .def("set_tweedbassman_master_volume", &Map2AudioEngine::setTweedBassmanMasterVolume, py::arg("value"))
+        .def("get_tweedbassman_master_volume", &Map2AudioEngine::getTweedBassmanMasterVolume)
+
+        // Power amp
+        .def("set_tweedbassman_presence", &Map2AudioEngine::setTweedBassmanPresence, py::arg("value"))
+        .def("get_tweedbassman_presence", &Map2AudioEngine::getTweedBassmanPresence)
+        .def("set_tweedbassman_nfb_mode", &Map2AudioEngine::setTweedBassmanNFBMode, py::arg("mode"),
+             "Set NFB mode (0=Stock/27k, 1=None, 2=High/10k)")
+        .def("get_tweedbassman_nfb_mode", &Map2AudioEngine::getTweedBassmanNFBMode)
+        .def("set_tweedbassman_power_tube_type", &Map2AudioEngine::setTweedBassmanPowerTubeType, py::arg("type"),
+             "Set power tube (0=6L6, 1=6V6, 2=EL34, 3=KT66)")
+        .def("get_tweedbassman_power_tube_type", &Map2AudioEngine::getTweedBassmanPowerTubeType)
+        .def("set_tweedbassman_bias_mode", &Map2AudioEngine::setTweedBassmanBiasMode, py::arg("mode"),
+             "Set bias mode (0=Fixed, 1=Cathode)")
+        .def("get_tweedbassman_bias_mode", &Map2AudioEngine::getTweedBassmanBiasMode)
+        .def("set_tweedbassman_rectifier_type", &Map2AudioEngine::setTweedBassmanRectifierType, py::arg("type"),
+             "Set rectifier (0=GZ34, 1=5U4G, 2=5Y3, 3=SS)")
+        .def("get_tweedbassman_rectifier_type", &Map2AudioEngine::getTweedBassmanRectifierType)
+
+        // Output
+        .def("set_tweedbassman_output_level", &Map2AudioEngine::setTweedBassmanOutputLevel, py::arg("dB"))
+        .def("get_tweedbassman_output_level", &Map2AudioEngine::getTweedBassmanOutputLevel)
+        .def("set_tweedbassman_cabinet_enabled", &Map2AudioEngine::setTweedBassmanCabinetEnabled, py::arg("on"))
+        .def("get_tweedbassman_cabinet_enabled", &Map2AudioEngine::getTweedBassmanCabinetEnabled)
+        .def("set_tweedbassman_cabinet_ir", &Map2AudioEngine::setTweedBassmanCabinetIR, py::arg("index"))
+        .def("get_tweedbassman_cabinet_ir", &Map2AudioEngine::getTweedBassmanCabinetIR)
+
+        // State
+        .def("set_tweedbassman_preset", [](Map2AudioEngine& self, const std::string& preset) {
+            self.setTweedBassmanPreset(stringToTweedBassmanPreset(preset));
+        }, py::arg("preset"), "Set Tweed Bassman preset by name")
+
+        .def("get_tweedbassman_preset", [](const Map2AudioEngine& self) {
+            return tweedBassmanPresetToString(self.getTweedBassmanPreset());
+        }, "Get current Tweed Bassman preset name")
+
+        .def("set_tweedbassman_bypass", &Map2AudioEngine::setTweedBassmanBypass, py::arg("bypass"))
+        .def("is_tweedbassman_bypassed", &Map2AudioEngine::isTweedBassmanBypassed)
+
+        // Bulk parameters
+        .def("get_tweedbassman_parameters", [](const Map2AudioEngine& self) {
+            return tweedBassmanParamsToDict(self.getTweedBassmanParameters());
+        }, "Get all Tweed Bassman parameters")
+
+        .def("set_tweedbassman_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setTweedBassmanParameters(dictToTweedBassmanParams(params));
+        }, py::arg("params"), "Set all Tweed Bassman parameters at once")
+
+        // Metering
+        .def("get_tweedbassman_metering", [](const Map2AudioEngine& self) {
+            return tweedBassmanMeteringToDict(self.getTweedBassmanMetering());
+        }, "Get Tweed Bassman metering data")
+
+        // Preset info
+        .def("get_tweedbassman_presets", [](const Map2AudioEngine& /*self*/) {
+            py::list result;
+            int numPresets = Map2AudioEngine::getTweedBassmanNumPresets();
+            for (int i = 0; i < numPresets; ++i) {
+                auto preset = static_cast<TweedBassmanProcessor::Preset>(i);
+                auto info = Map2AudioEngine::getTweedBassmanPresetInfo(preset);
+                py::dict d;
+                d["id"] = tweedBassmanPresetToString(preset);
+                d["name"] = info.name ? std::string(info.name) : "";
+                d["description"] = info.description ? std::string(info.description) : "";
+                result.append(d);
+            }
+            return result;
+        }, "Get all available Tweed Bassman presets")
+
+        // ========================================
+        // PassionFX Multi-Effect (Steve Vai Passion & Warfare)
+        // ========================================
+
+        // NoiseGate
+        .def("set_passionfx_gate_enabled", &Map2AudioEngine::setPassionFXGateEnabled, py::arg("enabled"))
+        .def("set_passionfx_gate_threshold", &Map2AudioEngine::setPassionFXGateThreshold, py::arg("dB"))
+        .def("set_passionfx_gate_release", &Map2AudioEngine::setPassionFXGateRelease, py::arg("ms"))
+
+        // Compressor
+        .def("set_passionfx_comp_enabled", &Map2AudioEngine::setPassionFXCompEnabled, py::arg("enabled"))
+        .def("set_passionfx_comp_threshold", &Map2AudioEngine::setPassionFXCompThreshold, py::arg("dB"))
+        .def("set_passionfx_comp_ratio", &Map2AudioEngine::setPassionFXCompRatio, py::arg("ratio"))
+        .def("set_passionfx_comp_attack", &Map2AudioEngine::setPassionFXCompAttack, py::arg("ms"))
+        .def("set_passionfx_comp_release", &Map2AudioEngine::setPassionFXCompRelease, py::arg("ms"))
+        .def("set_passionfx_comp_glassy", &Map2AudioEngine::setPassionFXCompGlassy, py::arg("glassy"))
+
+        // Wah
+        .def("set_passionfx_wah_enabled", &Map2AudioEngine::setPassionFXWahEnabled, py::arg("enabled"))
+        .def("set_passionfx_wah_mode", &Map2AudioEngine::setPassionFXWahMode, py::arg("mode"))
+        .def("set_passionfx_wah_position", &Map2AudioEngine::setPassionFXWahPosition, py::arg("position"))
+        .def("set_passionfx_wah_q", &Map2AudioEngine::setPassionFXWahQ, py::arg("q"))
+
+        // Phaser
+        .def("set_passionfx_phaser_enabled", &Map2AudioEngine::setPassionFXPhaserEnabled, py::arg("enabled"))
+        .def("set_passionfx_phaser_rate", &Map2AudioEngine::setPassionFXPhaserRate, py::arg("hz"))
+        .def("set_passionfx_phaser_depth", &Map2AudioEngine::setPassionFXPhaserDepth, py::arg("depth"))
+        .def("set_passionfx_phaser_stages", &Map2AudioEngine::setPassionFXPhaserStages, py::arg("stages"))
+        .def("set_passionfx_phaser_feedback", &Map2AudioEngine::setPassionFXPhaserFeedback, py::arg("feedback"))
+
+        // Chorus
+        .def("set_passionfx_chorus_enabled", &Map2AudioEngine::setPassionFXChorusEnabled, py::arg("enabled"))
+        .def("set_passionfx_chorus_rate", &Map2AudioEngine::setPassionFXChorusRate, py::arg("hz"))
+        .def("set_passionfx_chorus_depth", &Map2AudioEngine::setPassionFXChorusDepth, py::arg("depth"))
+        .def("set_passionfx_chorus_voices", &Map2AudioEngine::setPassionFXChorusVoices, py::arg("voices"))
+        .def("set_passionfx_chorus_mix", &Map2AudioEngine::setPassionFXChorusMix, py::arg("mix"))
+
+        // PitchShifter
+        .def("set_passionfx_pitch_enabled", &Map2AudioEngine::setPassionFXPitchEnabled, py::arg("enabled"))
+        .def("set_passionfx_pitch_semitones", &Map2AudioEngine::setPassionFXPitchSemitones, py::arg("semitones"))
+        .def("set_passionfx_pitch_mix", &Map2AudioEngine::setPassionFXPitchMix, py::arg("mix"))
+
+        // Harmonizer
+        .def("set_passionfx_harm_enabled", &Map2AudioEngine::setPassionFXHarmEnabled, py::arg("enabled"))
+        .def("set_passionfx_harm_voice1_interval", &Map2AudioEngine::setPassionFXHarmVoice1, py::arg("semitones"))
+        .def("set_passionfx_harm_voice2_interval", &Map2AudioEngine::setPassionFXHarmVoice2, py::arg("semitones"))
+        .def("set_passionfx_harm_detune_cents", &Map2AudioEngine::setPassionFXHarmDetune, py::arg("cents"))
+        .def("set_passionfx_harm_mix", &Map2AudioEngine::setPassionFXHarmMix, py::arg("mix"))
+
+        // Delay
+        .def("set_passionfx_delay_enabled", &Map2AudioEngine::setPassionFXDelayEnabled, py::arg("enabled"))
+        .def("set_passionfx_delay_time_l", &Map2AudioEngine::setPassionFXDelayTimeL, py::arg("ms"))
+        .def("set_passionfx_delay_time_r", &Map2AudioEngine::setPassionFXDelayTimeR, py::arg("ms"))
+        .def("set_passionfx_delay_feedback", &Map2AudioEngine::setPassionFXDelayFeedback, py::arg("feedback"))
+        .def("set_passionfx_delay_mix", &Map2AudioEngine::setPassionFXDelayMix, py::arg("mix"))
+        .def("set_passionfx_delay_freeze", &Map2AudioEngine::setPassionFXDelayFreeze, py::arg("freeze"))
+        .def("set_passionfx_delay_pitch_shift_l", &Map2AudioEngine::setPassionFXDelayPitchShiftL, py::arg("semitones"))
+        .def("set_passionfx_delay_pitch_shift_r", &Map2AudioEngine::setPassionFXDelayPitchShiftR, py::arg("semitones"))
+
+        // Reverb
+        .def("set_passionfx_reverb_enabled", &Map2AudioEngine::setPassionFXReverbEnabled, py::arg("enabled"))
+        .def("set_passionfx_reverb_type", &Map2AudioEngine::setPassionFXReverbType, py::arg("type"))
+        .def("set_passionfx_reverb_decay", &Map2AudioEngine::setPassionFXReverbDecay, py::arg("seconds"))
+        .def("set_passionfx_reverb_shimmer_amount", &Map2AudioEngine::setPassionFXReverbShimmerAmount, py::arg("amount"))
+        .def("set_passionfx_reverb_shimmer_interval", &Map2AudioEngine::setPassionFXReverbShimmerInterval, py::arg("semitones"))
+        .def("set_passionfx_reverb_mix", &Map2AudioEngine::setPassionFXReverbMix, py::arg("mix"))
+        .def("set_passionfx_reverb_freeze", &Map2AudioEngine::setPassionFXReverbFreeze, py::arg("freeze"))
+
+        // EQ
+        .def("set_passionfx_eq_enabled", &Map2AudioEngine::setPassionFXEqEnabled, py::arg("enabled"))
+        .def("set_passionfx_eq_low_gain", &Map2AudioEngine::setPassionFXEqLowGain, py::arg("dB"))
+        .def("set_passionfx_eq_mid_gain", &Map2AudioEngine::setPassionFXEqMidGain, py::arg("dB"))
+        .def("set_passionfx_eq_high_gain", &Map2AudioEngine::setPassionFXEqHighGain, py::arg("dB"))
+        .def("set_passionfx_eq_tilt", &Map2AudioEngine::setPassionFXEqTilt, py::arg("tilt"))
+
+        // Exciter
+        .def("set_passionfx_exciter_enabled", &Map2AudioEngine::setPassionFXExciterEnabled, py::arg("enabled"))
+        .def("set_passionfx_exciter_warmth", &Map2AudioEngine::setPassionFXExciterWarmth, py::arg("warmth"))
+        .def("set_passionfx_exciter_presence", &Map2AudioEngine::setPassionFXExciterPresence, py::arg("presence"))
+        .def("set_passionfx_exciter_air", &Map2AudioEngine::setPassionFXExciterAir, py::arg("air"))
+
+        // Tremolo
+        .def("set_passionfx_trem_enabled", &Map2AudioEngine::setPassionFXTremEnabled, py::arg("enabled"))
+        .def("set_passionfx_trem_rate", &Map2AudioEngine::setPassionFXTremRate, py::arg("hz"))
+        .def("set_passionfx_trem_depth", &Map2AudioEngine::setPassionFXTremDepth, py::arg("depth"))
+        .def("set_passionfx_trem_waveform", &Map2AudioEngine::setPassionFXTremWaveform, py::arg("waveform"))
+
+        // Global
+        .def("set_passionfx_mix", &Map2AudioEngine::setPassionFXMix, py::arg("mix"))
+        .def("set_passionfx_output_level", &Map2AudioEngine::setPassionFXOutputLevel, py::arg("dB"))
+
+        // State
+        .def("set_passionfx_preset", [](Map2AudioEngine& self, const std::string& preset) {
+            self.setPassionFXPreset(stringToPassionfxPreset(preset));
+        }, py::arg("preset"), "Set PassionFX preset by name")
+
+        .def("get_passionfx_preset", [](const Map2AudioEngine& self) {
+            return passionfxPresetToString(self.getPassionFXPreset());
+        }, "Get current PassionFX preset name")
+
+        .def("set_passionfx_bypass", &Map2AudioEngine::setPassionFXBypass, py::arg("bypass"))
+        .def("is_passionfx_bypassed", &Map2AudioEngine::isPassionFXBypassed)
+
+        // Bulk parameters
+        .def("get_passionfx_parameters", [](const Map2AudioEngine& self) {
+            return passionfxParamsToDict(self.getPassionFXParameters());
+        }, "Get all PassionFX parameters")
+
+        .def("set_passionfx_parameters", [](Map2AudioEngine& self, py::dict params) {
+            self.setPassionFXParameters(dictToPassionfxParams(params));
+        }, py::arg("params"), "Set all PassionFX parameters at once")
+
+        // Metering
+        .def("get_passionfx_metering", [](const Map2AudioEngine& self) {
+            return passionfxMeteringToDict(self.getPassionFXMetering());
+        }, "Get PassionFX metering data")
+
+        // Preset info
+        .def("get_passionfx_presets", [](const Map2AudioEngine& /*self*/) {
+            py::list result;
+            int numPresets = Map2AudioEngine::getPassionFXNumPresets();
+            for (int i = 0; i < numPresets; ++i) {
+                auto preset = static_cast<PassionFXProcessor::Preset>(i);
+                auto info = Map2AudioEngine::getPassionFXPresetInfo(preset);
+                py::dict d;
+                d["id"] = passionfxPresetToString(preset);
+                d["name"] = info.name ? std::string(info.name) : "";
+                d["track"] = info.track ? std::string(info.track) : "";
+                d["description"] = info.description ? std::string(info.description) : "";
+                result.append(d);
+            }
+            return result;
+        }, "Get all available PassionFX presets")
 
         // ========================================
         // Pedalboard State (Legacy Compatibility)

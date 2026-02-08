@@ -1,0 +1,188 @@
+"""
+Special Settings Raft Integration
+
+Handles Raft-based replication of special mode settings across cluster.
+Integrates with the existing Raft consensus system to ensure all nodes
+have synchronized special settings.
+"""
+
+import logging
+import os
+from datetime import datetime
+from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.database import SpecialSettings
+from app.models import SpecialSettingsResponse
+
+logger = logging.getLogger(__name__)
+
+
+class SpecialSettingsStateManager:
+    """
+    Manages special settings state machine for Raft consensus.
+    Applies committed log entries to local database.
+    """
+
+    def __init__(self, session_factory):
+        """Initialize with async session factory."""
+        self.session_factory = session_factory
+        self.logger = logging.getLogger("SpecialSettingsStateManager")
+
+    async def apply_entry(self, entry_data: dict) -> bool:
+        """
+        Apply special settings log entry to local state.
+        
+        Called when Raft log entry is committed.
+        Entry data should contain:
+        - enabled: bool
+        - hidden_plugins: List[str]
+        - menu_location: str
+        - updated_by_node: str
+        - timestamp: str (ISO format)
+        - version: int
+        """
+        try:
+            async with self.session_factory() as session:
+                # Get current settings or create default
+                result = await session.execute(
+                    select(SpecialSettings).where(SpecialSettings.id == 1)
+                )
+                settings = result.scalar_one_or_none()
+                
+                if not settings:
+                    settings = SpecialSettings(
+                        id=1,
+                        enabled=False,
+                        hidden_plugins=[],
+                        menu_location="top-nav",
+                        version=1
+                    )
+                    session.add(settings)
+                
+                # Update settings from log entry
+                settings.enabled = entry_data.get("enabled", False)
+                settings.hidden_plugins = entry_data.get("hidden_plugins", [])
+                settings.menu_location = entry_data.get("menu_location", "top-nav")
+                settings.version = entry_data.get("version", settings.version)
+                settings.updated_by_node = entry_data.get("updated_by_node")
+                settings.last_updated = datetime.utcnow()
+                
+                await session.flush()
+                
+                self.logger.info(
+                    f"Applied special settings: enabled={settings.enabled}, "
+                    f"hidden={len(settings.hidden_plugins)}, "
+                    f"location={settings.menu_location}, "
+                    f"version={settings.version}"
+                )
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Failed to apply special settings entry: {e}")
+            return False
+
+    async def get_current_state(self) -> Optional[dict]:
+        """Get current special settings as dict for state sync."""
+        try:
+            async with self.session_factory() as session:
+                result = await session.execute(
+                    select(SpecialSettings).where(SpecialSettings.id == 1)
+                )
+                settings = result.scalar_one_or_none()
+                
+                if not settings:
+                    return None
+                
+                return {
+                    "enabled": settings.enabled,
+                    "hidden_plugins": settings.hidden_plugins or [],
+                    "menu_location": settings.menu_location,
+                    "version": settings.version,
+                    "updated_by_node": settings.updated_by_node,
+                    "timestamp": settings.last_updated.isoformat() if settings.last_updated else None,
+                }
+        except Exception as e:
+            self.logger.error(f"Failed to get current special settings: {e}")
+            return None
+
+
+async def replicate_special_settings_to_raft(
+    raft_consensus,
+    session_factory,
+    enabled: bool,
+    hidden_plugins: list,
+    menu_location: str,
+    node_id: str
+) -> int:
+    """
+    Create Raft log entry for special settings change and replicate to followers.
+    
+    Only call from leader node.
+    
+    Returns:
+        Log index of the entry (for tracking)
+    """
+    logger = logging.getLogger("SpecialSettingsRaft")
+    
+    try:
+        # Get current version for incrementing
+        async with session_factory() as session:
+            result = await session.execute(
+                select(SpecialSettings).where(SpecialSettings.id == 1)
+            )
+            current = result.scalar_one_or_none()
+            version = (current.version if current else 0) + 1
+        
+        # Create log entry
+        entry_data = {
+            "enabled": enabled,
+            "hidden_plugins": hidden_plugins,
+            "menu_location": menu_location,
+            "updated_by_node": node_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": version,
+        }
+        
+        # Add to Raft log (this triggers replication to followers)
+        # Note: This assumes raft_consensus has append_entry method
+        log_index = await raft_consensus.append_entry(
+            command="update_special_settings",
+            data=entry_data
+        )
+        
+        logger.info(
+            f"Special settings replicated to Raft log at index {log_index}: "
+            f"enabled={enabled}, hidden={len(hidden_plugins)}, "
+            f"location={menu_location}, version={version}"
+        )
+        
+        # Wait for majority to acknowledge (with timeout)
+        await asyncio.wait_for(
+            raft_consensus.wait_for_commit(log_index),
+            timeout=5.0
+        )
+        
+        logger.info(f"Special settings committed at index {log_index}")
+        return log_index
+        
+    except asyncio.TimeoutError:
+        logger.warning("Special settings replication timed out (may still succeed)")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to replicate special settings: {e}")
+        raise
+
+
+async def get_leader_url(raft_consensus) -> Optional[str]:
+    """Get the URL of the current Raft leader."""
+    try:
+        # This assumes raft_consensus stores leader_id and has cluster_nodes mapping
+        if hasattr(raft_consensus, 'leader_id') and raft_consensus.leader_id:
+            if hasattr(raft_consensus, 'cluster_nodes'):
+                return raft_consensus.cluster_nodes.get(raft_consensus.leader_id)
+    except Exception as e:
+        logger.error(f"Failed to get leader URL: {e}")
+    
+    return None

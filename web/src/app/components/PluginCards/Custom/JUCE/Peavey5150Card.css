@@ -1,0 +1,271 @@
+/**
+ * Peavey 5150 Block Letter Card Styles
+ * Dark chassis aesthetic with blue LED accents
+ * Colors: #0A0A0A bg, #1A1A1E panel, #00A0FF accent, #333340 bezel
+ */
+
+/* Header */
+.peavey5150-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.peavey5150-card-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #ffffff;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0, 160, 255, 0.3);
+}
+
+.peavey5150-card-subtitle {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #00A0FF;
+  text-transform: uppercase;
+}
+
+/* Visualization - Amp face with tube glow */
+.peavey5150-visualization {
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #0A0A0A 0%, #121216 50%, #0A0A0A 100%);
+  border-radius: 6px;
+  border: 1px solid #333340;
+  position: relative;
+  overflow: hidden;
+}
+
+.peavey5150-visualization::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #333340 50%, transparent 100%);
+}
+
+.peavey5150-visual-svg {
+  width: 100%;
+  height: 70px;
+}
+
+.peavey5150-visual-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #808090;
+  margin-top: 4px;
+  padding: 0 2px;
+  text-transform: uppercase;
+}
+
+/* Section Panels */
+.peavey5150-section {
+  background: #1A1A1E;
+  border-radius: 6px;
+  border: 1px solid #333340;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.peavey5150-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00A0FF;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #333340;
+}
+
+/* Preset Selector */
+.peavey5150-preset-section {
+  margin-bottom: 10px;
+}
+
+.peavey5150-preset-select {
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: #0A0A0A;
+  border: 1px solid #333340;
+  border-radius: 4px;
+  color: #E0E0E0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300A0FF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.peavey5150-preset-select:hover {
+  border-color: #00A0FF;
+  background-color: #111114;
+}
+
+.peavey5150-preset-select:focus {
+  outline: none;
+  border-color: #00A0FF;
+  box-shadow: 0 0 0 2px rgba(0, 160, 255, 0.15);
+}
+
+.peavey5150-preset-select option {
+  background: #0A0A0A;
+  color: #E0E0E0;
+}
+
+.peavey5150-preset-info {
+  margin-top: 4px;
+  font-size: 10px;
+  font-style: italic;
+  color: #808090;
+  text-align: center;
+}
+
+/* Bright Switch */
+.peavey5150-bright-btn {
+  padding: 6px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #333340;
+  background: #1A1A1E;
+  color: #808090;
+}
+
+.peavey5150-bright-btn.active {
+  background: rgba(0, 160, 255, 0.2);
+  border-color: #00A0FF;
+  color: #00A0FF;
+  box-shadow: 0 0 10px rgba(0, 160, 255, 0.25);
+}
+
+.peavey5150-bright-btn:hover {
+  border-color: #0066AA;
+  color: #E0E0E0;
+}
+
+/* Quick Presets */
+.peavey5150-quick-presets {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #222228;
+}
+
+.peavey5150-quick-presets button {
+  padding: 4px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(0, 160, 255, 0.06);
+  border: 1px solid #333340;
+  border-radius: 3px;
+  color: #808090;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.peavey5150-quick-presets button:hover {
+  background: rgba(0, 160, 255, 0.15);
+  border-color: #0066AA;
+  color: #E0E0E0;
+}
+
+.peavey5150-quick-presets button.active {
+  background: rgba(0, 160, 255, 0.25);
+  border-color: #00A0FF;
+  color: #00A0FF;
+  box-shadow: 0 0 6px rgba(0, 160, 255, 0.3);
+}
+
+/* Footer */
+.peavey5150-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #222228;
+  margin-top: 10px;
+}
+
+.peavey5150-meter {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: #808090;
+}
+
+.peavey5150-sag {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: #0066AA;
+  padding: 2px 6px;
+  background: rgba(0, 160, 255, 0.06);
+  border-radius: 3px;
+}
+
+.peavey5150-cpu {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: #808090;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+}
+
+/* Tube glow animation */
+@keyframes peavey5150-tube-glow {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(2px);
+  }
+  50% {
+    opacity: 0.7;
+    filter: blur(3px);
+  }
+}
+
+.peavey5150-visualization .tube-glow {
+  animation: peavey5150-tube-glow 3s ease-in-out infinite;
+}
+
+.peavey5150-visualization .tube-glow:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.peavey5150-visualization .tube-glow:nth-child(3) {
+  animation-delay: 1s;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .peavey5150-card-title {
+    font-size: 15px;
+    letter-spacing: 3px;
+  }
+
+  .peavey5150-quick-presets button {
+    padding: 3px 7px;
+    font-size: 8px;
+  }
+}

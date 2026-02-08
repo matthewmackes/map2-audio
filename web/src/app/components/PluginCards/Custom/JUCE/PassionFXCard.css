@@ -1,0 +1,430 @@
+/**
+ * PassionFX Card Styles
+ * Green/black/jade tie-dye aesthetic inspired by Steve Vai's
+ * "Passion and Warfare" era and the Ibanez JEM77GMC swirl finish.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Keyframes                                                         */
+/* ------------------------------------------------------------------ */
+
+@keyframes passionfx-tiedye-swirl {
+  0% {
+    background-position: 0% 50%, 100% 50%, 50% 0%;
+  }
+  25% {
+    background-position: 50% 100%, 0% 0%, 100% 50%;
+  }
+  50% {
+    background-position: 100% 50%, 50% 100%, 0% 50%;
+  }
+  75% {
+    background-position: 50% 0%, 100% 100%, 50% 100%;
+  }
+  100% {
+    background-position: 0% 50%, 100% 50%, 50% 0%;
+  }
+}
+
+@keyframes passionfx-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px var(--dot-color, #00c853);
+  }
+  50% {
+    box-shadow: 0 0 10px var(--dot-color, #00c853), 0 0 20px rgba(0, 200, 83, 0.3);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Header                                                            */
+/* ------------------------------------------------------------------ */
+
+.passionfx-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.passionfx-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #004d25 0%, #00c853 45%, #69f0ae 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.passionfx-card-subtitle {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Visualization container                                           */
+/* ------------------------------------------------------------------ */
+
+.passionfx-visualization {
+  position: relative;
+  padding: 10px 8px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 77, 37, 0.15) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 200, 83, 0.2);
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tie-dye animated background overlay                               */
+/* ------------------------------------------------------------------ */
+
+.passionfx-tiedye-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 60% at 30% 40%, #00c853 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 70% 70%, #004d25 0%, transparent 70%),
+    radial-gradient(ellipse 45% 55% at 50% 20%, #69f0ae 0%, transparent 65%);
+  background-size: 200% 200%, 200% 200%, 200% 200%;
+  animation: passionfx-tiedye-swirl 12s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Signal chain                                                      */
+/* ------------------------------------------------------------------ */
+
+.passionfx-signal-chain {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 200, 83, 0.3) transparent;
+}
+
+.passionfx-signal-chain::-webkit-scrollbar {
+  height: 3px;
+}
+
+.passionfx-signal-chain::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.passionfx-signal-chain::-webkit-scrollbar-thumb {
+  background: rgba(0, 200, 83, 0.3);
+  border-radius: 2px;
+}
+
+/* IN / OUT labels */
+.passionfx-chain-label {
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-tertiary, #666);
+  text-transform: uppercase;
+  padding: 0 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Chain node wrapper (dot + preceding connector)                    */
+/* ------------------------------------------------------------------ */
+
+.passionfx-chain-node-wrapper {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Connector lines                                                   */
+/* ------------------------------------------------------------------ */
+
+.passionfx-chain-line {
+  width: 8px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.passionfx-chain-line.active {
+  background: rgba(0, 200, 83, 0.5);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Module dots                                                       */
+/* ------------------------------------------------------------------ */
+
+.passionfx-chain-dot {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+  outline: none;
+  color: var(--text-tertiary, #555);
+}
+
+.passionfx-chain-dot:hover {
+  border-color: var(--dot-color, #00c853);
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.passionfx-chain-dot.active {
+  border-color: var(--dot-color, #00c853);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--dot-color, #00c853);
+  box-shadow: 0 0 6px var(--dot-color, #00c853);
+  animation: passionfx-glow-pulse 2.5s ease-in-out infinite;
+}
+
+.passionfx-chain-dot-label {
+  font-size: 5.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Preset section                                                    */
+/* ------------------------------------------------------------------ */
+
+.passionfx-preset-section {
+  margin-bottom: 12px;
+}
+
+.passionfx-preset-select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 200, 83, 0.4);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300c853' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.passionfx-preset-select:hover {
+  border-color: rgba(0, 200, 83, 0.7);
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.passionfx-preset-select:focus {
+  outline: none;
+  border-color: #00c853;
+  box-shadow: 0 0 0 2px rgba(0, 200, 83, 0.2);
+}
+
+.passionfx-preset-select option {
+  background: #0a1f0f;
+  color: var(--text-primary, #fff);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Manufacturer label (vintage rack style)                           */
+/* ------------------------------------------------------------------ */
+
+.passionfx-section-mfr {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #555);
+  margin-bottom: 6px;
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Toggle row / buttons                                              */
+/* ------------------------------------------------------------------ */
+
+.passionfx-toggle-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.passionfx-toggle-btn {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.passionfx-toggle-btn:hover {
+  border-color: var(--toggle-color, #00c853);
+  color: var(--text-primary, #fff);
+  background: rgba(0, 200, 83, 0.1);
+}
+
+.passionfx-toggle-btn.active {
+  background: rgba(0, 200, 83, 0.2);
+  border-color: var(--toggle-color, #00c853);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0, 200, 83, 0.25);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Footer                                                            */
+/* ------------------------------------------------------------------ */
+
+.passionfx-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 12px;
+  gap: 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Meter group                                                       */
+/* ------------------------------------------------------------------ */
+
+.passionfx-meter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.passionfx-meter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.passionfx-meter-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary, #666);
+  text-transform: uppercase;
+  width: 22px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.passionfx-meter-bar-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.passionfx-meter-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #00c853;
+  transition: width 0.08s linear;
+  min-width: 0;
+}
+
+.passionfx-meter-value {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: var(--text-tertiary, #666);
+  width: 34px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Meter extras (gain reduction badges)                              */
+/* ------------------------------------------------------------------ */
+
+.passionfx-meter-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.passionfx-meter-badge {
+  font-size: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-weight: 500;
+  color: var(--text-tertiary, #666);
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 200, 83, 0.15);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Responsive                                                        */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 400px) {
+  .passionfx-card-title {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .passionfx-chain-dot {
+    width: 24px;
+    height: 24px;
+  }
+
+  .passionfx-chain-dot-label {
+    font-size: 5px;
+  }
+
+  .passionfx-chain-line {
+    width: 5px;
+  }
+
+  .passionfx-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .passionfx-meter-extras {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}

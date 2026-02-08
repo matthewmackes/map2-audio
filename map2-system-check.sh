@@ -166,6 +166,28 @@ else
     log_warning "Web dashboard package.json not found"
 fi
 
+# 11. Check SELinux status
+log_info "Checking SELinux status..."
+if command -v getenforce &> /dev/null; then
+    SELINUX_STATUS=$(getenforce 2>/dev/null || echo "error")
+    case "$SELINUX_STATUS" in
+        "Disabled")
+            log_success "SELinux is disabled (desired state)"
+            ;;
+        "Permissive")
+            log_warning "SELinux is in permissive mode (should be disabled)"
+            ;;
+        "Enforcing")
+            log_error "SELinux is enforcing (MUST BE DISABLED for MAP2 Audio)"
+            ;;
+        *)
+            log_warning "SELinux status unknown: $SELINUX_STATUS"
+            ;;
+    esac
+else
+    log_success "SELinux not installed (OK)"
+fi
+
 # 12. System check summary
 log "========================================="
 log_success "System check completed successfully"

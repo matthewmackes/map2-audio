@@ -193,6 +193,29 @@ async def lifespan(app):
         # Start MIDI broadcast service (real-time MIDI events via WebSocket)
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
 
+        # Start cluster monitoring services
+        from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+        from app.services.cluster.failover_monitor import get_failover_monitor
+        from app.services.cluster.raft_consensus import initialize_raft_consensus, get_raft_consensus
+        from app.services.cluster.config_distributor import initialize_config_distributor, get_config_distributor
+        from app.services.cluster.registry import get_cluster_registry
+        
+        heartbeat = get_heartbeat_monitor()
+        failover = get_failover_monitor()
+        registry = get_cluster_registry()
+        
+        # Initialize and start config distributor (if Git repo configured)
+        git_config_repo = os.getenv("MAP2_CONFIG_GIT_REPO")
+        if git_config_repo:
+            logger.info("Initializing configuration distributor...")
+            config_dist = initialize_config_distributor(git_config_repo)
+            await safe_start_service(logger, "Configuration distributor", config_dist.start)
+        else:
+            logger.debug("Configuration distributor disabled (MAP2_CONFIG_GIT_REPO not set)")
+        
+        await safe_start_service(logger, "Heartbeat monitor", heartbeat.start)
+        await safe_start_service(logger, "Failover monitor", failover.start)
+
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info(f"✅ Startup complete: {running}/{total} services running")
@@ -201,6 +224,25 @@ async def lifespan(app):
 
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
+        
+        # Stop configuration distributor
+        try:
+            config_dist = get_config_distributor()
+            await safe_stop_service(logger, "Configuration distributor", config_dist.stop)
+        except RuntimeError:
+            logger.debug("Config distributor not initialized")
+        
+        # Stop cluster consensus
+        try:
+            raft = get_raft_consensus()
+            await safe_stop_service(logger, "Raft consensus", raft.stop)
+        except RuntimeError:
+            logger.debug("Raft consensus not initialized")
+        
+        # Stop cluster monitoring
+        await safe_stop_service(logger, "Failover monitor", failover.stop)
+        await safe_stop_service(logger, "Heartbeat monitor", heartbeat.stop)
+        
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
         
@@ -254,7 +296,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'flow_snapshots', 'cluster_flows', 'flow_failover']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings']
 
         for route_name in route_modules:
             try:

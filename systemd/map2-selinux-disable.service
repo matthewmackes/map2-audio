@@ -1,0 +1,45 @@
+[Unit]
+Description=MAP2 Audio Platform - SELinux Disable Service
+Documentation=https://github.com/rerdavies/map2-audio
+# Run before everything else
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+RemainAfterExit=yes
+
+# Disable SELinux
+ExecStart=/bin/bash -c '\
+  if command -v getenforce &>/dev/null; then \
+    STATUS=$(getenforce 2>/dev/null || echo "error"); \
+    case "$STATUS" in \
+      Disabled) \
+        echo "SELinux already disabled" \
+        ;; \
+      Permissive|Enforcing) \
+        setenforce 0 2>/dev/null || true; \
+        if [ -f /etc/selinux/config ]; then \
+          sed -i "s/^SELINUX=.*/SELINUX=disabled/" /etc/selinux/config; \
+          echo "SELinux set to disabled (will be enforced on reboot)"; \
+        fi \
+        ;; \
+      *) \
+        echo "Unknown SELinux status: $STATUS" \
+        ;; \
+    esac \
+  else \
+    echo "SELinux not installed"; \
+  fi \
+'
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-selinux-disable
+
+[Install]
+WantedBy=multi-user.target

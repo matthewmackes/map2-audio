@@ -1,0 +1,277 @@
+name: Build & Publish RPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 1.0.0)'
+        required: true
+      release_number:
+        description: 'Release number (e.g., 1)'
+        required: false
+        default: '1'
+
+jobs:
+  build:
+    name: Build RPM Package
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:40
+    
+    outputs:
+      rpm-filename: ${{ steps.build.outputs.rpm-filename }}
+      rpm-path: ${{ steps.build.outputs.rpm-path }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Install build dependencies
+        run: |
+          dnf install -y \
+            rpm-build \
+            rpmlint \
+            git \
+            python3-devel \
+            python3-pip \
+            nodejs \
+            npm \
+            make \
+            tar \
+            gzip
+            
+      - name: Prepare build environment
+        run: |
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
+          
+      - name: Create source tarball
+        id: tarball
+        run: |
+          VERSION=${{ github.event.release.tag_name || github.event.inputs.version }}
+          VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          git archive \
+            --format=tar.gz \
+            --prefix="map2-audio-${VERSION}/" \
+            -o ~/rpmbuild/SOURCES/map2-audio-${VERSION}.tar.gz \
+            HEAD
+            
+          echo "Created source tarball: map2-audio-${VERSION}.tar.gz"
+          ls -lh ~/rpmbuild/SOURCES/
+          
+      - name: Prepare spec file
+        run: |
+          VERSION=${{ steps.tarball.outputs.version }}
+          RELEASE=${{ github.event.inputs.release_number || '1' }}
+          DIST="fc40"
+          
+          echo "Building: map2-audio-${VERSION}-${RELEASE}.${DIST}"
+          
+          # Copy spec file
+          cp packaging/map2-audio.spec ~/rpmbuild/SPECS/
+          
+          # Update version and release
+          sed -i "s/^Version:.*/Version:        ${VERSION}/" ~/rpmbuild/SPECS/map2-audio.spec
+          sed -i "s/^Release:.*/Release:        ${RELEASE}%{?dist}/" ~/rpmbuild/SPECS/map2-audio.spec
+          
+      - name: Build RPM
+        id: build
+        run: |
+          VERSION=${{ steps.tarball.outputs.version }}
+          RELEASE=${{ github.event.inputs.release_number || '1' }}
+          DIST="fc40"
+          ARCH="x86_64"
+          
+          rpmbuild \
+            -ba \
+            --define "_topdir ~/rpmbuild" \
+            --define "dist .${DIST}" \
+            ~/rpmbuild/SPECS/map2-audio.spec
+            
+          RPM_FILE="map2-audio-${VERSION}-${RELEASE}.${DIST}.${ARCH}.rpm"
+          RPM_PATH="~/rpmbuild/RPMS/${ARCH}/${RPM_FILE}"
+          
+          echo "rpm-filename=${RPM_FILE}" >> $GITHUB_OUTPUT
+          echo "rpm-path=${RPM_PATH}" >> $GITHUB_OUTPUT
+          
+          echo "Build complete:"
+          ls -lh ~/rpmbuild/RPMS/${ARCH}/
+          ls -lh ~/rpmbuild/SRPMS/
+          
+      - name: Lint RPM
+        continue-on-error: true
+        run: |
+          ARCH="x86_64"
+          rpmlint ~/rpmbuild/RPMS/${ARCH}/*.rpm || true
+          
+      - name: Generate checksums
+        id: checksums
+        run: |
+          VERSION=${{ steps.tarball.outputs.version }}
+          RELEASE=${{ github.event.inputs.release_number || '1' }}
+          DIST="fc40"
+          ARCH="x86_64"
+          
+          cd ~/rpmbuild/RPMS/${ARCH}
+          sha256sum *.rpm > checksums.txt
+          cat checksums.txt
+          
+          echo "checksums<<EOF" >> $GITHUB_OUTPUT
+          cat checksums.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rpm-artifacts
+          path: |
+            ~/rpmbuild/RPMS/x86_64/*.rpm
+            ~/rpmbuild/SRPMS/*.rpm
+            ~/rpmbuild/RPMS/x86_64/checksums.txt
+          retention-days: 30
+
+  test:
+    name: Test RPM Installation
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:40
+      
+    steps:
+      - name: Download RPM artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: rpm-artifacts
+          path: ./artifacts
+          
+      - name: Install test dependencies
+        run: |
+          dnf install -y \
+            python3-fastapi \
+            python3-uvicorn \
+            python3-pydantic \
+            pipewire \
+            jack-audio-connection-kit \
+            systemd
+            
+      - name: Install MAP2 RPM
+        run: |
+          RPM=$(find ./artifacts -name "map2-audio-*.fc40.x86_64.rpm" | head -1)
+          echo "Installing: $RPM"
+          dnf install -y "$RPM"
+          
+      - name: Verify installation
+        run: |
+          rpm -qi map2-audio
+          echo "---"
+          rpm -ql map2-audio | head -20
+          echo "---"
+          systemctl status map2-backend --no-pager || true
+          
+      - name: Check package contents
+        run: |
+          rpm -l map2-audio | grep -E '(app|tui|web|systemd)' || true
+
+  publish:
+    name: Publish RPM Release
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: rpm-artifacts
+          path: ./artifacts
+          
+      - name: Create release notes
+        run: |
+          VERSION=${{ github.event.release.tag_name }}
+          VERSION=${VERSION#v}
+          
+          cat > release-notes.md << EOF
+          # MAP2 Audio Platform v${VERSION}
+          
+          ## Contents
+          - Backend API service
+          - Web interface
+          - TUI management tools
+          - Cluster orchestration
+          - Update management system
+          
+          ## Installation
+          \`\`\`bash
+          sudo dnf install map2-audio-${VERSION}*.rpm
+          \`\`\`
+          
+          ## Quick Start
+          \`\`\`bash
+          sudo systemctl enable --now map2-backend
+          sudo systemctl enable --now map2-frontend
+          \`\`\`
+          
+          ## Release Notes
+          ${{ github.event.release.body }}
+          EOF
+          
+          cat release-notes.md
+          
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/*.rpm
+            artifacts/checksums.txt
+          body_path: release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-repo:
+    name: Update RPM Repository
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Checkout repo branch
+        uses: actions/checkout@v4
+        with:
+          ref: rpm-repo
+          
+      - name: Download RPM artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: rpm-artifacts
+          path: ./rpms
+          
+      - name: Update repository
+        run: |
+          # Create repo structure
+          mkdir -p fedora/40/x86_64
+          
+          # Copy new RPMs
+          cp rpms/map2-audio-*.fc40.x86_64.rpm fedora/40/x86_64/ || true
+          
+          # Update metadata
+          dnf install -y createrepo_c
+          createrepo_c fedora/40/x86_64/
+          
+          # Copy checksums
+          cp rpms/checksums.txt fedora/40/x86_64/ || true
+          
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add .
+          git commit -m "Update RPM repository: ${{ github.event.release.tag_name }}" || true
+          git push

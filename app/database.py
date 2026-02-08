@@ -921,6 +921,37 @@ class NodeCapability(Base):
     last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class SpecialSettings(Base):
+    """
+    Special mode settings for advanced features and plugin visibility.
+    
+    Singleton table (id always 1) that stores:
+    - Special mode enabled/disabled state
+    - List of hidden native plugins (JSON array of URIs)
+    - Advanced menu location preference
+    - Cluster replication metadata (version, timestamp, node_id)
+    
+    In cluster mode, changes replicate via Raft consensus.
+    """
+    __tablename__ = "special_settings"
+
+    id = Column(Integer, primary_key=True, default=1)  # Singleton
+    enabled = Column(Boolean, nullable=False, default=False)
+    hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
+    menu_location = Column(String(20), default="top-nav")  # "top-nav" | "mobile-only" | "hidden"
+    
+    # Cluster replication metadata
+    version = Column(Integer, default=1)  # Incremented on each update
+    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by_node = Column(String(128), nullable=True)  # Node ID that made the change
+    raft_log_index = Column(Integer, nullable=True)  # Audit trail: Raft log entry index
+    
+    __table_args__ = (
+        # Ensure singleton: only one row with id=1
+        Index("idx_special_settings_singleton", "id", unique=True),
+    )
+
+
 class FlowDeploymentHistory(Base):
     """Audit log of flow deployment events."""
     __tablename__ = "flow_deployment_history"

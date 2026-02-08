@@ -21,6 +21,8 @@ from typing import Optional, Dict, List, Callable, Any, Set
 from datetime import datetime
 from pathlib import Path
 
+from app.services.platform_checks import validate_platform, get_platform_status
+
 logger = logging.getLogger(__name__)
 
 
@@ -314,6 +316,23 @@ class ServiceOrchestrator:
             is_async=True,
         ))
 
+        # === INFRASTRUCTURE (Priority 2 - Audio Server) ===
+        self._register_service(ServiceDefinition(
+            name="pipewire",
+            display_name="PipeWire Audio Server",
+            description="PipeWire audio server monitoring, graph topology, and latency control",
+            priority=ServicePriority.HIGH,
+            dependencies=[],
+            start_func=self._start_pipewire,
+            stop_func=self._stop_pipewire,
+            health_check=self._check_pipewire_health,
+            is_async=True,
+            is_optional=False,
+            is_critical_for_ready=False,
+            auto_restart=True,
+            max_restarts=5,
+        ))
+
         # Calculate startup/shutdown order
         self._calculate_service_order()
 
@@ -419,6 +438,15 @@ class ServiceOrchestrator:
             logger.info("=" * 60)
             logger.info("MAP2 SERVICE ORCHESTRATOR - Starting all services (parallel mode)")
             logger.info("=" * 60)
+
+            # Validate platform before starting services
+            logger.info("Validating platform configuration...")
+            platform_valid, platform_msg = validate_platform()
+            if not platform_valid:
+                logger.error(f"Platform validation failed: {platform_msg}")
+                logger.warning("Continuing despite platform validation failure")
+            else:
+                logger.info(f"Platform validation passed: {platform_msg}")
 
             start_time = time.time()
 
@@ -920,7 +948,7 @@ class ServiceOrchestrator:
 
     # === SERVICE IMPLEMENTATIONS ===
 
-    async def _start_database(self):
+    def _start_database(self):
         """Start database service."""
         from app.database import init_db, _SessionLocal
         from app.services.default_effects_loader import initialize_default_effects
@@ -936,7 +964,7 @@ class ServiceOrchestrator:
         finally:
             db.close()
 
-    async def _stop_database(self):
+    def _stop_database(self):
         """Stop database service."""
         pass  # SQLite doesn't need explicit shutdown
 
@@ -1356,6 +1384,100 @@ class ServiceOrchestrator:
     async def _check_backup_health(self) -> ServiceHealth:
         """Check backup service health."""
         return ServiceHealth(healthy=True, message="Backup service available")
+
+    # -----------------------------------------------------------
+    # PipeWire Audio Server
+    # -----------------------------------------------------------
+
+    async def _start_pipewire(self):
+        """Start PipeWire monitoring service and WebSocket broadcast."""
+        try:
+            from app.services.pipewire_service import get_pipewire_service
+            svc = get_pipewire_service()
+            snapshot = await svc.get_graph_snapshot()
+
+            if not snapshot.daemon.running:
+                logger.warning("⚠️ PipeWire daemon not running — monitoring will retry")
+            else:
+                logger.info(
+                    f"✅ PipeWire {snapshot.daemon.version} connected — "
+                    f"{len(snapshot.devices)} device(s), "
+                    f"latency {snapshot.total_latency_ms:.1f}ms"
+                )
+
+            # Start WebSocket broadcast if manager is available
+            if self._websocket_manager:
+                await svc.start_broadcast(self._websocket_manager, interval=2.0)
+
+        except Exception as e:
+            logger.error(f"❌ PipeWire service start failed: {e}")
+            raise
+
+    async def _stop_pipewire(self):
+        """Stop PipeWire monitoring service."""
+        try:
+            from app.services.pipewire_service import get_pipewire_service
+            svc = get_pipewire_service()
+            await svc.stop_broadcast()
+            logger.info("PipeWire monitoring stopped")
+        except Exception:
+            pass
+
+    async def _check_pipewire_health(self) -> ServiceHealth:
+        """Check PipeWire audio server health."""
+        try:
+            from app.services.pipewire_service import get_pipewire_service, HAS_WPCTL
+            if not HAS_WPCTL:
+                return ServiceHealth(
+                    healthy=False,
+                    message="❌ wpctl not installed — PipeWire CLI tools required"
+                )
+            svc = get_pipewire_service()
+            snapshot = await svc.get_graph_snapshot()
+
+            if not snapshot.daemon.running:
+                return ServiceHealth(
+                    healthy=False,
+                    message="❌ PipeWire daemon not running"
+                )
+
+            alert_count = len(snapshot.alerts)
+            alert_msg = f" ({alert_count} alert(s))" if alert_count else ""
+
+            return ServiceHealth(
+                healthy=True,
+                message=(
+                    f"✅ PipeWire {snapshot.daemon.version} — "
+                    f"{len(snapshot.devices)} dev, {len(snapshot.streams)} stream(s), "
+                    f"{snapshot.total_latency_ms:.1f}ms{alert_msg}"
+                ),
+                metrics={
+                    "version": snapshot.daemon.version,
+                    "devices": len(snapshot.devices),
+                    "nodes": len(snapshot.nodes),
+                    "streams": len(snapshot.streams),
+                    "links": len(snapshot.links),
+                    "xruns": snapshot.xruns,
+                    "latency_ms": snapshot.total_latency_ms,
+                    "alerts": snapshot.alerts,
+                }
+            )
+        except Exception as e:
+            return ServiceHealth(healthy=False, message=f"❌ PipeWire error: {e}")
+
+    def get_platform_status(self) -> Dict[str, Any]:
+        """
+        Get detailed platform status including system checks.
+        
+        Returns:
+            Dictionary with platform status information
+        """
+        platform_info = get_platform_status()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "platform_checks": platform_info
+        }
 
 
 # Singleton accessor

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "map2://schemas/drums/practice_songbook_pack",
+  "title": "MAP2 Drum Practice Songbook Pack",
+  "type": "object",
+  "required": ["pack_id", "name", "version", "entries"],
+  "properties": {
+    "pack_id": { "type": "string" },
+    "name": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "description": { "type": "string" },
+    "license": { "type": "string" },
+    "source": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "default_bpm", "bpm_range", "time_signature", "style_id", "sections", "tags"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "year_range": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "default_bpm": { "type": "number", "minimum": 20, "maximum": 300 },
+          "bpm_range": {
+            "type": "array",
+            "items": { "type": "number", "minimum": 20, "maximum": 300 },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "time_signature": { "type": "string" },
+          "feel": { "type": "string", "enum": ["straight", "shuffle", "swing", "half_time", "reggae"] },
+          "style_id": { "type": "string" },
+          "variation_default": { "type": "number", "minimum": 0, "maximum": 1 },
+          "sections": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "bars"],
+              "properties": {
+                "name": { "type": "string", "enum": ["intro", "verse", "prechorus", "chorus", "bridge", "solo", "breakdown", "outro"] },
+                "bars": { "type": "integer", "minimum": 1, "maximum": 64 },
+                "variation": { "type": "number", "minimum": 0, "maximum": 1 },
+                "fill": { "type": "boolean" }
+              }
+            }
+          },
+          "tags": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        }
+      }
+    }
+  }
+}

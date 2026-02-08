@@ -49,3 +49,31 @@ class SystemHealthResponse(BaseModel):
     memory_mb: float
     audio_running: bool
     plugins_loaded: int
+
+
+class SpecialSettingsResponse(BaseModel):
+    """Special mode settings response."""
+    enabled: bool = False
+    hidden_plugins: List[str] = []
+    menu_location: str = "top-nav"
+    version: int = 1
+    last_updated: Optional[str] = None  # ISO timestamp
+    updated_by_node: Optional[str] = None
+
+
+class SpecialSettingsUpdateRequest(BaseModel):
+    """Request to update special settings."""
+    enabled: bool
+    hidden_plugins: List[str]
+    menu_location: str  # "top-nav" | "mobile-only" | "hidden"
+
+
+class PasswordAuthRequest(BaseModel):
+    """Password authentication request."""
+    password: str
+
+
+class PasswordAuthResponse(BaseModel):
+    """Password authentication response."""
+    success: bool
+    message: str = ""

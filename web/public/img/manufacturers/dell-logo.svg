@@ -1,0 +1,11 @@
+<svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dell Logo -->
+  <rect width="200" height="60" fill="white" opacity="0"/>
+  <g transform="translate(20, 10)">
+    <!-- Dell Red Logo -->
+    <rect x="0" y="0" width="160" height="40" rx="2" fill="none"/>
+    <text x="20" y="28" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#0066CC">
+      DELL
+    </text>
+  </g>
+</svg>

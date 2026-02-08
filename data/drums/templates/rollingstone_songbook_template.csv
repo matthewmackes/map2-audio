@@ -1,0 +1,2 @@
+rank,title,artist,year,guitar_focus,style_id,feel,default_bpm,bpm_min,bpm_max,time_signature,variation_default,sections,tags
+1,EXAMPLE SONG TITLE,EXAMPLE ARTIST,1977,true,rock_8,straight,120,100,160,4/4,0.35,"intro:4,verse:8,chorus:8,bridge:8,solo:8,chorus:8,outro:4","guitar;classic-rock;practice"

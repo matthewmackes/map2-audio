@@ -15,6 +15,7 @@ import { GridFlowPage } from './pages/GridFlowPage'
 import { DSPPage } from './pages/DSPPage'
 import { EdirolUA1000Page } from './pages/EdirolUA1000Page'
 import { HoToneJoGGPage } from './pages/HoToneJoGGPage'
+import { HostMachinePage } from './pages/HostMachinePage'
 import { MeteringPage } from './pages/MeteringPage'
 import { WelcomePage } from './pages/WelcomePage'
 import { LCDPage } from './pages/LCDPage'
@@ -22,6 +23,7 @@ import { LCDDashboardPage } from './pages/LCDDashboardPage'
 import { NodeLCDPage } from './pages/NodeLCDPage'
 import { LCDSettingsPage } from './pages/LCDSettingsPage'
 import { ClusterDashboardPage } from './pages/ClusterDashboardPage'
+import { PipeWirePage } from './pages/PipeWirePage'
 import { MidiLearnProvider } from './hooks/useMidiLearn'
 
 const queryClient = new QueryClient({
@@ -57,6 +59,7 @@ export function App() {
                 <Route path="/dsp" element={<DSPPage />} />
                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
+                <Route path="/host-machine" element={<HostMachinePage />} />
                 <Route path="/metering" element={<MeteringPage />} />
                 <Route path="/welcome" element={<WelcomePage />} />
                 <Route path="/lcd" element={<LCDPage />} />
@@ -64,6 +67,7 @@ export function App() {
                 <Route path="/lcd-nodes" element={<NodeLCDPage />} />
                 <Route path="/lcd-settings" element={<LCDSettingsPage />} />
                 <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
+                <Route path="/pipewire" element={<PipeWirePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppShell>
@@ -74,3 +78,4 @@ export function App() {
     </QueryClientProvider>
   )
 }
+

@@ -260,33 +260,49 @@ async def test_event_broadcast():
 
 ---
 
-### 3.4 Kubernetes Deployment Manifests
+### 3.4 Systemd Unit Templates for Multi-Instance Deployment
 **Status**: Not provided
-**Impact**: Cloud deployment support
+**Impact**: Easy production deployment across multiple systems
 
-```yaml
-# k8s/map2-lcd-deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: map2-lcd-node
-spec:
-  replicas: 2
-  template:
-    spec:
-      containers:
-      - name: map2-lcd
-        image: map2/lcd:latest
-        ports:
-        - containerPort: 8080
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
+```ini
+# /etc/systemd/system/map2-lcd@.service
+# Creates instances: map2-lcd@audio-1.service, map2-lcd@control.service
+
+[Unit]
+Description=MAP2 LCD Event System - %I Instance
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=map2
+WorkingDirectory=/opt/map2
+Environment="MAP2_NODE_ID=%I"
+Environment="MAP2_DEPLOYMENT_MODE=AUDIO-NODE"
+ExecStart=/opt/map2/venv/bin/python -m app.main
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-**Effort**: 2-3 hours
-**Files**: k8s/deployment.yaml, k8s/service.yaml, k8s/configmap.yaml
+Deployment:
+```bash
+# Deploy single instance
+sudo systemctl enable --now map2-lcd@audio-1
+
+# Deploy multiple instances on single host
+sudo systemctl enable --now map2-lcd@audio-1 map2-lcd@control
+
+# Monitor all instances
+sudo systemctl status map2-lcd@*
+```
+
+**Effort**: 1-2 hours
+**Files**: systemd/map2-lcd@.service, systemd/deployment-guide.md
 
 ---
 

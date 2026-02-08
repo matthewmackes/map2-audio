@@ -1,0 +1,10 @@
+<svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- HP Logo -->
+  <rect width="200" height="60" fill="white" opacity="0"/>
+  <g transform="translate(20, 10)">
+    <!-- HP Blue Logo -->
+    <text x="0" y="28" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#003DA5">
+      HP
+    </text>
+  </g>
+</svg>
