@@ -262,3 +262,215 @@ export function importHostMachineSettings(jsonString: string): boolean {
     return false
   }
 }
+
+/**
+ * usePersistedThresholds - Load/save health thresholds
+ * Enhanced version with HealthSettings type
+ */
+export function usePersistedThresholds(defaultThresholds: HealthSettings) {
+  const [thresholds, setThresholds] = useState<HealthSettings>(defaultThresholds)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const loadThresholds = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.healthSettings)
+        if (stored) {
+          const parsed = JSON.parse(stored) as HealthSettings
+          setThresholds(parsed)
+        }
+      } catch (error) {
+        console.error('Failed to load thresholds from localStorage:', error)
+      } finally {
+        setIsLoaded(true)
+      }
+    }
+
+    loadThresholds()
+  }, [])
+
+  const saveThresholds = useCallback(
+    (newThresholds: HealthSettings) => {
+      try {
+        localStorage.setItem(STORAGE_KEYS.healthSettings, JSON.stringify(newThresholds))
+        setThresholds(newThresholds)
+      } catch (error) {
+        console.error('Failed to save thresholds to localStorage:', error)
+      }
+    },
+    []
+  )
+
+  const resetThresholds = useCallback(() => {
+    saveThresholds(defaultThresholds)
+  }, [defaultThresholds, saveThresholds])
+
+  return {
+    thresholds,
+    saveThresholds,
+    resetThresholds,
+    isLoaded,
+  }
+}
+
+/**
+ * usePersistedAlertHistory - Load/save alert history
+ */
+export function usePersistedAlertHistory(maxAlerts: number = 100) {
+  const [alerts, setAlerts] = useState<StoredAlert[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const loadAlerts = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEYS.alertHistory)
+        if (stored) {
+          const parsed = JSON.parse(stored) as StoredAlert[]
+          setAlerts(parsed)
+        }
+      } catch (error) {
+        console.error('Failed to load alert history from localStorage:', error)
+      } finally {
+        setIsLoaded(true)
+      }
+    }
+
+    loadAlerts()
+  }, [])
+
+  const addAlert = useCallback(
+    (alert: StoredAlert) => {
+      setAlerts((prev) => {
+        const updated = [alert, ...prev].slice(0, maxAlerts)
+        try {
+          localStorage.setItem(STORAGE_KEYS.alertHistory, JSON.stringify(updated))
+        } catch (error) {
+          console.error('Failed to save alert to localStorage:', error)
+        }
+        return updated
+      })
+    },
+    [maxAlerts]
+  )
+
+  const clearHistory = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.alertHistory)
+      setAlerts([])
+    } catch (error) {
+      console.error('Failed to clear alert history:', error)
+    }
+  }, [])
+
+  const getAlertsByDateRange = useCallback(
+    (startTime: number, endTime: number) => {
+      return alerts.filter((a) => a.timestamp >= startTime && a.timestamp <= endTime)
+    },
+    [alerts]
+  )
+
+  return {
+    alerts,
+    addAlert,
+    clearHistory,
+    getAlertsByDateRange,
+    isLoaded,
+  }
+}
+
+/**
+ * usePersistedPreferences - Load/save user preferences
+ */
+export interface UserPreferences {
+  autoRefresh: boolean
+  useWebSocket: boolean
+  refreshInterval: number
+  metricsHistorySize: number
+  soundAlertsEnabled: boolean
+  notificationsEnabled: boolean
+  darkMode: boolean
+  chartType: 'line' | 'area'
+}
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  autoRefresh: true,
+  useWebSocket: true,
+  refreshInterval: 2,
+  metricsHistorySize: 360,
+  soundAlertsEnabled: true,
+  notificationsEnabled: true,
+  darkMode: false,
+  chartType: 'line',
+}
+
+export function usePersistedPreferences() {
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    const loadPreferences = () => {
+      try {
+        const stored = localStorage.getItem('hmp_preferences')
+        if (stored) {
+          const parsed = JSON.parse(stored) as UserPreferences
+          setPreferences({ ...DEFAULT_PREFERENCES, ...parsed })
+        }
+      } catch (error) {
+        console.error('Failed to load preferences from localStorage:', error)
+      } finally {
+        setIsLoaded(true)
+      }
+    }
+
+    loadPreferences()
+  }, [])
+
+  const savePreferences = useCallback((newPrefs: Partial<UserPreferences>) => {
+    try {
+      const updated = { ...preferences, ...newPrefs }
+      localStorage.setItem('hmp_preferences', JSON.stringify(updated))
+      setPreferences(updated)
+    } catch (error) {
+      console.error('Failed to save preferences to localStorage:', error)
+    }
+  }, [preferences])
+
+  const resetPreferences = useCallback(() => {
+    try {
+      localStorage.removeItem('hmp_preferences')
+      setPreferences(DEFAULT_PREFERENCES)
+    } catch (error) {
+      console.error('Failed to reset preferences:', error)
+    }
+  }, [])
+
+  return {
+    preferences,
+    savePreferences,
+    resetPreferences,
+    isLoaded,
+  }
+}
+
+/**
+ * Get storage size usage (for debugging)
+ */
+export function getStorageUsage() {
+  let totalSize = 0
+
+  try {
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      const item = localStorage.getItem(key)
+      if (item) {
+        totalSize += item.length
+      }
+    })
+  } catch (error) {
+    console.error('Failed to calculate storage usage:', error)
+  }
+
+  return {
+    bytes: totalSize,
+    kb: (totalSize / 1024).toFixed(2),
+  }
+}

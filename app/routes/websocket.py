@@ -196,6 +196,121 @@ async def websocket_endpoint_v1(websocket: WebSocket):
     await _handle_websocket_connection(websocket, version="1.0")
 
 
+@router.websocket("/ws/system/metrics")
+async def system_metrics_stream(websocket: WebSocket):
+    """
+    Real-time system metrics WebSocket stream
+    
+    Streams health and performance data:
+    - Health overview every 2 seconds
+    - Disk health every 5 seconds
+    - Heartbeat every 30 seconds
+    
+    Message Format (from server):
+    {
+        "type": "health-overview" | "disk-health" | "heartbeat",
+        "data": {...system metrics...},
+        "timestamp": Unix timestamp
+    }
+    """
+    import asyncio
+    import time
+    from app.routes.system import (
+        get_health_overview as get_system_health,
+        get_disk_health
+    )
+    
+    client_id = str(uuid.uuid4())
+    await websocket.accept()
+    
+    logger.info(f"System metrics client connected: {client_id}")
+    
+    try:
+        last_health_send = 0
+        last_disk_send = 0
+        last_heartbeat = 0
+        
+        while True:
+            try:
+                # Check for client messages (ping) with timeout
+                try:
+                    message_data = await asyncio.wait_for(
+                        websocket.receive_text(),
+                        timeout=1.0
+                    )
+                    
+                    try:
+                        message = json.loads(message_data)
+                        
+                        if message.get('type') == 'ping':
+                            # Respond to ping
+                            await websocket.send_json({
+                                'type': 'pong',
+                                'timestamp': time.time()
+                            })
+                    except json.JSONDecodeError:
+                        pass
+                except asyncio.TimeoutError:
+                    pass  # Expected, continue loop
+                
+                current_time = time.time()
+                
+                # Send health overview every 2 seconds
+                if current_time - last_health_send >= 2:
+                    try:
+                        health_data = await get_system_health()
+                        
+                        await websocket.send_json({
+                            'type': 'health-overview',
+                            'data': health_data,
+                            'timestamp': current_time
+                        })
+                        
+                        last_health_send = current_time
+                    except Exception as e:
+                        logger.error(f"Error sending health data: {e}")
+                
+                # Send disk health every 5 seconds
+                if current_time - last_disk_send >= 5:
+                    try:
+                        disk_data = await get_disk_health()
+                        
+                        await websocket.send_json({
+                            'type': 'disk-health',
+                            'data': disk_data,
+                            'timestamp': current_time
+                        })
+                        
+                        last_disk_send = current_time
+                    except Exception as e:
+                        logger.error(f"Error sending disk data: {e}")
+                
+                # Send heartbeat every 30 seconds
+                if current_time - last_heartbeat >= 30:
+                    try:
+                        await websocket.send_json({
+                            'type': 'heartbeat',
+                            'timestamp': current_time,
+                            'status': 'connected',
+                            'connection_id': client_id
+                        })
+                        
+                        last_heartbeat = current_time
+                    except Exception as e:
+                        logger.error(f"Error sending heartbeat: {e}")
+                
+                # Yield to event loop
+                await asyncio.sleep(0.1)
+            
+            except WebSocketDisconnect:
+                break
+    
+    except Exception as e:
+        logger.error(f"System metrics WebSocket error for client {client_id}: {e}")
+    finally:
+        logger.info(f"System metrics client disconnected: {client_id}")
+
+
 @router.get("/ws/stats")
 async def get_websocket_stats() -> Dict[str, Any]:
     """
