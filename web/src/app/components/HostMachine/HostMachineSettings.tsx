@@ -1,195 +1,264 @@
 /**
  * Host Machine Settings Component
  * Configure alarms, thresholds, and monitoring preferences
+ * Uses localStorage for persistence
  */
 
-import { useState, useCallback } from 'react'
-import { Box, Paper, Typography, TextField, Button, Grid, Switch, FormControlLabel, Divider } from '@mui/material'
-import type { HealthThresholds } from '@/app/hooks/useHealthMonitoring'
-import { DEFAULT_THRESHOLDS } from '@/app/hooks/useHealthMonitoring'
+import { useCallback } from 'react'
+import { Box, Paper, Typography, TextField, Button, Grid, Switch, FormControlLabel, Divider, Alert } from '@mui/material'
+import { useHealthSettings, useWebSocketPreference } from '@/app/hooks/useLocalStorage'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import SaveIcon from '@mui/icons-material/Save'
 
-interface HostMachineSettingsProps {
-  thresholds: HealthThresholds
-  onThresholdsChange: (thresholds: HealthThresholds) => void
-  enableWebSocket: boolean
-  onWebSocketToggle: (enabled: boolean) => void
-}
+export default function HostMachineSettings() {
+  const { settings, updateSettings, resetToDefaults } = useHealthSettings()
+  const { enabled: webSocketEnabled, setEnabled: setWebSocketEnabled } = useWebSocketPreference()
 
-export default function HostMachineSettings({
-  thresholds,
-  onThresholdsChange,
-  enableWebSocket,
-  onWebSocketToggle,
-}: HostMachineSettingsProps) {
-  const [localThresholds, setLocalThresholds] = useState(thresholds)
-  const [isModified, setIsModified] = useState(false)
-
-  const handleThresholdChange = useCallback(
-    (key: keyof HealthThresholds, value: number) => {
-      setLocalThresholds((prev) => ({
-        ...prev,
-        [key]: value,
-      }))
-      setIsModified(true)
+  const handleNumberChange = useCallback(
+    (field: keyof typeof settings, value: string) => {
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+        updateSettings({ [field]: numValue })
+      }
     },
-    []
+    [updateSettings]
   )
 
-  const handleSave = useCallback(() => {
-    onThresholdsChange(localThresholds)
-    setIsModified(false)
-  }, [localThresholds, onThresholdsChange])
+  const handleSaveAll = useCallback(() => {
+    // Settings are auto-saved via localStorage, show confirmation
+    console.log('Settings saved:', settings)
+  }, [settings])
 
-  const handleReset = useCallback(() => {
-    setLocalThresholds(DEFAULT_THRESHOLDS)
-    setIsModified(true)
-  }, [])
+  const renderThresholdPair = (
+    label: string,
+    warningKey: keyof typeof settings,
+    criticalKey: keyof typeof settings,
+    suffix: string
+  ) => (
+    <Paper sx={{ p: 3, mb: 2 }}>
+      <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 2 }}>
+        {label}
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <Typography sx={{ fontSize: 12, color: '#666', mb: 1 }}>
+            Warning Threshold
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              type="number"
+              value={settings[warningKey]}
+              onChange={(e) => handleNumberChange(warningKey, e.target.value)}
+              inputProps={{ min: 0, max: 100, step: 1 }}
+              size="small"
+              sx={{ width: 100 }}
+            />
+            <Typography sx={{ fontSize: 12, color: '#666' }}>{suffix}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 11, color: '#f59e0b', fontWeight: 500, mt: 1 }}>
+            ⚠️ Alert when exceeded
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography sx={{ fontSize: 12, color: '#666', mb: 1 }}>
+            Critical Threshold
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              type="number"
+              value={settings[criticalKey]}
+              onChange={(e) => handleNumberChange(criticalKey, e.target.value)}
+              inputProps={{ min: 0, max: 100, step: 1 }}
+              size="small"
+              sx={{ width: 100 }}
+            />
+            <Typography sx={{ fontSize: 12, color: '#666' }}>{suffix}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 11, color: '#ef4444', fontWeight: 500, mt: 1 }}>
+            🚨 Critical alert when exceeded
+          </Typography>
+        </Grid>
+      </Grid>
+    </Paper>
+  )
 
   return (
     <Box sx={{ display: 'grid', gap: 3 }}>
+      {/* Info Alert */}
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Settings are automatically saved to your browser's local storage. They persist across sessions.
+      </Alert>
+
       {/* Temperature Settings */}
-      <Paper sx={{ p: 3 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 2 }}>Temperature Thresholds (°C)</Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Warning Threshold"
-              type="number"
-              value={localThresholds.temperatureWarning}
-              onChange={(e) => handleThresholdChange('temperatureWarning', parseInt(e.target.value))}
-              fullWidth
-              helperText="Alert when temperature exceeds this value"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Critical Threshold"
-              type="number"
-              value={localThresholds.temperatureCritical}
-              onChange={(e) => handleThresholdChange('temperatureCritical', parseInt(e.target.value))}
-              fullWidth
-              helperText="Critical alert when temperature exceeds this value"
-            />
-          </Grid>
-        </Grid>
-      </Paper>
+      {renderThresholdPair(
+        '🌡️ CPU Temperature',
+        'tempWarning',
+        'tempCritical',
+        '°C'
+      )}
 
       {/* CPU Usage Settings */}
-      <Paper sx={{ p: 3 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 2 }}>CPU Usage Thresholds (%)</Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Warning Threshold"
-              type="number"
-              value={localThresholds.cpuUsageWarning}
-              onChange={(e) => handleThresholdChange('cpuUsageWarning', parseInt(e.target.value))}
-              fullWidth
-              inputProps={{ min: 0, max: 100 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Critical Threshold"
-              type="number"
-              value={localThresholds.cpuUsageCritical}
-              onChange={(e) => handleThresholdChange('cpuUsageCritical', parseInt(e.target.value))}
-              fullWidth
-              inputProps={{ min: 0, max: 100 }}
-            />
-          </Grid>
-        </Grid>
-      </Paper>
+      {renderThresholdPair(
+        '⚙️ CPU Usage',
+        'cpuWarning',
+        'cpuCritical',
+        '%'
+      )}
 
       {/* Memory Usage Settings */}
-      <Paper sx={{ p: 3 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 2 }}>Memory Usage Thresholds (%)</Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Warning Threshold"
-              type="number"
-              value={localThresholds.memoryUsageWarning}
-              onChange={(e) => handleThresholdChange('memoryUsageWarning', parseInt(e.target.value))}
-              fullWidth
-              inputProps={{ min: 0, max: 100 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Critical Threshold"
-              type="number"
-              value={localThresholds.memoryUsageCritical}
-              onChange={(e) => handleThresholdChange('memoryUsageCritical', parseInt(e.target.value))}
-              fullWidth
-              inputProps={{ min: 0, max: 100 }}
-            />
-          </Grid>
-        </Grid>
-      </Paper>
+      {renderThresholdPair(
+        '💾 Memory Usage',
+        'memWarning',
+        'memCritical',
+        '%'
+      )}
 
       {/* Disk Usage Settings */}
+      {renderThresholdPair(
+        '💿 Disk Usage',
+        'diskWarning',
+        'diskCritical',
+        '%'
+      )}
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* WebSocket Settings */}
+      <Paper sx={{ p: 3, mb: 2 }}>
+        <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 2 }}>
+          📡 Monitoring Preferences
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={webSocketEnabled}
+              onChange={(e) => setWebSocketEnabled(e.target.checked)}
+            />
+          }
+          label={
+            <Box>
+              <Typography sx={{ fontWeight: 500 }}>
+                Real-time WebSocket Updates
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: '#666' }}>
+                {webSocketEnabled
+                  ? '✅ WebSocket enabled - Instant updates with lower bandwidth'
+                  : '⏱️ Polling mode - Standard polling every 2-5 seconds'}
+              </Typography>
+            </Box>
+          }
+        />
+      </Paper>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Action Buttons */}
       <Paper sx={{ p: 3 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 2 }}>Disk Usage Thresholds (%)</Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
-            <TextField
-              label="Warning Threshold"
-              type="number"
-              value={localThresholds.diskUsageWarning}
-              onChange={(e) => handleThresholdChange('diskUsageWarning', parseInt(e.target.value))}
+            <Button
+              variant="contained"
               fullWidth
-              inputProps={{ min: 0, max: 100 }}
-            />
+              startIcon={<SaveIcon />}
+              onClick={handleSaveAll}
+              sx={{
+                backgroundColor: '#10b981',
+                '&:hover': { backgroundColor: '#059669' },
+              }}
+            >
+              Save All Settings
+            </Button>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              label="Critical Threshold"
-              type="number"
-              value={localThresholds.diskUsageCritical}
-              onChange={(e) => handleThresholdChange('diskUsageCritical', parseInt(e.target.value))}
+            <Button
+              variant="outlined"
               fullWidth
-              inputProps={{ min: 0, max: 100 }}
-            />
+              startIcon={<RestartAltIcon />}
+              onClick={resetToDefaults}
+              sx={{
+                borderColor: '#6b7280',
+                color: '#6b7280',
+                '&:hover': { borderColor: '#374151', color: '#374151' },
+              }}
+            >
+              Reset to Defaults
+            </Button>
           </Grid>
         </Grid>
       </Paper>
 
-      {/* Streaming Settings */}
-      <Paper sx={{ p: 3 }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 2 }}>Data Streaming</Typography>
-        <FormControlLabel
-          control={<Switch checked={enableWebSocket} onChange={(e) => onWebSocketToggle(e.target.checked)} />}
-          label="Use WebSocket for Real-time Updates (reduces server load)"
-        />
-        <Typography sx={{ fontSize: 12, color: '#666', mt: 1 }}>
-          When enabled, metrics stream via WebSocket instead of polling. Falls back to polling if connection fails.
+      {/* Current Settings Summary */}
+      <Paper sx={{ p: 3, backgroundColor: '#f9fafb' }}>
+        <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 2 }}>
+          📋 Current Thresholds Summary
         </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>Temp Warning</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>
+                {settings.tempWarning}°C
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>Temp Critical</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
+                {settings.tempCritical}°C
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>CPU Warning</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>
+                {settings.cpuWarning}%
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>CPU Critical</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
+                {settings.cpuCritical}%
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>Mem Warning</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>
+                {settings.memWarning}%
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>Mem Critical</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
+                {settings.memCritical}%
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>Disk Warning</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>
+                {settings.diskWarning}%
+              </Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Box>
+              <Typography sx={{ fontSize: 11, color: '#666' }}>Disk Critical</Typography>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
+                {settings.diskCritical}%
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
       </Paper>
-
-      {/* Action Buttons */}
-      <Divider />
-      <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button
-          onClick={handleReset}
-          variant="outlined"
-          disabled={!isModified}
-        >
-          Reset to Defaults
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={!isModified}
-        >
-          Save Settings
-        </Button>
-      </Box>
-
-      {/* Info */}
-      <Typography sx={{ fontSize: 12, color: '#999', textAlign: 'center', mt: 2 }}>
-        Settings are saved locally. Changes apply immediately to new alerts.
-      </Typography>
     </Box>
   )
 }
