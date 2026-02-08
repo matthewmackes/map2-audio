@@ -110,16 +110,11 @@ export function KeyboardSamplerCard({
         })
         return response
       } catch (error) {
-        // Return mock data for demo
+        console.warn('Failed to load soundfonts:', error)
+        // Return empty list — no mock data
         return {
-          soundfonts: [
-            { id: '1', name: 'Grand Piano', filename: 'grand_piano.sf2', path: '/soundfonts/grand_piano.sf2', format: 'sf2', category: 'Piano', library: 'User', size: 45000000 },
-            { id: '2', name: 'Electric Piano', filename: 'rhodes.sfz', path: '/soundfonts/rhodes.sfz', format: 'sfz', category: 'Keyboards', library: 'User', size: 12000000 },
-            { id: '3', name: 'Strings Ensemble', filename: 'strings.sf2', path: '/soundfonts/strings.sf2', format: 'sf2', category: 'Strings', library: 'SFZ Instruments', size: 89000000 },
-            { id: '4', name: 'Acoustic Guitar', filename: 'acoustic_gtr.sfz', path: '/soundfonts/acoustic_gtr.sfz', format: 'sfz', category: 'Guitar', library: 'Musical Artifacts', size: 34000000 },
-            { id: '5', name: 'Jazz Drums', filename: 'jazz_kit.sf2', path: '/soundfonts/jazz_kit.sf2', format: 'sf2', category: 'Drums', library: 'FreePats', size: 67000000 },
-          ] as SoundFont[],
-          total: 5,
+          soundfonts: [] as SoundFont[],
+          total: 0,
         }
       }
     },

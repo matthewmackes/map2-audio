@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X, Server, Radio, Flame } from 'lucide-react'
+import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X, Server, Radio, Flame, Drum, Guitar } from 'lucide-react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
@@ -54,8 +54,15 @@ const underTheHoodItems = [
     to: '/dsp',
     label: 'DSP',
     icon: Sliders,
-    description: 'Dynamics & EQ processors',
+    description: 'Native JUCE processors — dynamics, EQ, delay, modulation, pitch, reverb, amps & multi-FX',
     color: '#ff6644'  // Orange-red
+  },
+  {
+    to: '/drums',
+    label: 'Drums',
+    icon: Drum,
+    description: 'Drum machine & practice patterns',
+    color: '#f59e0b'  // Amber
   },
   {
     to: '/edirol-ua1000',
@@ -112,6 +119,13 @@ const underTheHoodItems = [
     icon: Server,
     description: 'Multi-node cluster monitoring & simulation',
     color: '#00d4ff'  // Cyan
+  },
+  {
+    to: '/multi-system',
+    label: 'Multi-System',
+    icon: Monitor,
+    description: 'Side-by-side multi-host metrics & comparison',
+    color: '#38bdf8'  // Sky blue
   },
   {
     to: '/pipewire',

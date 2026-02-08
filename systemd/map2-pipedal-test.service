@@ -20,8 +20,5 @@ RemainAfterExit=yes
 ExecStartPre=/bin/mkdir -p /home/mm/map2-audio/logs
 ExecStartPre=/bin/mkdir -p /home/mm/map2-audio/web/public
 
-# Set proper permissions
-ExecStartPre=/bin/chown -R mm:mm /home/mm/map2-audio/logs
-
 [Install]
 WantedBy=multi-user.target

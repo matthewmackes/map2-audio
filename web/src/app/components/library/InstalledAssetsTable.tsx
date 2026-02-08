@@ -384,14 +384,37 @@ export function InstalledAssetsTable() {
     }
   }, [selectedIds.size, paginatedAssets])
 
-  const handleDeleteSelected = useCallback(() => {
-    // For now, just show confirmation and clear selection
-    // TODO: Implement actual delete API calls
+  const handleDeleteSelected = useCallback(async () => {
+    const assetsToDelete = paginatedAssets.filter((a) => selectedIds.has(a.id))
+    const errors: string[] = []
+
+    for (const asset of assetsToDelete) {
+      try {
+        if (asset.type === 'nam') {
+          // NAM models have a backend delete endpoint
+          const response = await fetch(`/api/nam/models/${encodeURIComponent(asset.name)}`, { method: 'DELETE' })
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}))
+            errors.push(`${asset.name}: ${data.detail || response.statusText}`)
+          }
+        } else {
+          // Other asset types don't have delete endpoints yet
+          errors.push(`${asset.name}: Delete not yet supported for ${asset.type} assets`)
+        }
+      } catch (err) {
+        errors.push(`${asset.name}: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      }
+    }
+
+    if (errors.length > 0) {
+      console.warn('Some deletions failed:', errors)
+    }
+
     setShowDeleteConfirm(false)
     setSelectedIds(new Set())
     // After delete, refresh the lists
     handleRefresh()
-  }, [handleRefresh])
+  }, [handleRefresh, paginatedAssets, selectedIds])
 
   const toggleColumn = useCallback((col: keyof ColumnVisibility) => {
     setColumns((prev) => ({ ...prev, [col]: !prev[col] }))

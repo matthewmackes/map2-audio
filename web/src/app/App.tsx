@@ -24,6 +24,8 @@ import { NodeLCDPage } from './pages/NodeLCDPage'
 import { LCDSettingsPage } from './pages/LCDSettingsPage'
 import { ClusterDashboardPage } from './pages/ClusterDashboardPage'
 import { PipeWirePage } from './pages/PipeWirePage'
+import { DrumsPage } from './pages/DrumsPage'
+import MultiSystemDashboard from './pages/MultiSystemDashboardPage'
 import { MidiLearnProvider } from './hooks/useMidiLearn'
 
 const queryClient = new QueryClient({
@@ -68,6 +70,8 @@ export function App() {
                 <Route path="/lcd-settings" element={<LCDSettingsPage />} />
                 <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
                 <Route path="/pipewire" element={<PipeWirePage />} />
+                <Route path="/drums" element={<DrumsPage />} />
+                <Route path="/multi-system" element={<MultiSystemDashboard />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AppShell>

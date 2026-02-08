@@ -31,7 +31,9 @@ export function ReportingTab() {
       description: 'PDF report of cluster health over selected period',
       icon: '📊',
       format: 'PDF',
-      action: () => alert('PDF export coming soon'),
+      action: () => {},
+      disabled: true,
+      disabledReason: 'PDF report generation requires server-side rendering support (not yet available)',
     },
     {
       title: 'Metrics Export',
@@ -52,7 +54,9 @@ export function ReportingTab() {
       description: 'Service availability and SLA metrics',
       icon: '⏱️',
       format: 'HTML',
-      action: () => alert('Uptime report coming soon'),
+      action: () => {},
+      disabled: true,
+      disabledReason: 'Uptime SLA report requires backend metrics aggregation (not yet available)',
     },
   ]
 
@@ -132,29 +136,36 @@ export function ReportingTab() {
           >
             <div style={{ fontSize: 24, marginBottom: 12 }}>{report.icon}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#d0d0d0', marginBottom: 6 }}>{report.title}</div>
-            <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 14, flex: 1 }}>{report.description}</div>
+            <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 14, flex: 1 }}>
+              {report.description}
+              {(report as any).disabled && (
+                <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 6, fontStyle: 'italic' }}>
+                  ⚠ {(report as any).disabledReason}
+                </div>
+              )}
+            </div>
             <button
               onClick={report.action}
-              disabled={isExporting}
+              disabled={isExporting || (report as any).disabled}
               style={{
                 padding: '10px 14px',
-                background: '#00d4ff',
-                color: '#000',
+                background: (report as any).disabled ? '#333' : '#00d4ff',
+                color: (report as any).disabled ? '#666' : '#000',
                 border: 'none',
                 borderRadius: 6,
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: isExporting ? 'not-allowed' : 'pointer',
+                cursor: isExporting || (report as any).disabled ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 6,
-                opacity: isExporting ? 0.6 : 1,
+                opacity: isExporting || (report as any).disabled ? 0.6 : 1,
                 transition: 'opacity 0.2s',
               }}
             >
               <Download size={14} />
-              {isExporting ? 'Exporting...' : `Export ${report.format}`}
+              {isExporting ? 'Exporting...' : (report as any).disabled ? 'Not Available' : `Export ${report.format}`}
             </button>
           </div>
         ))}

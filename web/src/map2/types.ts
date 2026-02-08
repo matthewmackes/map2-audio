@@ -967,6 +967,350 @@ export interface PluginDataMessage {
   data: PeakData | OutputPortValue | TunerData | SpectrumData;
 }
 
+// ==================== Native Engine Types ====================
+
+/** JUCE Audio Engine status */
+export interface EngineStatus {
+  running: boolean;
+  available: boolean;
+  sample_rate: number;
+  buffer_size: number;
+  cpu_load: number;
+  plugin_count: number;
+  latency_ms: number;
+  error?: string;
+}
+
+/** JUCE Audio Engine version info */
+export interface EngineVersion {
+  version: string;
+}
+
+// ==================== Dynamics Processor Types ====================
+
+export interface DynamicsMetering {
+  inputLevel: number;
+  outputLevel: number;
+  gainReduction: number;
+  inputRms: number;
+  outputRms: number;
+}
+
+export interface CompressorState {
+  threshold: number;
+  ratio: number;
+  attack: number;
+  release: number;
+  knee: number;
+  makeupGain: number;
+  autoMakeup: boolean;
+  bypass: boolean;
+}
+
+export interface LimiterState {
+  threshold: number;
+  release: number;
+  bypass: boolean;
+}
+
+export interface GateState {
+  threshold: number;
+  ratio: number;
+  attack: number;
+  release: number;
+  bypass: boolean;
+}
+
+// ==================== EQ Processor Types ====================
+
+export interface EQBand {
+  index: number;
+  frequency: number;
+  gain: number;
+  q: number;
+  type: 'lowpass' | 'highpass' | 'bandpass' | 'notch' | 'peak' | 'lowshelf' | 'highshelf';
+  enabled: boolean;
+}
+
+export interface EQState {
+  bands: EQBand[];
+  bypass: boolean;
+  outputGain: number;
+}
+
+export interface FrequencyResponse {
+  frequencies: number[];
+  magnitudes: number[];
+}
+
+// ==================== Delay Processor Types ====================
+
+export interface DelayState {
+  delayTimeMs: number;
+  feedback: number;
+  mix: number;
+  sync: boolean;
+  pingPong: boolean;
+  highCut: number;
+  lowCut: number;
+  bypass: boolean;
+}
+
+export interface TempoDivision {
+  name: string;
+  multiplier: number;
+}
+
+// ==================== Modulation Processor Types ====================
+
+export interface ChorusState {
+  rate: number;
+  depth: number;
+  mix: number;
+  voices: number;
+  bypass: boolean;
+}
+
+export interface PhaserState {
+  rate: number;
+  depth: number;
+  feedback: number;
+  stages: number;
+  mix: number;
+  bypass: boolean;
+}
+
+export interface PitchShifterState {
+  semitones: number;
+  cents: number;
+  mix: number;
+  bypass: boolean;
+}
+
+// ==================== Boss XS-1 Pitch Types ====================
+
+export interface BossXS1State {
+  voice1_semitones: number;
+  voice1_cents: number;
+  voice2_semitones: number;
+  voice2_cents: number;
+  mix: number;
+  bypass: boolean;
+}
+
+export interface BossXS1Preset {
+  id: string;
+  name: string;
+  parameters: Record<string, number>;
+}
+
+// ==================== Shoegaze Multi-Effect Types ====================
+
+export interface ShoegazeState {
+  reverb_mix: number;
+  delay_mix: number;
+  modulation_depth: number;
+  distortion: number;
+  shimmer: number;
+  mix: number;
+  bypass: boolean;
+}
+
+export interface ShoegazePreset {
+  id: string;
+  name: string;
+  parameters: Record<string, number>;
+}
+
+// ==================== Lexi Love Reverb Types ====================
+
+export interface LexiLoveState {
+  algorithm: string;
+  decay: number;
+  damping: number;
+  pre_delay: number;
+  mix: number;
+  bypass: boolean;
+}
+
+export interface LexiLoveAlgorithm {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// ==================== H3000 Ultra-Harmonizer Types ====================
+
+export interface H3000State {
+  algorithm: string;
+  pitch_a: number;
+  pitch_b: number;
+  delay_a: number;
+  delay_b: number;
+  feedback: number;
+  mix: number;
+  bypass: boolean;
+}
+
+export interface H3000Algorithm {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// ==================== Amp Model Types ====================
+
+export interface Peavey5150State {
+  gain: number;
+  bass: number;
+  mid: number;
+  treble: number;
+  presence: number;
+  volume: number;
+  channel: string;
+  bypass: boolean;
+}
+
+export interface TweedBassmanState {
+  volume: number;
+  bass: number;
+  middle: number;
+  treble: number;
+  presence: number;
+  bright: boolean;
+  bypass: boolean;
+}
+
+export interface PassionFXState {
+  preset: string;
+  mix: number;
+  level: number;
+  bypass: boolean;
+}
+
+export interface AmpPreset {
+  id: string;
+  name: string;
+  parameters: Record<string, number>;
+}
+
+// ==================== Parallel Routing Types ====================
+
+export interface ParallelGroup {
+  id: number;
+  name: string;
+  branches: ParallelBranch[];
+  blend: number;
+  bypass: boolean;
+}
+
+export interface ParallelBranch {
+  id: number;
+  name: string;
+  plugins: string[];
+  level: number;
+  muted: boolean;
+}
+
+// ==================== Drum Machine Types ====================
+
+export interface DrumMachineState {
+  ui_mode: 'practice' | 'advanced' | 'backing_tracks';
+  practice_style_id: string | null;
+  practice_variation: number;
+  practice_change_quantization: number;
+  practice_count_in_bars: number;
+  practice_auto_fill: boolean;
+}
+
+export interface DrumPack {
+  pack_id: string;
+  name: string;
+  description: string;
+  source: string;
+  filename: string;
+}
+
+// ==================== Sidechain Types ====================
+
+export interface SidechainConnection {
+  id: number;
+  source_plugin: string;
+  target_plugin: string;
+  bus: number;
+  enabled: boolean;
+}
+
+// ==================== Core Plugins Types ====================
+
+export interface CorePluginInfo {
+  uri: string;
+  name: string;
+  category: string;
+  description: string;
+  priority: string;
+}
+
+export interface CorePluginsStatus {
+  total: number;
+  installed: number;
+  missing: number;
+  plugins: Record<string, CorePluginInfo & { installed: boolean }>;
+}
+
+// ==================== CPU Metrics Types ====================
+
+export interface CPUMetricsData {
+  totalCpuPercent: number;
+  audioCallbackPercent: number;
+  peakCpuPercent: number;
+  averageCpuPercent: number;
+  xrunCount: number;
+  budgetMs: number;
+  currentCallbackMs: number;
+  headroomPercent: number;
+  perPluginPercent: Record<string, number>;
+  running: boolean;
+}
+
+// ==================== Loudness Metering Types ====================
+
+export interface LoudnessLUFS {
+  momentary: number;
+  short_term: number;
+  integrated: number;
+  range: number;
+  true_peak: number;
+}
+
+// ==================== Spectrum Types ====================
+
+export interface SpectrumAnalysis {
+  frequencies: number[];
+  magnitudes: number[];
+  peak_frequency: number;
+  peak_magnitude: number;
+  centroid: number;
+}
+
+// ==================== Backup Types ====================
+
+export interface BackupInfo {
+  backup_id: string;
+  description: string;
+  created_at: string;
+  size_bytes: number;
+  database: boolean;
+  user_data: boolean;
+  config: boolean;
+}
+
+export interface BackupSettings {
+  max_backups: number;
+  retention_days: number;
+  auto_cleanup: boolean;
+}
+
 // ==================== Flow Snapshot Types ====================
 
 /** Flow slot state snapshot */

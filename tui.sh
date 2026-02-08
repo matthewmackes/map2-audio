@@ -1,23 +1,20 @@
 #!/bin/bash
-# MAP2 Backend Services Monitor - Terminal User Interface
-# World-class monitoring dashboard for all 13 backend services
+# MAP2 Node Console — Professional TUI for Headless Audio Nodes
 #
 # Features:
-#   - Real-time service health status
-#   - System metrics (CPU, Memory, Latency)
-#   - Active alerts with severity indicators
-#   - Circuit breaker visualization
-#   - Service dependency graph
-#   - Live log streaming
-#
-# Press 'm' to return to Monitor from any tab
+#   - Real-time node health: CPU, RAM, temp, audio latency
+#   - Audio engine status: Pipewire, JUCE, channels, XRuns
+#   - Cluster overview: peer nodes, audio flows, clock sync
+#   - System controls: mode change, service restart, reboot/shutdown
+#   - Live logs: journalctl tail with severity/unit filters
+#   - SSH-optimized: keyboard-driven, no animations, 80×24 compatible
 
 cd "$(dirname "$0")"
 
 # Check if backend is running
 if ! curl -s --max-time 2 http://localhost:8080/api/health >/dev/null 2>&1; then
     echo "╔═══════════════════════════════════════════════════════╗"
-    echo "║  MAP2 Backend Services Monitor                        ║"
+    echo "║  MAP2 Node Console                                    ║"
     echo "╠═══════════════════════════════════════════════════════╣"
     echo "║  Backend API not running at http://localhost:8080     ║"
     echo "║  Starting backend API...                              ║"
@@ -40,8 +37,10 @@ if ! curl -s --max-time 2 http://localhost:8080/api/health >/dev/null 2>&1; then
 fi
 
 echo "╔═══════════════════════════════════════════════════════╗"
-echo "║  Launching Backend Services Monitor...                ║"
+echo "║  Launching MAP2 Node Console...                       ║"
+echo "║                                                       ║"
+echo "║  Keyboard: F1=Help F5=Refresh d/a/c/m/l=Tabs q=Quit   ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 
-# Launch TUI as a module (required for relative imports)
-exec python3 -m tui.app
+# Launch the new Node Console (modern professional TUI)
+exec python3 -m tui.node_console "$@"

@@ -102,6 +102,8 @@ public:
      * @param numOutputChannels Number of output channels
      * @param numSamples Number of samples in this buffer
      */
+    // RT-SAFE: Use atomic shared_ptr to allow lock-free callback swapping
+    // std::function itself isn't atomic; we use atomic_load/store on shared_ptr
     using ProcessCallback = std::function<void(
         const float* const* inputChannelData,
         int numInputChannels,
@@ -151,7 +153,7 @@ public:
 
 private:
     juce::AudioDeviceManager deviceManager_;
-    ProcessCallback processCallback_;
+    std::shared_ptr<ProcessCallback> processCallback_{nullptr};
 
     bool initialized_ = false;
     std::atomic<bool> audioRunning_{false};
@@ -168,6 +170,11 @@ private:
 
     // Error handling
     std::string lastError_;
+
+    // Device recovery
+    std::atomic<bool> recoveryInProgress_{false};
+    juce::AudioDeviceManager::AudioDeviceSetup lastSetup_{};
+    bool recoveryEnabled_ = true;
 
     // Helper methods
     AudioDeviceInfo deviceToInfo(juce::AudioIODevice* device) const;

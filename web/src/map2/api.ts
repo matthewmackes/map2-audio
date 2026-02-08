@@ -1310,6 +1310,13 @@ export const namApi = {
     }
     return response.json() as Promise<{ status: string; model: { id: number; name: string; file_path: string } }>
   },
+
+  /** Delete a NAM model by name */
+  deleteModel: (modelName: string) =>
+    fetchJson<{ status: string; message: string }>(
+      `${API_BASE}/nam/models/${encodeURIComponent(modelName)}`,
+      { method: 'DELETE' }
+    ),
 };
 
 // ==================== SoundFont API ====================
@@ -2320,6 +2327,578 @@ export const pipewireApi = {
     ),
 };
 
+// ==================== JUCE Audio Engine ====================
+
+export const engineApi = {
+  /** Get comprehensive engine status */
+  getStatus: () =>
+    fetchJson<import('./types').EngineStatus>(`${API_BASE}/engine/status`),
+
+  /** Get engine version */
+  getVersion: () =>
+    fetchJson<import('./types').EngineVersion>(`${API_BASE}/engine/version`),
+
+  /** Initialize audio engine */
+  initialize: (config: { sample_rate?: number; buffer_size?: number; audio_device?: string; enable_midi?: boolean }) =>
+    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/engine/initialize`, {
+      method: 'POST', body: JSON.stringify(config),
+    }),
+
+  /** Shutdown audio engine */
+  shutdown: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/shutdown`, { method: 'POST' }),
+
+  /** Start audio processing */
+  startAudio: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/audio/start`, { method: 'POST' }),
+
+  /** Stop audio processing */
+  stopAudio: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/audio/stop`, { method: 'POST' }),
+
+  /** List loaded plugins */
+  getPlugins: () =>
+    fetchJson<{ plugins: unknown[] }>(`${API_BASE}/engine/plugins`),
+
+  /** Load a plugin */
+  loadPlugin: (uri: string) =>
+    fetchJson<{ success: boolean; instance_id: number }>(`${API_BASE}/engine/plugins`, {
+      method: 'POST', body: JSON.stringify({ uri }),
+    }),
+
+  /** Remove a plugin */
+  removePlugin: (instanceId: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/plugins/${instanceId}`, { method: 'DELETE' }),
+
+  /** Set plugin parameter */
+  setParameter: (instanceId: number, paramName: string, value: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/parameter`, {
+      method: 'POST', body: JSON.stringify({ instance_id: instanceId, param_name: paramName, value }),
+    }),
+
+  /** Set plugin bypass */
+  setBypass: (instanceId: number, bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/bypass`, {
+      method: 'POST', body: JSON.stringify({ instance_id: instanceId, bypass }),
+    }),
+
+  /** Get VU meter levels */
+  getVU: () =>
+    fetchJson<{ input: number[]; output: number[] }>(`${API_BASE}/engine/vu`),
+};
+
+// ==================== Dynamics Processors ====================
+
+export const dynamicsApi = {
+  /** Get compressor state */
+  getCompressor: () =>
+    fetchJson<{ parameters: import('./types').CompressorState; bypass: boolean }>(`${API_BASE}/engine/dynamics/compressor`),
+
+  /** Update compressor parameters */
+  updateCompressor: (params: Partial<import('./types').CompressorState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/dynamics/compressor`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get compressor metering */
+  getCompressorMetering: () =>
+    fetchJson<import('./types').DynamicsMetering>(`${API_BASE}/engine/dynamics/compressor/metering`),
+
+  /** Get limiter state */
+  getLimiter: () =>
+    fetchJson<{ parameters: import('./types').LimiterState; bypass: boolean }>(`${API_BASE}/engine/dynamics/limiter`),
+
+  /** Update limiter parameters */
+  updateLimiter: (params: Partial<import('./types').LimiterState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/dynamics/limiter`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get gate state */
+  getGate: () =>
+    fetchJson<{ parameters: import('./types').GateState; bypass: boolean }>(`${API_BASE}/engine/dynamics/gate`),
+
+  /** Update gate parameters */
+  updateGate: (params: Partial<import('./types').GateState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/dynamics/gate`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+};
+
+// ==================== EQ Processors ====================
+
+export const filtersApi = {
+  /** Get EQ state (all bands) */
+  getEQ: () =>
+    fetchJson<import('./types').EQState>(`${API_BASE}/engine/eq`),
+
+  /** Get EQ bands */
+  getBands: () =>
+    fetchJson<{ bands: import('./types').EQBand[] }>(`${API_BASE}/engine/eq/bands`),
+
+  /** Update an EQ band */
+  updateBand: (index: number, band: Partial<import('./types').EQBand>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/eq/bands/${index}`, {
+      method: 'PATCH', body: JSON.stringify(band),
+    }),
+
+  /** Get frequency response curve */
+  getFrequencyResponse: () =>
+    fetchJson<import('./types').FrequencyResponse>(`${API_BASE}/engine/eq/frequency-response`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/eq/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== Delay Processor ====================
+
+export const delayApi = {
+  /** Get delay state */
+  getDelay: () =>
+    fetchJson<import('./types').DelayState>(`${API_BASE}/engine/delay`),
+
+  /** Update delay parameters */
+  updateParameters: (params: Partial<import('./types').DelayState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/delay/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Tap tempo */
+  tapTempo: () =>
+    fetchJson<{ bpm: number; delay_ms: number }>(`${API_BASE}/engine/delay/tap-tempo`, { method: 'POST' }),
+
+  /** Get tempo divisions */
+  getTempoDivisions: () =>
+    fetchJson<{ divisions: import('./types').TempoDivision[] }>(`${API_BASE}/engine/delay/tempo-divisions`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/delay/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== Modulation Processors ====================
+
+export const modulationApi = {
+  /** Get chorus state */
+  getChorus: () =>
+    fetchJson<import('./types').ChorusState>(`${API_BASE}/engine/modulation/chorus`),
+
+  /** Update chorus parameters */
+  updateChorus: (params: Partial<import('./types').ChorusState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/modulation/chorus/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get phaser state */
+  getPhaser: () =>
+    fetchJson<import('./types').PhaserState>(`${API_BASE}/engine/modulation/phaser`),
+
+  /** Update phaser parameters */
+  updatePhaser: (params: Partial<import('./types').PhaserState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/modulation/phaser/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get pitch shifter state */
+  getPitchShifter: () =>
+    fetchJson<import('./types').PitchShifterState>(`${API_BASE}/engine/modulation/pitch-shifter`),
+
+  /** Update pitch shifter parameters */
+  updatePitchShifter: (params: Partial<import('./types').PitchShifterState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/modulation/pitch-shifter/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+};
+
+// ==================== Boss XS-1 Pitch ====================
+
+export const pitchApi = {
+  /** Get Boss XS-1 state */
+  getBossXS1: () =>
+    fetchJson<import('./types').BossXS1State>(`${API_BASE}/engine/pitch/boss-xs1`),
+
+  /** Update Boss XS-1 parameters */
+  updateBossXS1: (params: Partial<import('./types').BossXS1State>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/pitch/boss-xs1/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get Boss XS-1 presets */
+  getBossXS1Presets: () =>
+    fetchJson<{ presets: import('./types').BossXS1Preset[] }>(`${API_BASE}/engine/pitch/boss-xs1/presets`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/pitch/boss-xs1/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== Shoegaze Multi-Effect ====================
+
+export const shoegazeApi = {
+  /** Get shoegaze state */
+  getState: () =>
+    fetchJson<import('./types').ShoegazeState>(`${API_BASE}/engine/shoegaze`),
+
+  /** Update parameters */
+  updateParameters: (params: Partial<import('./types').ShoegazeState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/shoegaze/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get presets */
+  getPresets: () =>
+    fetchJson<{ presets: import('./types').ShoegazePreset[] }>(`${API_BASE}/engine/shoegaze/presets`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/shoegaze/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== Lexi Love Reverb ====================
+
+export const lexiLoveApi = {
+  /** Get state */
+  getState: () =>
+    fetchJson<import('./types').LexiLoveState>(`${API_BASE}/engine/lexilove`),
+
+  /** Update parameters */
+  updateParameters: (params: Partial<import('./types').LexiLoveState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/lexilove/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get available algorithms */
+  getAlgorithms: () =>
+    fetchJson<{ algorithms: import('./types').LexiLoveAlgorithm[] }>(`${API_BASE}/engine/lexilove/algorithms`),
+
+  /** Set algorithm */
+  setAlgorithm: (algorithmId: string) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/lexilove/algorithm`, {
+      method: 'POST', body: JSON.stringify({ algorithm: algorithmId }),
+    }),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/lexilove/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== H3000 Ultra-Harmonizer ====================
+
+export const h3000Api = {
+  /** Get state */
+  getState: () =>
+    fetchJson<import('./types').H3000State>(`${API_BASE}/engine/h3000`),
+
+  /** Update parameters */
+  updateParameters: (params: Partial<import('./types').H3000State>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/h3000/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get available algorithms */
+  getAlgorithms: () =>
+    fetchJson<{ algorithms: import('./types').H3000Algorithm[] }>(`${API_BASE}/engine/h3000/algorithms`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/h3000/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== Amp Models ====================
+
+export const peavey5150Api = {
+  /** Get state */
+  getState: () =>
+    fetchJson<import('./types').Peavey5150State>(`${API_BASE}/engine/amp/peavey5150`),
+
+  /** Update parameters */
+  updateParameters: (params: Partial<import('./types').Peavey5150State>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/amp/peavey5150/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get presets */
+  getPresets: () =>
+    fetchJson<{ presets: import('./types').AmpPreset[] }>(`${API_BASE}/engine/amp/peavey5150/presets`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/amp/peavey5150/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+export const tweedBassmanApi = {
+  /** Get state */
+  getState: () =>
+    fetchJson<import('./types').TweedBassmanState>(`${API_BASE}/engine/amp/tweedbassman`),
+
+  /** Update parameters */
+  updateParameters: (params: Partial<import('./types').TweedBassmanState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/amp/tweedbassman/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get presets */
+  getPresets: () =>
+    fetchJson<{ presets: import('./types').AmpPreset[] }>(`${API_BASE}/engine/amp/tweedbassman/presets`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/amp/tweedbassman/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+export const passionfxApi = {
+  /** Get state */
+  getState: () =>
+    fetchJson<import('./types').PassionFXState>(`${API_BASE}/engine/multieffect/passionfx`),
+
+  /** Update parameters */
+  updateParameters: (params: Partial<import('./types').PassionFXState>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/multieffect/passionfx/parameters`, {
+      method: 'PATCH', body: JSON.stringify(params),
+    }),
+
+  /** Get presets */
+  getPresets: () =>
+    fetchJson<{ presets: import('./types').AmpPreset[] }>(`${API_BASE}/engine/multieffect/passionfx/presets`),
+
+  /** Set bypass */
+  setBypass: (bypass: boolean) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/multieffect/passionfx/bypass`, {
+      method: 'POST', body: JSON.stringify({ bypass }),
+    }),
+};
+
+// ==================== Drum Machine ====================
+
+export const drumsApi = {
+  /** Get drum machine state */
+  getState: () =>
+    fetchJson<import('./types').DrumMachineState>(`${API_BASE}/engine/drums/state`),
+
+  /** Update drum machine state */
+  updateState: (state: Partial<import('./types').DrumMachineState>) =>
+    fetchJson<{ status: string; state: import('./types').DrumMachineState }>(`${API_BASE}/engine/drums/state`, {
+      method: 'POST', body: JSON.stringify(state),
+    }),
+
+  /** Get factory drum packs */
+  getFactoryPacks: () =>
+    fetchJson<import('./types').DrumPack[]>(`${API_BASE}/engine/drums/packs/factory`),
+
+  /** Get generated drum packs */
+  getGeneratedPacks: () =>
+    fetchJson<import('./types').DrumPack[]>(`${API_BASE}/engine/drums/packs/generated`),
+
+  /** Get factory pack details */
+  getFactoryPackDetails: (packId: string) =>
+    fetchJson<Record<string, unknown>>(`${API_BASE}/engine/drums/packs/factory/${packId}`),
+
+  /** Get generated pack details */
+  getGeneratedPackDetails: (packId: string) =>
+    fetchJson<Record<string, unknown>>(`${API_BASE}/engine/drums/packs/generated/${packId}`),
+};
+
+// ==================== Sidechain Routing ====================
+
+export const sidechainApi = {
+  /** Get sidechain connections */
+  getConnections: () =>
+    fetchJson<{ connections: import('./types').SidechainConnection[] }>(`${API_BASE}/sidechain`),
+
+  /** Create sidechain connection */
+  create: (source: string, target: string, bus?: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/sidechain`, {
+      method: 'POST', body: JSON.stringify({ source_plugin: source, target_plugin: target, bus: bus ?? 0 }),
+    }),
+
+  /** Delete sidechain connection */
+  delete: (connectionId: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/sidechain/${connectionId}`, { method: 'DELETE' }),
+
+  /** Toggle sidechain */
+  toggle: (connectionId: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/sidechain/${connectionId}/toggle`, { method: 'POST' }),
+
+  /** Get sidechain-capable plugins */
+  getCapablePlugins: () =>
+    fetchJson<{ plugins: unknown[] }>(`${API_BASE}/sidechain/plugins`),
+};
+
+// ==================== Core Plugins ====================
+
+export const corePluginsApi = {
+  /** Get core plugins installation status */
+  getStatus: () =>
+    fetchJson<import('./types').CorePluginsStatus>(`${API_BASE}/core-plugins/status`),
+
+  /** Verify core plugins */
+  verify: () =>
+    fetchJson<import('./types').CorePluginsStatus>(`${API_BASE}/core-plugins/verify`),
+
+  /** Get categories */
+  getCategories: () =>
+    fetchJson<{ categories: string[] }>(`${API_BASE}/core-plugins/categories`),
+
+  /** Install core plugins */
+  install: () =>
+    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/core-plugins/install`, { method: 'POST' }),
+
+  /** Refresh LV2 cache */
+  refreshCache: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/core-plugins/refresh-cache`, { method: 'POST' }),
+};
+
+// ==================== Parallel Routing ====================
+
+export const parallelApi = {
+  /** Get parallel groups */
+  getGroups: () =>
+    fetchJson<{ groups: import('./types').ParallelGroup[] }>(`${API_BASE}/parallel/groups`),
+
+  /** Create parallel group */
+  createGroup: (name: string) =>
+    fetchJson<{ success: boolean; group: import('./types').ParallelGroup }>(`${API_BASE}/parallel/groups`, {
+      method: 'POST', body: JSON.stringify({ name }),
+    }),
+
+  /** Delete parallel group */
+  deleteGroup: (groupId: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/parallel/groups/${groupId}`, { method: 'DELETE' }),
+
+  /** Set blend */
+  setBlend: (groupId: number, blend: number) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/parallel/groups/${groupId}/blend`, {
+      method: 'POST', body: JSON.stringify({ blend }),
+    }),
+};
+
+// ==================== Loudness Metering ====================
+
+export const loudnessApi = {
+  /** Get LUFS measurements */
+  getLUFS: () =>
+    fetchJson<import('./types').LoudnessLUFS>(`${API_BASE}/engine/loudness/lufs`),
+
+  /** Get momentary loudness */
+  getMomentary: () =>
+    fetchJson<{ momentary: number }>(`${API_BASE}/engine/loudness/momentary`),
+
+  /** Get short-term loudness */
+  getShortTerm: () =>
+    fetchJson<{ short_term: number }>(`${API_BASE}/engine/loudness/short-term`),
+
+  /** Get integrated loudness */
+  getIntegrated: () =>
+    fetchJson<{ integrated: number }>(`${API_BASE}/engine/loudness/integrated`),
+
+  /** Reset integrated loudness */
+  reset: () =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/engine/loudness/reset`, { method: 'POST' }),
+
+  /** Get true peak */
+  getTruePeak: () =>
+    fetchJson<{ true_peak: number }>(`${API_BASE}/engine/loudness/true-peak`),
+};
+
+// ==================== Spectrum Analysis ====================
+
+export const spectrumApi = {
+  /** Get spectrum data */
+  getSpectrum: () =>
+    fetchJson<import('./types').SpectrumAnalysis>(`${API_BASE}/engine/spectrum`),
+
+  /** Get magnitude data */
+  getMagnitudes: () =>
+    fetchJson<{ magnitudes: number[] }>(`${API_BASE}/engine/spectrum/magnitudes`),
+
+  /** Get frequency bins */
+  getFrequencies: () =>
+    fetchJson<{ frequencies: number[] }>(`${API_BASE}/engine/spectrum/frequencies`),
+
+  /** Get peak frequency */
+  getPeak: () =>
+    fetchJson<{ frequency: number; magnitude: number }>(`${API_BASE}/engine/spectrum/peak`),
+};
+
+// ==================== CPU Metrics ====================
+
+export const cpuMetricsApi = {
+  /** Get CPU metrics */
+  getMetrics: () =>
+    fetchJson<import('./types').CPUMetricsData>(`${API_BASE}/cpu`),
+
+  /** Get total CPU usage */
+  getTotal: () =>
+    fetchJson<{ total: number }>(`${API_BASE}/cpu/total`),
+
+  /** Get per-plugin CPU */
+  getPluginCPU: (pluginId: string) =>
+    fetchJson<{ plugin_id: string; cpu_percent: number }>(`${API_BASE}/cpu/plugin/${pluginId}`),
+
+  /** Get all plugin CPU stats */
+  getAllPluginCPU: () =>
+    fetchJson<{ plugins: Record<string, number> }>(`${API_BASE}/cpu/plugins`),
+
+  /** Get xrun count */
+  getXruns: () =>
+    fetchJson<{ xruns: number }>(`${API_BASE}/cpu/xruns`),
+
+  /** Get headroom */
+  getHeadroom: () =>
+    fetchJson<{ headroom_percent: number }>(`${API_BASE}/cpu/headroom`),
+};
+
+// ==================== Backup ====================
+
+export const backupApi = {
+  /** List all backups */
+  list: () =>
+    fetchJson<{ backups: import('./types').BackupInfo[] }>(`${API_BASE}/backup`),
+
+  /** Create a backup */
+  create: (description?: string) =>
+    fetchJson<{ success: boolean; backup_id: string }>(`${API_BASE}/backup`, {
+      method: 'POST', body: JSON.stringify({ description: description ?? '' }),
+    }),
+
+  /** Restore from backup */
+  restore: (backupId: string, options?: { restore_database?: boolean; restore_user_data?: boolean; restore_config?: boolean }) =>
+    fetchJson<{ success: boolean; message: string }>(`${API_BASE}/backup/${backupId}/restore`, {
+      method: 'POST', body: JSON.stringify(options ?? {}),
+    }),
+
+  /** Delete a backup */
+  delete: (backupId: string) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/backup/${backupId}`, { method: 'DELETE' }),
+
+  /** Get backup settings */
+  getSettings: () =>
+    fetchJson<import('./types').BackupSettings>(`${API_BASE}/backup/settings`),
+
+  /** Update backup settings */
+  updateSettings: (settings: Partial<import('./types').BackupSettings>) =>
+    fetchJson<{ success: boolean }>(`${API_BASE}/backup/settings`, {
+      method: 'PATCH', body: JSON.stringify(settings),
+    }),
+};
+
 // ==================== Export all APIs ====================
 
 export const map2Api = {
@@ -2347,6 +2926,27 @@ export const map2Api = {
   upload: uploadApi,
   flowSnapshots: flowSnapshotsApi,
   pipewire: pipewireApi,
+  // Native JUCE Engine APIs
+  engine: engineApi,
+  dynamics: dynamicsApi,
+  filters: filtersApi,
+  delay: delayApi,
+  modulation: modulationApi,
+  pitch: pitchApi,
+  shoegaze: shoegazeApi,
+  lexiLove: lexiLoveApi,
+  h3000: h3000Api,
+  peavey5150: peavey5150Api,
+  tweedBassman: tweedBassmanApi,
+  passionfx: passionfxApi,
+  drums: drumsApi,
+  sidechain: sidechainApi,
+  corePlugins: corePluginsApi,
+  parallel: parallelApi,
+  loudness: loudnessApi,
+  spectrum: spectrumApi,
+  cpuMetrics: cpuMetricsApi,
+  backup: backupApi,
 };
 
 export default map2Api;

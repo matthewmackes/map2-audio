@@ -17,6 +17,11 @@ NAMProcessor::NAMProcessor()
 
 NAMProcessor::~NAMProcessor()
 {
+    // FIX #3: Properly join loading thread before destroying
+    shouldExit_.store(true);
+    if (loadThread_.joinable()) {
+        loadThread_.join();
+    }
     releaseResources();
 }
 
@@ -64,13 +69,25 @@ bool NAMProcessor::loadModel(const std::string& path)
 
     loading_.store(true);
 
+    // FIX #3: Use proper thread management instead of detach
+    // Join any previous thread before starting a new one
+    if (loadThread_.joinable()) {
+        loadThread_.join();
+    }
+
     // Load model on background thread to avoid blocking audio
-    std::thread([this, path]() {
+    loadThread_ = std::thread([this, path]() {
         try
         {
+            // Check exit flag periodically
+            if (shouldExit_.load()) {
+                loading_.store(false);
+                return;
+            }
+
             auto newModel = nam::get_dsp(std::filesystem::path(path));
 
-            if (newModel)
+            if (newModel && !shouldExit_.load())
             {
                 // Prepare the model
                 newModel->Reset(sampleRate_, maxBlockSize_);
@@ -103,11 +120,12 @@ bool NAMProcessor::loadModel(const std::string& path)
                 // Swap models atomically
                 {
                     std::lock_guard<std::mutex> lock(modelMutex_);
-                    model_ = std::move(newModel);
-                    modelInfo_ = info;
+                    if (!shouldExit_.load()) {
+                        model_ = std::move(newModel);
+                        modelInfo_ = info;
+                        modelReady_.store(true);
+                    }
                 }
-
-                modelReady_.store(true);
             }
         }
         catch (const std::exception& e)
@@ -118,7 +136,7 @@ bool NAMProcessor::loadModel(const std::string& path)
         }
 
         loading_.store(false);
-    }).detach();
+    });
 
     return true;
 #else

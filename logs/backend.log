@@ -1,0 +1,112 @@
+INFO:     Started server process [15243]
+INFO:     Waiting for application startup.
+zeroconf not installed, mDNS discovery disabled
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Platform validation failed: SELinux enforcing (must be disabled)
+Platform validation failed: SELinux enforcing (must be disabled)
+Continuing despite platform validation failure
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+[FAIL] Database attempt 1: 'NoneType' object is not callable
+Default effects config not found: /home/mm/map2-audio/app/config/default_lv2_effects.json
+No default effects to initialize
+Default effects config not found: /home/mm/map2-audio/app/config/default_lv2_effects.json
+No default chains to create
+Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 10 inputs, 10 outputs
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 256 samples
+  Audio Device: Default ALSA Output (currently PipeWire Media Server)
+  Plugins Found: 9
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8080): [errno 98] address already in use
+INFO:     Waiting for application shutdown.
+[WARN] Metrics Collector stop error: cannot import name 'stop_metrics_collection' from 'app.services.performance_metrics' (/home/INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+[WARN] Metrics Collector stop error: cannot import name 'stop_metrics_collection' from 'app.services.performance_metrics' (/home/mm/map2-audio/app/services/performance_metrics.py)
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14756]
+INFO:     Started server process [16083]
+INFO:     Waiting for application startup.
+zeroconf not installed, mDNS discovery disabled
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Platform validation failed: SELinux enforcing (must be disabled)
+Platform validation failed: SELinux enforcing (must be disabled)
+Continuing despite platform validation failure
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Error writing to LCD: 'NoneType' object has no attribute 'write'
+Default effects config not found: /home/mm/map2-audio/app/config/default_lv2_effects.json
+No default effects to initialize
+Default effects config not found: /home/mm/map2-audio/app/config/default_lv2_effects.json
+No default chains to create
+Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 10 inputs, 10 outputs
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 256 samples
+  Audio Device: Default ALSA Output (currently PipeWire Media Server)
+  Plugins Found: 9
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59264 - "GET /api/ready HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55928 - "GET /api/ready HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:55938 - "GET /api/ready HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55948 - "GET /api/ready HTTP/1.1" 200 OK
+/home/mm/map2-audio/.venv/lib64/python3.14/site-packages/fastapi/routing.py:243: RuntimeWarning: coroutine 'get_metrics_collector' was never awaited
+  return await dependant.call(**values)
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+INFO:     127.0.0.1:44418 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44434 - "GET /api/services/status HTTP/1.1" 200 OK

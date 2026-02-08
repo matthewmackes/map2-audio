@@ -392,6 +392,53 @@ check_port_conflicts() {
     done
 }
 
+enforce_mode_override() {
+    log_header "Enforcing Mode-Specific Systemd Override"
+
+    local mode_file="/etc/guitarfx-mode.conf"
+    local override_dir="/etc/systemd/system/map2-backend.service.d"
+    local mode_override="${override_dir}/10-mode.conf"
+    local templates_dir="${MAP2_DIR}/systemd/modes"
+
+    # Read current mode
+    local mode="unknown"
+    if [ -f "$mode_file" ]; then
+        mode=$(grep -oP '^MODE=\K.*' "$mode_file" 2>/dev/null || echo "unknown")
+    fi
+
+    if [ "$mode" = "unknown" ]; then
+        log_warning "No mode configured in $mode_file — defaulting to all-in-one"
+        mode="all-in-one"
+    fi
+
+    log_info "Current mode: $mode"
+
+    # Check if template exists
+    local template="${templates_dir}/${mode}.conf"
+    if [ ! -f "$template" ]; then
+        log_warning "Mode template not found: $template — skipping override"
+        return
+    fi
+
+    # Remove legacy conflicting overrides (the old dual-override system)
+    for legacy in all-in-one-override.conf audio-mode-override.conf; do
+        if [ -f "${override_dir}/${legacy}" ]; then
+            rm -f "${override_dir}/${legacy}"
+            log_info "Removed legacy override: ${legacy}"
+        fi
+    done
+
+    # Install the correct mode override
+    mkdir -p "$override_dir"
+    cp "$template" "$mode_override"
+    chmod 644 "$mode_override"
+    log_success "Installed mode override: ${mode}.conf → 10-mode.conf"
+
+    # Reload systemd to pick up the change (backend hasn't started yet)
+    systemctl daemon-reload 2>/dev/null || log_warning "Could not reload systemd"
+    log_success "Mode $mode enforced for map2-backend.service"
+}
+
 verify_systemd_services() {
     log_header "Verifying Systemd Services"
 
@@ -514,6 +561,7 @@ main() {
     initialize_database
     check_web_dependencies
     check_port_conflicts
+    enforce_mode_override
     verify_systemd_services
 
     # Final summary

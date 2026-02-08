@@ -1,0 +1,17 @@
+[Unit]
+Description=MAP2 Audio - Disable CPU Turbo Boost
+Documentation=https://github.com/matthewmackes/map2-audio
+After=multi-user.target
+
+[Service]
+Type=oneshot
+# For Intel CPUs (most common)
+ExecStart=/bin/bash -c 'if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo; echo "Intel Turbo Boost disabled"; fi'
+# For AMD CPUs (if applicable)
+ExecStart=/bin/bash -c 'if [ -f /sys/devices/system/cpu/cpufreq/boost ]; then echo 0 > /sys/devices/system/cpu/cpufreq/boost; echo "AMD Turbo Boost disabled"; fi'
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

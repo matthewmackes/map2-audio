@@ -281,6 +281,7 @@ public:
 private:
     JucePluginHost& host_;
     std::unique_ptr<juce::AudioProcessorGraph> graph_;
+    juce::SpinLock graphLock_;
 
     bool initialized_ = false;
     double sampleRate_ = DEFAULT_SAMPLE_RATE;

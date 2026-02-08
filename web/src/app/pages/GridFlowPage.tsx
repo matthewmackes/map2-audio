@@ -14,7 +14,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tantml:invoke>
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
   LayoutGrid,

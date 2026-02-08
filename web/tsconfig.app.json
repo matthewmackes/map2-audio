@@ -15,6 +15,13 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/map2/*": ["src/map2/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": false,
@@ -27,12 +34,12 @@
     "src/index.css",
     "src/vite-env.d.ts",
     "src/app/**/*",
+    "src/map2/**/*",
     "src/ErrorBoundary.tsx",
     "src/TestApp.tsx"
   ],
   "exclude": [
     "src/pipedal/**",
-    "src/map2/**",
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
   ]

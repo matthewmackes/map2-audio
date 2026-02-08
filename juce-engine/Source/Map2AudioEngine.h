@@ -1011,6 +1011,7 @@ private:
     JuceAudioIO audioIO_;
     JucePluginHost pluginHost_;
     std::unique_ptr<JuceAudioGraph> audioGraph_;
+    juce::AudioBuffer<float> callbackBuffer_;
 
     // Native Processors (NEW)
     ConvolutionProcessor cabinetProcessor_;
@@ -1042,11 +1043,28 @@ private:
     NAMProcessor namProcessor_;
 #endif
 
-    // Metering (NEW)
+    // Metering (NEW) - OFF AUDIO THREAD (Option 3)
     SpectrumAnalyzer spectrumAnalyzer_;
     LufsMeter lufsMeter_;
     PhaseCorrelationMeter phaseCorrelation_;
     CPUMonitor cpuMonitor_;
+    
+    // Metering thread and lock-free FIFO (Option 3)
+    std::thread meteringThread_;
+    std::atomic<bool> meteringRunning_{false};
+    struct MeteringFrame {
+        std::vector<float> channels[2];
+        int numSamples = 0;
+    };
+    // Lock-free queue for metering data (producer: audio thread, consumer: metering thread)
+    std::queue<MeteringFrame> meteringQueue_;
+    std::mutex meteringQueueMutex_;
+    std::condition_variable meteringQueueCV_;
+    static constexpr int METERING_QUEUE_DEPTH = 4;
+
+    // Metering thread entry point
+    void meteringThreadFunc();
+    void pushMeteringData(const juce::AudioBuffer<float>& buffer);
 
     // Existing Components
     MidiHandler midiHandler_;

@@ -60,12 +60,17 @@ void CPUMonitor::endCallback() {
 }
 
 void CPUMonitor::beginPlugin(InstanceId pluginId) {
-    std::lock_guard<std::mutex> lock(pluginMutex_);
-    pluginTimings_[pluginId].startTime = Clock::now();
+    // RT-SAFE: Try-lock only, never block the audio thread
+    std::unique_lock<std::mutex> lock(pluginMutex_, std::try_to_lock);
+    if (lock.owns_lock()) {
+        pluginTimings_[pluginId].startTime = Clock::now();
+    }
 }
 
 void CPUMonitor::endPlugin(InstanceId pluginId) {
-    std::lock_guard<std::mutex> lock(pluginMutex_);
+    // RT-SAFE: Try-lock only to avoid blocking RT thread
+    std::unique_lock<std::mutex> lock(pluginMutex_, std::try_to_lock);
+    if (!lock.owns_lock()) return;  // Skip measurement if UI thread has the lock
 
     auto it = pluginTimings_.find(pluginId);
     if (it == pluginTimings_.end()) return;
@@ -82,6 +87,8 @@ void CPUMonitor::endPlugin(InstanceId pluginId) {
 }
 
 void CPUMonitor::removePlugin(InstanceId pluginId) {
+    // RT-SAFE: Use blocking lock here because this is NOT called from audio thread
+    // It's called during plugin unload (non-RT context)
     std::lock_guard<std::mutex> lock(pluginMutex_);
     pluginTimings_.erase(pluginId);
 }

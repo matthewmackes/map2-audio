@@ -15,7 +15,6 @@ from typing import Optional, List
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
-from app.services.cluster.flow_orchestrator import get_flow_orchestrator
 from app.services.event_bus import get_event_bus, EventType
 
 logger = logging.getLogger(__name__)
@@ -30,6 +29,8 @@ class FailoverMonitor:
     def __init__(self):
         self.registry = get_cluster_registry()
         self.heartbeat_monitor = get_heartbeat_monitor()
+        # Delayed import to avoid circular dependency
+        from app.services.flow_orchestrator import get_flow_orchestrator
         self.flow_orchestrator = get_flow_orchestrator()
         self.event_bus = get_event_bus()
         self.is_running = False

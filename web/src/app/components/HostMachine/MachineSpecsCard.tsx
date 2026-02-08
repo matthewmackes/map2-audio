@@ -93,7 +93,6 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
               {machineInfo.hostname}
             </Typography>
           </Box>
-          )}
         </Box>
       </Paper>
     </Box>

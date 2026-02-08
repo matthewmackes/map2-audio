@@ -60,6 +60,18 @@ async def lifespan(app):
         
         # Initialize database connection pool
         logger.info("Initializing database connection pool...")
+        
+        # Ensure data directory exists with proper permissions
+        import os
+        from pathlib import Path
+        data_dir = Path("data")
+        try:
+            data_dir.mkdir(exist_ok=True, mode=0o755)
+            logger.info(f"Data directory ensured: {data_dir.absolute()}")
+        except Exception as e:
+            logger.error(f"Failed to create data directory: {e}")
+            raise RuntimeError(f"Cannot create data directory: {e}")
+        
         pool_manager = get_pool_manager()
         pool_manager.initialize(
             "sqlite+aiosqlite:///data/map2.db",
@@ -74,13 +86,16 @@ async def lifespan(app):
         else:
             logger.info("Validating audio engine configuration...")
             from app.services.audio_engine_validator import validate_audio_engine
-            if not validate_audio_engine():
-                log_and_raise_critical(
-                    logger, 
-                    "Audio engine configuration validation failed! "
-                    "Fix configuration errors before starting. "
-                    "See logs above for details."
-                )
+            try:
+                if not validate_audio_engine():
+                    # Don't fail startup - log warnings but continue
+                    logger.warning(
+                        "Audio engine configuration has issues. "
+                        "The system will continue but may have degraded audio functionality. "
+                        "See logs above for details."
+                    )
+            except Exception as e:
+                logger.error(f"Audio engine validation error: {e}. Continuing with degraded audio support.")
         
         from app.services.metrics_daemon import start_metrics_daemon, stop_metrics_daemon
         from app.services.service_orchestrator import get_orchestrator
@@ -193,28 +208,35 @@ async def lifespan(app):
         # Start MIDI broadcast service (real-time MIDI events via WebSocket)
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
 
-        # Start cluster monitoring services
-        from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
-        from app.services.cluster.failover_monitor import get_failover_monitor
-        from app.services.cluster.raft_consensus import initialize_raft_consensus, get_raft_consensus
-        from app.services.cluster.config_distributor import initialize_config_distributor, get_config_distributor
-        from app.services.cluster.registry import get_cluster_registry
+        # Start cluster monitoring services (only in multi-node modes)
+        heartbeat = None
+        failover = None
+        cluster_enabled = os.getenv("MAP2_CLUSTER_ENABLED", "false").lower() == "true"
         
-        heartbeat = get_heartbeat_monitor()
-        failover = get_failover_monitor()
-        registry = get_cluster_registry()
-        
-        # Initialize and start config distributor (if Git repo configured)
-        git_config_repo = os.getenv("MAP2_CONFIG_GIT_REPO")
-        if git_config_repo:
-            logger.info("Initializing configuration distributor...")
-            config_dist = initialize_config_distributor(git_config_repo)
-            await safe_start_service(logger, "Configuration distributor", config_dist.start)
+        if cluster_enabled:
+            from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+            from app.services.cluster.failover_monitor import get_failover_monitor
+            from app.services.cluster.raft_consensus import initialize_raft_consensus, get_raft_consensus
+            from app.services.cluster.config_distributor import initialize_config_distributor, get_config_distributor
+            from app.services.cluster.registry import get_cluster_registry
+            
+            heartbeat = get_heartbeat_monitor()
+            failover = get_failover_monitor()
+            registry = get_cluster_registry()
+            
+            # Initialize and start config distributor (if Git repo configured)
+            git_config_repo = os.getenv("MAP2_CONFIG_GIT_REPO")
+            if git_config_repo:
+                logger.info("Initializing configuration distributor...")
+                config_dist = initialize_config_distributor(git_config_repo)
+                await safe_start_service(logger, "Configuration distributor", config_dist.start)
+            else:
+                logger.debug("Configuration distributor disabled (MAP2_CONFIG_GIT_REPO not set)")
+            
+            await safe_start_service(logger, "Heartbeat monitor", heartbeat.start)
+            await safe_start_service(logger, "Failover monitor", failover.start)
         else:
-            logger.debug("Configuration distributor disabled (MAP2_CONFIG_GIT_REPO not set)")
-        
-        await safe_start_service(logger, "Heartbeat monitor", heartbeat.start)
-        await safe_start_service(logger, "Failover monitor", failover.start)
+            logger.info("Cluster services disabled (single-node ALL-IN-ONE mode)")
 
         running = sum(1 for v in results.values() if v)
         total = len(results)
@@ -226,22 +248,27 @@ async def lifespan(app):
         logger.info("Stopping MAP2 Audio Platform services...")
         
         # Stop configuration distributor
-        try:
-            config_dist = get_config_distributor()
-            await safe_stop_service(logger, "Configuration distributor", config_dist.stop)
-        except RuntimeError:
-            logger.debug("Config distributor not initialized")
-        
-        # Stop cluster consensus
-        try:
-            raft = get_raft_consensus()
-            await safe_stop_service(logger, "Raft consensus", raft.stop)
-        except RuntimeError:
-            logger.debug("Raft consensus not initialized")
-        
-        # Stop cluster monitoring
-        await safe_stop_service(logger, "Failover monitor", failover.stop)
-        await safe_stop_service(logger, "Heartbeat monitor", heartbeat.stop)
+        if cluster_enabled:
+            try:
+                from app.services.cluster.config_distributor import get_config_distributor
+                config_dist = get_config_distributor()
+                await safe_stop_service(logger, "Configuration distributor", config_dist.stop)
+            except (RuntimeError, ImportError):
+                logger.debug("Config distributor not initialized")
+            
+            # Stop cluster consensus
+            try:
+                from app.services.cluster.raft_consensus import get_raft_consensus
+                raft = get_raft_consensus()
+                await safe_stop_service(logger, "Raft consensus", raft.stop)
+            except (RuntimeError, ImportError):
+                logger.debug("Raft consensus not initialized")
+            
+            # Stop cluster monitoring
+            if failover:
+                await safe_stop_service(logger, "Failover monitor", failover.stop)
+            if heartbeat:
+                await safe_stop_service(logger, "Heartbeat monitor", heartbeat.stop)
         
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
@@ -323,9 +350,9 @@ def create_app():
             from app.routes import lcd_events
             if lcd_events.router:
                 app.include_router(lcd_events.router)
-                # Initialize with LCD manager
-                init_lcd_routes(lcd_manager)
                 logger.info("LCD event routes registered")
+                # Note: init_lcd_routes would need to be called from lifespan context
+                # where lcd_manager is available. Skipping here to avoid NameError.
         except Exception as e:
             logger.warning(f"Failed to load LCD event routes: {e}")
 
@@ -454,6 +481,8 @@ def main():
     """Run FastAPI server."""
     try:
         import uvicorn
+        import socket
+        import time
         from app.config import ConfigManager
 
         config = ConfigManager()
@@ -461,22 +490,41 @@ def main():
         
         if app:
             host = config.get("backend.host", "0.0.0.0")
-            import socket
-            import logging
             port = config.get("backend.port", 8080)
-            logger = logging.getLogger("map2.main")
-            # Check if port is available
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                if s.connect_ex(("0.0.0.0", port)) == 0:
-                    logger.error(f"Port {port} is already in use. Please free the port or change the configuration.")
-                    raise RuntimeError(f"Port {port} is already in use. Please free the port or change the configuration.")
-            logger.info(f"Starting MAP2 Audio Engine on port {port}")
-            # ...existing code...
+            logger_main = logging.getLogger("map2.main")
+            
+            # Check if port is available (with better error handling)
+            port_available = False
+            max_attempts = 3
+            
+            for attempt in range(max_attempts):
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                        s.settimeout(1)
+                        result = s.connect_ex(("127.0.0.1", port))
+                        if result != 0:  # Connection failed = port is available
+                            port_available = True
+                            break
+                        else:
+                            logger_main.warning(f"Port {port} appears to be in use (attempt {attempt+1}/{max_attempts})")
+                            if attempt < max_attempts - 1:
+                                time.sleep(1)  # Wait before retrying
+                except Exception as e:
+                    logger_main.debug(f"Port check error (attempt {attempt+1}): {e}")
+                    if attempt == max_attempts - 1:
+                        raise
+            
+            if not port_available:
+                logger_main.error(f"Port {port} is already in use after {max_attempts} attempts. Please free the port or change the configuration.")
+                raise RuntimeError(f"Port {port} is already in use. Please free the port or change the configuration.")
+            
+            logger_main.info(f"Starting MAP2 Audio Engine on {host}:{port}")
             uvicorn.run(app, host=host, port=port, log_level="info")
         else:
             logger.error("Failed to create app")
     except Exception as e:
-        logger.error(f"Failed to start server: {e}")
+        logger.error(f"Failed to start server: {e}", exc_info=True)
 
 
 if __name__ == "__main__":

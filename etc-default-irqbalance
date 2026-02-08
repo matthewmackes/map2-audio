@@ -1,0 +1,16 @@
+# MAP2 Audio Platform - IRQ Balance Configuration
+# File: /etc/default/irqbalance
+#
+# Description:
+#   Exclude isolated audio cores (4,5) from IRQ balancing.
+#   Prevents audio device IRQs from being migrated to isolated cores.
+#
+# IRQBALANCE_BANNED_CPUS format:
+#   Hexadecimal bitmask where each bit represents a CPU
+#   Example: 0x30 = binary 00110000 = cores 4,5 (bits 4-5 set)
+
+# Ban cores 4,5 from IRQ balancing (they are audio-isolated)
+IRQBALANCE_BANNED_CPUS=0x30
+
+# Polling interval (default 10 seconds is fine)
+IRQBALANCE_POLLING_INTERVAL=10

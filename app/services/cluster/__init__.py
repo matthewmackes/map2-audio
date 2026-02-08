@@ -332,12 +332,12 @@ try:
 except ImportError as e:
     logger.warning(f"Failed to import Failover Monitor: {e}")
 
-# Import distributed event bus
+# Import distributed event bus (use prefixed names to avoid shadowing app.services.event_bus)
 try:
     from app.services.cluster.distributed_event_bus import (
         DistributedEventBus,
-        get_event_bus,
-        EventType,
+        get_event_bus as get_distributed_event_bus,
+        EventType as DistributedEventType,
         EventSeverity,
         ClusterEvent,
     )
@@ -377,21 +377,15 @@ __all__.extend([
     "ConfigSync",
     "get_state_replicator",
     "StateReplicator",
-    "get_event_bus",
+    "get_distributed_event_bus",
     "DistributedEventBus",
-    "EventType",
+    "DistributedEventType",
     "EventSeverity",
     "ClusterEvent",
     "get_lifecycle_manager",
     "NodeLifecycleManager",
     "NodeState",
     "NodeLifecycleEvent",
-    "get_disaster_recovery",
-    "DisasterRecoveryManager",
-    "BackupManifest",
-    "get_topology_monitor",
-    "NetworkTopologyMonitor",
-    "NetworkLink",
 ])
 
 logger.info("Cluster management module initialized with all services")

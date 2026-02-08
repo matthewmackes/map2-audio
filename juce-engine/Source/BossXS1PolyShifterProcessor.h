@@ -238,6 +238,11 @@ private:
      * Initialize preset library with Boss-style sounds
      */
     void initializePresets();
+    
+    /**
+     * Bypass state query
+     */
+    bool isBypassed() const { return parameters_.bypass; }
 };
 
 }  // namespace map2

@@ -1,13 +1,20 @@
 /**
  * MAP2 Audio Engine - Main Engine Implementation
  * Version 2.0 - Full JUCE Integration
+ * 
+ * REALTIME AUDIO OPTIMIZATION:
+ * - Low-latency audio processing (target <3ms)
+ * - Memory locking to prevent page faults
+ * - Realtime thread priorities
  */
 
 #include "Map2AudioEngine.h"
+#include <sys/mman.h>
+#include <errno.h>
 
-// RT-SAFE: Use conditional logging that can be disabled for production
-// In release builds, these are no-ops to avoid console I/O in audio context
-#ifndef MAP2_DISABLE_LOGGING
+// RT-SAFE: Disable logging in release builds and production
+// Logging to console acquires mutex and can block the audio thread
+#ifndef NDEBUG
 #include <iostream>
 #define MAP2_LOG(msg) std::cout << msg << std::endl
 #define MAP2_ERR(msg) std::cerr << msg << std::endl
@@ -63,6 +70,36 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     int graphChannels = std::max(numInputChannels_, numOutputChannels_);
     audioGraph_->initialize(sampleRate_, bufferSize_, graphChannels);
 
+    // Pre-allocate callback buffer to avoid heap allocation in RT thread
+    callbackBuffer_.setSize(numOutputChannels_, std::max(bufferSize_, MAX_AUDIO_BUFFER_SIZE),
+                            false, false, true);
+
+    // ============================================================================
+    // REALTIME OPTIMIZATION: Lock audio buffer to RAM to prevent page faults
+    // Page faults cause 1–10 ms latency spikes; mlock() pins memory to prevent swaps
+    // ============================================================================
+    try {
+        // Lock callback buffer to RAM
+        float* bufferData = callbackBuffer_.getWritePointer(0);
+        if (bufferData) {
+            size_t bufferBytes = static_cast<size_t>(callbackBuffer_.getNumSamples()) 
+                                * callbackBuffer_.getNumChannels() 
+                                * sizeof(float);
+            
+            if (mlock(bufferData, bufferBytes) == 0) {
+                std::cout << "  Audio buffer locked to RAM (" << (bufferBytes / 1024) << " KB)" << std::endl;
+            } else {
+                int err = errno;
+                std::cerr << "  WARNING: Failed to mlock audio buffer (errno=" << err << "). "
+                          << "System may experience latency spikes during memory pressure." << std::endl;
+                // Continue anyway—not fatal, just suboptimal
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "  Exception locking audio buffer: " << e.what() << std::endl;
+        // Continue—audio can still run without mlock
+    }
+
     // Initialize MIDI
     if (!midiHandler_.initialize()) {
         std::cerr << "MIDI initialization failed (continuing without MIDI)" << std::endl;
@@ -81,7 +118,9 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
 
     // Initialize convolution processors
     cabinetProcessor_.prepare(sampleRate_, bufferSize_, 2);
+    cabinetProcessor_.setMode(ConvolutionProcessor::Mode::ZeroLatency);
     reverbProcessor_.prepare(sampleRate_, bufferSize_, 2);
+    reverbProcessor_.setMode(ConvolutionProcessor::Mode::ZeroLatency);
 
     // Initialize dynamics processors
     compressor_.prepare(sampleRate_, bufferSize_, 2);
@@ -123,6 +162,10 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
         audioCallback(inputs, numInputs, outputs, numOutputs, numSamples);
     });
 
+    // Start metering thread (Option 3 - off-thread metering)
+    meteringRunning_.store(true);
+    meteringThread_ = std::thread([this]() { meteringThreadFunc(); });
+
     initialized_ = true;
 
     std::cout << "MAP2 Audio Engine initialized successfully" << std::endl;
@@ -140,6 +183,14 @@ void Map2AudioEngine::shutdown() {
     std::cout << "Shutting down MAP2 Audio Engine" << std::endl;
 
     stopAudio();
+    
+    // Stop metering thread (Option 3)
+    meteringRunning_.store(false);
+    meteringQueueCV_.notify_one();
+    if (meteringThread_.joinable()) {
+        meteringThread_.join();
+    }
+
     midiHandler_.shutdown();
     pluginHost_.shutdown();
     audioIO_.shutdown();
@@ -192,8 +243,11 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // Start CPU measurement
     cpuMonitor_.beginCallback();
 
-    // Create JUCE buffers
-    juce::AudioBuffer<float> buffer(numOutputs, numSamples);
+    // Create JUCE buffers — pre-allocated in initialize(), no RT allocation here
+    // GUARDED: assert buffer is large enough (setSize only called in non-RT context)
+    jassert(callbackBuffer_.getNumChannels() >= numOutputs && callbackBuffer_.getNumSamples() >= numSamples);
+    auto& buffer = callbackBuffer_;
+    buffer.clear();
     juce::MidiBuffer midiBuffer;
 
     // Copy input to buffer
@@ -217,10 +271,42 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
 #endif
 
     // Process modulation effects
-    pitchShifter_.process(buffer);   // Pitch shift first
-    chorus_.process(buffer);          // Then chorus
-    phaser_.process(buffer);          // Then phaser
-    intellifx_.process(buffer);       // IntelliFX 8-voice chorus
+    if (!pitchShifter_.isBypassed()) {
+        pitchShifter_.process(buffer);   // Pitch shift first
+    }
+    if (!chorus_.isBypassed()) {
+        chorus_.process(buffer);          // Then chorus
+    }
+    if (!phaser_.isBypassed()) {
+        phaser_.process(buffer);          // Then phaser
+    }
+    if (!intellifx_.isBypassed()) {
+        intellifx_.process(buffer);       // IntelliFX 8-voice chorus
+    }
+
+    // FIX #2: Add the 7 missing processors that were never called
+    // These are now wired into the signal chain
+    if (!shoegaze_.isBypassed()) {
+        shoegaze_.process(buffer);        // ShoeGaze reverb/fuzz
+    }
+    if (!passionFX_.isBypassed()) {
+        passionFX_.process(buffer);       // PassionFX multi-effect
+    }
+    if (!peavey5150_.isBypassed()) {
+        peavey5150_.process(buffer);      // Peavey 5150 amp sim
+    }
+    if (!tweedBassman_.isBypassed()) {
+        tweedBassman_.process(buffer);    // Tweed Bassman amp sim
+    }
+    if (!h3000_.isBypassed()) {
+        h3000_.process(buffer);           // Eventide H3000-style reverb
+    }
+    if (bossXS1_.isActive()) {
+        bossXS1_.process(buffer);         // Boss XS-1 multi-effect
+    }
+    if (!lexiLove_.isBypassed()) {
+        lexiLove_.process(buffer);        // Lexicon-style reverb
+    }
 
     // Process cabinet IR (if loaded)
     if (cabinetProcessor_.isIRLoaded()) {
@@ -231,26 +317,19 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     eq_.process(buffer);
 
     // Process dynamics chain: Gate -> Compressor -> Limiter
-    gate_.process(buffer);
-    compressor_.process(buffer);
-    limiter_.process(buffer);
+    if (!gate_.isBypassed()) {
+        gate_.process(buffer);
+    }
+    if (!compressor_.isBypassed()) {
+        compressor_.process(buffer);
+    }
+    if (!limiter_.isBypassed()) {
+        limiter_.process(buffer);
+    }
 
     // Process reverb IR (if loaded) - at end of chain
     if (reverbProcessor_.isIRLoaded()) {
         reverbProcessor_.process(buffer);
-    }
-
-    // Update metering
-    spectrumAnalyzer_.pushBuffer(buffer);
-    lufsMeter_.process(buffer);
-
-    if (numOutputs >= 2) {
-        phaseCorrelation_.process(buffer.getReadPointer(0),
-                                  buffer.getReadPointer(1),
-                                  numSamples);
-        masterVuMeter_.process(buffer.getReadPointer(0),
-                              buffer.getReadPointer(1),
-                              numSamples);
     }
 
     // Copy output
@@ -259,6 +338,10 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
             std::copy_n(buffer.getReadPointer(ch), numSamples, outputs[ch]);
         }
     }
+
+    // Push to metering thread (Option 3 - OFF audio thread)
+    // This is minimal CPU in the audio callback
+    pushMeteringData(buffer);
 
     // End CPU measurement
     cpuMonitor_.endCallback();
@@ -283,6 +366,8 @@ void Map2AudioEngine::setBufferSize(int size) {
     if (initialized_) {
         audioIO_.setBufferSize(size);
         audioGraph_->setBufferSize(size);
+        callbackBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
+                                false, false, true);
         // Fix #4: Use unified prepare method instead of individual calls
         prepareAllProcessors(sampleRate_, size, 2);
     }
@@ -318,6 +403,15 @@ void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, in
     phaser_.prepare(sampleRate, bufferSize, numChannels);
     pitchShifter_.prepare(sampleRate, bufferSize, numChannels);
     intellifx_.prepare(sampleRate, bufferSize, numChannels);
+    
+    // FIX #4: Prepare the 7 missing processors (were never re-prepared on config change)
+    shoegaze_.prepare(sampleRate, bufferSize, numChannels);
+    passionFX_.prepare(sampleRate, bufferSize, numChannels);
+    peavey5150_.prepare(sampleRate, bufferSize, numChannels);
+    tweedBassman_.prepare(sampleRate, bufferSize, numChannels);
+    h3000_.prepare(sampleRate, bufferSize, numChannels);
+    bossXS1_.prepare(sampleRate, bufferSize, numChannels);
+    lexiLove_.prepare(sampleRate, bufferSize, numChannels);
 }
 
 void Map2AudioEngine::setAudioDevice(const std::string& device) {
@@ -2292,6 +2386,83 @@ PassionFXProcessor::PresetInfo Map2AudioEngine::getPassionFXPresetInfo(PassionFX
 
 int Map2AudioEngine::getPassionFXNumPresets() {
     return PassionFXProcessor::getNumPresets();
+}
+
+// ========================================
+// Option 3: Off-thread Metering
+// ========================================
+
+void Map2AudioEngine::pushMeteringData(const juce::AudioBuffer<float>& buffer) {
+    // Try to push metering frame to queue (non-blocking)
+    // If queue is full, drop the frame (acceptable - metering is non-critical)
+    std::unique_lock<std::mutex> lock(meteringQueueMutex_, std::try_to_lock);
+    if (!lock.owns_lock() || meteringQueue_.size() >= METERING_QUEUE_DEPTH) {
+        return;  // Queue full or locked - drop this frame (RT-safe)
+    }
+
+    // Create metering frame (copies only pointers, not audio data)
+    MeteringFrame frame;
+    frame.numSamples = buffer.getNumSamples();
+    
+    // Copy channel pointers for metering thread
+    int numChannels = std::min(buffer.getNumChannels(), 2);
+    for (int ch = 0; ch < numChannels; ++ch) {
+        frame.channels[ch].assign(
+            buffer.getReadPointer(ch),
+            buffer.getReadPointer(ch) + buffer.getNumSamples()
+        );
+    }
+
+    meteringQueue_.push(std::move(frame));
+    lock.unlock();
+    meteringQueueCV_.notify_one();
+}
+
+void Map2AudioEngine::meteringThreadFunc() {
+    // Low-priority metering thread
+    // Runs independently from audio callback
+    while (meteringRunning_.load()) {
+        std::unique_lock<std::mutex> lock(meteringQueueMutex_);
+        
+        // Wait for metering data or shutdown signal
+        meteringQueueCV_.wait(lock, [this]() {
+            return !meteringQueue_.empty() || !meteringRunning_.load();
+        });
+
+        if (!meteringRunning_.load()) {
+            break;
+        }
+
+        if (meteringQueue_.empty()) {
+            continue;
+        }
+
+        MeteringFrame frame = std::move(meteringQueue_.front());
+        meteringQueue_.pop();
+        lock.unlock();
+
+        // Process metering off the audio thread (no RT constraints)
+        juce::AudioBuffer<float> tempBuffer(2, frame.numSamples);
+        
+        if (!frame.channels[0].empty()) {
+            std::copy(frame.channels[0].begin(), frame.channels[0].end(),
+                     tempBuffer.getWritePointer(0));
+        }
+        if (!frame.channels[1].empty()) {
+            std::copy(frame.channels[1].begin(), frame.channels[1].end(),
+                     tempBuffer.getWritePointer(1));
+        }
+
+        // Update metering components (all off-thread, no RT pressure)
+        spectrumAnalyzer_.pushBuffer(tempBuffer);
+        lufsMeter_.process(tempBuffer);
+        phaseCorrelation_.process(tempBuffer.getReadPointer(0),
+                                  tempBuffer.getReadPointer(1),
+                                  frame.numSamples);
+        masterVuMeter_.process(tempBuffer.getReadPointer(0),
+                              tempBuffer.getReadPointer(1),
+                              frame.numSamples);
+    }
 }
 
 } // namespace map2

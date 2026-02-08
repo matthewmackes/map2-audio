@@ -200,6 +200,10 @@ private:
     std::atomic<bool> loading_{false};
     std::atomic<bool> bypassed_{false};
     std::atomic<bool> modelReady_{false};
+    
+    // FIX #3: Proper thread management instead of detach
+    std::thread loadThread_;
+    std::atomic<bool> shouldExit_{false};
 
     // Audio config
     double sampleRate_ = 48000.0;

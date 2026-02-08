@@ -54,6 +54,9 @@ export function PresetsPage() {
   // State
   const [activeTab, setActiveTab] = useState<TabType>('local')
   const [showImportDialog, setShowImportDialog] = useState(false)
+  const [showUploadDialog, setShowUploadDialog] = useState(false)
+  const [uploadForm, setUploadForm] = useState({ name: '', description: '', category: 'User', tags: '' })
+  const [uploading, setUploading] = useState(false)
 
   // Queries - Flow Snapshots (Chain Presets)
   const snapshotsQuery = useQuery<FlowSnapshotsResponse>({
@@ -142,6 +145,41 @@ export function PresetsPage() {
     queryClient.invalidateQueries({ queryKey: ['flow-snapshots'] })
     queryClient.invalidateQueries({ queryKey: ['plugin-presets'] })
     pushToast(`Imported "${name}" successfully`, 'success')
+  }
+
+  // Community preset upload handler
+  const handleCommunityUpload = async () => {
+    if (!uploadForm.name.trim()) {
+      pushToast('Preset name is required', 'error')
+      return
+    }
+    setUploading(true)
+    try {
+      const response = await fetch('/api/preset-exchange/community/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: uploadForm.name.trim(),
+          plugin_uri: 'map2://flow-snapshot',
+          plugin_name: 'Flow Snapshot',
+          parameters: {},
+          description: uploadForm.description.trim(),
+          category: uploadForm.category || 'User',
+          tags: uploadForm.tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.detail || response.statusText)
+      }
+      pushToast(`"${uploadForm.name}" uploaded to community library`, 'success')
+      setShowUploadDialog(false)
+      setUploadForm({ name: '', description: '', category: 'User', tags: '' })
+    } catch (err) {
+      pushToast(`Upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error')
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -374,8 +412,7 @@ export function PresetsPage() {
               pushToast('Preset downloaded and ready to apply', 'success')
             }}
             onUploadClick={() => {
-              // Could open an upload dialog here
-              pushToast('Upload feature coming soon', 'info')
+              setShowUploadDialog(true)
             }}
           />
         )}
@@ -387,6 +424,91 @@ export function PresetsPage() {
         onClose={() => setShowImportDialog(false)}
         onImportSuccess={handleImportSuccess}
       />
+
+      {/* Community Upload Dialog */}
+      {showUploadDialog && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowUploadDialog(false) }}
+        >
+          <div style={{
+            background: '#1a1a2e', border: '1px solid #333', borderRadius: 12,
+            padding: 24, width: 420, maxWidth: '90vw',
+          }}>
+            <h3 style={{ margin: '0 0 16px', color: '#fff' }}>Upload to Community Library</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Preset Name *</label>
+                <input
+                  value={uploadForm.name}
+                  onChange={(e) => setUploadForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g., Warm Crunch"
+                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Description</label>
+                <textarea
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Describe your preset..."
+                  rows={3}
+                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff', resize: 'vertical' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Category</label>
+                <select
+                  value={uploadForm.category}
+                  onChange={(e) => setUploadForm(f => ({ ...f, category: e.target.value }))}
+                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                >
+                  <option value="User">User</option>
+                  <option value="Guitar">Guitar</option>
+                  <option value="Bass">Bass</option>
+                  <option value="Vocal">Vocal</option>
+                  <option value="Synth">Synth</option>
+                  <option value="Drums">Drums</option>
+                  <option value="Ambient">Ambient</option>
+                  <option value="Production">Production</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Tags (comma separated)</label>
+                <input
+                  value={uploadForm.tags}
+                  onChange={(e) => setUploadForm(f => ({ ...f, tags: e.target.value }))}
+                  placeholder="e.g., warm, crunch, blues"
+                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
+              <button
+                onClick={() => setShowUploadDialog(false)}
+                style={{ padding: '8px 16px', background: '#333', border: 'none', borderRadius: 6, color: '#ccc', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCommunityUpload}
+                disabled={uploading || !uploadForm.name.trim()}
+                style={{
+                  padding: '8px 20px', background: uploading ? '#555' : '#7c3aed',
+                  border: 'none', borderRadius: 6, color: '#fff', cursor: uploading ? 'not-allowed' : 'pointer',
+                  fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {uploading ? 'Uploading...' : 'Upload'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

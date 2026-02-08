@@ -1,0 +1,183 @@
+[2026-02-08 10:51:04] === MAP2 Latency Optimizer started ===
+[2026-02-08 10:51:04] PASS: CPU isolation: isolcpus=4,5
+[2026-02-08 10:51:04] PASS: Tickless cores: nohz_full=4,5
+[2026-02-08 10:51:04] PASS: RCU offload + threaded IRQs enabled
+[2026-02-08 10:51:04] PASS: Transparent Huge Pages: disabled
+[2026-02-08 10:51:04] WARN: CPU governor: could not determine
+[2026-02-08 10:51:04] PASS: RT limits: @audio rtprio=99, memlock=unlimited
+[2026-02-08 10:51:04] PASS: PipeWire service: active (v1.4.10)
+[2026-02-08 10:51:04] PASS: WirePlumber service: active
+[2026-02-08 10:51:04] PASS: libjack provider: PipeWire JACK (/usr/lib64/pipewire-0.3/jack/libjack.so.0)
+[2026-02-08 10:51:04] PASS: RTKit daemon: running
+[2026-02-08 10:51:04] FIX: Live PipeWire quantum: 256 (0ms) -- should be 64 (0ms)
+[2026-02-08 10:51:04] FIX: PipeWire config quantum: 128 -- should be 64 (/home/mm/.config/pipewire/pipewire.conf.d/10-low-latency.conf)
+[2026-02-08 10:51:04] FIX: PipeWire min-quantum: 64 -- should be <= 32
+[2026-02-08 10:51:04] FIX: PipeWire max-quantum: 2048 -- should be <= 256 (prevents latency spikes)
+[2026-02-08 10:51:04] FIX: Systemd force-quantum: 256 -- should be 64
+[2026-02-08 10:51:04] FIX: Systemd PIPEWIRE_LATENCY: 128/48000 -- should be 64/48000
+[2026-02-08 10:51:04] PASS: Systemd CPUAffinity: 4 5 (isolated cores)
+[2026-02-08 10:51:04] PASS: Systemd LimitRTPRIO: 95
+[2026-02-08 10:51:04] PASS: Systemd LimitMEMLOCK: infinity
+[2026-02-08 10:51:04] PASS: Systemd CAP_SYS_NICE: granted
+[2026-02-08 10:51:04] FIX: C++ DEFAULT_BUFFER_SIZE: 128 -- should be 64 (Common.h)
+[2026-02-08 10:51:04] FIX: Python config buffer_size default: 256 -- should be 64 (config.py)
+[2026-02-08 10:51:04] FIX: Device constants buffer_size: Edirol=256, Hotone=256 -- should be 64
+[2026-02-08 10:51:04] FIX: C++ RT thread priority: SCHED_FIFO 60 -- should be 80 (JuceAudioIO.cpp)
+[2026-02-08 10:51:04] FIX: callbackBuffer_.setSize() in audio callback (RT allocation risk) -- needs guard
+[2026-02-08 10:51:04] FIX: CMake -ffast-math: OFF -- should be ON for DSP performance (CMakeLists.txt)
+[2026-02-08 10:51:04] PASS: Build type: Release -O3
+[2026-02-08 10:51:04] PASS: SIMD: -march=native enabled
+[2026-02-08 10:51:48] === MAP2 Latency Optimizer started ===
+[2026-02-08 10:51:48] PASS: CPU isolation: isolcpus=4,5
+[2026-02-08 10:51:48] PASS: Tickless cores: nohz_full=4,5
+[2026-02-08 10:51:48] PASS: RCU offload + threaded IRQs enabled
+[2026-02-08 10:51:48] PASS: Transparent Huge Pages: disabled
+[2026-02-08 10:51:48] WARN: CPU governor: could not determine
+[2026-02-08 10:51:49] PASS: RT limits: @audio rtprio=99, memlock=unlimited
+[2026-02-08 10:51:49] PASS: PipeWire service: active (v1.4.10)
+[2026-02-08 10:51:49] PASS: WirePlumber service: active
+[2026-02-08 10:51:49] PASS: libjack provider: PipeWire JACK (/usr/lib64/pipewire-0.3/jack/libjack.so.0)
+[2026-02-08 10:51:49] PASS: RTKit daemon: running
+[2026-02-08 10:51:49] FIX: Live PipeWire quantum: 256 (5.33ms) -- should be 64 (1.33ms)
+[2026-02-08 10:51:49] FIX: PipeWire config quantum: 128 -- should be 64 (/home/mm/.config/pipewire/pipewire.conf.d/10-low-latency.conf)
+[2026-02-08 10:51:49] FIX: PipeWire min-quantum: 64 -- should be <= 32
+[2026-02-08 10:51:49] FIX: PipeWire max-quantum: 2048 -- should be <= 256 (prevents latency spikes)
+[2026-02-08 10:51:49] FIX: Systemd force-quantum: 256 -- should be 64
+[2026-02-08 10:51:49] FIX: Systemd PIPEWIRE_LATENCY: 128/48000 -- should be 64/48000
+[2026-02-08 10:51:49] PASS: Systemd CPUAffinity: 4 5 (isolated cores)
+[2026-02-08 10:51:49] PASS: Systemd LimitRTPRIO: 95
+[2026-02-08 10:51:49] PASS: Systemd LimitMEMLOCK: infinity
+[2026-02-08 10:51:49] PASS: Systemd CAP_SYS_NICE: granted
+[2026-02-08 10:51:49] FIX: C++ DEFAULT_BUFFER_SIZE: 128 -- should be 64 (Common.h)
+[2026-02-08 10:51:49] FIX: Python config buffer_size default: 256 -- should be 64 (config.py)
+[2026-02-08 10:51:49] FIX: Device constants buffer_size: Edirol=256, Hotone=256 -- should be 64
+[2026-02-08 10:51:49] FIX: C++ RT thread priority: SCHED_FIFO 60 -- should be 80 (JuceAudioIO.cpp)
+[2026-02-08 10:51:49] FIX: callbackBuffer_.setSize() in audio callback (RT allocation risk) -- needs guard
+[2026-02-08 10:51:49] FIX: CMake -ffast-math: OFF -- should be ON for DSP performance (CMakeLists.txt)
+[2026-02-08 10:51:49] PASS: Build type: Release -O3
+[2026-02-08 10:51:49] PASS: SIMD: -march=native enabled
+[2026-02-08 10:52:04] === MAP2 Latency Optimizer started ===
+[2026-02-08 10:52:04] PASS: CPU isolation: isolcpus=4,5
+[2026-02-08 10:52:04] PASS: Tickless cores: nohz_full=4,5
+[2026-02-08 10:52:04] PASS: RCU offload + threaded IRQs enabled
+[2026-02-08 10:52:04] PASS: Transparent Huge Pages: disabled
+[2026-02-08 10:52:04] WARN: CPU governor: could not determine
+[2026-02-08 10:52:04] PASS: RT limits: @audio rtprio=99, memlock=unlimited
+[2026-02-08 10:52:04] PASS: PipeWire service: active (v1.4.10)
+[2026-02-08 10:52:04] PASS: WirePlumber service: active
+[2026-02-08 10:52:04] PASS: libjack provider: PipeWire JACK (/usr/lib64/pipewire-0.3/jack/libjack.so.0)
+[2026-02-08 10:52:04] PASS: RTKit daemon: running
+[2026-02-08 10:52:04] FIX: Live PipeWire quantum: 256 (5.33ms) -- should be 64 (1.33ms)
+[2026-02-08 10:52:04] FIX: PipeWire config quantum: 128 -- should be 64 (/home/mm/.config/pipewire/pipewire.conf.d/10-low-latency.conf)
+[2026-02-08 10:52:04] FIX: PipeWire min-quantum: 64 -- should be <= 32
+[2026-02-08 10:52:04] FIX: PipeWire max-quantum: 2048 -- should be <= 256 (prevents latency spikes)
+[2026-02-08 10:52:04] FIX: Systemd force-quantum: 256 -- should be 64
+[2026-02-08 10:52:04] FIX: Systemd PIPEWIRE_LATENCY: 128/48000 -- should be 64/48000
+[2026-02-08 10:52:04] PASS: Systemd CPUAffinity: 4 5 (isolated cores)
+[2026-02-08 10:52:04] PASS: Systemd LimitRTPRIO: 95
+[2026-02-08 10:52:04] PASS: Systemd LimitMEMLOCK: infinity
+[2026-02-08 10:52:04] PASS: Systemd CAP_SYS_NICE: granted
+[2026-02-08 10:52:04] FIX: C++ DEFAULT_BUFFER_SIZE: 128 -- should be 64 (Common.h)
+[2026-02-08 10:52:04] FIX: Python config buffer_size default: 256 -- should be 64 (config.py)
+[2026-02-08 10:52:04] FIX: Device constants buffer_size: Edirol=256, Hotone=256 -- should be 64
+[2026-02-08 10:52:04] FIX: C++ RT thread priority: SCHED_FIFO 60 -- should be 80 (JuceAudioIO.cpp)
+[2026-02-08 10:52:04] FIX: callbackBuffer_.setSize() in audio callback (RT allocation risk) -- needs guard
+[2026-02-08 10:52:04] FIX: CMake -ffast-math: OFF -- should be ON for DSP performance (CMakeLists.txt)
+[2026-02-08 10:52:04] PASS: Build type: Release -O3
+[2026-02-08 10:52:04] PASS: SIMD: -march=native enabled
+[2026-02-08 10:52:04] APPLIED: PipeWire config: quantum=64, min=32, max=256
+[2026-02-08 10:52:04] APPLIED: force-quantum -> 64
+[2026-02-08 10:52:04] APPLIED: PIPEWIRE_LATENCY -> 64/48000
+[2026-02-08 10:52:04] APPLIED: config.py buffer_size default -> 64
+[2026-02-08 10:52:04] APPLIED: Device constants: Edirol=64, Hotone=64
+[2026-02-08 10:52:04] APPLIED: DEFAULT_BUFFER_SIZE -> 64
+[2026-02-08 10:52:04] APPLIED: RT priority -> SCHED_FIFO 80
+[2026-02-08 10:52:04] APPLIED: callbackBuffer_.setSize guarded with jassert
+[2026-02-08 10:52:04] APPLIED: -ffast-math -> ON
+[2026-02-08 10:52:04] APPLIED: Live quantum set to 64 via pw-metadata
+[2026-02-08 10:52:04] PASS: CPU isolation: isolcpus=4,5
+[2026-02-08 10:52:04] PASS: Tickless cores: nohz_full=4,5
+[2026-02-08 10:52:04] PASS: RCU offload + threaded IRQs enabled
+[2026-02-08 10:52:04] PASS: Transparent Huge Pages: disabled
+[2026-02-08 10:52:04] WARN: CPU governor: could not determine
+[2026-02-08 10:52:04] PASS: RT limits: @audio rtprio=99, memlock=unlimited
+[2026-02-08 10:52:04] PASS: PipeWire service: active (v1.4.10)
+[2026-02-08 10:52:04] PASS: WirePlumber service: active
+[2026-02-08 10:52:04] PASS: libjack provider: PipeWire JACK (/usr/lib64/pipewire-0.3/jack/libjack.so.0)
+[2026-02-08 10:52:04] PASS: RTKit daemon: running
+[2026-02-08 10:52:04] PASS: Live PipeWire quantum: 64 samples (1.33ms)
+[2026-02-08 10:52:04] PASS: PipeWire config quantum: 64
+[2026-02-08 10:52:04] PASS: PipeWire min-quantum: 32
+[2026-02-08 10:52:04] PASS: PipeWire max-quantum: 256
+[2026-02-08 10:52:04] PASS: Systemd ExecStartPre force-quantum: 64
+[2026-02-08 10:52:04] PASS: Systemd PIPEWIRE_LATENCY: 64/48000
+[2026-02-08 10:52:04] PASS: Systemd CPUAffinity: 4 5 (isolated cores)
+[2026-02-08 10:52:04] PASS: Systemd LimitRTPRIO: 95
+[2026-02-08 10:52:05] PASS: Systemd LimitMEMLOCK: infinity
+[2026-02-08 10:52:05] PASS: Systemd CAP_SYS_NICE: granted
+[2026-02-08 10:52:05] PASS: C++ DEFAULT_BUFFER_SIZE: 64 (Common.h)
+[2026-02-08 10:52:05] PASS: Python config buffer_size default: 64 (config.py)
+[2026-02-08 10:52:05] PASS: Device constants buffer_size: Edirol=64, Hotone=64
+[2026-02-08 10:52:05] PASS: C++ RT thread priority: SCHED_FIFO 80 (JuceAudioIO.cpp)
+[2026-02-08 10:52:05] FIX: callbackBuffer_.setSize() in audio callback (RT allocation risk) -- needs guard
+[2026-02-08 10:52:05] PASS: CMake -ffast-math: ON (CMakeLists.txt)
+[2026-02-08 10:52:05] PASS: Build type: Release -O3
+[2026-02-08 10:52:05] PASS: SIMD: -march=native enabled
+[2026-02-08 10:53:11] === MAP2 Latency Optimizer started ===
+[2026-02-08 10:53:11] PASS: CPU isolation: isolcpus=4,5
+[2026-02-08 10:53:11] PASS: Tickless cores: nohz_full=4,5
+[2026-02-08 10:53:11] PASS: RCU offload + threaded IRQs enabled
+[2026-02-08 10:53:11] PASS: Transparent Huge Pages: disabled
+[2026-02-08 10:53:11] WARN: CPU governor: could not determine
+[2026-02-08 10:53:11] PASS: RT limits: @audio rtprio=99, memlock=unlimited
+[2026-02-08 10:53:11] PASS: PipeWire service: active (v1.4.10)
+[2026-02-08 10:53:11] PASS: WirePlumber service: active
+[2026-02-08 10:53:11] PASS: libjack provider: PipeWire JACK (/usr/lib64/pipewire-0.3/jack/libjack.so.0)
+[2026-02-08 10:53:11] PASS: RTKit daemon: running
+[2026-02-08 10:53:11] PASS: Live PipeWire quantum: 64 samples (1.33ms)
+[2026-02-08 10:53:11] PASS: PipeWire config quantum: 64
+[2026-02-08 10:53:11] PASS: PipeWire min-quantum: 32
+[2026-02-08 10:53:11] PASS: PipeWire max-quantum: 256
+[2026-02-08 10:53:11] PASS: Systemd ExecStartPre force-quantum: 64
+[2026-02-08 10:53:11] PASS: Systemd PIPEWIRE_LATENCY: 64/48000
+[2026-02-08 10:53:11] PASS: Systemd CPUAffinity: 4 5 (isolated cores)
+[2026-02-08 10:53:11] PASS: Systemd LimitRTPRIO: 95
+[2026-02-08 10:53:11] PASS: Systemd LimitMEMLOCK: infinity
+[2026-02-08 10:53:11] PASS: Systemd CAP_SYS_NICE: granted
+[2026-02-08 10:53:11] PASS: C++ DEFAULT_BUFFER_SIZE: 64 (Common.h)
+[2026-02-08 10:53:12] PASS: Python config buffer_size default: 64 (config.py)
+[2026-02-08 10:53:12] PASS: Device constants buffer_size: Edirol=64, Hotone=64
+[2026-02-08 10:53:12] PASS: C++ RT thread priority: SCHED_FIFO 80 (JuceAudioIO.cpp)
+[2026-02-08 10:53:12] PASS: Callback buffer: guarded, no RT allocation (Map2AudioEngine.cpp)
+[2026-02-08 10:53:12] PASS: CMake -ffast-math: ON (CMakeLists.txt)
+[2026-02-08 10:53:12] PASS: Build type: Release -O3
+[2026-02-08 10:53:12] PASS: SIMD: -march=native enabled
+[2026-02-08 11:04:57] === MAP2 Latency Optimizer started ===
+[2026-02-08 11:04:57] PASS: CPU isolation: isolcpus=4,5
+[2026-02-08 11:04:57] PASS: Tickless cores: nohz_full=4,5
+[2026-02-08 11:04:57] PASS: RCU offload + threaded IRQs enabled
+[2026-02-08 11:04:57] PASS: Transparent Huge Pages: disabled
+[2026-02-08 11:04:57] WARN: CPU governor: could not determine
+[2026-02-08 11:04:57] PASS: RT limits: @audio rtprio=99, memlock=unlimited
+[2026-02-08 11:04:57] PASS: PipeWire service: active (v1.4.10)
+[2026-02-08 11:04:57] PASS: WirePlumber service: active
+[2026-02-08 11:04:57] PASS: libjack provider: PipeWire JACK (/usr/lib64/pipewire-0.3/jack/libjack.so.0)
+[2026-02-08 11:04:57] PASS: RTKit daemon: running
+[2026-02-08 11:04:57] FIX: Live PipeWire quantum: 128 (2.66ms) -- should be 64 (1.33ms)
+[2026-02-08 11:04:57] PASS: PipeWire config quantum: 64
+[2026-02-08 11:04:57] PASS: PipeWire min-quantum: 32
+[2026-02-08 11:04:57] PASS: PipeWire max-quantum: 256
+[2026-02-08 11:04:57] PASS: Systemd ExecStartPre force-quantum: 64
+[2026-02-08 11:04:57] PASS: Systemd PIPEWIRE_LATENCY: 64/48000
+[2026-02-08 11:04:57] PASS: Systemd CPUAffinity: 4 5 (isolated cores)
+[2026-02-08 11:04:57] PASS: Systemd LimitRTPRIO: 95
+[2026-02-08 11:04:57] PASS: Systemd LimitMEMLOCK: infinity
+[2026-02-08 11:04:57] PASS: Systemd CAP_SYS_NICE: granted
+[2026-02-08 11:04:57] PASS: C++ DEFAULT_BUFFER_SIZE: 64 (Common.h)
+[2026-02-08 11:04:57] PASS: Python config buffer_size default: 64 (config.py)
+[2026-02-08 11:04:57] PASS: Device constants buffer_size: Edirol=64, Hotone=64
+[2026-02-08 11:04:57] PASS: C++ RT thread priority: SCHED_FIFO 80 (JuceAudioIO.cpp)
+[2026-02-08 11:04:57] PASS: Callback buffer: guarded, no RT allocation (Map2AudioEngine.cpp)
+[2026-02-08 11:04:57] PASS: CMake -ffast-math: ON (CMakeLists.txt)
+[2026-02-08 11:04:57] PASS: Build type: Release -O3
+[2026-02-08 11:04:57] PASS: SIMD: -march=native enabled

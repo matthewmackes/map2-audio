@@ -1,0 +1,15 @@
+[Unit]
+Description=MAP2 Audio - Set CPU Governor to Performance
+Documentation=https://github.com/matthewmackes/map2-audio
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'for cpu in /sys/devices/system/cpu/cpu[0-9]*; do echo performance > $$cpu/cpufreq/scaling_governor; done'
+ExecStart=/bin/bash -c 'echo "CPU governor set to: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor)"'
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

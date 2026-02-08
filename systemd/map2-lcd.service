@@ -6,9 +6,9 @@ Wants=map2-backend.service
 
 [Service]
 Type=simple
-User=%u
-Group=%g
-WorkingDirectory=/home/%u/map2-audio
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio
 
 # Environment
 Environment=PYTHONUNBUFFERED=1

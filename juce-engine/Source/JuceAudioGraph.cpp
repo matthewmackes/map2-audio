@@ -234,44 +234,79 @@ void JuceAudioGraph::clearChain() {
 }
 
 juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId instanceId) {
+    const juce::SpinLock::ScopedLockType lock(graphLock_);
     auto* pluginInstance = host_.getInstance(instanceId);
     if (pluginInstance == nullptr) {
         return juce::AudioProcessorGraph::NodeID();
     }
 
-    // Create a wrapper that doesn't own the processor
-    // We use a shared_ptr to manage lifetime properly
-    class PluginWrapper : public juce::AudioProcessor {
+    // FIX #1: Use non-owning wrapper to prevent double-free
+    // The plugin instance is owned by PluginHost and stored in host_.getInstance()
+    // We wrap it without transferring ownership
+    class NonOwningPluginWrapper : public juce::AudioProcessor {
     public:
-        PluginWrapper(juce::AudioPluginInstance* wrapped) : wrapped_(wrapped) {}
-
-        const juce::String getName() const override { return wrapped_->getName(); }
-        void prepareToPlay(double sr, int bs) override { wrapped_->prepareToPlay(sr, bs); }
-        void releaseResources() override { wrapped_->releaseResources(); }
-        void processBlock(juce::AudioBuffer<float>& b, juce::MidiBuffer& m) override {
-            wrapped_->processBlock(b, m);
+        NonOwningPluginWrapper(juce::AudioPluginInstance* wrapped) 
+            : wrapped_(wrapped) {
+            // Don't take ownership - just wrap
         }
-        double getTailLengthSeconds() const override { return wrapped_->getTailLengthSeconds(); }
-        bool acceptsMidi() const override { return wrapped_->acceptsMidi(); }
-        bool producesMidi() const override { return wrapped_->producesMidi(); }
+
+        ~NonOwningPluginWrapper() override {
+            // DON'T delete wrapped_ - we don't own it
+            wrapped_ = nullptr;
+        }
+
+        const juce::String getName() const override { 
+            return wrapped_ ? wrapped_->getName() : juce::String(); 
+        }
+        void prepareToPlay(double sr, int bs) override { 
+            if (wrapped_) wrapped_->prepareToPlay(sr, bs); 
+        }
+        void releaseResources() override { 
+            if (wrapped_) wrapped_->releaseResources(); 
+        }
+        void processBlock(juce::AudioBuffer<float>& b, juce::MidiBuffer& m) override {
+            if (wrapped_) wrapped_->processBlock(b, m);
+        }
+        double getTailLengthSeconds() const override { 
+            return wrapped_ ? wrapped_->getTailLengthSeconds() : 0.0; 
+        }
+        bool acceptsMidi() const override { 
+            return wrapped_ ? wrapped_->acceptsMidi() : false; 
+        }
+        bool producesMidi() const override { 
+            return wrapped_ ? wrapped_->producesMidi() : false; 
+        }
         juce::AudioProcessorEditor* createEditor() override { return nullptr; }
         bool hasEditor() const override { return false; }
-        int getNumPrograms() override { return wrapped_->getNumPrograms(); }
-        int getCurrentProgram() override { return wrapped_->getCurrentProgram(); }
-        void setCurrentProgram(int i) override { wrapped_->setCurrentProgram(i); }
-        const juce::String getProgramName(int i) override { return wrapped_->getProgramName(i); }
-        void changeProgramName(int i, const juce::String& n) override { wrapped_->changeProgramName(i, n); }
-        void getStateInformation(juce::MemoryBlock& b) override { wrapped_->getStateInformation(b); }
-        void setStateInformation(const void* d, int s) override { wrapped_->setStateInformation(d, s); }
-        int getLatencySamples() const { return wrapped_->getLatencySamples(); }
+        int getNumPrograms() override { 
+            return wrapped_ ? wrapped_->getNumPrograms() : 1; 
+        }
+        int getCurrentProgram() override { 
+            return wrapped_ ? wrapped_->getCurrentProgram() : 0; 
+        }
+        void setCurrentProgram(int i) override { 
+            if (wrapped_) wrapped_->setCurrentProgram(i); 
+        }
+        const juce::String getProgramName(int i) override { 
+            return wrapped_ ? wrapped_->getProgramName(i) : juce::String(); 
+        }
+        void changeProgramName(int i, const juce::String& n) override { 
+            if (wrapped_) wrapped_->changeProgramName(i, n); 
+        }
+        void getStateInformation(juce::MemoryBlock& b) override { 
+            if (wrapped_) wrapped_->getStateInformation(b); 
+        }
+        void setStateInformation(const void* d, int s) override { 
+            if (wrapped_) wrapped_->setStateInformation(d, s); 
+        }
 
     private:
         juce::AudioPluginInstance* wrapped_;
     };
 
-    // Add the plugin directly (JUCE will manage it within the graph)
-    // Note: We're adding the actual instance - the graph takes ownership
-    auto node = graph_->addNode(std::unique_ptr<juce::AudioProcessor>(pluginInstance));
+    // Create the non-owning wrapper and add to graph
+    // Now the graph owns the wrapper, not the underlying plugin instance
+    auto node = graph_->addNode(std::make_unique<NonOwningPluginWrapper>(pluginInstance));
 
     if (node == nullptr) {
         return juce::AudioProcessorGraph::NodeID();
@@ -282,6 +317,7 @@ juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId insta
 }
 
 void JuceAudioGraph::removePluginNode(InstanceId instanceId) {
+    const juce::SpinLock::ScopedLockType lock(graphLock_);
     auto it = nodeMap_.find(instanceId);
     if (it == nodeMap_.end()) {
         return;
@@ -292,6 +328,7 @@ void JuceAudioGraph::removePluginNode(InstanceId instanceId) {
 }
 
 void JuceAudioGraph::rebuildConnections() {
+    const juce::SpinLock::ScopedLockType lock(graphLock_);
     // Remove all existing connections
     for (auto& conn : graph_->getConnections()) {
         graph_->removeConnection(conn);
@@ -418,6 +455,7 @@ void JuceAudioGraph::process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&
     updateMeters(buffer, true);
 
     // Process through the graph
+    const juce::SpinLock::ScopedLockType lock(graphLock_);
     graph_->processBlock(buffer, midiBuffer);
 
     // Update output meters

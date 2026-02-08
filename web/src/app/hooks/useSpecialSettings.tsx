@@ -129,20 +129,51 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
     loadSettings()
   }, [loadSettings])
 
-  // TODO: Add WebSocket listener for cluster sync
+  // WebSocket listener for cluster sync
   // When a node in the cluster updates special settings, all connected clients
-  // should be notified via WebSocket and reload settings automatically
+  // are notified and reload settings automatically
   useEffect(() => {
-    // This would be implemented using the existing WebSocket connection
-    // Pattern: Listen for 'special_settings_update' events and call loadSettings()
-    // Example event structure:
-    // {
-    //   type: 'special_settings_update',
-    //   node_id: 'node-1',
-    //   version: 2,
-    //   timestamp: '2026-02-07T...'
-    // }
-  }, [])
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/ws/events`
+    let ws: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
+    function connect() {
+      try {
+        ws = new WebSocket(wsUrl)
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            if (data.type === 'special_settings_update') {
+              // Another node updated settings — reload from backend
+              loadSettings()
+            }
+          } catch {
+            // Ignore non-JSON messages
+          }
+        }
+
+        ws.onclose = () => {
+          // Reconnect after a delay (cluster sync is non-critical)
+          reconnectTimer = setTimeout(connect, 10000)
+        }
+
+        ws.onerror = () => {
+          ws?.close()
+        }
+      } catch {
+        // WebSocket not available — silently degrade (single-node mode)
+      }
+    }
+
+    connect()
+
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (ws) ws.close()
+    }
+  }, [loadSettings])
 
   return {
     settings,

@@ -23,6 +23,10 @@ alias m2-dev='/home/mm/map2-audio/m2.sh dev'
 alias m2-stage='/home/mm/map2-audio/m2.sh stage'
 alias m2-status='/home/mm/map2-audio/m2.sh status'
 
+# Mode management (the proper way to switch modes)
+alias map2-mode='/home/mm/map2-audio/scripts/map2-mode.sh'
+alias m2-mode='/home/mm/map2-audio/scripts/map2-mode.sh'
+
 # Navigation shortcuts
 alias map2='cd /home/mm/map2-audio'
 alias map2-web='cd /home/mm/map2-audio/web'

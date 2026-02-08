@@ -162,6 +162,9 @@ class ServiceOrchestrator:
 
         # NOTE: Legacy audio_engine service removed - use juce_engine instead
 
+        # JUCE engine is optional for readiness - the API must be able to serve
+        # on management/testbed nodes even if the JUCE binary isn't built yet.
+        # Audio processing will be degraded, but the API remains fully functional.
         self._register_service(ServiceDefinition(
             name="juce_engine",
             display_name="JUCE Audio Engine",
@@ -172,8 +175,11 @@ class ServiceOrchestrator:
             stop_func=self._stop_juce_engine,
             health_check=self._check_juce_health,
             is_async=True,
-            is_optional=False,  # Make JUCE engine the primary audio engine
-            is_critical_for_ready=True,
+            is_optional=True,   # Optional: API must start even without audio engine
+            is_critical_for_ready=False,  # Don't block systemd readiness on JUCE
+            auto_restart=True,
+            max_restarts=3,
+            restart_delay=10.0,
         ))
 
         self._register_service(ServiceDefinition(
@@ -219,7 +225,7 @@ class ServiceOrchestrator:
             display_name="Meter Broadcaster",
             description="Audio level metering broadcast",
             priority=ServicePriority.NORMAL,
-            dependencies=["websocket_manager", "audio_engine"],
+            dependencies=["websocket_manager", "juce_engine"],
             start_func=self._start_meter_broadcaster,
             stop_func=self._stop_meter_broadcaster,
             health_check=self._check_meter_broadcaster_health,
@@ -257,7 +263,7 @@ class ServiceOrchestrator:
             display_name="RT Monitor",
             description="Real-time performance monitoring",
             priority=ServicePriority.LOW,
-            dependencies=["audio_engine"],
+            dependencies=["juce_engine"],
             start_func=self._start_rt_monitor,
             stop_func=self._stop_rt_monitor,
             health_check=self._check_rt_monitor_health,
@@ -281,7 +287,7 @@ class ServiceOrchestrator:
             display_name="LCD Display",
             description="Hardware LCD display interface",
             priority=ServicePriority.LOW,
-            dependencies=["audio_engine"],
+            dependencies=["juce_engine"],
             start_func=self._start_lcd_display,
             stop_func=self._stop_lcd_display,
             health_check=self._check_lcd_health,
@@ -950,11 +956,11 @@ class ServiceOrchestrator:
 
     def _start_database(self):
         """Start database service."""
-        from app.database import init_db, _SessionLocal
+        import app.database
         from app.services.default_effects_loader import initialize_default_effects
 
-        init_db()
-        db = _SessionLocal()
+        app.database.init_db()
+        db = app.database._SessionLocal()
         try:
             result = initialize_default_effects(db, force_refresh=False)
             self._services["database"].health.metrics = {

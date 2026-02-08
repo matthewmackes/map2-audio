@@ -212,10 +212,40 @@ export function MidiLearnProvider({ children }: { children: React.ReactNode }) {
     deleteMutation.mutate(`${uri}:${paramIndex}`)
   }, [deleteMutation])
 
+  const updateMappingMutation = useMutation({
+    mutationFn: async ({ uri, paramIndex, updates }: { uri: string; paramIndex: number; updates: Partial<MidiMapping> }) => {
+      const parameterId = `${uri}:${paramIndex}`
+      const existing = mappings.get(parameterId)
+      if (!existing) throw new Error('No mapping found to update')
+
+      // Delete existing mapping then recreate with merged updates
+      await deleteMapping(parameterId)
+
+      const createPayload = {
+        parameter_id: parameterId,
+        cc_number: updates.cc ?? existing.cc,
+        channel: updates.channel ?? existing.channel,
+        min_value: updates.minValue ?? existing.minValue,
+        max_value: updates.maxValue ?? existing.maxValue,
+        curve: updates.curve ?? existing.curve,
+        inverted: updates.inverted ?? existing.inverted,
+      }
+
+      const response = await fetch(`${API_BASE}/midi-learn/mappings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createPayload),
+      })
+      if (!response.ok) throw new Error('Failed to recreate mapping with updates')
+    },
+    onSuccess: () => {
+      refreshMappings()
+    },
+  })
+
   const updateMapping = useCallback((uri: string, paramIndex: number, updates: Partial<MidiMapping>) => {
-    // TODO: Implement mapping update via API
-    console.log('Update mapping:', uri, paramIndex, updates)
-  }, [])
+    updateMappingMutation.mutate({ uri, paramIndex, updates })
+  }, [updateMappingMutation])
 
   const value: MidiLearnContextValue = {
     isLearning,

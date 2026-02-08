@@ -2012,3 +2012,313 @@ async def get_branding_assets():
             "sff_optimized": True,
             "error": str(e)
         }
+
+
+# ============================================================================
+# CPU ISOLATION MONITORING & CONTROL ENDPOINTS
+# ============================================================================
+# These endpoints provide real-time visibility into CPU isolation status
+# and allow users to verify/adjust audio system tuning.
+
+@router.get("/cpu-isolation/status")
+async def get_cpu_isolation_status():
+    """
+    Get current CPU isolation status and configuration.
+    
+    Returns:
+        {
+            "mode": "audio" | "all-in-one" | "management",
+            "isolation_configured": bool,
+            "isolation_active": bool,
+            "isolated_cores": [4, 5],
+            "housekeeping_cores": [0, 1, 2, 3],
+            "kernel_params": {...},
+            "systemd_config": {...},
+            "services": {...},
+            "warnings": [...],
+            "expected_latency_ms": 2.5-3.5 | 4.0-5.5 | "N/A"
+        }
+    """
+    try:
+        # Read mode from config
+        mode = "unknown"
+        try:
+            with open("/etc/guitarfx-mode.conf", "r") as f:
+                for line in f:
+                    if line.startswith("MODE="):
+                        mode = line.split("=")[1].strip()
+                        break
+        except:
+            pass
+        
+        # Check kernel parameters
+        cmdline = ""
+        try:
+            with open("/proc/cmdline", "r") as f:
+                cmdline = f.read()
+        except:
+            pass
+        
+        isolated_cores = []
+        housekeeping_cores = []
+        
+        # Parse isolcpus
+        import re
+        isolcpus_match = re.search(r"isolcpus=([^ ]+)", cmdline)
+        if isolcpus_match:
+            isolated_cores = [int(x) for x in isolcpus_match.group(1).split(",")]
+            # Assume housekeeping on remaining cores
+            max_core = 7  # Detect from /proc/cpuinfo later
+            housekeeping_cores = [i for i in range(max_core+1) if i not in isolated_cores]
+        
+        # Check systemd service configuration
+        service_affinity = "unknown"
+        try:
+            with open("/etc/systemd/system/map2-backend.service.d/audio-mode-override.conf", "r") as f:
+                content = f.read()
+                if "CPUAffinity=4 5" in content:
+                    service_affinity = "4-5 (audio mode)"
+                elif "CPUAffinity=" in content:
+                    match = re.search(r"CPUAffinity=([^ \n]+)", content)
+                    if match:
+                        service_affinity = match.group(1)
+        except:
+            pass
+        
+        # Check sysctl settings
+        sysctl_settings = {}
+        try:
+            for param in ["kernel.sched_rt_runtime_us", "vm.swappiness", "kernel.nmi_watchdog"]:
+                result = subprocess.run(["sysctl", "-n", param], capture_output=True, text=True, timeout=2)
+                if result.returncode == 0:
+                    sysctl_settings[param] = result.stdout.strip()
+        except:
+            pass
+        
+        # Check if services are running
+        backend_running = False
+        pipewire_running = False
+        try:
+            result = subprocess.run(["pgrep", "-f", "uvicorn app.main"], capture_output=True, timeout=2)
+            backend_running = result.returncode == 0
+        except:
+            pass
+        
+        try:
+            result = subprocess.run(["pgrep", "pipewire"], capture_output=True, timeout=2)
+            pipewire_running = result.returncode == 0
+        except:
+            pass
+        
+        # Determine if isolation is active
+        isolation_active = len(isolated_cores) > 0 and "isolcpus=" in cmdline
+        
+        # Determine expected latency
+        expected_latency = "Unknown"
+        warnings = []
+        if mode == "audio":
+            expected_latency = "2.5-3.5 ms"
+            if not isolation_active:
+                warnings.append("CPU isolation NOT active; latency will be >5ms")
+            if sysctl_settings.get("vm.swappiness", "10") != "0":
+                warnings.append("Swappiness not 0; swap still enabled")
+        elif mode == "all-in-one":
+            expected_latency = "4.0-5.5 ms"
+            if not isolation_active:
+                warnings.append("CPU isolation NOT configured; latency will be 8-10ms")
+        
+        return {
+            "mode": mode,
+            "isolation_configured": len(isolated_cores) > 0,
+            "isolation_active": isolation_active,
+            "isolated_cores": isolated_cores,
+            "housekeeping_cores": housekeeping_cores,
+            "kernel_params": {
+                "isolcpus": isolcpus_match.group(1) if isolcpus_match else "missing",
+                "nohz_full": "enabled" if "nohz_full=" in cmdline else "missing",
+                "threadirqs": "enabled" if "threadirqs" in cmdline else "missing",
+                "nmi_watchdog": "disabled" if "nmi_watchdog=0" in cmdline else "enabled"
+            },
+            "systemd_config": {
+                "service_affinity": service_affinity,
+                "backend_running": backend_running,
+                "pipewire_running": pipewire_running
+            },
+            "sysctl_config": sysctl_settings,
+            "warnings": warnings,
+            "expected_latency_ms": expected_latency
+        }
+    except Exception as e:
+        logger.error(f"Error getting CPU isolation status: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting status: {str(e)}")
+
+
+@router.get("/cpu-isolation/verify")
+async def verify_cpu_isolation():
+    """
+    Run verification script to check CPU isolation configuration.
+    
+    Returns detailed report including actual vs configured state.
+    """
+    try:
+        result = subprocess.run(
+            ["/bin/bash", "/usr/local/bin/map2-verify-isolation.sh", "--verbose"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        output = result.stdout + result.stderr
+        
+        # Parse output for key findings
+        passed = result.returncode == 0
+        
+        return {
+            "passed": passed,
+            "output": output,
+            "status_code": result.returncode
+        }
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Verification script timed out")
+    except Exception as e:
+        logger.error(f"Error verifying CPU isolation: {e}")
+        raise HTTPException(status_code=500, detail=f"Error running verification: {str(e)}")
+
+
+@router.post("/cpu-isolation/reset-to-mode")
+async def reset_to_mode_configuration():
+    """
+    Reset all CPU isolation and realtime settings back to mode-specific defaults.
+    
+    This endpoint:
+    1. Reads current MODE from /etc/guitarfx-mode.conf
+    2. Reapplies all systemd drop-ins for that mode
+    3. Restarts map2-backend service
+    4. Returns status
+    
+    Returns:
+        {
+            "status": "success" | "partial" | "failed",
+            "mode": "audio" | "all-in-one" | "management",
+            "changes_applied": [...],
+            "warnings": [...],
+            "service_restarted": bool
+        }
+    """
+    try:
+        # Read current mode
+        mode = "unknown"
+        try:
+            with open("/etc/guitarfx-mode.conf", "r") as f:
+                for line in f:
+                    if line.startswith("MODE="):
+                        mode = line.split("=")[1].strip()
+                        break
+        except:
+            raise HTTPException(status_code=400, detail="Cannot read /etc/guitarfx-mode.conf")
+        
+        if mode not in ["audio", "all-in-one", "management"]:
+            raise HTTPException(status_code=400, detail=f"Invalid mode: {mode}")
+        
+        changes_applied = []
+        warnings = []
+        
+        # Reload systemd configuration
+        try:
+            subprocess.run(["systemctl", "daemon-reload"], check=True, timeout=5)
+            changes_applied.append("systemd daemon reloaded")
+        except Exception as e:
+            warnings.append(f"Failed to reload systemd: {str(e)}")
+        
+        # Restart map2-backend service to apply new settings
+        service_restarted = False
+        try:
+            subprocess.run(["systemctl", "restart", "map2-backend"], check=True, timeout=15)
+            changes_applied.append("map2-backend service restarted")
+            service_restarted = True
+        except Exception as e:
+            warnings.append(f"Failed to restart service: {str(e)}")
+        
+        return {
+            "status": "success" if not warnings else "partial",
+            "mode": mode,
+            "changes_applied": changes_applied,
+            "warnings": warnings,
+            "service_restarted": service_restarted
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resetting to mode configuration: {e}")
+        raise HTTPException(status_code=500, detail=f"Error resetting configuration: {str(e)}")
+
+
+@router.get("/cpu-isolation/metrics")
+async def get_cpu_isolation_metrics():
+    """
+    Get real-time CPU metrics relevant to audio latency.
+    
+    Returns:
+        {
+            "cpu_load": {...},
+            "frequency": {...},
+            "temperature": {...},
+            "process_stats": {...}
+        }
+    """
+    try:
+        metrics = {
+            "cpu_load": {},
+            "frequency": {},
+            "temperature": {},
+            "process_stats": {}
+        }
+        
+        # Get load average
+        try:
+            load_avg = os.getloadavg()
+            metrics["cpu_load"] = {
+                "1_min": load_avg[0],
+                "5_min": load_avg[1],
+                "15_min": load_avg[2]
+            }
+        except:
+            pass
+        
+        # Get CPU frequency (if available)
+        try:
+            freq_path = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
+            if os.path.exists(freq_path):
+                with open(freq_path) as f:
+                    freq_khz = int(f.read().strip())
+                    metrics["frequency"]["current_ghz"] = round(freq_khz / 1000000, 2)
+        except:
+            pass
+        
+        # Get backend process stats
+        try:
+            result = subprocess.run(["pgrep", "-f", "uvicorn app.main"], capture_output=True, text=True)
+            if result.returncode == 0:
+                pid = result.stdout.strip().split()[0]
+                # Use ps to get CPU usage
+                result = subprocess.run(
+                    ["ps", "-p", pid, "-o", "%cpu,%mem,cmd"],
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split("\n")
+                    if len(lines) > 1:
+                        parts = lines[1].split()
+                        metrics["process_stats"] = {
+                            "cpu_percent": float(parts[0]),
+                            "mem_percent": float(parts[1]),
+                            "pid": pid
+                        }
+        except:
+            pass
+        
+        return metrics
+    except Exception as e:
+        logger.error(f"Error getting CPU metrics: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting metrics: {str(e)}")

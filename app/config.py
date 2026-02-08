@@ -121,7 +121,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
     ),
     "audio.buffer_size": ConfigOption(
         key="audio.buffer_size",
-        default=256,
+        default=64,
         description="Audio buffer size in samples",
         value_type=int,
         env_var="MAP2_BUFFER_SIZE",
@@ -140,9 +140,26 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
     "audio.device": ConfigOption(
         key="audio.device",
         default=None,
-        description="Audio device name (None for default)",
+        description="Audio device name (None for PipeWire/system default via JACK)",
         value_type=str,
         env_var="MAP2_AUDIO_DEVICE",
+        restart_required=True,
+    ),
+    "audio.backend": ConfigOption(
+        key="audio.backend",
+        default="pipewire",
+        description="Audio backend: 'pipewire' (recommended), 'jack', or 'alsa' (direct)",
+        value_type=str,
+        env_var="MAP2_AUDIO_BACKEND",
+        choices=["pipewire", "jack", "alsa"],
+        restart_required=True,
+    ),
+    "audio.pipewire_use_jack": ConfigOption(
+        key="audio.pipewire_use_jack",
+        default=True,
+        description="Use PipeWire's JACK compatibility layer (recommended)",
+        value_type=bool,
+        env_var="MAP2_PIPEWIRE_USE_JACK",
         restart_required=True,
     ),
     "audio.latency_compensation": ConfigOption(

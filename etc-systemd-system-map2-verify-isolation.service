@@ -1,0 +1,16 @@
+[Unit]
+Description=MAP2 Audio - Verify CPU Isolation
+Documentation=https://github.com/matthewmackes/map2-audio
+After=multi-user.target
+Before=map2-backend.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/map2-verify-isolation.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-verify-isolation
+
+[Install]
+WantedBy=multi-user.target

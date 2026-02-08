@@ -1,10 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import svgr from "vite-plugin-svgr"
+import path from 'path'
 
 // MAP2 Audio Platform - Vite Configuration
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@/map2': path.resolve(__dirname, './src/map2'),
+    },
+  },
   build: {
     chunkSizeWarningLimit: 2000,
     outDir: 'dist',

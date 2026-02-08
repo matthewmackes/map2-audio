@@ -169,7 +169,7 @@ class HeartbeatMonitor:
                 })
                 
                 # Update registry
-                self.registry.update_node_status(node_id, 'online', now)
+                self.registry.update_node_status(node_id, 'online')
     
     async def _mark_node_failure(self, node_id: str, error: str):
         """Mark node failure and trigger offline event if threshold reached."""
@@ -202,7 +202,7 @@ class HeartbeatMonitor:
                 })
                 
                 # Update registry
-                self.registry.update_node_status(node_id, 'offline', now)
+                self.registry.update_node_status(node_id, 'offline')
     
     def get_node_health(self, node_id: str) -> Optional[NodeHealthStatus]:
         """Get health status for a specific node."""

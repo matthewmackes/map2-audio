@@ -17,17 +17,16 @@ if(ENABLE_NATIVE_OPTIMIZATIONS AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         message(STATUS "SIMD: Enabled native CPU optimizations (-march=native)")
     endif()
     # Enable fast math for DSP (use with caution)
-    option(ENABLE_FAST_MATH "Enable -ffast-math for DSP" OFF)
+    option(ENABLE_FAST_MATH "Enable -ffast-math for DSP" ON)
     if(ENABLE_FAST_MATH)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
         message(STATUS "Fast math: Enabled")
     endif()
 endif()
 
-# Build type
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
+# Build type - FORCE Release for audio DSP performance
+# Debug build (-O0) causes unacceptable CPU overhead for real-time audio
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 
 # Options
 option(USE_JUCE_AUDIO "Use JUCE for audio I/O (recommended)" ON)
@@ -85,8 +84,17 @@ if(UNIX AND NOT APPLE)
     pkg_check_modules(ALSA REQUIRED alsa)
 endif()
 
-# JACK (optional)
-pkg_check_modules(JACK jack)
+# JACK (optional) - now provided by PipeWire JACK compatibility layer
+# For direct JACK linking, add: link_directories(/usr/lib64/pipewire-0.3/jack)
+pkg_check_modules(JACK jack QUIET)
+if(NOT JACK_FOUND)
+    # Try PipeWire JACK libraries
+    find_library(JACK_LIBRARY NAMES jack PATHS /usr/lib64/pipewire-0.3/jack QUIET)
+    if(JACK_LIBRARY)
+        set(JACK_FOUND TRUE)
+        set(JACK_LIBRARIES ${JACK_LIBRARY})
+    endif()
+endif()
 
 # ========================================
 # Neural Amp Modeler Core (RT-safe)

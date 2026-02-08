@@ -26,7 +26,8 @@ constexpr const char* ENGINE_VERSION = "2.0.0-juce";
 
 // Audio defaults
 constexpr double DEFAULT_SAMPLE_RATE = 48000.0;
-constexpr int DEFAULT_BUFFER_SIZE = 256;
+constexpr int DEFAULT_BUFFER_SIZE = 64;
+constexpr int MAX_AUDIO_BUFFER_SIZE = 8192;
 constexpr int MAX_CHANNELS = 8;
 constexpr int MAX_PLUGINS = 64;
 constexpr int MAX_SNAPSHOTS = 6;

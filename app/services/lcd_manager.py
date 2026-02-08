@@ -77,11 +77,20 @@ class LCDManager:
         """Start all components"""
         logger.info(f"Starting LCD Manager for {self.node_label}")
         
-        # Connect LCD
+        # Connect LCD (with fallback to mock)
         try:
             await self.lcd.connect()
+            logger.info("LCD connected successfully")
+        except FileNotFoundError as e:
+            logger.warning(f"LCD device not found ({e}), using mock display")
+            self.lcd = MockLCDDisplay()
+            await self.lcd.connect()
+        except PermissionError as e:
+            logger.warning(f"No permission to access LCD device ({e}), using mock display")
+            self.lcd = MockLCDDisplay()
+            await self.lcd.connect()
         except Exception as e:
-            logger.error(f"Failed to connect LCD, using mock: {e}")
+            logger.warning(f"Failed to connect LCD ({type(e).__name__}: {e}), using mock display")
             self.lcd = MockLCDDisplay()
             await self.lcd.connect()
         

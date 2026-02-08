@@ -6,10 +6,14 @@ This module replaces the old pipedal.py routes with a cleaner,
 engine-agnostic API.
 """
 
+import asyncio
+import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from app.services.juce_engine_service import get_audio_engine
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/engine", tags=["engine"])
 
@@ -292,13 +296,35 @@ async def get_parameter(instance_id: int, param_name: str):
     """Get a plugin parameter value"""
     service = get_audio_engine()
     
-    # Note: Would need to look up URI from instance_id
-    # For now, return placeholder
-    return {
-        "instance_id": instance_id,
-        "param_name": param_name,
-        "value": 0.0
-    }
+    # FIX #10: Actually read the parameter value from the engine
+    # (was returning hardcoded 0.0 before)
+    if not service or not service._engine:
+        return {
+            "instance_id": instance_id,
+            "param_name": param_name,
+            "value": 0.0,
+            "error": "Engine not available"
+        }
+    
+    try:
+        value = await asyncio.to_thread(
+            service._engine.get_parameter_by_name,
+            instance_id,
+            param_name
+        )
+        return {
+            "instance_id": instance_id,
+            "param_name": param_name,
+            "value": value
+        }
+    except Exception as e:
+        logger.error(f"Error getting parameter {param_name} for instance {instance_id}: {e}")
+        return {
+            "instance_id": instance_id,
+            "param_name": param_name,
+            "value": 0.0,
+            "error": str(e)
+        }
 
 
 @router.post("/bypass")

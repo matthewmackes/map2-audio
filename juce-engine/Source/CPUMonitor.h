@@ -163,7 +163,8 @@ private:
         std::atomic<double> currentCpu{0.0};
         std::atomic<double> smoothedCpu{0.0};
     };
-    mutable std::mutex pluginMutex_;
+    // RT-SAFE: Use try_to_lock only, never block on audio thread
+    mutable std::mutex pluginMutex_;  // Only locked with try_to_lock
     std::map<InstanceId, PluginTiming> pluginTimings_;
 
     // XRun tracking

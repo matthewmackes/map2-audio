@@ -709,20 +709,28 @@ class ChainService:
             return False
 
     async def activate_chain(self, chain_id: int) -> bool:
-        """Activate a chain.
+        """Activate a chain and deploy it to the JUCE audio engine.
+        
+        FIX #8: Bridge layer connecting SQLite chains to JUCE engine graph
+        This method now:
+        1. Updates chain metadata in database (is_active = True)
+        2. Retrieves all plugins in the chain from the database
+        3. Deploys each plugin to the JUCE audio engine
+        4. Sets up the signal chain in the engine
         
         Args:
             chain_id: Chain ID
             
         Returns:
-            True if activated, False otherwise
+            True if activated and deployed, False otherwise
         """
         try:
             if not self.session:
                 return False
             
-            from app.database import Chain
+            from app.database import Chain, ChainPlugin
             
+            # Get the chain
             result = await self.session.execute(
                 select(Chain).filter(Chain.id == chain_id)
             )
@@ -731,8 +739,48 @@ class ChainService:
             if not chain:
                 return False
             
+            # Mark as active in database
             chain.is_active = True
             await self.session.flush()
+            
+            # FIX #8: Get all plugins in this chain from the database
+            plugins_result = await self.session.execute(
+                select(ChainPlugin)
+                .filter(ChainPlugin.chain_id == chain_id)
+                .order_by(ChainPlugin.position)
+            )
+            chain_plugins = plugins_result.scalars().all()
+            
+            # FIX #8: Deploy chain to JUCE engine
+            try:
+                from app.services.juce_engine_service import JuceEngineService
+                engine_service = JuceEngineService.get_instance()
+                
+                if engine_service and engine_service._engine:
+                    # Clear existing chain in engine
+                    engine_service._engine.clear_chain()
+                    
+                    # Load and add each plugin to the engine chain
+                    for chain_plugin in chain_plugins:
+                        try:
+                            # Load plugin by URI
+                            instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
+                            
+                            if instance_id >= 0:
+                                # Add to engine chain at the correct position
+                                engine_service._engine.add_to_chain(instance_id, chain_plugin.position)
+                                logger.info(f"Deployed plugin {chain_plugin.plugin_uri} to chain position {chain_plugin.position}")
+                            else:
+                                logger.warning(f"Failed to load plugin {chain_plugin.plugin_uri}")
+                        except Exception as e:
+                            logger.error(f"Error deploying plugin {chain_plugin.plugin_uri}: {e}")
+                    
+                    logger.info(f"Chain {chain_id} deployed to JUCE engine with {len(chain_plugins)} plugins")
+                else:
+                    logger.warning("JUCE engine not available for chain deployment")
+            except Exception as e:
+                logger.error(f"Error deploying chain to JUCE engine: {e}")
+                # Don't fail the database update if engine deployment fails
             
             logger.info(f"Activated chain {chain_id}")
             return True

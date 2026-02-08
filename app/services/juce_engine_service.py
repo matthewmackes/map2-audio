@@ -5,8 +5,10 @@ MAP2 Audio Engine - JUCE-based LV2 host
 Provides Python wrapper for MAP2 Audio Engine
 """
 
+import asyncio
 import logging
 import sys
+from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 
@@ -16,8 +18,12 @@ from app.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
+# FIX #5: Use relative path instead of hardcoded absolute path
+# This allows deployment to any location
+juce_build_path = str(Path(__file__).parent.parent.parent / "juce-engine" / "build")
+sys.path.insert(0, juce_build_path)
+
 # Check JUCE availability using dependency checker
-sys.path.insert(0, '/home/mm/map2-audio/juce-engine/build')
 JUCE_AVAILABLE, juce_engine = DependencyChecker.check('map2_audio_engine')
 
 if JUCE_AVAILABLE and juce_engine:
@@ -39,7 +45,7 @@ HOTONE_JOGG = {
     "output_channels": 2,
     "format": "S24_3LE",
     "period_size": 64,
-    "buffer_size": 256,
+    "buffer_size": 64,
 }
 
 # Edirol UA-1000 Hi-Speed USB Audio Interface constants
@@ -55,7 +61,7 @@ EDIROL_UA1000 = {
     "output_channels": 10,  # 8 analog + 2 S/PDIF (+ ADAT optical)
     "format": "S24_3LE",
     "period_size": 64,
-    "buffer_size": 256,
+    "buffer_size": 64,
 }
 
 
@@ -91,7 +97,7 @@ class JuceEngineService(Singleton):
             # Create engine instance
             self._engine = juce_engine.create_engine()
 
-            # Configure
+            # Configure (sync, immediate)
             self._engine.set_sample_rate(self.config.sample_rate)
             self._engine.set_buffer_size(self.config.buffer_size)
             self._engine.set_audio_device(self.config.audio_device)
@@ -103,8 +109,12 @@ class JuceEngineService(Singleton):
             logger.info(f"Configuring audio: {self.config.input_channels} inputs, "
                        f"{self.config.output_channels} outputs")
 
-            # Initialize
-            result = self._engine.initialize(self.config.config_file)
+            # FIX #7: Wrap blocking C++ initialization call in asyncio.to_thread()
+            # This prevents the entire event loop from freezing during engine init
+            result = await asyncio.to_thread(
+                self._engine.initialize,
+                self.config.config_file
+            )
             
             if result:
                 # Enable MIDI if configured
@@ -143,13 +153,15 @@ class JuceEngineService(Singleton):
         """Start audio processing"""
         if not self._engine or not self._initialized:
             return False
-        return self._engine.start_audio()
+        # FIX #7: Wrap blocking audio start in asyncio.to_thread()
+        return await asyncio.to_thread(self._engine.start_audio)
     
     async def stop_audio(self) -> bool:
         """Stop audio processing"""
         if not self._engine:
             return False
-        return self._engine.stop_audio()
+        # FIX #7: Wrap blocking audio stop in asyncio.to_thread()
+        return await asyncio.to_thread(self._engine.stop_audio)
     
     def is_audio_running(self) -> bool:
         """Check if audio is running"""
@@ -163,19 +175,23 @@ class JuceEngineService(Singleton):
         """List available LV2 plugins"""
         if not self._engine:
             return []
-        return self._engine.list_plugins()
+        # FIX #7: Wrap blocking plugin listing in asyncio.to_thread()
+        return await asyncio.to_thread(self._engine.list_plugins)
     
     async def load_plugin(self, uri: str) -> int:
         """Load a plugin by URI, returns instance ID"""
         if not self._engine:
             return -1
-        return self._engine.load_plugin(uri)
+        # FIX #7: Wrap blocking plugin loading in asyncio.to_thread()
+        # Plugin loading involves disk I/O and DSP initialization - can take hundreds of ms
+        return await asyncio.to_thread(self._engine.load_plugin, uri)
     
     async def unload_plugin(self, instance_id: int) -> bool:
         """Unload a plugin by instance ID"""
         if not self._engine:
             return False
-        return self._engine.unload_plugin(instance_id)
+        # FIX #7: Wrap blocking plugin unloading in asyncio.to_thread()
+        return await asyncio.to_thread(self._engine.unload_plugin, instance_id)
     
     # Pedalboard Management
     

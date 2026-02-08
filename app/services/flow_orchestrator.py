@@ -347,3 +347,15 @@ class FlowOrchestrator:
             except Exception as e:
                 logger.error(f"Failed to promote standby on {node_id}: {e}")
                 return False
+
+
+# Singleton instance
+_flow_orchestrator: Optional[FlowOrchestrator] = None
+
+
+def get_flow_orchestrator() -> FlowOrchestrator:
+    """Get or create the singleton FlowOrchestrator instance."""
+    global _flow_orchestrator
+    if _flow_orchestrator is None:
+        _flow_orchestrator = FlowOrchestrator()
+    return _flow_orchestrator

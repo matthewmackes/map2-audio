@@ -88,7 +88,16 @@ async def get_deployment_mode():
 
 @router.post("/mode", response_model=DeploymentModeResponse)
 async def set_deployment_mode(request: SetModeRequest):
-    """Switch deployment mode"""
+    """
+    Switch deployment mode.
+    
+    Updates all config stores (deployment.json, guitarfx-mode.conf, /etc/map2/environment)
+    and installs the correct systemd override.
+    
+    Note: The backend service will need to be restarted for systemd-level changes 
+    (Nice, CPUAffinity, RT priority) to take effect. Use POST /api/system/restart-backend
+    after this call, or pass restart=true in the request.
+    """
     try:
         mode = DeploymentMode(request.mode)
     except ValueError:
@@ -101,12 +110,57 @@ async def set_deployment_mode(request: SetModeRequest):
     old_mode = config.mode.value
     config.set_mode(mode)
     
+    # Also update the system-level config files so all stores agree
+    _sync_system_config(mode)
+    
     logger.info(f"Deployment mode switched from {old_mode} to {request.mode}")
     
     return DeploymentModeResponse(
         mode=config.mode.value,
         description=MODE_DESCRIPTIONS.get(config.mode.value, "Unknown mode"),
     )
+
+
+def _sync_system_config(mode: DeploymentMode):
+    """
+    Sync the deployment mode to all system config stores.
+    
+    This ensures guitarfx-mode.conf, /etc/map2/environment, and
+    the systemd override all agree with deployment.json.
+    """
+    import subprocess
+    
+    # Map deployment enum → guitarfx-mode.conf value
+    mode_map = {
+        DeploymentMode.ALL_IN_ONE: "all-in-one",
+        DeploymentMode.AUDIO_NODE: "audio",
+        DeploymentMode.CONTROL_NODE: "management",
+        DeploymentMode.FRONTEND_ONLY: "management",
+    }
+    gfx_mode = mode_map.get(mode, "all-in-one")
+    
+    try:
+        # Use the unified map2-mode script if available (handles all stores + systemd)
+        result = subprocess.run(
+            ["/usr/local/bin/map2-mode", "apply"],
+            capture_output=True, text=True, timeout=15,
+            env={**__import__('os').environ, "SUDO_ASKPASS": "/bin/false"}
+        )
+        if result.returncode == 0:
+            logger.info(f"System config synced via map2-mode apply")
+            return
+    except Exception as e:
+        logger.debug(f"map2-mode script not available: {e}")
+    
+    # Fallback: update guitarfx-mode.conf directly if we have write access
+    try:
+        with open("/etc/guitarfx-mode.conf", "w") as f:
+            f.write(f"MODE={gfx_mode}\n")
+        logger.info(f"Updated guitarfx-mode.conf → {gfx_mode}")
+    except PermissionError:
+        logger.warning("Cannot write to /etc/guitarfx-mode.conf (need root)")
+    except Exception as e:
+        logger.warning(f"Failed to update guitarfx-mode.conf: {e}")
 
 
 async def _get_service_status(service: str) -> ServiceStatusResponse:
@@ -154,6 +208,94 @@ async def get_full_config():
     """Get full deployment configuration"""
     config = get_deployment_config()
     return config.to_dict()
+
+
+@router.get("/verify")
+async def verify_mode_consistency():
+    """
+    Verify all mode config stores agree.
+    
+    Checks guitarfx-mode.conf, deployment.json, /etc/map2/environment,
+    and the active systemd override for consistency.
+    
+    Returns:
+        {
+            "consistent": true/false,
+            "stores": { ... },
+            "issues": [...]
+        }
+    """
+    import os
+    import re
+
+    stores = {}
+    issues = []
+
+    # 1. guitarfx-mode.conf
+    gfx_mode = "missing"
+    try:
+        with open("/etc/guitarfx-mode.conf", "r") as f:
+            for line in f:
+                if line.startswith("MODE="):
+                    gfx_mode = line.split("=", 1)[1].strip()
+                    break
+    except FileNotFoundError:
+        issues.append("guitarfx-mode.conf not found")
+    stores["guitarfx_mode_conf"] = gfx_mode
+
+    # 2. deployment.json
+    config = get_deployment_config()
+    stores["deployment_json"] = config.mode.value
+
+    # 3. /etc/map2/environment
+    env_mode = "missing"
+    try:
+        with open("/etc/map2/environment", "r") as f:
+            for line in f:
+                if line.startswith("MAP2_DEPLOYMENT_MODE="):
+                    env_mode = line.split("=", 1)[1].strip()
+                    break
+    except FileNotFoundError:
+        issues.append("/etc/map2/environment not found")
+    stores["etc_map2_environment"] = env_mode
+
+    # 4. systemd override
+    override_mode = "none"
+    override_path = "/etc/systemd/system/map2-backend.service.d/10-mode.conf"
+    legacy_aio = "/etc/systemd/system/map2-backend.service.d/all-in-one-override.conf"
+    legacy_audio = "/etc/systemd/system/map2-backend.service.d/audio-mode-override.conf"
+
+    if os.path.exists(override_path):
+        try:
+            with open(override_path) as f:
+                m = re.search(r"^# MAP2_MODE=(.+)$", f.read(), re.MULTILINE)
+                override_mode = m.group(1) if m else "unknown"
+        except Exception:
+            override_mode = "error"
+    if os.path.exists(legacy_aio) and os.path.exists(legacy_audio):
+        override_mode = "CONFLICT(both legacy overrides present)"
+        issues.append("Both legacy overrides installed simultaneously — run 'sudo map2-mode apply'")
+    stores["systemd_override"] = override_mode
+
+    # Check agreement
+    mode_map = {
+        "audio": "AUDIO-NODE",
+        "all-in-one": "ALL-IN-ONE",
+        "management": "CONTROL-NODE",
+    }
+    expected_deploy = mode_map.get(gfx_mode, "UNKNOWN")
+
+    if config.mode.value != expected_deploy and gfx_mode != "missing":
+        issues.append(f"deployment.json ({config.mode.value}) disagrees with guitarfx-mode.conf ({gfx_mode} → {expected_deploy})")
+    if env_mode not in ("missing",) and env_mode != expected_deploy:
+        issues.append(f"/etc/map2/environment ({env_mode}) disagrees with guitarfx-mode.conf ({gfx_mode} → {expected_deploy})")
+
+    return {
+        "consistent": len(issues) == 0,
+        "canonical_mode": gfx_mode,
+        "stores": stores,
+        "issues": issues,
+    }
 
 
 async def _check_network_connectivity() -> HealthCheckResult:
