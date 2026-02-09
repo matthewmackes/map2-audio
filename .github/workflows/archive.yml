@@ -1,0 +1,39 @@
+name: Scheduled Archive
+
+on:
+  schedule:
+    # Every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history
+
+      - name: Create archive
+        run: |
+          TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+          SHA="$(git rev-parse --short HEAD)"
+          FILENAME="map2-audio-${TIMESTAMP}-${SHA}.tar.gz"
+          tar czf "/tmp/${FILENAME}" \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='web/dist' \
+            --exclude='build/_deps' \
+            .
+          echo "FILENAME=${FILENAME}" >> "$GITHUB_ENV"
+          echo "FILEPATH=/tmp/${FILENAME}" >> "$GITHUB_ENV"
+          ls -lh "/tmp/${FILENAME}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILENAME }}
+          path: ${{ env.FILEPATH }}
+          retention-days: 30
