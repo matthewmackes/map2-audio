@@ -10,7 +10,7 @@ Group=mm
 WorkingDirectory=/home/mm/map2-audio
 Environment="PYTHONPATH=/home/mm/map2-audio"
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
-ExecStart=/bin/bash /home/mm/map2-audio/map2-system-check.sh
+ExecStart=/bin/bash /home/mm/map2-audio/scripts/map2-system-check.sh
 RemainAfterExit=yes
 StandardOutput=journal
 StandardError=journal

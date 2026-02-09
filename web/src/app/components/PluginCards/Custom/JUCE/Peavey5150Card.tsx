@@ -21,6 +21,9 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
+import { TubeGlowGradient, VerticalMeterGradient } from '../../components/SVGGradients'
+import { TubeBank } from '../../components/Visualizations/TubeGlowCircle'
+import { MeterBar } from '../../components/Visualizations/MeterBar'
 import './Peavey5150Card.css'
 
 // Plugin URI for MIDI mappings
@@ -90,73 +93,56 @@ function Peavey5150CardBase({
     <div className="peavey5150-visualization">
       <svg viewBox="0 0 240 70" className="peavey5150-visual-svg">
         <defs>
-          <radialGradient id="p5150TubeGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ff6622" stopOpacity="0.6" />
-            <stop offset="60%" stopColor="#ff4400" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#ff4400" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="p5150Meter" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor={accentColor} stopOpacity="0.9" />
-            <stop offset="80%" stopColor={accentColor} stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#ffaa00" stopOpacity="0.9" />
-          </linearGradient>
+          <TubeGlowGradient id="p5150TubeGlow" color="#ff6622" />
+          <VerticalMeterGradient id="p5150Meter" color={accentColor} />
         </defs>
 
         {/* Background panel */}
         <rect x="0" y="0" width="240" height="70" rx="3" fill="#0A0A0A" />
         <rect x="1" y="1" width="238" height="68" rx="2" fill="none" stroke="#333340" strokeWidth="0.5" />
 
-        {/* Tube glow circles (5 preamp tubes) */}
-        {[30, 60, 90, 120, 150].map((cx, i) => {
-          const intensity = Math.min(1, (parameters.preGain / 10) * (1 + i * 0.15))
-          return (
-            <g key={i}>
-              <circle
-                className="tube-glow"
-                cx={cx}
-                cy="25"
-                r={8 + intensity * 3}
-                fill="url(#p5150TubeGlow)"
-                opacity={0.3 + intensity * 0.5}
-              />
-              <circle cx={cx} cy="25" r="4" fill="none" stroke="#333340" strokeWidth="0.5" />
-              <circle cx={cx} cy="25" r="1.5" fill={`rgba(255, ${100 - i * 10}, 0, ${0.3 + intensity * 0.5})`} />
-            </g>
-          )
-        })}
+        {/* Preamp tubes (5 tubes) - using shared TubeBank component */}
+        <TubeBank
+          positions={[30, 60, 90, 120, 150]}
+          cy={25}
+          intensities={[30, 60, 90, 120, 150].map((_, i) => 
+            Math.min(1, (parameters.preGain / 10) * (1 + i * 0.15))
+          )}
+          baseRadius={7}
+          tubeType="preamp"
+          glowGradientId="p5150TubeGlow"
+          color="#ff6622"
+          className="tube-glow"
+        />
 
-        {/* Power tubes (2 pairs) */}
-        {[185, 210].map((cx, i) => {
-          const intensity = Math.min(1, parameters.postGain / 10)
-          const biasGlow = parameters.bias / 10
-          return (
-            <g key={`pt${i}`}>
-              <circle
-                className="tube-glow"
-                cx={cx}
-                cy="25"
-                r={10 + biasGlow * 4}
-                fill="url(#p5150TubeGlow)"
-                opacity={0.2 + intensity * 0.4 + biasGlow * 0.2}
-              />
-              <circle cx={cx} cy="25" r="5.5" fill="none" stroke="#333340" strokeWidth="0.5" />
-              <circle cx={cx} cy="25" r="2.5" fill={`rgba(255, ${80 + biasGlow * 40}, 0, ${0.3 + biasGlow * 0.4})`} />
-            </g>
-          )
-        })}
+        {/* Power tubes (2 tubes) */}
+        <TubeBank
+          positions={[185, 210]}
+          cy={25}
+          intensities={[185, 210].map(() => {
+            const intensity = Math.min(1, parameters.postGain / 10)
+            const biasGlow = parameters.bias / 10
+            return intensity + biasGlow * 0.3
+          })}
+          baseRadius={9}
+          tubeType="power"
+          glowGradientId="p5150TubeGlow"
+          color="#ff6622"
+          className="tube-glow"
+        />
 
         {/* Labels */}
         <text x="90" y="48" textAnchor="middle" fontSize="7" fill="#808090" fontWeight="600" letterSpacing="1.5">12AX7</text>
         <text x="197" y="48" textAnchor="middle" fontSize="7" fill="#808090" fontWeight="600" letterSpacing="1.5">6L6GC</text>
 
-        {/* Input meter */}
-        <rect x="6" y={60 - Math.max(0, (metering.inputLevel + 60) * 0.7)} width="4" height={Math.max(0, (metering.inputLevel + 60) * 0.7)} fill="url(#p5150Meter)" rx="1" />
+        {/* Input meter - using shared MeterBar */}
+        <MeterBar level={metering.inputLevel} x={6} y={0} width={4} height={60} color={accentColor} />
 
         {/* Preamp level meter */}
-        <rect x="12" y={60 - Math.max(0, (metering.preampLevel + 60) * 0.7)} width="4" height={Math.max(0, (metering.preampLevel + 60) * 0.7)} fill={accentColor} opacity="0.6" rx="1" />
+        <MeterBar level={metering.preampLevel} x={12} y={0} width={4} height={60} color={accentColor} />
 
         {/* Output meter */}
-        <rect x="230" y={60 - Math.max(0, (metering.outputLevel + 60) * 0.7)} width="4" height={Math.max(0, (metering.outputLevel + 60) * 0.7)} fill="url(#p5150Meter)" rx="1" />
+        <MeterBar level={metering.outputLevel} x={230} y={0} width={4} height={60} color={accentColor} showClipping />
 
         {/* Supply sag indicator */}
         <rect x="170" y="55" width={40 * metering.supplySag} height="3" fill={accentColor} opacity="0.4" rx="1" />

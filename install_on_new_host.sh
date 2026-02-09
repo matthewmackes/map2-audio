@@ -537,22 +537,22 @@ ok "All directories created"
 phase "PHASE 8: System Tuning — Kernel Parameters (sysctl.d)"
 
 section "sysctl.d/91 — Realtime scheduling budget"
-cp "$INSTALL_DIR/etc-sysctl-d-91-map2-audio-rt.conf" /etc/sysctl.d/91-map2-audio-rt.conf
+cp "$INSTALL_DIR/config/system-templates/etc-sysctl-d-91-map2-audio-rt.conf" /etc/sysctl.d/91-map2-audio-rt.conf
 chmod 644 /etc/sysctl.d/91-map2-audio-rt.conf
 ok "Installed /etc/sysctl.d/91-map2-audio-rt.conf"
 
 section "sysctl.d/92 — THP & memory tuning"
-cp "$INSTALL_DIR/etc-sysctl-d-92-map2-audio-thp.conf" /etc/sysctl.d/92-map2-audio-thp.conf
+cp "$INSTALL_DIR/config/system-templates/etc-sysctl-d-92-map2-audio-thp.conf" /etc/sysctl.d/92-map2-audio-thp.conf
 chmod 644 /etc/sysctl.d/92-map2-audio-thp.conf
 ok "Installed /etc/sysctl.d/92-map2-audio-thp.conf"
 
 section "sysctl.d/93 — Swap & memory pressure"
-cp "$INSTALL_DIR/etc-sysctl-d-93-map2-audio-swappiness.conf" /etc/sysctl.d/93-map2-audio-swappiness.conf
+cp "$INSTALL_DIR/config/system-templates/etc-sysctl-d-93-map2-audio-swappiness.conf" /etc/sysctl.d/93-map2-audio-swappiness.conf
 chmod 644 /etc/sysctl.d/93-map2-audio-swappiness.conf
 ok "Installed /etc/sysctl.d/93-map2-audio-swappiness.conf"
 
 section "sysctl.d/94 — Watchdog & NMI tuning"
-cp "$INSTALL_DIR/etc-sysctl-d-94-map2-audio-watchdog.conf" /etc/sysctl.d/94-map2-audio-watchdog.conf
+cp "$INSTALL_DIR/config/system-templates/etc-sysctl-d-94-map2-audio-watchdog.conf" /etc/sysctl.d/94-map2-audio-watchdog.conf
 chmod 644 /etc/sysctl.d/94-map2-audio-watchdog.conf
 ok "Installed /etc/sysctl.d/94-map2-audio-watchdog.conf"
 
@@ -568,7 +568,7 @@ phase "PHASE 9: GRUB Kernel Parameters (isolcpus, nohz_full, threadirqs)"
 
 section "GRUB — Low-latency kernel cmdline"
 mkdir -p /etc/default/grub.d
-cp "$INSTALL_DIR/etc-default-grub-d-20-map2-audio-latency.cfg" /etc/default/grub.d/20-map2-audio-latency.cfg
+cp "$INSTALL_DIR/config/system-templates/etc-default-grub-d-20-map2-audio-latency.cfg" /etc/default/grub.d/20-map2-audio-latency.cfg
 chmod 644 /etc/default/grub.d/20-map2-audio-latency.cfg
 ok "Installed /etc/default/grub.d/20-map2-audio-latency.cfg"
 
@@ -592,7 +592,7 @@ warn "   Parameters: isolcpus=${ISOLATED_CORES} nohz_full=${ISOLATED_CORES} rcu_
 
 phase "PHASE 10: IRQ Balance Configuration"
 
-cp "$INSTALL_DIR/etc-default-irqbalance" /etc/default/irqbalance
+cp "$INSTALL_DIR/config/system-templates/etc-default-irqbalance" /etc/default/irqbalance
 chmod 644 /etc/default/irqbalance
 ok "Installed /etc/default/irqbalance (banned CPUs: 0x30 = cores ${ISOLATED_CORES})"
 
@@ -629,7 +629,7 @@ phase "PHASE 12: PipeWire Low-Latency Configuration"
 
 PIPEWIRE_CONF_DIR="/home/$INSTALL_USER/.config/pipewire/pipewire.conf.d"
 mkdir -p "$PIPEWIRE_CONF_DIR"
-cp "$INSTALL_DIR/home-mm-.config-pipewire-pipewire.conf.d-99-map2-audio-latency.conf" \
+cp "$INSTALL_DIR/config/system-templates/home-mm-.config-pipewire-pipewire.conf.d-99-map2-audio-latency.conf" \
    "$PIPEWIRE_CONF_DIR/99-map2-audio-latency.conf"
 chown -R "$INSTALL_USER:$INSTALL_USER" "/home/$INSTALL_USER/.config/pipewire"
 ok "Installed PipeWire low-latency config (48kHz, quantum=64)"
@@ -670,32 +670,32 @@ esac
 # --- PipeWire CPU affinity drop-in ---
 section "PipeWire CPU affinity"
 mkdir -p "$SYSTEMD_DIR/user@.service.d"
-cp "$INSTALL_DIR/etc-systemd-user@.service.d-pipewire-affinity.conf" \
+cp "$INSTALL_DIR/config/system-templates/etc-systemd-user@.service.d-pipewire-affinity.conf" \
    "$SYSTEMD_DIR/user@.service.d/pipewire-affinity.conf"
 ok "Installed PipeWire CPU affinity drop-in (cores 0-3)"
 
 # --- Journald low-latency ---
 section "journald configuration"
 mkdir -p /etc/systemd/journald.conf.d
-cp "$INSTALL_DIR/etc-systemd-journald.conf.d-map2-audio.conf" \
+cp "$INSTALL_DIR/config/system-templates/etc-systemd-journald.conf.d-map2-audio.conf" \
    /etc/systemd/journald.conf.d/map2-audio.conf
 ok "Installed journald volatile storage config"
 
 # --- CPU governor service ---
 section "CPU governor service"
-cp "$INSTALL_DIR/etc-systemd-system-map2-cpu-governor.service" \
+cp "$INSTALL_DIR/config/system-templates/etc-systemd-system-map2-cpu-governor.service" \
    "$SYSTEMD_DIR/map2-cpu-governor.service"
 ok "Installed map2-cpu-governor.service"
 
 # --- Disable turbo boost service ---
 section "Turbo boost disable service"
-cp "$INSTALL_DIR/etc-systemd-system-map2-disable-turbo.service" \
+cp "$INSTALL_DIR/config/system-templates/etc-systemd-system-map2-disable-turbo.service" \
    "$SYSTEMD_DIR/map2-disable-turbo.service"
 ok "Installed map2-disable-turbo.service"
 
 # --- CPU isolation verification service ---
 section "CPU isolation verification"
-cp "$INSTALL_DIR/etc-systemd-system-map2-verify-isolation.service" \
+cp "$INSTALL_DIR/config/system-templates/etc-systemd-system-map2-verify-isolation.service" \
    "$SYSTEMD_DIR/map2-verify-isolation.service"
 cp "$INSTALL_DIR/usr-local-bin-map2-verify-isolation.sh" \
    /usr/local/bin/map2-verify-isolation.sh
@@ -798,7 +798,7 @@ ok "Installed /usr/local/bin/map2-mode"
 
 # Make main scripts executable
 chmod +x "$INSTALL_DIR/map2.sh" "$INSTALL_DIR/m2.sh" "$INSTALL_DIR/tui.sh" 2>/dev/null || true
-chmod +x "$INSTALL_DIR/map2-boot-manager.sh" "$INSTALL_DIR/map2-system-check.sh" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/scripts/map2-boot-manager.sh" "$INSTALL_DIR/scripts/map2-system-check.sh" 2>/dev/null || true
 
 # Add shell aliases to user profile if not present
 BASHRC="/home/$INSTALL_USER/.bashrc"

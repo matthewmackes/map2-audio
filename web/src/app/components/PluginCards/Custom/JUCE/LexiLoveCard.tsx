@@ -12,6 +12,8 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
+import { formatDecay, formatFrequency } from '../../utils/formatters'
+import { LCDDisplay } from '../../components/Visualizations/LCDDisplay'
 import './LexiLoveCard.css'
 
 // Plugin URI for MIDI mappings
@@ -66,39 +68,23 @@ function LexiLoveCardBase({
     isConnected,
   } = useLexiLove()
 
-  // Format decay time for display
-  const formatDecay = (seconds: number) => {
-    if (seconds >= 10) return seconds.toFixed(0) + 's'
-    return seconds.toFixed(1) + 's'
-  }
-
-  // Format frequency for display
-  const formatFreq = (hz: number) => {
-    if (hz >= 10000) return (hz / 1000).toFixed(0) + 'k'
-    if (hz >= 1000) return (hz / 1000).toFixed(1) + 'k'
-    return hz.toFixed(0)
-  }
-
-  // LCD Display visualization
+  // LCD Display visualization using shared component
   const lcdVisualization = (
-    <div className="lexi-lcd-container">
-      <div className="lexi-lcd-screen">
-        <div className="lexi-lcd-row">
-          <span className="lexi-lcd-label">PROGRAM</span>
-          <span className="lexi-lcd-value">{currentAlgorithm.name}</span>
-        </div>
-        <div className="lexi-lcd-row">
-          <span className="lexi-lcd-label">DECAY</span>
-          <span className="lexi-lcd-value">{formatDecay(parameters.decayTime)}</span>
-        </div>
-        <div className="lexi-lcd-decay-bar">
-          <div
-            className="lexi-lcd-decay-fill"
-            style={{ width: `${Math.min(100, (parameters.decayTime / 10) * 100)}%` }}
-          />
-        </div>
+    <div className="lexi-lcd-wrapper">
+      <LCDDisplay
+        style="lexicon-green"
+        rows={[
+          { label: 'PROGRAM', value: currentAlgorithm.name, size: 'medium' },
+          { label: 'DECAY', value: formatDecay(parameters.decayTime), size: 'large' },
+        ]}
+        logo="LEXI LOVE"
+      />
+      <div className="lexi-lcd-decay-bar">
+        <div
+          className="lexi-lcd-decay-fill"
+          style={{ width: `${Math.min(100, (parameters.decayTime / 10) * 100)}%` }}
+        />
       </div>
-      <div className="lexi-lcd-logo">LEXI LOVE</div>
     </div>
   )
 

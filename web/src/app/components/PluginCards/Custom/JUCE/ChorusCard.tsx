@@ -12,6 +12,8 @@ import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import type { PluginCardProps } from '../../types'
+import { formatPercentage, formatRate } from '../../utils/formatters'
+import { HorizontalGlowGradient } from '../../components/SVGGradients'
 import './ChorusCard.css'
 
 // Plugin URI for MIDI mappings
@@ -65,11 +67,7 @@ function ChorusCardBase({
     <div className="chorus-visualization">
       <svg viewBox="0 0 200 60" className="chorus-lfo-wave">
         <defs>
-          <linearGradient id="chorusGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={accentColor} stopOpacity="0.2" />
-            <stop offset="50%" stopColor={accentColor} stopOpacity="0.8" />
-            <stop offset="100%" stopColor={accentColor} stopOpacity="0.2" />
-          </linearGradient>
+          <HorizontalGlowGradient id="chorusGradient" color={accentColor} />
         </defs>
         {/* Animated sine wave */}
         <path
@@ -87,8 +85,8 @@ function ChorusCardBase({
         <line x1="0" y1="30" x2="200" y2="30" stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
       </svg>
       <div className="chorus-meters">
-        <span>Depth: {(parameters.depth * 100).toFixed(0)}%</span>
-        <span>Rate: {parameters.rate.toFixed(1)} Hz</span>
+        <span>Depth: {formatPercentage(parameters.depth, true)}</span>
+        <span>Rate: {formatRate(parameters.rate)}</span>
       </div>
     </div>
   )

@@ -18,7 +18,18 @@
   letter-spacing: 4px;
   color: #ffffff;
   text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(0, 160, 255, 0.3);
+  text-shadow: 
+    0 0 12px rgba(0, 160, 255, 0.5),
+    0 0 24px rgba(0, 160, 255, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+  transition: text-shadow 0.3s ease;
+}
+
+.peavey5150-card-title:hover {
+  text-shadow: 
+    0 0 16px rgba(0, 160, 255, 0.7),
+    0 0 32px rgba(0, 160, 255, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .peavey5150-card-subtitle {
@@ -32,11 +43,23 @@
 /* Visualization - Amp face with tube glow */
 .peavey5150-visualization {
   padding: 10px 12px;
-  background: linear-gradient(180deg, #0A0A0A 0%, #121216 50%, #0A0A0A 100%);
-  border-radius: 6px;
+  background: linear-gradient(180deg, #0a0a0a 0%, #0f0f12 30%, #121216 50%, #0f0f12 70%, #0a0a0a 100%);
+  border-radius: 8px;
   border: 1px solid #333340;
   position: relative;
   overflow: hidden;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.peavey5150-visualization:hover {
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 6px 16px rgba(0, 160, 255, 0.2);
 }
 
 .peavey5150-visualization::before {
@@ -45,8 +68,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #333340 50%, transparent 100%);
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
 }
 
 .peavey5150-visual-svg {

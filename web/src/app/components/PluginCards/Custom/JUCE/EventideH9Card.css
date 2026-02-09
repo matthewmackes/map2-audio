@@ -69,15 +69,26 @@
    ======================================== */
 
 .h9-led-container {
-  background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+  background: linear-gradient(180deg, #0a0a0a 0%, #000000 50%, #050505 100%);
   border: 2px solid #1a1a1a;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
   box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(255, 17, 17, 0.2);
+    inset 0 3px 8px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(255, 17, 17, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.6);
   position: relative;
   margin-bottom: 4px;
+  transition: all 0.3s ease;
+}
+
+.h9-led-container:hover {
+  box-shadow:
+    inset 0 3px 8px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(255, 17, 17, 0.4),
+    0 10px 24px rgba(0, 0, 0, 0.7);
 }
 
 .h9-led-screen {
@@ -106,14 +117,33 @@
   font-weight: 900;
   color: var(--h9-led-red);
   text-shadow:
-    0 0 15px rgba(255, 17, 17, 0.9),
-    0 0 30px rgba(255, 17, 17, 0.5),
-    0 2px 4px rgba(0, 0, 0, 0.9);
+    0 0 20px rgba(255, 17, 17, 1),
+    0 0 40px rgba(255, 17, 17, 0.6),
+    0 0 60px rgba(255, 17, 17, 0.3),
+    0 3px 6px rgba(0, 0, 0, 1);
   font-family: 'Courier New', 'Courier', monospace;
   letter-spacing: 4px;
   line-height: 1;
   text-align: center;
   min-width: 80px;
+  animation: led-pulse 2s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 20px rgba(255, 17, 17, 1),
+      0 0 40px rgba(255, 17, 17, 0.6),
+      0 0 60px rgba(255, 17, 17, 0.3),
+      0 3px 6px rgba(0, 0, 0, 1);
+  }
+  50% {
+    text-shadow:
+      0 0 25px rgba(255, 17, 17, 1),
+      0 0 50px rgba(255, 17, 17, 0.7),
+      0 0 75px rgba(255, 17, 17, 0.4),
+      0 3px 6px rgba(0, 0, 0, 1);
+  }
 }
 
 /* Algorithm Name Display */

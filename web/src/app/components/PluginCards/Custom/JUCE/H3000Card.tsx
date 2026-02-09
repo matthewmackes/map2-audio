@@ -12,6 +12,8 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
+import { formatPitch, formatFrequency } from '../../utils/formatters'
+import { VFDPitchDisplay } from '../../components/Visualizations/LCDDisplay'
 import './H3000Card.css'
 
 // Plugin URI for MIDI mappings
@@ -70,52 +72,15 @@ function H3000CardBase({
     isConnected,
   } = useH3000()
 
-  // Format pitch in cents for display
-  const formatPitch = (cents: number) => {
-    if (cents === 0) return '0'
-    const sign = cents > 0 ? '+' : ''
-    if (Math.abs(cents) >= 1200) {
-      const semitones = cents / 100
-      return `${sign}${semitones.toFixed(0)}st`
-    }
-    return `${sign}${cents.toFixed(0)}c`
-  }
-
-  // Format frequency for display
-  const formatFreq = (hz: number) => {
-    if (hz >= 10000) return (hz / 1000).toFixed(0) + 'k'
-    if (hz >= 1000) return (hz / 1000).toFixed(1) + 'k'
-    return hz.toFixed(0)
-  }
-
-  // VFD-style Display visualization
+  // VFD-style Display visualization using shared component
   const vfdVisualization = (
-    <div className="h3000-vfd-container">
-      <div className="h3000-vfd-screen">
-        <div className="h3000-vfd-row">
-          <span className="h3000-vfd-label">ALGORITHM</span>
-          <span className="h3000-vfd-value">{currentAlgorithm.name}</span>
-        </div>
-        <div className="h3000-vfd-row h3000-vfd-pitch-row">
-          <div className="h3000-vfd-pitch">
-            <span className="h3000-vfd-channel">L</span>
-            <span className="h3000-vfd-pitch-value">{formatPitch(parameters.pitchL)}</span>
-          </div>
-          <div className="h3000-vfd-divider" />
-          <div className="h3000-vfd-pitch">
-            <span className="h3000-vfd-channel">R</span>
-            <span className="h3000-vfd-pitch-value">{formatPitch(parameters.pitchR)}</span>
-          </div>
-        </div>
-        <div className="h3000-vfd-meters">
-          <div
-            className="h3000-vfd-meter-bar"
-            style={{ width: `${Math.max(0, Math.min(100, (metering.inputLevelL + 60) * 1.67))}%` }}
-          />
-        </div>
-      </div>
-      <div className="h3000-vfd-logo">H3000</div>
-    </div>
+    <VFDPitchDisplay
+      algorithmName={currentAlgorithm.name}
+      pitchL={formatPitch(parameters.pitchL)}
+      pitchR={formatPitch(parameters.pitchR)}
+      meterLevel={(metering.inputLevelL + 60) * 1.67}
+      accentColor={accentColor}
+    />
   )
 
   return (

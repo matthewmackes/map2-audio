@@ -14,6 +14,8 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
+import { formatSemitones, formatPitch } from '../../utils/formatters'
+import { dbToNormalized } from '../../utils/metering'
 import './BossXS1Card.css'
 
 // Plugin URI for MIDI mappings
@@ -72,19 +74,6 @@ function BossXS1CardBase({
 
   const currentPreset = presets.find((_, idx) => idx === parameters.preset) || presets[0]
 
-  // Format shift display
-  const formatShift = useCallback((semitones: number) => {
-    if (semitones === 0) return '0'
-    const sign = semitones > 0 ? '+' : ''
-    return `${sign}${semitones.toFixed(1)} st`
-  }, [])
-
-  // Format detune display
-  const formatDetune = useCallback((cents: number) => {
-    const sign = cents > 0 ? '+' : ''
-    return `${sign}${cents.toFixed(0)}c`
-  }, [])
-
   // Pitch visualization
   const visualization = (
     <div className="boss-visualization">
@@ -99,8 +88,8 @@ function BossXS1CardBase({
           />
           <span className="boss-pitch-value">
             {parameters.detuneMode
-              ? formatDetune(parameters.detuneAmount)
-              : formatShift(parameters.shiftAmount)}
+              ? formatPitch(parameters.detuneAmount)
+              : formatSemitones(parameters.shiftAmount)}
           </span>
         </div>
         <div className="boss-mode-badge">
@@ -114,7 +103,7 @@ function BossXS1CardBase({
           <div className="boss-meter-bar">
             <div
               className="boss-meter-fill"
-              style={{ width: `${Math.max(0, (metering.inputLevel + 60) / 60 * 100)}%` }}
+              style={{ width: `${dbToNormalized(metering.inputLevel) * 100}%` }}
             />
           </div>
         </div>
@@ -123,7 +112,7 @@ function BossXS1CardBase({
           <div className="boss-meter-bar">
             <div
               className="boss-meter-fill boss-meter-output"
-              style={{ width: `${Math.max(0, (metering.outputLevel + 60) / 60 * 100)}%` }}
+              style={{ width: `${dbToNormalized(metering.outputLevel) * 100}%` }}
             />
           </div>
         </div>

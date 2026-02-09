@@ -1,0 +1,201 @@
+/**
+ * Styles for LCD/VFD/LED display components
+ */
+
+.lcd-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lcd-screen {
+  background: #000000;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: 'Courier New', monospace;
+  position: relative;
+}
+
+.lcd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.lcd-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--lcd-color, #00cc00);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.lcd-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lcd-color, #00cc00);
+  text-shadow: 0 0 4px var(--lcd-color, #00cc00);
+}
+
+.lcd-row-small .lcd-value {
+  font-size: 10px;
+}
+
+.lcd-row-large .lcd-value {
+  font-size: 16px;
+}
+
+.lcd-logo {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: right;
+  opacity: 0.6;
+}
+
+/* VFD-specific styles */
+.vfd-container {
+  --accent-color: #00aaff;
+}
+
+.vfd-screen {
+  background: linear-gradient(180deg, #0a0a0f 0%, #12121a 100%);
+  border: 1px solid #2a2a3a;
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.vfd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.vfd-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent-color);
+  opacity: 0.6;
+}
+
+.vfd-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-color);
+  text-shadow: 0 0 6px var(--accent-color);
+}
+
+.vfd-pitch-row {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.vfd-pitch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vfd-channel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-color);
+  opacity: 0.5;
+}
+
+.vfd-pitch-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-color);
+  text-shadow: 0 0 8px var(--accent-color);
+  min-width: 60px;
+  text-align: center;
+}
+
+.vfd-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--accent-color);
+  opacity: 0.3;
+}
+
+.vfd-meters {
+  margin-top: 8px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.vfd-meter-bar {
+  height: 100%;
+  background: var(--accent-color);
+  box-shadow: 0 0 4px var(--accent-color);
+  transition: width 0.05s linear;
+}
+
+/* LED 7-segment style */
+.led-container {
+  --led-color: #ff1111;
+}
+
+.led-screen {
+  background: #000000;
+  border: 2px solid #222;
+  border-radius: 6px;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.led-number {
+  margin-bottom: 8px;
+}
+
+.led-digit {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'DS-Digital', 'Courier New', monospace;
+  color: var(--led-color);
+  text-shadow: 0 0 10px var(--led-color), 0 0 20px var(--led-color);
+}
+
+.led-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--led-color);
+  text-shadow: 0 0 6px var(--led-color);
+  text-transform: uppercase;
+}
+
+.led-description {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--led-color);
+  opacity: 0.6;
+}
+
+/* Style variants */
+.lcd-display-lexicon-green {
+  --lcd-color: #00cc00;
+}
+
+.lcd-display-eventide-blue {
+  --lcd-color: #00aaff;
+}
+
+.lcd-display-h9-red {
+  --lcd-color: #ff1111;
+}
+
+.lcd-display-boss-orange {
+  --lcd-color: #ff6600;
+}

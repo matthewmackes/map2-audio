@@ -12,6 +12,9 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
+import { formatSemitones } from '../../utils/formatters'
+import { dbToVerticalBar } from '../../utils/metering'
+import { ReverbTailGradient, ShimmerGradient } from '../../components/SVGGradients'
 import './ShoeGazeCard.css'
 
 // Plugin URI for MIDI mappings
@@ -56,17 +59,6 @@ const SHOEGAZE_PARAMS: PluginParamDef[] = [
   { index: PARAM.STEREO_WIDTH, name: 'Stereo Width', symbol: 'stereoWidth' },
   { index: PARAM.DUCKING, name: 'Ducking', symbol: 'duckingAmount' },
 ]
-
-// Shimmer pitch display helper
-function shimmerPitchLabel(semitones: number): string {
-  if (semitones === 0) return '0'
-  if (semitones === 12) return '+Oct'
-  if (semitones === -12) return '-Oct'
-  if (semitones === 24) return '+2 Oct'
-  if (semitones === 7) return '+5th'
-  if (semitones === -7) return '-5th'
-  return (semitones > 0 ? '+' : '') + semitones + 'st'
-}
 
 interface ShoeGazeCardProps extends PluginCardProps {
   onOpenMidiMappings?: () => void
@@ -299,7 +291,7 @@ function ShoeGazeCardBase({
             max={24}
             defaultValue={12}
             unit=""
-            valueFormatter={(v: number) => shimmerPitchLabel(Math.round(v))}
+            valueFormatter={(v: number) => formatSemitones(Math.round(v))}
             onChange={(v) => setShimmerPitch(Math.round(v))}
             accentColor="#9b59b6"
             size="medium"

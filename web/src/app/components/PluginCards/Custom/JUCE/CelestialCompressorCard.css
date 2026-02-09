@@ -15,11 +15,19 @@
   font-size: 14px;
   font-weight: 900;
   letter-spacing: 4px;
-  background: linear-gradient(135deg, #d4a574 0%, #e8c49a 40%, #d4a574 60%, #b8885a 100%);
+  background: linear-gradient(135deg, #d4a574 0%, #e8c49a 25%, #f0d5a8 50%, #e8c49a 75%, #d4a574 100%);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: uppercase;
+  animation: amber-shimmer 3s ease infinite;
+  filter: drop-shadow(0 0 10px rgba(212, 165, 116, 0.4));
+}
+
+@keyframes amber-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .celestial-card-subtitle {
@@ -35,19 +43,42 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px 8px;
-  border-radius: 8px;
-  background: radial-gradient(ellipse at center, rgba(30, 25, 20, 0.95) 0%, rgba(10, 10, 15, 0.98) 100%);
+  padding: 16px 8px;
+  border-radius: 10px;
+  background: 
+    radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #0a0a0a 0%, #0f0d0a 30%, #1a1510 50%, #0f0d0a 70%, #0a0a0a 100%);
   overflow: hidden;
+  border: 1px solid rgba(212, 165, 116, 0.15);
+  box-shadow: 
+    inset 0 2px 0 rgba(255, 255, 255, 0.03),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(212, 165, 116, 0.12),
+    0 6px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.celestial-visualization:hover {
+  box-shadow: 
+    inset 0 2px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.5),
+    0 0 32px rgba(212, 165, 116, 0.18),
+    0 8px 20px rgba(0, 0, 0, 0.6);
 }
 
 .celestial-visualization::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 8px;
-  background: radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.06) 0%, transparent 70%);
+  border-radius: 10px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(212, 165, 116, 0.1) 0%, transparent 70%);
   pointer-events: none;
+  animation: warm-pulse 3s ease-in-out infinite;
+}
+
+@keyframes warm-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .celestial-visualization svg {
@@ -64,13 +95,25 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 200px;
-  height: 100px;
+  width: 240px;
+  height: 120px;
   border-radius: 50%;
-  opacity: 0.15;
-  filter: blur(40px);
+  opacity: 0.2;
+  filter: blur(50px);
   pointer-events: none;
-  transition: background 0.5s ease;
+  transition: all 0.5s ease;
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
 }
 
 /* ---- Preset Info Bar ---- */
