@@ -2,8 +2,8 @@ name: Scheduled Archive
 
 on:
   schedule:
-    # Every 30 minutes, skipping 3am–7am UTC
-    - cron: '*/30 0-2,7-23 * * *'
+    # Every 30 minutes, skipping 3am–7am Eastern (8–12 UTC)
+    - cron: '*/30 0-7,12-23 * * *'
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
