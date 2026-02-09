@@ -380,8 +380,8 @@ export default function SettingsPanel() {
       icon: <NAMIcon />,
       status: namStatus?.available ? 'running' : 'stopped',
       message: namStatus?.available
-        ? `Active: ${namStatus.active_model || 'None'}`
-        : namStatus?.error || 'PyTorch not installed',
+        ? `Active: ${namStatus.activeModel || 'None'}`
+        : 'PyTorch not installed',
     },
     {
       name: 'Automation Engine',

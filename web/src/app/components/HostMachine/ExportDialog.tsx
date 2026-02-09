@@ -179,7 +179,7 @@ export default function ExportDialog({ open, onClose, metrics, alerts }: ExportD
             control={
               <Checkbox
                 checked={useDateRange}
-                onChange={(e) => setUseeDateRange(e.target.checked)}
+                onChange={(e) => setUseDateRange(e.target.checked)}
               />
             }
             label={

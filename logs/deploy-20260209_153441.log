@@ -1,0 +1,176 @@
+2026-02-09 15:34:41 [INFO] Checking prerequisites...
+2026-02-09 15:34:41 [SUCCESS] All prerequisites met
+2026-02-09 15:34:41 [INFO] Checking production service status on port 3000...
+2026-02-09 15:34:41 [SUCCESS] Port 3000 is available
+2026-02-09 15:34:41 [INFO] Cleaning previous build artifacts...
+2026-02-09 15:34:41 [SUCCESS] Previous builds cleaned
+2026-02-09 15:34:41 [INFO] Dependencies already installed, skipping npm ci
+2026-02-09 15:34:41 [INFO] Building optimized production bundle...
+
+> mackes-audio-platform-2-web@3.0.0-FEB2026 build
+> tsc -b && vite build
+
+src/app/components/ClusterDashboard/ServicesHealthTab.tsx(89,33): error TS2872: This kind of expression is always truthy.
+src/app/components/ClusterDashboard/ServicesHealthTab.tsx(119,35): error TS2367: This comparison appears to be unintentional because the types '"n/a"' and '"offline"' have no overlap.
+src/app/components/ClusterDashboard/ServicesHealthTab.tsx(126,26): error TS2367: This comparison appears to be unintentional because the types '"running" | "degraded" | "n/a"' and '"offline"' have no overlap.
+src/app/components/ClusterDashboard/TopologyGraph.tsx(206,54): error TS2339: Property 'simulationMode' does not exist on type 'TopologyGraphProps'.
+src/app/components/GridFlow/ToolbarTooltip.tsx(26,22): error TS2554: Expected 1 arguments, but got 0.
+src/app/components/HostMachine/AlertNotificationSettings.tsx(9,15): error TS2305: Module '"@/app/hooks/useAlertNotifications"' has no exported member 'NotificationConfig'.
+src/app/components/HostMachine/ExportDialog.tsx(182,34): error TS2552: Cannot find name 'setUseeDateRange'. Did you mean 'setUseDateRange'?
+src/app/components/HostMachine/HealthMonitor.tsx(82,29): error TS2339: Property 'temperature' does not exist on type 'SystemHealthOverview'.
+src/app/components/HostMachine/HealthMonitor.tsx(84,63): error TS2339: Property 'temperature' does not exist on type 'SystemHealthOverview'.
+src/app/components/HostMachine/HealthMonitor.tsx(84,106): error TS2339: Property 'temperature' does not exist on type 'SystemHealthOverview'.
+src/app/components/HostMachine/HealthMonitor.tsx(87,29): error TS2339: Property 'temperature' does not exist on type 'SystemHealthOverview'.
+src/app/components/HostMachine/HealthMonitor.tsx(95,50): error TS2367: This comparison appears to be unintentional because the types '"normal" | "unknown" | "slow" | "stopped"' and '"ok"' have no overlap.
+src/app/components/HostMachine/HealthMonitor.tsx(161,45): error TS2367: This comparison appears to be unintentional because the types '"normal" | "unknown" | "slow" | "stopped"' and '"ok"' have no overlap.
+src/app/components/HostMachine/HealthMonitor.tsx(162,26): error TS2367: This comparison appears to be unintentional because the types '"normal" | "unknown" | "slow" | "stopped"' and '"ok"' have no overlap.
+src/app/components/PluginCards/Custom/JUCE/BossXS1Card.tsx(222,31): error TS2304: Cannot find name 'formatDetune'.
+src/app/components/PluginCards/Custom/JUCE/BossXS1Card.tsx(235,31): error TS2304: Cannot find name 'formatShift'.
+src/app/components/PluginCards/Custom/JUCE/H3000Card.tsx(258,29): error TS2304: Cannot find name 'formatFreq'.
+src/app/components/PluginCards/Custom/JUCE/H3000Card.tsx(272,29): error TS2304: Cannot find name 'formatFreq'.
+src/app/components/PluginCards/Custom/JUCE/LexiLoveCard.tsx(243,29): error TS2304: Cannot find name 'formatFreq'.
+src/app/components/PluginCards/Visualizations/DelayTapGrid.tsx(39,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/DistortionCurve.tsx(32,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/EQCurveDisplay.tsx(102,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/LFOWaveform.tsx(34,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/PitchDisplay.tsx(53,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/ReverbDecayCurve.tsx(35,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/TransferCurve.tsx(44,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/Visualizations/TunerDisplay.tsx(37,43): error TS2345: Argument of type 'RefObject<SVGSVGElement>' is not assignable to parameter of type 'RefObject<HTMLElement>'.
+  Type 'SVGSVGElement' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 25 more.
+src/app/components/PluginCards/utils/paramHelpers.ts(55,15): error TS2345: Argument of type '{ index: number; name: string; symbol: string; }' is not assignable to parameter of type 'PluginParamDef'.
+  Property 'key' is missing in type '{ index: number; name: string; symbol: string; }' but required in type 'PluginParamDef'.
+src/app/hooks/useMultiSystemMonitoring.ts(7,76): error TS2307: Cannot find module '@/app/services/api' or its corresponding type declarations.
+src/app/hooks/useMultiSystemMonitoring.ts(46,28): error TS2554: Expected 1 arguments, but got 0.
+src/app/pages/GridFlowPage.tsx(1459,23): error TS2739: Type '{ separator: true; }' is missing the following properties from type 'ContextMenuItem': label, onClick
+src/app/pages/GridFlowPage.tsx(1651,48): error TS2339: Property 'undo_stack' does not exist on type 'HistoryStatus'.
+src/app/pages/GridFlowPage.tsx(1654,34): error TS2339: Property 'undo_stack' does not exist on type 'HistoryStatus'.
+src/app/pages/GridFlowPage.tsx(1684,48): error TS2339: Property 'redo_stack' does not exist on type 'HistoryStatus'.
+src/app/pages/GridFlowPage.tsx(1687,34): error TS2339: Property 'redo_stack' does not exist on type 'HistoryStatus'.
+src/app/pages/HostMachinePage.tsx(140,15): error TS2322: Type '{ icon: string; label: string; value: string; secondary: string; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & Props'.
+src/app/pages/HostMachinePage.tsx(148,15): error TS2322: Type '{ icon: string; label: string; value: string; secondary: string; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & Props'.
+src/app/pages/HostMachinePage.tsx(156,15): error TS2322: Type '{ icon: string; label: string; value: string; secondary: string; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & Props'.
+src/app/pages/HostMachinePage.tsx(164,15): error TS2322: Type '{ icon: string; label: string; value: string; secondary: string; color: string; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'icon' does not exist on type 'IntrinsicAttributes & Props'.
+src/app/pages/WelcomePage.tsx(603,19): error TS2353: Object literal may only specify known properties, and ''::placeholder'' does not exist in type 'Properties<string | number, string & {}>'.
+src/map2/components/MAP2Dashboard.tsx(100,19): error TS2339: Property 'error' does not exist on type '{ status: ConnectionStatus; client: Map2WebSocket; isConnected: boolean; }'.
+src/map2/components/NAMManager.tsx(102,22): error TS2339: Property 'error' does not exist on type 'NAMStatus'.
+src/map2/components/NAMManager.tsx(160,28): error TS2551: Property 'active_model' does not exist on type 'NAMStatus'. Did you mean 'activeModel'?
+src/map2/components/NAMManager.tsx(209,44): error TS2551: Property 'active_model' does not exist on type 'NAMStatus'. Did you mean 'activeModel'?
+src/map2/components/SettingsPanel.tsx(383,32): error TS2551: Property 'active_model' does not exist on type 'NAMStatus'. Did you mean 'activeModel'?
+src/map2/components/SettingsPanel.tsx(384,22): error TS2339: Property 'error' does not exist on type 'NAMStatus'.
+src/map2/index.ts(54,1): error TS2308: Module './types' has already exported a member named 'SidechainConnection'. Consider explicitly re-exporting to resolve the ambiguity.
+src/pipedal/OkDialog.tsx(98,29): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(props: { href: string; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>, "children" | ... 27 more ... | "startIcon">): Element', gave the following error.
+    Type '"dialogPrimary"' is not assignable to type 'OverridableStringUnion<"text" | "outlined" | "contained", ButtonPropsVariantOverrides>'.
+  Overload 2 of 3, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & ButtonOwnProps & Omit<ButtonBaseOwnProps, "classes"> & CommonProps & Omit<...>): Element', gave the following error.
+    Type '"dialogPrimary"' is not assignable to type 'OverridableStringUnion<"text" | "outlined" | "contained", ButtonPropsVariantOverrides>'.
+  Overload 3 of 3, '(props: DefaultComponentProps<ExtendButtonBaseTypeMap<ButtonTypeMap<{}, "button">>>): Element', gave the following error.
+    Type '"dialogPrimary"' is not assignable to type 'OverridableStringUnion<"text" | "outlined" | "contained", ButtonPropsVariantOverrides>'.
+src/pipedal/Pedalboard.tsx(404,19): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(414,19): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(426,73): error TS2345: Argument of type 'void | PedalboardItem' is not assignable to parameter of type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(438,25): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(463,25): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(465,17): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(497,25): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(499,17): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(510,25): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(512,17): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(658,29): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(659,37): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(670,25): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(671,25): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/Pedalboard.tsx(795,23): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(801,23): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(818,23): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/Pedalboard.tsx(824,23): error TS2322: Type 'void | PedalboardItem' is not assignable to type 'PedalboardItem'.
+  Type 'void' is not assignable to type 'PedalboardItem'.
+src/pipedal/PiPedalModel.tsx(590,9): error TS2322: Type 'Timeout' is not assignable to type 'number'.
+src/pipedal/PiPedalModel.tsx(894,9): error TS2322: Type 'Timeout' is not assignable to type 'number'.
+src/pipedal/PiPedalModel.tsx(1028,9): error TS2322: Type 'Timeout' is not assignable to type 'number'.
+src/pipedal/PiPedalModel.tsx(1773,22): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1774,38): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1775,22): error TS2339: Property 'deserialize' does not exist on type 'void | PedalboardItem'.
+  Property 'deserialize' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1776,22): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1777,38): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1778,22): error TS2339: Property 'uri' does not exist on type 'void | PedalboardItem'.
+  Property 'uri' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1779,22): error TS2339: Property 'pluginName' does not exist on type 'void | PedalboardItem'.
+  Property 'pluginName' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1780,22): error TS2339: Property 'controlValues' does not exist on type 'void | PedalboardItem'.
+  Property 'controlValues' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1780,65): error TS2339: Property 'uri' does not exist on type 'void | PedalboardItem'.
+  Property 'uri' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1781,22): error TS2339: Property 'isEnabled' does not exist on type 'void | PedalboardItem'.
+  Property 'isEnabled' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1782,22): error TS2339: Property 'lv2State' does not exist on type 'void | PedalboardItem'.
+  Property 'lv2State' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1783,22): error TS2339: Property 'vstState' does not exist on type 'void | PedalboardItem'.
+  Property 'vstState' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1784,22): error TS2339: Property 'pathProperties' does not exist on type 'void | PedalboardItem'.
+  Property 'pathProperties' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1785,22): error TS2339: Property 'useModUi' does not exist on type 'void | PedalboardItem'.
+  Property 'useModUi' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1789,26): error TS2339: Property 'pathProperties' does not exist on type 'void | PedalboardItem'.
+  Property 'pathProperties' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1791,53): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1797,29): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(1827,26): error TS2339: Property 'pluginInfo' does not exist on type 'PedalboardItem'.
+src/pipedal/PiPedalModel.tsx(1828,34): error TS2339: Property 'pluginInfo' does not exist on type 'PedalboardItem'.
+src/pipedal/PiPedalModel.tsx(2159,53): error TS2339: Property 'isConnected' does not exist on type 'PiPedalSocket'.
+src/pipedal/PiPedalModel.tsx(3382,9): error TS2322: Type 'Timeout' is not assignable to type 'number'.
+src/pipedal/PiPedalModel.tsx(3409,9): error TS2322: Type 'Timeout' is not assignable to type 'number'.
+src/pipedal/PiPedalModel.tsx(3613,22): error TS2339: Property 'sideChainInputId' does not exist on type 'void | PedalboardItem'.
+  Property 'sideChainInputId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(3614,47): error TS2339: Property 'sideChainInputId' does not exist on type 'void | PedalboardItem'.
+  Property 'sideChainInputId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(3615,26): error TS2339: Property 'sideChainInputId' does not exist on type 'void | PedalboardItem'.
+  Property 'sideChainInputId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(3618,23): error TS2339: Property 'isEmpty' does not exist on type 'void | PedalboardItem'.
+  Property 'isEmpty' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(3619,42): error TS2339: Property 'instanceId' does not exist on type 'void | PedalboardItem'.
+  Property 'instanceId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(3630,22): error TS2339: Property 'sideChainInputId' does not exist on type 'void | PedalboardItem'.
+  Property 'sideChainInputId' does not exist on type 'void'.
+src/pipedal/PiPedalModel.tsx(3631,22): error TS2339: Property 'sideChainInputId' does not exist on type 'void | PedalboardItem'.
+  Property 'sideChainInputId' does not exist on type 'void'.
+src/shared/components/PluginChooser/utils/pluginBridge.ts(155,5): error TS2322: Type '"vst3" | "lv2"' is not assignable to type '"lv2"'.
+  Type '"vst3"' is not assignable to type '"lv2"'.
+src/shared/components/PluginChooser/utils/pluginSearch.ts(74,7): error TS2322: Type '"vst3"' is not assignable to type '"lv2"'.
+2026-02-09 15:35:15 [SUCCESS] Production build completed successfully
+2026-02-09 15:35:15 [ERROR] Build output directory not created at /home/mm/map2-audio/web/dist

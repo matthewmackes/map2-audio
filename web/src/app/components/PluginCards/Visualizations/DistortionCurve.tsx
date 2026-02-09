@@ -29,7 +29,7 @@ export function DistortionCurve({
   compact = false,
 }: DistortionCurveProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const dimensions = useResponsiveVizSize(svgRef, {
+  const dimensions = useResponsiveVizSize(svgRef as any, {
     width,
     height,
     aspectRatio: 160 / 100,

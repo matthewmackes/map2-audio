@@ -31,7 +31,7 @@ export function LFOWaveform({
   compact = false,
 }: LFOWaveformProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const dimensions = useResponsiveVizSize(svgRef, {
+  const dimensions = useResponsiveVizSize(svgRef as any, {
     width,
     height,
     aspectRatio: 200 / 60,

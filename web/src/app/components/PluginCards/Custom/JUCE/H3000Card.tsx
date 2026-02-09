@@ -12,7 +12,7 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
-import { formatPitch, formatFrequency } from '../../utils/formatters'
+import { formatPitch, formatFrequency, formatFreq } from '../../utils/formatters'
 import { VFDPitchDisplay } from '../../components/Visualizations/LCDDisplay'
 import './H3000Card.css'
 

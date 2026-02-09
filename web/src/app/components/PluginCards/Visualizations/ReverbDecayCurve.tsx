@@ -32,7 +32,7 @@ export function ReverbDecayCurve({
   compact = false,
 }: ReverbDecayCurveProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const dimensions = useResponsiveVizSize(svgRef, {
+  const dimensions = useResponsiveVizSize(svgRef as any, {
     width,
     height,
     aspectRatio: 280 / 100,

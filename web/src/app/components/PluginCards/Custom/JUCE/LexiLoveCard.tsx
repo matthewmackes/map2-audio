@@ -12,7 +12,7 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
-import { formatDecay, formatFrequency } from '../../utils/formatters'
+import { formatDecay, formatFrequency, formatFreq } from '../../utils/formatters'
 import { LCDDisplay } from '../../components/Visualizations/LCDDisplay'
 import './LexiLoveCard.css'
 

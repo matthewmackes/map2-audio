@@ -43,6 +43,12 @@ for helper in "${HELPERS[@]}"; do
     fi
 done
 
+# Make deployment script executable
+if [ -f "$HELPERS_DIR/deploy-to-production" ]; then
+    chmod +x "$HELPERS_DIR/deploy-to-production"
+    echo "✓ Deployment script made executable"
+fi
+
 # Create symlink in /usr/local/bin
 echo ""
 echo "Creating symlink in /usr/local/bin..."

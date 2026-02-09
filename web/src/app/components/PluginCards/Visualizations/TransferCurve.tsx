@@ -41,7 +41,7 @@ export function TransferCurve({
   const svgRef = useRef<SVGSVGElement>(null)
 
   // Compute responsive dimensions based on container width
-  const dimensions = useResponsiveVizSize(svgRef, {
+  const dimensions = useResponsiveVizSize(svgRef as any, {
     width,
     height,
     aspectRatio: 200 / 140, // Original aspect ratio (1.43:1)

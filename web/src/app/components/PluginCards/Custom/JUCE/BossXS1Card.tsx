@@ -14,7 +14,7 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import type { PluginCardProps } from '../../types'
-import { formatSemitones, formatPitch } from '../../utils/formatters'
+import { formatSemitones, formatPitch, formatDetune, formatShift } from '../../utils/formatters'
 import { dbToNormalized } from '../../utils/metering'
 import './BossXS1Card.css'
 

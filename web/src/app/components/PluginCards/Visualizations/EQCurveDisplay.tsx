@@ -99,7 +99,7 @@ export function EQCurveDisplay({
   compact = false,
 }: EQCurveDisplayProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const dimensions = useResponsiveVizSize(svgRef, {
+  const dimensions = useResponsiveVizSize(svgRef as any, {
     width,
     height,
     aspectRatio: 320 / 120,

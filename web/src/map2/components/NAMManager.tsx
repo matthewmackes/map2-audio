@@ -157,7 +157,7 @@ export default function NAMManager() {
                   Active Model
                 </Typography>
                 <Typography variant="subtitle1">
-                  {status?.active_model || 'None'}
+                  {status?.activeModel || 'None'}
                 </Typography>
               </Grid>
               <Grid item>
@@ -206,7 +206,7 @@ export default function NAMManager() {
               </Typography>
               <List dense disablePadding>
                 {typeModels.map((model) => {
-                  const isActive = status?.active_model === model.name;
+                  const isActive = status?.activeModel === model.name;
                   const isLoading = loadingModel === model.name;
 
                   return (

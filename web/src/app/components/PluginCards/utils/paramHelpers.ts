@@ -6,7 +6,7 @@
 
 // Plugin parameter definition type
 export interface PluginParamDef {
-  key: string
+  key?: string
   name: string
   symbol?: string
   min?: number
