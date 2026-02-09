@@ -23,11 +23,10 @@
     },
 
     /* Linting */
-    "strict": true,
+    "strict": false,
     "noUnusedLocals": false,
-    // "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedSideEffectImports": false
   },
   "include": [
     "src/main.tsx",

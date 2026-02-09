@@ -13,6 +13,7 @@ export interface PluginParamDef {
   max?: number
   default?: number
   unit?: string
+  index?: number
 }
 
 /**

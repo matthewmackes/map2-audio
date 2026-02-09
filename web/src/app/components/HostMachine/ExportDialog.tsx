@@ -39,11 +39,11 @@ export default function ExportDialog({ open, onClose, metrics, alerts }: ExportD
   const [format, setFormat] = useState<'csv' | 'pdf'>('csv')
   const [includeMetrics, setIncludeMetrics] = useState(true)
   const [includeAlerts, setIncludeAlerts] = useState(true)
-  const [useDateRange, setUseDateRange] = useState(false)
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [filename, setFilename] = useState('')
-  const [isExporting, setIsExporting] = useState(false)
+  const [useDateRange, setUseDateRange] = useState<boolean>(false)
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
+  const [filename, setFilename] = useState<string>('')
+  const [isExporting, setIsExporting] = useState<boolean>(false)
 
   const handleExport = useCallback(async () => {
     setIsExporting(true)
