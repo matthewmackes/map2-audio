@@ -7,7 +7,7 @@ from typing import Dict, List
 
 from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor, NodeHealthStatus
 
-router = APIRouter()
+router = APIRouter(prefix="/api/cluster", tags=["cluster-health"])
 
 
 @router.get("/health")

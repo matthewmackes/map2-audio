@@ -22,7 +22,8 @@ export function DrumsPage() {
   const stateQuery = useQuery({
     queryKey: ['drums', 'state'],
     queryFn: drumsApi.getState,
-    refetchInterval: 2000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const factoryPacksQuery = useQuery({

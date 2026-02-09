@@ -165,7 +165,8 @@ class ClusterModeScreen(BaseScreen):
             table.add_columns("Node", "Mode", "Host", "API", "WS", "Connected", "Pending", "Ping", "SSH")
         if self._ssh_manager is None:
             self._ssh_manager = SSHConnectionManager()
-        self.set_interval(6.0, self._refresh_data)
+        from ..polling_config import get_polling_interval
+        self.set_interval(get_polling_interval('cluster_status'), self._refresh_data)  # 7s non-disruptive polling
         await self._refresh_data()
 
     async def action_refresh(self) -> None:

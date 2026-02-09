@@ -159,19 +159,22 @@ export function EdirolUA1000Page() {
   const statusQuery = useQuery({
     queryKey: ['audio', 'status'],
     queryFn: audioApi.getStatus,
-    refetchInterval: 2000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const healthQuery = useQuery({
     queryKey: ['audio', 'health'],
     queryFn: audioApi.getHealth,
-    refetchInterval: 5000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const xrunsQuery = useQuery({
     queryKey: ['audio', 'xruns'],
     queryFn: audioApi.getXruns,
-    refetchInterval: 5000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const bufferPresetsQuery = useQuery({
@@ -182,13 +185,15 @@ export function EdirolUA1000Page() {
   const juceQuery = useQuery({
     queryKey: ['audio', 'juce'],
     queryFn: audioApi.getJuceMetrics,
-    refetchInterval: 5000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const latencyQuery = useQuery({
     queryKey: ['audio', 'latency'],
     queryFn: audioApi.getLatency,
-    refetchInterval: 2000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   // Mutations
@@ -535,6 +540,7 @@ export function EdirolUA1000Page() {
               latency={latency}
               cpuLoad={cpuLoad}
               wsConnected={wsConnected}
+              pw={pw}
             />
           </TabPanel>
 
@@ -584,12 +590,14 @@ function JuceEngineTab({
   latency,
   cpuLoad,
   wsConnected,
+  pw,
 }: {
   status?: AudioStatus
   juce?: JuceMetrics
   latency?: { latency_ms: number }
   cpuLoad: number
   wsConnected: boolean
+  pw: ReturnType<typeof usePipeWire>
 }) {
   return (
     <div className="stack">

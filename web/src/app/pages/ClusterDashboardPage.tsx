@@ -45,7 +45,8 @@ export function ClusterDashboardPage() {
       if (!res.ok) throw new Error('Failed to fetch deployment mode')
       return res.json()
     },
-    refetchInterval: 30000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const isAllInOne = deploymentMode?.mode === 'ALL-IN-ONE'
@@ -58,7 +59,8 @@ export function ClusterDashboardPage() {
       if (!res.ok) throw new Error('Failed to fetch cluster status')
       return res.json()
     },
-    refetchInterval: 5000,
+    refetchInterval: 7000,  // 7s polling - non-disruptive
+    staleTime: 5000,
   })
 
   const activeTabInfo = useMemo(

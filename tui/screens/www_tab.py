@@ -519,8 +519,9 @@ class WWWTab(ScrollableContainer):
     async def on_mount(self) -> None:
         """Initialize WWW data on mount."""
         await self.refresh_data()
-        # Auto-refresh WebSocket stats every 5 seconds
-        self.set_interval(5.0, self.refresh_ws_stats)
+        # Auto-refresh WebSocket stats every 7 seconds (non-disruptive)
+        from ..polling_config import get_polling_interval
+        self.set_interval(get_polling_interval('general'), self.refresh_ws_stats)
 
     async def refresh_data(self) -> None:
         """Refresh all WWW data."""

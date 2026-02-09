@@ -207,7 +207,8 @@ class ClusterAdminScreen(Screen):
         super().__init__(*args, **kwargs)
         self.api_base = "http://localhost:8080/api/cluster"
         self.auto_refresh = True
-        self.refresh_interval = 10  # seconds
+        from ..polling_config import get_polling_interval
+        self.refresh_interval = get_polling_interval('cluster_status')  # 7s non-disruptive polling
     
     def compose(self) -> ComposeResult:
         """Compose the UI"""

@@ -19,9 +19,6 @@ import { HostMachinePage } from './pages/HostMachinePage'
 import { MeteringPage } from './pages/MeteringPage'
 import { WelcomePage } from './pages/WelcomePage'
 import { LCDPage } from './pages/LCDPage'
-import { LCDDashboardPage } from './pages/LCDDashboardPage'
-import { NodeLCDPage } from './pages/NodeLCDPage'
-import { LCDSettingsPage } from './pages/LCDSettingsPage'
 import { ClusterDashboardPage } from './pages/ClusterDashboardPage'
 import { PipeWirePage } from './pages/PipeWirePage'
 import { DrumsPage } from './pages/DrumsPage'
@@ -65,9 +62,6 @@ export function App() {
                 <Route path="/metering" element={<MeteringPage />} />
                 <Route path="/welcome" element={<WelcomePage />} />
                 <Route path="/lcd" element={<LCDPage />} />
-                <Route path="/lcd-dashboard" element={<LCDDashboardPage />} />
-                <Route path="/lcd-nodes" element={<NodeLCDPage />} />
-                <Route path="/lcd-settings" element={<LCDSettingsPage />} />
                 <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
                 <Route path="/pipewire" element={<PipeWirePage />} />
                 <Route path="/drums" element={<DrumsPage />} />

@@ -343,7 +343,8 @@ class DeveloperModeScreen(BaseScreen):
     async def on_mount(self) -> None:
         """Initialize screen and start data refresh."""
         # Set refresh interval
-        self.set_interval(3.0, self._refresh_status)
+        from ..polling_config import get_polling_interval
+        self.set_interval(get_polling_interval('general'), self._refresh_status)  # 7s non-disruptive polling
         
         # Initial refresh
         await self._refresh_status()

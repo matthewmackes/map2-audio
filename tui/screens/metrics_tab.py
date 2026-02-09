@@ -351,8 +351,9 @@ class MetricsTab(ScrollableContainer):
     async def on_mount(self) -> None:
         """Initialize on mount."""
         try:
+            from ..polling_config import get_polling_interval
             await self.refresh_data()
-            self.set_interval(5.0, self.refresh_data)
+            self.set_interval(get_polling_interval('audio_status'), self.refresh_data)  # 7s non-disruptive polling
         except Exception as e:
             self.log.error(f"Mount error: {e}")
 
