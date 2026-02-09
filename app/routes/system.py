@@ -1551,67 +1551,116 @@ async def get_host_machine_info():
     try:
         from app.response_models import HostMachineInfo
         import platform
+        import socket
         
-        # System manufacturer detection (dmidecode)
+        def _read_dmi(field: str) -> str:
+            """Read DMI info from sysfs (no root needed) with dmidecode fallback."""
+            sysfs_map = {
+                "system-manufacturer": "sys_vendor",
+                "system-product-name": "product_name",
+                "system-serial-number": "product_serial",
+                "bios-version": "bios_version",
+                "bios-release-date": "bios_date",
+                "system-uuid": "product_uuid",
+                "chassis-type": "chassis_type",
+                "baseboard-product-name": "board_name",
+                "baseboard-version": "board_version",
+            }
+            # Try sysfs first (works without root for most fields)
+            sysfs_name = sysfs_map.get(field, "")
+            if sysfs_name:
+                sysfs_path = f"/sys/devices/virtual/dmi/id/{sysfs_name}"
+                try:
+                    with open(sysfs_path, "r") as f:
+                        return f.read().strip()
+                except (PermissionError, FileNotFoundError, OSError):
+                    pass
+            # Fallback to dmidecode (may need root)
+            return _run_cmd(f"sudo dmidecode -s {field} 2>/dev/null | head -1")
+        
+        # Chassis type numeric to string mapping
+        chassis_type_map = {
+            "1": "Other", "2": "Unknown", "3": "Desktop", "4": "Low Profile Desktop",
+            "5": "Pizza Box", "6": "Mini Tower", "7": "Tower", "8": "Portable",
+            "9": "Laptop", "10": "Notebook", "11": "Hand Held", "12": "Docking Station",
+            "13": "All in One", "14": "Sub Notebook", "15": "Space-saving",
+            "16": "Lunch Box", "17": "Main Server Chassis", "18": "Expansion Chassis",
+            "19": "SubChassis", "20": "Bus Expansion Chassis", "21": "Peripheral Chassis",
+            "22": "RAID Chassis", "23": "Rack Mount Chassis", "24": "Sealed-case PC",
+            "25": "Multi-system Chassis", "35": "Mini PC", "36": "Stick PC",
+        }
+        
+        # System manufacturer detection via sysfs (no root needed)
+        mfg_name = _read_dmi("system-manufacturer")
+        product_name = _read_dmi("system-product-name")
+        serial_number = _read_dmi("system-serial-number")
+        
+        # Parse manufacturer from the manufacturer string
         manufacturer = "other"
-        model = _run_cmd("dmidecode -s system-product-name 2>/dev/null | head -1")
-        product_name = _run_cmd("dmidecode -s system-manufacturer 2>/dev/null | head -1")
-        serial_number = _run_cmd("dmidecode -s system-serial-number 2>/dev/null | head -1")
-        
-        # Parse manufacturer
-        model_lower = model.lower()
+        mfg_lower = mfg_name.lower()
         product_lower = product_name.lower()
         
-        if "dell" in product_lower or "dell" in model_lower or "poweredge" in model_lower:
+        if "dell" in mfg_lower or "dell" in product_lower or "poweredge" in product_lower:
             manufacturer = "dell"
-        elif "lenovo" in product_lower or "lenovo" in model_lower or "thinkcentre" in model_lower or "thinkstation" in model_lower:
+        elif "lenovo" in mfg_lower or "lenovo" in product_lower or "thinkcentre" in product_lower or "thinkstation" in product_lower:
             manufacturer = "lenovo"
-        elif "hp" in product_lower or "hp" in model_lower or "hewlett" in product_lower:
+        elif "hp" in mfg_lower or "hewlett" in mfg_lower or "hp" in product_lower:
             manufacturer = "hp"
+        else:
+            # Use the raw manufacturer name if not a known brand
+            manufacturer = mfg_name.strip() if mfg_name.strip() else "other"
         
         # CPU information
         cpu_model = _run_cmd("grep 'model name' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
         cpu_count_output = _run_cmd("grep -c '^processor' /proc/cpuinfo")
         cpu_cores = int(cpu_count_output) if cpu_count_output.isdigit() else 1
         
-        # Thread count
-        cpu_siblings = _run_cmd("grep 'siblings' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
-        cpu_threads = int(cpu_siblings) if cpu_siblings.isdigit() else cpu_cores
+        # Physical core count (more accurate than logical processor count)
+        phys_cores = _run_cmd("grep 'cpu cores' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
+        if phys_cores and phys_cores.isdigit():
+            cpu_cores = int(phys_cores)
         
-        # CPU frequency
+        # Thread count (logical processors)
+        cpu_threads = int(cpu_count_output) if cpu_count_output.isdigit() else cpu_cores
+        
+        # CPU frequency in MHz (frontend expects MHz)
         cpu_freq_output = _run_cmd("grep 'cpu MHz' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
         try:
-            cpu_frequency_ghz = float(cpu_freq_output) / 1000.0 if cpu_freq_output else None
+            cpu_frequency_mhz = float(cpu_freq_output) if cpu_freq_output else None
         except Exception:
-            cpu_frequency_ghz = None
+            cpu_frequency_mhz = None
         
-        # Memory
+        # Memory in MB (frontend expects MB)
         meminfo = _run_cmd("grep '^MemTotal:' /proc/meminfo | awk '{print $2}'")
         try:
             ram_kb = int(meminfo)
-            ram_total_gb = ram_kb / (1024 * 1024)
+            total_memory_mb = ram_kb / 1024
         except Exception:
-            ram_total_gb = 0
+            total_memory_mb = 0
         
-        # BIOS info
-        bios_version = _run_cmd("dmidecode -s bios-version 2>/dev/null | head -1")
-        bios_date = _run_cmd("dmidecode -s bios-release-date 2>/dev/null | head -1")
+        # BIOS info from sysfs
+        bios_version = _read_dmi("bios-version")
+        bios_date = _read_dmi("bios-release-date")
         
-        # System UUID
-        system_uuid = _run_cmd("dmidecode -s system-uuid 2>/dev/null | head -1")
+        # System UUID (may require root via sysfs, fallback to dmidecode)
+        system_uuid = _read_dmi("system-uuid")
         
-        # Chassis type
-        chassis_type = _run_cmd("dmidecode -s chassis-type 2>/dev/null | head -1")
+        # Chassis type - convert numeric sysfs value to human-readable string
+        chassis_raw = _read_dmi("chassis-type")
+        chassis_type = chassis_type_map.get(chassis_raw, chassis_raw)
         
         # Motherboard
-        motherboard = _run_cmd("dmidecode -s baseboard-product-name 2>/dev/null | head -1")
+        motherboard = _read_dmi("baseboard-product-name")
         
         # Firmware
-        firmware_version = _run_cmd("dmidecode -s baseboard-version 2>/dev/null | head -1")
+        firmware_version = _read_dmi("baseboard-version")
+        
+        # Hostname and kernel version
+        hostname = socket.gethostname()
+        kernel_version = platform.release()
         
         return {
             "manufacturer": manufacturer,
-            "model": model.strip(),
             "product_name": product_name.strip(),
             "serial_number": serial_number.strip(),
             "bios_version": bios_version.strip(),
@@ -1621,10 +1670,12 @@ async def get_host_machine_info():
             "cpu_model": cpu_model.strip(),
             "cpu_cores": cpu_cores,
             "cpu_threads": cpu_threads,
-            "cpu_frequency_ghz": cpu_frequency_ghz,
-            "ram_total_gb": round(ram_total_gb, 1),
+            "cpu_frequency_mhz": cpu_frequency_mhz,
+            "total_memory_mb": round(total_memory_mb, 1),
             "motherboard": motherboard.strip(),
             "firmware_version": firmware_version.strip(),
+            "hostname": hostname,
+            "kernel_version": kernel_version,
         }
         
     except Exception as e:
@@ -1886,7 +1937,6 @@ async def get_branding_assets():
         # Get machine info first to determine manufacturer
         info_response = await get_host_machine_info()
         manufacturer = info_response.get("manufacturer", "other")
-        model = info_response.get("model", "")
         product_name = info_response.get("product_name", "")
         
         # Branding asset mappings by manufacturer
@@ -1903,9 +1953,9 @@ async def get_branding_assets():
                     "precision": "Precision Compact Workstation",
                 },
                 "sff_models": {
-                    "optiplex": "/img/manufacturers/dell-optiplex-sff.png",
-                    "precision": "/img/manufacturers/dell-precision-sff.png",
-                    "poweredge": "/img/manufacturers/dell-poweredge-compact.png",
+                    "optiplex": "/img/manufacturers/dell-optiplex-sff.svg",
+                    "precision": "/img/manufacturers/dell-precision-sff.svg",
+                    "poweredge": "/img/manufacturers/dell-poweredge-compact.svg",
                 }
             },
             "lenovo": {
@@ -1920,9 +1970,9 @@ async def get_branding_assets():
                     "ideacentre": "IdeaCentre Compact PC",
                 },
                 "sff_models": {
-                    "thinkcentre": "/img/manufacturers/lenovo-thinkcentre-sff.png",
-                    "thinkstation": "/img/manufacturers/lenovo-thinkstation-sff.png",
-                    "ideacentre": "/img/manufacturers/lenovo-ideacentre-sff.png",
+                    "thinkcentre": "/img/manufacturers/lenovo-thinkcentre-sff.svg",
+                    "thinkstation": "/img/manufacturers/lenovo-thinkstation-sff.svg",
+                    "ideacentre": "/img/manufacturers/lenovo-ideacentre-sff.svg",
                 }
             },
             "hp": {
@@ -1937,9 +1987,9 @@ async def get_branding_assets():
                     "omen": "OMEN Compact Gaming PC",
                 },
                 "sff_models": {
-                    "elitedesk": "/img/manufacturers/hp-elitedesk-sff.png",
-                    "eliteminimicro": "/img/manufacturers/hp-elitemini-sff.png",
-                    "omen": "/img/manufacturers/hp-omen-sff.png",
+                    "elitedesk": "/img/manufacturers/hp-elitedesk-sff.svg",
+                    "eliteminimicro": "/img/manufacturers/hp-elitemini-sff.svg",
+                    "omen": "/img/manufacturers/hp-omen-sff.svg",
                 }
             },
             "other": {
@@ -1956,19 +2006,19 @@ async def get_branding_assets():
         # Get branding data for manufacturer
         branding = branding_map.get(manufacturer, branding_map["other"])
         
-        # Determine product image based on model
-        product_image_url = "/img/manufacturers/generic-pc.png"  # Default
+        # Determine product image based on product name
+        product_image_url = "/img/manufacturers/generic-pc.svg"  # Default
         
-        model_lower = model.lower()
+        product_lower = product_name.lower()
         for product_type, image_url in branding.get("sff_models", {}).items():
-            if product_type in model_lower:
+            if product_type in product_lower:
                 product_image_url = image_url
                 break
         
         # Determine marketing name
         marketing_name = product_name
         for template_type, template_name in branding.get("marketing_templates", {}).items():
-            if template_type in model_lower:
+            if template_type in product_lower:
                 marketing_name = f"{template_name} ({product_name})"
                 break
         
@@ -1985,7 +2035,7 @@ async def get_branding_assets():
         
         return {
             "manufacturer": manufacturer,
-            "logo_url": branding["logo_url"],
+            "logo_url": branding["logo_fallback"],
             "logo_fallback": branding["logo_fallback"],
             "product_image_url": product_image_url,
             "marketing_name": marketing_name,
@@ -2003,7 +2053,7 @@ async def get_branding_assets():
             "manufacturer": "other",
             "logo_url": "/img/manufacturers/generic-pc.svg",
             "logo_fallback": "/img/manufacturers/generic-pc.svg",
-            "product_image_url": "/img/manufacturers/generic-pc.png",
+            "product_image_url": "/img/manufacturers/generic-pc.svg",
             "marketing_name": "Computer System",
             "product_name": "Unknown",
             "support_url": "",

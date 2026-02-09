@@ -299,29 +299,6 @@ class ClusterModeScreen(BaseScreen):
             ])
         )
 
-    def _update_discovery(self) -> None:
-        discovery = self.query_one("#discovery", Static)
-        discovery_data = self._peer_status.get("discovery", {})
-        connections = self._peer_status.get("connections", {})
-        enabled = discovery_data.get("enabled", False)
-        discovered = discovery_data.get("discovered_peers", [])
-        connected_peers = connections.get("connected_peers", 0)
-        total_peers = connections.get("total_peers", 0)
-
-        mdns_running = self._get_service_status("avahi-daemon")
-        ssh_running = self._get_service_status("sshd")
-
-        discovery.update(
-            "\n".join([
-                "[b]Discovery Process[/b]",
-                f"mDNS Enabled: {'[green]Yes[/green]' if enabled else '[red]No[/red]'}",
-                f"mDNS Service: {'[green]Running[/green]' if mdns_running else '[red]Stopped[/red]'}",
-                f"SSH Service: {'[green]Running[/green]' if ssh_running else '[red]Stopped[/red]'}",
-                f"Discovered Peers: {len(discovered)}",
-                f"Connected Peers: {connected_peers}/{max(total_peers, len(discovered))}",
-            ])
-        )
-
     def _update_troubleshooting(self) -> None:
         troubleshooting = self.query_one("#troubleshooting", Static)
         hints: List[str] = ["[b]🔧 Troubleshooting[/b]"]
@@ -548,49 +525,6 @@ class ClusterModeScreen(BaseScreen):
 
         self._update_peer_table()
         self._update_peer_detail()
-
-    def _set_deployment_mode(self, mode: str) -> None:
-        os.environ["MAP2_DEPLOYMENT_MODE"] = mode
-        config_path = "/etc/map2/lcd.conf"
-        try:
-            lines: List[str] = []
-            updated = False
-            try:
-                with open(config_path, "r", encoding="utf-8") as fh:
-                    for line in fh:
-                        if line.strip().startswith("DEPLOYMENT_MODE="):
-                            lines.append(f"DEPLOYMENT_MODE={mode}\n")
-                            updated = True
-                        else:
-                            lines.append(line)
-            except FileNotFoundError:
-                pass
-
-            if not updated:
-                lines.append(f"DEPLOYMENT_MODE={mode}\n")
-
-            os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            with open(config_path, "w", encoding="utf-8") as fh:
-                fh.writelines(lines)
-
-            self.app.notify(f"Mode set to {mode}. Restart required.", severity="warning", timeout=4)
-        except Exception as e:
-            fallback_path = os.path.expanduser("~/.config/map2/lcd.conf")
-            try:
-                os.makedirs(os.path.dirname(fallback_path), exist_ok=True)
-                with open(fallback_path, "w", encoding="utf-8") as fh:
-                    fh.write(f"DEPLOYMENT_MODE={mode}\n")
-                self.app.notify(
-                    f"Mode set to {mode}. Restart required. Saved to {fallback_path}",
-                    severity="warning",
-                    timeout=6,
-                )
-            except Exception:
-                self.app.notify(
-                    f"Mode set to {mode} (restart required). Failed to write config: {e}",
-                    severity="error",
-                    timeout=6,
-                )
 
     def _get_ssh_status(self, host: str) -> str:
         if not self._ssh_manager:

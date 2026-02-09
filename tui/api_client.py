@@ -2382,15 +2382,6 @@ class MAP2APIClient:
 
     # ==================== SYSTEM METRICS ====================
 
-    async def get_current_metrics(self) -> APIResult:
-        """
-        Get current system metrics snapshot.
-
-        Returns:
-            CPU, memory, disk, and audio metrics.
-        """
-        return await self._request("GET", "/api/metrics/current")
-
     async def get_cpu_history(self, limit: int = 60) -> APIResult:
         """
         Get CPU usage history.
@@ -2514,7 +2505,7 @@ class MAP2APIClient:
         """
         return await self._request("GET", "/api/deployment/status")
 
-    async def get_health_status(self) -> APIResult:
+    async def get_deployment_health_status(self) -> APIResult:
         """
         Get overall deployment health status.
 
@@ -2552,12 +2543,6 @@ class MAP2APIClient:
             Result of remediation action.
         """
         return await self._request("POST", f"/api/deployment/remediation/{action}")
-
-    async def close(self) -> None:
-        """Close the API client and cleanup resources."""
-        if self._client:
-            await self._client.aclose()
-            self._client = None
 
 
 # Global singleton instance (will be initialized in app.py)

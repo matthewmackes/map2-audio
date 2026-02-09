@@ -1,0 +1,28 @@
+[Unit]
+Description=MAP2 Audio Platform - Dev Web Server (Port 3001)
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network.target map2-backend.service
+Wants=map2-backend.service
+
+[Service]
+Type=simple
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio/web
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+Environment="NODE_ENV=development"
+
+# Vite dev server with HMR on port 3001
+ExecStart=/usr/bin/npm run dev
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-web-dev
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

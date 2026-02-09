@@ -432,11 +432,6 @@ class ClusterManagementApp(App):
             notif = self.query_one("#notifications", NotificationWidget)
             notif.show(f"Error switching screens: {str(e)}", NotificationSeverity.ERROR)
 
-    async def action_switch_to_settings(self) -> None:
-        """Switch to settings screen (placeholder)."""
-        notif = self.query_one("#notifications", NotificationWidget)
-        notif.show("Settings not yet implemented", NotificationSeverity.WARNING, 2.0)
-    
     async def action_reconnect(self) -> None:
         """Reconnect to cluster."""
         try:

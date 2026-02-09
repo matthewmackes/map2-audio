@@ -1,4 +1,4 @@
-import { Github, ExternalLink, Info, Music, Code2, Zap, Server, PenTool, Cpu, PanelsTopLeft, Sparkles, Package, AudioLines, Piano, Activity, Sliders, Usb, Palette, ChevronDown, Scale, Database, Globe, Layers, Box, Terminal, FileCode, Headphones, Radio, BookOpen, Shield, Heart, Monitor } from 'lucide-react'
+import { Github, ExternalLink, Info, Music, Code2, Zap, Server, PenTool, Cpu, PanelsTopLeft, Sparkles, Package, AudioLines, Piano, Activity, Sliders, Usb, Palette, ChevronDown, Scale, Database, Globe, Layers, Box, Terminal, FileCode, Headphones, Radio, BookOpen, Shield, Heart, Monitor, Drum } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
@@ -26,94 +26,143 @@ const DragonIcon = ({ size = 16 }: { size?: number }) => (
 )
 
 // Items under the "hic sunt dracones" dropdown
+// Grouped with dividerBefore to visually separate categories
 const underTheHoodItems = [
-  // System
+  // ── System ──
   {
     to: '/',
-    label: 'Holistic System Overview',
+    label: 'Overview',
     icon: Sparkles,
     description: 'System status & quick actions',
-    color: '#f59e0b'  // Amber
+    color: '#f59e0b',  // Amber
+    group: 'System',
   },
   {
     to: '/presets',
     label: 'Presets',
     icon: PanelsTopLeft,
     description: 'Save & recall your sounds',
-    color: '#22c55e'  // Green
+    color: '#22c55e',  // Green
+    group: 'System',
   },
-  // Content & Plugins
+
+  // ── Content & Plugins ──
   {
     to: '/plugins',
     label: 'LV2 Plugins',
     icon: Package,
     description: 'LV2 plugin manager',
     color: '#06b6d4',  // Teal
-    dividerBefore: true
+    dividerBefore: true,
+    group: 'Content & Plugins',
   },
   {
     to: '/library',
     label: 'IR & NAM Library',
     icon: AudioLines,
     description: 'Impulse responses & NAM models',
-    color: '#06b6d4'  // Teal
+    color: '#06b6d4',  // Teal
+    group: 'Content & Plugins',
   },
-  // Audio Processing
+
+  // ── Audio Processing ──
   {
     to: '/metering',
     label: 'Metering',
     icon: Activity,
     description: 'Audio analysis & monitoring',
     color: '#37d6c9',  // Cyan-teal
-    dividerBefore: true
+    dividerBefore: true,
+    group: 'Audio Processing',
   },
   {
     to: '/dsp',
     label: 'DSP',
     icon: Sliders,
     description: 'Dynamics & EQ processors',
-    color: '#ff6644'  // Orange-red
+    color: '#ff6644',  // Orange-red
+    group: 'Audio Processing',
   },
-  // Control
+  {
+    to: '/drums',
+    label: 'Drums',
+    icon: Drum,
+    description: 'Drum machine & practice patterns',
+    color: '#f59e0b',  // Amber
+    group: 'Audio Processing',
+  },
+
+  // ── Control ──
   {
     to: '/midi',
     label: 'MIDI',
     icon: Piano,
     description: 'MIDI mapping & control',
     color: '#ec4899',  // Pink
-    dividerBefore: true
+    dividerBefore: true,
+    group: 'Control',
   },
-  // Hardware
+
+  // ── Hardware & Interfaces ──
   {
     to: '/lcd',
-    label: 'LCD Display',
+    label: 'LCD Console',
     icon: Monitor,
-    description: 'Hardware LCD configuration',
+    description: 'Displays, events, nodes, alerts, hardware & settings',
     color: '#22c55e',  // Green
-    dividerBefore: true
+    dividerBefore: true,
+    group: 'Hardware & Interfaces',
   },
   {
     to: '/edirol-ua1000',
     label: 'Edirol UA-1000',
     icon: Usb,
     description: 'USB audio interface control',
-    color: '#0066cc'  // Roland blue
+    color: '#0066cc',  // Roland blue
+    group: 'Hardware & Interfaces',
   },
   {
     to: '/hotone-jogg',
     label: 'HoTone JoGG',
     icon: AudioLines,
     description: 'HoTone audio interface',
-    color: '#e53935'  // HoTone red
+    color: '#e53935',  // HoTone red
+    group: 'Hardware & Interfaces',
   },
-  // Cluster Management
+  {
+    to: '/pipewire',
+    label: 'PipeWire',
+    icon: Radio,
+    description: 'Audio server graph, latency & controls',
+    color: '#a78bfa',  // Purple
+    group: 'Hardware & Interfaces',
+  },
+
+  // ── Infrastructure ──
+  {
+    to: '/host-machine',
+    label: 'Host Machine',
+    icon: Server,
+    description: 'Hardware info & real-time health',
+    color: '#3b82f6',  // Blue
+    dividerBefore: true,
+    group: 'Infrastructure',
+  },
   {
     to: '/cluster-dashboard',
     label: 'Cluster Dashboard',
     icon: Server,
     description: 'Multi-node cluster monitoring & simulation',
     color: '#00d4ff',  // Cyan
-    dividerBefore: true
+    group: 'Infrastructure',
+  },
+  {
+    to: '/multi-system',
+    label: 'Multi-System',
+    icon: Monitor,
+    description: 'Side-by-side multi-host metrics & comparison',
+    color: '#38bdf8',  // Sky blue
+    group: 'Infrastructure',
   },
 ]
 
@@ -613,6 +662,7 @@ export function AboutPage() {
   const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
+  const [legalOpen, setLegalOpen] = useState(false)
 
   const refreshCustomThemes = useCallback(() => {
     setCustomThemes(getCustomThemes())
@@ -1351,6 +1401,156 @@ export function AboutPage() {
         </div>
       </div>
 
+      {/* Legal Disclaimer Panel */}
+      <div style={{
+        marginTop: 32,
+        borderRadius: 12,
+        border: '1px solid rgba(161, 161, 170, 0.2)',
+        background: 'rgba(24, 24, 27, 0.6)',
+        backdropFilter: 'blur(8px)',
+        overflow: 'hidden'
+      }}>
+        <button
+          onClick={() => setLegalOpen(prev => !prev)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#a1a1aa'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Scale size={16} style={{ color: '#a1a1aa' }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#d4d4d8', letterSpacing: '0.5px' }}>
+              LEGAL DISCLAIMER – IMPORTANT NOTICE
+            </span>
+          </div>
+          <ChevronDown
+            size={16}
+            style={{
+              transform: legalOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 200ms ease'
+            }}
+          />
+        </button>
+        {legalOpen && (
+          <div style={{
+            padding: '0 20px 20px',
+            fontSize: 12,
+            color: '#a1a1aa',
+            lineHeight: '1.7',
+            borderTop: '1px solid rgba(161, 161, 170, 0.1)'
+          }}>
+            <p style={{ marginTop: 16, color: '#d4d4d8', fontWeight: 600, fontSize: 13 }}>
+              This project is a strictly non-commercial, educational, open-source resource created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes.
+            </p>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Affiliation, Endorsement, Sponsorship or Connection of Any Kind</h4>
+            <p style={{ margin: '0 0 12px' }}>
+              This software, source code, documentation, presets, examples, impulse responses, user interface text, comments, variable/function names, demo files, and any other materials are <strong style={{ color: '#d4d4d8' }}>in no way affiliated with, endorsed by, approved by, sponsored by, officially connected to, or associated with</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder in the professional audio industry.
+            </p>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Trademark, Trade Name, Product Name &amp; Intellectual Property Notice</h4>
+            <p style={{ margin: '0 0 12px' }}>
+              All trademarks, service marks, trade names, brand names, product names, model designations, logos, slogans, distinctive designs, packaging, software titles, plugin names, and other intellectual property (whether registered or unregistered) that may appear in any form within this project are the <strong style={{ color: '#d4d4d8' }}>exclusive property of their respective owners</strong>.
+            </p>
+            <p style={{ margin: '0 0 12px' }}>
+              This project claims <strong style={{ color: '#d4d4d8' }}>no ownership</strong>, license, permission, authorization, sponsorship, or other right to use any such intellectual property.
+            </p>
+            <p style={{ margin: '0 0 8px' }}>
+              References to any brand, product, model, algorithm name, effect name, hardware unit, software title, or related terminology are made <strong style={{ color: '#d4d4d8' }}>solely for educational, historical, descriptive, comparative, and referential purposes</strong> — including (but not limited to):
+            </p>
+            <ul style={{ margin: '0 0 12px', paddingLeft: 24 }}>
+              <li style={{ marginBottom: 4 }}>identifying well-known audio effects processors, algorithms, or sonic characteristics that are widely discussed in public-domain literature, academic papers, textbooks, tutorials, forums, and engineering communities</li>
+              <li style={{ marginBottom: 4 }}>helping learners understand historically significant signal-processing techniques</li>
+              <li>facilitating comparison and study of different approaches to reverb, delay, modulation, pitch/time manipulation, dynamics, distortion, filtering, harmonics, spatial effects, and similar audio processing concepts</li>
+            </ul>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Legal Basis in the United States</h4>
+            <p style={{ margin: '0 0 8px' }}>
+              In the United States, limited referential use of trademarks in non-commercial, educational, descriptive, or comparative contexts is often protected under several legal doctrines, including:
+            </p>
+            <ul style={{ margin: '0 0 12px', paddingLeft: 24, listStyleType: 'none' }}>
+              <li style={{ marginBottom: 10 }}>
+                <strong style={{ color: '#d4d4d8' }}>Nominative fair use</strong><br />
+                <span style={{ fontSize: 11 }}>(New Kids on the Block v. News America Publishing, Inc., 971 F.2d 302 (9th Cir. 1992) and subsequent case law)</span><br />
+                → Allows use of a trademark to identify the actual product/service when there is no practical alternative way to refer to it, no suggestion of sponsorship or endorsement, and no more use than reasonably necessary.
+              </li>
+              <li style={{ marginBottom: 10 }}>
+                <strong style={{ color: '#d4d4d8' }}>Descriptive / informational fair use</strong><br />
+                → Permits use of a mark descriptively (to describe a characteristic, function, or type of product) rather than as a source identifier, particularly when the use is in good faith and does not create a likelihood of confusion.
+              </li>
+              <li style={{ marginBottom: 10 }}>
+                <strong style={{ color: '#d4d4d8' }}>First Amendment / expressive use</strong><br />
+                → Educational commentary, criticism, teaching, scholarship, research, and non-commercial expression receive strong protection under the First Amendment, especially when the use is transformative, non-misleading, and does not compete with the trademark owner's goods or services.
+              </li>
+              <li style={{ marginBottom: 10 }}>
+                <strong style={{ color: '#d4d4d8' }}>Classic / nominative fair use in comparative or referential contexts</strong><br />
+                → Commonly accepted in technical documentation, reviews, academic writing, and open-source educational projects when the mark is used only as necessary to refer to the genuine article.
+              </li>
+            </ul>
+            <p style={{ margin: '0 0 12px' }}>
+              <strong style={{ color: '#d4d4d8' }}>This project is intentionally designed to fall within these principles</strong>: it is non-commercial, does not compete with any commercial product, makes no false claims of affiliation, and uses references only to the extent necessary for genuine educational purposes.
+            </p>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Explicit Restrictions &amp; Prohibitions</h4>
+            <p style={{ margin: '0 0 8px' }}>
+              This project is <strong style={{ color: '#d4d4d8' }}>expressly NOT intended</strong> for, and you are strictly prohibited from using it (or any derivative thereof) in connection with:
+            </p>
+            <ul style={{ margin: '0 0 12px', paddingLeft: 24 }}>
+              <li style={{ marginBottom: 4 }}>any commercial purpose</li>
+              <li style={{ marginBottom: 4 }}>resale, redistribution for profit, or incorporation into any for-profit product</li>
+              <li style={{ marginBottom: 4 }}>inclusion in commercial software, plugins, hardware, apps, services, or subscription offerings</li>
+              <li style={{ marginBottom: 4 }}>any form of direct or indirect monetization</li>
+              <li style={{ marginBottom: 4 }}>retail distribution</li>
+              <li>any use that could reasonably suggest sponsorship, endorsement, affiliation, partnership, or licensing by any trademark owner or rights holder</li>
+            </ul>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No License or Permission Granted</h4>
+            <p style={{ margin: '0 0 12px' }}>
+              Nothing contained in this project — including source code, comments, variable names, function names, documentation, presets, impulse responses, demo files, UI text, or any other content — should be construed as granting (explicitly, implicitly, by estoppel, or otherwise) any license, right, permission, or authorization to use any trademark, trade name, product designation, logo, copyrighted material, patented technology, or other intellectual property in a commercial context or in any manner that would suggest source, sponsorship, or endorsement.
+            </p>
+            <p style={{ margin: '0 0 12px' }}>
+              If you intend to use any referenced effect, algorithm, impulse response, sound design technique, branding, product name, or similar element in a <strong style={{ color: '#d4d4d8' }}>commercial product, service, plugin, hardware device, or monetized offering</strong>, you <strong style={{ color: '#d4d4d8' }}>must</strong> obtain all necessary licenses, permissions, and clearances directly from the respective rights holders.
+            </p>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Warranty – Use at Your Own Risk</h4>
+            <p style={{ margin: '0 0 12px' }}>
+              This project and all associated materials are provided <strong style={{ color: '#d4d4d8' }}>"AS IS"</strong> and <strong style={{ color: '#d4d4d8' }}>"AS AVAILABLE"</strong>, with <strong style={{ color: '#d4d4d8' }}>no warranties</strong> of any kind — express, implied, statutory, or otherwise — including (without limitation) warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, reliability, or uninterrupted operation.
+            </p>
+            <p style={{ margin: '0 0 12px' }}>
+              The authors, contributors, maintainers, and distributors shall not be liable under any legal theory for any damages (direct, indirect, incidental, special, consequential, punitive, or exemplary) arising from the use, misuse, or inability to use this educational resource, even if advised of the possibility of such damage.
+            </p>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Your Responsibility</h4>
+            <p style={{ margin: '0 0 8px' }}>
+              By accessing, studying, compiling, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
+            </p>
+            <ol style={{ margin: '0 0 12px', paddingLeft: 24 }}>
+              <li style={{ marginBottom: 6 }}>Not represent or imply that this project is official, endorsed, affiliated with, sponsored by, or produced by any commercial brand, manufacturer, or rights holder</li>
+              <li style={{ marginBottom: 6 }}>Not use any referenced marks in a manner likely to cause confusion, mistake, or deception as to source, sponsorship, or affiliation</li>
+              <li style={{ marginBottom: 6 }}>Comply with all applicable trademark, copyright, unfair competition, and intellectual property laws in your jurisdiction</li>
+              <li>Refrain from creating or distributing derivative works for commercial purposes that prominently feature protected brand names, model designations, logos, or other indicia without express written permission from the rights holders</li>
+            </ol>
+
+            <p style={{ margin: '16px 0 8px', color: '#d4d4d8', fontStyle: 'italic', fontSize: 12 }}>
+              We respectfully ask all users to honor the intellectual property rights of the many talented engineers, designers, and companies that have advanced the field of audio signal processing.
+            </p>
+            <p style={{ margin: '0 0 0', color: '#d4d4d8', fontStyle: 'italic', fontSize: 12 }}>
+              Thank you for using this educational resource responsibly.
+            </p>
+            <p style={{ margin: '12px 0 0', color: '#71717a', fontSize: 11 }}>
+              Last updated: 2026
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Advanced Settings Menu (hic sunt dracones) - Bottom Button */}
       <div style={{
         marginTop: 32,
@@ -1391,11 +1591,25 @@ export function AboutPage() {
             {underTheHoodItems.map((item, index) => (
               <div key={item.to}>
                 {item.dividerBefore && (
-                  <div style={{
-                    height: '1px',
-                    background: 'var(--border)',
-                    margin: '8px 0'
-                  }} />
+                  <>
+                    <div style={{
+                      height: '1px',
+                      background: 'var(--border)',
+                      margin: '8px 0 0 0'
+                    }} />
+                    {item.group && (
+                      <div style={{
+                        padding: '6px 16px 2px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: '#71717a',
+                      }}>
+                        {item.group}
+                      </div>
+                    )}
+                  </>
                 )}
                 <MenuItem
                   className="menu-item"

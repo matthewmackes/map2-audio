@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw, Cpu, HardDrive, Zap, Monitor } from 'lucide-react'
 
+const API_BASE = (() => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const port = window.location.port
+  if (isLocalhost) return '/api'
+  if (port === '' || port === '80' || port === '8080') return '/api'
+  return `http://${window.location.hostname}:8080/api`
+})()
+
 interface ClusterNode {
   node_id: string
   hostname: string
@@ -20,13 +28,13 @@ interface DeploymentModeResponse {
 }
 
 async function fetchDeploymentMode(): Promise<DeploymentModeResponse> {
-  const res = await fetch('/api/deployment/mode')
+  const res = await fetch(`${API_BASE}/deployment/mode`)
   if (!res.ok) throw new Error('Failed to fetch deployment mode')
   return res.json()
 }
 
 async function fetchClusterNodes(): Promise<{ nodes: ClusterNode[] }> {
-  const res = await fetch('/api/cluster/nodes')
+  const res = await fetch(`${API_BASE}/cluster/nodes`)
   if (!res.ok) {
     throw new Error('Failed to fetch cluster nodes')
   }
@@ -62,7 +70,7 @@ export function ClusterDashboard() {
 
   const toggleMaintenance = async (node: ClusterNode) => {
     const enabled = node.status !== 'maintenance'
-    await fetch(`/api/cluster/nodes/${node.node_id}/maintenance`, {
+    await fetch(`${API_BASE}/cluster/nodes/${node.node_id}/maintenance`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled }),

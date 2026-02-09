@@ -167,15 +167,25 @@ def collect_node_mode() -> NodeMode:
 
 def collect_service_states() -> List[ServiceInfo]:
     """Check systemd service status for key MAP2 services."""
-    services_to_check = [
-        "map2-backend",
-        "pipewire",
-        "pipewire-pulse",
-        "wireplumber",
-    ]
+    # System-level services
+    system_services = ["map2-backend"]
+    # User-level services (pipewire stack runs under systemd --user)
+    user_services = ["pipewire", "pipewire-pulse", "wireplumber"]
+
     result: List[ServiceInfo] = []
-    for svc in services_to_check:
+    for svc in system_services:
         output = _run_cmd(f"systemctl is-active {svc} 2>/dev/null")
+        if output == "active":
+            state = ServiceState.RUNNING
+        elif output == "failed":
+            state = ServiceState.FAILED
+        elif output == "inactive":
+            state = ServiceState.STOPPED
+        else:
+            state = ServiceState.UNKNOWN
+        result.append(ServiceInfo(name=svc, state=state))
+    for svc in user_services:
+        output = _run_cmd(f"systemctl --user is-active {svc} 2>/dev/null")
         if output == "active":
             state = ServiceState.RUNNING
         elif output == "failed":
@@ -219,13 +229,14 @@ async def collect_from_api(client: NodeAPIClient) -> dict:
 def _parse_pipewire(pw_data: Optional[dict], pw_settings: Optional[dict]) -> PipewireStatus:
     if not pw_data:
         return PipewireStatus()
-    state = ServiceState.RUNNING if pw_data.get("running") else ServiceState.STOPPED
+    daemon = pw_data.get("daemon") or {}
+    state = ServiceState.RUNNING if daemon.get("running") else ServiceState.STOPPED
     sr = 0
     bs = 0
     quantum = 0
     if pw_settings:
-        sr = pw_settings.get("rate", pw_settings.get("default_rate", 0))
-        quantum = pw_settings.get("quantum", pw_settings.get("default_quantum", 0))
+        sr = pw_settings.get("clock_rate", pw_settings.get("clock_force_rate", 0))
+        quantum = pw_settings.get("clock_quantum", pw_settings.get("clock_force_quantum", 0))
         bs = quantum
     latency = (quantum / sr * 1000) if sr and quantum else 0.0
     return PipewireStatus(

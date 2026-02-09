@@ -60,11 +60,15 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
     setError('')
     
     try {
-      const response = await fetch('/api/plugins')
+      const response = await fetch('/api/plugins/discover')
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
       const data = await response.json()
       
       // Filter for native plugins (uri starts with "map2://")
-      const native = data.plugins.filter((p: Plugin) => p.uri.startsWith('map2://'))
+      const plugins = data.plugins || []
+      const native = plugins.filter((p: Plugin) => p.uri.startsWith('map2://'))
       
       setNativePlugins(native)
     } catch (err) {

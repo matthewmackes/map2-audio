@@ -67,6 +67,7 @@ import {
   ClusterDashboard,
   FlowAssignmentMatrix,
   FlowAssignmentDialog,
+  FlowRoutingVisualizer,
   getCategoryConfig,
 } from '../components/GridFlow'
 import type { AudioInterfaceStatus, MidiMapping, AutomationLane } from '../components/GridFlow'
@@ -86,6 +87,14 @@ import { ConfirmationDialog } from '../components/GridFlow/ConfirmationDialog'
 import { ButtonGroup } from '../components/GridFlow/ButtonGroup'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
 import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot } from '../../map2/types'
+
+const API_BASE = (() => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const port = window.location.port
+  if (isLocalhost) return '/api'
+  if (port === '' || port === '80' || port === '8080') return '/api'
+  return `http://${window.location.hostname}:8080/api`
+})()
 
 // ============================================================================
 // Types
@@ -324,9 +333,8 @@ export function GridFlowPage() {
   const [automationLanes, setAutomationLanes] = useState<AutomationLane[]>([])
   const [lanePickerOpen, setLanePickerOpen] = useState(false)
 
-  // Audio Port Selection State
-  const [inputPortSelectorOpen, setInputPortSelectorOpen] = useState(false)
-  const [outputPortSelectorOpen, setOutputPortSelectorOpen] = useState(false)
+  // Audio Port Selection State — unified per-flow selector
+  const [portSelectorFlowIndex, setPortSelectorFlowIndex] = useState<number | null>(null)
 
   // ============================================================================
   // Toolbar Enhancement State
@@ -487,7 +495,7 @@ export function GridFlowPage() {
   const clusterNodesQuery = useQuery({
     queryKey: ['cluster', 'nodes'],
     queryFn: async () => {
-      const res = await fetch('/api/cluster/nodes')
+      const res = await fetch(`${API_BASE}/cluster/nodes`)
       if (!res.ok) throw new Error('Failed to load cluster nodes')
       return res.json()
     },
@@ -1050,7 +1058,7 @@ export function GridFlowPage() {
     }
 
     try {
-      const res = await fetch('/api/cluster/flows/assign', {
+      const res = await fetch(`${API_BASE}/cluster/flows/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1842,6 +1850,29 @@ export function GridFlowPage() {
         <ClusterDashboard />
         <FlowAssignmentMatrix />
 
+        {/* Signal Routing Topology Diagram */}
+        <div style={{
+          padding: '12px 24px 4px',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
+        }}>
+          <FlowRoutingVisualizer
+            mode={routing.mode}
+            flows={flowSlots.map((slot, i) => ({
+              id: slot.id,
+              label: SLOT_COLORS[i]?.label || slot.label,
+              color: SLOT_COLORS[i]?.color || slot.color,
+              muted: slot.muted,
+              active: routing.activeSlotId === slot.id,
+              blendPercent: routing.blendPositions[slot.id] ?? 100,
+            }))}
+            morphProgress={routing.morphProgress}
+            activeFlowId={routing.activeSlotId}
+            morphSourceId={routing.morphSourceSlotId}
+            morphTargetId={routing.morphTargetSlotId}
+            compact={flowSlots.length > 4}
+          />
+        </div>
+
         {/* Multi-flow signal grids */}
         <div className="grid-flow-slots">
           {flowSlots.map((flow, index) => {
@@ -2004,16 +2035,29 @@ export function GridFlowPage() {
                         setActiveFlowIndex(index)
                         handlePluginSelect(uri)
                       }}
-                      onToggleBypass={handleToggleBypass}
-                      onDeletePlugin={handleDeletePlugin}
-                      onReorderPlugins={handleReorderPlugins}
+                      onToggleBypass={(uri, bypassed) => {
+                        if (!flowChain) return
+                        bypassMutation.mutate({ chainId: flowChain.id, pluginUri: uri, bypass: bypassed })
+                      }}
+                      onDeletePlugin={(uri) => {
+                        if (!flowChain) return
+                        deleteMutation.mutate({ chainId: flowChain.id, pluginUri: uri })
+                      }}
+                      onReorderPlugins={(pluginUris) => {
+                        if (!flowChain) return
+                        reorderMutation.mutate({ chainId: flowChain.id, pluginUris })
+                      }}
                       onAddPlugin={handleAddPlugin}
-                      onAddPluginDirect={handleAddPluginDirect}
-                      audioStatus={isActive ? audioInterfaceStatus : undefined}
+                      onAddPluginDirect={(uri) => {
+                        if (!flowChain) return
+                        addPluginMutation.mutate({ chainId: flowChain.id, pluginUri: uri })
+                      }}
+                      audioStatus={audioInterfaceStatus}
+                      audioOutputStatus={audioOutputStatus}
                       pluginLevels={pluginLevels}
-                      showEndpoints={isActive}
-                      onInputPortSelectClick={() => setInputPortSelectorOpen(true)}
-                      onOutputPortSelectClick={() => setOutputPortSelectorOpen(true)}
+                      showEndpoints={true}
+                      onInputPortSelectClick={() => setPortSelectorFlowIndex(index)}
+                      onOutputPortSelectClick={() => setPortSelectorFlowIndex(index)}
                     />
                   </div>
                 </div>
@@ -2607,24 +2651,17 @@ export function GridFlowPage() {
         </div>
       )}
 
-      {/* Audio Port Selector Modals */}
+      {/* Unified Audio Port Selector — per-flow or global */}
       <AudioPortSelector
-        type="input"
-        open={inputPortSelectorOpen}
-        onClose={() => setInputPortSelectorOpen(false)}
+        open={portSelectorFlowIndex !== null}
+        onClose={() => setPortSelectorFlowIndex(null)}
+        chainId={portSelectorFlowIndex !== null ? flowSlots[portSelectorFlowIndex]?.chainId : null}
+        flowLabel={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.label || '') : undefined}
+        flowColor={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.color || '#00d4ff') : undefined}
         onPortsChange={() => {
           queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
-          pushToast('Input ports updated', 'success')
-        }}
-      />
-
-      <AudioPortSelector
-        type="output"
-        open={outputPortSelectorOpen}
-        onClose={() => setOutputPortSelectorOpen(false)}
-        onPortsChange={() => {
-          queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
-          pushToast('Output ports updated', 'success')
+          const label = portSelectorFlowIndex !== null ? SLOT_COLORS[portSelectorFlowIndex]?.label : ''
+          pushToast(`Flow ${label} port routing updated`, 'success')
         }}
       />
 

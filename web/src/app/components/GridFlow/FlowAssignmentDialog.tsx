@@ -2,6 +2,14 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Server } from 'lucide-react'
 
+const API_BASE = (() => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const port = window.location.port
+  if (isLocalhost) return '/api'
+  if (port === '' || port === '80' || port === '8080') return '/api'
+  return `http://${window.location.hostname}:8080/api`
+})()
+
 interface FlowAssignmentDialogProps {
   isOpen: boolean
   flowId: string | null
@@ -32,7 +40,7 @@ export function FlowAssignmentDialog({
   const { data: chainAnalysis } = useQuery({
     queryKey: ['chains', chainId, 'analysis'],
     queryFn: async () => {
-      const res = await fetch(`/api/chains/${chainId}/analysis`)
+      const res = await fetch(`${API_BASE}/chains/${chainId}/analysis`)
       if (!res.ok) throw new Error('Failed to load chain analysis')
       return res.json()
     },

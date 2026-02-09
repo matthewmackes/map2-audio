@@ -3,7 +3,7 @@ Description=MAP2 Audio Platform Boot Manager
 Documentation=https://github.com/matthewmackes/map2-audio
 After=network-online.target map2-selinux-disable.service
 Wants=network-online.target
-Before=map2-backend.service map2-web.service
+Before=map2-backend.service map2-web-prod.service map2-web-dev.service
 
 [Service]
 Type=oneshot

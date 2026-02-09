@@ -78,14 +78,22 @@ const RAW_API_BASE = (() => {
   if (envBase) return envBase
 
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  const isFrontendPort = window.location.port === '3000'
+  const port = window.location.port
 
-  // If running on localhost or on the frontend dev port, use /api proxy
-  if (isLocalhost || isFrontendPort) {
+  // On localhost, /api works via the Vite dev server proxy (3001), the
+  // port-80 reverse proxy, or direct 8080 access.
+  if (isLocalhost) {
     return '/api'
   }
 
-  // For remote access (e.g., 172.20.234.234:3000), construct API URL to port 8080
+  // Port 80 is reverse-proxied to 8080, so relative /api works there too.
+  // Port 8080 is the backend itself — relative /api also works.
+  if (port === '' || port === '80' || port === '8080') {
+    return '/api'
+  }
+
+  // For any other port on a remote host (e.g., the static "serve" on 3000,
+  // or the Vite dev server on 3001), call the backend on port 8080 directly.
   return `http://${window.location.hostname}:8080/api`
 })()
 const API_BASE = RAW_API_BASE.endsWith('/') ? RAW_API_BASE.slice(0, -1) : RAW_API_BASE
@@ -283,6 +291,29 @@ export const audioApi = {
   },
 
   getPortPresets: () => fetchJson<AudioPortPresetsResponse>(`${API_BASE}/audio/ports/presets`),
+
+  // Per-chain port routing
+  getChainRouting: (chainId: number) =>
+    fetchJson<ChainRoutingResponse>(`${API_BASE}/audio/routing/chain/${chainId}`),
+
+  setChainRouting: (chainId: number, config: { inputPorts?: number[]; outputPorts?: number[] }) => {
+    const params = new URLSearchParams();
+    if (config.inputPorts) {
+      config.inputPorts.forEach(p => params.append('input_ports', p.toString()));
+    }
+    if (config.outputPorts) {
+      config.outputPorts.forEach(p => params.append('output_ports', p.toString()));
+    }
+    return fetchJson<ChainRoutingUpdateResponse>(`${API_BASE}/audio/routing/chain/${chainId}?${params.toString()}`, {
+      method: 'POST',
+    });
+  },
+
+  clearChainRouting: (chainId: number) =>
+    fetchJson<{ success: boolean; message: string; chain_id: number; input_ports: number[]; output_ports: number[] }>(
+      `${API_BASE}/audio/routing/chain/${chainId}`,
+      { method: 'DELETE' }
+    ),
 };
 
 // Audio health types
@@ -356,6 +387,22 @@ export interface AudioRoutingResponse {
 export interface AudioRoutingUpdateResponse {
   success: boolean;
   message: string;
+  input_ports: number[];
+  output_ports: number[];
+}
+
+export interface ChainRoutingResponse {
+  available: boolean;
+  chain_id: number;
+  input_ports: number[];
+  output_ports: number[];
+  is_override: boolean;
+}
+
+export interface ChainRoutingUpdateResponse {
+  success: boolean;
+  message: string;
+  chain_id: number;
   input_ports: number[];
   output_ports: number[];
 }

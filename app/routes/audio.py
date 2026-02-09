@@ -995,6 +995,9 @@ try:
         "output_ports": [0, 1],  # Default: first stereo pair
     }
 
+    # Per-chain port routing overrides: { chain_id: { "input_ports": [...], "output_ports": [...] } }
+    _chain_port_routing: Dict[int, Dict[str, list]] = {}
+
     @router.get("/ports")
     async def get_available_ports() -> Dict[str, Any]:
         """
@@ -1170,6 +1173,96 @@ try:
             "message": "Port routing updated",
             "input_ports": _port_routing_config["input_ports"],
             "output_ports": _port_routing_config["output_ports"]
+        }
+
+    @router.get("/routing/chain/{chain_id}")
+    async def get_chain_port_routing(chain_id: int) -> Dict[str, Any]:
+        """
+        Get port routing for a specific chain.
+        Falls back to global routing if no per-chain override exists.
+        """
+        if chain_id in _chain_port_routing:
+            return {
+                "available": True,
+                "chain_id": chain_id,
+                "input_ports": _chain_port_routing[chain_id].get("input_ports", _port_routing_config["input_ports"]),
+                "output_ports": _chain_port_routing[chain_id].get("output_ports", _port_routing_config["output_ports"]),
+                "is_override": True,
+            }
+        return {
+            "available": True,
+            "chain_id": chain_id,
+            "input_ports": _port_routing_config["input_ports"],
+            "output_ports": _port_routing_config["output_ports"],
+            "is_override": False,
+        }
+
+    @router.post("/routing/chain/{chain_id}")
+    async def set_chain_port_routing(
+        chain_id: int,
+        input_ports: List[int] = Query(None, description="Input port indices for this chain"),
+        output_ports: List[int] = Query(None, description="Output port indices for this chain"),
+    ) -> Dict[str, Any]:
+        """
+        Set port routing for a specific chain/flow.
+        """
+        service = get_audio_engine()
+        if not service.is_available:
+            raise HTTPException(status_code=503, detail="Audio engine not available")
+
+        info = service.get_system_info()
+        max_inputs = info.get("input_channels", 2)
+        max_outputs = info.get("output_channels", 2)
+
+        if chain_id not in _chain_port_routing:
+            _chain_port_routing[chain_id] = {
+                "input_ports": list(_port_routing_config["input_ports"]),
+                "output_ports": list(_port_routing_config["output_ports"]),
+            }
+
+        if input_ports is not None:
+            for port in input_ports:
+                if port < 0 or port >= max_inputs:
+                    raise HTTPException(status_code=400, detail=f"Invalid input port {port}. Valid range: 0-{max_inputs - 1}")
+            _chain_port_routing[chain_id]["input_ports"] = input_ports
+            try:
+                if hasattr(service._engine, 'set_input_channels'):
+                    service._engine.set_input_channels(input_ports)
+            except Exception as e:
+                logger.warning(f"Could not apply chain input routing to engine: {e}")
+
+        if output_ports is not None:
+            for port in output_ports:
+                if port < 0 or port >= max_outputs:
+                    raise HTTPException(status_code=400, detail=f"Invalid output port {port}. Valid range: 0-{max_outputs - 1}")
+            _chain_port_routing[chain_id]["output_ports"] = output_ports
+            try:
+                if hasattr(service._engine, 'set_output_channels'):
+                    service._engine.set_output_channels(output_ports)
+            except Exception as e:
+                logger.warning(f"Could not apply chain output routing to engine: {e}")
+
+        return {
+            "success": True,
+            "message": f"Chain {chain_id} port routing updated",
+            "chain_id": chain_id,
+            "input_ports": _chain_port_routing[chain_id]["input_ports"],
+            "output_ports": _chain_port_routing[chain_id]["output_ports"],
+        }
+
+    @router.delete("/routing/chain/{chain_id}")
+    async def clear_chain_port_routing(chain_id: int) -> Dict[str, Any]:
+        """
+        Remove per-chain port routing override (revert to global).
+        """
+        if chain_id in _chain_port_routing:
+            del _chain_port_routing[chain_id]
+        return {
+            "success": True,
+            "message": f"Chain {chain_id} reverted to global routing",
+            "chain_id": chain_id,
+            "input_ports": _port_routing_config["input_ports"],
+            "output_ports": _port_routing_config["output_ports"],
         }
 
     @router.get("/ports/presets")

@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw, AlertTriangle, GitBranch } from 'lucide-react'
 
+const API_BASE = (() => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const port = window.location.port
+  if (isLocalhost) return '/api'
+  if (port === '' || port === '80' || port === '8080') return '/api'
+  return `http://${window.location.hostname}:8080/api`
+})()
+
 interface FlowAssignment {
   flow_id: string
   chain_id: number
@@ -15,13 +23,13 @@ interface DeploymentModeResponse {
 }
 
 async function fetchDeploymentMode(): Promise<DeploymentModeResponse> {
-  const res = await fetch('/api/deployment/mode')
+  const res = await fetch(`${API_BASE}/deployment/mode`)
   if (!res.ok) throw new Error('Failed to fetch deployment mode')
   return res.json()
 }
 
 async function fetchAssignments(): Promise<{ assignments: FlowAssignment[]; total: number }> {
-  const res = await fetch('/api/cluster/flows/assignments')
+  const res = await fetch(`${API_BASE}/cluster/flows/assignments`)
   if (!res.ok) {
     throw new Error('Failed to fetch flow assignments')
   }
@@ -50,7 +58,7 @@ export function FlowAssignmentMatrix() {
     const confirmed = window.confirm('Trigger failover to standby node?')
     if (!confirmed) return
 
-    await fetch('/api/cluster/flows/failover', {
+    await fetch(`${API_BASE}/cluster/flows/failover`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ flow_id: flowId }),

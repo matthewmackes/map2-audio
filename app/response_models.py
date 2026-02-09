@@ -343,7 +343,6 @@ class DiskInfo(BaseModel):
 class HostMachineInfo(BaseModel):
     """Host machine hardware information."""
     manufacturer: str  # "dell", "lenovo", "hp", "other"
-    model: str
     product_name: str
     serial_number: Optional[str] = None
     bios_version: Optional[str] = None
@@ -353,10 +352,12 @@ class HostMachineInfo(BaseModel):
     cpu_model: str
     cpu_cores: int
     cpu_threads: int
-    cpu_frequency_ghz: Optional[float] = None
-    ram_total_gb: float
+    cpu_frequency_mhz: Optional[float] = None
+    total_memory_mb: float
     motherboard: Optional[str] = None
     firmware_version: Optional[str] = None
+    hostname: Optional[str] = None
+    kernel_version: Optional[str] = None
 
 
 class DiskHealthData(BaseModel):

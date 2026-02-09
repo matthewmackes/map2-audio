@@ -19,7 +19,7 @@ export default defineConfig({
   },
   plugins: [react(), svgr()],
   server: {
-    port: 3000,
+    port: 3001,
     host: '0.0.0.0',
     proxy: {
       // Proxy all API requests to FastAPI backend
@@ -61,5 +61,6 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: '0.0.0.0',
+    strictPort: true,
   }
 })

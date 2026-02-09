@@ -48,12 +48,15 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, gap: 2.5 }}>
       {diskHealth.disks.map((disk, idx) => {
-        // Map overall_health to individual disk status
-        const overallStatus = diskHealth.overall_health === 'excellent' || diskHealth.overall_health === 'good' 
+        // Use per-disk health_status if available, otherwise fall back to overall_health
+        const diskStatus = disk.health_status || diskHealth.overall_health || 'unknown'
+        const overallStatus = (diskStatus === 'excellent' || diskStatus === 'good' || diskStatus === 'healthy')
           ? 'passing' 
-          : diskHealth.overall_health === 'warning' 
+          : diskStatus === 'warning' 
           ? 'warning' 
-          : 'failing'
+          : diskStatus === 'critical' || diskStatus === 'failing'
+          ? 'failing'
+          : 'passing'
         
         const colors = getHealthColor(overallStatus)
 
@@ -64,14 +67,16 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
               <Box>
                 <Typography sx={{ fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <HardDrive size={18} style={{ color: colors.icon }} />
-                  {disk.device.toUpperCase()}
+                  {(disk.name || disk.device || 'Unknown').toUpperCase()}
                 </Typography>
-                <Typography sx={{ fontSize: 12, color: '#666', mt: 0.5 }}>{disk.mount_point}</Typography>
+                {(disk.mount_point || disk.model) && (
+                  <Typography sx={{ fontSize: 12, color: '#666', mt: 0.5 }}>{disk.mount_point || disk.model}</Typography>
+                )}
               </Box>
 
               <Chip
                 icon={getHealthIcon(overallStatus)}
-                label={diskHealth.overall_health.toUpperCase()}
+                label={(disk.health_status || diskHealth.overall_health || 'UNKNOWN').toUpperCase()}
                 size="small"
                 sx={{
                   backgroundColor: colors.bg,
@@ -87,18 +92,18 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, fontSize: 12 }}>
                 <span style={{ fontWeight: 600, color: '#333' }}>Capacity</span>
                 <span style={{ color: '#666' }}>
-                  {disk.use_percent.toFixed(1)}% of {disk.total_gb} GB used
+                  {(disk.used_percent ?? disk.use_percent ?? 0).toFixed(1)}% of {disk.size_gb ?? disk.total_gb ?? '?'} GB used
                 </span>
               </Box>
               <LinearProgress
                 variant="determinate"
-                value={disk.use_percent}
+                value={disk.used_percent ?? disk.use_percent ?? 0}
                 sx={{
                   height: 6,
                   borderRadius: 3,
                   backgroundColor: '#f0f0f0',
                   '& .MuiLinearProgress-bar': {
-                    backgroundColor: disk.use_percent > 85 ? '#ef4444' : disk.use_percent > 75 ? '#f59e0b' : '#3b82f6',
+                    backgroundColor: (disk.used_percent ?? disk.use_percent ?? 0) > 85 ? '#ef4444' : (disk.used_percent ?? disk.use_percent ?? 0) > 75 ? '#f59e0b' : '#3b82f6',
                   },
                 }}
               />
@@ -106,7 +111,7 @@ export default function DiskHealthCard({ diskHealth }: DiskHealthCardProps) {
 
             {/* SMART Status & Temperature */}
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-              {disk.temperature_c !== undefined && (
+              {disk.temperature_c != null && (
                 <Box sx={{ p: 1.5, backgroundColor: '#f9fafb', borderRadius: 1 }}>
                   <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#666', mb: 0.5 }}>
                     Temperature

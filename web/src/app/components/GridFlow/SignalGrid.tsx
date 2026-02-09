@@ -21,6 +21,7 @@ export interface SignalGridProps {
   onAddPlugin?: () => void
   onAddPluginDirect?: (uri: string) => void
   audioStatus?: AudioInterfaceStatus
+  audioOutputStatus?: AudioInterfaceStatus
   pluginLevels?: Record<string, { in: number; out: number }>
   showEndpoints?: boolean
   onInputPortSelectClick?: () => void
@@ -38,6 +39,7 @@ export const SignalGrid = memo(function SignalGrid({
   onAddPlugin,
   onAddPluginDirect,
   audioStatus,
+  audioOutputStatus,
   pluginLevels = {},
   showEndpoints = false,
   onInputPortSelectClick,
@@ -100,12 +102,12 @@ export const SignalGrid = memo(function SignalGrid({
       </div>
 
       {/* Output ChainEndpoint - Far Right */}
-      {showEndpoints && audioStatus && (
+      {showEndpoints && (audioOutputStatus || audioStatus) && (
         <div className="signal-grid-endpoint-wrapper" style={{ flexShrink: 0 }}>
           <ChainEndpoint
             type="output"
             label="OUTPUT"
-            audioStatus={audioStatus}
+            audioStatus={audioOutputStatus || audioStatus!}
             compact={false}
             onPortSelectClick={onOutputPortSelectClick}
           />

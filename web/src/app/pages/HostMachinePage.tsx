@@ -60,11 +60,7 @@ export function HostMachinePage() {
   // Handle refresh with toast notification
   const handleManualRefresh = async () => {
     refresh()
-    pushToast({
-      message: 'Refreshing host machine data...',
-      type: 'info',
-      duration: 2000,
-    })
+    pushToast('Refreshing host machine data...', 'info')
   }
 
   if (isLoading) {
@@ -159,7 +155,7 @@ export function HostMachinePage() {
             <StatCard
               icon="storage"
               label="Storage"
-              value={diskHealthData?.disks?.[0] ? `${diskHealthData.disks[0].total_gb} GB` : 'N/A'}
+              value={diskHealthData?.disks?.[0] ? `${diskHealthData.disks[0].size_gb} GB` : 'N/A'}
               secondary={diskHealthData?.overall_health || ''}
             />
           </Grid>

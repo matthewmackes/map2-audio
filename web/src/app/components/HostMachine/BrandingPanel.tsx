@@ -27,8 +27,9 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
       sx={{
         p: 4,
         mb: 3,
-        background: `linear-gradient(135deg, ${branding.brand_color}20 0%, ${branding.brand_color}10 100%)`,
+        background: `linear-gradient(135deg, ${branding.brand_color}44 0%, ${branding.brand_color}22 50%, rgba(30,30,30,0.95) 100%)`,
         borderLeft: `4px solid ${branding.brand_color}`,
+        border: `1px solid ${branding.brand_color}55`,
       }}
     >
       <Grid container spacing={4} alignItems="center">
@@ -45,6 +46,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
               maxHeight: 80,
               maxWidth: 150,
               objectFit: 'contain',
+              filter: 'brightness(0) invert(1)',
             }}
           />
         </Grid>
@@ -54,11 +56,12 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
           <Paper
             sx={{
               overflow: 'hidden',
-              backgroundColor: '#fafafa',
+              backgroundColor: 'rgba(255,255,255,0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 150,
+              border: '1px solid rgba(255,255,255,0.12)',
             }}
           >
             <Box
@@ -66,7 +69,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
               src={branding.product_image_url}
               alt={branding.product_name}
               onError={(e) => {
-                ;(e.target as HTMLImageElement).src = '/img/manufacturers/generic-pc.png'
+                ;(e.target as HTMLImageElement).src = '/img/manufacturers/generic-pc.svg'
               }}
               sx={{
                 maxHeight: '100%',
@@ -83,7 +86,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
           <Box>
             <Typography
               variant="overline"
-              sx={{ color: branding.brand_color, fontWeight: 600, display: 'block', mb: 1 }}
+              sx={{ color: branding.brand_color, fontWeight: 600, display: 'block', mb: 1, letterSpacing: 2 }}
             >
               {branding.manufacturer.toUpperCase()}
             </Typography>
@@ -93,7 +96,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
               sx={{
                 mt: 1,
                 fontWeight: 700,
-                color: '#111',
+                color: '#fff',
               }}
             >
               {branding.marketing_name}
@@ -101,17 +104,17 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
 
             <Typography
               variant="body2"
-              sx={{ mt: 2, color: '#666' }}
+              sx={{ mt: 2, color: 'rgba(255,255,255,0.7)' }}
             >
-              Model: <strong>{branding.product_name}</strong>
+              Model: <strong style={{ color: 'rgba(255,255,255,0.9)' }}>{branding.product_name}</strong>
             </Typography>
 
             {branding.warranty_status && (
               <Typography
                 variant="body2"
-                sx={{ mt: 1, color: '#666' }}
+                sx={{ mt: 1, color: 'rgba(255,255,255,0.7)' }}
               >
-                Warranty: <strong>{branding.warranty_status}</strong>
+                Warranty: <strong style={{ color: 'rgba(255,255,255,0.9)' }}>{branding.warranty_status}</strong>
               </Typography>
             )}
 
@@ -120,7 +123,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
                 variant="body2"
                 sx={{
                   mt: 1,
-                  color: '#10b981',
+                  color: '#34d399',
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
@@ -144,7 +147,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    '&:hover': { textDecoration: 'underline' },
+                    '&:hover': { textDecoration: 'underline', color: '#fff' },
                   }}
                 >
                   Official Support <ExternalLink size={14} />

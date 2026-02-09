@@ -553,17 +553,7 @@ class MAP2AudioTUI(App):
         import sys
         sys.excepthook = self.handle_exception
         super().run()
-    def __init__(self, daemon_mode: bool = False):
-        super().__init__()
-        self.daemon_mode = daemon_mode
-        self.api_client = MAP2APIClient(base_url=API_BASE)
-        self.current_tab = 0
-        self._screen_cache = LRUScreenCache(max_size=4)
-        self.error_handler = setup_error_handler(self) if setup_error_handler else None
-        self._status_bar: Optional[StatusBar] = None
-        # Config loading with error notification
-        self.config_manager = ConfigManager()
-        self.config, self.config_error = self.config_manager.try_load_config()
+
     """
     Main TUI application with tabbed navigation.
 

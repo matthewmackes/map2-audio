@@ -146,14 +146,6 @@ class EffectBlock(Container):
             yield ProgressBar(total=100, show_eta=False, classes="param-indicator")
             yield Button("▶", variant="default", id=f"move-right-{id(self)}", classes="effect-move")
 
-    async def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id and event.button.id.startswith("automate-"):
-            # Open parameter automation UI for this effect
-            from screens.parameter_automation import ParameterAutomationPanel
-            # For demo, just use a placeholder parameter name
-            panel = ParameterAutomationPanel(parameter_name="gain")
-            self.mount(panel)
-
     def on_mount(self) -> None:
         """Apply initial bypass state styling."""
         if self.is_bypassed:

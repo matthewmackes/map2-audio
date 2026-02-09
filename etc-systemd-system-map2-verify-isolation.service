@@ -1,7 +1,7 @@
 [Unit]
 Description=MAP2 Audio - Verify CPU Isolation
 Documentation=https://github.com/matthewmackes/map2-audio
-After=multi-user.target
+After=sysinit.target
 Before=map2-backend.service
 
 [Service]

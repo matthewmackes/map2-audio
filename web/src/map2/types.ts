@@ -1511,12 +1511,24 @@ export interface HostMachineInfo {
 }
 
 export interface DiskInfo {
-  device: string;
-  mount_point: string;
-  total_gb: number;
-  used_gb: number;
-  available_gb: number;
-  use_percent: number;
+  name: string;
+  model: string;
+  size_gb: number;
+  health_status: string;
+  temperature_c: number | null;
+  used_percent: number;
+  smart_status: string;
+  reallocated_sectors: number;
+  uncorrectable_errors: number;
+  power_on_hours: number;
+  estimated_lifespan_percent: number;
+  /** @deprecated alias kept for backwards compat */
+  device?: string;
+  mount_point?: string;
+  total_gb?: number;
+  used_gb?: number;
+  available_gb?: number;
+  use_percent?: number;
 }
 
 export interface SMARTData {
@@ -1533,10 +1545,11 @@ export interface SMARTData {
 
 export interface DiskHealthData {
   disks: DiskInfo[];
-  smart_data: SMARTData[];
-  total_storage_gb: number;
-  total_used_gb: number;
-  overall_health: 'excellent' | 'good' | 'warning' | 'critical';
+  last_updated?: string;
+  smart_data?: SMARTData[];
+  total_storage_gb?: number;
+  total_used_gb?: number;
+  overall_health?: 'excellent' | 'good' | 'warning' | 'critical';
 }
 
 export interface Fan {

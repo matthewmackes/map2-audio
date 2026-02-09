@@ -415,42 +415,107 @@ map2_stop() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# Design 3 – Audio / Equalizer Inspired Bash Prompt
-# Modern modular synth aesthetic with neon colors
+# AI-Optimized Shell Prompt
+# Designed for maximum machine-readability by AI coding agents.
+# Every field is labeled and delimited so an AI can reliably parse
+# the working directory, git state, exit codes, and environment
+# without running extra commands.
+#
+# Example output:
+#   ┌ [14:32:07] mm@MAP2-TESTBED mode:all-in-one ✓
+#   │ /home/mm/map2-audio/web git:master ✎ venv:.venv
+#   └─$
 # ═══════════════════════════════════════════════════════════════════════
-
-# Color definitions (256-color ANSI)
-ANSI_MAGENTA="\033[38;5;198m"        # Bold magenta
-ANSI_CYAN="\033[38;5;51m"            # Bright cyan
-ANSI_ORANGE="\033[38;5;208m"         # Bold orange
-ANSI_NEON_GREEN="\033[38;5;46m"      # Neon green
-ANSI_DARK_PURPLE="\033[38;5;55m"     # Dark purple for EQ bars
-ANSI_BRIGHT_PURPLE="\033[38;5;141m"  # Bright purple for EQ bars
-ANSI_RESET="\033[0m"
-ANSI_BOLD="\033[1m"
 
 # Set NODE_MODE from the canonical config file
 export NODE_MODE="${NODE_MODE:-$(grep -oP '^MODE=\K.*' /etc/guitarfx-mode.conf 2>/dev/null || echo 'unknown')}"
 
-# Build Bash PS1 Prompt - Audio Platform Theme
-PS1="\n"                                                              # Start with blank line
-PS1+="${ANSI_MAGENTA}${ANSI_BOLD}MODULAR AUDIO PLATFORM${ANSI_RESET} "  # Main title
-PS1+="${ANSI_MAGENTA}◈${ANSI_RESET} "                                # Diamond separator
-PS1+="${ANSI_MAGENTA}${ANSI_BOLD}NODE${ANSI_RESET}\n"               # NODE label
+# ── Git info helper ──────────────────────────────────────────────────
+# Returns " git:<branch>[ ✎][ ⚑]" or "" if not in a repo.
+# ✎ = uncommitted changes, ⚑ = stashes exist
+__map2_git_info() {
+    local branch
+    branch=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null) || return
+    local dirty=""
+    if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+        dirty=" ✎"
+    fi
+    local stash=""
+    if git stash list 2>/dev/null | grep -q .; then
+        stash=" ⚑"
+    fi
+    echo " git:${branch}${dirty}${stash}"
+}
 
-# Orange line spanning 60% of terminal (approximately 48 characters for 80-char terminal)
-PS1+="${ANSI_ORANGE}────────────────────────────────────────────────${ANSI_RESET}\n"  # Orange separator line
+# ── Python venv helper ───────────────────────────────────────────────
+__map2_venv_info() {
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo " venv:$(basename "$VIRTUAL_ENV")"
+    elif [ -n "$CONDA_DEFAULT_ENV" ]; then
+        echo " conda:${CONDA_DEFAULT_ENV}"
+    fi
+}
 
-# Info line: hostname ─ MODE: value
-PS1+="${ANSI_CYAN}\h${ANSI_RESET} "                                 # Hostname
-PS1+="${ANSI_DARK_PURPLE}⸻${ANSI_RESET} "                            # Separator
-PS1+="${ANSI_BOLD}${ANSI_ORANGE}MODE:${ANSI_RESET} "                # MODE label
-PS1+="${ANSI_BOLD}${ANSI_NEON_GREEN}${NODE_MODE}${ANSI_RESET}\n"    # Mode value
+# ── PROMPT_COMMAND builds the prompt each time ───────────────────────
+# This ensures git info and exit code are always fresh.
+__map2_prompt_command() {
+    local last_exit=$?
 
-# Prompt symbol with neon magenta arrow
-PS1+="${ANSI_MAGENTA}${ANSI_BOLD}➜${ANSI_RESET} "                   # Prompt arrow
+    # Exit code indicator — green ✓ for 0, red ✗:N for failure
+    local exit_indicator
+    if [ $last_exit -eq 0 ]; then
+        exit_indicator="\[\033[38;5;78m\]✓\[\033[0m\]"
+    else
+        exit_indicator="\[\033[38;5;196m\]✗:${last_exit}\[\033[0m\]"
+    fi
 
-export PS1
+    # Git info (computed at runtime)
+    local git_info
+    git_info=$(__map2_git_info)
+
+    # Python venv info
+    local venv_info
+    venv_info=$(__map2_venv_info)
+
+    # Prompt color definitions (using \[\] for proper line-length calc)
+    local C_RESET="\[\033[0m\]"
+    local C_DIM="\[\033[2m\]"
+    local C_BOLD="\[\033[1m\]"
+    local C_BLUE="\[\033[38;5;75m\]"
+    local C_CYAN="\[\033[38;5;117m\]"
+    local C_GREEN="\[\033[38;5;78m\]"
+    local C_YELLOW="\[\033[38;5;220m\]"
+    local C_ORANGE="\[\033[38;5;208m\]"
+    local C_GRAY="\[\033[38;5;242m\]"
+    local C_WHITE="\[\033[38;5;252m\]"
+
+    # ── Assemble PS1 ─────────────────────────────────────────────────
+    # Line 1: metadata — timestamp, user@host, node mode, exit code
+    # Line 2: full working directory, git branch+status, python env
+    # Line 3: prompt character
+    PS1=""
+    PS1+="${C_GRAY}┌${C_RESET} "
+    PS1+="${C_DIM}[\t]${C_RESET} "                          # [HH:MM:SS]
+    PS1+="${C_CYAN}\u@\h${C_RESET} "                        # user@host
+    PS1+="${C_ORANGE}mode:${NODE_MODE}${C_RESET} "          # mode:all-in-one
+    PS1+="${exit_indicator}"                                 # ✓ or ✗:1
+    PS1+="\n"
+    PS1+="${C_GRAY}│${C_RESET} "
+    PS1+="${C_BLUE}${C_BOLD}${PWD}${C_RESET}"               # full absolute path
+    PS1+="${C_GREEN}${git_info}${C_RESET}"                  # git:branch ✎
+    PS1+="${C_YELLOW}${venv_info}${C_RESET}"                # venv:.venv
+    PS1+="\n"
+    PS1+="${C_GRAY}└─${C_RESET}${C_WHITE}\$${C_RESET} "    # └─$
+}
+
+# Install our prompt command, chaining with any existing one (e.g. VS Code's)
+if [[ "$PROMPT_COMMAND" == *"__map2_prompt_command"* ]]; then
+    : # already installed
+elif [ -n "$PROMPT_COMMAND" ]; then
+    PROMPT_COMMAND="__map2_prompt_command;${PROMPT_COMMAND}"
+else
+    PROMPT_COMMAND="__map2_prompt_command"
+fi
 
 # Create aliases for dash-style function calls
 alias map2-restart='map2_restart'
