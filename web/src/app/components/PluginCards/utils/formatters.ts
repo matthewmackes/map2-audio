@@ -37,7 +37,7 @@ export const formatPitch = (cents: number): string => {
  * @returns Formatted string (e.g., "Uni", "3rd", "Oct", "+5st")
  */
 export const formatSemitones = (semitones: number): string => {
-  const intervals: Record<number, string> = {
+  const intervals: Record<string, string> = {
     '-24': '-2Oct',
     '-12': '-Oct',
     '-7': '-5th',
@@ -74,6 +74,35 @@ export const formatInterval = (semitones: number): string => {
 export const formatDecay = (seconds: number): string => {
   if (seconds >= 10) return `${seconds.toFixed(0)}s`
   return `${seconds.toFixed(1)}s`
+}
+
+/**
+ * Format frequency (alias for formatFrequency)
+ * @param hz - Frequency in Hz
+ * @returns Formatted string
+ */
+export const formatFreq = (hz: number): string => formatFrequency(hz)
+
+/**
+ * Format detune value in cents
+ * @param cents - Detune amount in cents
+ * @returns Formatted string (e.g., "0", "+12c", "-5c")
+ */
+export const formatDetune = (cents: number): string => {
+  if (cents === 0) return '0'
+  const sign = cents > 0 ? '+' : ''
+  return `${sign}${cents.toFixed(0)}c`
+}
+
+/**
+ * Format pitch shift in semitones
+ * @param semitones - Pitch shift in semitones
+ * @returns Formatted string (e.g., "0", "+1st", "-2st")
+ */
+export const formatShift = (semitones: number): string => {
+  if (semitones === 0) return '0'
+  const sign = semitones > 0 ? '+' : ''
+  return `${sign}${semitones.toFixed(0)}st`
 }
 
 /**

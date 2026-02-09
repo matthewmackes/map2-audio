@@ -4,7 +4,16 @@
  * Reduces boilerplate when defining plugin parameters and MIDI mappings.
  */
 
-import type { PluginParamDef } from '../../withMidiDialog'
+// Plugin parameter definition type
+export interface PluginParamDef {
+  key: string
+  name: string
+  symbol?: string
+  min?: number
+  max?: number
+  default?: number
+  unit?: string
+}
 
 /**
  * Parameter definition input
