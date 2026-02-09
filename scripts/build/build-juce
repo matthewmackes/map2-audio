@@ -1,0 +1,75 @@
+#!/bin/bash
+# ============================================================================
+# JUCE Plugin Compilation Helper
+# ============================================================================
+
+set -e
+
+PROJECT_ROOT="${PROJECT_ROOT:-.}"
+JUCE_DIR="$PROJECT_ROOT/juce-engine"
+BUILD_DIR="${BUILD_DIR:-.}/build"
+BUILD_LOG="${BUILD_LOG:--}"
+
+print_status() {
+    echo "[JUCE] $1"
+}
+
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+print_error() {
+    echo "[ERROR] $1" >&2
+}
+
+# ============================================================================
+# JUCE BUILD PROCESS
+# ============================================================================
+
+print_status "JUCE Plugin Recompilation Starting"
+
+if [ ! -d "$JUCE_DIR" ]; then
+    print_error "JUCE directory not found: $JUCE_DIR"
+    exit 1
+fi
+
+# Create build directory
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+# Check for CMake
+if ! command -v cmake &>/dev/null; then
+    print_error "cmake is required but not installed"
+    exit 1
+fi
+
+# Check for compiler
+if ! command -v gcc &>/dev/null && ! command -v clang &>/dev/null; then
+    print_error "No C++ compiler found"
+    exit 1
+fi
+
+print_status "Configuring CMake..."
+if cmake -DCMAKE_BUILD_TYPE=Release "$JUCE_DIR" 2>&1; then
+    print_status "Building plugins..."
+    
+    # Get number of cores for parallel build
+    local cores=$(nproc 2>/dev/null || echo 4)
+    
+    if make -j"$cores" 2>&1; then
+        print_success "JUCE compilation completed"
+        
+        print_status "Build artifacts:"
+        find . -name "*.so" -o -name "*.vst3" -o -name "*.au" 2>/dev/null | while read -r plugin; do
+            ls -lh "$plugin"
+        done
+        
+        exit 0
+    else
+        print_error "Make build failed"
+        exit 1
+    fi
+else
+    print_error "CMake configuration failed"
+    exit 1
+fi

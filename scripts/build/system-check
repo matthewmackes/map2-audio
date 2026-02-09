@@ -1,0 +1,265 @@
+#!/bin/bash
+# ============================================================================
+# System State Checker - Evaluates build environment
+# ============================================================================
+
+set -o pipefail
+
+OUTPUT_FORMAT="${1:-human}"
+DETAILED="${2:-}"
+
+# ============================================================================
+# CHECK FUNCTIONS
+# ============================================================================
+
+check_disk_space() {
+    local build_dir="${BUILD_DIR:-.}"
+    local available=$(df "$build_dir" 2>/dev/null | awk 'NR==2 {print $4}')
+    local required=$((5 * 1024 * 1024))  # 5GB minimum
+    
+    if [ "$available" -gt "$required" ]; then
+        echo "ok"
+        return 0
+    else
+        echo "critical"
+        return 1
+    fi
+}
+
+get_disk_usage() {
+    local build_dir="${BUILD_DIR:-.}"
+    local total=$(df "$build_dir" 2>/dev/null | awk 'NR==2 {print $2}')
+    local used=$(df "$build_dir" 2>/dev/null | awk 'NR==2 {print $3}')
+    local percent=$((used * 100 / total))
+    echo "$percent%"
+}
+
+check_memory() {
+    local available=$(free -b 2>/dev/null | awk 'NR==2 {print $7}')
+    local required=$((2 * 1024 * 1024 * 1024))  # 2GB minimum
+    
+    if [ "$available" -gt "$required" ]; then
+        echo "ok"
+        return 0
+    else
+        echo "critical"
+        return 1
+    fi
+}
+
+get_memory_usage() {
+    local total=$(free -b 2>/dev/null | awk 'NR==2 {print $2}')
+    local used=$(free -b 2>/dev/null | awk 'NR==2 {print $3}')
+    local percent=$((used * 100 / total))
+    echo "$percent%"
+}
+
+check_cpu_load() {
+    local load=$(uptime 2>/dev/null | awk -F'load average:' '{print $2}' | awk '{print $1}')
+    local cpus=$(nproc 2>/dev/null || echo 4)
+    
+    if (( $(echo "$load < $cpus" | bc -l 2>/dev/null) )); then
+        echo "ok"
+    else
+        echo "high"
+    fi
+}
+
+check_build_tools() {
+    local required_tools=("node" "npm" "cmake" "make" "gcc" "g++")
+    local missing=0
+    
+    for tool in "${required_tools[@]}"; do
+        if ! command -v "$tool" &>/dev/null; then
+            ((missing++))
+        fi
+    done
+    
+    if [ $missing -eq 0 ]; then
+        echo "ok"
+        return 0
+    else
+        echo "missing_tools"
+        return 1
+    fi
+}
+
+get_missing_tools() {
+    local required_tools=("node" "npm" "cmake" "make" "gcc" "g++")
+    local missing=()
+    
+    for tool in "${required_tools[@]}"; do
+        if ! command -v "$tool" &>/dev/null; then
+            missing+=("$tool")
+        fi
+    done
+    
+    echo "${missing[@]}" | tr ' ' ','
+}
+
+check_processes() {
+    local critical_procs=("webpack" "npm" "python" "java")
+    local running_builds=0
+    
+    for proc in "${critical_procs[@]}"; do
+        running_builds=$((running_builds + $(pgrep -c "$proc" 2>/dev/null || echo 0)))
+    done
+    
+    echo "$running_builds"
+}
+
+check_ports() {
+    local ports=(3000 3001 5000)
+    local available=""
+    
+    for port in "${ports[@]}"; do
+        if ! lsof -i ":$port" >/dev/null 2>&1; then
+            available+="${port},"
+        fi
+    done
+    
+    echo "${available%,}"
+}
+
+get_nodejs_version() {
+    node --version 2>/dev/null || echo "not_installed"
+}
+
+get_npm_version() {
+    npm --version 2>/dev/null || echo "not_installed"
+}
+
+# ============================================================================
+# OUTPUT FUNCTIONS
+# ============================================================================
+
+output_json() {
+    local disk_status=$(check_disk_space)
+    local memory_status=$(check_memory)
+    local tools_status=$(check_build_tools)
+    local load_status=$(check_cpu_load)
+    local running=$(check_processes)
+    local available_ports=$(check_ports)
+    local node_ver=$(get_nodejs_version)
+    local npm_ver=$(get_npm_version)
+    
+    cat <<EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "system": {
+    "hostname": "$(hostname)",
+    "os": "$(uname -s)",
+    "kernel": "$(uname -r)",
+    "arch": "$(uname -m)",
+    "uptime": "$(uptime -p 2>/dev/null || uptime)"
+  },
+  "resources": {
+    "disk": {
+      "status": "$disk_status",
+      "usage": "$(get_disk_usage)"
+    },
+    "memory": {
+      "status": "$memory_status",
+      "usage": "$(get_memory_usage)"
+    },
+    "cpu": {
+      "status": "$load_status",
+      "cores": $(nproc),
+      "load": "$(uptime | awk -F'load average:' '{print $2}')"
+    }
+  },
+  "build_environment": {
+    "tools": {
+      "status": "$tools_status",
+      "nodejs": "$node_ver",
+      "npm": "$npm_ver",
+      "missing": "$(get_missing_tools)"
+    },
+    "processes": {
+      "running_builds": $running
+    },
+    "ports": {
+      "available": "$available_ports"
+    }
+  },
+  "ready_to_build": $([[ "$disk_status" == "ok" && "$memory_status" == "ok" && "$tools_status" == "ok" ]] && echo "true" || echo "false")
+}
+EOF
+}
+
+output_human() {
+    cat <<EOF
+
+╔═══════════════════════════════════════════════════════════════╗
+║           SYSTEM STATE CHECK - MAP2 BUILD ENVIRONMENT         ║
+╚═══════════════════════════════════════════════════════════════╝
+
+SYSTEM INFORMATION
+  Hostname:    $(hostname)
+  OS:          $(uname -s) $(uname -r)
+  Architecture: $(uname -m)
+  Uptime:      $(uptime -p 2>/dev/null || uptime)
+
+RESOURCES
+  Disk Space:
+    Status:    $(check_disk_space | tr '[:lower:]' '[:upper:]')
+    Usage:     $(get_disk_usage)
+    
+  Memory:
+    Status:    $(check_memory | tr '[:lower:]' '[:upper:]')
+    Usage:     $(get_memory_usage)
+    
+  CPU Load:
+    Status:    $(check_cpu_load | tr '[:lower:]' '[:upper:]')
+    Cores:     $(nproc)
+
+BUILD ENVIRONMENT
+  Required Tools:
+    Status:    $(check_build_tools | tr '[:lower:]' '[:upper:]')
+    Node.js:   $(get_nodejs_version)
+    npm:       $(get_npm_version)
+    
+  Running Builds:
+    Count:     $(check_processes)
+    
+  Available Ports:
+    3000:      $(lsof -i :3000 >/dev/null 2>&1 && echo "IN USE" || echo "Available")
+    3001:      $(lsof -i :3001 >/dev/null 2>&1 && echo "IN USE" || echo "Available")
+
+OVERALL STATUS
+  Ready to Build: $([[ "$(check_disk_space)" == "ok" && "$(check_memory)" == "ok" && "$(check_build_tools)" == "ok" ]] && echo "✓ YES" || echo "✗ NO")
+
+EOF
+}
+
+output_detailed() {
+    output_human
+    
+    echo "DETAILED PROCESS LIST"
+    echo "  Build-related processes:"
+    ps aux 2>/dev/null | grep -E 'node|npm|webpack|python|java|make|cmake|gcc' | grep -v grep || echo "    None"
+    echo ""
+    
+    echo "PORT LISTENERS"
+    lsof -i -P -n 2>/dev/null | grep -E 'LISTEN|3000|3001' || echo "  None"
+    echo ""
+}
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+case "$OUTPUT_FORMAT" in
+    --json)
+        output_json
+        ;;
+    --detailed)
+        output_detailed
+        ;;
+    --human|human)
+        output_human
+        ;;
+    *)
+        output_human
+        ;;
+esac

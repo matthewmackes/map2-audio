@@ -1,0 +1,69 @@
+#!/bin/bash
+# ============================================================================
+# Development Web Build Helper - Builds with hot-reload and source maps
+# ============================================================================
+
+set -e
+
+PORT="${1:-3001}"
+PROJECT_ROOT="${PROJECT_ROOT:-.}"
+WEB_DIR="$PROJECT_ROOT/web"
+BUILD_LOG="${BUILD_LOG:--}"
+
+print_status() {
+    echo "[BUILD] $1"
+}
+
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+print_error() {
+    echo "[ERROR] $1" >&2
+}
+
+# ============================================================================
+# BUILD PROCESS
+# ============================================================================
+
+print_status "Development Web Build Starting (Port $PORT)"
+
+if [ ! -d "$WEB_DIR" ]; then
+    print_error "Web directory not found: $WEB_DIR"
+    exit 1
+fi
+
+cd "$WEB_DIR"
+
+# Check dependencies
+if [ ! -d "node_modules" ]; then
+    print_status "Installing dependencies..."
+    npm ci --legacy-peer-deps || {
+        print_error "npm installation failed"
+        exit 1
+    }
+fi
+
+# Start development server
+print_status "Starting development server..."
+print_status "Features: Hot-reload, source maps, live refresh"
+print_status "Server running on http://localhost:$PORT"
+
+export NODE_ENV=development
+export PORT=$PORT
+export FAST_REFRESH=true
+export BABEL_ENV=development
+
+if [ -f "package.json" ]; then
+    if grep -q '"dev":' package.json; then
+        npm run dev
+    elif grep -q '"start":' package.json; then
+        npm start
+    else
+        print_error "No dev or start script found in package.json"
+        exit 1
+    fi
+else
+    print_error "package.json not found"
+    exit 1
+fi

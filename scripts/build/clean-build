@@ -1,0 +1,51 @@
+#!/bin/bash
+# ============================================================================
+# Clean Build Artifacts Helper
+# ============================================================================
+
+set -e
+
+PROJECT_ROOT="${PROJECT_ROOT:-.}"
+BUILD_DIR="${BUILD_DIR:-$PROJECT_ROOT/build}"
+WEB_DIR="$PROJECT_ROOT/web"
+
+print_status() {
+    echo "[CLEAN] $1"
+}
+
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+print_error() {
+    echo "[ERROR] $1" >&2
+}
+
+# ============================================================================
+# CLEANING PROCESS
+# ============================================================================
+
+print_status "Starting clean build process..."
+
+print_status "Removing C++ build artifacts..."
+rm -rf "$BUILD_DIR" 2>/dev/null || true
+
+print_status "Cleaning web builds..."
+if [ -d "$WEB_DIR" ]; then
+    cd "$WEB_DIR"
+    rm -rf dist build .next out 2>/dev/null || true
+    rm -rf node_modules/.cache 2>/dev/null || true
+fi
+
+print_status "Cleaning Python cache..."
+find "$PROJECT_ROOT" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find "$PROJECT_ROOT" -type f -name "*.pyc" -delete 2>/dev/null || true
+
+print_status "Removing temporary files..."
+find "$PROJECT_ROOT" -type f -name "*.tmp" -o -name ".DS_Store" -delete 2>/dev/null || true
+
+print_status "Cleaning lock files..."
+rm -f /tmp/map2-build-locks/*.lock 2>/dev/null || true
+
+print_success "Clean build completed"
+print_status "Disk space freed: $(du -sh "$PROJECT_ROOT" 2>/dev/null | awk '{print $1}')"

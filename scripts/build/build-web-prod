@@ -1,0 +1,84 @@
+#!/bin/bash
+# ============================================================================
+# Production Web Build Helper - Builds optimized production bundle
+# ============================================================================
+
+set -e
+
+PORT="${1:-3000}"
+PROJECT_ROOT="${PROJECT_ROOT:-.}"
+WEB_DIR="$PROJECT_ROOT/web"
+BUILD_LOG="${BUILD_LOG:--}"
+
+print_status() {
+    echo "[BUILD] $1"
+}
+
+print_success() {
+    echo "[SUCCESS] $1"
+}
+
+print_error() {
+    echo "[ERROR] $1" >&2
+}
+
+# ============================================================================
+# BUILD PROCESS
+# ============================================================================
+
+print_status "Production Web Build Starting (Port $PORT)"
+
+if [ ! -d "$WEB_DIR" ]; then
+    print_error "Web directory not found: $WEB_DIR"
+    exit 1
+fi
+
+cd "$WEB_DIR"
+
+# Check dependencies
+if [ ! -d "node_modules" ]; then
+    print_status "Installing dependencies..."
+    npm ci --legacy-peer-deps || {
+        print_error "npm installation failed"
+        exit 1
+    }
+fi
+
+# Clean previous build
+print_status "Cleaning previous build..."
+rm -rf dist build .next out 2>/dev/null || true
+
+# Build for production
+print_status "Building optimized production bundle..."
+
+if [ -f "package.json" ]; then
+    # Check for build script
+    if grep -q '"build":' package.json; then
+        export NODE_ENV=production
+        export PORT=$PORT
+        
+        if npm run build 2>&1; then
+            print_success "Production build completed"
+            
+            # Show build artifacts
+            print_status "Build artifacts:"
+            if [ -d "dist" ]; then
+                du -sh dist 2>/dev/null && print_status "Output: dist/"
+            elif [ -d "build" ]; then
+                du -sh build 2>/dev/null && print_status "Output: build/"
+            fi
+            
+            echo "Ready to serve on http://localhost:$PORT"
+            exit 0
+        else
+            print_error "Build script failed"
+            exit 1
+        fi
+    else
+        print_error "No build script found in package.json"
+        exit 1
+    fi
+else
+    print_error "package.json not found"
+    exit 1
+fi
