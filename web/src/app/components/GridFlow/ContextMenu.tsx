@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 export interface ContextMenuItem {
-  label: string
+  label?: string
   icon?: React.ReactNode
-  onClick: () => void
+  onClick?: () => void
   disabled?: boolean
   separator?: boolean
   shortcut?: string

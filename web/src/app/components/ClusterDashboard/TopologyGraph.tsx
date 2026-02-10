@@ -28,6 +28,7 @@ interface ClusterNode {
 interface TopologyGraphProps {
   nodes: ClusterNode[]
   edges: Array<{ source: string; target: string; latency: number }>
+  simulationMode?: boolean
 }
 
 // Custom Node Component

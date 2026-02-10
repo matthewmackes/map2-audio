@@ -600,7 +600,6 @@ function DocumentLibrary() {
                   color: '#f2f6ff',
                   fontSize: 13,
                   outline: 'none',
-                  '::placeholder': { color: 'rgba(242, 246, 255, 0.4)' }
                 }}
               />
             </div>

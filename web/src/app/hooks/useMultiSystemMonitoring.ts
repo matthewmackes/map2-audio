@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react'
-import type { HostMachineInfo, SystemHealthOverview, DiskHealthData } from '@/app/services/api'
+import type { HostMachineInfo, SystemHealthOverview, DiskHealthData } from '@/map2/types'
 
 export interface SystemSnapshot {
   systemId: string
@@ -43,7 +43,7 @@ export interface MultiSystemStats {
  */
 export function useMultiSystemMonitoring() {
   const [systems, setSystems] = useState<Record<string, SystemSnapshot>>({})
-  const updateTimeoutRef = useRef<NodeJS.Timeout>()
+  const updateTimeoutRef = useRef<NodeJS.Timeout>(undefined)
 
   /**
    * Add or update a system in the monitoring list

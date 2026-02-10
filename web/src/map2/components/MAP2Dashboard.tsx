@@ -97,7 +97,7 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
   const theme = useTheme();
 
   // Initialize WebSocket connection for real-time updates
-  const { status, error } = useWebSocketConnection();
+  const { status } = useWebSocketConnection();
 
   // Show connection status notifications
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
         message: 'Real-time updates connected',
         severity: 'success'
       });
-    } else if (status === 'error' && error) {
+    } else if (status === 'error') {
       setWsNotification({
         open: true,
         message: 'WebSocket connection failed',
@@ -120,7 +120,7 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
         severity: 'info'
       });
     }
-  }, [status, error]);
+  }, [status]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

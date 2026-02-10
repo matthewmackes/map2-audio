@@ -6,7 +6,18 @@
 import { useState, useEffect } from 'react'
 import { Box, Paper, Typography, Switch, FormControlLabel, Button, Grid, Chip, Alert } from '@mui/material'
 import { Bell, Volume2, Vibrate, X } from 'lucide-react'
-import type { NotificationConfig } from '@/app/hooks/useAlertNotifications'
+import type { AlertNotification } from '@/app/hooks/useAlertNotifications'
+
+export interface NotificationConfig {
+  enabled: boolean
+  sound: boolean
+  vibrate: boolean
+  types: string[]
+  notificationsEnabled?: boolean
+  soundEnabled?: boolean
+  vibrateEnabled?: boolean
+  requireInteraction?: boolean
+}
 
 interface AlertNotificationSettingsProps {
   config: NotificationConfig

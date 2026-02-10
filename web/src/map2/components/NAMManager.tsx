@@ -85,7 +85,7 @@ export default function NAMManager() {
       setLoadingModel(name);
       await namApi.loadModel(name);
       await namApi.activateModel(name);
-      setStatus((prev) => (prev ? { ...prev, active_model: name } : prev));
+      setStatus((prev) => (prev ? { ...prev, activeModel: name } : prev));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load NAM model');
     } finally {

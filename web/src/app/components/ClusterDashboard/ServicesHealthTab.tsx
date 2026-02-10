@@ -86,7 +86,7 @@ export function ServicesHealthTab() {
                   key={service.name}
                   style={{
                     borderBottom: '1px solid #333',
-                    background: 'hover' ? 'rgba(0, 212, 255, 0.02)' : 'transparent',
+                    background: 'transparent',
                   }}
                 >
                   <td
@@ -101,7 +101,7 @@ export function ServicesHealthTab() {
                   </td>
                   {nodes.nodes.map((node: any) => {
                     const shouldRun = service.runOn.includes('ALL') || service.runOn.includes(node.role)
-                    const status = shouldRun ? (Math.random() > 0.1 ? 'running' : 'degraded') : 'n/a'
+                    const status: string = shouldRun ? (Math.random() > 0.1 ? 'running' : 'degraded') : 'n/a'
 
                     return (
                       <td

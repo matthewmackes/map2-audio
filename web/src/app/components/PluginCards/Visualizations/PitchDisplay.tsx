@@ -50,7 +50,7 @@ export function PitchDisplay({
   compact = false,
 }: PitchDisplayProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const dimensions = useResponsiveVizSize(svgRef as any, {
+  const dimensions = useResponsiveVizSize(svgRef, {
     width,
     height,
     aspectRatio: 200 / 100,

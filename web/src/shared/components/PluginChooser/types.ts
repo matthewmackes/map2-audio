@@ -8,7 +8,7 @@ import { PluginType } from '../../../pipedal/Lv2Plugin'
 /**
  * Unified plugin format type
  */
-export type PluginFormat = 'lv2'
+export type PluginFormat = 'lv2' | 'vst3'
 
 /**
  * View modes for the plugin grid/list

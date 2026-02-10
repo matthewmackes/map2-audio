@@ -445,6 +445,7 @@ export interface NAMStatus {
   peakOutput: number;
   latency: number;
   availableModels: string[];
+  error?: string;
 }
 
 // ==================== Automation Types ====================
@@ -501,6 +502,8 @@ export interface HistoryStatus {
   next_redo?: string;
   undo_stack_size: number;
   redo_stack_size: number;
+  undo_stack?: string[];
+  redo_stack?: string[];
 }
 
 // ==================== Session Types ====================
@@ -1550,12 +1553,13 @@ export interface DiskHealthData {
   total_storage_gb?: number;
   total_used_gb?: number;
   overall_health?: 'excellent' | 'good' | 'warning' | 'critical';
+  use_percent?: number;
 }
 
 export interface Fan {
   name: string;
   rpm?: number;
-  status: 'normal' | 'slow' | 'stopped' | 'unknown';
+  status: 'ok' | 'normal' | 'slow' | 'stopped' | 'unknown';
 }
 
 export interface PowerInfo {
@@ -1576,6 +1580,11 @@ export interface SystemHealthOverview {
     temperature_status: string;
     fan_status: string;
     power_status: string;
+  };
+  temperature?: {
+    cpu_c: number;
+    max_c: number;
+    throttling?: boolean;
   };
 }
 

@@ -23,7 +23,7 @@ export function ToolbarTooltip({
   const [actualPosition, setActualPosition] = useState(position)
   const triggerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout>(undefined)
 
   useEffect(() => {
     if (!isVisible || !triggerRef.current || !tooltipRef.current) return

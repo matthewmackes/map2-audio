@@ -62,7 +62,7 @@ export interface ResponsiveVizConfig {
  * @returns Computed dimensions { width, height }
  */
 export function useResponsiveVizSize(
-  ref: React.RefObject<HTMLElement>,
+  ref: React.RefObject<Element>,
   config: ResponsiveVizConfig
 ): VizDimensions {
   const { width, height, aspectRatio, baseOn = 'width', defaultWidth, defaultHeight } = config

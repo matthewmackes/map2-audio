@@ -5,9 +5,12 @@ interface Props {
   value: ReactNode
   helper?: string
   tone?: 'default' | 'success' | 'warn'
+  icon?: string
+  secondary?: string
+  color?: string
 }
 
-export function StatCard({ label, value, helper, tone = 'default' }: Props) {
+export function StatCard({ label, value, helper, tone = 'default', icon, secondary, color }: Props) {
   const toneClass = tone === 'success' ? 'pill success' : tone === 'warn' ? 'pill warn' : 'pill muted'
 
   return (

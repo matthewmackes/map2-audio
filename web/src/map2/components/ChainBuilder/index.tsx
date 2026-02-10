@@ -40,7 +40,7 @@ export { autoLayoutNodes, relayoutNodes, defaultLayoutConfig } from './layout/au
 export { useChainFlow } from './hooks/useChainFlow';
 export { useSidechainConnections } from './hooks/useSidechainConnections';
 export { usePluginMeters } from './hooks/usePluginMeters';
-export type { SidechainConnection, SidechainAPI, PluginInfo } from './hooks/useSidechainConnections';
+export type { SidechainConnection as ChainBuilderSidechainConnection, SidechainAPI, PluginInfo } from './hooks/useSidechainConnections';
 export type { PluginMetersState, UsePluginMetersOptions, UsePluginMetersReturn } from './hooks/usePluginMeters';
 export type { PluginMeterData, PluginMeterPanelProps } from './nodes/PluginMeterPanel';
 export type { PluginLatencyInfo, LatencyOverlayProps } from './panels/LatencyOverlay';

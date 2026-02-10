@@ -95,7 +95,7 @@ export default class OkDialog extends React.Component<OkDialogProps, OkDialogSta
                 </DialogContent>
                 <DialogActions>
 
-                    <Button variant="dialogPrimary" onClick={handleOk} style={{marginRight: 24}} >
+                    <Button variant="contained" onClick={handleOk} style={{marginRight: 24}} >
                         {okButtonText ? okButtonText : "OK"}
                     </Button>
                 </DialogActions>
