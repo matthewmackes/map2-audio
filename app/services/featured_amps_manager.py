@@ -13,7 +13,7 @@ from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 
 from app.paths import StoragePaths
-from app.database import get_db, NAMModel
+from app.database import get_db, get_db_session, NAMModel
 from app.services.ir_library.tone3000_scraper import Tone3000Scraper
 
 logger = logging.getLogger(__name__)
@@ -235,7 +235,7 @@ class FeaturedAmpsManager:
             file_hash = self._calculate_hash(file_path)
 
             # Register in database as featured
-            db = get_db()
+            db = get_db_session()
             try:
                 # Check if already exists
                 existing = db.query(NAMModel).filter_by(file_hash=file_hash).first()
@@ -310,7 +310,7 @@ class FeaturedAmpsManager:
         Returns:
             Number of featured NAM models
         """
-        db = get_db()
+        db = get_db_session()
         try:
             count = db.query(NAMModel).filter_by(is_featured=True).count()
             return count
@@ -323,7 +323,7 @@ class FeaturedAmpsManager:
         Returns:
             Number of models cleared
         """
-        db = get_db()
+        db = get_db_session()
         try:
             count = db.query(NAMModel).filter_by(is_featured=True).update(
                 {'is_featured': False, 'featured_position': None}

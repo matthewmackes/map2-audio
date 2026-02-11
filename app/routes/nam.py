@@ -24,7 +24,7 @@ try:
     from fastapi import APIRouter, HTTPException, Query, UploadFile, File
     from pydantic import BaseModel
     from app.paths import StoragePaths
-    from app.database import get_db, NAMModel
+    from app.database import get_db, get_db_session, NAMModel
     from app.services.juce_engine_service import get_audio_engine
     from sqlalchemy import or_
 
@@ -163,7 +163,7 @@ try:
     async def get_nam_categories() -> Dict:
         """Get available NAM model categories and amp types."""
         try:
-            session = get_db()
+            session = get_db_session()
 
             categories = session.query(NAMModel.category).distinct().all()
             category_list = [c[0] for c in categories if c[0]]
@@ -193,7 +193,7 @@ try:
     ) -> Dict:
         """List available NAM models with optional filtering."""
         try:
-            session = get_db()
+            session = get_db_session()
             query = session.query(NAMModel)
 
             if category:
@@ -242,7 +242,7 @@ try:
     async def search_nam_models(request: NAMSearchRequest) -> Dict:
         """Search NAM models by text and filters."""
         try:
-            session = get_db()
+            session = get_db_session()
             query = session.query(NAMModel)
 
             if request.query:
@@ -294,7 +294,7 @@ try:
     async def get_nam_model(model_id: int) -> Dict:
         """Get detailed NAM model information."""
         try:
-            session = get_db()
+            session = get_db_session()
             model = session.query(NAMModel).filter_by(id=model_id).first()
 
             if not model:
@@ -405,7 +405,7 @@ try:
     async def toggle_nam_favorite(model_id: int) -> Dict:
         """Toggle favorite status for NAM model."""
         try:
-            session = get_db()
+            session = get_db_session()
             model = session.query(NAMModel).filter_by(id=model_id).first()
 
             if not model:
@@ -436,7 +436,7 @@ try:
             if not 1 <= request.rating <= 5:
                 raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
 
-            session = get_db()
+            session = get_db_session()
             model = session.query(NAMModel).filter_by(id=model_id).first()
 
             if not model:
@@ -479,7 +479,7 @@ try:
             file_hash = hashlib.sha256(content).hexdigest()
 
             # Check if already in database
-            session = get_db()
+            session = get_db_session()
             existing = session.query(NAMModel).filter_by(file_hash=file_hash).first()
 
             if existing:
@@ -588,7 +588,7 @@ try:
             List of featured models sorted by featured_position
         """
         try:
-            session = next(get_db())
+            session = get_db_session()
             featured = session.query(NAMModel).filter(
                 NAMModel.is_featured == True
             ).order_by(NAMModel.featured_position).limit(limit).all()

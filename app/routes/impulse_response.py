@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.services.ir_library.download_manager import get_download_manager
-from app.database import get_db, ImpulseResponse, IRCategory, NAMModel
+from app.database import get_db, get_db_session, ImpulseResponse, IRCategory, NAMModel
 from sqlalchemy import or_, and_
 
 logger = logging.getLogger(__name__)
@@ -189,7 +189,7 @@ async def list_irs(
         }
     """
     try:
-        session = get_db()
+        session = get_db_session()
         
         query = session.query(ImpulseResponse)
         
@@ -249,7 +249,7 @@ async def get_categories() -> Dict:
         }
     """
     try:
-        session = get_db()
+        session = get_db_session()
         categories = session.query(IRCategory).order_by(IRCategory.display_order).all()
 
         cat_list = []
@@ -292,7 +292,7 @@ async def get_libraries() -> Dict:
     """
     try:
         manager = get_download_manager()
-        session = get_db()
+        session = get_db_session()
 
         # NAM source names (these count from NAMModel table instead of ImpulseResponse)
         nam_sources = {'nam_github', 'tone3000'}
@@ -372,7 +372,7 @@ async def get_ir(ir_id: int) -> Dict:
         Complete IR metadata
     """
     try:
-        session = get_db()
+        session = get_db_session()
         ir = session.query(ImpulseResponse).filter_by(id=ir_id).first()
         
         if not ir:
@@ -428,7 +428,7 @@ async def search_irs(request: IRSearchRequest) -> Dict:
         }
     """
     try:
-        session = get_db()
+        session = get_db_session()
         query = session.query(ImpulseResponse)
         
         # Text search
@@ -509,7 +509,7 @@ async def scan_existing_irs() -> Dict:
         import hashlib
 
         loader = get_ir_loader()
-        session = get_db()
+        session = get_db_session()
 
         stats = {
             "ir_scanned": 0,
@@ -874,7 +874,7 @@ async def toggle_favorite(ir_id: int) -> Dict:
         }
     """
     try:
-        session = get_db()
+        session = get_db_session()
         ir = session.query(ImpulseResponse).filter_by(id=ir_id).first()
         
         if not ir:
@@ -917,7 +917,7 @@ async def set_rating(ir_id: int, request: IRRatingRequest) -> Dict:
         if not 1 <= request.rating <= 5:
             raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
         
-        session = get_db()
+        session = get_db_session()
         ir = session.query(ImpulseResponse).filter_by(id=ir_id).first()
         
         if not ir:

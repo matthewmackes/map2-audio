@@ -62,15 +62,41 @@ def init_db(database_url: str = "sqlite:///data/map2.db") -> None:
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
-def get_db() -> Session:
-    """Get database session (dependency for FastAPI routes)."""
+def get_db():
+    """Get database session as a generator (FastAPI Depends compatible).
+
+    Usage with FastAPI:
+        @router.get("/items")
+        def read_items(db: Session = Depends(get_db)):
+            ...
+
+    Usage without FastAPI:
+        db = next(get_db())   # or use get_db_session() below
+    """
     if _SessionLocal is None:
         init_db()
     db = _SessionLocal()
     try:
-        return db
+        yield db
     finally:
         db.close()
+
+
+def get_db_session() -> Session:
+    """Get a database session for direct (non-FastAPI) use.
+
+    Caller is responsible for closing the session when done.
+
+    Usage:
+        session = get_db_session()
+        try:
+            ...
+        finally:
+            session.close()
+    """
+    if _SessionLocal is None:
+        init_db()
+    return _SessionLocal()
 
 
 from contextlib import asynccontextmanager

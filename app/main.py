@@ -33,10 +33,6 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 
-from app.exceptions import MAP2Exception
-from app.response_models import ErrorResponse
-from app.middleware.request_logging import RequestLoggingMiddleware
-from app.middleware.rate_limiting import RateLimitingMiddleware, ENDPOINT_RATE_LIMITS
 from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
 from app.utils.health_metrics import init_health_metrics
 

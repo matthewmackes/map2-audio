@@ -21,7 +21,7 @@ from datetime import datetime
 import json
 
 from app.paths import StoragePaths
-from app.database import get_db, NAMModel
+from app.database import get_db, get_db_session, NAMModel
 from app.services.ir_library.nam_github_scraper import NAMGitHubScraper
 
 logger = logging.getLogger(__name__)
@@ -135,7 +135,7 @@ class NAMBulkRenamer:
             github_models = []
 
         # Load database records
-        db = get_db()
+        db = get_db_session()
         try:
             db_models = db.query(NAMModel).all()
             db_lookup = {m.file_hash: m for m in db_models}
@@ -277,7 +277,7 @@ class NAMBulkRenamer:
         result.start_time = datetime.now()
         result.total_files = len(files_info)
 
-        db = get_db()
+        db = get_db_session()
         db_lookup = {m.file_hash: m for m in db.query(NAMModel).all()}
 
         try:
