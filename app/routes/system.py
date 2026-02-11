@@ -95,13 +95,18 @@ def _check_status(condition: bool, name: str, good_msg: str, bad_msg: str, fix: 
     }
 
 
-def _run_cmd(cmd: str) -> str:
-    """Run a shell command and return output."""
+def _run_cmd_sync(cmd: str) -> str:
+    """Run a shell command synchronously and return output."""
     try:
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
         return result.stdout.strip()
     except Exception:
         return ""
+
+
+async def _run_cmd(cmd: str) -> str:
+    """Run a shell command without blocking the event loop."""
+    return await asyncio.to_thread(_run_cmd_sync, cmd)
 
 
 @router.get("/realtime-status")
@@ -129,7 +134,7 @@ async def get_realtime_status() -> Dict[str, Any]:
     # ---------------------
 
     # Check audio group membership
-    groups_output = _run_cmd("groups")
+    groups_output = await _run_cmd("groups")
     in_audio_group = "audio" in groups_output.split()
     check = _check_status(
         in_audio_group,
@@ -193,7 +198,7 @@ async def get_realtime_status() -> Dict[str, Any]:
     # -----------------------
 
     # Check kernel preemption
-    kernel_version = _run_cmd("uname -v")
+    kernel_version = await _run_cmd("uname -v")
     is_preempt_rt = "PREEMPT_RT" in kernel_version.upper()
     is_preempt = "PREEMPT" in kernel_version.upper()
 
@@ -210,7 +215,7 @@ async def get_realtime_status() -> Dict[str, Any]:
     checks.append(check)
 
     # Check threadirqs
-    cmdline = _run_cmd("cat /proc/cmdline")
+    cmdline = await _run_cmd("cat /proc/cmdline")
     threadirqs = "threadirqs" in cmdline
 
     check = _check_status(
@@ -264,7 +269,7 @@ async def get_realtime_status() -> Dict[str, Any]:
         warnings += 1
 
     # Check CPU governor
-    governor = _run_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null")
+    governor = await _run_cmd("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null")
     if governor:
         governor_ok = governor == "performance"
         check = _check_status(
@@ -302,7 +307,7 @@ async def get_realtime_status() -> Dict[str, Any]:
     # -----------------------
 
     # Check swappiness
-    swappiness = _run_cmd("cat /proc/sys/vm/swappiness")
+    swappiness = await _run_cmd("cat /proc/sys/vm/swappiness")
     try:
         swappiness_val = int(swappiness)
     except Exception:
@@ -322,7 +327,7 @@ async def get_realtime_status() -> Dict[str, Any]:
 
     # Check total memory
     try:
-        mem_info = _run_cmd("free -g | grep '^Mem:' | awk '{print $2}'")
+        mem_info = await _run_cmd("free -g | grep '^Mem:' | awk '{print $2}'")
         mem_gb = int(mem_info) if mem_info else 0
     except Exception:
         mem_gb = 0
@@ -344,7 +349,7 @@ async def get_realtime_status() -> Dict[str, Any]:
     # ----------------------
 
     # Check for audio hardware
-    cards = _run_cmd("grep -c '^[[:space:]]*[0-9]' /proc/asound/cards 2>/dev/null")
+    cards = await _run_cmd("grep -c '^[[:space:]]*[0-9]' /proc/asound/cards 2>/dev/null")
     try:
         card_count = int(cards) if cards else 0
     except Exception:
@@ -364,7 +369,7 @@ async def get_realtime_status() -> Dict[str, Any]:
         failed += 1
 
     # Check USB autosuspend
-    autosuspend = _run_cmd("cat /sys/module/usbcore/parameters/autosuspend 2>/dev/null")
+    autosuspend = await _run_cmd("cat /sys/module/usbcore/parameters/autosuspend 2>/dev/null")
     usb_ok = autosuspend == "-1"
 
     check = _check_status(
@@ -387,7 +392,7 @@ async def get_realtime_status() -> Dict[str, Any]:
     scheduler = ""
     disk = ""
     for dev in ["nvme0n1", "sda", "vda"]:
-        sched_out = _run_cmd(f"cat /sys/block/{dev}/queue/scheduler 2>/dev/null")
+        sched_out = await _run_cmd(f"cat /sys/block/{dev}/queue/scheduler 2>/dev/null")
         if sched_out:
             # Extract active scheduler from [brackets]
             import re
@@ -501,8 +506,8 @@ async def get_branding_status() -> Dict[str, Any]:
 
     # Check Plymouth boot splash
     plymouth_theme_exists = os.path.exists("/usr/share/plymouth/themes/map2/map2-boot-splash.script")
-    plymouth_installed = _run_cmd("command -v plymouth") != ""
-    current_theme = _run_cmd("plymouth-set-default-theme 2>/dev/null") if plymouth_installed else ""
+    plymouth_installed = await _run_cmd("command -v plymouth") != ""
+    current_theme = await _run_cmd("plymouth-set-default-theme 2>/dev/null") if plymouth_installed else ""
     plymouth_active = current_theme.strip() == "map2-boot-splash"
 
     checks.append({
@@ -518,7 +523,7 @@ async def get_branding_status() -> Dict[str, Any]:
 
     # Check welcome message
     welcome_system = os.path.exists("/etc/profile.d/map2-welcome.sh")
-    welcome_bashrc = "map2-welcome.sh" in _run_cmd("grep -l 'map2-welcome.sh' ~/.bashrc 2>/dev/null || echo ''")
+    welcome_bashrc = "map2-welcome.sh" in await _run_cmd("grep -l 'map2-welcome.sh' ~/.bashrc 2>/dev/null || echo ''")
 
     checks.append({
         "name": "Welcome Script (System)",
@@ -599,10 +604,10 @@ async def reinstall_branding() -> Dict[str, Any]:
 
     try:
         # 1. Check/Install Plymouth
-        plymouth_check = _run_cmd("command -v plymouth")
+        plymouth_check = await _run_cmd("command -v plymouth")
         if not plymouth_check:
             results.append("Installing Plymouth...")
-            install_result = _run_cmd("sudo dnf install -y plymouth plymouth-scripts plymouth-system-theme 2>&1")
+            install_result = await _run_cmd("sudo dnf install -y plymouth plymouth-scripts plymouth-system-theme 2>&1")
             if "Error" in install_result or "error" in install_result:
                 errors.append(f"Plymouth install issue: {install_result[:200]}")
             else:
@@ -612,15 +617,15 @@ async def reinstall_branding() -> Dict[str, Any]:
 
         # 2. Create theme directory and copy files
         results.append("Installing boot splash theme...")
-        _run_cmd("sudo mkdir -p /usr/share/plymouth/themes/map2")
-        _run_cmd(f"sudo cp '{splash_script}' /usr/share/plymouth/themes/map2/")
-        _run_cmd(f"sudo cp '{splash_plymouth}' /usr/share/plymouth/themes/map2/")
-        _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.script")
-        _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth")
+        await _run_cmd("sudo mkdir -p /usr/share/plymouth/themes/map2")
+        await _run_cmd(f"sudo cp '{splash_script}' /usr/share/plymouth/themes/map2/")
+        await _run_cmd(f"sudo cp '{splash_plymouth}' /usr/share/plymouth/themes/map2/")
+        await _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.script")
+        await _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth")
         results.append("Boot splash files copied")
 
         # 3. Set as default theme
-        set_theme = _run_cmd("sudo plymouth-set-default-theme map2-boot-splash 2>&1")
+        set_theme = await _run_cmd("sudo plymouth-set-default-theme map2-boot-splash 2>&1")
         if "error" in set_theme.lower():
             errors.append(f"Theme set issue: {set_theme}")
         else:
@@ -628,21 +633,21 @@ async def reinstall_branding() -> Dict[str, Any]:
 
         # 4. Rebuild initramfs (run in background, don't wait)
         results.append("Initramfs rebuild started (runs in background)...")
-        kernel_version = _run_cmd("uname -r")
+        kernel_version = await _run_cmd("uname -r")
         # Use nohup to run dracut in background
-        _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
+        await _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
 
         # 5. Install welcome message
         results.append("Installing welcome message...")
-        _run_cmd("sudo mkdir -p /etc/profile.d")
-        _run_cmd(f"sudo cp '{welcome_script}' /etc/profile.d/map2-welcome.sh")
-        _run_cmd("sudo chmod 755 /etc/profile.d/map2-welcome.sh")
+        await _run_cmd("sudo mkdir -p /etc/profile.d")
+        await _run_cmd(f"sudo cp '{welcome_script}' /etc/profile.d/map2-welcome.sh")
+        await _run_cmd("sudo chmod 755 /etc/profile.d/map2-welcome.sh")
         results.append("Welcome message installed to /etc/profile.d/")
 
         # 6. Add to user's bashrc if not present
         home_dir = os.path.expanduser("~")
         bashrc_path = os.path.join(home_dir, ".bashrc")
-        bashrc_check = _run_cmd(f"grep -l 'map2-welcome.sh' '{bashrc_path}' 2>/dev/null")
+        bashrc_check = await _run_cmd(f"grep -l 'map2-welcome.sh' '{bashrc_path}' 2>/dev/null")
 
         if not bashrc_check:
             bashrc_addition = '''
@@ -702,9 +707,9 @@ async def toggle_welcome_banner(install: bool = True) -> Dict[str, Any]:
                 }
 
             # Install to /etc/profile.d/
-            _run_cmd("sudo mkdir -p /etc/profile.d")
-            _run_cmd(f"sudo cp '{welcome_script}' /etc/profile.d/map2-welcome.sh")
-            _run_cmd("sudo chmod 755 /etc/profile.d/map2-welcome.sh")
+            await _run_cmd("sudo mkdir -p /etc/profile.d")
+            await _run_cmd(f"sudo cp '{welcome_script}' /etc/profile.d/map2-welcome.sh")
+            await _run_cmd("sudo chmod 755 /etc/profile.d/map2-welcome.sh")
 
             return {
                 "success": True,
@@ -713,7 +718,7 @@ async def toggle_welcome_banner(install: bool = True) -> Dict[str, Any]:
             }
         else:
             # Remove from /etc/profile.d/
-            _run_cmd("sudo rm -f /etc/profile.d/map2-welcome.sh")
+            await _run_cmd("sudo rm -f /etc/profile.d/map2-welcome.sh")
 
             return {
                 "success": True,
@@ -753,8 +758,8 @@ async def get_boot_splash_status() -> Dict[str, Any]:
         Installation status
     """
     theme_exists = os.path.exists("/usr/share/plymouth/themes/map2/map2-boot-splash.script")
-    plymouth_installed = _run_cmd("command -v plymouth") != ""
-    current_theme = _run_cmd("plymouth-set-default-theme 2>/dev/null") if plymouth_installed else ""
+    plymouth_installed = await _run_cmd("command -v plymouth") != ""
+    current_theme = await _run_cmd("plymouth-set-default-theme 2>/dev/null") if plymouth_installed else ""
     is_active = current_theme.strip() == "map2-boot-splash"
 
     return {
@@ -793,7 +798,7 @@ async def toggle_boot_splash(install: bool = True) -> Dict[str, Any]:
                 }
 
             # Check Plymouth is installed
-            if not _run_cmd("command -v plymouth"):
+            if not await _run_cmd("command -v plymouth"):
                 return {
                     "success": False,
                     "installed": False,
@@ -801,18 +806,18 @@ async def toggle_boot_splash(install: bool = True) -> Dict[str, Any]:
                 }
 
             # Create theme directory and copy files
-            _run_cmd("sudo mkdir -p /usr/share/plymouth/themes/map2")
-            _run_cmd(f"sudo cp '{splash_script}' /usr/share/plymouth/themes/map2/")
-            _run_cmd(f"sudo cp '{splash_plymouth}' /usr/share/plymouth/themes/map2/")
-            _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.script")
-            _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth")
+            await _run_cmd("sudo mkdir -p /usr/share/plymouth/themes/map2")
+            await _run_cmd(f"sudo cp '{splash_script}' /usr/share/plymouth/themes/map2/")
+            await _run_cmd(f"sudo cp '{splash_plymouth}' /usr/share/plymouth/themes/map2/")
+            await _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.script")
+            await _run_cmd("sudo chmod 644 /usr/share/plymouth/themes/map2/map2-boot-splash.plymouth")
 
             # Set as default theme
-            set_result = _run_cmd("sudo plymouth-set-default-theme map2-boot-splash 2>&1")
+            set_result = await _run_cmd("sudo plymouth-set-default-theme map2-boot-splash 2>&1")
 
             # Rebuild initramfs in background
-            kernel_version = _run_cmd("uname -r")
-            _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
+            kernel_version = await _run_cmd("uname -r")
+            await _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
 
             return {
                 "success": True,
@@ -822,14 +827,14 @@ async def toggle_boot_splash(install: bool = True) -> Dict[str, Any]:
             }
         else:
             # Reset to default theme
-            _run_cmd("sudo plymouth-set-default-theme bgrt 2>/dev/null || sudo plymouth-set-default-theme spinner 2>/dev/null")
+            await _run_cmd("sudo plymouth-set-default-theme bgrt 2>/dev/null || sudo plymouth-set-default-theme spinner 2>/dev/null")
 
             # Remove theme files
-            _run_cmd("sudo rm -rf /usr/share/plymouth/themes/map2")
+            await _run_cmd("sudo rm -rf /usr/share/plymouth/themes/map2")
 
             # Rebuild initramfs in background
-            kernel_version = _run_cmd("uname -r")
-            _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
+            kernel_version = await _run_cmd("uname -r")
+            await _run_cmd(f"nohup sudo dracut -f /boot/initramfs-{kernel_version}.img {kernel_version} > /tmp/dracut.log 2>&1 &")
 
             return {
                 "success": True,
@@ -1553,7 +1558,7 @@ async def get_host_machine_info():
         import platform
         import socket
         
-        def _read_dmi(field: str) -> str:
+        async def _read_dmi(field: str) -> str:
             """Read DMI info from sysfs (no root needed) with dmidecode fallback."""
             sysfs_map = {
                 "system-manufacturer": "sys_vendor",
@@ -1576,7 +1581,7 @@ async def get_host_machine_info():
                 except (PermissionError, FileNotFoundError, OSError):
                     pass
             # Fallback to dmidecode (may need root)
-            return _run_cmd(f"sudo dmidecode -s {field} 2>/dev/null | head -1")
+            return await _run_cmd(f"sudo dmidecode -s {field} 2>/dev/null | head -1")
         
         # Chassis type numeric to string mapping
         chassis_type_map = {
@@ -1591,9 +1596,9 @@ async def get_host_machine_info():
         }
         
         # System manufacturer detection via sysfs (no root needed)
-        mfg_name = _read_dmi("system-manufacturer")
-        product_name = _read_dmi("system-product-name")
-        serial_number = _read_dmi("system-serial-number")
+        mfg_name = await _read_dmi("system-manufacturer")
+        product_name = await _read_dmi("system-product-name")
+        serial_number = await _read_dmi("system-serial-number")
         
         # Parse manufacturer from the manufacturer string
         manufacturer = "other"
@@ -1611,12 +1616,12 @@ async def get_host_machine_info():
             manufacturer = mfg_name.strip() if mfg_name.strip() else "other"
         
         # CPU information
-        cpu_model = _run_cmd("grep 'model name' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
-        cpu_count_output = _run_cmd("grep -c '^processor' /proc/cpuinfo")
+        cpu_model = await _run_cmd("grep 'model name' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
+        cpu_count_output = await _run_cmd("grep -c '^processor' /proc/cpuinfo")
         cpu_cores = int(cpu_count_output) if cpu_count_output.isdigit() else 1
         
         # Physical core count (more accurate than logical processor count)
-        phys_cores = _run_cmd("grep 'cpu cores' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
+        phys_cores = await _run_cmd("grep 'cpu cores' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
         if phys_cores and phys_cores.isdigit():
             cpu_cores = int(phys_cores)
         
@@ -1624,14 +1629,14 @@ async def get_host_machine_info():
         cpu_threads = int(cpu_count_output) if cpu_count_output.isdigit() else cpu_cores
         
         # CPU frequency in MHz (frontend expects MHz)
-        cpu_freq_output = _run_cmd("grep 'cpu MHz' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
+        cpu_freq_output = await _run_cmd("grep 'cpu MHz' /proc/cpuinfo | head -1 | cut -d ':' -f2 | xargs")
         try:
             cpu_frequency_mhz = float(cpu_freq_output) if cpu_freq_output else None
         except Exception:
             cpu_frequency_mhz = None
         
         # Memory in MB (frontend expects MB)
-        meminfo = _run_cmd("grep '^MemTotal:' /proc/meminfo | awk '{print $2}'")
+        meminfo = await _run_cmd("grep '^MemTotal:' /proc/meminfo | awk '{print $2}'")
         try:
             ram_kb = int(meminfo)
             total_memory_mb = ram_kb / 1024
@@ -1639,21 +1644,21 @@ async def get_host_machine_info():
             total_memory_mb = 0
         
         # BIOS info from sysfs
-        bios_version = _read_dmi("bios-version")
-        bios_date = _read_dmi("bios-release-date")
+        bios_version = await _read_dmi("bios-version")
+        bios_date = await _read_dmi("bios-release-date")
         
         # System UUID (may require root via sysfs, fallback to dmidecode)
-        system_uuid = _read_dmi("system-uuid")
+        system_uuid = await _read_dmi("system-uuid")
         
         # Chassis type - convert numeric sysfs value to human-readable string
-        chassis_raw = _read_dmi("chassis-type")
+        chassis_raw = await _read_dmi("chassis-type")
         chassis_type = chassis_type_map.get(chassis_raw, chassis_raw)
         
         # Motherboard
-        motherboard = _read_dmi("baseboard-product-name")
+        motherboard = await _read_dmi("baseboard-product-name")
         
         # Firmware
-        firmware_version = _read_dmi("baseboard-version")
+        firmware_version = await _read_dmi("baseboard-version")
         
         # Hostname and kernel version
         hostname = socket.gethostname()
@@ -1699,7 +1704,7 @@ async def get_disk_health():
         disks = []
         
         # Detect all block devices
-        block_devs = _run_cmd("lsblk -nd -o NAME | grep -E '^(sd|nvme|vd)'")
+        block_devs = await _run_cmd("lsblk -nd -o NAME | grep -E '^(sd|nvme|vd)'")
         
         for dev in block_devs.split('\n'):
             if not dev.strip():
@@ -1708,10 +1713,10 @@ async def get_disk_health():
             dev = dev.strip()
             
             # Get disk model
-            model = _run_cmd(f"lsblk -nd -o MODEL /dev/{dev} 2>/dev/null | head -1")
+            model = await _run_cmd(f"lsblk -nd -o MODEL /dev/{dev} 2>/dev/null | head -1")
             
             # Get disk size
-            size_output = _run_cmd(f"lsblk -nd -o SIZE /dev/{dev} 2>/dev/null | head -1")
+            size_output = await _run_cmd(f"lsblk -nd -o SIZE /dev/{dev} 2>/dev/null | head -1")
             try:
                 # Parse size (e.g., "2T" -> 2000 GB)
                 size_str = size_output.strip()
@@ -1725,7 +1730,7 @@ async def get_disk_health():
                 size_gb = 0
             
             # Get temperature using smartctl
-            temp_output = _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep -E 'Temperature|Temp' | head -1")
+            temp_output = await _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep -E 'Temperature|Temp' | head -1")
             temperature_c = None
             try:
                 if temp_output:
@@ -1737,24 +1742,24 @@ async def get_disk_health():
                 pass
             
             # Get SMART status
-            smart_status = _run_cmd(f"sudo smartctl -H /dev/{dev} 2>/dev/null | grep -E 'PASSED|FAILED|Unknown'")
+            smart_status = await _run_cmd(f"sudo smartctl -H /dev/{dev} 2>/dev/null | grep -E 'PASSED|FAILED|Unknown'")
             
             # Get reallocated sectors
-            reallocated = _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep 'Reallocated_Sector_Ct' | awk '{{print $NF}}'")
+            reallocated = await _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep 'Reallocated_Sector_Ct' | awk '{{print $NF}}'")
             try:
                 reallocated_sectors = int(reallocated) if reallocated else 0
             except Exception:
                 reallocated_sectors = 0
             
             # Get uncorrectable errors
-            uncorrectable = _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep 'Uncorrectable_Error' | awk '{{print $NF}}'")
+            uncorrectable = await _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep 'Uncorrectable_Error' | awk '{{print $NF}}'")
             try:
                 uncorrectable_errors = int(uncorrectable) if uncorrectable else 0
             except Exception:
                 uncorrectable_errors = 0
             
             # Get power on hours
-            power_on = _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep 'Power_On_Hours' | awk '{{print $NF}}'")
+            power_on = await _run_cmd(f"sudo smartctl -A /dev/{dev} 2>/dev/null | grep 'Power_On_Hours' | awk '{{print $NF}}'")
             try:
                 power_on_hours = int(power_on) if power_on else 0
             except Exception:
@@ -1775,7 +1780,7 @@ async def get_disk_health():
                 health_status = "warning"
             
             # Get disk usage
-            df_output = _run_cmd(f"df /dev/{dev} | tail -1 | awk '{{print int($3/$2*100)}}'")
+            df_output = await _run_cmd(f"df /dev/{dev} | tail -1 | awk '{{print int($3/$2*100)}}'")
             try:
                 used_percent = int(df_output) if df_output else 0
             except Exception:
@@ -1823,7 +1828,7 @@ async def get_health_overview():
         max_temp = None
         
         # Try lm-sensors first
-        sensors_output = _run_cmd("sensors 2>/dev/null | grep -E 'Core|Package|CPU|Temp' | head -10")
+        sensors_output = await _run_cmd("sensors 2>/dev/null | grep -E 'Core|Package|CPU|Temp' | head -10")
         if sensors_output:
             try:
                 # Parse sensors output
@@ -1841,7 +1846,7 @@ async def get_health_overview():
         
         # Fallback: try /sys/class/thermal
         if not cpu_temp:
-            thermal_output = _run_cmd("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null")
+            thermal_output = await _run_cmd("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null")
             if thermal_output.isdigit():
                 cpu_temp = int(thermal_output) / 1000
                 max_temp = cpu_temp
@@ -1858,7 +1863,7 @@ async def get_health_overview():
         # Get fan speeds
         fans = []
         try:
-            fan_output = _run_cmd("sensors 2>/dev/null | grep -i 'fan' | grep RPM")
+            fan_output = await _run_cmd("sensors 2>/dev/null | grep -i 'fan' | grep RPM")
             if fan_output:
                 for line in fan_output.split('\n'):
                     if 'fan' in line.lower():
@@ -1882,7 +1887,7 @@ async def get_health_overview():
         power_load = None
         try:
             # Try to read PSU info
-            psu_output = _run_cmd("sensors 2>/dev/null | grep -i 'psu' | head -3")
+            psu_output = await _run_cmd("sensors 2>/dev/null | grep -i 'psu' | head -3")
             if psu_output:
                 voltage_match = re.search(r'(\d+\.?\d*)\s*V', psu_output)
                 if voltage_match:
