@@ -32,8 +32,6 @@
     "@reactflow/minimap": "^11.7.14",
     "@reactflow/node-resizer": "^2.2.14",
     "@tanstack/react-query": "^5.59.0",
-    "@types/dagre": "^0.7.53",
-    "@types/react-window": "^1.8.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
@@ -55,7 +53,9 @@
   "devDependencies": {
     "@eslint/js": "^9.19.0",
     "@tanstack/react-query-devtools": "^5.59.0",
+    "@types/dagre": "^0.7.53",
     "@types/react": "^19.0.8",
+    "@types/react-window": "^1.8.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.19.0",

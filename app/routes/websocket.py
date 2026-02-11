@@ -196,6 +196,17 @@ async def websocket_endpoint_v1(websocket: WebSocket):
     await _handle_websocket_connection(websocket, version="1.0")
 
 
+@router.websocket("/ws/events")
+async def websocket_events(websocket: WebSocket):
+    """
+    General-purpose event stream endpoint.
+
+    Used by cluster sync (special settings updates) and other
+    event-driven features. Same protocol as /ws/v1.
+    """
+    await _handle_websocket_connection(websocket, version="1.0")
+
+
 @router.websocket("/ws/system/metrics")
 async def system_metrics_stream(websocket: WebSocket):
     """
