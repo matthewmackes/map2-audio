@@ -395,7 +395,7 @@ async def websocket_health_updates(websocket: WebSocket):
         _ws_connections.discard(websocket)
         try:
             await websocket.close()
-        except:
+        except Exception:
             pass
 
 

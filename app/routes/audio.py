@@ -5,6 +5,9 @@ Integrated with JUCE audio engine service.
 Includes new audio health monitoring endpoints.
 """
 
+import asyncio
+import subprocess
+
 try:
     from fastapi import APIRouter, HTTPException, Query
     from typing import Dict, Any, Optional, List
@@ -132,7 +135,7 @@ try:
         if isinstance(cpu_load, str):
             try:
                 cpu_load = float(cpu_load.replace('%', ''))
-            except:
+            except Exception:
                 cpu_load = 0.0
 
         return {
@@ -300,7 +303,6 @@ try:
         await service.stop_audio()
 
         # Wait a brief moment
-        import asyncio
         await asyncio.sleep(0.5)
 
         # Start audio
@@ -711,7 +713,6 @@ try:
     @router.get("/alsa/info")
     async def get_alsa_info() -> Dict[str, Any]:
         """Get ALSA device information."""
-        import subprocess
 
         cards = []
         current_device = "unknown"
@@ -719,7 +720,8 @@ try:
         state = "stopped"
 
         try:
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 ["cat", "/proc/asound/cards"],
                 capture_output=True, text=True, timeout=5
             )
@@ -758,13 +760,12 @@ try:
     @router.post("/alsa/reset")
     async def reset_alsa_state() -> Dict[str, Any]:
         """Reset ALSA state."""
-        import subprocess
 
         try:
-            result = subprocess.run(["alsactl", "restore"], capture_output=True, text=True, timeout=10)
+            result = await asyncio.to_thread(subprocess.run, ["alsactl", "restore"], capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
                 return {"success": True, "message": "ALSA state restored successfully"}
-            result2 = subprocess.run(["alsactl", "init"], capture_output=True, text=True, timeout=10)
+            result2 = await asyncio.to_thread(subprocess.run, ["alsactl", "init"], capture_output=True, text=True, timeout=10)
             if result2.returncode == 0:
                 return {"success": True, "message": "ALSA initialized successfully"}
             return {"success": False, "message": f"ALSA reset failed: {result.stderr or result2.stderr}"}
@@ -845,7 +846,7 @@ try:
         if isinstance(cpu_load, str):
             try:
                 cpu_load = float(cpu_load.replace('%', ''))
-            except:
+            except Exception:
                 cpu_load = 0
         cpu_ok = cpu_load < 70
         tests.append({
@@ -901,7 +902,7 @@ try:
                     monitor = get_audio_health_monitor()
                     if hasattr(monitor, 'reset_xrun_counter'):
                         monitor.reset_xrun_counter()
-                except:
+                except Exception:
                     pass
             return {"success": True}
         except Exception as e:
@@ -934,7 +935,7 @@ try:
         except Exception as e:
             try:
                 await service.set_sample_rate(original_rate)
-            except:
+            except Exception:
                 pass
             return {"success": False, "test_name": f"Sample Rate Test ({rate} Hz)", "duration_ms": (datetime.now() - test_start).total_seconds() * 1000, "xruns_detected": 0, "message": f"Error: {str(e)}"}
 
@@ -944,7 +945,6 @@ try:
         duration: int = Query(5, description="Test duration in seconds")
     ) -> Dict[str, Any]:
         """Test buffer stability at a specific buffer size."""
-        import asyncio
         service = get_audio_engine()
 
         if not service.is_available:
@@ -973,7 +973,7 @@ try:
                 if isinstance(cpu, str):
                     try:
                         cpu = float(cpu.replace('%', ''))
-                    except:
+                    except Exception:
                         cpu = 0
                 cpu_samples.append(cpu)
 
@@ -999,7 +999,7 @@ try:
         except Exception as e:
             try:
                 await service.set_buffer_size(original_buffer)
-            except:
+            except Exception:
                 pass
             return {"success": False, "buffer_size": buffer_size, "duration_seconds": duration, "xruns": 0, "avg_cpu_load": 0, "peak_cpu_load": 0, "stability_score": 0, "recommendation": f"Test error: {str(e)}"}
 

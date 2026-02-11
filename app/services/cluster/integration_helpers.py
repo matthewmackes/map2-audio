@@ -165,7 +165,7 @@ class HybridNodeClient:
                 )
                 if result:
                     return 0, result.get("stdout", ""), ""
-            except:
+            except Exception:
                 pass
         
         # Fall back to SSH
@@ -207,7 +207,7 @@ class HybridNodeClient:
                 timeout=10
             )
             return returncode == 0
-        except:
+        except Exception:
             return False
 
 

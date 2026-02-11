@@ -131,7 +131,7 @@ class AudioEngineValidator:
                     "⚠️  Audio callback already registered - possible conflict!\n"
                     "   Ensure only JUCE engine is handling audio I/O."
                 )
-        except:
+        except Exception:
             pass
 
 

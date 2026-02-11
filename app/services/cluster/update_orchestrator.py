@@ -438,7 +438,7 @@ class UpdateScheduler:
                             if rc == 0:
                                 self.logger.info(f"Node {node_id} is back online")
                                 break
-                        except:
+                        except Exception:
                             pass
                     else:
                         self.logger.warning(f"Node {node_id} did not come back online within {max_wait}s")
@@ -546,7 +546,7 @@ class UpdateScheduler:
                 if device_count == 0:
                     self.logger.error(f"No audio devices found on {node_id}")
                     return False
-            except:
+            except Exception:
                 self.logger.warning(f"Could not enumerate audio devices on {node_id}")
             
             # Check 3: Health score is reasonable
@@ -557,7 +557,7 @@ class UpdateScheduler:
                     if health_score and health_score < 50:
                         self.logger.warning(f"Low health score on {node_id}: {health_score}")
                         # Don't fail - could be warming up
-            except:
+            except Exception:
                 pass
             
             self.logger.info(f"Post-update validation passed for {node_id}")

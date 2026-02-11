@@ -2103,7 +2103,7 @@ async def get_cpu_isolation_status():
                     if line.startswith("MODE="):
                         mode = line.split("=")[1].strip()
                         break
-        except:
+        except Exception:
             pass
         
         # Check kernel parameters
@@ -2111,7 +2111,7 @@ async def get_cpu_isolation_status():
         try:
             with open("/proc/cmdline", "r") as f:
                 cmdline = f.read()
-        except:
+        except Exception:
             pass
         
         isolated_cores = []
@@ -2137,7 +2137,7 @@ async def get_cpu_isolation_status():
                     match = re.search(r"CPUAffinity=([^ \n]+)", content)
                     if match:
                         service_affinity = match.group(1)
-        except:
+        except Exception:
             pass
         
         # Check sysctl settings
@@ -2147,7 +2147,7 @@ async def get_cpu_isolation_status():
                 result = subprocess.run(["sysctl", "-n", param], capture_output=True, text=True, timeout=2)
                 if result.returncode == 0:
                     sysctl_settings[param] = result.stdout.strip()
-        except:
+        except Exception:
             pass
         
         # Check if services are running
@@ -2156,13 +2156,13 @@ async def get_cpu_isolation_status():
         try:
             result = subprocess.run(["pgrep", "-f", "uvicorn app.main"], capture_output=True, timeout=2)
             backend_running = result.returncode == 0
-        except:
+        except Exception:
             pass
         
         try:
             result = subprocess.run(["pgrep", "pipewire"], capture_output=True, timeout=2)
             pipewire_running = result.returncode == 0
-        except:
+        except Exception:
             pass
         
         # Determine if isolation is active
@@ -2269,7 +2269,7 @@ async def reset_to_mode_configuration():
                     if line.startswith("MODE="):
                         mode = line.split("=")[1].strip()
                         break
-        except:
+        except Exception:
             raise HTTPException(status_code=400, detail="Cannot read /etc/guitarfx-mode.conf")
         
         if mode not in ["audio", "all-in-one", "management"]:
@@ -2337,7 +2337,7 @@ async def get_cpu_isolation_metrics():
                 "5_min": load_avg[1],
                 "15_min": load_avg[2]
             }
-        except:
+        except Exception:
             pass
         
         # Get CPU frequency (if available)
@@ -2347,7 +2347,7 @@ async def get_cpu_isolation_metrics():
                 with open(freq_path) as f:
                     freq_khz = int(f.read().strip())
                     metrics["frequency"]["current_ghz"] = round(freq_khz / 1000000, 2)
-        except:
+        except Exception:
             pass
         
         # Get backend process stats
@@ -2370,7 +2370,7 @@ async def get_cpu_isolation_metrics():
                             "mem_percent": float(parts[1]),
                             "pid": pid
                         }
-        except:
+        except Exception:
             pass
         
         return metrics

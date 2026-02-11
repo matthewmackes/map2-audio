@@ -496,7 +496,7 @@ class PluginSandbox:
         if self._input_queue:
             try:
                 self._input_queue.put_nowait(None)  # Shutdown signal
-            except:
+            except Exception:
                 pass
 
         if self._process and self._process.is_alive():

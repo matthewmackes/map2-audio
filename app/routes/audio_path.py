@@ -318,12 +318,12 @@ async def websocket_audio_path_changes(websocket: WebSocket):
                     if data.get("action") == "subscribe_node":
                         # Client can request updates only for specific nodes
                         logger.debug(f"Client subscribed to node: {data.get('node_id')}")
-                except:
+                except Exception:
                     pass
             except asyncio.TimeoutError:
                 # Keep alive, no timeout
                 continue
-            except:
+            except Exception:
                 break
     
     except WebSocketDisconnect:
@@ -358,8 +358,8 @@ async def broadcast_audio_path_update(node_id: str, change_type: str, data: Dict
         for subscriber in list(subscribers):
             try:
                 await subscriber.send_text(msg_json)
-            except:
+            except Exception:
                 try:
                     subscribers.remove(subscriber)
-                except:
+                except Exception:
                     pass

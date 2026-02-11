@@ -158,7 +158,7 @@ class ConfigurationDistributor:
                         logger.debug(f"Checksum verified for {config_file} on {node_id}")
                     else:
                         logger.warning(f"Checksum mismatch for {config_file} on {node_id}")
-                except:
+                except Exception:
                     pass  # Non-critical
             
             # Signal node to reload configuration
@@ -168,7 +168,7 @@ class ConfigurationDistributor:
                     timeout=10
                 )
                 logger.info(f"Reloaded configuration on {node_id}")
-            except:
+            except Exception:
                 logger.warning(f"Could not reload configuration on {node_id}")
             
             return True
@@ -206,21 +206,21 @@ class NodeLifecycleManager:
             try:
                 rc, output, _ = client.execute_command("free -h", timeout=10)
                 diagnostics['checks']['memory'] = output if rc == 0 else "N/A"
-            except:
+            except Exception:
                 diagnostics['checks']['memory'] = "Error"
             
             # Check 2: Disk usage
             try:
                 rc, output, _ = client.execute_command("df -h /", timeout=10)
                 diagnostics['checks']['disk'] = output if rc == 0 else "N/A"
-            except:
+            except Exception:
                 diagnostics['checks']['disk'] = "Error"
             
             # Check 3: Audio services
             try:
                 rc, _, _ = client.execute_command("systemctl is-active map2-audio", timeout=10)
                 diagnostics['checks']['audio_service'] = "running" if rc == 0 else "stopped"
-            except:
+            except Exception:
                 diagnostics['checks']['audio_service'] = "unknown"
             
             # Check 4: Recent logs
@@ -230,7 +230,7 @@ class NodeLifecycleManager:
                     timeout=10
                 )
                 diagnostics['checks']['recent_logs'] = logs if rc == 0 else "N/A"
-            except:
+            except Exception:
                 diagnostics['checks']['recent_logs'] = "Error"
             
             logger.info(f"Diagnostics complete for {node_id}")
@@ -258,21 +258,21 @@ class NodeLifecycleManager:
             try:
                 client.execute_command("systemctl stop map2-audio", timeout=30)
                 logger.info(f"Stopped services on {node_id}")
-            except:
+            except Exception:
                 pass
             
             # Step 2: Clear cache/temp
             try:
                 client.execute_command("rm -rf /tmp/map2-*", timeout=10)
                 logger.info(f"Cleared cache on {node_id}")
-            except:
+            except Exception:
                 pass
             
             # Step 3: Restart services
             try:
                 client.execute_command("systemctl start map2-audio", timeout=30)
                 logger.info(f"Restarted services on {node_id}")
-            except:
+            except Exception:
                 logger.error(f"Failed to restart services on {node_id}")
                 return False
             
@@ -284,7 +284,7 @@ class NodeLifecycleManager:
                     self.registry.update_node_status(node_id, "active")
                     logger.info(f"Recovery successful for {node_id}")
                     return True
-            except:
+            except Exception:
                 pass
             
             return False

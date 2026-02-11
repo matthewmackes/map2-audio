@@ -128,7 +128,7 @@ class BinaryPluginCache:
             # Clean up temp file
             try:
                 self.temp_path.unlink()
-            except:
+            except Exception:
                 pass
             return False
     

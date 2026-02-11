@@ -442,7 +442,7 @@ class FolderScanner(Singleton):
                 for f in files:
                     try:
                         total_size += os.path.getsize(os.path.join(root, f))
-                    except:
+                    except Exception:
                         pass
             
             stats[name] = {

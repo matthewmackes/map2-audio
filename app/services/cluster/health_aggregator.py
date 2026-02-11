@@ -231,22 +231,22 @@ class HealthAggregator:
                                 if 'node_cpu_percent' in line:
                                     try:
                                         cpu_percent = float(line.split()[-1])
-                                    except:
+                                    except Exception:
                                         pass
                                 elif 'node_memory_percent' in line:
                                     try:
                                         memory_percent = float(line.split()[-1])
-                                    except:
+                                    except Exception:
                                         pass
                                 elif 'dsp_load_percent' in line or 'jack_load_percent' in line:
                                     try:
                                         dsp_load_percent = float(line.split()[-1])
-                                    except:
+                                    except Exception:
                                         pass
                                 elif 'jack_xruns_total' in line or 'xrun_count' in line:
                                     try:
                                         xrun_count = int(float(line.split()[-1]))
-                                    except:
+                                    except Exception:
                                         pass
                             
                             metrics = NodeMetrics(

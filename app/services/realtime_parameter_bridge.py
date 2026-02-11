@@ -406,7 +406,7 @@ class RealTimeParameterBridge:
             try:
                 self._update_queue.get_nowait()
                 self._update_queue.put_nowait(update)
-            except:
+            except Exception:
                 pass
 
         # Broadcast to subscribers (except source)

@@ -424,7 +424,7 @@ class RealLV2Loader:
             if lilv_val is None:
                 return None
             return str(lilv_val)
-        except:
+        except Exception:
             return None
     
     def _get_stub_plugins(self) -> List[LV2Plugin]:

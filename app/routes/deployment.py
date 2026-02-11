@@ -9,7 +9,9 @@ Endpoints for:
 - GET /api/deployment/config - Get full deployment config
 """
 
+import asyncio
 import logging
+import subprocess
 from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -128,7 +130,6 @@ def _sync_system_config(mode: DeploymentMode):
     This ensures guitarfx-mode.conf, /etc/map2/environment, and
     the systemd override all agree with deployment.json.
     """
-    import subprocess
     
     # Map deployment enum → guitarfx-mode.conf value
     mode_map = {
@@ -141,7 +142,8 @@ def _sync_system_config(mode: DeploymentMode):
     
     try:
         # Use the unified map2-mode script if available (handles all stores + systemd)
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["/usr/local/bin/map2-mode", "apply"],
             capture_output=True, text=True, timeout=15,
             env={**__import__('os').environ, "SUDO_ASKPASS": "/bin/false"}
