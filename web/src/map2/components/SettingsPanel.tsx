@@ -776,7 +776,7 @@ export default function SettingsPanel() {
               <Button
                 variant="outlined"
                 startIcon={<ApiIcon />}
-                href="http://localhost:8080/docs"
+                href="/docs"
                 target="_blank"
               >
                 Open API Docs

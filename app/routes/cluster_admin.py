@@ -1244,14 +1244,3 @@ async def get_optimal_route(
     except Exception as e:
         logger.error(f"Route calculation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# Health check endpoint (no auth required)
-@router.get("/ping")
-async def cluster_ping() -> Dict:
-    """Simple health check endpoint"""
-    return {
-        "status": "ok",
-        "service": "cluster-manager",
-        "timestamp": datetime.utcnow().isoformat(),
-    }

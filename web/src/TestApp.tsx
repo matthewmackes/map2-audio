@@ -32,8 +32,8 @@ export default function TestApp() {
         <h2 style={{ marginBottom: '1rem' }}>Status</h2>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           <li style={{ marginBottom: '0.5rem' }}>✅ Frontend: Running</li>
-          <li style={{ marginBottom: '0.5rem' }}>✅ Backend: http://localhost:8080</li>
-          <li style={{ marginBottom: '0.5rem' }}>✅ WebSocket: ws://localhost:8080/ws/v1</li>
+          <li style={{ marginBottom: '0.5rem' }}>✅ Backend: {window.location.origin}</li>
+          <li style={{ marginBottom: '0.5rem' }}>✅ WebSocket: {window.location.origin.replace(/^http/, 'ws')}/ws/v1</li>
           <li style={{ marginBottom: '0.5rem' }}>✅ PiPedal Removed</li>
         </ul>
         <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: '#888' }}>

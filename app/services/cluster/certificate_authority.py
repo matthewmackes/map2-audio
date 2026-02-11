@@ -19,13 +19,20 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import os
 
-from cryptography import x509
-from cryptography.x509.oid import NameOID, ExtensionOID
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.backends import default_backend
+try:
+    from cryptography import x509
+    from cryptography.x509.oid import NameOID, ExtensionOID
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.backends import default_backend
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+    x509 = None  # type: ignore
 
 logger = logging.getLogger(__name__)
+if not CRYPTOGRAPHY_AVAILABLE:
+    logger.info("cryptography module not installed — cluster CA disabled")
 
 
 class ClusterCA:

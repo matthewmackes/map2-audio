@@ -311,7 +311,7 @@ class SessionSettingsUpdate(BaseModel):
     auto_save_interval_sec: Optional[int] = None
 
 
-@router.get("/current")
+@router.get("/current/status")
 async def get_current_session_status() -> Dict[str, Any]:
     """
     Get current session status for UI display

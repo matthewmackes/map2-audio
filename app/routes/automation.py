@@ -204,38 +204,6 @@ async def remove_point(request: RemovePointRequest) -> Dict[str, str]:
     }
 
 
-@router.post("/lfo")
-async def configure_lfo(config: LFOConfig) -> Dict[str, str]:
-    """
-    Configure LFO for a parameter
-    
-    Request body:
-    - parameter_id: Parameter identifier
-    - rate_hz: LFO rate in Hz (0.1 to 20.0)
-    - depth: Modulation depth (0.0 to 1.0)
-    - waveform: "sine", "triangle", "square", or "saw"
-    
-    Returns:
-        Success message
-    """
-    try:
-        automation_engine.configure_lfo(
-            parameter_id=config.parameter_id,
-            rate_hz=config.rate_hz,
-            depth=config.depth,
-            waveform=config.waveform
-        )
-        
-        return {
-            "status": "success",
-            "message": f"Configured LFO for {config.parameter_id}"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error configuring LFO: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/lanes")
 async def list_lanes() -> Dict[str, List[str]]:
     """
@@ -352,25 +320,6 @@ async def control_playback(control: PlaybackControl) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error controlling playback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/status")
-async def get_status() -> Dict[str, Any]:
-    """
-    Get automation engine status
-    
-    Returns:
-        Playback status and statistics
-    """
-    return {
-        "is_playing": automation_engine.is_playing,
-        "current_time": automation_engine.current_time,
-        "loop_enabled": automation_engine.loop_enabled,
-        "loop_start": automation_engine.loop_start,
-        "loop_end": automation_engine.loop_end,
-        "automated_parameters": len(automation_engine.get_all_automated_parameters()),
-        "sample_rate": automation_engine.sample_rate
-    }
 
 
 @router.post("/import")

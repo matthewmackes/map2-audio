@@ -410,9 +410,9 @@ export function MeteringPage() {
               color: '#64748b',
               lineHeight: '1.5'
             }}>
-              <strong style={{ color: '#3b82f6' }}>Base URL:</strong> http://localhost:8080/api
+              <strong style={{ color: '#3b82f6' }}>Base URL:</strong> {window.location.origin}/api
               <br />
-              <strong style={{ color: '#3b82f6' }}>WebSocket:</strong> ws://localhost:8080/ws/metering (real-time updates)
+              <strong style={{ color: '#3b82f6' }}>WebSocket:</strong> {window.location.origin.replace(/^http/, 'ws')}/ws/metering (real-time updates)
             </div>
           </div>
         )}
