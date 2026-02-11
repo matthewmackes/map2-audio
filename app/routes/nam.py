@@ -470,7 +470,10 @@ try:
             upload_dir = StoragePaths.get_nam_user_dir()
             upload_dir.mkdir(parents=True, exist_ok=True)
 
-            file_path = upload_dir / file.filename
+            safe_name = os.path.basename(file.filename)
+            if not safe_name or safe_name.startswith('.'):
+                raise HTTPException(status_code=400, detail="Invalid filename")
+            file_path = upload_dir / safe_name
             content = await file.read()
 
             with open(file_path, 'wb') as f:
@@ -480,36 +483,37 @@ try:
 
             # Check if already in database
             session = get_db_session()
-            existing = session.query(NAMModel).filter_by(file_hash=file_hash).first()
+            try:
+                existing = session.query(NAMModel).filter_by(file_hash=file_hash).first()
 
-            if existing:
-                session.close()
-                return {
-                    "status": "exists",
-                    "model": {
-                        "id": existing.id,
-                        "name": existing.name
+                if existing:
+                    return {
+                        "status": "exists",
+                        "model": {
+                            "id": existing.id,
+                            "name": existing.name
+                        }
                     }
-                }
 
-            # Create database entry
-            model_name = os.path.splitext(file.filename)[0]
+                # Create database entry
+                model_name = os.path.splitext(safe_name)[0]
 
-            new_model = NAMModel(
-                name=model_name,
-                file_path=str(file_path),
-                file_hash=file_hash,
-                file_size=len(content),
-                model_type="unknown",
-                category="User",
-                license="User uploaded"
-            )
+                new_model = NAMModel(
+                    name=model_name,
+                    file_path=str(file_path),
+                    file_hash=file_hash,
+                    file_size=len(content),
+                    model_type="unknown",
+                    category="User",
+                    license="User uploaded"
+                )
 
-            session.add(new_model)
-            session.commit()
+                session.add(new_model)
+                session.commit()
 
-            model_id = new_model.id
-            session.close()
+                model_id = new_model.id
+            finally:
+                session.close()
 
             logger.info(f"Uploaded NAM model: {file.filename}")
 

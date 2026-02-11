@@ -306,7 +306,11 @@ class UnifiedUploadService:
                             error="ZIP does not contain .vst3 bundle"
                         )
 
-                    # Extract to destination
+                    # Validate paths before extracting (Zip Slip prevention)
+                    for member in zf.namelist():
+                        member_path = (dest_dir / member).resolve()
+                        if not str(member_path).startswith(str(dest_dir.resolve())):
+                            raise ValueError(f"Illegal path in ZIP archive: {member}")
                     zf.extractall(dest_dir)
 
                     # Find the root VST3 bundle name

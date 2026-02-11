@@ -3,6 +3,7 @@ Package Manager Routes - Unified component lifecycle management API
 """
 
 import logging
+import os
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
@@ -272,7 +273,10 @@ async def upload_ir_file(
             raise HTTPException(status_code=400, detail="file_type must be 'cabinet' or 'reverb'")
         
         target_dir.mkdir(parents=True, exist_ok=True)
-        target_path = target_dir / file.filename
+        safe_name = os.path.basename(file.filename)
+        if not safe_name or safe_name.startswith('.'):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        target_path = target_dir / safe_name
         
         # Save file
         content = await file.read()
@@ -286,7 +290,7 @@ async def upload_ir_file(
         
         return {
             "status": "success",
-            "message": f"Uploaded {file.filename}",
+            "message": f"Uploaded {safe_name}",
             "path": str(target_path)
         }
         
@@ -314,7 +318,10 @@ async def upload_nam_model(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         target_dir = package_manager.nam_paths[0]
         target_dir.mkdir(parents=True, exist_ok=True)
-        target_path = target_dir / file.filename
+        safe_name = os.path.basename(file.filename)
+        if not safe_name or safe_name.startswith('.'):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        target_path = target_dir / safe_name
         
         # Save file
         content = await file.read()
@@ -328,7 +335,7 @@ async def upload_nam_model(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         return {
             "status": "success",
-            "message": f"Uploaded {file.filename}",
+            "message": f"Uploaded {safe_name}",
             "path": str(target_path)
         }
         

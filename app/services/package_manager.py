@@ -746,9 +746,19 @@ class PackageManager:
                             # Find the .lv2 directory in the archive
                             lv2_dirs = [n for n in zf.namelist() if '.lv2/' in n]
                             if lv2_dirs:
+                                # Validate paths (Zip Slip prevention)
+                                for member in zf.namelist():
+                                    member_path = (target_base / member).resolve()
+                                    if not str(member_path).startswith(str(target_base.resolve())):
+                                        raise ValueError(f"Illegal path in archive: {member}")
                                 zf.extractall(target_base)
                     elif source_url.endswith(('.tar.gz', '.tgz', '.tar.xz', '.tar.bz2')):
                         with tarfile.open(tmp_path) as tf:
+                            # Validate paths (path traversal prevention)
+                            for member in tf.getmembers():
+                                member_path = (target_base / member.name).resolve()
+                                if not str(member_path).startswith(str(target_base.resolve())):
+                                    raise ValueError(f"Illegal path in archive: {member.name}")
                             tf.extractall(target_base)
                     else:
                         # Assume it's a single .so file or similar

@@ -14,11 +14,14 @@ from app.models import PasswordAuthRequest, PasswordAuthResponse
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# Get password from environment (default: "backdoor")
-SPECIAL_MODE_PASSWORD = os.getenv("SPECIAL_MODE_PASSWORD", "backdoor")
+# Get password from environment — NO default, must be explicitly configured
+SPECIAL_MODE_PASSWORD = os.getenv("SPECIAL_MODE_PASSWORD")
 
-# Store hashed password for comparison (simple SHA-256 for now)
-HASHED_PASSWORD = hashlib.sha256(SPECIAL_MODE_PASSWORD.encode()).hexdigest()
+if SPECIAL_MODE_PASSWORD:
+    HASHED_PASSWORD = hashlib.sha256(SPECIAL_MODE_PASSWORD.encode()).hexdigest()
+else:
+    HASHED_PASSWORD = None
+    logger.warning("SPECIAL_MODE_PASSWORD not set — special mode authentication disabled")
 
 
 def verify_password(password: str) -> bool:
@@ -39,6 +42,8 @@ async def authenticate_special_mode(request: PasswordAuthRequest):
         PasswordAuthResponse with success=True if password correct
     """
     try:
+        if HASHED_PASSWORD is None:
+            raise HTTPException(status_code=503, detail="Special mode not configured")
         if verify_password(request.password):
             logger.info("Special mode authentication successful")
             return PasswordAuthResponse(

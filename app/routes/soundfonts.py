@@ -455,7 +455,10 @@ async def upload_soundfont(file: UploadFile = File(...)) -> Dict:
         # Save to user soundfont directory
         sf_dir = StoragePaths.get_soundfont_user_dir()
         sf_dir.mkdir(parents=True, exist_ok=True)
-        file_path = sf_dir / file.filename
+        safe_name = os.path.basename(file.filename)
+        if not safe_name or safe_name.startswith('.'):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        file_path = sf_dir / safe_name
 
         import shutil
         with file_path.open("wb") as buffer:

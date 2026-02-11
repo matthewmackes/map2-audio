@@ -73,6 +73,12 @@ async def push_config(file: UploadFile = File(...)):
         # Extract tarball
         tar_buffer = io.BytesIO(content)
         with tarfile.open(fileobj=tar_buffer, mode='r:gz') as tar:
+            # Validate members before extracting (path traversal prevention)
+            dest = Path("/tmp/config_push")
+            for member in tar.getmembers():
+                member_path = (dest / member.name).resolve()
+                if not str(member_path).startswith(str(dest.resolve())):
+                    raise HTTPException(400, f"Illegal path in archive: {member.name}")
             tar.extractall(path="/tmp/config_push")
         
         # TODO: Validate and apply configuration

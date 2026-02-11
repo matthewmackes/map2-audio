@@ -368,6 +368,12 @@ class DisasterRecoveryManager:
             temp_dir.mkdir(parents=True, exist_ok=True)
             
             with tarfile.open(archive_path, "r:gz") as tar:
+                # Validate members before extracting (path traversal prevention)
+                for member in tar.getmembers():
+                    member_path = (temp_dir / member.name).resolve()
+                    if not str(member_path).startswith(str(temp_dir.resolve())):
+                        self.logger.error(f"Illegal path in backup archive: {member.name}")
+                        return False
                 tar.extractall(temp_dir)
             
             # Restore based on type
