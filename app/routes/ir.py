@@ -158,14 +158,29 @@ try:
         if not file.filename.endswith('.wav'):
             raise HTTPException(status_code=400, detail="Only WAV files are supported")
 
+        # Security: sanitize filename to prevent path traversal
+        import os
+        safe_name = os.path.basename(file.filename)
+        if not safe_name or safe_name.startswith('.'):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        # Size limit: 50 MB for cabinet IRs
+        MAX_IR_SIZE = 50 * 1024 * 1024
+        content = await file.read()
+        if len(content) > MAX_IR_SIZE:
+            raise HTTPException(status_code=413, detail=f"File too large (max {MAX_IR_SIZE // (1024*1024)}MB)")
+
         # Save to cabinets directory using centralized paths
         cabinet_dir = StoragePaths.get_ir_cabinet_dir()
         cabinet_dir.mkdir(parents=True, exist_ok=True)
-        file_path = cabinet_dir / file.filename
+        file_path = cabinet_dir / safe_name
+        # Verify resolved path is still inside cabinet_dir
+        if not str(file_path.resolve()).startswith(str(cabinet_dir.resolve())):
+            raise HTTPException(status_code=400, detail="Invalid filename")
         with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(content)
 
-        return {"status": "uploaded", "filename": file.filename, "type": "cabinet"}
+        return {"status": "uploaded", "filename": safe_name, "type": "cabinet"}
 
     @router.post("/reverbs/upload")
     async def upload_reverb_ir(file: UploadFile = File(...)):
@@ -173,14 +188,29 @@ try:
         if not file.filename.endswith('.wav'):
             raise HTTPException(status_code=400, detail="Only WAV files are supported")
 
+        # Security: sanitize filename to prevent path traversal
+        import os
+        safe_name = os.path.basename(file.filename)
+        if not safe_name or safe_name.startswith('.'):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        # Size limit: 100 MB for reverb IRs
+        MAX_IR_SIZE = 100 * 1024 * 1024
+        content = await file.read()
+        if len(content) > MAX_IR_SIZE:
+            raise HTTPException(status_code=413, detail=f"File too large (max {MAX_IR_SIZE // (1024*1024)}MB)")
+
         # Save to reverbs directory using centralized paths
         reverb_dir = StoragePaths.get_ir_reverb_dir()
         reverb_dir.mkdir(parents=True, exist_ok=True)
-        file_path = reverb_dir / file.filename
+        file_path = reverb_dir / safe_name
+        # Verify resolved path is still inside reverb_dir
+        if not str(file_path.resolve()).startswith(str(reverb_dir.resolve())):
+            raise HTTPException(status_code=400, detail="Invalid filename")
         with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(content)
 
-        return {"status": "uploaded", "filename": file.filename, "type": "reverb"}
+        return {"status": "uploaded", "filename": safe_name, "type": "reverb"}
 
 except ImportError as e:
     # Create stub router if dependencies not available

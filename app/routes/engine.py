@@ -79,6 +79,72 @@ async def get_version():
     return {"version": service.get_version()}
 
 
+@router.get("/diagnostics")
+async def get_diagnostics():
+    """Get comprehensive audio I/O diagnostics including xrun/jitter/connection health.
+    
+    Returns real-time data from the JUCE audio callback including:
+    - Xrun count and history
+    - Callback jitter analysis
+    - CPU budget utilization
+    - PipeWire/JACK connection health
+    - Device recovery statistics
+    """
+    try:
+        service = get_audio_engine()
+        if not service._engine:
+            raise HTTPException(status_code=503, detail="Engine not initialized")
+        
+        result = {}
+        
+        # Audio I/O stats (xrun, jitter, latency)
+        try:
+            result["io_stats"] = service._engine.get_audio_io_stats()
+        except Exception as e:
+            logger.warning(f"get_audio_io_stats failed: {e}")
+            result["io_stats"] = {}
+        
+        # Connection health (PipeWire/JACK state, recovery count)
+        try:
+            result["connection_health"] = service._engine.get_connection_health()
+        except Exception as e:
+            logger.warning(f"get_connection_health failed: {e}")
+            result["connection_health"] = {}
+        
+        # Xrun history (last 64 xrun timestamps)
+        try:
+            result["xrun_history"] = service._engine.get_xrun_history()
+        except Exception as e:
+            logger.warning(f"get_xrun_history failed: {e}")
+            result["xrun_history"] = []
+        
+        # Basic engine info for context
+        result["sample_rate"] = service._engine.get_sample_rate()
+        result["buffer_size"] = service._engine.get_buffer_size()
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting diagnostics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get diagnostics")
+
+
+@router.post("/diagnostics/reset-xruns")
+async def reset_xrun_counter():
+    """Reset the xrun counter without resetting other statistics."""
+    try:
+        service = get_audio_engine()
+        if not service._engine:
+            raise HTTPException(status_code=503, detail="Engine not initialized")
+        service._engine.reset_xrun_counter()
+        return {"status": "ok", "message": "Xrun counter reset"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to reset xrun counter")
+
+
 # ============================================================================
 # Engine Control
 # ============================================================================

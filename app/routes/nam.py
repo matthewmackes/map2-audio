@@ -162,16 +162,13 @@ try:
     @router.get("/categories")
     async def get_nam_categories() -> Dict:
         """Get available NAM model categories and amp types."""
+        session = get_db_session()
         try:
-            session = get_db_session()
-
             categories = session.query(NAMModel.category).distinct().all()
             category_list = [c[0] for c in categories if c[0]]
 
             amp_types = session.query(NAMModel.amp_type).distinct().all()
             amp_type_list = [t[0] for t in amp_types if t[0]]
-
-            session.close()
 
             return {
                 "categories": sorted(category_list),
@@ -180,6 +177,8 @@ try:
         except Exception as e:
             logger.error(f"Error getting NAM categories: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            session.close()
 
     # ==================== Model Listing ====================
 
@@ -192,8 +191,8 @@ try:
         favorites_only: bool = False
     ) -> Dict:
         """List available NAM models with optional filtering."""
+        session = get_db_session()
         try:
-            session = get_db_session()
             query = session.query(NAMModel)
 
             if category:
@@ -222,8 +221,6 @@ try:
                     "tags": m.tags or []
                 })
 
-            session.close()
-
             return {
                 "models": model_list,
                 "total": total,
@@ -235,14 +232,16 @@ try:
             # Fall back to file-based listing
             models = _scan_nam_models()
             return {"models": models, "total": len(models), "limit": limit, "offset": offset}
+        finally:
+            session.close()
 
     # ==================== Search ====================
 
     @router.post("/search")
     async def search_nam_models(request: NAMSearchRequest) -> Dict:
         """Search NAM models by text and filters."""
+        session = get_db_session()
         try:
-            session = get_db_session()
             query = session.query(NAMModel)
 
             if request.query:
@@ -278,8 +277,6 @@ try:
                     "rating": m.rating
                 })
 
-            session.close()
-
             return {
                 "results": results,
                 "count": len(results)
@@ -287,18 +284,19 @@ try:
         except Exception as e:
             logger.error(f"Error searching NAM models: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            session.close()
 
     # ==================== Model Detail ====================
 
     @router.get("/models/{model_id}")
     async def get_nam_model(model_id: int) -> Dict:
         """Get detailed NAM model information."""
+        session = get_db_session()
         try:
-            session = get_db_session()
             model = session.query(NAMModel).filter_by(id=model_id).first()
 
             if not model:
-                session.close()
                 raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
 
             result = {
@@ -324,7 +322,6 @@ try:
                 "created_at": model.created_at.isoformat() if model.created_at else None
             }
 
-            session.close()
             return result
 
         except HTTPException:
@@ -332,6 +329,8 @@ try:
         except Exception as e:
             logger.error(f"Error getting NAM model: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            session.close()
 
     # ==================== Load/Unload (RT-safe via JUCE) ====================
 
@@ -404,23 +403,19 @@ try:
     @router.post("/models/{model_id}/favorite")
     async def toggle_nam_favorite(model_id: int) -> Dict:
         """Toggle favorite status for NAM model."""
+        session = get_db_session()
         try:
-            session = get_db_session()
             model = session.query(NAMModel).filter_by(id=model_id).first()
 
             if not model:
-                session.close()
                 raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
 
             model.is_favorite = not model.is_favorite
             session.commit()
 
-            new_status = model.is_favorite
-            session.close()
-
             return {
                 "status": "ok",
-                "is_favorite": new_status
+                "is_favorite": model.is_favorite
             }
 
         except HTTPException:
@@ -428,24 +423,24 @@ try:
         except Exception as e:
             logger.error(f"Error toggling favorite: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            session.close()
 
     @router.put("/models/{model_id}/rating")
     async def set_nam_rating(model_id: int, request: NAMRatingRequest) -> Dict:
         """Set rating for NAM model."""
-        try:
-            if not 1 <= request.rating <= 5:
-                raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+        if not 1 <= request.rating <= 5:
+            raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
 
-            session = get_db_session()
+        session = get_db_session()
+        try:
             model = session.query(NAMModel).filter_by(id=model_id).first()
 
             if not model:
-                session.close()
                 raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
 
             model.rating = request.rating
             session.commit()
-            session.close()
 
             return {
                 "status": "ok",
@@ -457,6 +452,8 @@ try:
         except Exception as e:
             logger.error(f"Error setting rating: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            session.close()
 
     # ==================== Upload ====================
 
@@ -591,12 +588,11 @@ try:
         Returns:
             List of featured models sorted by featured_position
         """
+        session = get_db_session()
         try:
-            session = get_db_session()
             featured = session.query(NAMModel).filter(
                 NAMModel.is_featured == True
             ).order_by(NAMModel.featured_position).limit(limit).all()
-            session.close()
             
             return {
                 "status": "ok",
@@ -619,6 +615,8 @@ try:
         except Exception as e:
             logger.error(f"Error getting featured models: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            session.close()
 
     # ==================== Bulk Rename ====================
 

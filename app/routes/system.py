@@ -96,9 +96,13 @@ def _check_status(condition: bool, name: str, good_msg: str, bad_msg: str, fix: 
 
 
 def _run_cmd_sync(cmd: str) -> str:
-    """Run a shell command synchronously and return output."""
+    """Run a shell command synchronously and return output.
+    
+    NOTE: This is intentionally a sync function — it is called via
+    asyncio.to_thread() from _run_cmd() to avoid blocking the event loop.
+    """
     try:
-        result = await asyncio.to_thread(subprocess.run,cmd, shell=True, capture_output=True, text=True, timeout=5)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
         return result.stdout.strip()
     except Exception:
         return ""

@@ -20,8 +20,14 @@ logger = get_logger(__name__)
 
 # FIX #5: Use relative path instead of hardcoded absolute path
 # This allows deployment to any location
-juce_build_path = str(Path(__file__).parent.parent.parent / "juce-engine" / "build")
+# Check both build directories: project-root/build (CMake default) and juce-engine/build (legacy)
+_project_root = Path(__file__).parent.parent.parent
+juce_build_path = str(_project_root / "build")
 sys.path.insert(0, juce_build_path)
+# Legacy path (fallback)
+_legacy_build = str(_project_root / "juce-engine" / "build")
+if _legacy_build not in sys.path:
+    sys.path.insert(1, _legacy_build)
 
 # Check JUCE availability using dependency checker
 JUCE_AVAILABLE, juce_engine = DependencyChecker.check('map2_audio_engine')
