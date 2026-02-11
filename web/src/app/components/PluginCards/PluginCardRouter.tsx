@@ -6,7 +6,7 @@
  * custom card or template is available.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { pluginsApi, chainsApi } from '../../../map2/api'
 import type { Plugin } from '../../../map2/types'
@@ -151,9 +151,13 @@ export function PluginCardRouter({
     realtimeData,
   }
 
-  // Render the appropriate card
+  // Render the appropriate card (may be a React.lazy component)
   if (CardComponent) {
-    return <CardComponent {...cardProps} />
+    return (
+      <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 12 }}><div style={{ width: 24, height: 24, border: '3px solid rgba(150,150,150,0.2)', borderTopColor: '#90caf9', borderRadius: '50%', animation: 'map2spin .8s linear infinite' }} /></div>}>
+        <CardComponent {...cardProps} />
+      </Suspense>
+    )
   }
 
   // Fallback: Import and use the original LV2PluginParameterEditor

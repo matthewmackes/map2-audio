@@ -42,8 +42,12 @@ export interface PluginCardProps {
 export interface PluginCardConfig {
   /** Custom component to render (if any) */
   component?: React.ComponentType<PluginCardProps>
+  /** Lazy loader for the component — loaded on demand */
+  loader?: () => Promise<{ default: React.ComponentType<PluginCardProps> }>
   /** Template to use if no custom component */
   template?: PluginCardTemplate
+  /** Lazy loader for a template component */
+  templateLoader?: () => Promise<{ default: React.ComponentType<PluginCardProps> }>
   /** Additional visualizations to include */
   visualizations?: VisualizationType[]
   /** Custom parameter grouping */

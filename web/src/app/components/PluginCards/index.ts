@@ -6,6 +6,9 @@
  * - Custom visualizations (transfer curves, decay envelopes, etc.)
  * - Plugin registry for custom overrides
  * - Smart parameter grouping and detection
+ *
+ * All custom cards and templates use lazy dynamic imports
+ * to avoid bloating the initial bundle.
  */
 
 // Types
@@ -16,6 +19,7 @@ export {
   registerPluginCard,
   registerPluginPattern,
   registerTemplate,
+  registerTemplateLazy,
   getPluginCardConfig,
   getPluginCardComponent,
   getTemplateComponent,
@@ -28,41 +32,32 @@ export {
 // Base components
 export * from './Base'
 
-// Templates
-export * from './Templates'
+// Templates (re-export types only — actual components are lazy-loaded via registry)
+export type { PluginCardTemplate } from './types'
 
 // Visualizations
 export * from './Visualizations'
 
-// Custom plugin-specific cards
-export * from './Custom'
-
 // Router
 export { PluginCardRouter } from './PluginCardRouter'
 
-// Initialize templates in the registry
-import { registerTemplate } from './registry'
-import { DynamicsTemplate } from './Templates/DynamicsTemplate'
-import { ReverbTemplate } from './Templates/ReverbTemplate'
-import { EQTemplate } from './Templates/EQTemplate'
-import { DelayTemplate } from './Templates/DelayTemplate'
-import { DistortionTemplate } from './Templates/DistortionTemplate'
-import { ModulationTemplate } from './Templates/ModulationTemplate'
-import { UtilityTemplate } from './Templates/UtilityTemplate'
-import { PitchTemplate } from './Templates/PitchTemplate'
+// ============================================================================
+// Initialize templates in the registry using LAZY loaders
+// Templates are loaded on-demand when a plugin of that category is opened
+// ============================================================================
+import { registerTemplateLazy } from './registry'
 
-// Register all templates
-registerTemplate('dynamics', DynamicsTemplate)
-registerTemplate('reverb', ReverbTemplate)
-registerTemplate('eq', EQTemplate)
-registerTemplate('delay', DelayTemplate)
-registerTemplate('distortion', DistortionTemplate)
-registerTemplate('modulation', ModulationTemplate)
-registerTemplate('utility', UtilityTemplate)
-registerTemplate('pitch', PitchTemplate)
+registerTemplateLazy('dynamics', () => import('./Templates/DynamicsTemplate').then(m => ({ default: m.DynamicsTemplate })))
+registerTemplateLazy('reverb', () => import('./Templates/ReverbTemplate').then(m => ({ default: m.ReverbTemplate })))
+registerTemplateLazy('eq', () => import('./Templates/EQTemplate').then(m => ({ default: m.EQTemplate })))
+registerTemplateLazy('delay', () => import('./Templates/DelayTemplate').then(m => ({ default: m.DelayTemplate })))
+registerTemplateLazy('distortion', () => import('./Templates/DistortionTemplate').then(m => ({ default: m.DistortionTemplate })))
+registerTemplateLazy('modulation', () => import('./Templates/ModulationTemplate').then(m => ({ default: m.ModulationTemplate })))
+registerTemplateLazy('utility', () => import('./Templates/UtilityTemplate').then(m => ({ default: m.UtilityTemplate })))
+registerTemplateLazy('pitch', () => import('./Templates/PitchTemplate').then(m => ({ default: m.PitchTemplate })))
 
 // Filter template uses EQ (similar functionality)
-registerTemplate('filter', EQTemplate)
+registerTemplateLazy('filter', () => import('./Templates/EQTemplate').then(m => ({ default: m.EQTemplate })))
 
 // Instrument template uses utility
-registerTemplate('instrument', UtilityTemplate)
+registerTemplateLazy('instrument', () => import('./Templates/UtilityTemplate').then(m => ({ default: m.UtilityTemplate })))

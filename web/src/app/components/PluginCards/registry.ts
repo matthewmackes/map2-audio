@@ -3,9 +3,13 @@
  *
  * Maps plugin URIs to their custom card components or templates.
  * Provides fallback chain: Custom Card → Category Template → Generic Editor
+ *
+ * ALL custom cards and templates use lazy dynamic imports to avoid pulling
+ * ~40 card components into the initial bundle. Cards are loaded on-demand
+ * when the user opens a specific plugin.
  */
 
-import type { ComponentType } from 'react'
+import { lazy, type ComponentType } from 'react'
 import type {
   PluginCardProps,
   PluginCardConfig,
@@ -24,6 +28,12 @@ const PATTERN_REGISTRY: Array<{ pattern: RegExp; config: PluginCardConfig }> = [
 
 /** Registry of templates */
 const TEMPLATE_REGISTRY = new Map<PluginCardTemplate, ComponentType<PluginCardProps>>()
+
+/** Registry of lazy template loaders */
+const TEMPLATE_LOADER_REGISTRY = new Map<PluginCardTemplate, () => Promise<{ default: ComponentType<PluginCardProps> }>>()
+
+/** Cache for lazily-resolved components */
+const LAZY_COMPONENT_CACHE = new Map<string, ComponentType<PluginCardProps>>()
 
 // ==================== Registration Functions ====================
 
@@ -55,6 +65,16 @@ export function registerTemplate(
   component: ComponentType<PluginCardProps>
 ): void {
   TEMPLATE_REGISTRY.set(template, component)
+}
+
+/**
+ * Register a lazy template loader for a category
+ */
+export function registerTemplateLazy(
+  template: PluginCardTemplate,
+  loader: () => Promise<{ default: ComponentType<PluginCardProps> }>
+): void {
+  TEMPLATE_LOADER_REGISTRY.set(template, loader)
 }
 
 // ==================== Lookup Functions ====================
@@ -91,7 +111,8 @@ export function getPluginCardConfig(
 }
 
 /**
- * Get the card component for a plugin
+ * Get the card component for a plugin.
+ * Resolves lazy loaders to React.lazy components (cached).
  */
 export function getPluginCardComponent(
   uri: string,
@@ -103,14 +124,34 @@ export function getPluginCardComponent(
     return null
   }
 
-  // Custom component takes priority
+  // Custom component takes priority (eagerly loaded)
   if (config.component) {
     return config.component
   }
 
-  // Fall back to template
+  // Lazy-loaded custom component
+  if (config.loader) {
+    const cacheKey = `loader:${uri}`
+    if (!LAZY_COMPONENT_CACHE.has(cacheKey)) {
+      LAZY_COMPONENT_CACHE.set(cacheKey, lazy(config.loader))
+    }
+    return LAZY_COMPONENT_CACHE.get(cacheKey)!
+  }
+
+  // Fall back to template (eagerly loaded)
   if (config.template) {
-    return TEMPLATE_REGISTRY.get(config.template) || null
+    const eagerly = TEMPLATE_REGISTRY.get(config.template)
+    if (eagerly) return eagerly
+
+    // Fall back to lazy template loader
+    const templateLoader = TEMPLATE_LOADER_REGISTRY.get(config.template)
+    if (templateLoader) {
+      const cacheKey = `template:${config.template}`
+      if (!LAZY_COMPONENT_CACHE.has(cacheKey)) {
+        LAZY_COMPONENT_CACHE.set(cacheKey, lazy(templateLoader))
+      }
+      return LAZY_COMPONENT_CACHE.get(cacheKey)!
+    }
   }
 
   return null
@@ -243,255 +284,212 @@ registerPluginPattern(/dist|drive|fuzz|overdrive|saturate|valve|tube/i, {
 
 // ==================== JUCE Native Processors ====================
 // Best-in-class processors built into the C++ audio engine
-// Using default exports to get wrapped components with MIDI dialog
-
-import CompressorCard from './Custom/JUCE/CompressorCard'
-import LimiterCard from './Custom/JUCE/LimiterCard'
-import GateCard from './Custom/JUCE/GateCard'
-import ParametricEQCard from './Custom/JUCE/ParametricEQCard'
-import CabinetIRCard from './Custom/JUCE/CabinetIRCard'
-import ReverbIRCard from './Custom/JUCE/ReverbIRCard'
-import NAMCard from './Custom/JUCE/NAMCard'
-import NativeDelayCard from './Custom/JUCE/NativeDelayCard'
-import ChorusCard from './Custom/JUCE/ChorusCard'
-import JUCEPhaserCard from './Custom/JUCE/PhaserCard'
-import IntelliFXCard from './Custom/JUCE/IntelliFXCard'
-import EVHPitchShifterCard from './Custom/JUCE/EVHPitchShifterCard'
-import IntervalShifterCard from './Custom/JUCE/IntervalShifterCard'
-import BossXS1Card from './Custom/JUCE/BossXS1Card'
-import ShoeGazeCard from './Custom/JUCE/ShoeGazeCard'
-import LexiLoveCard from './Custom/JUCE/LexiLoveCard'
-import H3000Card from './Custom/JUCE/H3000Card'
-import { EventideH9Card } from './Custom/JUCE/EventideH9Card'
-import Peavey5150Card from './Custom/JUCE/Peavey5150Card'
-import TweedBassmanCard from './Custom/JUCE/TweedBassmanCard'
-import PassionFXCard from './Custom/JUCE/PassionFXCard'
-import CelestialCompressorCard from './Custom/JUCE/CelestialCompressorCard'
-import DrumMachineCard from './Custom/JUCE/DrumMachineCard'
+// All cards use lazy dynamic imports — loaded only when the plugin is opened
 
 // JUCE Dynamics
 registerPluginCard('map2://juce/dynamics/compressor', {
-  component: CompressorCard,
+  loader: () => import('./Custom/JUCE/CompressorCard'),
 })
 
 // JUCE Dynamics - Celestial Compressor (50 artist presets with gear imagery)
 registerPluginCard('map2://juce/dynamics/celestial', {
-  component: CelestialCompressorCard,
+  loader: () => import('./Custom/JUCE/CelestialCompressorCard'),
 })
 
 registerPluginCard('map2://juce/dynamics/limiter', {
-  component: LimiterCard,
+  loader: () => import('./Custom/JUCE/LimiterCard'),
 })
 
 registerPluginCard('map2://juce/dynamics/gate', {
-  component: GateCard,
+  loader: () => import('./Custom/JUCE/GateCard'),
 })
 
 // JUCE EQ
 registerPluginCard('map2://juce/eq/parametric', {
-  component: ParametricEQCard,
+  loader: () => import('./Custom/JUCE/ParametricEQCard'),
 })
 
 // JUCE Convolution (IR)
 registerPluginCard('map2://juce/convolution/cabinet', {
-  component: CabinetIRCard,
+  loader: () => import('./Custom/JUCE/CabinetIRCard'),
 })
 
 registerPluginCard('map2://juce/convolution/reverb', {
-  component: ReverbIRCard,
+  loader: () => import('./Custom/JUCE/ReverbIRCard'),
 })
 
 // JUCE Neural Amp Modeler
 registerPluginCard('map2://juce/nam', {
-  component: NAMCard,
+  loader: () => import('./Custom/JUCE/NAMCard'),
 })
 
 // JUCE Stereo Delay
 registerPluginCard('map2://juce/delay', {
-  component: NativeDelayCard,
+  loader: () => import('./Custom/JUCE/NativeDelayCard'),
 })
 
 // JUCE Modulation
 registerPluginCard('map2://juce/modulation/chorus', {
-  component: ChorusCard,
+  loader: () => import('./Custom/JUCE/ChorusCard'),
 })
 
 registerPluginCard('map2://juce/modulation/phaser', {
-  component: JUCEPhaserCard,
+  loader: () => import('./Custom/JUCE/PhaserCard'),
 })
 
 registerPluginCard('map2://juce/modulation/intellifx', {
-  component: IntelliFXCard,
+  loader: () => import('./Custom/JUCE/IntelliFXCard'),
 })
 
 // JUCE Pitch - EVH Harmonizer with Van Halen presets
 registerPluginCard('map2://juce/pitch/shifter', {
-  component: EVHPitchShifterCard,
+  loader: () => import('./Custom/JUCE/EVHPitchShifterCard'),
 })
 
 // JUCE Pitch - Musical Interval Shifter (semitone steps)
 registerPluginCard('map2://juce/pitch/interval', {
-  component: IntervalShifterCard,
+  loader: () => import('./Custom/JUCE/IntervalShifterCard'),
 })
 
 // JUCE Pitch - Boss XS-1 Polyphonic Pitch Shifter
 registerPluginCard('map2://juce/pitch/boss-xs1', {
-  component: BossXS1Card,
+  loader: () => import('./Custom/JUCE/BossXS1Card'),
 })
 
 // JUCE Multi-Effect - ShoeGaze (wall of sound)
 registerPluginCard('map2://juce/multieffect/shoegaze', {
-  component: ShoeGazeCard,
+  loader: () => import('./Custom/JUCE/ShoeGazeCard'),
 })
 
 // JUCE Reverb - Lexi Love (PCM 70 algorithmic reverb)
 registerPluginCard('map2://juce/reverb/pcm70', {
-  component: LexiLoveCard,
+  loader: () => import('./Custom/JUCE/LexiLoveCard'),
 })
 
 // JUCE Pitch - H3000 Ultra-Harmonizer
 registerPluginCard('map2://juce/pitch/h3000', {
-  component: H3000Card,
+  loader: () => import('./Custom/JUCE/H3000Card'),
 })
 
 // JUCE Multi-Effect - Eventide H9
 registerPluginCard('map2://juce/effects/eventide-h9', {
-  component: EventideH9Card,
+  loader: () => import('./Custom/JUCE/EventideH9Card'),
 })
 
 // JUCE Amplifier - Peavey 5150 Block Letter
 registerPluginCard('map2://juce/amp/peavey5150', {
-  component: Peavey5150Card,
+  loader: () => import('./Custom/JUCE/Peavey5150Card'),
 })
 
 // JUCE Amplifier - Tweed Bassman 5F6-A
 registerPluginCard('map2://juce/amp/tweedbassman', {
-  component: TweedBassmanCard,
+  loader: () => import('./Custom/JUCE/TweedBassmanCard'),
 })
 
 // JUCE Multi-Effect - PassionFX (Steve Vai Passion & Warfare)
 registerPluginCard('map2://juce/multieffect/passionfx', {
-  component: PassionFXCard,
+  loader: () => import('./Custom/JUCE/PassionFXCard'),
 })
 
 // JUCE Drums - Sophisticated Drum Machine
 registerPluginCard('map2://juce/drums', {
-  component: DrumMachineCard,
+  loader: () => import('./Custom/JUCE/DrumMachineCard'),
 })
 
 // ==================== Dragonfly Reverbs ====================
 // Best-in-class algorithmic reverbs
 
-import { DragonflyRoomCard } from './Custom/Dragonfly/DragonflyRoomCard'
-import { DragonflyHallCard } from './Custom/Dragonfly/DragonflyHallCard'
-import { DragonflyPlateCard } from './Custom/Dragonfly/DragonflyPlateCard'
-
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#room', {
-  component: DragonflyRoomCard,
+  loader: () => import('./Custom/Dragonfly/DragonflyRoomCard').then(m => ({ default: m.DragonflyRoomCard })),
 })
 
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#hall', {
-  component: DragonflyHallCard,
+  loader: () => import('./Custom/Dragonfly/DragonflyHallCard').then(m => ({ default: m.DragonflyHallCard })),
 })
 
 registerPluginCard('https://michaelwillis.github.io/dragonfly-reverb#plate', {
-  component: DragonflyPlateCard,
+  loader: () => import('./Custom/Dragonfly/DragonflyPlateCard').then(m => ({ default: m.DragonflyPlateCard })),
 })
 
 // ==================== TooB Plugins ====================
 // ToobAmp LV2 plugin collection
 
-import { CE2ChorusCard } from './Custom/TooB/CE2ChorusCard'
-import { BF2FlangerCard } from './Custom/TooB/BF2FlangerCard'
-import { PhaserCard } from './Custom/TooB/PhaserCard'
-import { TremoloCard } from './Custom/TooB/TremoloCard'
-import { DelayCard } from './Custom/TooB/DelayCard'
-import { TunerCard } from './Custom/TooB/TunerCard'
-import { LooperCard } from './Custom/TooB/LooperCard'
-
 // TooB Modulation
 registerPluginCard('http://two-play.com/plugins/toob-ce2-chorus', {
-  component: CE2ChorusCard,
+  loader: () => import('./Custom/TooB/CE2ChorusCard').then(m => ({ default: m.CE2ChorusCard })),
 })
 
 registerPluginCard('http://two-play.com/plugins/toob-bf2-flanger', {
-  component: BF2FlangerCard,
+  loader: () => import('./Custom/TooB/BF2FlangerCard').then(m => ({ default: m.BF2FlangerCard })),
 })
 
 registerPluginCard('http://two-play.com/plugins/toob-phaser', {
-  component: PhaserCard,
+  loader: () => import('./Custom/TooB/PhaserCard').then(m => ({ default: m.PhaserCard })),
 })
 
 registerPluginCard('http://two-play.com/plugins/toob-tremolo', {
-  component: TremoloCard,
+  loader: () => import('./Custom/TooB/TremoloCard').then(m => ({ default: m.TremoloCard })),
 })
 
 // TooB Time-Based
 registerPluginCard('http://two-play.com/plugins/toob-delay', {
-  component: DelayCard,
+  loader: () => import('./Custom/TooB/DelayCard').then(m => ({ default: m.DelayCard })),
 })
 
 // TooB Utility
 registerPluginCard('http://two-play.com/plugins/toob-tuner', {
-  component: TunerCard,
+  loader: () => import('./Custom/TooB/TunerCard').then(m => ({ default: m.TunerCard })),
 })
 
 registerPluginCard('http://two-play.com/plugins/toob-4looper', {
-  component: LooperCard,
+  loader: () => import('./Custom/TooB/LooperCard').then(m => ({ default: m.LooperCard })),
 })
 
 // ==================== LV2 Plugin Cards ====================
 // Third-party LV2 plugins with custom world-class interfaces
 
-import { REEVRCard } from './Custom/LV2/REEVRCard'
-import { OutotuneCard } from './Custom/LV2/OutotuneCard'
-import { WhammyCard } from './Custom/LV2/WhammyCard'
-import { KeyboardSamplerCard } from './Custom/LV2/KeyboardSamplerCard'
-
 // REEV-R Reverb (FabFilter Pro-R inspired)
 registerPluginPattern(/REEV-?R/i, {
-  component: REEVRCard,
+  loader: () => import('./Custom/LV2/REEVRCard').then(m => ({ default: m.REEVRCard })),
 })
 
 // Outotune Auto-Tune (Antares inspired)
 registerPluginPattern(/outotune/i, {
-  component: OutotuneCard,
+  loader: () => import('./Custom/LV2/OutotuneCard').then(m => ({ default: m.OutotuneCard })),
 })
 
 // dm-Whammy Pitch Shifter (DigiTech Whammy inspired)
 registerPluginCard('http://drobilla.net/plugins/mda/dm-Whammy', {
-  component: WhammyCard,
+  loader: () => import('./Custom/LV2/WhammyCard').then(m => ({ default: m.WhammyCard })),
 })
 
 registerPluginPattern(/whammy/i, {
-  component: WhammyCard,
+  loader: () => import('./Custom/LV2/WhammyCard').then(m => ({ default: m.WhammyCard })),
 })
 
 // Sfizz - Keyboard Sampler (with soundfont browser)
 registerPluginCard('http://sfztools.github.io/sfizz', {
-  component: KeyboardSamplerCard,
+  loader: () => import('./Custom/LV2/KeyboardSamplerCard').then(m => ({ default: m.KeyboardSamplerCard })),
 })
 
 // Also match sfizz variants
 registerPluginPattern(/sfizz/i, {
-  component: KeyboardSamplerCard,
+  loader: () => import('./Custom/LV2/KeyboardSamplerCard').then(m => ({ default: m.KeyboardSamplerCard })),
 })
 
 // ==================== GlitchShifter ====================
 // Airwindows plugin ported to LV2 by Hannes Braun
 
-import { GlitchShifterCard } from './Custom/Airwindows/GlitchShifterCard'
-
 // GlitchShifter - Granular pitch shifter / harmonizer
 registerPluginCard('https://hannesbraun.net/ns/lv2/airwindows/glitchshifter', {
-  component: GlitchShifterCard,
+  loader: () => import('./Custom/Airwindows/GlitchShifterCard').then(m => ({ default: m.GlitchShifterCard })),
 })
 
 // Also match by name pattern
 registerPluginPattern(/airwindows.*glitchshifter/i, {
-  component: GlitchShifterCard,
+  loader: () => import('./Custom/Airwindows/GlitchShifterCard').then(m => ({ default: m.GlitchShifterCard })),
 })
 
 registerPluginPattern(/glitchshifter/i, {
-  component: GlitchShifterCard,
+  loader: () => import('./Custom/Airwindows/GlitchShifterCard').then(m => ({ default: m.GlitchShifterCard })),
 })

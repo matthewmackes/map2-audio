@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X, Server, Radio, Flame, Drum, Guitar, Layers, Cpu } from 'lucide-react'
+import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Usb, BookOpen, Monitor, Menu, X, Server, Flame, Layers, Cpu } from 'lucide-react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
