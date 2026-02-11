@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, AlertCircle, XCircle, RefreshCw, Activity } from 'lucide-react'
+import { CheckCircle, WarningCircle, XCircle, ArrowsClockwise, Pulse } from '@phosphor-icons/react'
 
 interface JUCEEngineTestResult {
   timestamp: string
@@ -95,13 +95,13 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
 
   const getStatusIcon = (status: string, score: number) => {
     if (status === 'excellent' || score >= 90) {
-      return <CheckCircle className="text-green-500" size={20} />
+      return <CheckCircle className="text-green-500" size={20} weight="duotone" />
     } else if (status === 'good' || score >= 75) {
-      return <CheckCircle className="text-blue-500" size={20} />
+      return <CheckCircle className="text-blue-500" size={20} weight="duotone" />
     } else if (status === 'fair' || score >= 50) {
-      return <AlertCircle className="text-yellow-500" size={20} />
+      return <WarningCircle className="text-yellow-500" size={20} weight="duotone" />
     } else {
-      return <XCircle className="text-red-500" size={20} />
+      return <XCircle className="text-red-500" size={20} weight="duotone" />
     }
   }
 
@@ -127,7 +127,7 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
     return (
       <div className="card">
         <div className="flex items-center gap-3">
-          <Activity className="animate-pulse" size={20} />
+          <Pulse className="animate-pulse" size={20} weight="duotone" />
           <span>Loading JUCE Engine test results...</span>
         </div>
       </div>
@@ -139,7 +139,7 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
       <div className="card">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <XCircle className="text-gray-400" size={20} />
+            <XCircle className="text-gray-400" size={20} weight="duotone" />
             <div>
               <h3 className="font-semibold">JUCE Audio Engine Test</h3>
               <p className="text-sm text-gray-600">{error}</p>
@@ -152,7 +152,7 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
           >
             {runningTest ? (
               <>
-                <RefreshCw className="animate-spin" size={16} />
+                <ArrowsClockwise className="animate-spin" size={16} weight="duotone" />
                 Running...
               </>
             ) : (
@@ -184,9 +184,9 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
           className="btn btn-ghost btn-sm"
         >
           {runningTest ? (
-            <RefreshCw className="animate-spin" size={16} />
+            <ArrowsClockwise className="animate-spin" size={16} weight="duotone" />
           ) : (
-            <RefreshCw size={16} />
+            <ArrowsClockwise size={16} weight="duotone" />
           )}
         </button>
       </div>
@@ -268,11 +268,11 @@ export function JUCEEngineTestStatus({ showDetails = true }: TestStatusProps) {
                     {category.passed_tests}/{category.total_tests}
                   </span>
                   {category.status === 'passed' ? (
-                    <CheckCircle className="text-green-500" size={16} />
+                    <CheckCircle className="text-green-500" size={16} weight="duotone" />
                   ) : category.status === 'partial' ? (
-                    <AlertCircle className="text-yellow-500" size={16} />
+                    <WarningCircle className="text-yellow-500" size={16} weight="duotone" />
                   ) : (
-                    <XCircle className="text-red-500" size={16} />
+                    <XCircle className="text-red-500" size={16} weight="duotone" />
                   )}
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { RefreshCw, Pause, Play, RotateCcw, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowsClockwise, Pause, Play, ArrowCounterClockwise, Warning, CheckCircle, XCircle } from '@phosphor-icons/react'
 
 interface UpdateStage {
   name: string
@@ -97,13 +97,13 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle size={16} color="#00ff41" />
+        return <CheckCircle size={16} weight="duotone" color="#00ff41" />
       case 'failed':
-        return <XCircle size={16} color="#ff3333" />
+        return <XCircle size={16} weight="duotone" color="#ff3333" />
       case 'running':
-        return <RefreshCw size={16} color="#00d4ff" className="animate-spin" />
+        return <ArrowsClockwise size={16} weight="duotone" color="#2563eb" className="animate-spin" />
       default:
-        return <Pause size={16} color="#888" />
+        return <Pause size={16} weight="duotone" color="#6b7280" />
     }
   }
 
@@ -125,17 +125,17 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
-          border: '2px solid #00d4ff',
+          background: 'linear-gradient(135deg, #0a0a0a, #111111)',
+          border: '2px solid #2563eb',
           borderRadius: 12,
           padding: 20,
         }}
       >
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>🔄 Cluster Update Progress Monitor</h2>
-        <div style={{ marginTop: 8, fontSize: 13, color: '#a0a0a0' }}>
+        <div style={{ marginTop: 8, fontSize: 13, color: '#9ca3af' }}>
           Update ID: {updateId || 'N/A'}
         </div>
-        <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
           Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}
         </div>
       </div>
@@ -151,14 +151,14 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
         <div
           style={{
             padding: 16,
-            background: 'rgba(0, 212, 255, 0.1)',
-            border: '2px solid rgba(0, 212, 255, 0.5)',
+            background: 'rgba(37, 99, 235, 0.1)',
+            border: '2px solid rgba(37, 99, 235, 0.5)',
             borderRadius: 8,
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#00d4ff' }}>{stats.total}</div>
-          <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>Total Nodes</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#2563eb' }}>{stats.total}</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Total Nodes</div>
         </div>
 
         <div
@@ -171,7 +171,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           }}
         >
           <div style={{ fontSize: 24, fontWeight: 700, color: '#00ff41' }}>{stats.completed}</div>
-          <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>Completed</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Completed</div>
         </div>
 
         <div
@@ -184,14 +184,14 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           }}
         >
           <div style={{ fontSize: 24, fontWeight: 700, color: '#ff3333' }}>{stats.failed}</div>
-          <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>Failed</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Failed</div>
         </div>
 
         <div
           style={{
             padding: 16,
             background: 'rgba(255, 255, 255, 0.05)',
-            border: '2px solid #333',
+            border: '2px solid #222222',
             borderRadius: 8,
             textAlign: 'center',
           }}
@@ -199,21 +199,21 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           <div style={{ fontSize: 24, fontWeight: 700 }}>
             {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
           </div>
-          <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>Overall Progress</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Overall Progress</div>
         </div>
       </div>
 
       {/* Controls */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <button className="btn btn-primary" onClick={() => window.location.reload()}>
-          <RefreshCw size={16} /> Refresh Now
+          <ArrowsClockwise size={16} weight="duotone" /> Refresh Now
         </button>
         <button className="btn" onClick={() => setAutoRefresh(!autoRefresh)}>
-          {autoRefresh ? <Pause size={16} /> : <Play size={16} />}
+          {autoRefresh ? <Pause size={16} weight="bold" /> : <Play size={16} weight="bold" />}
           {autoRefresh ? 'Pause' : 'Resume'} Auto-Refresh
         </button>
         <button className="btn btn-error" onClick={handleRollback}>
-          <RotateCcw size={16} /> Rollback
+          <ArrowCounterClockwise size={16} weight="duotone" /> Rollback
         </button>
       </div>
 
@@ -226,10 +226,10 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
             style={{
               padding: 40,
               textAlign: 'center',
-              background: '#1a1a1a',
-              border: '1px solid #333',
+              background: '#0a0a0a',
+              border: '1px solid #222222',
               borderRadius: 8,
-              color: '#888',
+              color: '#6b7280',
             }}
           >
             No update in progress
@@ -240,13 +240,13 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
               key={node.node_id}
               style={{
                 padding: 20,
-                background: '#1a1a1a',
+                background: '#0a0a0a',
                 border: `2px solid ${
                   node.status === 'failed'
                     ? '#ff3333'
                     : node.status === 'success'
                     ? '#00ff41'
-                    : '#333'
+                    : '#222222'
                 }`,
                 borderRadius: 12,
               }}
@@ -257,23 +257,23 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   {getStatusIcon(node.status)}
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{node.node_id}</div>
-                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
                       Status: {node.status.toUpperCase()}
                     </div>
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#00d4ff' }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#2563eb' }}>
                     {node.progress_percent}%
                   </div>
-                  <div style={{ fontSize: 11, color: '#888' }}>Overall</div>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>Overall</div>
                 </div>
               </div>
 
               {/* Current Stage */}
-              <div style={{ marginBottom: 12, padding: 12, background: 'rgba(0, 212, 255, 0.05)', borderRadius: 6 }}>
-                <div style={{ fontSize: 12, color: '#00d4ff', fontWeight: 600 }}>
+              <div style={{ marginBottom: 12, padding: 12, background: 'rgba(37, 99, 235, 0.05)', borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>
                   Current Stage: {node.current_stage || 'N/A'}
                 </div>
               </div>
@@ -290,7 +290,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                       padding: 10,
                       background: 'rgba(255, 255, 255, 0.02)',
                       borderRadius: 6,
-                      border: '1px solid #222',
+                      border: '1px solid #1e293b',
                     }}
                   >
                     <span style={{ fontSize: 16 }}>{getStageIcon(stage.status)}</span>
@@ -314,13 +314,13 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                                 ? '#ff3333'
                                 : stage.status === 'completed'
                                 ? '#00ff41'
-                                : '#00d4ff',
+                                : '#2563eb',
                             transition: 'width 0.3s',
                           }}
                         />
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: '#888', minWidth: 40, textAlign: 'right' }}>
+                    <div style={{ fontSize: 12, color: '#6b7280', minWidth: 40, textAlign: 'right' }}>
                       {stage.progress}%
                     </div>
                   </div>
@@ -339,7 +339,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   }}
                 >
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <AlertTriangle size={16} color="#ff3333" style={{ marginTop: 2 }} />
+                    <Warning size={16} weight="duotone" color="#ff3333" style={{ marginTop: 2 }} />
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#ff3333', marginBottom: 4 }}>
                         ERROR
@@ -361,27 +361,27 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
         <div
           style={{
             padding: 16,
-            background: '#111',
-            border: '1px solid #333',
+            background: '#111111',
+            border: '1px solid #222222',
             borderRadius: 8,
             maxHeight: 300,
             overflowY: 'auto',
           }}
         >
           {logs.length === 0 ? (
-            <div style={{ color: '#666', textAlign: 'center', padding: 20 }}>No events yet</div>
+            <div style={{ color: '#6b7280', textAlign: 'center', padding: 20 }}>No events yet</div>
           ) : (
             logs.map((log, idx) => (
               <div
                 key={idx}
                 style={{
                   padding: '8px 0',
-                  borderBottom: idx < logs.length - 1 ? '1px solid #222' : 'none',
+                  borderBottom: idx < logs.length - 1 ? '1px solid #1e293b' : 'none',
                   fontSize: 12,
                   fontFamily: 'monospace',
                 }}
               >
-                <span style={{ color: '#666' }}>[{log.time}]</span>{' '}
+                <span style={{ color: '#6b7280' }}>[{log.time}]</span>{' '}
                 <span
                   style={{
                     color:
@@ -391,7 +391,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                         ? '#ffaa00'
                         : log.severity === 'success'
                         ? '#00ff41'
-                        : '#00d4ff',
+                        : '#2563eb',
                   }}
                 >
                   {log.severity === 'error'

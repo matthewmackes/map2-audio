@@ -13,10 +13,10 @@ import {
   SkipBack,
   SkipForward,
   Plus,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react'
+  Trash,
+  CaretDown,
+  CaretRight,
+} from '@phosphor-icons/react'
 
 export interface AutomationPoint {
   id: string
@@ -97,7 +97,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={() => onSeek(0)}
             title="Go to start"
           >
-            <SkipBack size={16} />
+            <SkipBack size={16} weight="duotone" />
           </button>
 
           {/* Play/Pause */}
@@ -106,7 +106,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={onPlay}
             title={isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+            {isPlaying ? <Pause size={18} weight="duotone" /> : <Play size={18} weight="duotone" />}
           </button>
 
           {/* Stop */}
@@ -115,7 +115,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={onStop}
             title="Stop"
           >
-            <Square size={16} />
+            <Square size={16} weight="duotone" />
           </button>
 
           {/* Record */}
@@ -124,7 +124,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={onRecord}
             title={isRecording ? 'Stop Recording' : 'Record'}
           >
-            <Circle size={16} fill={isRecording ? '#ef4444' : 'none'} />
+            <Circle size={16} weight="duotone" fill={isRecording ? '#ef4444' : 'none'} />
           </button>
 
           {/* Loop */}
@@ -133,7 +133,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={onToggleLoop}
             title={loopEnabled ? 'Disable Loop' : 'Enable Loop'}
           >
-            <Repeat size={16} />
+            <Repeat size={16} weight="duotone" />
           </button>
 
           {/* Skip Forward */}
@@ -142,7 +142,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={() => onSeek(duration)}
             title="Go to end"
           >
-            <SkipForward size={16} />
+            <SkipForward size={16} weight="duotone" />
           </button>
         </div>
 
@@ -160,7 +160,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
             onClick={onAddLane}
             title="Add automation lane"
           >
-            <Plus size={16} />
+            <Plus size={16} weight="bold" />
             <span>Add Lane</span>
           </button>
         </div>
@@ -207,7 +207,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
                     className="grid-automation-lane-toggle"
                     onClick={() => onToggleLaneEnabled(lane.id)}
                   >
-                    {lane.enabled ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    {lane.enabled ? <CaretDown size={14} weight="bold" /> : <CaretRight size={14} weight="bold" />}
                   </button>
                   <div className="grid-automation-lane-info">
                     <span className="grid-automation-lane-param">{lane.parameterName}</span>
@@ -218,14 +218,14 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
                     onClick={() => onToggleLaneArmed(lane.id)}
                     title={lane.armed ? 'Disarm' : 'Arm for recording'}
                   >
-                    <Circle size={10} fill={lane.armed ? '#ef4444' : 'none'} />
+                    <Circle size={10} weight="duotone" fill={lane.armed ? '#ef4444' : 'none'} />
                   </button>
                   <button
                     className="grid-automation-lane-delete"
                     onClick={() => onDeleteLane(lane.id)}
                     title="Delete lane"
                   >
-                    <Trash2 size={12} />
+                    <Trash size={12} weight="duotone" />
                   </button>
                 </div>
 

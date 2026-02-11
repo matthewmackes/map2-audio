@@ -3,7 +3,7 @@
  */
 
 import { Box, Paper, Chip, Typography, Button, IconButton } from '@mui/material'
-import { AlertTriangle, AlertCircle, X, Bell } from 'lucide-react'
+import { Warning, WarningCircle, X, Bell } from '@phosphor-icons/react'
 import type { HealthAlert } from '@/app/hooks/useHealthMonitoring'
 
 interface HealthAlarmsProps {
@@ -17,7 +17,7 @@ export default function HealthAlarms({ alerts, onAcknowledge, onClearAll }: Heal
     return (
       <Paper sx={{ p: 3, textAlign: 'center', bgcolor: '#d1fae5', borderLeft: '4px solid #10b981' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-          <Bell size={20} style={{ color: '#10b981' }} />
+          <Bell size={20} weight="duotone" style={{ color: '#10b981' }} />
           <Typography sx={{ color: '#065f46', fontWeight: 600 }}>
             All systems healthy - no active alerts
           </Typography>
@@ -36,7 +36,7 @@ export default function HealthAlarms({ alerts, onAcknowledge, onClearAll }: Heal
         <Box sx={{ display: 'flex', gap: 2 }}>
           {criticalCount > 0 && (
             <Chip
-              icon={<AlertTriangle size={16} />}
+              icon={<Warning size={16} weight="duotone" />}
               label={`${criticalCount} Critical`}
               color="error"
               variant="filled"
@@ -44,7 +44,7 @@ export default function HealthAlarms({ alerts, onAcknowledge, onClearAll }: Heal
           )}
           {warningCount > 0 && (
             <Chip
-              icon={<AlertCircle size={16} />}
+              icon={<WarningCircle size={16} weight="duotone" />}
               label={`${warningCount} Warning`}
               color="warning"
               variant="filled"
@@ -83,9 +83,9 @@ export default function HealthAlarms({ alerts, onAcknowledge, onClearAll }: Heal
               {/* Icon */}
               <Box sx={{ mt: 0.5 }}>
                 {alert.severity === 'critical' ? (
-                  <AlertTriangle size={20} style={{ color: iconColor }} />
+                  <Warning size={20} weight="duotone" style={{ color: iconColor }} />
                 ) : (
-                  <AlertCircle size={20} style={{ color: iconColor }} />
+                  <WarningCircle size={20} weight="duotone" style={{ color: iconColor }} />
                 )}
               </Box>
 
@@ -108,7 +108,7 @@ export default function HealthAlarms({ alerts, onAcknowledge, onClearAll }: Heal
                 onClick={() => onAcknowledge(alert.id)}
                 sx={{ color: textColor, opacity: 0.7, '&:hover': { opacity: 1 } }}
               >
-                <X size={16} />
+                <X size={16} weight="bold" />
               </IconButton>
             </Box>
           )

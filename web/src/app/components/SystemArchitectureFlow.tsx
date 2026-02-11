@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Activity, AlertCircle, CheckCircle, Database, Radio, Server, Zap, Workflow, Cpu, MemoryStick, Gauge, AudioLines } from 'lucide-react'
+import { Pulse, WarningCircle, CheckCircle, Database, Broadcast, DesktopTower, Lightning, FlowArrow, Cpu, HardDrive, Gauge, Waveform } from '@phosphor-icons/react'
 
 interface ComponentDetails {
   description: string
@@ -306,14 +306,14 @@ export function SystemArchitectureFlow() {
       case 'healthy':
         return { bg: '#4caf5020', border: '#4caf50', text: '#4caf50', icon: CheckCircle }
       case 'warning':
-        return { bg: '#ffa72620', border: '#ffa726', text: '#ffa726', icon: AlertCircle }
+        return { bg: '#ffa72620', border: '#ffa726', text: '#ffa726', icon: WarningCircle }
       case 'critical':
-        return { bg: '#ef444420', border: '#ef4444', text: '#ef4444', icon: AlertCircle }
+        return { bg: '#ef444420', border: '#ef4444', text: '#ef4444', icon: WarningCircle }
     }
   }
 
   const renderHealthBlock = (
-    icon: React.ComponentType<{ size: number; style?: React.CSSProperties }>,
+    icon: React.ComponentType<{ size: number; style?: React.CSSProperties; weight?: string }>,
     label: string,
     healthInfo: { 
       status: 'healthy' | 'warning' | 'critical'
@@ -352,10 +352,10 @@ export function SystemArchitectureFlow() {
       >
         <div className="flex" style={{ gap: 8, alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div className="flex" style={{ gap: 6, alignItems: 'center' }}>
-            <IconComponent size={18} style={{ color: color.text, flexShrink: 0 }} />
+            <IconComponent size={18} style={{ color: color.text, flexShrink: 0 }} weight="duotone" />
             <strong style={{ fontSize: 12, color: color.text }}>{label}</strong>
           </div>
-          <StatusIcon size={14} style={{ color: color.text, flexShrink: 0 }} />
+          <StatusIcon size={14} style={{ color: color.text, flexShrink: 0 }} weight="duotone" />
         </div>
 
         <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.4 }}>{healthInfo.message}</div>
@@ -457,7 +457,7 @@ export function SystemArchitectureFlow() {
     <div className="card">
       <div style={{ marginBottom: 16 }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 8 }}>
-          <Workflow size={22} style={{ color: '#64b5f6' }} />
+          <FlowArrow size={22} weight="duotone" style={{ color: '#64b5f6' }} />
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>System Architecture & Health</h3>
         </div>
         <p style={{ margin: 0, fontSize: 12, color: '#aaa', lineHeight: 1.5 }}>
@@ -508,7 +508,7 @@ export function SystemArchitectureFlow() {
         </div>
 
         {/* Audio Engine */}
-        {renderHealthBlock(Activity, 'Audio Engine', health.audioEngine, audioEngineColor, 'audioEngine')}
+        {renderHealthBlock(Pulse, 'Audio Engine', health.audioEngine, audioEngineColor, 'audioEngine')}
 
         {/* Arrow */}
         <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
@@ -527,7 +527,7 @@ export function SystemArchitectureFlow() {
         </div>
 
         {/* DSP Graph */}
-        {renderHealthBlock(Zap, 'DSP Graph', health.dspGraph, dspGraphColor, 'dspGraph')}
+        {renderHealthBlock(Lightning, 'DSP Graph', health.dspGraph, dspGraphColor, 'dspGraph')}
 
         {/* Arrow */}
         <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
@@ -546,7 +546,7 @@ export function SystemArchitectureFlow() {
         </div>
 
         {/* Plugin Host */}
-        {renderHealthBlock(Radio, 'Plugin Host', health.pluginHost, pluginHostColor, 'pluginHost')}
+        {renderHealthBlock(Broadcast, 'Plugin Host', health.pluginHost, pluginHostColor, 'pluginHost')}
 
         {/* Arrow */}
         <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
@@ -590,13 +590,13 @@ export function SystemArchitectureFlow() {
       {/* Parallel Systems */}
       <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
         {/* PipeWire Audio Server */}
-        {renderHealthBlock(AudioLines, 'PipeWire', health.pipeWire, pipeWireColor, 'pipeWire')}
+        {renderHealthBlock(Waveform, 'PipeWire', health.pipeWire, pipeWireColor, 'pipeWire')}
 
         {/* MIDI Sequencer */}
         {renderHealthBlock(Database, 'MIDI Sequencer', health.midiSequencer, midiSequencerColor, 'midiSequencer')}
 
         {/* Web API */}
-        {renderHealthBlock(Server, 'Web API Server', health.webAPI, webAPIColor, 'webAPI')}
+        {renderHealthBlock(DesktopTower, 'Web API Server', health.webAPI, webAPIColor, 'webAPI')}
       </div>
 
       {/* Performance Summary Bar */}
@@ -610,17 +610,17 @@ export function SystemArchitectureFlow() {
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Cpu size={14} style={{ color: '#64b5f6' }} />
+              <Cpu size={14} weight="duotone" style={{ color: '#64b5f6' }} />
               <span style={{ fontSize: 10, color: '#888' }}>System CPU:</span>
               <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.cpu_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <MemoryStick size={14} style={{ color: '#81c784' }} />
+              <HardDrive size={14} weight="duotone" style={{ color: '#81c784' }} />
               <span style={{ fontSize: 10, color: '#888' }}>Memory:</span>
               <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.memory_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Gauge size={14} style={{ color: pluginPerf.gpu_device ? '#ab47bc' : '#888' }} />
+              <Gauge size={14} weight="duotone" style={{ color: pluginPerf.gpu_device ? '#ab47bc' : '#888' }} />
               <span style={{ fontSize: 10, color: '#888' }}>GPU:</span>
               <span style={{ fontSize: 11, color: pluginPerf.gpu_device ? '#ab47bc' : '#666', fontWeight: 500 }}>
                 {pluginPerf.gpu_device || 'CPU Only'}

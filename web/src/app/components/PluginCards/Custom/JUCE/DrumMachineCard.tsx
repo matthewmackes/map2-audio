@@ -15,9 +15,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
-  Play, Square, Zap, Volume2, Hash, Folder, Layers,
-  ListMusic, Headphones, Sliders, Music, Drum,
-} from 'lucide-react'
+  Play, Square, Lightning, SpeakerHigh, Hash, Folder, Stack,
+  Playlist, Headphones, Sliders, MusicNote,
+} from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 import { drumsApi } from '@/map2/api'
 import { PluginCardShell } from '../../Base/PluginCardShell'
@@ -43,7 +43,7 @@ const DRUM_MACHINE_PARAMS: PluginParamDef[] = [
 const MODE_CONFIG = {
   practice:      { label: 'Practice', icon: Headphones, color: '#22c55e', desc: 'Guided practice with count-in & auto-fill' },
   advanced:      { label: 'Advanced', icon: Sliders,    color: '#f59e0b', desc: 'Full pattern & pack editing' },
-  backing_tracks:{ label: 'Backing',  icon: Music,      color: '#8b5cf6', desc: 'Song sections & performance' },
+  backing_tracks:{ label: 'Backing',  icon: MusicNote,      color: '#8b5cf6', desc: 'Song sections & performance' },
 } as const
 
 // ── Inline Styles ──────────────────────────────────────────
@@ -161,7 +161,7 @@ function PracticeModePanel({ state }: { state: DrumMachineState }) {
   const color = MODE_CONFIG.practice.color
   return (
     <>
-      <ParameterSection title="Practice Controls" icon={<Headphones size={14} />} accentColor={color}>
+      <ParameterSection title="Practice Controls" icon={<Headphones size={14} weight="duotone" />} accentColor={color}>
         <ParameterRow>
           <ParameterKnob
             label="Count-In" value={state.practice_count_in_bars}
@@ -185,7 +185,7 @@ function PracticeModePanel({ state }: { state: DrumMachineState }) {
         </ParameterRow>
       </ParameterSection>
 
-      <ParameterSection title="Automation" icon={<Zap size={14} />} accentColor={color}>
+      <ParameterSection title="Automation" icon={<Lightning size={14} weight="duotone" />} accentColor={color}>
         <Toggle
           on={state.practice_auto_fill} color={color}
           onChange={v => drumsApi.updateState({ practice_auto_fill: v })}
@@ -209,7 +209,7 @@ function AdvancedModePanel({ state, factoryPacks, generatedPacks }: {
 
   return (
     <>
-      <ParameterSection title="Pattern Editor" icon={<Hash size={14} />} accentColor={color}>
+      <ParameterSection title="Pattern Editor" icon={<Hash size={14} weight="duotone" />} accentColor={color}>
         <ParameterRow>
           <ParameterKnob
             label="Pattern" value={state.pattern}
@@ -230,7 +230,7 @@ function AdvancedModePanel({ state, factoryPacks, generatedPacks }: {
 
       <ParameterSection
         title={`Factory Packs (${factoryPacks.length})`}
-        icon={<Folder size={14} />} accentColor={color} collapsible
+        icon={<Folder size={14} weight="duotone" />} accentColor={color} collapsible
       >
         {factoryPacks.length === 0 ? (
           <div style={S.emptyState}>No factory packs available</div>
@@ -266,7 +266,7 @@ function AdvancedModePanel({ state, factoryPacks, generatedPacks }: {
 
       <ParameterSection
         title={`User Packs (${generatedPacks.length})`}
-        icon={<Layers size={14} />} accentColor="#8b5cf6" collapsible defaultCollapsed
+        icon={<Stack size={14} weight="duotone" />} accentColor="#8b5cf6" collapsible defaultCollapsed
       >
         {generatedPacks.length === 0 ? (
           <div style={S.emptyState}>No user-generated packs — create one from the API</div>
@@ -295,7 +295,7 @@ function BackingTracksModePanel({ state }: { state: DrumMachineState }) {
   const color = MODE_CONFIG.backing_tracks.color
   return (
     <>
-      <ParameterSection title="Song Controls" icon={<ListMusic size={14} />} accentColor={color}>
+      <ParameterSection title="Song Controls" icon={<Playlist size={14} weight="duotone" />} accentColor={color}>
         <ParameterRow>
           <ParameterKnob
             label="Pattern" value={state.pattern}
@@ -320,7 +320,7 @@ function BackingTracksModePanel({ state }: { state: DrumMachineState }) {
         </ParameterRow>
       </ParameterSection>
 
-      <ParameterSection title="Performance" icon={<Zap size={14} />} accentColor={color}>
+      <ParameterSection title="Performance" icon={<Lightning size={14} weight="duotone" />} accentColor={color}>
         <Toggle
           on={state.practice_auto_fill} color={color}
           onChange={v => drumsApi.updateState({ practice_auto_fill: v })}
@@ -433,7 +433,7 @@ function DrumMachineCardBase({
       </div>
       <div style={S.transportRow}>
         <button onClick={() => drumsApi.updateState({ transport: !isPlaying })} style={S.transportBtn(isPlaying, modeColor)}>
-          {isPlaying ? <Square size={14} /> : <Play size={14} />}
+          {isPlaying ? <Square size={14} weight="duotone" /> : <Play size={14} weight="duotone" />}
           {isPlaying ? 'Stop' : 'Play'}
         </button>
         <button onClick={handleTapTempo} style={S.tapBtn}>Tap</button>
@@ -451,7 +451,7 @@ function DrumMachineCardBase({
   const footer = (
     <div style={S.footer}>
       <span>
-        <Drum size={10} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+        <MusicNote size={10} weight="duotone" style={{ marginRight: 4, verticalAlign: 'middle' }} />
         {state?.active_pack ? `Pack: ${state.active_pack}` : 'No pack loaded'}
       </span>
       <span style={S.footerBadge(modeColor)}>
@@ -465,7 +465,7 @@ function DrumMachineCardBase({
     return (
       <PluginCardShell plugin={plugin} accentColor={accentColor} compact={compact}>
         <div style={{ ...S.emptyState, padding: 32 }}>
-          <Drum size={24} style={{ marginBottom: 8, opacity: 0.4 }} />
+          <MusicNote size={24} weight="duotone" style={{ marginBottom: 8, opacity: 0.4 }} />
           <div>Connecting to Drum Machine...</div>
         </div>
       </PluginCardShell>
@@ -484,7 +484,7 @@ function DrumMachineCardBase({
           const Icon = cfg.icon
           return (
             <button key={key} onClick={() => drumsApi.updateState({ ui_mode: key })} style={S.modeBtn(currentMode === key, cfg.color)}>
-              <Icon size={11} style={{ marginRight: 3, verticalAlign: 'middle' }} />
+              <Icon size={11} weight="duotone" style={{ marginRight: 3, verticalAlign: 'middle' }} />
               {cfg.label}
             </button>
           )
@@ -492,7 +492,7 @@ function DrumMachineCardBase({
       </div>
 
       {/* Global Transport Controls (all modes) */}
-      <ParameterSection title="Transport" icon={<Volume2 size={14} />} accentColor={modeColor}>
+      <ParameterSection title="Transport" icon={<SpeakerHigh size={14} weight="duotone" />} accentColor={modeColor}>
         <ParameterRow>
           <ParameterKnob
             label="BPM" value={bpm} min={40} max={300} step={1} defaultValue={120}

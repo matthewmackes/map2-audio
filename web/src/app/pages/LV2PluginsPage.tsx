@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
-import { Package, Download, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, ChevronDown, ChevronUp, EyeOff, Eye, SlidersHorizontal, Zap, Waves, Gauge, AlertTriangle, Check, Plug } from 'lucide-react'
+import { Package, DownloadSimple, Trash, ArrowsClockwise, CheckCircle, XCircle, SpinnerGap, CaretDown, CaretUp, EyeSlash, Eye, Faders, Lightning, WaveSine, Gauge, Warning, Check, Plug } from '@phosphor-icons/react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 
@@ -256,7 +256,7 @@ export function LV2PluginsPage() {
             onClick={loadPluginPacks}
             disabled={loading}
           >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            {loading ? <SpinnerGap weight="bold" size={16} className="animate-spin" /> : <ArrowsClockwise weight="duotone" size={16} />}
             Refresh
           </button>
         }
@@ -270,7 +270,7 @@ export function LV2PluginsPage() {
         padding: 32
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
-          <AlertTriangle size={36} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 4 }} />
+          <Warning weight="duotone" size={36} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 4 }} />
           <div style={{ flex: 1 }}>
             <h3 style={{ fontSize: 22, fontWeight: 700, color: '#fbbf24', marginBottom: 12 }}>
               Native Realtime Processors Available
@@ -315,7 +315,7 @@ export function LV2PluginsPage() {
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '16px 20px', color: '#22c55e' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Gauge size={20} /> Dynamics
+                        <Gauge size={20} weight="duotone" /> Dynamics
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>DynamicsProcessor</td>
@@ -328,7 +328,7 @@ export function LV2PluginsPage() {
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '16px 20px', color: '#4ecdc4' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <SlidersHorizontal size={20} /> EQ
+                        <Faders size={20} weight="duotone" /> EQ
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>FilterProcessor</td>
@@ -341,7 +341,7 @@ export function LV2PluginsPage() {
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <td style={{ padding: '16px 20px', color: '#ff6b6b' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Zap size={20} /> Amp Modeling
+                        <Lightning size={20} weight="duotone" /> Amp Modeling
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>NAMProcessor</td>
@@ -354,7 +354,7 @@ export function LV2PluginsPage() {
                   <tr>
                     <td style={{ padding: '16px 20px', color: '#a855f7' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Waves size={20} /> Cabinet / Reverb
+                        <WaveSine size={20} weight="duotone" /> Cabinet / Reverb
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>ConvolutionProcessor</td>
@@ -379,11 +379,11 @@ export function LV2PluginsPage() {
           padding: 16
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <XCircle size={20} style={{ color: '#ef4444' }} />
+            <XCircle size={20} weight="duotone" style={{ color: '#ef4444' }} />
             <div>
               <div style={{ fontWeight: 600, color: '#ef4444', marginBottom: 4 }}>Error Loading Plugin Packs</div>
               <div style={{ fontSize: 12, color: '#f87171' }}>{error}</div>
-              <div style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
                 Check that the backend API is running at /api/plugin-packages/list
               </div>
             </div>
@@ -394,28 +394,28 @@ export function LV2PluginsPage() {
       {/* Summary Stats */}
       <div className="card" style={{
         background: 'linear-gradient(135deg, rgba(14, 22, 37, 0.95), rgba(20, 30, 50, 0.9))',
-        borderColor: 'rgba(55, 214, 201, 0.3)'
+        borderColor: 'rgba(37, 99, 235, 0.3)'
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 20 }}>
           <div style={{ textAlign: 'center', padding: 16 }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: '#37d6c9' }}>{installedCount}</div>
-            <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Installed</div>
+            <div style={{ fontSize: 32, fontWeight: 700, color: '#60a5fa' }}>{installedCount}</div>
+            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Installed</div>
           </div>
           <div style={{ textAlign: 'center', padding: 16 }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: '#6b7280' }}>{disabledCount}</div>
-            <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Disabled</div>
+            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Disabled</div>
           </div>
           <div style={{ textAlign: 'center', padding: 16 }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: '#a78bfa' }}>{pluginPacks.length}</div>
-            <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Total</div>
+            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Total</div>
           </div>
           <div style={{ textAlign: 'center', padding: 16 }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: '#4ade80' }}>{totalPlugins}</div>
-            <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Plugins Active</div>
+            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Plugins Active</div>
           </div>
           <div style={{ textAlign: 'center', padding: 16 }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: '#f59e0b' }}>{packCategories.length}</div>
-            <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Categories</div>
+            <div style={{ fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>Categories</div>
           </div>
         </div>
       </div>
@@ -484,12 +484,12 @@ export function LV2PluginsPage() {
                 >
                   {refreshingPlugins ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" />
+                      <SpinnerGap weight="bold" size={14} className="animate-spin" />
                       Refreshing...
                     </>
                   ) : (
                     <>
-                      <RefreshCw size={14} />
+                      <ArrowsClockwise weight="duotone" size={14} />
                       Refresh
                     </>
                   )}
@@ -508,12 +508,12 @@ export function LV2PluginsPage() {
                 >
                   {deleteMutation.isPending ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" />
+                      <SpinnerGap weight="bold" size={14} className="animate-spin" />
                       Deleting...
                     </>
                   ) : (
                     <>
-                      <Trash2 size={14} />
+                      <Trash weight="duotone" size={14} />
                       Delete Selected
                     </>
                   )}
@@ -542,8 +542,8 @@ export function LV2PluginsPage() {
               maxWidth: 400
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, color: '#ef4444' }}>
-                <AlertTriangle size={24} />
-                <h2 style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>Delete Plugins</h2>
+                <Warning size={24} weight="duotone" />
+                <h2 style={{ fontSize: 18, fontWeight: 600, color: '#f3f4f6' }}>Delete Plugins</h2>
               </div>
               <p style={{ color: '#94a3b8', marginBottom: 24 }}>
                 This will permanently delete {selectedUris.size} plugin{selectedUris.size === 1 ? '' : 's'} from your system.
@@ -573,12 +573,12 @@ export function LV2PluginsPage() {
                 >
                   {deleteMutation.isPending ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
+                      <SpinnerGap weight="bold" size={16} className="animate-spin" />
                       Deleting...
                     </>
                   ) : (
                     <>
-                      <Trash2 size={16} />
+                      <Trash weight="duotone" size={16} />
                       Delete
                     </>
                   )}
@@ -615,7 +615,7 @@ export function LV2PluginsPage() {
             alignItems: 'center',
             gap: 8
           }}>
-            <Check size={20} />
+            <Check weight="bold" size={20} />
             <p style={{ fontWeight: 600 }}>Plugins deleted successfully</p>
           </div>
         )}
@@ -629,7 +629,7 @@ export function LV2PluginsPage() {
         }}>
           {pluginsQuery.isLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-              <Loader2 className="animate-spin" size={32} style={{ color: '#3b82f6' }} />
+              <SpinnerGap weight="bold" className="animate-spin" size={32} style={{ color: '#3b82f6' }} />
             </div>
           ) : pluginsQuery.error ? (
             <div style={{ padding: 32, color: '#f87171', textAlign: 'center' }}>
@@ -720,8 +720,8 @@ export function LV2PluginsPage() {
       {/* Quick Status Row */}
       <div className="card" style={{ padding: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Package size={16} style={{ color: '#37d6c9' }} />
-          <span style={{ fontSize: 12, color: '#888' }}>Quick Status:</span>
+          <Package weight="duotone" size={16} style={{ color: '#60a5fa' }} />
+          <span style={{ fontSize: 12, color: '#6b7280' }}>Quick Status:</span>
           {pluginPacks.map(pack => {
             const isTransitional = ['installing', 'uninstalling', 'disabling', 'enabling'].includes(pack.status)
             const isDisabled = pack.status === 'disabled'
@@ -749,18 +749,18 @@ export function LV2PluginsPage() {
                       ? '#6b7280'
                       : isTransitional
                         ? '#f59e0b'
-                        : '#888',
+                        : '#6b7280',
                   border: `1px solid ${pack.status === 'installed' ? 'rgba(74, 222, 128, 0.3)' : isDisabled ? 'rgba(107, 114, 128, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
                   textDecoration: isDisabled ? 'line-through' : 'none',
                   opacity: isDisabled ? 0.7 : 1
                 }}
               >
                 {isTransitional ? (
-                  <Loader2 size={10} className="animate-spin" style={{ marginRight: 4, display: 'inline' }} />
+                  <SpinnerGap weight="bold" size={10} className="animate-spin" style={{ marginRight: 4, display: 'inline' }} />
                 ) : pack.status === 'installed' ? (
-                  <CheckCircle size={10} style={{ marginRight: 4, display: 'inline' }} />
+                  <CheckCircle weight="duotone" size={10} style={{ marginRight: 4, display: 'inline' }} />
                 ) : isDisabled ? (
-                  <EyeOff size={10} style={{ marginRight: 4, display: 'inline' }} />
+                  <EyeSlash weight="duotone" size={10} style={{ marginRight: 4, display: 'inline' }} />
                 ) : null}
                 {pack.name}
               </span>
@@ -771,7 +771,7 @@ export function LV2PluginsPage() {
             onClick={() => setExpanded(!expanded)}
             style={{ marginLeft: 'auto', padding: '4px 10px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
           >
-            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {expanded ? <CaretUp weight="bold" size={14} /> : <CaretDown weight="bold" size={14} />}
             {expanded ? 'Collapse Packs' : 'Expand Packs'}
           </button>
         </div>
@@ -780,15 +780,15 @@ export function LV2PluginsPage() {
       {/* Plugin Packs Grid */}
       {expanded && (
         <div className="card">
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Package size={16} />
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Package weight="duotone" size={16} />
             Available Plugin Packs
           </h3>
 
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-              <Loader2 size={24} className="animate-spin" style={{ color: '#37d6c9' }} />
-              <span style={{ marginLeft: 12, color: '#888' }}>Loading plugin packs...</span>
+              <SpinnerGap size={24} className="animate-spin" weight="bold" style={{ color: '#60a5fa' }} />
+              <span style={{ marginLeft: 12, color: '#6b7280' }}>Loading plugin packs...</span>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
@@ -806,7 +806,7 @@ export function LV2PluginsPage() {
                           ? 'linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(0,0,0,0.3))'
                           : 'linear-gradient(135deg, rgba(55, 214, 201, 0.05), rgba(0,0,0,0.2))',
                       border: `1px solid ${pack.status === 'installed' ? 'rgba(74, 222, 128, 0.3)' : isDisabled ? 'rgba(107, 114, 128, 0.3)' : 'rgba(55, 214, 201, 0.2)'}`,
-                      borderLeft: `4px solid ${pack.status === 'installed' ? '#4ade80' : isDisabled ? '#6b7280' : '#37d6c9'}`,
+                      borderLeft: `4px solid ${pack.status === 'installed' ? '#4ade80' : isDisabled ? '#6b7280' : '#60a5fa'}`,
                       borderRadius: 8,
                       display: 'flex',
                       flexDirection: 'column',
@@ -820,7 +820,7 @@ export function LV2PluginsPage() {
                         <h4 style={{
                           fontSize: 15,
                           fontWeight: 600,
-                          color: isDisabled ? '#6b7280' : '#f2f6ff',
+                          color: isDisabled ? '#6b7280' : '#f3f4f6',
                           margin: 0,
                           textDecoration: isDisabled ? 'line-through' : 'none'
                         }}>
@@ -828,7 +828,7 @@ export function LV2PluginsPage() {
                         </h4>
                         <span style={{
                           fontSize: 10,
-                          color: '#888',
+                          color: '#6b7280',
                           textTransform: 'uppercase',
                           letterSpacing: 1
                         }}>
@@ -836,11 +836,11 @@ export function LV2PluginsPage() {
                         </span>
                       </div>
                       {pack.status === 'installed' && (
-                        <CheckCircle size={18} style={{ color: '#4ade80' }} />
+                        <CheckCircle weight="duotone" size={18} style={{ color: '#4ade80' }} />
                       )}
                       {pack.status === 'disabled' && (
                         <span title="Disabled">
-                          <EyeOff size={18} style={{ color: '#6b7280' }} />
+                          <EyeSlash weight="duotone" size={18} style={{ color: '#6b7280' }} />
                         </span>
                       )}
                       {pack.status === 'error' && (
@@ -849,11 +849,11 @@ export function LV2PluginsPage() {
                         </span>
                       )}
                       {isTransitional && (
-                        <Loader2 size={18} className="animate-spin" style={{ color: '#f59e0b' }} />
+                        <SpinnerGap weight="bold" size={18} className="animate-spin" style={{ color: '#f59e0b' }} />
                       )}
                     </div>
 
-                  <p style={{ fontSize: 12, color: '#aaa', margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12, color: '#9ca3af', margin: 0, lineHeight: 1.5 }}>
                     {pack.description}
                   </p>
 
@@ -870,11 +870,11 @@ export function LV2PluginsPage() {
                     </span>
                     <span style={{
                       padding: '3px 8px',
-                      background: 'rgba(55, 214, 201, 0.1)',
-                      border: '1px solid rgba(55, 214, 201, 0.2)',
+                      background: 'rgba(37, 99, 235, 0.1)',
+                      border: '1px solid rgba(37, 99, 235, 0.2)',
                       borderRadius: 4,
                       fontSize: 10,
-                      color: '#37d6c9'
+                      color: '#60a5fa'
                     }}>
                       {pack.size_estimate}
                     </span>
@@ -883,19 +883,19 @@ export function LV2PluginsPage() {
                     <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {pack.status === 'installing' ? (
                         <button className="btn btn-ghost" disabled style={{ width: '100%' }}>
-                          <Loader2 size={14} className="animate-spin" /> Installing...
+                          <SpinnerGap weight="bold" size={14} className="animate-spin" /> Installing...
                         </button>
                       ) : pack.status === 'uninstalling' ? (
                         <button className="btn btn-ghost" disabled style={{ width: '100%' }}>
-                          <Loader2 size={14} className="animate-spin" /> Uninstalling...
+                          <SpinnerGap weight="bold" size={14} className="animate-spin" /> Uninstalling...
                         </button>
                       ) : pack.status === 'disabling' ? (
                         <button className="btn btn-ghost" disabled style={{ width: '100%' }}>
-                          <Loader2 size={14} className="animate-spin" /> Disabling...
+                          <SpinnerGap weight="bold" size={14} className="animate-spin" /> Disabling...
                         </button>
                       ) : pack.status === 'enabling' ? (
                         <button className="btn btn-ghost" disabled style={{ width: '100%' }}>
-                          <Loader2 size={14} className="animate-spin" /> Enabling...
+                          <SpinnerGap weight="bold" size={14} className="animate-spin" /> Enabling...
                         </button>
                       ) : pack.status === 'disabled' ? (
                         <button
@@ -903,7 +903,7 @@ export function LV2PluginsPage() {
                           onClick={() => handleEnable(pack.id)}
                           style={{ width: '100%' }}
                         >
-                          <Eye size={14} /> Enable
+                          <Eye weight="duotone" size={14} /> Enable
                         </button>
                       ) : pack.status === 'installed' ? (
                         <div style={{ display: 'flex', gap: 8 }}>
@@ -917,7 +917,7 @@ export function LV2PluginsPage() {
                             }}
                             title="Temporarily disable without uninstalling"
                           >
-                            <EyeOff size={14} /> Disable
+                            <EyeSlash weight="duotone" size={14} /> Disable
                           </button>
                           {pack.can_uninstall !== false && (
                             <button
@@ -929,7 +929,7 @@ export function LV2PluginsPage() {
                                 borderColor: 'rgba(239, 68, 68, 0.3)'
                               }}
                             >
-                              <Trash2 size={14} /> Uninstall
+                              <Trash weight="duotone" size={14} /> Uninstall
                             </button>
                           )}
                         </div>
@@ -939,7 +939,7 @@ export function LV2PluginsPage() {
                           onClick={() => handleInstall(pack.id)}
                           style={{ width: '100%' }}
                         >
-                          <Download size={14} /> Install
+                          <DownloadSimple weight="duotone" size={14} /> Install
                         </button>
                       ) : (
                         <div style={{
@@ -964,11 +964,11 @@ export function LV2PluginsPage() {
       )}
 
       {/* Info Section */}
-      <div className="card" style={{ background: 'rgba(55, 214, 201, 0.05)', borderColor: 'rgba(55, 214, 201, 0.2)' }}>
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#37d6c9', marginBottom: 8 }}>
+      <div className="card" style={{ background: 'rgba(37, 99, 235, 0.05)', borderColor: 'rgba(37, 99, 235, 0.2)' }}>
+        <h4 style={{ fontSize: 13, fontWeight: 600, color: '#60a5fa', marginBottom: 8 }}>
           About LV2 Plugin Packs
         </h4>
-        <p style={{ fontSize: 12, color: '#888', margin: 0, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 12, color: '#6b7280', margin: 0, lineHeight: 1.6 }}>
           LV2 (LADSPA Version 2) plugins are audio processing modules that can be loaded into the signal chain.
           These curated packs are installed via apt package manager and provide high-quality effects, instruments,
           and utilities. Installation requires sudo privileges and an internet connection.

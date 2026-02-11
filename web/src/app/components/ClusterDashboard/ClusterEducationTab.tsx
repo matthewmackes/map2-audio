@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Zap } from 'lucide-react'
+import { CaretDown, CaretRight, Lightning } from '@phosphor-icons/react'
 import { useState } from 'react'
 
 interface EducationSection {
@@ -26,7 +26,7 @@ export function ClusterEducationTab() {
     {
       id: 'what-is',
       title: 'What is a Cluster?',
-      icon: <Zap size={20} />,
+      icon: <Lightning size={20} weight="duotone" />,
       description: 'Learn the basics of audio clustering',
       content: (
         <div style={{ lineHeight: 1.6, color: '#d0d0d0', fontSize: 13 }}>
@@ -50,7 +50,7 @@ export function ClusterEducationTab() {
     {
       id: 'deployment-modes',
       title: 'Deployment Modes',
-      icon: <Zap size={20} />,
+      icon: <Lightning size={20} weight="duotone" />,
       description: 'Different ways to deploy the system',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -102,7 +102,7 @@ export function ClusterEducationTab() {
     {
       id: 'node-roles',
       title: 'Node Roles',
-      icon: <Zap size={20} />,
+      icon: <Lightning size={20} weight="duotone" />,
       description: 'Different types of nodes in a cluster',
       content: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -113,8 +113,8 @@ export function ClusterEducationTab() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(0, 212, 255, 0.1)', border: '1px solid #00d4ff', borderRadius: 8, padding: '12px 16px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#00d4ff', marginBottom: 4 }}>🎚️ Management Node</div>
+          <div style={{ background: 'rgba(37, 99, 235, 0.1)', border: '1px solid #2563eb', borderRadius: 8, padding: '12px 16px' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', marginBottom: 4 }}>🏚️ Management Node</div>
             <div style={{ fontSize: 12, color: '#d0d0d0', lineHeight: 1.5 }}>
               Orchestrates the cluster. Manages node discovery, flow distribution, monitoring, and provides web UI for control.
             </div>
@@ -132,7 +132,7 @@ export function ClusterEducationTab() {
     {
       id: 'data-flow',
       title: 'How Data Flows',
-      icon: <Zap size={20} />,
+      icon: <Lightning size={20} weight="duotone" />,
       description: 'Data transmission between nodes',
       content: (
         <div style={{ lineHeight: 1.6, color: '#d0d0d0', fontSize: 13 }}>
@@ -144,7 +144,7 @@ export function ClusterEducationTab() {
                 JACK audio I/O (local). Complete flows run independently on each node.
               </div>
             </div>
-            <div style={{ background: 'rgba(0, 212, 255, 0.1)', padding: '10px 12px', borderRadius: 6 }}>
+            <div style={{ background: 'rgba(37, 99, 235, 0.1)', padding: '10px 12px', borderRadius: 6 }}>
               <strong>⚡ Events</strong>
               <div style={{ color: '#a0a0a0', fontSize: 12, marginTop: 4 }}>
                 WebSocket real-time events (status changes, alerts, system events). Broadcast to all nodes.
@@ -163,7 +163,7 @@ export function ClusterEducationTab() {
     {
       id: 'redundancy',
       title: 'Redundancy & Failover',
-      icon: <Zap size={20} />,
+      icon: <Lightning size={20} weight="duotone" />,
       description: 'How the cluster stays online',
       content: (
         <div style={{ lineHeight: 1.6, color: '#d0d0d0', fontSize: 13 }}>
@@ -198,12 +198,12 @@ export function ClusterEducationTab() {
       <div
         style={{
           background: 'linear-gradient(155deg, #2d2d2d, #333333)',
-          border: '2px solid #00d4ff',
+          border: '2px solid #2563eb',
           borderRadius: 12,
           padding: '20px',
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 600, color: '#00d4ff', marginBottom: 8 }}>📚 Cluster Learning Guide</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>📚 Cluster Learning Guide</div>
         <div style={{ fontSize: 13, color: '#d0d0d0', lineHeight: 1.6 }}>
           Learn how the MAP2 cluster works, from basic concepts to advanced topics. Expand each section to dive deeper.
         </div>
@@ -213,8 +213,8 @@ export function ClusterEducationTab() {
         <div
           key={section.id}
           style={{
-            background: expandedSections.has(section.id) ? 'rgba(0, 212, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-            border: '2px solid ' + (expandedSections.has(section.id) ? '#00d4ff' : '#333'),
+            background: expandedSections.has(section.id) ? 'rgba(37, 99, 235, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+            border: '2px solid ' + (expandedSections.has(section.id) ? '#2563eb' : '#333'),
             borderRadius: 12,
             overflow: 'hidden',
             transition: 'all 0.2s',
@@ -233,11 +233,11 @@ export function ClusterEducationTab() {
               cursor: 'pointer',
               fontSize: 14,
               fontWeight: 600,
-              color: expandedSections.has(section.id) ? '#00d4ff' : '#d0d0d0',
+              color: expandedSections.has(section.id) ? '#2563eb' : '#d0d0d0',
               transition: 'color 0.2s',
             }}
           >
-            {expandedSections.has(section.id) ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+            {expandedSections.has(section.id) ? <CaretDown size={18} weight="bold" /> : <CaretRight size={18} weight="bold" />}
             <div style={{ fontSize: 16 }}>{section.icon}</div>
             <div style={{ flex: 1, textAlign: 'left' }}>
               {section.title}

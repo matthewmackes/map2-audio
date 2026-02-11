@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { Box, Paper, Typography, Switch, FormControlLabel, Button, Grid, Chip, Alert } from '@mui/material'
-import { Bell, Volume2, Vibrate, X } from 'lucide-react'
+import { Bell, SpeakerHigh, X } from '@phosphor-icons/react'
 import type { AlertNotification } from '@/app/hooks/useAlertNotifications'
 
 export interface NotificationConfig {
@@ -72,7 +72,7 @@ export default function AlertNotificationSettings({
       <Paper sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Bell size={20} />
+            <Bell size={20} weight="duotone" />
             <Typography sx={{ fontWeight: 600 }}>Browser Notifications</Typography>
           </Box>
           {!notificationsSupported && <Chip label="Not Supported" size="small" color="default" />}
@@ -128,7 +128,7 @@ export default function AlertNotificationSettings({
       <Paper sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Volume2 size={20} />
+            <SpeakerHigh size={20} weight="duotone" />
             <Typography sx={{ fontWeight: 600 }}>Audio Alerts</Typography>
           </Box>
           {!audioSupported && <Chip label="Not Supported" size="small" color="default" />}
@@ -170,7 +170,7 @@ export default function AlertNotificationSettings({
       <Paper sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Vibrate size={20} />
+            <Bell size={20} weight="duotone" />
             <Typography sx={{ fontWeight: 600 }}>Vibration Alerts</Typography>
           </Box>
           {!vibrateSupported && <Chip label="Mobile Only" size="small" color="default" />}

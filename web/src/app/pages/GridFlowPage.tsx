@@ -17,45 +17,45 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import {
-  LayoutGrid,
-  Search,
+  GridFour,
+  MagnifyingGlass,
   Plus,
-  RefreshCw,
+  ArrowsClockwise,
   Power,
-  Save,
+  FloppyDisk,
   Copy,
   Cpu,
   Clock,
-  Layers,
-  ArrowRightLeft,
+  Stack,
+  ArrowsLeftRight,
   Shuffle,
   GitBranch,
-  Trash2,
-  Volume2,
-  VolumeX,
-  Undo2,
-  Redo2,
-  Settings2,
+  Trash,
+  SpeakerHigh,
+  SpeakerX,
+  ArrowCounterClockwise,
+  ArrowClockwise,
+  GearSix,
   Sliders,
-  AlertTriangle,
-  CheckCircle2,
-  Link2,
+  Warning,
+  CheckCircle,
+  Link,
   Headphones,
   FolderOpen,
-  Download,
+  DownloadSimple,
   X,
   Star,
   Info,
   Keyboard,
-  GripVertical,
-  Music,
+  DotsSixVertical,
+  MusicNote,
   PlayCircle,
-  ChevronDown,
-  ChevronRight,
-  Upload,
+  CaretDown,
+  CaretRight,
+  UploadSimple,
   Globe,
   Camera,
-} from 'lucide-react'
+} from '@phosphor-icons/react'
 import {
   SignalGrid,
   KnobParameterPanel,
@@ -132,12 +132,12 @@ interface RoutingConfig {
 // ============================================================================
 
 const SLOT_COLORS = [
-  { label: 'A', color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.15)' },
-  { label: 'B', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },
+  { label: 'A', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.15)' },
+  { label: 'B', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)' },
   { label: 'C', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)' },
   { label: 'D', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
-  { label: 'E', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
-  { label: 'F', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },
+  { label: 'E', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)' },
+  { label: 'F', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.15)' },
 ]
 
 const MIN_FLOWS = 2
@@ -195,7 +195,7 @@ function migrateLocalStorage(): { slots: FlowSlot[]; routing: RoutingConfig; act
           id: slot.id || `flow-${i}`,
           chainId: slot.chainId ?? null,
           label: slot.label || SLOT_COLORS[i]?.label || String.fromCharCode(65 + i),
-          color: slot.color || SLOT_COLORS[i]?.color || '#00d4ff',
+          color: slot.color || SLOT_COLORS[i]?.color || '#2563eb',
           muted: slot.muted ?? false,
           solo: false,
           dryWetMix: 100,
@@ -1438,7 +1438,7 @@ export function GridFlowPage() {
           <div className="grid-flow-header-left grid-toolbar-section">
             <div className="grid-toolbar-section-label">CHAIN & PRESETS</div>
             <div className="grid-flow-title">
-              <LayoutGrid size={24} />
+              <GridFour size={24} weight="duotone" />
               <h1>Grid Editor</h1>
             </div>
 
@@ -1454,16 +1454,16 @@ export function GridFlowPage() {
                   setContextMenu({
                     position: { x: e.clientX, y: e.clientY },
                     items: [
-                      { label: 'Activate', icon: <Power size={14} />, onClick: () => currentChain && activateMutation.mutate(currentChain.id), disabled: !currentChain || currentChain.is_active },
-                      { label: 'Deactivate', icon: <Power size={14} />, onClick: () => currentChain && deactivateMutation.mutate(currentChain.id), disabled: !currentChain || !currentChain.is_active },
+                      { label: 'Activate', icon: <Power size={14} weight="duotone" />, onClick: () => currentChain && activateMutation.mutate(currentChain.id), disabled: !currentChain || currentChain.is_active },
+                      { label: 'Deactivate', icon: <Power size={14} weight="duotone" />, onClick: () => currentChain && deactivateMutation.mutate(currentChain.id), disabled: !currentChain || !currentChain.is_active },
                       { separator: true },
-                      { label: 'Rename', icon: <Info size={14} />, onClick: handleRenameChain, disabled: !currentChain },
+                      { label: 'Rename', icon: <Info size={14} weight="duotone" />, onClick: handleRenameChain, disabled: !currentChain },
                     ],
                   })
                 }}
                 disabled={!currentChain}
               >
-                <Power size={18} />
+                <Power size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1473,7 +1473,7 @@ export function GridFlowPage() {
                 onClick={handleSavePreset}
                 disabled={!currentChain}
               >
-                <Save size={18} />
+                <FloppyDisk size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1482,7 +1482,7 @@ export function GridFlowPage() {
                 className="grid-header-btn"
                 onClick={() => setShowPresetBrowser(true)}
               >
-                <FolderOpen size={18} />
+                <FolderOpen size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1491,7 +1491,7 @@ export function GridFlowPage() {
                 className="grid-header-btn"
                 onClick={() => setShowImportDialog(true)}
               >
-                <Upload size={18} />
+                <UploadSimple size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1501,7 +1501,7 @@ export function GridFlowPage() {
                 onClick={handleDuplicateChain}
                 disabled={!currentChain}
               >
-                <Copy size={18} />
+                <Copy size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1539,7 +1539,7 @@ export function GridFlowPage() {
                     onMouseEnter={() => setRoutingPreview('series')}
                     onMouseLeave={() => setRoutingPreview(null)}
                   >
-                    <ArrowRightLeft size={14} />
+                    <ArrowsLeftRight size={14} weight="duotone" />
                   </button>
                 </ToolbarTooltip>
                 <ToolbarTooltip content="Parallel Blend" shortcut="">
@@ -1549,7 +1549,7 @@ export function GridFlowPage() {
                     onMouseEnter={() => setRoutingPreview('parallel_blend')}
                     onMouseLeave={() => setRoutingPreview(null)}
                   >
-                    <GitBranch size={14} />
+                    <GitBranch size={14} weight="duotone" />
                   </button>
                 </ToolbarTooltip>
                 <ToolbarTooltip content="A/B Switch" shortcut="">
@@ -1559,7 +1559,7 @@ export function GridFlowPage() {
                     onMouseEnter={() => setRoutingPreview('ab_switch')}
                     onMouseLeave={() => setRoutingPreview(null)}
                   >
-                    <Shuffle size={14} />
+                    <Shuffle size={14} weight="duotone" />
                   </button>
                 </ToolbarTooltip>
                 <ToolbarTooltip content="Parameter Morph" shortcut="">
@@ -1569,7 +1569,7 @@ export function GridFlowPage() {
                     onMouseEnter={() => setRoutingPreview('parameter_morph')}
                     onMouseLeave={() => setRoutingPreview(null)}
                   >
-                    <Settings2 size={14} />
+                    <GearSix size={14} weight="duotone" />
                   </button>
                 </ToolbarTooltip>
                 <ToolbarTooltip content="Sidechain View" shortcut="">
@@ -1579,7 +1579,7 @@ export function GridFlowPage() {
                     onMouseEnter={() => setRoutingPreview('sidechain')}
                     onMouseLeave={() => setRoutingPreview(null)}
                   >
-                    <Link2 size={14} />
+                    <Link size={14} weight="duotone" />
                   </button>
                 </ToolbarTooltip>
               </div>
@@ -1645,7 +1645,7 @@ export function GridFlowPage() {
                   onMouseLeave={() => setShowUndoStack(false)}
                   disabled={!historyStatus?.can_undo}
                 >
-                  <Undo2 size={18} />
+                  <ArrowCounterClockwise size={18} weight="duotone" />
                 </button>
               </ToolbarTooltip>
               {showUndoStack && historyStatus?.undo_stack && (
@@ -1678,7 +1678,7 @@ export function GridFlowPage() {
                   onMouseLeave={() => setShowRedoStack(false)}
                   disabled={!historyStatus?.can_redo}
                 >
-                  <Redo2 size={18} />
+                  <ArrowClockwise size={18} weight="duotone" />
                 </button>
               </ToolbarTooltip>
               {showRedoStack && historyStatus?.redo_stack && (
@@ -1710,7 +1710,7 @@ export function GridFlowPage() {
                 className="grid-header-btn"
                 onClick={() => setShowAudioConfig(true)}
               >
-                <Sliders size={18} />
+                <Sliders size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1727,7 +1727,7 @@ export function GridFlowPage() {
                 {(chainsQuery.isRefetching || pluginsQuery.isRefetching) ? (
                   <span className="spin">↻</span>
                 ) : (
-                  <RefreshCw size={18} />
+                  <ArrowsClockwise size={18} weight="duotone" />
                 )}
               </button>
             </ToolbarTooltip>
@@ -1740,7 +1740,7 @@ export function GridFlowPage() {
                 className={`grid-header-btn ${midiMappingsPanelOpen ? 'active' : ''}`}
                 onClick={() => setMidiMappingsPanelOpen(!midiMappingsPanelOpen)}
               >
-                <Music size={18} />
+                <MusicNote size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1750,7 +1750,7 @@ export function GridFlowPage() {
                 className={`grid-header-btn ${automationTimelineExpanded ? 'active' : ''}`}
                 onClick={() => setAutomationTimelineExpanded(!automationTimelineExpanded)}
               >
-                <PlayCircle size={18} />
+                <PlayCircle size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1761,7 +1761,7 @@ export function GridFlowPage() {
                 onClick={handleQuickFavorite}
                 disabled={isCreatingFavorite}
               >
-                <Star size={18} />
+                <Star size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1771,7 +1771,7 @@ export function GridFlowPage() {
                 className={`grid-header-btn ${snapshotsPanelExpanded ? 'active' : ''}`}
                 onClick={() => setSnapshotsPanelExpanded(!snapshotsPanelExpanded)}
               >
-                <Camera size={18} />
+                <Camera size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1783,7 +1783,7 @@ export function GridFlowPage() {
                 className="grid-header-btn"
                 onClick={() => setShowKeyboardHelp(true)}
               >
-                <Keyboard size={18} />
+                <Keyboard size={18} weight="duotone" />
               </button>
             </ToolbarTooltip>
 
@@ -1793,7 +1793,7 @@ export function GridFlowPage() {
                 className="grid-header-btn"
                 onClick={() => setToolbarCollapsed(true)}
               >
-                <ChevronRight size={18} />
+                <CaretRight size={18} weight="bold" />
               </button>
             </ToolbarTooltip>
           </div>
@@ -1804,7 +1804,7 @@ export function GridFlowPage() {
       {toolbarCollapsed && (
         <div className="grid-flow-header-collapsed">
           <button className="grid-flow-header-collapsed-btn" onClick={() => setToolbarCollapsed(false)}>
-            <LayoutGrid size={18} />
+            <GridFour size={18} weight="duotone" />
             <span>Show Toolbar</span>
           </button>
         </div>
@@ -1929,12 +1929,12 @@ export function GridFlowPage() {
               >
                 {/* Drag Handle */}
                 <div className="grid-flow-slot-drag-handle">
-                  <GripVertical size={16} />
+                  <DotsSixVertical size={16} weight="duotone" />
                 </div>
 
                 {/* Vertical title on the left */}
                 <div className="grid-flow-slot-title">
-                  <GitBranch size={14} />
+                  <GitBranch size={14} weight="duotone" />
                   <span>Flow</span>
                 </div>
 
@@ -1982,7 +1982,7 @@ export function GridFlowPage() {
                       }}
                       title="Assign flow to node"
                     >
-                      <Link2 size={14} />
+                      <Link size={14} weight="duotone" />
                     </button>
 
                     {/* Solo button */}
@@ -1994,7 +1994,7 @@ export function GridFlowPage() {
                       }}
                       title={flow.solo ? 'Unsolo' : 'Solo'}
                     >
-                      <Headphones size={14} />
+                      <Headphones size={14} weight="duotone" />
                     </button>
 
                     {/* Mute button */}
@@ -2006,7 +2006,7 @@ export function GridFlowPage() {
                       }}
                       title={flow.muted ? 'Unmute' : 'Mute'}
                     >
-                      {flow.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                      {flow.muted ? <SpeakerX size={14} weight="duotone" /> : <SpeakerHigh size={14} weight="duotone" />}
                     </button>
 
                     {/* Delete flow */}
@@ -2019,7 +2019,7 @@ export function GridFlowPage() {
                         }}
                         title={`Delete flow ${SLOT_COLORS[index]?.label || String.fromCharCode(65 + index)}`}
                       >
-                        <Trash2 size={14} />
+                        <Trash size={14} weight="duotone" />
                       </button>
                     )}
                   </div>
@@ -2101,28 +2101,28 @@ export function GridFlowPage() {
               {/* CPU */}
               {getPluginCpu(selectedPlugin.uri) > 0 && (
                 <span className="grid-info-badge cpu">
-                  <Cpu size={10} /> {getPluginCpu(selectedPlugin.uri).toFixed(1)}%
+                  <Cpu size={10} weight="duotone" /> {getPluginCpu(selectedPlugin.uri).toFixed(1)}%
                 </span>
               )}
 
               {/* Latency */}
               {selectedPlugin.latency_samples && selectedPlugin.latency_samples > 0 && (
                 <span className="grid-info-badge latency">
-                  <Clock size={10} /> {selectedPlugin.latency_samples}smp
+                  <Clock size={10} weight="duotone" /> {selectedPlugin.latency_samples}smp
                 </span>
               )}
 
               {/* PDC */}
               {selectedPlugin.latency_compensated && (
                 <span className="grid-info-badge pdc">
-                  <CheckCircle2 size={10} /> PDC
+                  <CheckCircle size={10} weight="bold" /> PDC
                 </span>
               )}
 
               {/* Sidechain */}
               {selectedPlugin.sidechain_source && (
                 <span className="grid-info-badge sidechain">
-                  <Link2 size={10} /> SC
+                  <Link size={10} weight="duotone" /> SC
                 </span>
               )}
             </div>
@@ -2136,10 +2136,10 @@ export function GridFlowPage() {
           <div className="grid-flow-modal" onClick={(e) => e.stopPropagation()}>
             <div className="grid-flow-modal-header">
               <h2>Add Plugin</h2>
-              <button onClick={() => setShowPluginBrowser(false)}><X size={20} /></button>
+              <button onClick={() => setShowPluginBrowser(false)}><X size={20} weight="bold" /></button>
             </div>
             <div className="grid-flow-modal-search">
-              <Search size={16} />
+              <MagnifyingGlass size={16} weight="duotone" />
               <input
                 type="text"
                 placeholder="Search plugins..."
@@ -2174,7 +2174,7 @@ export function GridFlowPage() {
               {nativeProcessors.length > 0 && (
                 <div className="grid-flow-modal-native-section">
                   <div className="grid-flow-modal-native-header">
-                    <Cpu size={16} />
+                    <Cpu size={16} weight="duotone" />
                     <span>Core Integrated</span>
                     <span className="grid-flow-modal-native-badge">Zero Latency</span>
                   </div>
@@ -2207,7 +2207,7 @@ export function GridFlowPage() {
               {groupedPlugins.length > 0 && (
                 <div className="grid-flow-modal-lv2-section">
                   <div className="grid-flow-modal-lv2-header">
-                    <Layers size={14} />
+                    <Stack size={14} weight="duotone" />
                     <span>LV2 Plugin Library</span>
                     <span className="grid-flow-modal-lv2-count">{lv2Plugins.length} plugins</span>
                   </div>
@@ -2226,7 +2226,7 @@ export function GridFlowPage() {
                       onClick={() => toggleCategory(category)}
                       style={{ borderLeftColor: catConfig.color }}
                     >
-                      {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                      {isCollapsed ? <CaretRight size={16} weight="bold" /> : <CaretDown size={16} weight="bold" />}
                       <span style={{ color: catConfig.color }}>{category}</span>
                       <span className="grid-flow-modal-category-count">{plugins.length}</span>
                     </button>
@@ -2247,7 +2247,7 @@ export function GridFlowPage() {
                               }}
                               title={favoritePlugins.has(plugin.uri) ? 'Remove from favorites' : 'Add to favorites'}
                             >
-                              <Star size={14} fill={favoritePlugins.has(plugin.uri) ? 'currentColor' : 'none'} />
+                              <Star size={14} weight="duotone" fill={favoritePlugins.has(plugin.uri) ? 'currentColor' : 'none'} />
                             </button>
 
                             {/* Main plugin button */}
@@ -2280,7 +2280,7 @@ export function GridFlowPage() {
                               }}
                               title="View plugin details"
                             >
-                              <Info size={14} />
+                              <Info size={14} weight="duotone" />
                             </button>
                           </div>
                         ))}
@@ -2310,10 +2310,10 @@ export function GridFlowPage() {
                   title="Import from file (FXP, VST3, LV2, etc.)"
                   style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
-                  <Upload size={14} />
+                  <UploadSimple size={14} weight="duotone" />
                   <span style={{ fontSize: '0.8rem' }}>Import</span>
                 </button>
-                <button onClick={() => setShowPresetBrowser(false)}><X size={20} /></button>
+                <button onClick={() => setShowPresetBrowser(false)}><X size={20} weight="bold" /></button>
               </div>
             </div>
             <div className="grid-flow-modal-list">
@@ -2331,7 +2331,7 @@ export function GridFlowPage() {
                       className="grid-flow-preset-load"
                       onClick={() => loadPresetMutation.mutate(preset.id)}
                     >
-                      <Download size={16} />
+                      <DownloadSimple size={16} weight="duotone" />
                       <span className="grid-flow-modal-item-name">{preset.name}</span>
                     </button>
                     <button
@@ -2343,7 +2343,7 @@ export function GridFlowPage() {
                       }}
                       title="Delete preset"
                     >
-                      <Trash2 size={14} />
+                      <Trash size={14} weight="duotone" />
                     </button>
                   </div>
                 ))
@@ -2362,12 +2362,12 @@ export function GridFlowPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  color: 'var(--accent, #7c3aed)',
+                  color: 'var(--accent, #60a5fa)',
                   textDecoration: 'none',
                   fontSize: '0.85rem',
                 }}
               >
-                <Globe size={14} />
+                <Globe size={14} weight="duotone" />
                 Browse Community Presets
               </a>
             </div>
@@ -2440,7 +2440,7 @@ export function GridFlowPage() {
           <div className="grid-flow-modal keyboard-help" onClick={(e) => e.stopPropagation()}>
             <div className="grid-flow-modal-header">
               <h2>Keyboard Shortcuts</h2>
-              <button onClick={() => setShowKeyboardHelp(false)}><X size={20} /></button>
+              <button onClick={() => setShowKeyboardHelp(false)}><X size={20} weight="bold" /></button>
             </div>
             <div className="grid-flow-keyboard-help">
               <div className="keyboard-help-section">
@@ -2531,7 +2531,7 @@ export function GridFlowPage() {
           <div className="grid-flow-modal lane-picker" onClick={(e) => e.stopPropagation()}>
             <div className="grid-flow-modal-header">
               <h2>Add Automation Lane</h2>
-              <button onClick={() => setLanePickerOpen(false)}><X size={20} /></button>
+              <button onClick={() => setLanePickerOpen(false)}><X size={20} weight="bold" /></button>
             </div>
             <div className="grid-flow-lane-picker-content">
               <p className="grid-flow-lane-picker-hint">Select a parameter to automate:</p>
@@ -2592,7 +2592,7 @@ export function GridFlowPage() {
             disabled={flowSlots.length >= MAX_FLOWS}
             title="Add new flow"
           >
-            <Plus size={20} />
+            <Plus size={20} weight="bold" />
           </button>
           <button
             className="grid-flow-palette-btn clear-flows"
@@ -2604,7 +2604,7 @@ export function GridFlowPage() {
             disabled={flowSlots.length <= 1}
             title="Clear all flows"
           >
-            <Trash2 size={18} />
+            <Trash size={18} weight="duotone" />
           </button>
         </div>
 
@@ -2657,7 +2657,7 @@ export function GridFlowPage() {
         onClose={() => setPortSelectorFlowIndex(null)}
         chainId={portSelectorFlowIndex !== null ? flowSlots[portSelectorFlowIndex]?.chainId : null}
         flowLabel={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.label || '') : undefined}
-        flowColor={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.color || '#00d4ff') : undefined}
+        flowColor={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.color || '#2563eb') : undefined}
         onPortsChange={() => {
           queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
           const label = portSelectorFlowIndex !== null ? SLOT_COLORS[portSelectorFlowIndex]?.label : ''
@@ -2671,26 +2671,26 @@ export function GridFlowPage() {
           className={`grid-footer-item ${cpuStatus}`}
           title={`CPU: ${cpuMetrics.totalCpuPercent.toFixed(1)}%`}
         >
-          <Cpu size={12} />
+          <Cpu size={12} weight="duotone" />
           <span>{cpuMetrics.totalCpuPercent.toFixed(0)}%</span>
         </div>
 
         {jackMetrics && (
           <div className="grid-footer-item" title={`Buffer: ${jackMetrics.buffer_size} @ ${jackMetrics.sample_rate}Hz`}>
-            <Clock size={12} />
+            <Clock size={12} weight="duotone" />
             <span>{((jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000).toFixed(1)}ms</span>
           </div>
         )}
 
         {hasXruns && (
           <div className="grid-footer-item warning" title={`${cpuMetrics.xrunCount} XRuns`}>
-            <AlertTriangle size={12} />
+            <Warning size={12} weight="duotone" />
             <span>{cpuMetrics.xrunCount}</span>
           </div>
         )}
 
         <div className="grid-footer-item">
-          <Layers size={12} />
+          <Stack size={12} weight="duotone" />
           <span>{flowSlots.length} Flows</span>
         </div>
       </footer>

@@ -7,18 +7,18 @@ import { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Camera,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
+  CaretDown,
+  CaretRight,
+  Trash,
   Copy,
-  Edit3,
-  Music,
+  PencilSimple,
+  MusicNote,
   Star,
-  MoreVertical,
+  DotsThreeVertical,
   Plus,
   Check,
-  GripVertical,
-} from 'lucide-react'
+  DotsSixVertical,
+} from '@phosphor-icons/react'
 import { flowSnapshotsApi } from '../../../map2/api'
 import type { FlowSnapshot, FlowSnapshotData } from '../../../map2/types'
 
@@ -252,14 +252,14 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
         onClick={onToggleExpanded}
       >
         <div className="flow-snapshots-header-left">
-          <Camera size={16} className="flow-snapshots-icon" />
+          <Camera size={16} weight="duotone" className="flow-snapshots-icon" />
           <span className="flow-snapshots-title">Flow Snapshots</span>
           <span className="flow-snapshots-count">({snapshots.length})</span>
         </div>
         {expanded ? (
-          <ChevronDown size={16} className="flow-snapshots-chevron" />
+          <CaretDown size={16} weight="bold" className="flow-snapshots-chevron" />
         ) : (
-          <ChevronRight size={16} className="flow-snapshots-chevron" />
+          <CaretRight size={16} weight="bold" className="flow-snapshots-chevron" />
         )}
       </button>
 
@@ -272,7 +272,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
             onClick={handleSaveNew}
             disabled={createMutation.isPending}
           >
-            <Plus size={14} />
+            <Plus size={14} weight="bold" />
             Save Current State
           </button>
 
@@ -282,7 +282,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
               <div className="flow-snapshots-loading">Loading...</div>
             ) : snapshots.length === 0 ? (
               <div className="flow-snapshots-empty">
-                <Camera size={24} className="flow-snapshots-empty-icon" />
+                <Camera size={24} weight="duotone" className="flow-snapshots-empty-icon" />
                 <span>No snapshots saved yet</span>
               </div>
             ) : (
@@ -304,7 +304,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
                 >
                   {/* Drag handle */}
                   <div className="flow-snapshot-drag-handle">
-                    <GripVertical size={12} />
+                    <DotsSixVertical size={12} weight="duotone" />
                   </div>
 
                   {/* Active indicator */}
@@ -321,7 +321,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
                     }}
                     title={snapshot.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    <Star size={12} fill={snapshot.is_favorite ? 'currentColor' : 'none'} />
+                    <Star size={12} weight="duotone" fill={snapshot.is_favorite ? 'currentColor' : 'none'} />
                   </button>
 
                   {/* Name (editable) */}
@@ -390,7 +390,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
                       }}
                       title="MIDI Program Change"
                     >
-                      <Music size={10} />
+                      <MusicNote size={10} weight="duotone" />
                       {snapshot.program_number}
                     </button>
                   ) : (
@@ -402,7 +402,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
                       }}
                       title="Set MIDI PC"
                     >
-                      <Music size={10} />
+                      <MusicNote size={10} weight="duotone" />
                     </button>
                   )}
 
@@ -414,7 +414,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
                       handleContextMenu(e, snapshot)
                     }}
                   >
-                    <MoreVertical size={14} />
+                    <DotsThreeVertical size={14} weight="duotone" />
                   </button>
                 </div>
               ))
@@ -437,7 +437,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
               setContextMenu(null)
             }}
           >
-            <Check size={14} /> Load
+            <Check size={14} weight="bold" /> Load
           </button>
           <button
             className="flow-snapshot-context-item"
@@ -446,7 +446,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
               setContextMenu(null)
             }}
           >
-            <Edit3 size={14} /> Rename
+            <PencilSimple size={14} weight="duotone" /> Rename
           </button>
           <button
             className="flow-snapshot-context-item"
@@ -455,7 +455,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
               setContextMenu(null)
             }}
           >
-            <Copy size={14} /> Duplicate
+            <Copy size={14} weight="duotone" /> Duplicate
           </button>
           <button
             className="flow-snapshot-context-item"
@@ -464,7 +464,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
               setContextMenu(null)
             }}
           >
-            <Music size={14} /> Set MIDI PC
+            <MusicNote size={14} weight="duotone" /> Set MIDI PC
           </button>
           <div className="flow-snapshot-context-divider" />
           <button
@@ -474,7 +474,7 @@ export const FlowSnapshotsPanel = memo(function FlowSnapshotsPanel({
               setContextMenu(null)
             }}
           >
-            <Trash2 size={14} /> Delete
+            <Trash size={14} weight="duotone" /> Delete
           </button>
         </div>
       )}

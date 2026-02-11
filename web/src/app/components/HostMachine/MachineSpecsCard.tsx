@@ -3,7 +3,7 @@
  */
 
 import { Box, Paper, Grid, Typography } from '@mui/material'
-import { Cpu, HardDrive, Zap, FileText } from 'lucide-react'
+import { Cpu, HardDrive, Lightning, FileText } from '@phosphor-icons/react'
 import type { HostMachineInfo } from '@/map2/types'
 
 interface MachineSpecsCardProps {
@@ -13,7 +13,7 @@ interface MachineSpecsCardProps {
 const SpecRow = ({ label, value }: { label: string; value?: string | number }) => (
   <Box sx={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 2, py: 0.5, fontSize: 14 }}>
     <Typography sx={{ fontWeight: 600, color: '#333' }}>{label}</Typography>
-    <Typography sx={{ color: '#666', wordBreak: 'break-all' }}>{value || 'N/A'}</Typography>
+    <Typography sx={{ color: '#6b7280', wordBreak: 'break-all' }}>{value || 'N/A'}</Typography>
   </Box>
 )
 
@@ -23,7 +23,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       {/* Processor Section */}
       <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <Cpu size={20} style={{ color: '#3b82f6' }} />
+          <Cpu size={20} weight="duotone" style={{ color: '#2563eb' }} />
           <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Processor</Typography>
         </Box>
         <Box sx={{ borderTop: '1px solid #f0f0f0', pt: 1.5 }}>
@@ -37,7 +37,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       {/* Memory Section */}
       <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <HardDrive size={20} style={{ color: '#10b981' }} />
+          <HardDrive size={20} weight="duotone" style={{ color: '#10b981' }} />
           <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Memory</Typography>
         </Box>
         <Box sx={{ borderTop: '1px solid #f0f0f0', pt: 1.5 }}>
@@ -50,7 +50,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       {/* System Information */}
       <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <Zap size={20} style={{ color: '#f59e0b' }} />
+          <Lightning size={20} weight="duotone" style={{ color: '#f59e0b' }} />
           <Typography sx={{ fontWeight: 700, fontSize: 16 }}>System</Typography>
         </Box>
         <Box sx={{ borderTop: '1px solid #f0f0f0', pt: 1.5 }}>
@@ -64,7 +64,7 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       {/* BIOS & Firmware */}
       <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <FileText size={20} style={{ color: '#8b5cf6' }} />
+          <FileText size={20} weight="duotone" style={{ color: '#60a5fa' }} />
           <Typography sx={{ fontWeight: 700, fontSize: 16 }}>BIOS & Firmware</Typography>
         </Box>
         <Box sx={{ borderTop: '1px solid #f0f0f0', pt: 1.5 }}>
@@ -77,19 +77,19 @@ export default function MachineSpecsCard({ machineInfo }: MachineSpecsCardProps)
       {/* Service Information */}
       <Paper sx={{ p: 2.5, border: '1px solid #e5e7eb' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <FileText size={20} style={{ color: '#ec4899' }} />
+          <FileText size={20} weight="duotone" style={{ color: '#60a5fa' }} />
           <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Identification</Typography>
         </Box>
         <Box sx={{ borderTop: '1px solid #f0f0f0', pt: 1.5, fontSize: 11 }}>
           <Box sx={{ mb: 1.5 }}>
             <Typography sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>System UUID</Typography>
-            <Typography sx={{ color: '#666', wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 11 }}>
+            <Typography sx={{ color: '#6b7280', wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 11 }}>
               {machineInfo.system_uuid}
             </Typography>
           </Box>
           <Box>
             <Typography sx={{ fontWeight: 600, color: '#333', mb: 0.5 }}>Hostname</Typography>
-            <Typography sx={{ color: '#666', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+            <Typography sx={{ color: '#6b7280', wordBreak: 'break-all', fontFamily: 'monospace' }}>
               {machineInfo.hostname}
             </Typography>
           </Box>

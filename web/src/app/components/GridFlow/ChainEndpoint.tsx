@@ -12,7 +12,7 @@
  */
 
 import { memo } from 'react'
-import { ArrowDown, Speaker, Settings2 } from 'lucide-react'
+import { ArrowDown, SpeakerHigh, GearSix } from '@phosphor-icons/react'
 
 export interface AudioInterfaceStatus {
   deviceName?: string
@@ -84,7 +84,7 @@ export const ChainEndpoint = memo(function ChainEndpoint({
           minWidth: 72,
         }}
       >
-        {type === 'input' ? <ArrowDown size={12} style={{ color: accent, opacity: 0.7 }} /> : <Speaker size={12} style={{ color: accent, opacity: 0.7 }} />}
+        {type === 'input' ? <ArrowDown size={12} weight="duotone" style={{ color: accent, opacity: 0.7 }} /> : <SpeakerHigh size={12} weight="duotone" style={{ color: accent, opacity: 0.7 }} />}
         <span style={{ fontSize: 9, fontWeight: 700, color: accent, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{label}</span>
         <div style={{ width: 5, height: 5, borderRadius: '50%', background: isRunning ? '#22c55e' : '#ef4444' }} />
       </button>
@@ -124,8 +124,8 @@ export const ChainEndpoint = memo(function ChainEndpoint({
           flexShrink: 0,
         }}>
           {type === 'input'
-            ? <ArrowDown size={12} style={{ color: accent }} />
-            : <Speaker size={12} style={{ color: accent }} />
+            ? <ArrowDown size={12} weight="duotone" style={{ color: accent }} />
+            : <SpeakerHigh size={12} weight="duotone" style={{ color: accent }} />
           }
         </div>
         <span style={{
@@ -196,7 +196,7 @@ export const ChainEndpoint = memo(function ChainEndpoint({
           )}
         </div>
         {onPortSelectClick && (
-          <Settings2
+          <GearSix
             size={12}
             style={{ color: accentMuted, opacity: 0.55, flexShrink: 0 }}
           />

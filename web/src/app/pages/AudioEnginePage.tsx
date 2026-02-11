@@ -14,10 +14,10 @@
 
 import { useState } from 'react'
 import {
-  Activity, Radio, Cpu, Link2, Speaker, Mic, AlertTriangle,
-  CheckCircle, XCircle, Volume2, VolumeX, Settings, Zap,
-  BarChart3, Layers, GitBranch, ChevronDown, ChevronUp
-} from 'lucide-react'
+  Pulse, Broadcast, Cpu, Link, SpeakerHigh, Microphone, Warning,
+  CheckCircle, XCircle, SpeakerX, GearSix, Lightning,
+  ChartBar, Stack, GitBranch, CaretDown, CaretUp
+} from '@phosphor-icons/react'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
@@ -45,9 +45,9 @@ const T = {
   amber:     '#f59e0b',
   red:       '#ef4444',
   purple:    '#a78bfa',
-  cyan:      '#06b6d4',
-  pink:      '#ec4899',
-  teal:      '#14b8a6',
+  cyan:      '#60a5fa',
+  pink:      '#60a5fa',
+  teal:      '#60a5fa',
 }
 
 // ============================================================================
@@ -114,10 +114,10 @@ function SectionLabel({ children, color = T.accent }: { children: React.ReactNod
 type Tab = 'overview' | 'metering' | 'routing' | 'diagnostics'
 
 const TABS: { id: Tab; label: string; icon: any; color: string }[] = [
-  { id: 'overview',    label: 'Engine Cluster',  icon: Layers,     color: T.accent },
-  { id: 'metering',    label: 'Metering',        icon: BarChart3,  color: T.green },
+  { id: 'overview',    label: 'Engine Cluster',  icon: Stack,      color: T.accent },
+  { id: 'metering',    label: 'Metering',        icon: ChartBar,   color: T.green },
   { id: 'routing',     label: 'Signal Path',     icon: GitBranch,  color: T.purple },
-  { id: 'diagnostics', label: 'Diagnostics',     icon: Settings,   color: T.amber },
+  { id: 'diagnostics', label: 'Diagnostics',     icon: GearSix,    color: T.amber },
 ]
 
 // ============================================================================
@@ -140,7 +140,7 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
         {/* PipeWire Engine */}
         <Panel borderColor={daemonOk ? `${T.green}30` : `${T.red}30`}>
           <SectionLabel color={T.purple}>
-            <Radio size={13} /> PipeWire Audio Server
+            <Broadcast size={13} weight="duotone" /> PipeWire Audio Server
           </SectionLabel>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
             <StatusLed ok={daemonOk} label={daemonOk ? 'Online' : 'Offline'} size={10} />
@@ -163,7 +163,7 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
         {/* JUCE Engine */}
         <Panel borderColor={`${T.accent}30`}>
           <SectionLabel color={T.accent}>
-            <Zap size={13} /> JUCE Audio Engine
+            <Lightning size={13} weight="duotone" /> JUCE Audio Engine
           </SectionLabel>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
             <StatusLed ok={true} label="Running" size={10} />
@@ -180,7 +180,7 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
       {/* ── Alerts ── */}
       {pw.alerts.length > 0 && (
         <Panel borderColor={`${T.red}30`}>
-          <SectionLabel color={T.red}><AlertTriangle size={13} /> Alerts</SectionLabel>
+          <SectionLabel color={T.red}><Warning size={13} weight="duotone" /> Alerts</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {pw.alerts.map((a, i) => {
               const c = a.severity === 'error' ? T.red : a.severity === 'warning' ? T.amber : T.accent
@@ -190,7 +190,7 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
                   padding: '8px 12px', borderRadius: 6, background: `${c}10`,
                   border: `1px solid ${c}25`, fontSize: 12, color: c,
                 }}>
-                  <AlertTriangle size={13} />
+                  <Warning size={13} weight="duotone" />
                   <span style={{ flex: 1 }}>{a.message}</span>
                   <span style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>{a.severity}</span>
                 </div>
@@ -201,14 +201,14 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
       )}
       {pw.alerts.length === 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 6, background: `${T.green}08`, border: `1px solid ${T.green}20`, fontSize: 12, color: T.green }}>
-          <CheckCircle size={14} /> No active alerts — system healthy
+          <CheckCircle size={14} weight="duotone" /> No active alerts — system healthy
         </div>
       )}
 
       {/* ── Default I/O ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Panel>
-          <SectionLabel color={T.green}><Speaker size={13} /> Default Sink (Output)</SectionLabel>
+          <SectionLabel color={T.green}><SpeakerHigh size={13} weight="duotone" /> Default Sink (Output)</SectionLabel>
           {pw.defaultSink ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{pw.defaultSink.name}</span>
@@ -222,7 +222,7 @@ function OverviewLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
           ) : <span style={{ fontSize: 13, color: T.dim }}>No default sink configured</span>}
         </Panel>
         <Panel>
-          <SectionLabel color={T.cyan}><Mic size={13} /> Default Source (Input)</SectionLabel>
+          <SectionLabel color={T.cyan}><Microphone size={13} weight="duotone" /> Default Source (Input)</SectionLabel>
           {pw.defaultSource ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{pw.defaultSource.name}</span>
@@ -260,11 +260,11 @@ function MeteringLayer() {
       {/* Row 1: Spectrum + VU */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
         <Panel borderColor={`${T.accent}25`}>
-          <SectionLabel color={T.accent}><Zap size={13} /> Frequency Spectrum</SectionLabel>
+          <SectionLabel color={T.accent}><Lightning size={13} weight="duotone" /> Frequency Spectrum</SectionLabel>
           <SpectrumAnalyzer mode="bars" height={200} barCount={64} showLabels showPeaks colors={[T.green, T.amber, T.red]} />
         </Panel>
         <Panel borderColor={`${T.green}25`}>
-          <SectionLabel color={T.green}><BarChart3 size={13} /> Signal Levels</SectionLabel>
+          <SectionLabel color={T.green}><ChartBar size={13} weight="duotone" /> Signal Levels</SectionLabel>
           <VuMeterDisplay showInput showOutput />
         </Panel>
       </div>
@@ -272,15 +272,15 @@ function MeteringLayer() {
       {/* Row 2: LUFS + Phase + Dynamics */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
         <Panel borderColor={`${T.accent}25`}>
-          <SectionLabel color={T.accent}><Activity size={13} /> Loudness (LUFS)</SectionLabel>
+          <SectionLabel color={T.accent}><Pulse size={13} weight="duotone" /> Loudness (LUFS)</SectionLabel>
           <LoudnessMeter targetLufs={-14} truePeakLimit={-1} compact={false} />
         </Panel>
         <Panel borderColor={`${T.pink}25`}>
-          <SectionLabel color={T.pink}><Activity size={13} /> Stereo Phase</SectionLabel>
+          <SectionLabel color={T.pink}><Pulse size={13} weight="duotone" /> Stereo Phase</SectionLabel>
           <PhaseCorrelationMeter showStereoInfo orientation="horizontal" />
         </Panel>
         <Panel borderColor={`${T.amber}25`}>
-          <SectionLabel color={T.amber}><Activity size={13} /> Dynamics</SectionLabel>
+          <SectionLabel color={T.amber}><Pulse size={13} weight="duotone" /> Dynamics</SectionLabel>
           <DynamicsMeteringPanel showCompressor showLimiter showGate />
         </Panel>
       </div>
@@ -299,7 +299,7 @@ function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Devices */}
       <Panel>
-        <SectionLabel color={T.purple}><Speaker size={13} /> Audio Devices</SectionLabel>
+        <SectionLabel color={T.purple}><SpeakerHigh size={13} weight="duotone" /> Audio Devices</SectionLabel>
         {pw.devices.length === 0
           ? <span style={{ fontSize: 13, color: T.dim }}>No devices detected</span>
           : (
@@ -328,7 +328,7 @@ function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
 
       {/* Nodes */}
       <Panel>
-        <SectionLabel color={T.green}><Volume2 size={13} /> Sink & Source Nodes</SectionLabel>
+        <SectionLabel color={T.green}><SpeakerHigh size={13} weight="duotone" /> Sink & Source Nodes</SectionLabel>
         {pw.nodes.length === 0
           ? <span style={{ fontSize: 13, color: T.dim }}>No sink/source nodes</span>
           : (
@@ -352,14 +352,14 @@ function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
                       <td style={{ padding: '8px 10px', color: T.text, fontWeight: 500 }}>{n.name}</td>
                       <td style={{ padding: '8px 10px' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: isSink ? T.accent : T.purple, fontSize: 12 }}>
-                          {isSink ? <Speaker size={12}/> : <Mic size={12}/>}
+                          {isSink ? <SpeakerHigh size={12} weight="duotone" /> : <Microphone size={12} weight="duotone" />}
                           {isSink ? 'Sink' : 'Source'}
                         </span>
                       </td>
                       <td style={{ padding: '8px 10px', fontFamily: T.mono, color: T.muted, fontSize: 12 }}>{n.channels ?? '—'}</td>
                       <td style={{ padding: '8px 10px', fontFamily: T.mono, fontSize: 12 }}>
                         <span style={{ color: n.volume > 1 ? T.amber : T.text }}>{(n.volume * 100).toFixed(0)}%</span>
-                        {n.muted && <VolumeX size={12} color={T.red} style={{ marginLeft: 6 }} />}
+                        {n.muted && <SpeakerX size={12} weight="duotone" color={T.red} style={{ marginLeft: 6 }} />}
                       </td>
                       <td style={{ padding: '8px 10px' }}>
                         <StatusLed ok={n.state === 'running'} label={n.state || '—'} />
@@ -375,7 +375,7 @@ function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
       {/* Streams */}
       {pw.streams.length > 0 && (
         <Panel>
-          <SectionLabel color={T.cyan}><Activity size={13} /> Active Streams</SectionLabel>
+          <SectionLabel color={T.cyan}><Pulse size={13} weight="duotone" /> Active Streams</SectionLabel>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${T.border}`, color: T.muted, textAlign: 'left' }}>
@@ -407,11 +407,11 @@ function RoutingLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
           }}
         >
           <SectionLabel color={T.accent}>
-            <Link2 size={13} /> Port Connections
+            <Link size={13} weight="duotone" /> Port Connections
             <span style={{ fontFamily: T.mono, fontSize: 11, color: T.muted, marginLeft: 6 }}>({pw.links.length})</span>
           </SectionLabel>
           <span style={{ marginLeft: 'auto' }}>
-            {expandLinks ? <ChevronUp size={14} color={T.muted} /> : <ChevronDown size={14} color={T.muted} />}
+            {expandLinks ? <CaretUp size={14} weight="bold" color={T.muted} /> : <CaretDown size={14} weight="bold" color={T.muted} />}
           </span>
         </button>
         {expandLinks && pw.links.length > 0 && (
@@ -468,18 +468,18 @@ function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
       {/* Row 1: CPU + Latency */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Panel borderColor={`${T.green}25`}>
-          <SectionLabel color={T.green}><Cpu size={13} /> CPU & DSP Load</SectionLabel>
+          <SectionLabel color={T.green}><Cpu size={13} weight="duotone" /> CPU & DSP Load</SectionLabel>
           <CPUMeterPanel showBreakdown compact={false} />
         </Panel>
         <Panel borderColor={`${T.amber}25`}>
-          <SectionLabel color={T.amber}><Activity size={13} /> Latency Analysis</SectionLabel>
+          <SectionLabel color={T.amber}><Pulse size={13} weight="duotone" /> Latency Analysis</SectionLabel>
           <LatencyDisplay showBreakdown compact={false} />
         </Panel>
       </div>
 
       {/* Row 2: Quantum Control */}
       <Panel>
-        <SectionLabel color={T.purple}><Settings size={13} /> Buffer Size (Quantum)</SectionLabel>
+        <SectionLabel color={T.purple}><GearSix size={13} weight="duotone" /> Buffer Size (Quantum)</SectionLabel>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
           <button
             onClick={() => handleQuantum(0)}
@@ -519,7 +519,7 @@ function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
       {/* Row 3: Clock Settings + Latency Breakdown */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Panel>
-          <SectionLabel color={T.muted}><Settings size={13} /> Clock Configuration</SectionLabel>
+          <SectionLabel color={T.muted}><GearSix size={13} weight="duotone" /> Clock Configuration</SectionLabel>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
             {[
               ['clock.rate', `${pw.settings.clock_rate} Hz`],
@@ -538,7 +538,7 @@ function DiagnosticsLayer({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
           </div>
         </Panel>
         <Panel>
-          <SectionLabel color={T.teal}><Activity size={13} /> Latency Breakdown</SectionLabel>
+          <SectionLabel color={T.teal}><Pulse size={13} weight="duotone" /> Latency Breakdown</SectionLabel>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             <div style={{ background: T.surface, borderRadius: 6, padding: '14px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Graph</div>
@@ -593,7 +593,7 @@ export function AudioEnginePage() {
           background: `linear-gradient(135deg, ${T.accent}20, ${T.purple}20)`,
           border: `1px solid ${T.accent}30`,
         }}>
-          <Activity size={22} color={T.accent} />
+          <Pulse size={22} weight="duotone" color={T.accent} />
         </div>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f8fafc', letterSpacing: '-0.3px' }}>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Key, ExternalLink, Check, AlertCircle, Loader2, RefreshCw, Download, X } from 'lucide-react'
+import { Key, ArrowSquareOut, Check, WarningCircle, SpinnerGap, ArrowsClockwise, DownloadSimple, X } from '@phosphor-icons/react'
 import { irLibraryApi } from '../../../map2/api'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 
@@ -53,7 +53,7 @@ export function Tone3000Config() {
     <div className="card" style={{ padding: 16, borderLeft: '3px solid #8b5cf6' }}>
       <div className="flex-between" style={{ marginBottom: 12 }}>
         <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-          <Key size={20} style={{ color: '#8b5cf6' }} />
+          <Key size={20} weight="duotone" style={{ color: '#8b5cf6' }} />
           <span style={{ fontWeight: 600 }}>TONE3000 Configuration</span>
           {isConfigured && (
             <span
@@ -75,9 +75,9 @@ export function Tone3000Config() {
               disabled={isDownloading || isStarting}
             >
               {isStarting ? (
-                <Loader2 size={14} className="spin" />
+                <SpinnerGap size={14} weight="duotone" className="spin" />
               ) : (
-                <Download size={14} />
+                <DownloadSimple size={14} weight="duotone" />
               )}
               Download Top 10 NAM
             </button>
@@ -87,9 +87,9 @@ export function Tone3000Config() {
               disabled={isDownloading || isStarting}
             >
               {isStarting ? (
-                <Loader2 size={14} className="spin" />
+                <SpinnerGap size={14} weight="duotone" className="spin" />
               ) : (
-                <Download size={14} />
+                <DownloadSimple size={14} weight="duotone" />
               )}
               Download Top 25 Trending Amp Heads
             </button>
@@ -99,9 +99,9 @@ export function Tone3000Config() {
               disabled={isDownloading || isStarting}
             >
               {isStarting ? (
-                <Loader2 size={14} className="spin" />
+                <SpinnerGap size={14} weight="duotone" className="spin" />
               ) : (
-                <Download size={14} />
+                <DownloadSimple size={14} weight="duotone" />
               )}
               Download Cabinet IRs
             </button>
@@ -111,9 +111,9 @@ export function Tone3000Config() {
               disabled={testAuthMutation.isPending}
             >
               {testAuthMutation.isPending ? (
-                <Loader2 size={14} className="spin" />
+                <SpinnerGap size={14} weight="duotone" className="spin" />
               ) : (
-                <RefreshCw size={14} />
+                <ArrowsClockwise size={14} weight="duotone" />
               )}
               Test
             </button>
@@ -132,25 +132,25 @@ export function Tone3000Config() {
             <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
               {tone3000Progress?.state === 'discovering' && (
                 <>
-                  <Loader2 size={14} className="spin" style={{ color: '#8b5cf6' }} />
+                  <SpinnerGap size={14} weight="duotone" className="spin" style={{ color: '#8b5cf6' }} />
                   <span style={{ fontSize: 13, fontWeight: 500 }}>Discovering NAM models...</span>
                 </>
               )}
               {tone3000Progress?.state === 'downloading' && (
                 <>
-                  <Loader2 size={14} className="spin" style={{ color: '#8b5cf6' }} />
+                  <SpinnerGap size={14} weight="duotone" className="spin" style={{ color: '#8b5cf6' }} />
                   <span style={{ fontSize: 13, fontWeight: 500 }}>Downloading NAM models...</span>
                 </>
               )}
               {tone3000Progress?.state === 'completed' && (
                 <>
-                  <Check size={14} style={{ color: 'var(--success)' }} />
+                  <Check size={14} weight="bold" style={{ color: 'var(--success)' }} />
                   <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--success)' }}>Download complete!</span>
                 </>
               )}
               {tone3000Progress?.state === 'failed' && (
                 <>
-                  <AlertCircle size={14} style={{ color: 'var(--danger)' }} />
+                  <WarningCircle size={14} weight="duotone" style={{ color: 'var(--danger)' }} />
                   <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--danger)' }}>Download failed</span>
                 </>
               )}
@@ -162,7 +162,7 @@ export function Tone3000Config() {
                 disabled={isCancelling}
                 style={{ padding: '4px 8px' }}
               >
-                {isCancelling ? <Loader2 size={12} className="spin" /> : <X size={12} />}
+                {isCancelling ? <SpinnerGap size={12} weight="duotone" className="spin" /> : <X size={12} weight="bold" />}
               </button>
             )}
           </div>
@@ -219,14 +219,14 @@ export function Tone3000Config() {
               rel="noopener noreferrer"
               className="btn btn-primary btn-sm"
             >
-              <ExternalLink size={14} />
+              <ArrowSquareOut size={14} weight="duotone" />
               Get API Key
             </a>
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => setShowInput(true)}
             >
-              <Key size={14} />
+              <Key size={14} weight="duotone" />
               Enter Key
             </button>
           </div>
@@ -261,9 +261,9 @@ export function Tone3000Config() {
               disabled={!apiKey.trim() || setApiKeyMutation.isPending}
             >
               {setApiKeyMutation.isPending ? (
-                <Loader2 size={14} className="spin" />
+                <SpinnerGap size={14} weight="duotone" className="spin" />
               ) : (
-                <Check size={14} />
+                <Check size={14} weight="bold" />
               )}
               Save
             </button>
@@ -271,7 +271,7 @@ export function Tone3000Config() {
 
           {setApiKeyMutation.isError && (
             <div className="flex" style={{ gap: 6, color: 'var(--danger)', fontSize: 12, flexWrap: 'wrap' }}>
-              <AlertCircle size={12} />
+              <WarningCircle size={12} weight="duotone" />
               <span>Failed to save API key: {setApiKeyMutation.error instanceof Error ? setApiKeyMutation.error.message : String(setApiKeyMutation.error)}</span>
             </div>
           )}
@@ -283,7 +283,7 @@ export function Tone3000Config() {
           {testAuthMutation.data.authenticated ? (
             <div className="card" style={{ padding: 12, background: 'var(--success-bg)' }}>
               <div className="flex" style={{ gap: 6, color: 'var(--success)', marginBottom: 8 }}>
-                <Check size={14} />
+                <Check size={14} weight="bold" />
                 <span style={{ fontWeight: 500, fontSize: 13 }}>Authentication successful!</span>
               </div>
               {testAuthMutation.data.sample_models && testAuthMutation.data.sample_models.length > 0 && (
@@ -302,7 +302,7 @@ export function Tone3000Config() {
           ) : (
             <div className="card" style={{ padding: 12, background: 'var(--danger-bg)' }}>
               <div className="flex" style={{ gap: 6, color: 'var(--danger)' }}>
-                <AlertCircle size={14} />
+                <WarningCircle size={14} weight="duotone" />
                 <span style={{ fontSize: 13 }}>{testAuthMutation.data.message || 'Authentication failed'}</span>
               </div>
             </div>

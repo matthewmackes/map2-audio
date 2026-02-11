@@ -105,7 +105,7 @@ export interface ParameterGroupConfig {
   id: string
   /** Display label */
   label: string
-  /** Icon name (lucide-react) */
+  /** Icon name (@phosphor-icons/react) */
   icon?: string
   /** Parameter indices or symbols to include */
   parameters: (number | string)[]

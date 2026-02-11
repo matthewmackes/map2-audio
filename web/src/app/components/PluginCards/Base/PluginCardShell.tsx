@@ -10,14 +10,14 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import {
   Power,
-  Save,
+  FloppyDisk,
   FolderOpen,
-  ChevronDown,
-  MoreVertical,
+  CaretDown,
+  DotsThreeVertical,
   Copy,
-  RotateCcw,
+  ArrowCounterClockwise,
   Sliders,
-} from 'lucide-react'
+} from '@phosphor-icons/react'
 import type { Plugin } from '../../../../map2/types'
 import { getCategoryConfig, getCategoryIcon } from '../types'
 import { BypassSwitch } from './BypassSwitch'
@@ -132,7 +132,7 @@ export function PluginCardShell({
                   onClick={onLoadPreset}
                   title="Load Preset"
                 >
-                  <FolderOpen size={14} />
+                  <FolderOpen size={14} weight="duotone" />
                 </button>
               )}
               {onSavePreset && (
@@ -141,7 +141,7 @@ export function PluginCardShell({
                   onClick={onSavePreset}
                   title="Save Preset"
                 >
-                  <Save size={14} />
+                  <FloppyDisk size={14} weight="duotone" />
                 </button>
               )}
             </div>
@@ -154,23 +154,23 @@ export function PluginCardShell({
                 onClick={() => setShowMenu(!showMenu)}
                 title="More Options"
               >
-                <MoreVertical size={14} />
+                <DotsThreeVertical size={14} weight="duotone" />
               </button>
               {showMenu && (
                 <div className="plugin-card-menu">
                   {onOpenMidiMappings && (
                     <button onClick={() => { onOpenMidiMappings(); setShowMenu(false); }}>
-                      <Sliders size={12} /> MIDI Mappings
+                      <Sliders size={12} weight="duotone" /> MIDI Mappings
                     </button>
                   )}
                   {onCopyParams && (
                     <button onClick={() => { onCopyParams(); setShowMenu(false); }}>
-                      <Copy size={12} /> Copy Parameters
+                      <Copy size={12} weight="duotone" /> Copy Parameters
                     </button>
                   )}
                   {onResetParams && (
                     <button onClick={() => { onResetParams(); setShowMenu(false); }}>
-                      <RotateCcw size={12} /> Reset to Default
+                      <ArrowCounterClockwise size={12} weight="duotone" /> Reset to Default
                     </button>
                   )}
                 </div>
@@ -216,7 +216,7 @@ export function PluginCardShell({
 
       <style>{`
         .plugin-card-shell {
-          background: linear-gradient(145deg, #1a1a1a 0%, #141414 100%);
+          background: linear-gradient(145deg, #0a0a0a 0%, #141414 100%);
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 12px;
           overflow: hidden;
@@ -292,7 +292,7 @@ export function PluginCardShell({
         }
 
         .plugin-card-author {
-          color: #888;
+          color: #6b7280;
         }
 
         .plugin-card-category {
@@ -328,7 +328,7 @@ export function PluginCardShell({
           border: none;
           border-radius: 6px;
           background: rgba(255, 255, 255, 0.05);
-          color: #888;
+          color: #6b7280;
           cursor: pointer;
           transition: all 0.15s ease;
         }
@@ -348,7 +348,7 @@ export function PluginCardShell({
           right: 0;
           margin-top: 4px;
           min-width: 160px;
-          background: #242424;
+          background: #111111;
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
           padding: 4px;
@@ -365,7 +365,7 @@ export function PluginCardShell({
           border: none;
           border-radius: 4px;
           background: transparent;
-          color: #ccc;
+          color: #d1d5db;
           font-size: 12px;
           cursor: pointer;
           text-align: left;
@@ -385,7 +385,7 @@ export function PluginCardShell({
         .plugin-card-description {
           padding: 8px 16px;
           font-size: 11px;
-          color: #888;
+          color: #6b7280;
           background: rgba(0, 0, 0, 0.1);
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
           line-height: 1.4;

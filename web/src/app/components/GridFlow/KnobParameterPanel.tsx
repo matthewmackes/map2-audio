@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react'
-import { Power, Settings2, RefreshCw, AlertCircle } from 'lucide-react'
+import { Power, GearSix, ArrowsClockwise, WarningCircle } from '@phosphor-icons/react'
 import { ParameterKnob } from '../Controls/ParameterKnob'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginCardComponent, getCategoryConfig } from '../PluginCards'
@@ -127,7 +127,7 @@ export function KnobParameterPanel({
     return (
       <div className="knob-param-panel">
         <div className="knob-param-panel-empty">
-          <Settings2 size={32} strokeWidth={1.5} />
+          <GearSix size={32} weight="duotone" />
           <p>Select a plugin to edit parameters</p>
         </div>
       </div>
@@ -139,7 +139,7 @@ export function KnobParameterPanel({
     return (
       <div className="knob-param-panel">
         <div className="knob-param-panel-error">
-          <AlertCircle size={32} strokeWidth={1.5} style={{ color: '#f59e0b' }} />
+          <WarningCircle size={32} weight="duotone" style={{ color: '#f59e0b' }} />
           <div className="knob-param-panel-error-content">
             <p className="knob-param-panel-error-title">
               Plugin metadata not found
@@ -156,7 +156,7 @@ export function KnobParameterPanel({
                 onClick={onRefreshPlugins}
                 disabled={isRefreshing}
               >
-                <RefreshCw size={14} className={isRefreshing ? 'spin' : ''} />
+                <ArrowsClockwise size={14} weight="duotone" className={isRefreshing ? 'spin' : ''} />
                 {isRefreshing ? 'Refreshing...' : 'Refresh Plugin List'}
               </button>
             )}
@@ -224,7 +224,7 @@ export function KnobParameterPanel({
             title={plugin.bypassed ? 'Enable plugin' : 'Bypass plugin'}
             style={{ '--accent': accentColor } as React.CSSProperties}
           >
-            <Power size={18} />
+            <Power size={18} weight="duotone" />
           </button>
         )}
       </div>

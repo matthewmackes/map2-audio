@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Settings, Zap, BarChart3, Eye, Activity, GitBranch, FileText, RefreshCw, ShieldCheck } from 'lucide-react'
+import { GearSix, Lightning, ChartBar, Eye, Pulse, GitBranch, FileText, ArrowsClockwise, ShieldCheck } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '../components/PageHeader'
 import { ClusterOverviewTabEnhanced } from '../components/ClusterDashboard/ClusterOverviewTabEnhanced'
@@ -21,14 +21,14 @@ interface DashboardTab {
 }
 
 const DASHBOARD_TABS: DashboardTab[] = [
-  { id: 'overview', label: 'Overview', icon: <Eye size={18} />, description: 'Cluster status at a glance' },
-  { id: 'education', label: 'Learn', icon: <Zap size={18} />, description: 'How clusters work' },
-  { id: 'services', label: 'Services', icon: <Activity size={18} />, description: 'All services health' },
-  { id: 'metrics', label: 'Metrics', icon: <BarChart3 size={18} />, description: 'Prometheus dashboard' },
-  { id: 'events', label: 'Events', icon: <GitBranch size={18} />, description: 'Live event stream' },
-  { id: 'flows', label: 'Flows', icon: <GitBranch size={18} />, description: 'Flow distribution' },
-  { id: 'reports', label: 'Reports', icon: <FileText size={18} />, description: 'Export & analysis' },
-  { id: 'updates', label: 'Updates', icon: <ShieldCheck size={18} />, description: 'System and cluster updates' },
+  { id: 'overview', label: 'Overview', icon: <Eye size={18} weight="duotone" />, description: 'Cluster status at a glance' },
+  { id: 'education', label: 'Learn', icon: <Lightning size={18} weight="duotone" />, description: 'How clusters work' },
+  { id: 'services', label: 'Services', icon: <Pulse size={18} weight="duotone" />, description: 'All services health' },
+  { id: 'metrics', label: 'Metrics', icon: <ChartBar size={18} weight="duotone" />, description: 'Prometheus dashboard' },
+  { id: 'events', label: 'Events', icon: <GitBranch size={18} weight="duotone" />, description: 'Live event stream' },
+  { id: 'flows', label: 'Flows', icon: <GitBranch size={18} weight="duotone" />, description: 'Flow distribution' },
+  { id: 'reports', label: 'Reports', icon: <FileText size={18} weight="duotone" />, description: 'Export & analysis' },
+  { id: 'updates', label: 'Updates', icon: <ShieldCheck size={18} weight="duotone" />, description: 'System and cluster updates' },
 ]
 
 export function ClusterDashboardPage() {
@@ -80,8 +80,8 @@ export function ClusterDashboardPage() {
         <div
           className="cluster-status-banner"
           style={{
-            background: 'linear-gradient(155deg, #2d2d2d, #333333)',
-            border: '2px solid #00d4ff',
+            background: 'linear-gradient(155deg, #1a1a1a, #222222)',
+            border: '2px solid #2563eb',
             borderRadius: 12,
             padding: '18px 24px',
             display: 'flex',
@@ -102,7 +102,7 @@ export function ClusterDashboardPage() {
               <div style={{ fontSize: 14, fontWeight: 600 }}>
                 {clusterStatus.cluster_name || 'Unnamed Cluster'}
               </div>
-              <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
                 {clusterStatus.online_count}/{clusterStatus.total_count} nodes online • Health:{' '}
                 {clusterStatus.aggregate_health_score?.toFixed(0) || 0}%
               </div>
@@ -118,7 +118,7 @@ export function ClusterDashboardPage() {
               className="btn btn-sm"
               title="Refresh cluster data"
             >
-              <RefreshCw size={14} />
+              <ArrowsClockwise size={14} weight="bold" />
             </button>
             <button
               onClick={() => setShowWizard(true)}
@@ -141,7 +141,7 @@ export function ClusterDashboardPage() {
                 gap: 8,
                 padding: '8px 14px',
                 background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid #444',
+                border: '1px solid #1e293b',
                 borderRadius: 6,
                 cursor: 'pointer',
                 fontSize: 12,
@@ -165,7 +165,7 @@ export function ClusterDashboardPage() {
         style={{
           display: 'flex',
           gap: 12,
-          borderBottom: '1px solid #333',
+          borderBottom: '1px solid #222222',
           overflowX: 'auto',
           paddingBottom: 12,
         }}
@@ -180,10 +180,10 @@ export function ClusterDashboardPage() {
               alignItems: 'center',
               gap: 8,
               padding: '10px 16px',
-              background: activeTab === tab.id ? 'rgba(0, 212, 255, 0.1)' : 'transparent',
-              border: `2px solid ${activeTab === tab.id ? '#00d4ff' : 'transparent'}`,
+              background: activeTab === tab.id ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+              border: `2px solid ${activeTab === tab.id ? '#2563eb' : 'transparent'}`,
               borderRadius: 6,
-              color: activeTab === tab.id ? '#00d4ff' : '#a0a0a0',
+              color: activeTab === tab.id ? '#60a5fa' : '#9ca3af',
               fontSize: 13,
               fontWeight: activeTab === tab.id ? 600 : 500,
               cursor: 'pointer',

@@ -36,45 +36,44 @@ import React, { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Monitor,
-  Zap,
+  Lightning,
   Bell,
-  Settings,
+  GearSix,
   Play,
   Pause,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
-  RotateCcw,
-  Send,
-  AlertTriangle,
+  CaretLeft,
+  CaretRight,
+  CaretUp,
+  CaretDown,
+  ArrowCounterClockwise,
+  PaperPlaneTilt,
+  Warning,
   CheckCircle,
-  Activity,
-  Radio,
+  Pulse,
+  Broadcast,
   Sliders,
-  Music,
+  MusicNote,
   HardDrive,
-  RefreshCw,
+  ArrowsClockwise,
   Power,
   Sun,
-  SunDim,
   Terminal,
-  MessageSquare,
-  TestTube,
-  Link2,
+  ChatDots,
+  Flask,
+  Link,
   Scan,
   Layout,
-  Volume2,
+  SpeakerHigh,
   Cpu,
   GitBranch,
   Keyboard,
-  Server,
+  DesktopTower,
   X,
-  Pin,
-  Filter,
+  PushPin,
+  Funnel,
   Info,
   BookOpen,
-} from 'lucide-react'
+} from '@phosphor-icons/react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
@@ -129,18 +128,18 @@ function LCDSimulator({ lcdId, lines, address, currentPage, onPageChange, connec
     <div className="lcd-simulator-card">
       <div className="lcd-header">
         <div className="lcd-title">
-          <Monitor size={18} />
+          <Monitor weight="duotone" size={18} />
           <span>LCD {lcdId + 1}</span>
           <span className="lcd-address">{address}</span>
         </div>
         <div className="lcd-status-badges">
           {connected ? (
-            <span className="pill success"><CheckCircle size={12} /> Connected</span>
+            <span className="pill success"><CheckCircle weight="duotone" size={12} /> Connected</span>
           ) : (
-            <span className="pill warn"><AlertTriangle size={12} /> Disconnected</span>
+            <span className="pill warn"><Warning weight="duotone" size={12} /> Disconnected</span>
           )}
           {isPolling && (
-            <span className="pill muted"><Activity size={12} /> Live</span>
+            <span className="pill muted"><Pulse weight="duotone" size={12} /> Live</span>
           )}
         </div>
       </div>
@@ -180,16 +179,16 @@ function LCDSimulator({ lcdId, lines, address, currentPage, onPageChange, connec
 
 function getPageIcon(page: string): React.ReactNode {
   const icons: Record<string, React.ReactNode> = {
-    status: <Activity size={14} />,
-    vu: <Volume2 size={14} />,
-    chain: <GitBranch size={14} />,
-    plugins: <Layout size={14} />,
-    midi: <Music size={14} />,
-    perf: <Cpu size={14} />,
-    settings: <Settings size={14} />,
-    menu: <Sliders size={14} />,
+    status: <Pulse weight="duotone" size={14} />,
+    vu: <SpeakerHigh weight="duotone" size={14} />,
+    chain: <GitBranch weight="duotone" size={14} />,
+    plugins: <Layout weight="duotone" size={14} />,
+    midi: <MusicNote weight="duotone" size={14} />,
+    perf: <Cpu weight="duotone" size={14} />,
+    settings: <GearSix weight="duotone" size={14} />,
+    menu: <Sliders weight="duotone" size={14} />,
   }
-  return icons[page] || <Monitor size={14} />
+  return icons[page] || <Monitor weight="duotone" size={14} />
 }
 
 interface InputControllerProps {
@@ -201,39 +200,39 @@ function InputController({ onInput, disabled }: InputControllerProps) {
   return (
     <div className="input-controller">
       <div className="input-title">
-        <Keyboard size={16} />
+        <Keyboard weight="duotone" size={16} />
         <span>Virtual Input</span>
       </div>
 
       <div className="input-grid">
         <div className="input-dpad">
           <button className="input-btn dpad-up" onClick={() => onInput('up')} disabled={disabled} title="Up">
-            <ChevronUp size={20} />
+            <CaretUp weight="bold" size={20} />
           </button>
           <div className="dpad-row">
             <button className="input-btn dpad-left" onClick={() => onInput('left')} disabled={disabled} title="Left">
-              <ChevronLeft size={20} />
+              <CaretLeft weight="bold" size={20} />
             </button>
             <button className="input-btn dpad-center" onClick={() => onInput('select')} disabled={disabled} title="Select">
-              <CheckCircle size={16} />
+              <CheckCircle weight="duotone" size={16} />
             </button>
             <button className="input-btn dpad-right" onClick={() => onInput('right')} disabled={disabled} title="Right">
-              <ChevronRight size={20} />
+              <CaretRight weight="bold" size={20} />
             </button>
           </div>
           <button className="input-btn dpad-down" onClick={() => onInput('down')} disabled={disabled} title="Down">
-            <ChevronDown size={20} />
+            <CaretDown weight="bold" size={20} />
           </button>
         </div>
 
         <div className="input-encoder">
           <div className="encoder-ring">
             <button className="encoder-btn ccw" onClick={() => onInput('encoder_ccw')} disabled={disabled} title="Rotate CCW">
-              <RotateCcw size={14} />
+              <ArrowCounterClockwise weight="duotone" size={14} />
             </button>
             <button className="encoder-btn press" onClick={() => onInput('encoder_press')} disabled={disabled} title="Press">●</button>
             <button className="encoder-btn cw" onClick={() => onInput('encoder_cw')} disabled={disabled} title="Rotate CW">
-              <RefreshCw size={14} />
+              <ArrowsClockwise weight="duotone" size={14} />
             </button>
           </div>
           <span className="encoder-label">Encoder</span>
@@ -263,7 +262,7 @@ function CustomMessageComposer({ onSend }: CustomMessageComposerProps) {
   return (
     <div className="message-composer">
       <div className="composer-header">
-        <MessageSquare size={18} />
+        <ChatDots weight="duotone" size={18} />
         <span>Custom Message</span>
       </div>
 
@@ -301,7 +300,7 @@ function CustomMessageComposer({ onSend }: CustomMessageComposerProps) {
           onClick={() => { onSend(targetLcd, line1, line2, duration); setLine1(''); setLine2('') }}
           disabled={!line1.trim()}
         >
-          <Send size={16} /> Send Message
+          <PaperPlaneTilt weight="duotone" size={16} /> Send Message
         </button>
       </div>
     </div>
@@ -314,20 +313,20 @@ interface EventTriggersProps {
 
 function EventTriggers({ onTrigger }: EventTriggersProps) {
   const events = [
-    { type: 'chain_loaded', label: 'Chain Loaded', icon: <GitBranch size={14} />, data: { chain_name: 'Test Chain' } },
-    { type: 'snapshot_loaded', label: 'Snapshot Loaded', icon: <Layout size={14} />, data: { snapshot_name: 'Clean Tone' } },
-    { type: 'nam_loaded', label: 'NAM Model', icon: <Radio size={14} />, data: { model_name: 'Mesa Boogie' } },
-    { type: 'ir_loaded', label: 'IR Loaded', icon: <Volume2 size={14} />, data: { ir_name: 'Marshall 4x12' } },
-    { type: 'xrun', label: 'XRun Alert', icon: <AlertTriangle size={14} />, data: { count: 1 } },
-    { type: 'cpu_high', label: 'High CPU', icon: <Cpu size={14} />, data: { load: 85 } },
-    { type: 'midi_cc', label: 'MIDI CC', icon: <Music size={14} />, data: { cc: 1, value: 127 } },
-    { type: 'bypass', label: 'Plugin Bypass', icon: <Power size={14} />, data: { plugin: 'Chorus' } },
+    { type: 'chain_loaded', label: 'Chain Loaded', icon: <GitBranch weight="duotone" size={14} />, data: { chain_name: 'Test Chain' } },
+    { type: 'snapshot_loaded', label: 'Snapshot Loaded', icon: <Layout weight="duotone" size={14} />, data: { snapshot_name: 'Clean Tone' } },
+    { type: 'nam_loaded', label: 'NAM Model', icon: <Broadcast weight="duotone" size={14} />, data: { model_name: 'Mesa Boogie' } },
+    { type: 'ir_loaded', label: 'IR Loaded', icon: <SpeakerHigh weight="duotone" size={14} />, data: { ir_name: 'Marshall 4x12' } },
+    { type: 'xrun', label: 'XRun Alert', icon: <Warning weight="duotone" size={14} />, data: { count: 1 } },
+    { type: 'cpu_high', label: 'High CPU', icon: <Cpu weight="duotone" size={14} />, data: { load: 85 } },
+    { type: 'midi_cc', label: 'MIDI CC', icon: <MusicNote weight="duotone" size={14} />, data: { cc: 1, value: 127 } },
+    { type: 'bypass', label: 'Plugin Bypass', icon: <Power weight="duotone" size={14} />, data: { plugin: 'Chorus' } },
   ]
 
   return (
     <div className="event-triggers">
       <div className="triggers-header">
-        <Zap size={18} />
+        <Lightning weight="duotone" size={18} />
         <span>Event Triggers</span>
         <span className="triggers-hint">Simulate system events</span>
       </div>
@@ -383,9 +382,9 @@ function AlertRouterConfig({ config, onUpdate }: AlertRouterConfigProps) {
   return (
     <div className="alert-router-config">
       <div className="alert-router-header">
-        <Bell size={18} />
+        <Bell weight="duotone" size={18} />
         <span>Alert Routing</span>
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#666', fontWeight: 400 }}>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280', fontWeight: 400 }}>
           Configure which events appear on each LCD and how they behave
         </span>
       </div>
@@ -466,13 +465,13 @@ function HardwareControls({ onScan, onTest, onBacklight, onReset, scanResult, is
   return (
     <div className="hardware-controls">
       <div className="hardware-header">
-        <HardDrive size={18} />
+        <HardDrive weight="duotone" size={18} />
         <span>I2C Bus &amp; LCD Control</span>
       </div>
 
       <div className="hardware-actions">
         <button className="btn btn-ghost" onClick={onScan} disabled={isScanning}>
-          <Scan size={16} />
+          <Scan weight="duotone" size={16} />
           {isScanning ? 'Scanning…' : 'Scan I2C Bus'}
         </button>
 
@@ -494,12 +493,12 @@ function HardwareControls({ onScan, onTest, onBacklight, onReset, scanResult, is
       <div className="lcd-controls-grid">
         {[0, 1].map(lcdId => (
           <div key={lcdId} className="lcd-control-card">
-            <div className="lcd-control-header"><Monitor size={14} /><span>LCD {lcdId + 1}</span></div>
+            <div className="lcd-control-header"><Monitor weight="duotone" size={14} /><span>LCD {lcdId + 1}</span></div>
             <div className="lcd-control-buttons">
-              <button className="btn btn-sm" onClick={() => onTest(lcdId)} title="Run display test"><TestTube size={14} /> Test</button>
-              <button className="btn btn-sm" onClick={() => onBacklight(lcdId, true)} title="Backlight on"><Sun size={14} /></button>
-              <button className="btn btn-sm" onClick={() => onBacklight(lcdId, false)} title="Backlight off"><SunDim size={14} /></button>
-              <button className="btn btn-sm" onClick={() => onReset(lcdId)} title="Reset display"><RotateCcw size={14} /></button>
+              <button className="btn btn-sm" onClick={() => onTest(lcdId)} title="Run display test"><Flask weight="duotone" size={14} /> Test</button>
+              <button className="btn btn-sm" onClick={() => onBacklight(lcdId, true)} title="Backlight on"><Sun weight="duotone" size={14} /></button>
+              <button className="btn btn-sm" onClick={() => onBacklight(lcdId, false)} title="Backlight off"><Sun weight="light" size={14} /></button>
+              <button className="btn btn-sm" onClick={() => onReset(lcdId)} title="Reset display"><ArrowCounterClockwise weight="duotone" size={14} /></button>
             </div>
           </div>
         ))}
@@ -553,22 +552,22 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
   return (
     <div className="ft232h-config">
       <div className="ft232h-header">
-        <Cpu size={20} />
+        <Cpu weight="duotone" size={20} />
         <span>FT232H USB-to-I2C Configuration</span>
         <a href="https://learn.adafruit.com/circuitpython-on-any-computer-with-ft232h" target="_blank" rel="noopener noreferrer" className="ft232h-docs-link">
-          <Link2 size={14} /> Adafruit Docs
+          <Link weight="duotone" size={14} /> Adafruit Docs
         </a>
       </div>
 
       <div className="ft232h-layout">
         {/* Left — Device Status */}
         <div className="ft232h-status-panel">
-          <div className="panel-header"><Activity size={16} /><span>Device Status</span></div>
+          <div className="panel-header"><Pulse weight="duotone" size={16} /><span>Device Status</span></div>
 
           <div className="status-item">
             <span className="status-label">USB Device</span>
             <span className={`status-value ${deviceStatus?.connected ? 'connected' : 'disconnected'}`}>
-              {deviceStatus?.connected ? <><CheckCircle size={14} /> FT232H Detected</> : <><AlertTriangle size={14} /> Not Detected</>}
+              {deviceStatus?.connected ? <><CheckCircle weight="duotone" size={14} /> FT232H Detected</> : <><Warning weight="duotone" size={14} /> Not Detected</>}
             </span>
           </div>
           <div className="status-item"><span className="status-label">Vendor ID</span><span className="status-value mono">0x0403</span></div>
@@ -577,7 +576,7 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
           <div className="status-item"><span className="status-label">URL</span><span className="status-value mono small">{deviceStatus?.url || 'ftdi://ftdi:232h/1'}</span></div>
 
           <button className="btn btn-primary full-width" onClick={onScan} disabled={isScanning}>
-            <Scan size={16} /> {isScanning ? 'Scanning…' : 'Scan I2C Bus'}
+            <Scan weight="duotone" size={16} /> {isScanning ? 'Scanning…' : 'Scan I2C Bus'}
           </button>
 
           {scanResult && (
@@ -646,7 +645,7 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
 
         {/* Right — Wiring & Testing */}
         <div className="ft232h-wiring-panel">
-          <div className="panel-header"><Link2 size={16} /><span>I2C LCD Wiring</span></div>
+          <div className="panel-header"><Link weight="duotone" size={16} /><span>I2C LCD Wiring</span></div>
           <div className="wiring-table">
             <div className="wiring-header"><span>FT232H</span><span></span><span>LCD</span></div>
             {i2cWiring.map(wire => (
@@ -657,9 +656,9 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
               </div>
             ))}
           </div>
-          <div className="wiring-notes"><AlertTriangle size={14} /><span>Set I2C switch to ON position</span></div>
+          <div className="wiring-notes"><Warning weight="duotone" size={14} /><span>Set I2C switch to ON position</span></div>
 
-          <div className="panel-header" style={{ marginTop: 16 }}><TestTube size={16} /><span>LCD Test</span></div>
+          <div className="panel-header" style={{ marginTop: 16 }}><Flask weight="duotone" size={16} /><span>LCD Test</span></div>
           <div className="test-controls">
             <div className="test-address">
               <label>I2C Address</label>
@@ -674,11 +673,11 @@ function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isScanning, 
               <label>Test Message</label>
               <input type="text" value={testMessage} onChange={(e) => setTestMessage(e.target.value)} maxLength={20} placeholder="Enter message…" />
             </div>
-            <button className="btn btn-primary full-width" onClick={() => onTestWrite(testAddress, testMessage)}><Send size={16} /> Send to LCD</button>
-            <button className="btn btn-ghost full-width" onClick={() => onTestLCD(testAddress)}><TestTube size={16} /> Run Display Test</button>
+            <button className="btn btn-primary full-width" onClick={() => onTestWrite(testAddress, testMessage)}><PaperPlaneTilt weight="duotone" size={16} /> Send to LCD</button>
+            <button className="btn btn-ghost full-width" onClick={() => onTestLCD(testAddress)}><Flask weight="duotone" size={16} /> Run Display Test</button>
           </div>
 
-          <div className="panel-header" style={{ marginTop: 16 }}><Terminal size={16} /><span>CLI Commands</span></div>
+          <div className="panel-header" style={{ marginTop: 16 }}><Terminal weight="duotone" size={16} /><span>CLI Commands</span></div>
           <div className="cli-commands">
             <code>python lcd/test_ft232h_lcd.py</code>
             <code>sudo ./scripts/setup_ft232h.sh</code>
@@ -710,45 +709,45 @@ function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDe
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 32 }}>{event.icon}</span>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#22d3ee', margin: 0 }}>{event.title}</h2>
-              <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0' }}>{event.source_node}</p>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#60a5fa', margin: 0 }}>{event.title}</h2>
+              <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0' }}>{event.source_node}</p>
             </div>
           </div>
-          <button className="btn btn-sm" onClick={onClose}><X size={18} /></button>
+          <button className="btn btn-sm" onClick={onClose}><X weight="bold" size={18} /></button>
         </div>
 
         <div className="event-modal-body">
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: '#888' }}>Message</label>
-            <p style={{ fontSize: 16, color: '#fff', margin: '4px 0 0' }}>{event.message}</p>
+            <label style={{ fontSize: 12, color: '#6b7280' }}>Message</label>
+            <p style={{ fontSize: 16, color: '#f3f4f6', margin: '4px 0 0' }}>{event.message}</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div><label style={{ fontSize: 12, color: '#888' }}>Severity</label><p style={{ color: '#fff', fontWeight: 600, margin: '4px 0 0' }}>{event.severity.toUpperCase()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#888' }}>Type</label><p style={{ color: '#fff', fontWeight: 600, margin: '4px 0 0' }}>{event.event_type.toUpperCase()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#888' }}>Time</label><p style={{ color: '#fff', fontFamily: 'monospace', fontSize: 13, margin: '4px 0 0' }}>{new Date(event.timestamp).toLocaleString()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#888' }}>Event ID</label><p style={{ color: '#fff', fontFamily: 'monospace', fontSize: 13, margin: '4px 0 0' }}>{event.event_id.substring(0, 12)}…</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Severity</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.severity.toUpperCase()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Type</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.event_type.toUpperCase()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Time</label><p style={{ color: '#f3f4f6', fontFamily: 'monospace', fontSize: 13, margin: '4px 0 0' }}>{new Date(event.timestamp).toLocaleString()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Event ID</label><p style={{ color: '#f3f4f6', fontFamily: 'monospace', fontSize: 13, margin: '4px 0 0' }}>{event.event_id.substring(0, 12)}…</p></div>
           </div>
 
           {Object.keys(event.context).length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 8 }}>Context</label>
-              <pre style={{ background: '#111', padding: 12, borderRadius: 6, fontSize: 12, color: '#22c55e', overflowX: 'auto', margin: 0 }}>
+              <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 8 }}>Context</label>
+              <pre style={{ background: '#0a0a0a', padding: 12, borderRadius: 6, fontSize: 12, color: '#22c55e', overflowX: 'auto', margin: 0 }}>
                 {JSON.stringify(event.context, null, 2)}
               </pre>
             </div>
           )}
 
-          <div style={{ background: '#111', borderRadius: 6, padding: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, fontSize: 13 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#888' }}>Broadcast:</span><span style={{ color: '#fff' }}>{event.broadcast ? '✓ Yes' : '✗ No'}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#888' }}>Sound:</span><span style={{ color: '#fff' }}>{event.sound ? '🔊 Yes' : '🔇 No'}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#888' }}>TTL:</span><span style={{ color: '#fff' }}>{event.ttl}s</span></div>
+          <div style={{ background: '#0a0a0a', borderRadius: 6, padding: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, fontSize: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>Broadcast:</span><span style={{ color: '#f3f4f6' }}>{event.broadcast ? '✓ Yes' : '✗ No'}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>Sound:</span><span style={{ color: '#f3f4f6' }}>{event.sound ? '🔊 Yes' : '🔇 No'}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#6b7280' }}>TTL:</span><span style={{ color: '#f3f4f6' }}>{event.ttl}s</span></div>
           </div>
         </div>
 
         <div className="event-modal-footer">
           <button className="btn btn-primary" style={{ flex: 1 }} onClick={isPinned ? onUnpin : onPin}>
-            <Pin size={14} /> {isPinned ? 'Unpin' : 'Pin'}
+            <PushPin weight="duotone" size={14} /> {isPinned ? 'Unpin' : 'Pin'}
           </button>
           <button className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>Close</button>
         </div>
@@ -776,10 +775,10 @@ function NodeHealthBar({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-        <span style={{ color: '#888' }}>{label}</span>
-        <span style={{ color: '#fff', fontWeight: 600 }}>{value.toFixed(1)}%</span>
+        <span style={{ color: '#6b7280' }}>{label}</span>
+        <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{value.toFixed(1)}%</span>
       </div>
-      <div style={{ height: 6, background: '#222', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ height: 6, background: '#111111', borderRadius: 3, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${Math.min(value, 100)}%`, background: color, borderRadius: 3, transition: 'width 0.3s' }} />
       </div>
     </div>
@@ -793,8 +792,8 @@ function NodeOverviewCard({ node }: { node: MockNodeStatus }) {
   return (
     <div style={{ border: `2px solid ${borderColor}`, borderRadius: 8, padding: 12, background: 'rgba(0,0,0,0.3)' }}>
       <h4 style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>{node.nodeId}</h4>
-      <p style={{ fontSize: 11, color: '#888', margin: '4px 0 0' }}>{statusLabel}</p>
-      <p style={{ fontSize: 11, margin: '8px 0 0' }}><span style={{ color: '#22d3ee' }}>{node.eventCount}</span> events</p>
+      <p style={{ fontSize: 11, color: '#6b7280', margin: '4px 0 0' }}>{statusLabel}</p>
+      <p style={{ fontSize: 11, margin: '8px 0 0' }}><span style={{ color: '#60a5fa' }}>{node.eventCount}</span> events</p>
       {node.cpu !== undefined && <p style={{ fontSize: 11, color: '#f59e0b', margin: '2px 0 0' }}>CPU: {node.cpu.toFixed(0)}%</p>}
     </div>
   )
@@ -949,12 +948,12 @@ export function LCDPage() {
 
   // ── Tab definitions ───────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: 'displays', label: 'Displays', icon: <Monitor size={16} /> },
-    { id: 'events',   label: 'Events',   icon: <Activity size={16} /> },
-    { id: 'nodes',    label: 'Nodes',    icon: <Server size={16} /> },
-    { id: 'alerts',   label: 'Alerts',   icon: <Bell size={16} /> },
-    { id: 'hardware', label: 'Hardware',  icon: <HardDrive size={16} /> },
-    { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
+    { id: 'displays', label: 'Displays', icon: <Monitor weight="duotone" size={16} /> },
+    { id: 'events',   label: 'Events',   icon: <Pulse weight="duotone" size={16} /> },
+    { id: 'nodes',    label: 'Nodes',    icon: <DesktopTower weight="duotone" size={16} /> },
+    { id: 'alerts',   label: 'Alerts',   icon: <Bell weight="duotone" size={16} /> },
+    { id: 'hardware', label: 'Hardware',  icon: <HardDrive weight="duotone" size={16} /> },
+    { id: 'settings', label: 'Settings', icon: <GearSix weight="duotone" size={16} /> },
   ]
 
   return (
@@ -962,15 +961,15 @@ export function LCDPage() {
       <PageHeader
         title="LCD Management Console"
         subtitle="Unified control center for dual-LCD display hardware, real-time events, alert routing, and system configuration"
-        icon={<Monitor size={32} style={{ color: '#22c55e' }} />}
+        icon={<Monitor weight="duotone" size={32} style={{ color: '#22c55e' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
             <button className={`btn ${isPolling ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pause live updates' : 'Resume live updates'}>
-              {isPolling ? <Pause size={16} /> : <Play size={16} />}
+              {isPolling ? <Pause weight="duotone" size={16} /> : <Play weight="duotone" size={16} />}
               {isPolling ? 'Live' : 'Paused'}
             </button>
             <button className="btn btn-ghost" onClick={() => queryClient.invalidateQueries({ queryKey: ['lcd'] })}>
-              <RefreshCw size={16} /> Refresh
+              <ArrowsClockwise weight="duotone" size={16} /> Refresh
             </button>
           </div>
         }
@@ -986,7 +985,7 @@ export function LCDPage() {
 
       {/* ── How It Works banner ─────────────────────────────────────── */}
       <div className="lcd-edu-banner">
-        <BookOpen size={16} style={{ flexShrink: 0 }} />
+        <BookOpen weight="duotone" size={16} style={{ flexShrink: 0 }} />
         <div>
           <strong>How It Works</strong> — MAP2 drives two I2C 4×20-character LCD screens via an FT232H USB-to-I2C adapter.
           The backend streams real-time status (VU meters, chain info, performance) to each display.
@@ -1049,7 +1048,7 @@ export function LCDPage() {
 
             {/* Filters */}
             <div className="lcd-filters-bar">
-              <Filter size={16} style={{ color: '#22d3ee' }} />
+              <Funnel weight="duotone" size={16} style={{ color: '#60a5fa' }} />
               <div className="lcd-filter-group">
                 <label>Severity</label>
                 <select value={filterSeverity} onChange={(e) => setFilterSeverity(e.target.value as any)}>
@@ -1078,7 +1077,7 @@ export function LCDPage() {
             {pinnedEvents.length > 0 && (
               <div style={{ marginBottom: 20 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f59e0b', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Pin size={16} /> Pinned Events ({pinnedEvents.length})
+                  <PushPin weight="duotone" size={16} /> Pinned Events ({pinnedEvents.length})
                 </h3>
                 <LCDEventFeed events={pinnedEvents} maxHeight="200px" onEventClick={(e) => setSelectedEvent(e)} />
               </div>
@@ -1086,7 +1085,7 @@ export function LCDPage() {
 
             {/* Event Feed */}
             <div>
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 12 }}>
                 Event Feed ({filteredEvents.length})
               </h3>
               <LCDEventFeed events={filteredEvents} maxHeight="500px" onEventClick={(e) => setSelectedEvent(e)} />
@@ -1111,7 +1110,7 @@ export function LCDPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24 }}>
               {/* Left — Node Selector */}
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 16 }}>Audio Nodes</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>Audio Nodes</h3>
                 <NodeLCDGrid nodes={nodes} selectedNode={selectedNode} onNodeSelect={setSelectedNode} />
               </div>
 
@@ -1119,7 +1118,7 @@ export function LCDPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* LCD Preview */}
                 <div className="lcd-section-card">
-                  <h4 style={{ fontSize: 14, fontWeight: 600, color: '#22d3ee', marginBottom: 16 }}>LCD Preview</h4>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>LCD Preview</h4>
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <LCDEmulator event={currentNodeEvent} nodeLabel={selectedNode} loading={!selectedNodeData} />
                   </div>
@@ -1128,22 +1127,22 @@ export function LCDPage() {
                 {/* Node Status */}
                 {selectedNodeData && (
                   <div className="lcd-section-card">
-                    <h4 style={{ fontSize: 14, fontWeight: 600, color: '#22d3ee', marginBottom: 16 }}>Node Status</h4>
+                    <h4 style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>Node Status</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
-                      <div><span style={{ fontSize: 11, color: '#888' }}>Node ID</span><p style={{ fontFamily: 'monospace', fontSize: 12, margin: '4px 0 0', color: '#fff' }}>{selectedNodeData.nodeId}</p></div>
+                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Node ID</span><p style={{ fontFamily: 'monospace', fontSize: 12, margin: '4px 0 0', color: '#f3f4f6' }}>{selectedNodeData.nodeId}</p></div>
                       <div>
-                        <span style={{ fontSize: 11, color: '#888' }}>Status</span>
+                        <span style={{ fontSize: 11, color: '#6b7280' }}>Status</span>
                         <p style={{ fontWeight: 700, margin: '4px 0 0', color: selectedNodeData.status === 'online' ? '#22c55e' : selectedNodeData.status === 'local' ? '#3b82f6' : '#ef4444' }}>
                           {selectedNodeData.status.toUpperCase()}
                         </p>
                       </div>
-                      <div><span style={{ fontSize: 11, color: '#888' }}>Last Event</span><p style={{ fontFamily: 'monospace', fontSize: 12, margin: '4px 0 0', color: '#fff' }}>{selectedNodeData.lastEvent || '—'}</p></div>
-                      <div><span style={{ fontSize: 11, color: '#888' }}>Event Count</span><p style={{ fontWeight: 700, margin: '4px 0 0', color: '#22d3ee' }}>{selectedNodeData.eventCount}</p></div>
+                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Last Event</span><p style={{ fontFamily: 'monospace', fontSize: 12, margin: '4px 0 0', color: '#f3f4f6' }}>{selectedNodeData.lastEvent || '—'}</p></div>
+                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Event Count</span><p style={{ fontWeight: 700, margin: '4px 0 0', color: '#60a5fa' }}>{selectedNodeData.eventCount}</p></div>
                       {selectedNodeData.cpu !== undefined && (
-                        <div><span style={{ fontSize: 11, color: '#888' }}>CPU Usage</span><p style={{ margin: '4px 0 0', color: selectedNodeData.cpu > 80 ? '#ef4444' : selectedNodeData.cpu > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.cpu.toFixed(1)}%</p></div>
+                        <div><span style={{ fontSize: 11, color: '#6b7280' }}>CPU Usage</span><p style={{ margin: '4px 0 0', color: selectedNodeData.cpu > 80 ? '#ef4444' : selectedNodeData.cpu > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.cpu.toFixed(1)}%</p></div>
                       )}
                       {selectedNodeData.memory !== undefined && (
-                        <div><span style={{ fontSize: 11, color: '#888' }}>Memory Usage</span><p style={{ margin: '4px 0 0', color: selectedNodeData.memory > 80 ? '#ef4444' : selectedNodeData.memory > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.memory.toFixed(1)}%</p></div>
+                        <div><span style={{ fontSize: 11, color: '#6b7280' }}>Memory Usage</span><p style={{ margin: '4px 0 0', color: selectedNodeData.memory > 80 ? '#ef4444' : selectedNodeData.memory > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.memory.toFixed(1)}%</p></div>
                       )}
                     </div>
                     {selectedNodeData.cpu !== undefined && <NodeHealthBar label="CPU Load" value={selectedNodeData.cpu} />}
@@ -1153,7 +1152,7 @@ export function LCDPage() {
 
                 {/* Recent Events */}
                 <div className="lcd-section-card">
-                  <h4 style={{ fontSize: 14, fontWeight: 600, color: '#22d3ee', marginBottom: 12 }}>Recent Events (10)</h4>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 12 }}>Recent Events (10)</h4>
                   <LCDEventFeed events={nodeEvents.slice(0, 10)} maxHeight="300px" />
                 </div>
               </div>
@@ -1161,7 +1160,7 @@ export function LCDPage() {
 
             {/* Cluster Overview */}
             <div className="lcd-section-card" style={{ marginTop: 24 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 16 }}>Cluster Overview</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>Cluster Overview</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
                 {nodes.map(node => <NodeOverviewCard key={node.nodeId} node={node} />)}
               </div>
@@ -1176,7 +1175,7 @@ export function LCDPage() {
 
             {queueLength > 0 && (
               <div className="active-alerts-panel">
-                <div className="alerts-panel-header"><Activity size={18} /><span>Active Alerts ({queueLength})</span></div>
+                <div className="alerts-panel-header"><Pulse weight="duotone" size={18} /><span>Active Alerts ({queueLength})</span></div>
                 <div className="alerts-list">
                   {activeAlertsQuery.data?.alerts?.map((alert, idx) => (
                     <div key={idx} className="alert-item">
@@ -1205,7 +1204,7 @@ export function LCDPage() {
 
             {/* System Info */}
             <div className="hardware-info">
-              <div className="info-header"><Terminal size={18} /><span>System Information</span></div>
+              <div className="info-header"><Terminal weight="duotone" size={18} /><span>System Information</span></div>
               <div className="info-grid">
                 <div className="info-item"><span className="info-label">Mode</span><span className="info-value">{isSimulation ? 'Simulation' : 'Hardware'}</span></div>
                 <div className="info-item"><span className="info-label">Uptime</span><span className="info-value">{uptime > 0 ? `${Math.floor(uptime / 60)}m ${Math.floor(uptime % 60)}s` : 'N/A'}</span></div>
@@ -1239,15 +1238,15 @@ export function LCDPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* Display Settings */}
                 <div className="lcd-section-card">
-                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Monitor size={18} /> Display Settings
+                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Monitor weight="duotone" size={18} /> Display Settings
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* Brightness */}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <label style={{ color: '#ccc', fontWeight: 600 }}>Brightness</label>
-                        <span style={{ color: '#22d3ee', fontFamily: 'monospace' }}>{settings.brightness}%</span>
+                        <label style={{ color: '#d1d5db', fontWeight: 600 }}>Brightness</label>
+                        <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{settings.brightness}%</span>
                       </div>
                       <input type="range" min={0} max={100} value={settings.brightness} onChange={(e) => setSettings({ ...settings, brightness: parseInt(e.target.value) })} className="lcd-slider" />
                       <p className="setting-hint">Adjust LCD backlight brightness</p>
@@ -1255,7 +1254,7 @@ export function LCDPage() {
 
                     {/* Auto-off */}
                     <div>
-                      <label style={{ color: '#ccc', fontWeight: 600, display: 'block', marginBottom: 8 }}>Auto-off Timer</label>
+                      <label style={{ color: '#d1d5db', fontWeight: 600, display: 'block', marginBottom: 8 }}>Auto-off Timer</label>
                       <select value={String(settings.autoOffTime)} onChange={(e) => setSettings({ ...settings, autoOffTime: parseInt(e.target.value) })} className="lcd-select">
                         <option value="0">Never</option>
                         <option value="5">5 minutes</option>
@@ -1269,7 +1268,7 @@ export function LCDPage() {
                     {/* Auto-scroll */}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <label style={{ color: '#ccc', fontWeight: 600 }}>Auto-scroll Long Messages</label>
+                        <label style={{ color: '#d1d5db', fontWeight: 600 }}>Auto-scroll Long Messages</label>
                         <button
                           onClick={() => setSettings({ ...settings, autoScrollDelay: settings.autoScrollDelay > 0 ? 0 : 3 })}
                           style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.autoScrollDelay > 0 ? '#22c55e' : '#444', position: 'relative', transition: 'background 0.2s' }}
@@ -1284,8 +1283,8 @@ export function LCDPage() {
                     {settings.autoScrollDelay > 0 && (
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <label style={{ color: '#ccc', fontWeight: 600 }}>Scroll Speed</label>
-                          <span style={{ color: '#22d3ee', fontFamily: 'monospace' }}>{settings.autoScrollDelay}s</span>
+                          <label style={{ color: '#d1d5db', fontWeight: 600 }}>Scroll Speed</label>
+                          <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{settings.autoScrollDelay}s</span>
                         </div>
                         <input type="range" min={1} max={5} value={settings.autoScrollDelay} onChange={(e) => setSettings({ ...settings, autoScrollDelay: parseInt(e.target.value) })} className="lcd-slider" />
                         <p className="setting-hint">Delay between scroll steps</p>
@@ -1296,14 +1295,14 @@ export function LCDPage() {
 
                 {/* Audio & Alert Settings */}
                 <div className="lcd-section-card">
-                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Volume2 size={18} /> Audio &amp; Alerts
+                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <SpeakerHigh weight="duotone" size={18} /> Audio &amp; Alerts
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* Sound toggle */}
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <label style={{ color: '#ccc', fontWeight: 600 }}>Alert Sounds</label>
+                        <label style={{ color: '#d1d5db', fontWeight: 600 }}>Alert Sounds</label>
                         <button
                           onClick={() => setSettings({ ...settings, soundEnabled: !settings.soundEnabled })}
                           style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.soundEnabled ? '#22c55e' : '#444', position: 'relative', transition: 'background 0.2s' }}
@@ -1319,8 +1318,8 @@ export function LCDPage() {
                         {/* Volume */}
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <label style={{ color: '#ccc', fontWeight: 600 }}>Alert Volume</label>
-                            <span style={{ color: '#22d3ee', fontFamily: 'monospace' }}>{settings.soundVolume}%</span>
+                            <label style={{ color: '#d1d5db', fontWeight: 600 }}>Alert Volume</label>
+                            <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{settings.soundVolume}%</span>
                           </div>
                           <input type="range" min={0} max={100} value={settings.soundVolume} onChange={(e) => setSettings({ ...settings, soundVolume: parseInt(e.target.value) })} className="lcd-slider" />
                           <p className="setting-hint">Volume for critical alert sounds</p>
@@ -1329,7 +1328,7 @@ export function LCDPage() {
                         {/* Critical only */}
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <label style={{ color: '#ccc', fontWeight: 600 }}>Critical Alerts Only</label>
+                            <label style={{ color: '#d1d5db', fontWeight: 600 }}>Critical Alerts Only</label>
                             <button
                               onClick={() => setSettings({ ...settings, alertSoundOnly: !settings.alertSoundOnly })}
                               style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.alertSoundOnly ? '#22c55e' : '#444', position: 'relative', transition: 'background 0.2s' }}
@@ -1351,13 +1350,13 @@ export function LCDPage() {
 
                 {/* Event Management */}
                 <div className="lcd-section-card">
-                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Activity size={18} /> Event Management
+                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Pulse weight="duotone" size={18} /> Event Management
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* Broadcast Mode */}
                     <div>
-                      <label style={{ color: '#ccc', fontWeight: 600, display: 'block', marginBottom: 8 }}>Broadcast Mode</label>
+                      <label style={{ color: '#d1d5db', fontWeight: 600, display: 'block', marginBottom: 8 }}>Broadcast Mode</label>
                       <select value={settings.broadcastMode} onChange={(e) => setSettings({ ...settings, broadcastMode: e.target.value as any })} className="lcd-select">
                         <option value="all">All Events</option>
                         <option value="critical">Critical Only</option>
@@ -1368,7 +1367,7 @@ export function LCDPage() {
 
                     {/* Retention */}
                     <div>
-                      <label style={{ color: '#ccc', fontWeight: 600, display: 'block', marginBottom: 8 }}>Event Retention</label>
+                      <label style={{ color: '#d1d5db', fontWeight: 600, display: 'block', marginBottom: 8 }}>Event Retention</label>
                       <select value={String(settings.eventRetention)} onChange={(e) => setSettings({ ...settings, eventRetention: parseInt(e.target.value) })} className="lcd-select">
                         <option value="1">1 hour</option>
                         <option value="6">6 hours</option>
@@ -1407,11 +1406,11 @@ export function LCDPage() {
               {/* Preview Panel */}
               <div>
                 <div className="lcd-section-card" style={{ position: 'sticky', top: 24 }}>
-                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#22d3ee', marginBottom: 16 }}>Live Preview</h4>
+                  <h4 style={{ fontSize: 16, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>Live Preview</h4>
 
                   {/* Brightness Preview */}
                   <div style={{ marginBottom: 16 }}>
-                    <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Brightness Level</p>
+                    <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Brightness Level</p>
                     <div style={{ background: '#fde68a', borderRadius: 6, padding: 16, border: '2px solid #78350f', textAlign: 'center', opacity: settings.brightness / 100, transition: 'opacity 0.2s' }}>
                       <span style={{ color: '#78350f', fontFamily: 'monospace', fontWeight: 600 }}>4×20 LCD</span>
                     </div>
@@ -1419,21 +1418,21 @@ export function LCDPage() {
 
                   {/* Current Settings */}
                   <div style={{ marginBottom: 16 }}>
-                    <p style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Current Settings</p>
-                    <div style={{ background: '#111', borderRadius: 6, padding: 12, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.8 }}>
-                      <div>Brightness: <span style={{ color: '#22d3ee' }}>{settings.brightness}%</span></div>
-                      <div>Sound: <span style={{ color: '#22d3ee' }}>{settings.soundEnabled ? 'ON' : 'OFF'}</span></div>
-                      <div>Volume: <span style={{ color: '#22d3ee' }}>{settings.soundVolume}%</span></div>
-                      <div>Mode: <span style={{ color: '#22d3ee' }}>{settings.broadcastMode}</span></div>
-                      <div>Retention: <span style={{ color: '#22d3ee' }}>{settings.eventRetention}h</span></div>
-                      <div>Scroll: <span style={{ color: '#22d3ee' }}>{settings.autoScrollDelay > 0 ? `${settings.autoScrollDelay}s` : 'OFF'}</span></div>
+                    <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Current Settings</p>
+                    <div style={{ background: '#0a0a0a', borderRadius: 6, padding: 12, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.8 }}>
+                      <div>Brightness: <span style={{ color: '#60a5fa' }}>{settings.brightness}%</span></div>
+                      <div>Sound: <span style={{ color: '#60a5fa' }}>{settings.soundEnabled ? 'ON' : 'OFF'}</span></div>
+                      <div>Volume: <span style={{ color: '#60a5fa' }}>{settings.soundVolume}%</span></div>
+                      <div>Mode: <span style={{ color: '#60a5fa' }}>{settings.broadcastMode}</span></div>
+                      <div>Retention: <span style={{ color: '#60a5fa' }}>{settings.eventRetention}h</span></div>
+                      <div>Scroll: <span style={{ color: '#60a5fa' }}>{settings.autoScrollDelay > 0 ? `${settings.autoScrollDelay}s` : 'OFF'}</span></div>
                     </div>
                   </div>
 
                   {/* Info Note */}
                   <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 6, padding: 12 }}>
                     <p style={{ fontSize: 12, color: '#93c5fd', margin: 0 }}>
-                      <Info size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                      <Info weight="duotone" size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
                       Settings apply immediately to this node's LCD display.
                     </p>
                   </div>
@@ -1649,7 +1648,7 @@ export function LCDPage() {
           background: #111; border: 1px solid #222; border-radius: 10px; margin-bottom: 20px;
         }
         .lcd-filter-group { display: flex; flex-direction: column; gap: 4px; }
-        .lcd-filter-group label { font-size: 11px; color: '#888'; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .lcd-filter-group label { font-size: 11px; color: '#6b7280'; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .lcd-filter-group select {
           background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 6px 12px; font-size: 13px;
         }

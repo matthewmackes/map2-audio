@@ -1,23 +1,23 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Search,
-  Speaker,
-  Waves,
-  Zap,
-  Music,
-  Loader2,
-  RefreshCw,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
+  MagnifyingGlass,
+  SpeakerHigh,
+  WaveSine,
+  Lightning,
+  MusicNote,
+  SpinnerGap,
+  ArrowsClockwise,
+  Trash,
+  CaretUp,
+  CaretDown,
+  CaretLeft,
+  CaretRight,
   Check,
-  AlertTriangle,
+  Warning,
   FolderOpen,
-  Settings2,
-} from 'lucide-react'
+  GearSix,
+} from '@phosphor-icons/react'
 import { irApi, namApi, soundfontApi, foldersApi, pluginsApi } from '../../../map2/api'
 import type { NAMModel, IRFile } from '../../../map2/types'
 import type { SoundFont } from '../../types/library'
@@ -71,12 +71,12 @@ const DEFAULT_COLUMNS: ColumnVisibility = {
   status: true,
 }
 
-const TYPE_CONFIG: Record<AssetType, { label: string; icon: typeof Zap; color: string }> = {
-  nam: { label: 'NAM', icon: Zap, color: '#ff6b6b' },
-  cabinet: { label: 'Cabinet IR', icon: Speaker, color: '#f97316' },
-  reverb: { label: 'Reverb IR', icon: Waves, color: '#a855f7' },
-  sfz: { label: 'SoundFont', icon: Music, color: '#22c55e' },
-  native: { label: 'Native Plugin', icon: Zap, color: '#06b6d4' },
+const TYPE_CONFIG: Record<AssetType, { label: string; icon: typeof Lightning; color: string }> = {
+  nam: { label: 'NAM', icon: Lightning, color: '#ff6b6b' },
+  cabinet: { label: 'Cabinet IR', icon: SpeakerHigh, color: '#f97316' },
+  reverb: { label: 'Reverb IR', icon: WaveSine, color: '#a855f7' },
+  sfz: { label: 'SoundFont', icon: MusicNote, color: '#22c55e' },
+  native: { label: 'Native Plugin', icon: Lightning, color: '#06b6d4' },
 }
 
 function formatSize(bytes?: number): string {
@@ -444,9 +444,9 @@ export function InstalledAssetsTable() {
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return null
     return sortDirection === 'asc' ? (
-      <ChevronUp size={14} style={{ marginLeft: 4 }} />
+      <CaretUp size={14} weight="bold" style={{ marginLeft: 4 }} />
     ) : (
-      <ChevronDown size={14} style={{ marginLeft: 4 }} />
+      <CaretDown size={14} weight="bold" style={{ marginLeft: 4 }} />
     )
   }
 
@@ -474,7 +474,7 @@ export function InstalledAssetsTable() {
                 style={{ background: 'var(--error)', color: '#fff' }}
                 onClick={() => setShowDeleteConfirm(true)}
               >
-                <Trash2 size={14} />
+                <Trash size={14} weight="duotone" />
                 Delete ({selectedIds.size})
               </button>
             )}
@@ -483,7 +483,7 @@ export function InstalledAssetsTable() {
               onClick={() => setShowColumnSettings(!showColumnSettings)}
               title="Column settings"
             >
-              <Settings2 size={14} />
+              <GearSix size={14} weight="duotone" />
             </button>
             <button
               className="btn btn-sm btn-primary"
@@ -491,9 +491,9 @@ export function InstalledAssetsTable() {
               disabled={scanMutation.isPending}
             >
               {scanMutation.isPending ? (
-                <Loader2 size={14} className="spin" />
+                <SpinnerGap size={14} weight="duotone" className="spin" />
               ) : (
-                <RefreshCw size={14} />
+                <ArrowsClockwise size={14} weight="duotone" />
               )}
               Update
             </button>
@@ -502,7 +502,7 @@ export function InstalledAssetsTable() {
               onClick={handleRefresh}
               disabled={isLoading}
             >
-              <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
+              <ArrowsClockwise size={14} weight="duotone" className={isLoading ? 'spin' : ''} />
             </button>
           </div>
         </div>
@@ -590,7 +590,7 @@ export function InstalledAssetsTable() {
             padding: '8px 12px',
           }}
         >
-          <Search size={16} className="muted" />
+          <MagnifyingGlass size={16} weight="duotone" className="muted" />
           <input
             type="text"
             placeholder="Search by name, source, category, folder..."
@@ -621,7 +621,7 @@ export function InstalledAssetsTable() {
       <div style={{ overflowX: 'auto' }}>
         {isLoading ? (
           <div className="flex" style={{ justifyContent: 'center', padding: 40 }}>
-            <Loader2 size={24} className="spin" style={{ color: 'var(--primary)' }} />
+            <SpinnerGap size={24} weight="duotone" className="spin" style={{ color: 'var(--primary)' }} />
           </div>
         ) : filteredAssets.length === 0 ? (
           <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
@@ -717,7 +717,7 @@ export function InstalledAssetsTable() {
                 {columns.folder && (
                   <th style={{ ...thStyle(), width: 140 }} onClick={() => handleSort('folder')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
-                      <FolderOpen size={14} style={{ marginRight: 4 }} />
+                      <FolderOpen size={14} weight="duotone" style={{ marginRight: 4 }} />
                       Folder
                       <SortIcon field="folder" />
                     </div>
@@ -865,7 +865,7 @@ export function InstalledAssetsTable() {
                               fontSize: 11,
                             }}
                           >
-                            <Check size={10} /> Active
+                            <Check size={10} weight="bold" /> Active
                           </span>
                         )}
                       </td>
@@ -880,7 +880,7 @@ export function InstalledAssetsTable() {
                         }}
                         title="Delete"
                       >
-                        <Trash2 size={14} />
+                        <Trash size={14} weight="duotone" />
                       </button>
                     </td>
                   </tr>
@@ -917,7 +917,7 @@ export function InstalledAssetsTable() {
               onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
               disabled={currentPage === 0}
             >
-              <ChevronLeft size={14} />
+              <CaretLeft size={14} weight="bold" />
             </button>
             <span style={{ minWidth: 80, textAlign: 'center' }}>
               Page {currentPage + 1} of {totalPages}
@@ -928,7 +928,7 @@ export function InstalledAssetsTable() {
               onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={currentPage >= totalPages - 1}
             >
-              <ChevronRight size={14} />
+              <CaretRight size={14} weight="bold" />
             </button>
           </div>
         )}
@@ -957,7 +957,7 @@ export function InstalledAssetsTable() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex" style={{ gap: 12, marginBottom: 16 }}>
-              <AlertTriangle size={24} style={{ color: 'var(--warning)' }} />
+              <Warning size={24} weight="duotone" style={{ color: 'var(--warning)' }} />
               <div>
                 <h3 style={{ margin: 0, fontSize: 18 }}>Confirm Delete</h3>
                 <p style={{ margin: '8px 0 0', color: 'var(--muted)' }}>

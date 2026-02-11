@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Radio, Volume2, VolumeX, AlertTriangle, CheckCircle, XCircle, Activity, Cpu, Link2, Mic, Speaker, Settings } from 'lucide-react'
+import { Broadcast, SpeakerHigh, SpeakerX, Warning, CheckCircle, XCircle, Pulse, Cpu, Link, Microphone, GearSix } from '@phosphor-icons/react'
 import { usePipeWire } from '../hooks/usePipeWire'
 
 // ============================================================================
@@ -9,7 +9,7 @@ import { usePipeWire } from '../hooks/usePipeWire'
 function StatusBadge({ status }: { status: 'ok' | 'warning' | 'error' | 'offline' }) {
   const config = {
     ok:      { icon: CheckCircle,    color: '#22c55e', bg: '#052e16', label: 'Healthy' },
-    warning: { icon: AlertTriangle,  color: '#f59e0b', bg: '#451a03', label: 'Warning' },
+    warning: { icon: Warning,        color: '#f59e0b', bg: '#451a03', label: 'Warning' },
     error:   { icon: XCircle,        color: '#ef4444', bg: '#450a0a', label: 'Error' },
     offline: { icon: XCircle,        color: '#6b7280', bg: '#1f2937', label: 'Offline' },
   }
@@ -27,7 +27,7 @@ function MetricCard({ label, value, unit, icon: Icon, color = '#94a3b8' }: {
   return (
     <div style={{ background: '#1e293b', borderRadius: 12, padding: '20px 24px', minWidth: 160 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: '#64748b', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
-        <Icon size={14} /> {label}
+        <Icon size={14} weight="duotone" /> {label}
       </div>
       <div style={{ fontSize: 28, fontWeight: 700, color, fontFamily: 'JetBrains Mono, monospace' }}>
         {value}{unit && <span style={{ fontSize: 14, color: '#64748b', marginLeft: 4 }}>{unit}</span>}
@@ -43,14 +43,14 @@ function MetricCard({ label, value, unit, icon: Icon, color = '#94a3b8' }: {
 function DaemonSection({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-      <MetricCard icon={Radio}    label="Version"     value={pw.daemonVersion || '—'} color="#60a5fa" />
-      <MetricCard icon={Activity} label="Latency"     value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? '#f59e0b' : '#22c55e'} />
-      <MetricCard icon={Cpu}      label="Quantum"     value={pw.effectiveQuantum} unit="smp" color="#a78bfa" />
-      <MetricCard icon={Activity} label="Sample Rate" value={(pw.effectiveRate / 1000).toFixed(1)} unit="kHz" color="#a78bfa" />
-      <MetricCard icon={Speaker}  label="Devices"     value={pw.devices.length} color="#60a5fa" />
-      <MetricCard icon={Link2}    label="Links"       value={pw.links.length} color="#60a5fa" />
-      <MetricCard icon={Activity} label="Streams"     value={pw.streams.length} color="#60a5fa" />
-      <MetricCard icon={AlertTriangle} label="XRuns"  value={pw.xruns} color={pw.hasXruns ? '#ef4444' : '#22c55e'} />
+      <MetricCard icon={Broadcast}    label="Version"     value={pw.daemonVersion || '—'} color="#60a5fa" />
+      <MetricCard icon={Pulse} label="Latency"     value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? '#f59e0b' : '#22c55e'} />
+      <MetricCard icon={Cpu}      label="Quantum"     value={pw.effectiveQuantum} unit="smp" color="#60a5fa" />
+      <MetricCard icon={Pulse} label="Sample Rate" value={(pw.effectiveRate / 1000).toFixed(1)} unit="kHz" color="#60a5fa" />
+      <MetricCard icon={SpeakerHigh}  label="Devices"     value={pw.devices.length} color="#60a5fa" />
+      <MetricCard icon={Link}    label="Links"       value={pw.links.length} color="#60a5fa" />
+      <MetricCard icon={Pulse} label="Streams"     value={pw.streams.length} color="#60a5fa" />
+      <MetricCard icon={Warning} label="XRuns"  value={pw.xruns} color={pw.hasXruns ? '#ef4444' : '#22c55e'} />
     </div>
   )
 }
@@ -102,7 +102,7 @@ function NodesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
             <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{n.name}</td>
             <td style={{ padding: '8px 12px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: n.media_class.includes('Sink') ? '#60a5fa' : '#a78bfa' }}>
-                {n.media_class.includes('Sink') ? <Speaker size={14}/> : <Mic size={14}/>}
+                {n.media_class.includes('Sink') ? <SpeakerHigh size={14} weight="duotone"/> : <Microphone size={14} weight="duotone"/>}
                 {n.media_class.includes('Sink') ? 'Sink' : 'Source'}
               </span>
             </td>
@@ -113,8 +113,8 @@ function NodesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
             </td>
             <td style={{ padding: '8px 12px' }}>
               {n.muted
-                ? <VolumeX size={16} color="#ef4444" />
-                : <Volume2 size={16} color="#22c55e" />}
+                ? <SpeakerX size={16} weight="duotone" color="#ef4444" />
+                : <SpeakerHigh size={16} weight="duotone" color="#22c55e" />}
             </td>
             <td style={{ padding: '8px 12px' }}>{n.is_default ? '★' : ''}</td>
           </tr>
@@ -196,7 +196,7 @@ function AlertsList({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
         const bg = a.severity === 'error' ? '#450a0a' : a.severity === 'warning' ? '#451a03' : '#172554'
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, backgroundColor: bg, color, fontSize: 13 }}>
-            <AlertTriangle size={16} />
+            <Warning size={16} weight="duotone" />
             <span>{a.message}</span>
             <span style={{ marginLeft: 'auto', fontSize: 11, opacity: 0.7, textTransform: 'uppercase' }}>{a.severity}</span>
           </div>
@@ -270,19 +270,19 @@ export function PipeWirePage() {
   const [tab, setTab] = useState<Tab>('overview')
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
-    { id: 'overview', label: 'Overview',  icon: Activity },
-    { id: 'devices',  label: 'Devices',   icon: Speaker },
-    { id: 'nodes',    label: 'Nodes',     icon: Volume2 },
-    { id: 'streams',  label: 'Streams',   icon: Mic },
-    { id: 'links',    label: 'Links',     icon: Link2 },
-    { id: 'settings', label: 'Settings',  icon: Settings },
+    { id: 'overview', label: 'Overview',  icon: Pulse },
+    { id: 'devices',  label: 'Devices',   icon: SpeakerHigh },
+    { id: 'nodes',    label: 'Nodes',     icon: SpeakerHigh },
+    { id: 'streams',  label: 'Streams',   icon: Microphone },
+    { id: 'links',    label: 'Links',     icon: Link },
+    { id: 'settings', label: 'Settings',  icon: GearSix },
   ]
 
   return (
     <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto', color: '#e2e8f0' }}>
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-        <Radio size={36} color="#a78bfa" />
+        <Broadcast size={36} weight="duotone" color="#60a5fa" />
         <div>
           <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#f8fafc' }}>
             PipeWire Audio Server
@@ -309,9 +309,9 @@ export function PipeWirePage() {
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '10px 18px', border: 'none', cursor: 'pointer',
                 fontSize: 14, fontWeight: active ? 600 : 400,
-                color: active ? '#a78bfa' : '#94a3b8',
+                color: active ? '#60a5fa' : '#94a3b8',
                 backgroundColor: 'transparent',
-                borderBottom: active ? '2px solid #a78bfa' : '2px solid transparent',
+                borderBottom: active ? '2px solid #60a5fa' : '2px solid transparent',
                 marginBottom: -1,
               }}
             >
@@ -326,10 +326,10 @@ export function PipeWirePage() {
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
             <DaemonSection pw={pw} />
-            <Section title="Alerts" icon={AlertTriangle}>
+            <Section title="Alerts" icon={Warning}>
               <AlertsList pw={pw} />
             </Section>
-            <Section title="Default Sink" icon={Speaker}>
+            <Section title="Default Sink" icon={SpeakerHigh}>
               {pw.defaultSink
                 ? <p style={{ color: '#e2e8f0', fontSize: 14 }}>
                     <strong>{pw.defaultSink.name}</strong> — Vol: {(pw.defaultSink.volume * 100).toFixed(0)}%
@@ -337,7 +337,7 @@ export function PipeWirePage() {
                   </p>
                 : <p style={{ color: '#64748b' }}>No default sink</p>}
             </Section>
-            <Section title="Default Source" icon={Mic}>
+            <Section title="Default Source" icon={Microphone}>
               {pw.defaultSource
                 ? <p style={{ color: '#e2e8f0', fontSize: 14 }}>
                     <strong>{pw.defaultSource.name}</strong> — Vol: {(pw.defaultSource.volume * 100).toFixed(0)}%
@@ -349,35 +349,35 @@ export function PipeWirePage() {
         )}
 
         {tab === 'devices' && (
-          <Section title="Audio Devices" icon={Speaker}>
+          <Section title="Audio Devices" icon={SpeakerHigh}>
             <DevicesTable pw={pw} />
           </Section>
         )}
 
         {tab === 'nodes' && (
-          <Section title="Sink & Source Nodes" icon={Volume2}>
+          <Section title="Sink & Source Nodes" icon={SpeakerHigh}>
             <NodesTable pw={pw} />
           </Section>
         )}
 
         {tab === 'streams' && (
-          <Section title="Active Streams" icon={Mic}>
+          <Section title="Active Streams" icon={Microphone}>
             <StreamsTable pw={pw} />
           </Section>
         )}
 
         {tab === 'links' && (
-          <Section title="Port Connections" icon={Link2}>
+          <Section title="Port Connections" icon={Link}>
             <LinksTable pw={pw} />
           </Section>
         )}
 
         {tab === 'settings' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <Section title="Buffer Size (Quantum)" icon={Settings}>
+            <Section title="Buffer Size (Quantum)" icon={GearSix}>
               <QuantumControl pw={pw} />
             </Section>
-            <Section title="Clock Settings" icon={Activity}>
+            <Section title="Clock Settings" icon={Pulse}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
                 <SettingItem label="clock.rate" value={`${pw.settings.clock_rate} Hz`} />
                 <SettingItem label="clock.force-rate" value={pw.settings.clock_force_rate ? `${pw.settings.clock_force_rate} Hz` : 'auto'} />
@@ -390,9 +390,9 @@ export function PipeWirePage() {
             </Section>
             <Section title="Latency Breakdown" icon={Activity}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                <MetricCard icon={Activity} label="Graph" value={pw.graphLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
-                <MetricCard icon={Activity} label="Driver" value={pw.driverLatencyMs.toFixed(1)} unit="ms" color="#a78bfa" />
-                <MetricCard icon={Activity} label="Total" value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? '#f59e0b' : '#22c55e'} />
+                <MetricCard icon={Pulse} label="Graph" value={pw.graphLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
+                <MetricCard icon={Pulse} label="Driver" value={pw.driverLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
+                <MetricCard icon={Pulse} label="Total" value={pw.totalLatencyMs.toFixed(1)} unit="ms" color={pw.isHighLatency ? '#f59e0b' : '#22c55e'} />
               </div>
             </Section>
           </div>
@@ -416,7 +416,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: any; ch
   return (
     <div style={{ background: '#0f172a', borderRadius: 12, padding: 24, border: '1px solid #1e293b' }}>
       <h3 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 600, color: '#f8fafc' }}>
-        <Icon size={18} color="#a78bfa" /> {title}
+        <Icon size={18} color="#60a5fa" /> {title}
       </h3>
       {children}
     </div>

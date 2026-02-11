@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AlertTriangle, CheckCircle, AlertCircle, Zap, Radio, Music, Cpu, Volume2, Link, Clock, Monitor } from 'lucide-react'
+import { Warning, CheckCircle, WarningCircle, Lightning, Broadcast, MusicNote, Cpu, SpeakerHigh, Link, Clock, Monitor } from '@phosphor-icons/react'
 import { useQuery } from '@tanstack/react-query'
 
 interface Service {
@@ -43,15 +43,15 @@ interface NodeAudioPathViewProps {
 const getServiceIcon = (type: string) => {
   switch (type) {
     case 'pipewire':
-      return <Radio size={16} />
+      return <Broadcast size={16} weight="duotone" />
     case 'juce_engine':
-      return <Music size={16} />
+      return <MusicNote size={16} weight="duotone" />
     case 'alsa':
-      return <Volume2 size={16} />
+      return <SpeakerHigh size={16} weight="duotone" />
     case 'latency_compensator':
-      return <Clock size={16} />
+      return <Clock size={16} weight="duotone" />
     default:
-      return <Zap size={16} />
+      return <Lightning size={16} weight="duotone" />
   }
 }
 
@@ -60,13 +60,13 @@ const getHealthColor = (health: string) => {
     case 'healthy':
       return { bg: '#22c55e20', border: '#22c55e', text: '#22c55e', icon: CheckCircle }
     case 'warning':
-      return { bg: '#ffa72620', border: '#ffa726', text: '#ffa726', icon: AlertCircle }
+      return { bg: '#ffa72620', border: '#ffa726', text: '#ffa726', icon: WarningCircle }
     case 'error':
-      return { bg: '#ef444420', border: '#ef4444', text: '#ef4444', icon: AlertTriangle }
+      return { bg: '#ef444420', border: '#ef4444', text: '#ef4444', icon: Warning }
     case 'offline':
-      return { bg: '#66666620', border: '#888', text: '#888', icon: AlertCircle }
+      return { bg: '#66666620', border: '#888', text: '#888', icon: WarningCircle }
     default:
-      return { bg: '#44444420', border: '#555', text: '#555', icon: AlertCircle }
+      return { bg: '#44444420', border: '#555', text: '#555', icon: WarningCircle }
   }
 }
 

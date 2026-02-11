@@ -6,12 +6,12 @@
 
 import {
   Star,
-  Volume2,
-  Settings2,
-  Sparkles,
-  Radio,
-  BarChart2,
-} from 'lucide-react'
+  SpeakerHigh,
+  GearSix,
+  Sparkle,
+  Broadcast,
+  ChartBar,
+} from '@phosphor-icons/react'
 import {
   DynamicsIcon,
   EQIcon,
@@ -78,19 +78,19 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   // Multi-Effect
   'Multi-Effect': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', icon: MultiEffectIcon },
   // Utility
-  'Utility': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: Settings2 },
-  'Gain': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: Volume2 },
-  'Mixer': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: Volume2 },
+  'Utility': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: GearSix },
+  'Gain': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: SpeakerHigh },
+  'Mixer': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', icon: SpeakerHigh },
   // Analyser/Tuner/Meter
-  'Analyser': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: BarChart2 },
-  'Analyzer': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: BarChart2 },
-  'Tuner': { color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.15)', icon: Radio },
+  'Analyser': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: ChartBar },
+  'Analyzer': { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', icon: ChartBar },
+  'Tuner': { color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.15)', icon: Broadcast },
   'Meter': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: DynamicsIcon },
-  'Spectrum': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', icon: BarChart2 },
+  'Spectrum': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', icon: ChartBar },
   // Generator
   'Generator': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: MultiEffectIcon },
   // Default
-  'Effect': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', icon: Sparkles },
+  'Effect': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', icon: Sparkle },
   'default': { color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', icon: MultiEffectIcon },
 }
 

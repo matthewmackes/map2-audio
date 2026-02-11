@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { ChevronDown, Sliders, Music2, Footprints } from 'lucide-react'
+import { CaretDown, Sliders, MusicNotes, Path } from '@phosphor-icons/react'
 import { useBossXS1, BOSS_XS1_PRESETS } from '../../../../hooks/useModulation'
 import { withMidiDialog, type PluginParamDef } from '../../withMidiDialog'
 import { PluginCardShell } from '../../Base/PluginCardShell'
@@ -143,9 +143,9 @@ function BossXS1CardBase({
           onClick={() => setShowPresetBrowser(!showPresetBrowser)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Music2 size={14} />
+          <MusicNotes size={14} weight="duotone" />
           <span className="boss-preset-name">{currentPreset.name}</span>
-          <ChevronDown size={14} className={showPresetBrowser ? 'rotated' : ''} />
+          <CaretDown size={14} weight="bold" className={showPresetBrowser ? 'rotated' : ''} />
         </button>
 
         {/* Preset Browser Dropdown */}
@@ -194,7 +194,7 @@ function BossXS1CardBase({
           onClick={() => setDetuneMode(false)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Sliders size={14} />
+          <Sliders size={14} weight="duotone" />
           <span>Shift</span>
         </button>
         <button
@@ -202,7 +202,7 @@ function BossXS1CardBase({
           onClick={() => setDetuneMode(true)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Music2 size={14} />
+          <MusicNotes size={14} weight="duotone" />
           <span>Detune</span>
         </button>
       </div>
@@ -299,7 +299,7 @@ function BossXS1CardBase({
             onClick={() => setPedalEnabled(!parameters.pedalEnabled)}
             style={{ '--accent': accentColor } as React.CSSProperties}
           >
-            <Footprints size={16} />
+            <Path size={16} weight="duotone" />
             <span>{parameters.pedalEnabled ? 'Enabled' : 'Disabled'}</span>
           </button>
 

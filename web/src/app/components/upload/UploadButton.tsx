@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload } from 'lucide-react'
+import { UploadSimple } from '@phosphor-icons/react'
 import { UnifiedUploadDialog, type AssetType } from './UnifiedUploadDialog'
 
 interface Props {
@@ -29,7 +29,7 @@ export function UploadButton({
         className={`btn btn-${variant} ${sizeClass} ${className}`}
         onClick={() => setDialogOpen(true)}
       >
-        <Upload size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />
+        <UploadSimple size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} weight="duotone" />
         {label}
       </button>
 

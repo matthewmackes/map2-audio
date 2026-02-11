@@ -1,4 +1,4 @@
-import { Network, Radio, Zap, CheckCircle, AlertCircle, XCircle, Plug2, Play, Square, RefreshCw, Loader2, ChevronDown, ChevronRight, Clock, TrendingUp, Cpu, HardDrive } from 'lucide-react'
+import { Graph, Broadcast, Lightning, CheckCircle, WarningCircle, XCircle, Plug, Play, Square, ArrowsClockwise, SpinnerGap, CaretDown, CaretRight, Clock, TrendUp, Cpu, HardDrive } from '@phosphor-icons/react'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { servicesApi, type ServiceStatus, type ServicesStatusResponse, metricsApi } from '../../map2/api'
@@ -277,10 +277,10 @@ export function PlatformCapabilities() {
   }
 
   const getStatusIcon = (status: string, score: number) => {
-    if (status === 'excellent' || score >= 90) return <CheckCircle size={20} style={{ color: '#4caf50' }} />
-    if (status === 'good' || score >= 75) return <CheckCircle size={20} style={{ color: '#64b5f6' }} />
-    if (status === 'fair' || score >= 50) return <AlertCircle size={20} style={{ color: '#ffa726' }} />
-    return <XCircle size={20} style={{ color: '#ef5350' }} />
+    if (status === 'excellent' || score >= 90) return <CheckCircle size={20} weight="duotone" style={{ color: '#4caf50' }} />
+    if (status === 'good' || score >= 75) return <CheckCircle size={20} weight="duotone" style={{ color: '#64b5f6' }} />
+    if (status === 'fair' || score >= 50) return <WarningCircle size={20} weight="duotone" style={{ color: '#ffa726' }} />
+    return <XCircle size={20} weight="duotone" style={{ color: '#ef5350' }} />
   }
 
   return (
@@ -299,10 +299,10 @@ export function PlatformCapabilities() {
         <div className="card" style={{ padding: 16, gridColumn: '1 / -1' }}>
           <div className="flex" style={{ gap: 10, marginBottom: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <Network size={20} style={{ color: '#4caf50', flexShrink: 0, marginTop: 2 }} />
+              <Graph size={20} weight="duotone" style={{ color: '#4caf50', flexShrink: 0, marginTop: 2 }} />
               <div>
                 <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Connectivity & Integration - Service Management</h4>
-                <p style={{ margin: 0, fontSize: 11, color: '#aaa' }}>Audio protocols, APIs, services, and real-time control</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Audio protocols, APIs, services, and real-time control</p>
               </div>
             </div>
             {/* Global Service Controls */}
@@ -324,7 +324,7 @@ export function PlatformCapabilities() {
                   gap: 4,
                 }}
               >
-                {startAllMutation.isPending ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={12} />}
+                {startAllMutation.isPending ? <SpinnerGap size={12} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={12} weight="duotone" />}
                 Start All
               </button>
               <button
@@ -344,7 +344,7 @@ export function PlatformCapabilities() {
                   gap: 4,
                 }}
               >
-                {stopAllMutation.isPending ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={12} />}
+                {stopAllMutation.isPending ? <SpinnerGap size={12} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={12} weight="duotone" />}
                 Stop All
               </button>
             </div>
@@ -353,7 +353,7 @@ export function PlatformCapabilities() {
           {/* Connectivity Info & Service Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
             {/* Audio Connectivity Layer */}
-            <div className="stack" style={{ gap: 10, padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#4caf50', textTransform: 'uppercase', marginBottom: 4 }}>🔊 Audio Connectivity</div>
               <div className="stack" style={{ gap: 6, fontSize: 11 }}>
                 <div className="flex" style={{ gap: 8, alignItems: 'flex-start' }}>
@@ -376,17 +376,17 @@ export function PlatformCapabilities() {
             </div>
 
             {/* REST API Engine */}
-            <div className="stack" style={{ gap: 10, padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#64b5f6', textTransform: 'uppercase', marginBottom: 4 }}>🌐 REST API Engine</div>
               <div style={{ padding: 8, background: '#64b5f615', borderRadius: 4, border: '1px solid #64b5f6' }}>
-                <div style={{ fontSize: 9, color: '#aaa', marginBottom: 2 }}>Available Endpoints</div>
+                <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 2 }}>Available Endpoints</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64b5f6' }}>{apiCount || '120'}+</div>
-                <div style={{ fontSize: 9, color: '#999', marginTop: 2 }}>HTTP/JSON APIs for all functions</div>
+                <div style={{ fontSize: 9, color: '#6b7280', marginTop: 2 }}>HTTP/JSON APIs for all functions</div>
               </div>
             </div>
 
             {/* Web Services & WebSocket */}
-            <div className="stack" style={{ gap: 10, padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#81c784', textTransform: 'uppercase', marginBottom: 4 }}>⚡ Real-time Services</div>
               <div className="stack" style={{ gap: 5, fontSize: 10 }}>
                 <div>📡 <strong>WebSocket Server</strong> - Live updates</div>
@@ -398,29 +398,29 @@ export function PlatformCapabilities() {
 
           {/* Service Statistics Header */}
           {servicesStatus.data && (
-            <div style={{ marginBottom: 16, padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ marginBottom: 16, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 0 }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#64b5f6' }}>{Object.keys(servicesStatus.data.services || {}).length}</div>
-                  <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>Total Services</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Total Services</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#4caf50' }}>
                     {Object.values(servicesStatus.data.services || {}).filter((s: ServiceStatus) => s.state === 'running').length}
                   </div>
-                  <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>Running</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Running</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#ef5350' }}>
                     {Object.values(servicesStatus.data.services || {}).filter((s: ServiceStatus) => s.state === 'failed').length}
                   </div>
-                  <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>Failed</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Failed</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#ffa726' }}>
                     {servicesStatus.data.orchestrator?.uptime_seconds ? `${Math.floor(servicesStatus.data.orchestrator.uptime_seconds / 3600)}h ${Math.floor((servicesStatus.data.orchestrator.uptime_seconds % 3600) / 60)}m` : 'N/A'}
                   </div>
-                  <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>Uptime</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Uptime</div>
                 </div>
               </div>
             </div>
@@ -428,8 +428,8 @@ export function PlatformCapabilities() {
 
           {/* Services List - Grouped by Priority */}
           {servicesStatus.isLoading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#aaa' }}>
-              <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
+            <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af' }}>
+              <SpinnerGap size={16} weight="duotone" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
               Loading services...
             </div>
           ) : servicesStatus.error ? (
@@ -447,10 +447,10 @@ export function PlatformCapabilities() {
                 if (servicesInGroup.length === 0) return null
 
                 return (
-                  <div key={priority} style={{ borderRadius: 6, border: '1px solid #333', overflow: 'hidden' }}>
-                    <div style={{ padding: 10, background: '#1a1a1a', fontSize: 11, fontWeight: 600, color: '#ffa726', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={priority} style={{ borderRadius: 6, border: '1px solid #1e293b', overflow: 'hidden' }}>
+                    <div style={{ padding: 10, background: '#0a0a0a', fontSize: 11, fontWeight: 600, color: '#ffa726', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>{PRIORITY_LABELS[priority]} SERVICES</span>
-                      <span style={{ fontSize: 10, color: '#aaa' }}>{servicesInGroup.length} services</span>
+                      <span style={{ fontSize: 10, color: '#9ca3af' }}>{servicesInGroup.length} services</span>
                     </div>
                     <div>
                       {servicesInGroup.map((service: ServiceStatus) => (
@@ -469,12 +469,12 @@ export function PlatformCapabilities() {
                           <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleServiceExpanded(service.name)}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               {expandedServices.has(service.name) ? (
-                                <ChevronDown size={14} style={{ color: '#aaa' }} />
+                                <CaretDown size={14} weight="bold" style={{ color: '#9ca3af' }} />
                               ) : (
-                                <ChevronRight size={14} style={{ color: '#aaa' }} />
+                                <CaretRight size={14} weight="bold" style={{ color: '#9ca3af' }} />
                               )}
                               <strong style={{ fontSize: 12 }}>{service.display_name}</strong>
-                              {service.is_optional && <span style={{ fontSize: 9, color: '#aaa', background: '#2a2a2a', padding: '2px 6px', borderRadius: 3 }}>optional</span>}
+                              {service.is_optional && <span style={{ fontSize: 9, color: '#9ca3af', background: '#111111', padding: '2px 6px', borderRadius: 3 }}>optional</span>}
                               <span
                                 style={{
                                   fontSize: 10,
@@ -490,7 +490,7 @@ export function PlatformCapabilities() {
                               </span>
                             </div>
                             {expandedServices.has(service.name) && (
-                              <div style={{ fontSize: 10, color: '#aaa', marginTop: 6, marginLeft: 22 }}>
+                              <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 6, marginLeft: 22 }}>
                                 {service.description}
                               </div>
                             )}
@@ -517,7 +517,7 @@ export function PlatformCapabilities() {
                                   opacity: loadingService === service.name ? 0.6 : 1,
                                 }}
                               >
-                                {loadingService === service.name ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={10} />}
+                                {loadingService === service.name ? <SpinnerGap size={10} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={10} weight="duotone" />}
                               </button>
                             ) : (
                               <>
@@ -539,7 +539,7 @@ export function PlatformCapabilities() {
                                     opacity: loadingService === service.name ? 0.6 : 1,
                                   }}
                                 >
-                                  {loadingService === service.name ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={10} />}
+                                  {loadingService === service.name ? <SpinnerGap size={10} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <Square size={10} weight="duotone" />}
                                 </button>
                                 <button
                                   onClick={() => handleServiceRestart(service.name)}
@@ -559,7 +559,7 @@ export function PlatformCapabilities() {
                                     opacity: loadingService === service.name ? 0.6 : 1,
                                   }}
                                 >
-                                  {loadingService === service.name ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={10} />}
+                                  {loadingService === service.name ? <SpinnerGap size={10} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} /> : <ArrowsClockwise size={10} weight="duotone" />}
                                 </button>
                               </>
                             )}
@@ -575,28 +575,28 @@ export function PlatformCapabilities() {
 
           {/* Expanded Service Details */}
           {servicesStatus.data && expandedServices.size > 0 && (
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #333' }}>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1e293b' }}>
               {Object.values(servicesStatus.data.services || {}).map((service: ServiceStatus) => {
                 if (!expandedServices.has(service.name)) return null
 
                 return (
-                  <div key={service.name} style={{ marginBottom: 12, padding: 10, background: '#1a1a1a', borderRadius: 6, border: `1px solid ${STATE_COLORS[service.state]}40` }}>
+                  <div key={service.name} style={{ marginBottom: 12, padding: 10, background: '#0a0a0a', borderRadius: 6, border: `1px solid ${STATE_COLORS[service.state]}40` }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, fontSize: 10 }}>
                       {service.started_at && (
                         <div>
-                          <div style={{ color: '#aaa', marginBottom: 2 }}>Started</div>
+                          <div style={{ color: '#9ca3af', marginBottom: 2 }}>Started</div>
                           <div style={{ color: '#fff' }}>{new Date(service.started_at).toLocaleString()}</div>
                         </div>
                       )}
                       {service.dependencies.length > 0 && (
                         <div>
-                          <div style={{ color: '#aaa', marginBottom: 2 }}>Dependencies</div>
+                          <div style={{ color: '#9ca3af', marginBottom: 2 }}>Dependencies</div>
                           <div style={{ color: '#fff' }}>{service.dependencies.join(', ')}</div>
                         </div>
                       )}
                       {service.health.message && (
                         <div>
-                          <div style={{ color: '#aaa', marginBottom: 2 }}>Health</div>
+                          <div style={{ color: '#9ca3af', marginBottom: 2 }}>Health</div>
                           <div style={{ color: service.health.healthy ? '#4caf50' : '#ef5350' }}>
                             {service.health.healthy ? '✓' : '✗'} {service.health.message}
                           </div>
@@ -615,8 +615,8 @@ export function PlatformCapabilities() {
           )}
 
           {/* Integration Summary */}
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #333', padding: 10, background: 'rgba(100,181,246,0.08)', borderRadius: 6 }}>
-            <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.6 }}>
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1e293b', padding: 10, background: 'rgba(100,181,246,0.08)', borderRadius: 6 }}>
+            <div style={{ fontSize: 10, color: '#9ca3af', lineHeight: 1.6 }}>
               <strong style={{ color: '#64b5f6', fontSize: 11 }}>Integration Architecture:</strong> MAP2 provides multi-layered connectivity. Audio flows through ALSA (hardware access) and JACK (app routing). MIDI uses USB and ALSA sequencer protocols. REST API with {apiCount || '120+'}  endpoints enables remote monitoring and control. WebSocket connections deliver real-time updates. All {Object.keys(servicesStatus.data?.services || {}).length} services feature health monitoring, automatic failover, and graceful degradation for robust audio processing.
             </div>
           </div>
@@ -626,13 +626,13 @@ export function PlatformCapabilities() {
         <div className="card" style={{ padding: 16, gridColumn: '1 / -1' }}>
           <div className="flex" style={{ gap: 10, marginBottom: 12, alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <TrendingUp size={20} style={{ color: '#64b5f6', flexShrink: 0, marginTop: 2 }} />
+              <TrendUp size={20} weight="duotone" style={{ color: '#64b5f6', flexShrink: 0, marginTop: 2 }} />
               <div>
                 <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>System Metrics - Live Performance</h4>
-                <p style={{ margin: 0, fontSize: 11, color: '#aaa' }}>Real-time CPU, memory, disk, and audio metrics</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Real-time CPU, memory, disk, and audio metrics</p>
               </div>
             </div>
-            <span style={{ fontSize: 10, color: '#aaa', background: '#2a2a2a', padding: '4px 8px', borderRadius: 4 }}>
+            <span style={{ fontSize: 10, color: '#9ca3af', background: '#111111', padding: '4px 8px', borderRadius: 4 }}>
               {metricsCurrentQuery.isFetching ? 'Refreshing 4s' : 'Live'}
             </span>
           </div>
@@ -640,10 +640,10 @@ export function PlatformCapabilities() {
           {/* Current Metrics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
             {/* CPU */}
-            <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Cpu size={14} style={{ color: '#64b5f6' }} />
-                <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>CPU Load</div>
+                <Cpu size={14} weight="duotone" style={{ color: '#64b5f6' }} />
+                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>CPU Load</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.cpu_percent, { warn: 70, critical: 90 }) }}>
                 {formatMaybeNumber(metricsCurrentQuery.data?.cpu_percent, 1, '%')}
@@ -651,24 +651,24 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Memory */}
-            <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <HardDrive size={14} style={{ color: '#81c784' }} />
-                <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>Memory</div>
+                <HardDrive size={14} weight="duotone" style={{ color: '#81c784' }} />
+                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Memory</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.memory_percent, { warn: 80, critical: 95 }) }}>
                 {formatMaybeNumber(metricsCurrentQuery.data?.memory_percent, 1, '%')}
               </div>
-              <div style={{ fontSize: 9, color: '#aaa', marginTop: 4 }}>
+              <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 4 }}>
                 {metricsCurrentQuery.data?.memory_used_mb} / {metricsCurrentQuery.data?.memory_total_mb} MB
               </div>
             </div>
 
             {/* Disk */}
-            <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <HardDrive size={14} style={{ color: '#ffa726' }} />
-                <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>Disk</div>
+                <HardDrive size={14} weight="duotone" style={{ color: '#ffa726' }} />
+                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Disk</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.disk_percent, { warn: 80, critical: 90 }) }}>
                 {formatMaybeNumber(metricsCurrentQuery.data?.disk_percent, 1, '%')}
@@ -676,10 +676,10 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Audio Latency */}
-            <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Clock size={14} style={{ color: '#4caf50' }} />
-                <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>Latency</div>
+                <Clock size={14} weight="duotone" style={{ color: '#4caf50' }} />
+                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Latency</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: getMetricColor(metricsCurrentQuery.data?.audio_latency_ms, { warn: 8, critical: 16 }) }}>
                 {formatMaybeNumber(metricsCurrentQuery.data?.audio_latency_ms, 2, 'ms')}
@@ -687,22 +687,22 @@ export function PlatformCapabilities() {
             </div>
 
             {/* XRuns */}
-            <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <AlertCircle size={14} style={{ color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }} />
-                <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>XRuns</div>
+                <WarningCircle size={14} weight="duotone" style={{ color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }} />
+                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>XRuns</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }}>
                 {typeof metricsCurrentQuery.data?.audio_xruns === 'number' ? metricsCurrentQuery.data.audio_xruns : '—'}
               </div>
-              <div style={{ fontSize: 9, color: '#aaa', marginTop: 4 }}>Audio stability</div>
+              <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 4 }}>Audio stability</div>
             </div>
 
             {/* Uptime */}
-            <div style={{ padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Clock size={14} style={{ color: '#64b5f6' }} />
-                <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>Uptime</div>
+                <Clock size={14} weight="duotone" style={{ color: '#64b5f6' }} />
+                <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>Uptime</div>
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#64b5f6' }}>
                 {metricsCurrentQuery.data ? `${Math.floor((metricsCurrentQuery.data.uptime_seconds || 0) / 3600)}h ${Math.floor(((metricsCurrentQuery.data.uptime_seconds || 0) % 3600) / 60)}m` : '—'}
@@ -712,23 +712,23 @@ export function PlatformCapabilities() {
 
           {/* Summary Statistics */}
           {metricsSummaryQuery.data && (
-            <div style={{ marginBottom: 16, padding: 12, background: '#1a1a1a', borderRadius: 6, border: '1px solid #333' }}>
+            <div style={{ marginBottom: 16, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: '#ffa726', marginBottom: 10, textTransform: 'uppercase' }}>Min / Avg / Max Statistics</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
                 <div>
-                  <div style={{ fontSize: 9, color: '#aaa', marginBottom: 6 }}>CPU %</div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 6 }}>CPU %</div>
                   <div style={{ fontSize: 11, color: '#fff' }}>
                     {formatMaybeNumber(metricsSummaryQuery.data.cpu.min, 1)} / {formatMaybeNumber(metricsSummaryQuery.data.cpu.avg, 1)} / {formatMaybeNumber(metricsSummaryQuery.data.cpu.max, 1)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 9, color: '#aaa', marginBottom: 6 }}>Memory %</div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 6 }}>Memory %</div>
                   <div style={{ fontSize: 11, color: '#fff' }}>
                     {formatMaybeNumber(metricsSummaryQuery.data.memory.min, 1)} / {formatMaybeNumber(metricsSummaryQuery.data.memory.avg, 1)} / {formatMaybeNumber(metricsSummaryQuery.data.memory.max, 1)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 9, color: '#aaa', marginBottom: 6 }}>Latency ms</div>
+                  <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 6 }}>Latency ms</div>
                   <div style={{ fontSize: 11, color: '#fff' }}>
                     {formatMaybeNumber(metricsSummaryQuery.data.latency.min, 2)} / {formatMaybeNumber(metricsSummaryQuery.data.latency.avg, 2)} / {formatMaybeNumber(metricsSummaryQuery.data.latency.max, 2)}
                   </div>
@@ -739,8 +739,8 @@ export function PlatformCapabilities() {
 
           {/* Loading State */}
           {metricsCurrentQuery.isLoading && (
-            <div style={{ padding: 20, textAlign: 'center', color: '#aaa' }}>
-              <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
+            <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af' }}>
+              <SpinnerGap size={16} weight="duotone" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: 8 }} />
               Loading metrics...
             </div>
           )}
@@ -754,7 +754,7 @@ export function PlatformCapabilities() {
 
           {/* Metrics Summary */}
           <div style={{ marginTop: 12, padding: 10, background: 'rgba(100,181,246,0.08)', borderRadius: 6 }}>
-            <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 10, color: '#9ca3af', lineHeight: 1.6 }}>
               <strong style={{ color: '#64b5f6', fontSize: 11 }}>Performance Overview:</strong> Real-time system metrics provide visibility into MAP2 platform health. CPU and memory usage indicate system load, while audio latency and XRun counts reflect audio engine stability. The metrics refresh every 4 seconds for current status and every 10 seconds for statistical summaries (min/avg/max), enabling proactive performance monitoring and optimization.
             </div>
           </div>
@@ -763,10 +763,10 @@ export function PlatformCapabilities() {
         {/* Platform Standards, Assets & Tools - Table Card */}
         <div className="card" style={{ padding: 16 }}>
           <div className="flex" style={{ gap: 10, marginBottom: 16, alignItems: 'flex-start' }}>
-            <Zap size={20} style={{ color: '#ffa726', flexShrink: 0, marginTop: 2 }} />
+            <Lightning size={20} weight="duotone" style={{ color: '#ffa726', flexShrink: 0, marginTop: 2 }} />
             <div>
               <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Platform Standards & Tools</h4>
-              <p style={{ margin: 0, fontSize: 11, color: '#aaa' }}>Supported formats, protocols, and development tools</p>
+              <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Supported formats, protocols, and development tools</p>
             </div>
           </div>
 
@@ -825,7 +825,7 @@ export function PlatformCapabilities() {
             </tbody>
             <tfoot>
               <tr style={{ borderTop: '1px solid rgba(100,100,100,0.3)' }}>
-                <td colSpan={2} style={{ padding: '10px 12px', color: '#888' }}>
+                <td colSpan={2} style={{ padding: '10px 12px', color: '#6b7280' }}>
                   Published REST APIs
                 </td>
                 <td colSpan={2} style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#64b5f6' }}>
@@ -844,7 +844,7 @@ export function PlatformCapabilities() {
                 {getStatusIcon(testResult.overall_status, testResult.score)}
                 <div>
                   <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>JUCE Engine Health & Performance</h4>
-                  <p style={{ margin: 0, fontSize: 11, color: '#aaa' }}>Real-time audio engine testing & metrics</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Real-time audio engine testing & metrics</p>
                 </div>
               </div>
               <button
@@ -854,29 +854,29 @@ export function PlatformCapabilities() {
                 style={{ padding: '4px 8px', flexShrink: 0 }}
                 title="Rerun performance test"
               >
-                <RefreshCw size={14} className={runningTest ? 'animate-spin' : ''} style={{ color: runningTest ? '#ffa726' : undefined }} />
+                <ArrowsClockwise size={14} weight="duotone" className={runningTest ? 'animate-spin' : ''} style={{ color: runningTest ? '#ffa726' : undefined }} />
               </button>
             </div>
 
             {/* Score and Latency Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div style={{ padding: 12, background: 'rgba(100,100,100,0.1)', borderRadius: 8 }}>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 4, textTransform: 'uppercase' }}>RT Score</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>RT Score</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: getStatusColor(testResult.overall_status, testResult.score) }}>
                   {testResult.score}/100
                 </div>
-                <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
                   {testResult.score >= 90 ? 'Excellent' : testResult.score >= 75 ? 'Good' : testResult.score >= 50 ? 'Fair' : 'Needs Attention'}
                 </div>
               </div>
               <div style={{ padding: 12, background: 'rgba(100,100,100,0.1)', borderRadius: 8 }}>
-                <div style={{ fontSize: 10, color: '#888', marginBottom: 4, textTransform: 'uppercase' }}>Latency</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4, textTransform: 'uppercase' }}>Latency</div>
                 <div style={{ fontSize: 24, fontWeight: 700, color: '#4caf50' }}>
                   {testResult.engine_info?.buffer_size && testResult.engine_info?.sample_rate
                     ? ((testResult.engine_info.buffer_size / testResult.engine_info.sample_rate) * 1000).toFixed(2)
                     : '5.33'} ms
                 </div>
-                <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
                   {testResult.engine_info?.sample_rate ? `${(testResult.engine_info.sample_rate / 1000).toFixed(0)} kHz` : '48 kHz'} / {testResult.engine_info?.buffer_size ?? 256} samples
                 </div>
               </div>
@@ -885,7 +885,7 @@ export function PlatformCapabilities() {
             {/* Progress Bar */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: '100%', height: 6, background: '#333', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: 6, background: '#222222', borderRadius: 3, overflow: 'hidden' }}>
                   <div style={{
                     width: `${testResult.score}%`,
                     height: '100%',
@@ -902,7 +902,7 @@ export function PlatformCapabilities() {
 
             {/* Test Results */}
             <div style={{ marginBottom: 16 }}>
-              <h5 style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#ccc' }}>Test Results</h5>
+              <h5 style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#d1d5db' }}>Test Results</h5>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(() => {
                   // Get key tests from categories or use fallback
@@ -932,10 +932,10 @@ export function PlatformCapabilities() {
                       fontSize: 11
                     }}>
                       {test.passed
-                        ? <CheckCircle size={14} style={{ color: '#4caf50', flexShrink: 0 }} />
-                        : <XCircle size={14} style={{ color: '#ef5350', flexShrink: 0 }} />}
+                        ? <CheckCircle size={14} weight="duotone" style={{ color: '#4caf50', flexShrink: 0 }} />
+                        : <XCircle size={14} weight="duotone" style={{ color: '#ef5350', flexShrink: 0 }} />}
                       <span style={{ fontWeight: 500 }}>{test.name}</span>
-                      <span style={{ color: '#888', flex: 1 }}>— {test.details}</span>
+                      <span style={{ color: '#6b7280', flex: 1 }}>— {test.details}</span>
                       <span style={{
                         fontSize: 10,
                         padding: '2px 6px',
@@ -952,7 +952,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Engine Info & Timestamp */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: '#666', borderTop: '1px solid rgba(100,100,100,0.2)', paddingTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: '#6b7280', borderTop: '1px solid rgba(100,100,100,0.2)', paddingTop: 12 }}>
               <div>
                 {testResult.engine_info?.version && <span>JUCE v{testResult.engine_info.version} • </span>}
                 {testResult.engine_info?.plugin_count && <span>{testResult.engine_info.plugin_count} plugins</span>}

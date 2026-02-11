@@ -1,30 +1,30 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download, ChevronDown, ChevronUp, Waves, Speaker, Loader2, Github, Building2, Radio, AlertCircle, Mountain, Music, Zap, FileMusic } from 'lucide-react'
+import { DownloadSimple, CaretDown, CaretUp, WaveSine, SpeakerHigh, SpinnerGap, GithubLogo, Buildings, Broadcast, WarningCircle, Mountains, MusicNote, Lightning, FileDashed } from '@phosphor-icons/react'
 import { irLibraryApi, soundfontApi } from '../../../map2/api'
 import { LIBRARY_SOURCES, SOUNDFONT_SOURCES } from '../../types/library'
 import { useDownloadProgress } from '../../hooks/useDownloadProgress'
 import { useSoundFontDownloadProgress } from '../../hooks/useSoundFontDownloadProgress'
 import { Tone3000Config } from './Tone3000Config'
 
-const SOURCE_ICONS: Record<string, typeof Waves> = {
+const SOURCE_ICONS: Record<string, typeof WaveSine> = {
   // Reverb IRs
-  conners: Waves,
-  voxengo: Building2,
-  samplicity: Waves,
-  signaltonoize: Radio,
-  echothief: Mountain,
-  lexicon: Music,
+  conners: WaveSine,
+  voxengo: Buildings,
+  samplicity: WaveSine,
+  signaltonoize: Broadcast,
+  echothief: Mountains,
+  lexicon: MusicNote,
   // Cabinet IRs
-  djammincabs: Radio,
-  overdriven: Speaker,
+  djammincabs: Broadcast,
+  overdriven: SpeakerHigh,
   // NAM Models
-  nam_github: Github,
-  tone3000: Zap,
+  nam_github: GithubLogo,
+  tone3000: Lightning,
   // SoundFonts
-  sfzinstruments: Github,
-  musical_artifacts: Building2,
-  freepats: FileMusic,
+  sfzinstruments: GithubLogo,
+  musical_artifacts: Buildings,
+  freepats: FileDashed,
 }
 
 export function LibrarySources() {
@@ -102,12 +102,12 @@ export function LibrarySources() {
         >
           {allExpanded ? (
             <>
-              <ChevronUp size={16} />
+              <CaretUp size={16} weight="bold" />
               Hide All Sources
             </>
           ) : (
             <>
-              <ChevronDown size={16} />
+              <CaretDown size={16} weight="bold" />
               Show All Sources
             </>
           )}
@@ -132,7 +132,7 @@ export function LibrarySources() {
           }}
         >
           <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            <Download size={20} style={{ color: 'var(--primary)' }} />
+            <DownloadSimple size={20} weight="duotone" style={{ color: 'var(--primary)' }} />
             <span style={{ fontWeight: 600, fontSize: 16 }}>IR & NAM Library Sources</span>
             <span className="badge" style={{ marginLeft: 8 }}>
               {sourcesWithCounts.length} sources
@@ -150,18 +150,18 @@ export function LibrarySources() {
               >
                 {isStarting ? (
                   <>
-                    <Loader2 size={14} className="spin" />
+                    <SpinnerGap size={14} weight="duotone" className="spin" />
                     Starting...
                   </>
                 ) : (
                   <>
-                    <Download size={14} />
+                    <DownloadSimple size={14} weight="duotone" />
                     Download All
                   </>
                 )}
               </button>
             )}
-            {irExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            {irExpanded ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />}
           </div>
         </button>
 
@@ -170,7 +170,7 @@ export function LibrarySources() {
             {startError && (
               <div className="card" style={{ padding: 12, marginBottom: 12, background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)' }}>
                 <div className="flex" style={{ gap: 8, alignItems: 'center', color: 'var(--danger)' }}>
-                  <AlertCircle size={16} />
+                  <WarningCircle size={16} weight="duotone" />
                   <span style={{ fontSize: 13 }}>
                     Download failed: {startError instanceof Error ? startError.message : 'Unknown error'}
                   </span>
@@ -185,7 +185,7 @@ export function LibrarySources() {
 
             <div className="grid" style={{ gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
               {sourcesWithCounts.map(source => {
-                const Icon = SOURCE_ICONS[source.name] ?? Waves
+                const Icon = SOURCE_ICONS[source.name] ?? WaveSine
                 return (
                   <div
                     key={source.name}
@@ -215,7 +215,7 @@ export function LibrarySources() {
                         onClick={() => handleDownloadSource(source.name)}
                         disabled={isDownloading || isStarting}
                       >
-                        <Download size={14} />
+                        <DownloadSimple size={14} weight="duotone" />
                         Download
                       </button>
                     </div>
@@ -245,7 +245,7 @@ export function LibrarySources() {
           }}
         >
           <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-            <FileMusic size={20} style={{ color: 'var(--accent)' }} />
+            <FileDashed size={20} weight="duotone" style={{ color: 'var(--accent)' }} />
             <span style={{ fontWeight: 600, fontSize: 16 }}>SoundFont Sources</span>
             <span className="badge" style={{ marginLeft: 8 }}>
               {sfSourcesWithCounts.length} sources
@@ -262,17 +262,17 @@ export function LibrarySources() {
             >
               {isSFDownloadingAll ? (
                 <>
-                  <Loader2 size={14} className="spin" />
+                  <SpinnerGap size={14} weight="duotone" className="spin" />
                   Starting...
                 </>
               ) : (
                 <>
-                  <Download size={14} />
+                  <DownloadSimple size={14} weight="duotone" />
                   Download All
                 </>
               )}
             </button>
-            {sfExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            {sfExpanded ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />}
           </div>
         </button>
 
@@ -281,7 +281,7 @@ export function LibrarySources() {
             {sfStartError && (
               <div className="card" style={{ padding: 12, marginBottom: 12, background: 'var(--danger-bg)', borderLeft: '3px solid var(--danger)' }}>
                 <div className="flex" style={{ gap: 8, alignItems: 'center', color: 'var(--danger)' }}>
-                  <AlertCircle size={16} />
+                  <WarningCircle size={16} weight="duotone" />
                   <span style={{ fontSize: 13 }}>
                     Download failed: {sfStartError instanceof Error ? sfStartError.message : 'Unknown error'}
                   </span>
@@ -291,7 +291,7 @@ export function LibrarySources() {
 
             <div className="grid" style={{ gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
               {sfSourcesWithCounts.map(source => {
-                const Icon = SOURCE_ICONS[source.name] ?? FileMusic
+                const Icon = SOURCE_ICONS[source.name] ?? FileDashed
                 const isDownloadingThisSource = isSFDownloading && downloadingSourceId === source.name
                 return (
                   <div
@@ -324,12 +324,12 @@ export function LibrarySources() {
                       >
                         {isDownloadingThisSource ? (
                           <>
-                            <Loader2 size={14} className="spin" />
+                            <SpinnerGap size={14} weight="duotone" className="spin" />
                             Downloading...
                           </>
                         ) : (
                           <>
-                            <Download size={14} />
+                            <DownloadSimple size={14} weight="duotone" />
                             Download
                           </>
                         )}

@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react'
-import { Waves, Sliders, LayoutGrid, Timer, Music2, Zap, Guitar, Sparkles, Volume2, ChevronRight } from 'lucide-react'
+import { WaveSine, Sliders, GridFour, Timer, MusicNotes, Lightning, Guitar, Sparkle, SpeakerHigh, CaretRight } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { CompressorCard, LimiterCard, GateCard } from '../components/Dynamics'
 import { EQCard } from '../components/EQ'
@@ -55,7 +55,7 @@ export function DSPPage() {
     <div className="dsp-page">
       <header className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Waves size={32} style={{ color: '#3b82f6' }} />
+          <WaveSine size={32} weight="duotone" style={{ color: '#2563eb' }} />
           <div>
             <h1>Native DSP Processors</h1>
             <p className="page-subtitle">Built-in JUCE audio engine — {NATIVE_PLUGINS.length} processors available</p>
@@ -127,16 +127,16 @@ export function DSPPage() {
                   border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 500,
                 }}
               >
-                <LayoutGrid size={14} /> Open in Grid Editor
+                <GridFour size={14} weight="bold" /> Open in Grid Editor
               </button>
             </div>
-            <p style={{ color: '#888', fontSize: 13, marginBottom: 20 }}>
+            <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 20 }}>
               All {NATIVE_PLUGINS.length} built-in JUCE processors. Add them to your signal chain via the Grid editor.
             </p>
             {Object.entries(pluginsByCategory).map(([category, plugins]) => (
               <div key={category} style={{ marginBottom: 20 }}>
-                <h3 style={{ fontSize: 14, color: '#aaa', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
-                  {category} <span style={{ color: '#555' }}>({plugins.length})</span>
+                <h3 style={{ fontSize: 14, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
+                  {category} <span style={{ color: '#6b7280' }}>({plugins.length})</span>
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
                   {plugins.map(p => (
@@ -145,27 +145,27 @@ export function DSPPage() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: 12,
                         padding: '12px 16px',
-                        background: '#1a1a2e',
-                        border: '1px solid #2a2a3e',
+                        background: '#111111',
+                        border: '1px solid #1a1a1a',
                         borderLeft: `3px solid ${p.color}`,
                         borderRadius: 8,
                         cursor: 'pointer',
                         transition: 'all 0.15s',
                       }}
                       onClick={() => navigate('/grid')}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#222240'; e.currentTarget.style.borderColor = '#444' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.borderColor = '#2a2a3e' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#1a1a1a'; e.currentTarget.style.borderColor = '#1e293b' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#111111'; e.currentTarget.style.borderColor = '#1a1a1a' }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: 13, color: '#fff' }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{p.uri}</div>
+                        <div style={{ fontWeight: 500, fontSize: 13, color: '#f3f4f6' }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{p.uri}</div>
                       </div>
                       {p.standalone && (
                         <span style={{ fontSize: 10, padding: '2px 6px', background: '#22c55e22', color: '#22c55e', borderRadius: 4 }}>
                           Standalone
                         </span>
                       )}
-                      <ChevronRight size={14} style={{ color: '#555' }} />
+                      <CaretRight size={14} weight="bold" style={{ color: '#6b7280' }} />
                     </div>
                   ))}
                 </div>
@@ -190,13 +190,13 @@ export function DSPPage() {
           margin: 0 0 8px 0;
           font-size: 24px;
           font-weight: 600;
-          color: #fff;
+          color: #f3f4f6;
         }
 
         .page-subtitle {
           margin: 0;
           font-size: 14px;
-          color: #888;
+          color: #6b7280;
         }
 
         .section-tabs {
@@ -204,14 +204,14 @@ export function DSPPage() {
           gap: 8px;
           margin-bottom: 24px;
           padding-bottom: 16px;
-          border-bottom: 1px solid #333;
+          border-bottom: 1px solid #1e293b;
         }
 
         .section-tab {
-          background: #222;
-          border: 1px solid #444;
+          background: #111111;
+          border: 1px solid #1e293b;
           border-radius: 6px;
-          color: #888;
+          color: #6b7280;
           font-size: 13px;
           padding: 8px 16px;
           cursor: pointer;
@@ -219,14 +219,14 @@ export function DSPPage() {
         }
 
         .section-tab:hover {
-          background: #333;
-          color: #fff;
+          background: #1a1a1a;
+          color: #f3f4f6;
         }
 
         .section-tab.active {
-          background: #444;
-          border-color: #666;
-          color: #fff;
+          background: #222222;
+          border-color: #1e293b;
+          color: #f3f4f6;
         }
 
         .dsp-content {
@@ -236,8 +236,8 @@ export function DSPPage() {
         }
 
         .dsp-section {
-          background: #111;
-          border: 1px solid #2a2a2a;
+          background: #0a0a0a;
+          border: 1px solid #1a1a1a;
           border-radius: 12px;
           padding: 20px;
         }
@@ -246,7 +246,7 @@ export function DSPPage() {
           margin: 0 0 16px 0;
           font-size: 16px;
           font-weight: 500;
-          color: #aaa;
+          color: #9ca3af;
           text-transform: uppercase;
           letter-spacing: 1px;
         }

@@ -16,7 +16,7 @@ import {
   Tab,
   Alert,
 } from '@mui/material'
-import { Cpu, TrendingUp, Zap, Activity, Info } from 'lucide-react'
+import { Cpu, TrendUp, Lightning, Pulse, Info } from '@phosphor-icons/react'
 
 interface CPUGeneration {
   gen: string
@@ -132,13 +132,13 @@ export default function CPUPerformancePage() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(180deg, #0F0F12 0%, #111114 100%)',
+      background: 'linear-gradient(180deg, #0a0a0a 0%, #111111 100%)',
       padding: '24px',
     }}>
       {/* Page Title */}
       <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="h3" style={{ color: '#E0E0E5', fontWeight: 700, marginBottom: 8 }}>
-          <Cpu size={32} style={{ marginRight: 12, verticalAlign: 'middle', color: '#3b82f6' }} />
+        <Typography variant="h3" style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8 }}>
+          <Cpu size={32} weight="duotone" style={{ marginRight: 12, verticalAlign: 'middle', color: '#2563eb' }} />
           CPU Performance Analysis
         </Typography>
         <Typography variant="subtitle1" style={{ color: '#94a3b8', fontSize: 14 }}>
@@ -149,14 +149,14 @@ export default function CPUPerformancePage() {
       {/* Info Alert */}
       <Alert 
         severity="info" 
-        icon={<Info size={20} />}
+        icon={<Info size={20} weight="duotone" />}
         style={{ 
           marginBottom: 24, 
           background: 'rgba(59, 130, 246, 0.1)', 
           border: '1px solid rgba(59, 130, 246, 0.3)' 
         }}
       >
-        <Typography variant="body2" style={{ color: '#E0E0E5', fontSize: 13, lineHeight: 1.6 }}>
+        <Typography variant="body2" style={{ color: '#f3f4f6', fontSize: 13, lineHeight: 1.6 }}>
           <strong>Baseline:</strong> Intel Core i7-7700K (7th Gen, 2017) - 4 cores/8 threads
           <br />
           <strong>Test Configuration:</strong> Edirol UA-1000 @ 48kHz, 64-sample buffer, 24-bit
@@ -177,7 +177,7 @@ export default function CPUPerformancePage() {
 
       {/* Tab 0: Table View */}
       {selectedTab === 0 && (
-        <Card style={{ background: '#1a1a2e', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+        <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
           <CardContent>
             <TableContainer>
               <Table>
@@ -187,15 +187,15 @@ export default function CPUPerformancePage() {
                     <TableCell style={{ color: '#94a3b8', fontWeight: 600 }}>Year</TableCell>
                     <TableCell style={{ color: '#94a3b8', fontWeight: 600 }}>Architecture</TableCell>
                     <TableCell align="center" style={{ color: '#94a3b8', fontWeight: 600 }}>
-                      <Zap size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      <Lightning size={16} weight="duotone" style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       Effects Capacity
                     </TableCell>
                     <TableCell align="center" style={{ color: '#94a3b8', fontWeight: 600 }}>
-                      <Activity size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      <Pulse size={16} weight="duotone" style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       Channel Capacity
                     </TableCell>
                     <TableCell align="center" style={{ color: '#94a3b8', fontWeight: 600 }}>
-                      <TrendingUp size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      <TrendUp size={16} weight="duotone" style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       vs. Baseline
                     </TableCell>
                   </TableRow>
@@ -213,7 +213,7 @@ export default function CPUPerformancePage() {
                         }}
                       >
                         <TableCell>
-                          <Typography variant="body2" style={{ fontWeight: 600, color: '#E0E0E5' }}>
+                          <Typography variant="body2" style={{ fontWeight: 600, color: '#f3f4f6' }}>
                             {cpu.gen}
                           </Typography>
                           {isBaseline && (
@@ -273,9 +273,9 @@ export default function CPUPerformancePage() {
       {selectedTab === 1 && (
         <Box sx={{ display: 'grid', gap: 3 }}>
           {/* Performance Multiplier Chart */}
-          <Card style={{ background: '#1a1a2e', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+          <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
             <CardContent>
-              <Typography variant="h6" style={{ color: '#E0E0E5', marginBottom: 16, fontWeight: 600 }}>
+              <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
                 Overall Performance vs. 7th Gen Baseline
               </Typography>
               <Box sx={{ display: 'grid', gap: 2 }}>
@@ -320,10 +320,10 @@ export default function CPUPerformancePage() {
           </Card>
 
           {/* Effects Capacity Chart */}
-          <Card style={{ background: '#1a1a2e', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+          <Card style={{ background: '#111111', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
             <CardContent>
-              <Typography variant="h6" style={{ color: '#E0E0E5', marginBottom: 16, fontWeight: 600 }}>
-                <Zap size={20} style={{ marginRight: 8, verticalAlign: 'middle', color: '#a855f7' }} />
+              <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
+                <Lightning size={20} weight="duotone" style={{ marginRight: 8, verticalAlign: 'middle', color: '#a855f7' }} />
                 Complex Effects Processing Capacity
               </Typography>
               <Box sx={{ display: 'grid', gap: 2 }}>
@@ -368,10 +368,10 @@ export default function CPUPerformancePage() {
           </Card>
 
           {/* Channel Capacity Chart */}
-          <Card style={{ background: '#1a1a2e', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+          <Card style={{ background: '#111111', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
             <CardContent>
-              <Typography variant="h6" style={{ color: '#E0E0E5', marginBottom: 16, fontWeight: 600 }}>
-                <Activity size={20} style={{ marginRight: 8, verticalAlign: 'middle', color: '#22c55e' }} />
+              <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
+                <Pulse size={20} weight="duotone" style={{ marginRight: 8, verticalAlign: 'middle', color: '#22c55e' }} />
                 Simultaneous Channel Capacity
               </Typography>
               <Box sx={{ display: 'grid', gap: 2 }}>

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Loader2, RefreshCw, Zap, X, Upload, Star } from 'lucide-react'
+import { Check, SpinnerGap, ArrowsClockwise, Lightning, X, UploadSimple, Star } from '@phosphor-icons/react'
 import { namApi } from '../../../map2/api'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
@@ -145,11 +145,11 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
       >
         <div className="flex-between" style={{ marginBottom: 8 }}>
           <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-            <Zap size={20} style={{ color: '#f6c452' }} />
+            <Lightning size={20} weight="duotone" style={{ color: '#f6c452' }} />
             <h3 style={{ margin: 0 }}>Neural Amp Modeler</h3>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -172,7 +172,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
               onClick={handleUpload}
               disabled={uploading}
             >
-              <Upload size={16} />
+              <UploadSimple size={16} weight="duotone" />
               {uploading ? 'Uploading...' : 'Upload'}
             </button>
             <button
@@ -180,7 +180,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
               onClick={handleRefresh}
               disabled={modelsQuery.isFetching}
             >
-              <RefreshCw size={16} className={modelsQuery.isFetching ? 'spin' : ''} />
+              <ArrowsClockwise size={16} weight="duotone" className={modelsQuery.isFetching ? 'spin' : ''} />
             </button>
           </div>
         </div>
@@ -196,7 +196,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
         {activeModel && (
           <div className="flex" style={{ marginBottom: 12 }}>
             <span className="pill success">
-              <Check size={14} />
+              <Check size={14} weight="bold" />
               Active: {activeModel}
             </span>
           </div>
@@ -216,7 +216,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
                 gap: 6,
               }}
             >
-              <Star size={14} fill="#f6c452" />
+              <Star size={14} weight="duotone" fill="#f6c452" />
               FEATURED TOP AMPS
             </div>
             <div
@@ -262,7 +262,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
                     <div
                       style={{
                         fontSize: 9,
-                        color: '#888',
+                        color: '#6b7280',
                         marginBottom: 6,
                       }}
                     >
@@ -314,7 +314,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
 
         {modelsQuery.isLoading ? (
           <div className="flex" style={{ padding: 16, justifyContent: 'center' }}>
-            <Loader2 className="spin" size={20} />
+            <SpinnerGap className="spin" size={20} weight="duotone" />
             <span className="muted">Loading models...</span>
           </div>
         ) : modelsQuery.error ? (
@@ -354,7 +354,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
                           </div>
                           {isActive ? (
                             <span className="pill success" style={{ padding: '4px 8px' }}>
-                              <Check size={12} />
+                              <Check size={12} weight="bold" />
                               Active
                             </span>
                           ) : (
@@ -364,7 +364,7 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
                               disabled={loadMutation.isPending}
                             >
                               {isLoading ? (
-                                <Loader2 className="spin" size={14} />
+                                <SpinnerGap className="spin" size={14} weight="duotone" />
                               ) : (
                                 'Load'
                               )}

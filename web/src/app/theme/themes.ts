@@ -1,37 +1,37 @@
 import type { Theme } from './types';
 
 export const themes: Record<string, Theme> = {
-  // Default theme - current design
+  // Default theme - Quad-Tone Dark (near-black + blue accents)
   default: {
     id: 'default',
     name: 'Default',
-    description: 'Dark professional theme with cyan accents',
+    description: 'Near-black quad-tone theme with Material Blue accents',
     colors: {
-      'bg': '#1a1a1a',
-      'surface': '#242424',
-      'surface-2': '#2d2d2d',
-      'surface-3': '#333333',
-      'primary': '#00d4ff',
-      'primary-strong': '#0099cc',
-      'accent': '#ff6b35',
-      'muted': '#a0a0a0',
-      'muted-2': '#707070',
-      'border': 'rgba(255,255,255,0.15)',
-      'success': '#00ff41',
-      'danger': '#ff3333',
-      'warning': '#ffaa00',
-      'shadow-strong': '0 10px 30px rgba(0,0,0,0.5)',
-      'shadow-soft': '0 2px 10px rgba(0,0,0,0.3)',
+      'bg': '#0a0a0a',
+      'surface': '#111111',
+      'surface-2': '#1a1a1a',
+      'surface-3': '#222222',
+      'primary': '#2563eb',
+      'primary-strong': '#1e40af',
+      'accent': '#60a5fa',
+      'muted': '#9ca3af',
+      'muted-2': '#6b7280',
+      'border': 'rgba(255,255,255,0.06)',
+      'success': '#22c55e',
+      'danger': '#ef4444',
+      'warning': '#f59e0b',
+      'shadow-strong': '0 10px 30px rgba(0,0,0,0.6)',
+      'shadow-soft': '0 2px 10px rgba(0,0,0,0.4)',
       'color-scheme': 'dark'
     },
     widgets: {
       'border-radius-sm': '6px',
-      'border-radius-md': '12px',
-      'border-radius-lg': '16px',
-      'border-width': '2px',
+      'border-radius-md': '8px',
+      'border-radius-lg': '12px',
+      'border-width': '1px',
       'surface-gradient': 'none',
-      'glow-intensity': '1',
-      'transition-speed': '0.2s'
+      'glow-intensity': '0',
+      'transition-speed': '0.15s'
     }
   },
 

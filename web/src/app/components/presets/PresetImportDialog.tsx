@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback, DragEvent, ChangeEvent } from 'react'
-import { Upload, FileUp, CheckCircle, AlertCircle, X, Loader2 } from 'lucide-react'
+import { UploadSimple, FileArrowUp, CheckCircle, WarningCircle, X, SpinnerGap } from '@phosphor-icons/react'
 
 interface PresetImportDialogProps {
   isOpen: boolean
@@ -177,7 +177,7 @@ export function PresetImportDialog({
               color: 'var(--text-secondary, #888)',
             }}
           >
-            <X size={20} />
+            <X size={20} weight="bold" />
           </button>
         </div>
 
@@ -222,7 +222,7 @@ export function PresetImportDialog({
         >
           {file ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <FileUp size={40} style={{ color: 'var(--accent, #7c3aed)' }} />
+              <FileArrowUp size={40} weight="duotone" style={{ color: 'var(--accent, #7c3aed)' }} />
               <span style={{ fontWeight: 500 }}>{file.name}</span>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
                 {(file.size / 1024).toFixed(1)} KB
@@ -230,7 +230,7 @@ export function PresetImportDialog({
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <Upload size={40} style={{ color: 'var(--text-secondary, #888)' }} />
+              <UploadSimple size={40} weight="duotone" style={{ color: 'var(--text-secondary, #888)' }} />
               <span>Drop preset file here or click to browse</span>
             </div>
           )}
@@ -257,7 +257,7 @@ export function PresetImportDialog({
               gap: '8px',
             }}
           >
-            <AlertCircle size={18} style={{ color: '#ef4444' }} />
+            <WarningCircle size={18} weight="duotone" style={{ color: '#ef4444' }} />
             <span style={{ color: '#ef4444' }}>{error}</span>
           </div>
         )}
@@ -274,7 +274,7 @@ export function PresetImportDialog({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <CheckCircle size={18} style={{ color: '#22c55e' }} />
+              <CheckCircle size={18} weight="duotone" style={{ color: '#22c55e' }} />
               <span style={{ color: '#22c55e', fontWeight: 500 }}>Imported successfully!</span>
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
@@ -329,12 +329,12 @@ export function PresetImportDialog({
             >
               {importing ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
+                  <SpinnerGap size={18} weight="duotone" className="animate-spin" />
                   Importing...
                 </>
               ) : (
                 <>
-                  <Upload size={18} />
+                  <UploadSimple size={18} weight="duotone" />
                   Import
                 </>
               )}

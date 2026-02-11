@@ -38,7 +38,7 @@ export default function MultiSystemDashboard() {
       case 'error':
         return '#ef4444'
       default:
-        return '#999'
+        return '#9ca3af'
     }
   }
 
@@ -57,7 +57,7 @@ export default function MultiSystemDashboard() {
 
   if (systems.length === 0) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center', color: '#999' }}>
+      <Paper sx={{ p: 4, textAlign: 'center', color: '#9ca3af' }}>
         <Typography sx={{ fontSize: 18, mb: 2 }}>
           📊 No systems being monitored
         </Typography>
@@ -78,7 +78,7 @@ export default function MultiSystemDashboard() {
         <Grid container spacing={2}>
           <Grid item xs={6} sm={3}>
             <Box>
-              <Typography sx={{ fontSize: 12, color: '#666' }}>Total Systems</Typography>
+              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Total Systems</Typography>
               <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#3b82f6' }}>
                 {stats.totalSystems}
               </Typography>
@@ -86,7 +86,7 @@ export default function MultiSystemDashboard() {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Box>
-              <Typography sx={{ fontSize: 12, color: '#666' }}>Online</Typography>
+              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Online</Typography>
               <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#10b981' }}>
                 {stats.onlineSystems}
               </Typography>
@@ -94,7 +94,7 @@ export default function MultiSystemDashboard() {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Box>
-              <Typography sx={{ fontSize: 12, color: '#666' }}>Offline</Typography>
+              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Offline</Typography>
               <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#6b7280' }}>
                 {stats.offlineSystems}
               </Typography>
@@ -102,8 +102,8 @@ export default function MultiSystemDashboard() {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Box>
-              <Typography sx={{ fontSize: 12, color: '#666' }}>Avg CPU</Typography>
-              <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#8b5cf6' }}>
+              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Avg CPU</Typography>
+              <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#60a5fa' }}>
                 {stats.avgCpuUsage}%
               </Typography>
             </Box>
@@ -140,7 +140,7 @@ export default function MultiSystemDashboard() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                       <Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography sx={{ fontSize: 12, color: '#666' }}>CPU</Typography>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>CPU</Typography>
                           <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
                             {system.health.cpu_usage_percent.toFixed(1)}%
                           </Typography>
@@ -151,7 +151,7 @@ export default function MultiSystemDashboard() {
                           sx={{
                             backgroundColor: '#e5e7eb',
                             '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#8b5cf6',
+                              backgroundColor: '#60a5fa',
                             },
                           }}
                         />
@@ -159,7 +159,7 @@ export default function MultiSystemDashboard() {
 
                       <Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography sx={{ fontSize: 12, color: '#666' }}>Memory</Typography>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Memory</Typography>
                           <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
                             {system.health.memory_usage_percent.toFixed(1)}%
                           </Typography>
@@ -170,7 +170,7 @@ export default function MultiSystemDashboard() {
                           sx={{
                             backgroundColor: '#e5e7eb',
                             '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#ec4899',
+                              backgroundColor: '#60a5fa',
                             },
                           }}
                         />
@@ -178,7 +178,7 @@ export default function MultiSystemDashboard() {
 
                       <Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography sx={{ fontSize: 12, color: '#666' }}>Temperature</Typography>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Temperature</Typography>
                           <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
                             {system.health.cpu_temp_celsius.toFixed(1)}°C
                           </Typography>
@@ -203,7 +203,7 @@ export default function MultiSystemDashboard() {
                   {system.disk && (
                     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid #e5e7eb' }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: 12, color: '#666' }}>Disk</Typography>
+                        <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Disk</Typography>
                         <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
                           {system.disk.use_percent.toFixed(1)}%
                         </Typography>
@@ -221,7 +221,7 @@ export default function MultiSystemDashboard() {
                     </Box>
                   )}
 
-                  <Typography sx={{ fontSize: 11, color: '#999', mt: 1.5 }}>
+                  <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 1.5 }}>
                     Last update: {new Date(system.lastUpdate).toLocaleTimeString()}
                   </Typography>
                 </CardContent>
@@ -312,7 +312,7 @@ export default function MultiSystemDashboard() {
                   p: 1.5,
                   backgroundColor: index === 0 ? '#fef3c7' : '#f9fafb',
                   borderRadius: 1,
-                  borderLeft: `4px solid ${['#fbbf24', '#d1d5db', '#cd7f32', '#999', '#999'][index]}`,
+                  borderLeft: `4px solid ${['#fbbf24', '#d1d5db', '#cd7f32', '#9ca3af', '#9ca3af'][index]}`,
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
@@ -321,16 +321,16 @@ export default function MultiSystemDashboard() {
                   </Typography>
                   <Box>
                     <Typography sx={{ fontWeight: 600 }}>{system.systemName}</Typography>
-                    <Typography sx={{ fontSize: 12, color: '#666' }}>
+                    <Typography sx={{ fontSize: 12, color: '#6b7280' }}>
                       {system.status}
                     </Typography>
                   </Box>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#8b5cf6' }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#60a5fa' }}>
                     {system.health?.cpu_usage_percent.toFixed(1) || 'N/A'}%
                   </Typography>
-                  <Typography sx={{ fontSize: 12, color: '#666' }}>CPU Usage</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#6b7280' }}>CPU Usage</Typography>
                 </Box>
               </Box>
             ))}

@@ -18,22 +18,22 @@ import {
   useComboboxStore,
 } from '@ariakit/react'
 import {
-  BookmarkPlus,
-  Loader2,
+  BookmarkSimple,
+  SpinnerGap,
   Star,
-  Settings,
-  Upload,
-  Download,
+  GearSix,
+  UploadSimple,
+  DownloadSimple,
   Globe,
   FolderOpen,
-  Trash2,
-  RefreshCw,
-  FileUp,
+  Trash,
+  ArrowsClockwise,
+  FileArrowUp,
   Users,
   Package,
   Play,
   Check,
-} from 'lucide-react'
+} from '@phosphor-icons/react'
 import type { Preset, FlowSnapshot } from '../../map2/types'
 import { presetsApi, pluginPresetsApi, flowSnapshotsApi } from '../../map2/api'
 import { PageHeader } from '../components/PageHeader'
@@ -187,7 +187,7 @@ export function PresetsPage() {
       <PageHeader
         title="Presets"
         subtitle="Manage local presets, browse community, and import/export cross-platform formats."
-        icon={<Settings size={32} style={{ color: '#3b82f6' }} />}
+        icon={<GearSix size={32} weight="duotone" style={{ color: '#2563eb' }} />}
         actions={
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -195,7 +195,7 @@ export function PresetsPage() {
               onClick={() => setShowImportDialog(true)}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <Upload size={16} />
+              <UploadSimple size={16} weight="duotone" />
               Import
             </button>
             <button
@@ -204,7 +204,7 @@ export function PresetsPage() {
               disabled={snapshots.length === 0}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <Download size={16} />
+              <DownloadSimple size={16} weight="duotone" />
               Export All
             </button>
           </div>
@@ -222,21 +222,21 @@ export function PresetsPage() {
           <TabButton
             active={activeTab === 'local'}
             onClick={() => setActiveTab('local')}
-            icon={<FolderOpen size={16} />}
+            icon={<FolderOpen size={16} weight="duotone" />}
             label="Chain Presets"
             count={snapshots.length}
           />
           <TabButton
             active={activeTab === 'plugin'}
             onClick={() => setActiveTab('plugin')}
-            icon={<Package size={16} />}
+            icon={<Package size={16} weight="duotone" />}
             label="Plugin Presets"
             count={pluginPresets.length}
           />
           <TabButton
             active={activeTab === 'community'}
             onClick={() => setActiveTab('community')}
-            icon={<Globe size={16} />}
+            icon={<Globe size={16} weight="duotone" />}
             label="Community"
           />
         </div>
@@ -277,20 +277,20 @@ export function PresetsPage() {
                   onClick={() => snapshotsQuery.refetch()}
                   title="Refresh"
                 >
-                  <RefreshCw size={16} />
+                  <ArrowsClockwise size={16} weight="duotone" />
                 </button>
               </div>
             </div>
 
             {snapshotsQuery.isLoading ? (
               <div className="flex" style={{ padding: '12px 4px' }}>
-                <Loader2 className="spin" size={18} /> Loading presets...
+                <SpinnerGap className="spin" size={18} weight="duotone" /> Loading presets...
               </div>
             ) : snapshotsQuery.error ? (
               <div className="pill warn">Failed to load presets</div>
             ) : snapshots.length === 0 ? (
               <div className="empty-state">
-                <FolderOpen size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                <FolderOpen size={48} weight="duotone" style={{ opacity: 0.3, marginBottom: '12px' }} />
                 <p>No chain presets yet.</p>
                 <p className="subtitle">Save one from the Grid editor (press S) or import from file.</p>
               </div>
@@ -346,19 +346,19 @@ export function PresetsPage() {
                 onClick={() => pluginPresetsQuery.refetch()}
                 title="Refresh"
               >
-                <RefreshCw size={16} />
+                <ArrowsClockwise size={16} weight="duotone" />
               </button>
             </div>
 
             {pluginPresetsQuery.isLoading ? (
               <div className="flex" style={{ padding: '12px 4px' }}>
-                <Loader2 className="spin" size={18} /> Loading plugin presets...
+                <SpinnerGap className="spin" size={18} weight="duotone" /> Loading plugin presets...
               </div>
             ) : pluginPresetsQuery.error ? (
               <div className="pill warn">Failed to load plugin presets</div>
             ) : pluginPresets.length === 0 ? (
               <div className="empty-state">
-                <Package size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                <Package size={48} weight="duotone" style={{ opacity: 0.3, marginBottom: '12px' }} />
                 <p>No plugin presets yet.</p>
                 <p className="subtitle">
                   Save presets from plugin parameter editors or import from file.
@@ -435,36 +435,36 @@ export function PresetsPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setShowUploadDialog(false) }}
         >
           <div style={{
-            background: '#1a1a2e', border: '1px solid #333', borderRadius: 12,
+            background: '#111111', border: '1px solid #1e293b', borderRadius: 12,
             padding: 24, width: 420, maxWidth: '90vw',
           }}>
-            <h3 style={{ margin: '0 0 16px', color: '#fff' }}>Upload to Community Library</h3>
+            <h3 style={{ margin: '0 0 16px', color: '#f3f4f6' }}>Upload to Community Library</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Preset Name *</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Preset Name *</label>
                 <input
                   value={uploadForm.name}
                   onChange={(e) => setUploadForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g., Warm Crunch"
-                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Description</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Description</label>
                 <textarea
                   value={uploadForm.description}
                   onChange={(e) => setUploadForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Describe your preset..."
                   rows={3}
-                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff', resize: 'vertical' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6', resize: 'vertical' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Category</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Category</label>
                 <select
                   value={uploadForm.category}
                   onChange={(e) => setUploadForm(f => ({ ...f, category: e.target.value }))}
-                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
                 >
                   <option value="User">User</option>
                   <option value="Guitar">Guitar</option>
@@ -477,19 +477,19 @@ export function PresetsPage() {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Tags (comma separated)</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Tags (comma separated)</label>
                 <input
                   value={uploadForm.tags}
                   onChange={(e) => setUploadForm(f => ({ ...f, tags: e.target.value }))}
                   placeholder="e.g., warm, crunch, blues"
-                  style={{ width: '100%', padding: 8, background: '#111', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
                 />
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
               <button
                 onClick={() => setShowUploadDialog(false)}
-                style={{ padding: '8px 16px', background: '#333', border: 'none', borderRadius: 6, color: '#ccc', cursor: 'pointer' }}
+                style={{ padding: '8px 16px', background: '#1a1a1a', border: 'none', borderRadius: 6, color: '#9ca3af', cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -497,12 +497,12 @@ export function PresetsPage() {
                 onClick={handleCommunityUpload}
                 disabled={uploading || !uploadForm.name.trim()}
                 style={{
-                  padding: '8px 20px', background: uploading ? '#555' : '#7c3aed',
-                  border: 'none', borderRadius: 6, color: '#fff', cursor: uploading ? 'not-allowed' : 'pointer',
+                  padding: '8px 20px', background: uploading ? '#222222' : '#2563eb',
+                  border: 'none', borderRadius: 6, color: '#f3f4f6', cursor: uploading ? 'not-allowed' : 'pointer',
                   fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
-                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {uploading ? <SpinnerGap size={14} className="animate-spin" weight="duotone" /> : <UploadSimple size={14} weight="duotone" />}
                 {uploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
@@ -534,7 +534,7 @@ function TabButton({
         padding: '12px 20px',
         background: active ? 'var(--bg-secondary, #1e1e2e)' : 'transparent',
         border: 'none',
-        borderBottom: active ? '2px solid var(--accent, #7c3aed)' : '2px solid transparent',
+        borderBottom: active ? '2px solid var(--accent, #2563eb)' : '2px solid transparent',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -549,7 +549,7 @@ function TabButton({
       {count !== undefined && (
         <span
           style={{
-            background: active ? 'var(--accent, #7c3aed)' : 'var(--bg-tertiary, #2a2a3e)',
+            background: active ? 'var(--accent, #2563eb)' : 'var(--bg-tertiary, #1a1a1a)',
             padding: '2px 8px',
             borderRadius: '12px',
             fontSize: '0.75rem',
@@ -655,11 +655,11 @@ function SnapshotRow({
             disabled={isLoading || isActive}
           >
             {isLoading ? (
-              <Loader2 size={14} className="spin" />
+              <SpinnerGap size={14} className="spin" weight="duotone" />
             ) : isActive ? (
-              <Check size={14} style={{ color: 'var(--success, #22c55e)' }} />
+              <Check size={14} weight="duotone" style={{ color: 'var(--success, #22c55e)' }} />
             ) : (
-              <Play size={14} />
+              <Play size={14} weight="duotone" />
             )}
           </button>
           <button
@@ -668,7 +668,7 @@ function SnapshotRow({
             title="Delete preset"
             style={{ padding: '4px' }}
           >
-            <Trash2 size={14} />
+            <Trash size={14} weight="duotone" />
           </button>
         </div>
       </td>

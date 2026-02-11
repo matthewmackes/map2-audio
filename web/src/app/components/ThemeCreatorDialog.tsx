@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Palette, Check, RotateCcw, Save, Eye, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
+import { X, Palette, Check, ArrowCounterClockwise, FloppyDisk, Eye, CaretDown, CaretRight, SpinnerGap } from '@phosphor-icons/react'
 import type { Theme, ThemeColors, ThemeWidgets } from '../theme/types'
 import { applyTheme, getSavedThemeId, themes, themeOrder, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 
@@ -136,7 +136,7 @@ const DEFAULT_COLORS: ThemeColors = {
   'surface': '#242424',
   'surface-2': '#2d2d2d',
   'surface-3': '#333333',
-  'primary': '#00d4ff',
+  'primary': '#2563eb',
   'primary-strong': '#0099cc',
   'accent': '#ff6b35',
   'muted': '#a0a0a0',
@@ -351,7 +351,7 @@ export function ThemeCreatorDialog({
           justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Palette size={20} style={{ color: 'var(--primary)' }} />
+            <Palette size={20} weight="duotone" style={{ color: 'var(--primary)' }} />
             <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Create Theme</h2>
           </div>
           <button
@@ -365,7 +365,7 @@ export function ThemeCreatorDialog({
               color: 'var(--muted)'
             }}
           >
-            <X size={20} />
+            <X size={20} weight="bold" />
           </button>
         </div>
 
@@ -389,7 +389,7 @@ export function ThemeCreatorDialog({
                 fontWeight: 600
               }}
             >
-              {expandedSections['theme-selector'] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {expandedSections['theme-selector'] ? <CaretDown size={16} weight="bold" /> : <CaretRight size={16} weight="bold" />}
               Theme Selection
             </button>
             {expandedSections['theme-selector'] && (
@@ -478,7 +478,7 @@ export function ThemeCreatorDialog({
                   fontWeight: 600
                 }}
               >
-                {expandedSections['system-config'] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                {expandedSections['system-config'] ? <CaretDown size={16} weight="bold" /> : <CaretRight size={16} weight="bold" />}
                 System Configuration
               </button>
               {expandedSections['system-config'] && (
@@ -512,17 +512,17 @@ export function ThemeCreatorDialog({
                       >
                         {bannerLoading ? (
                           <>
-                            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                            <SpinnerGap size={14} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} />
                             {welcomeBanner?.installed ? 'Removing...' : 'Installing...'}
                           </>
                         ) : welcomeBanner?.installed ? (
                           <>
-                            <X size={14} />
+                            <X size={14} weight="bold" />
                             Remove
                           </>
                         ) : (
                           <>
-                            <Check size={14} />
+                            <Check size={14} weight="bold" />
                             Install
                           </>
                         )}
@@ -571,17 +571,17 @@ export function ThemeCreatorDialog({
                       >
                         {splashLoading ? (
                           <>
-                            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                            <SpinnerGap size={14} weight="duotone" style={{ animation: 'spin 1s linear infinite' }} />
                             {bootSplash?.installed ? 'Removing...' : 'Installing...'}
                           </>
                         ) : bootSplash?.installed ? (
                           <>
-                            <X size={14} />
+                            <X size={14} weight="bold" />
                             Remove
                           </>
                         ) : (
                           <>
-                            <Check size={14} />
+                            <Check size={14} weight="bold" />
                             Install
                           </>
                         )}
@@ -595,7 +595,7 @@ export function ThemeCreatorDialog({
                           color: '#22c55e',
                           marginTop: 8
                         }}>
-                          <Check size={12} />
+                          <Check size={12} weight="bold" />
                           Currently installed
                         </div>
                       )}
@@ -664,7 +664,7 @@ export function ThemeCreatorDialog({
                 fontWeight: 600
               }}
             >
-              {expandedSections.palette ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {expandedSections.palette ? <CaretDown size={16} weight="bold" /> : <CaretRight size={16} weight="bold" />}
               Material Design Palettes
             </button>
             {expandedSections.palette && (
@@ -761,7 +761,7 @@ export function ThemeCreatorDialog({
                 fontWeight: 600
               }}
             >
-              {expandedSections.colors ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {expandedSections.colors ? <CaretDown size={16} weight="bold" /> : <CaretRight size={16} weight="bold" />}
               Colors
             </button>
             {expandedSections.colors && (
@@ -816,7 +816,7 @@ export function ThemeCreatorDialog({
                           }}
                           title="Pick from palette"
                         >
-                          <Palette size={14} />
+                          <Palette size={14} weight="duotone" />
                         </button>
                       )}
                     </div>
@@ -865,7 +865,7 @@ export function ThemeCreatorDialog({
                 fontWeight: 600
               }}
             >
-              {expandedSections.widgets ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {expandedSections.widgets ? <CaretDown size={16} weight="bold" /> : <CaretRight size={16} weight="bold" />}
               Widget Styles
             </button>
             {expandedSections.widgets && (
@@ -1014,7 +1014,7 @@ export function ThemeCreatorDialog({
               fontSize: 13
             }}
           >
-            <RotateCcw size={14} />
+            <ArrowCounterClockwise size={14} weight="duotone" />
             Reset
           </button>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -1033,7 +1033,7 @@ export function ThemeCreatorDialog({
                 fontSize: 13
               }}
             >
-              <Eye size={14} />
+              <Eye size={14} weight="duotone" />
               Preview
             </button>
             <button
@@ -1052,7 +1052,7 @@ export function ThemeCreatorDialog({
                 fontWeight: 500
               }}
             >
-              <Save size={14} />
+              <FloppyDisk size={14} weight="duotone" />
               Save Theme
             </button>
           </div>

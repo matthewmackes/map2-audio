@@ -12,7 +12,7 @@ import {
   Alert,
   IconButton,
 } from '@mui/material'
-import { Activity, Zap, AlertTriangle, Info, TrendingUp, Layers } from 'lucide-react'
+import { Pulse, Lightning, Warning, Info, TrendUp, Stack } from '@phosphor-icons/react'
 
 type LatencyMode = 'motu-only' | 'adat-expanded' | 'outboard-inserts'
 
@@ -89,7 +89,7 @@ export default function MOTURMEPage() {
   const getMeterColor = (value: number) => {
     if (value > 85) return '#FF4444'
     if (value > 70) return '#FFAA00'
-    return '#00D4FF'
+    return '#2563eb'
   }
 
   const getLoadColor = (value: number) => {
@@ -101,12 +101,12 @@ export default function MOTURMEPage() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(180deg, #0F0F12 0%, #111114 100%)',
+      background: 'linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%)',
       padding: '24px',
     }}>
       {/* Page Title */}
       <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="h3" style={{ color: '#E0E0E5', fontWeight: 700, marginBottom: 8 }}>
+        <Typography variant="h3" style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8 }}>
           MOTU UltraLite-mk5 + RME ADI-8 QS
         </Typography>
         <Typography variant="subtitle1" style={{ color: '#94a3b8', fontSize: 14 }}>
@@ -116,8 +116,8 @@ export default function MOTURMEPage() {
 
       {/* Hero Section - Product Photos */}
       <Card style={{ 
-        background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(168, 85, 247, 0.05))',
-        border: '1px solid rgba(0, 212, 255, 0.2)',
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(96, 165, 250, 0.05))',
+        border: '1px solid rgba(37, 99, 235, 0.2)',
         marginBottom: 24,
       }}>
         <CardContent>
@@ -127,8 +127,8 @@ export default function MOTURMEPage() {
               <div style={{
                 width: '100%',
                 height: 180,
-                background: 'linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(0, 212, 255, 0.1))',
-                border: '2px dashed rgba(0, 212, 255, 0.3)',
+                background: 'linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(37, 99, 235, 0.1))',
+                border: '2px dashed rgba(37, 99, 235, 0.3)',
                 borderRadius: 12,
                 display: 'flex',
                 alignItems: 'center',
@@ -136,7 +136,7 @@ export default function MOTURMEPage() {
                 marginBottom: 12,
               }}>
                 <div style={{ textAlign: 'center' }}>
-                  <Layers size={48} style={{ color: '#00D4FF', marginBottom: 8 }} />
+                  <Stack size={48} weight="duotone" style={{ color: '#2563eb', marginBottom: 8 }} />
                   <Typography variant="body2" style={{ color: '#94a3b8' }}>
                     RME ADI-8 QS
                   </Typography>
@@ -145,7 +145,7 @@ export default function MOTURMEPage() {
                   </Typography>
                 </div>
               </div>
-              <Chip label="ADAT Slave" size="small" style={{ background: '#00D4FF', color: '#111', fontWeight: 600 }} />
+              <Chip label="ADAT Slave" size="small" style={{ background: '#2563eb', color: '#111', fontWeight: 600 }} />
             </Box>
 
             {/* ADAT Connection Indicator */}
@@ -154,16 +154,16 @@ export default function MOTURMEPage() {
                 width: 80,
                 height: 80,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(0, 212, 255, 0.3), transparent)',
-                border: '2px solid #00D4FF',
+                background: 'radial-gradient(circle, rgba(37, 99, 235, 0.3), transparent)',
+                border: '2px solid #2563eb',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 animation: 'pulse 2s ease-in-out infinite',
               }}>
-                <Activity size={32} style={{ color: '#00D4FF' }} />
+                <Pulse size={32} weight="duotone" style={{ color: '#2563eb' }} />
               </div>
-              <Typography variant="caption" style={{ color: '#00D4FF', marginTop: 8, display: 'block' }}>
+              <Typography variant="caption" style={{ color: '#2563eb', marginTop: 8, display: 'block' }}>
                 ADAT Optical
               </Typography>
             </Box>
@@ -173,7 +173,7 @@ export default function MOTURMEPage() {
               <div style={{
                 width: '100%',
                 height: 180,
-                background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.1), rgba(0, 212, 255, 0.1))',
+                background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.1), rgba(37, 99, 235, 0.1))',
                 border: '2px dashed rgba(0, 255, 157, 0.3)',
                 borderRadius: 12,
                 display: 'flex',
@@ -182,7 +182,7 @@ export default function MOTURMEPage() {
                 marginBottom: 12,
               }}>
                 <div style={{ textAlign: 'center' }}>
-                  <Zap size={48} style={{ color: '#00FF9D', marginBottom: 8 }} />
+                  <Lightning size={48} weight="duotone" style={{ color: '#00FF9D', marginBottom: 8 }} />
                   <Typography variant="body2" style={{ color: '#94a3b8' }}>
                     MOTU UltraLite-mk5
                   </Typography>
@@ -200,7 +200,7 @@ export default function MOTURMEPage() {
       {/* System Load & Health */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2, mb: 3 }}>
         {/* USB Load */}
-        <Card style={{ background: '#1a1a2e', border: '1px solid rgba(0, 212, 255, 0.2)' }}>
+        <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 13 }}>
@@ -208,7 +208,7 @@ export default function MOTURMEPage() {
               </Typography>
               <Tooltip title="Calculated from active channels × sample rate × bit depth. >75% increases dropout risk. Consider larger buffer size.">
                 <IconButton size="small">
-                  <Info size={16} style={{ color: '#6b7280' }} />
+                  <Info size={16} weight="duotone" style={{ color: '#6b7280' }} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -234,7 +234,7 @@ export default function MOTURMEPage() {
         </Card>
 
         {/* Host Backplane Load */}
-        <Card style={{ background: '#1a1a2e', border: '1px solid rgba(0, 212, 255, 0.2)' }}>
+        <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 13 }}>
@@ -242,7 +242,7 @@ export default function MOTURMEPage() {
               </Typography>
               <Tooltip title="Computer-side CPU/driver pressure. Based on buffer size, channel count, and sample rate. Lower buffer = higher load.">
                 <IconButton size="small">
-                  <Info size={16} style={{ color: '#6b7280' }} />
+                  <Info size={16} weight="duotone" style={{ color: '#6b7280' }} />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -269,9 +269,9 @@ export default function MOTURMEPage() {
       </Box>
 
       {/* 16-Channel Metering Grid */}
-      <Card style={{ background: '#1a1a2e', border: '1px solid rgba(0, 212, 255, 0.2)', marginBottom: 24 }}>
+      <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)', marginBottom: 24 }}>
         <CardContent>
-          <Typography variant="h6" style={{ color: '#E0E0E5', marginBottom: 16, fontWeight: 600 }}>
+          <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
             16-Channel Metering (8 MOTU + 8 RME via ADAT)
           </Typography>
           
@@ -305,7 +305,7 @@ export default function MOTURMEPage() {
 
           {/* RME Channels 9-16 */}
           <Box>
-            <Chip label="RME ADAT (9-16)" size="small" style={{ background: '#00D4FF', color: '#111', marginBottom: 12, fontWeight: 600 }} />
+            <Chip label="RME ADAT (9-16)" size="small" style={{ background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600 }} />
             <Box sx={{ display: 'grid', gap: 1 }}>
               {meterValues.slice(8, 16).map((value, i) => (
                 <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -334,10 +334,10 @@ export default function MOTURMEPage() {
       </Card>
 
       {/* Latency & Audio Chain Panel */}
-      <Card style={{ background: '#1a1a2e', border: '1px solid rgba(255, 170, 0, 0.3)', marginBottom: 24 }}>
+      <Card style={{ background: '#111111', border: '1px solid rgba(255, 170, 0, 0.3)', marginBottom: 24 }}>
         <CardContent>
-          <Typography variant="h6" style={{ color: '#E0E0E5', marginBottom: 16, fontWeight: 600 }}>
-            <TrendingUp size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+          <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
+            <TrendUp size={20} weight="duotone" style={{ marginRight: 8, verticalAlign: 'middle' }} />
             Latency & Audio Chain Analysis
           </Typography>
 
@@ -380,8 +380,8 @@ export default function MOTURMEPage() {
             
             {(latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') && (
               <>
-                <LatencyRow label="ADAT Transmission (round-trip)" samples={latency.adatTransmission.samples} ms={latency.adatTransmission.ms} color="#00D4FF" />
-                <LatencyRow label="RME ADI-8 QS Converters (AD+DA)" samples={latency.rmeConverters.samples} ms={latency.rmeConverters.ms} color="#00D4FF" />
+                <LatencyRow label="ADAT Transmission (round-trip)" samples={latency.adatTransmission.samples} ms={latency.adatTransmission.ms} color="#2563eb" />
+                <LatencyRow label="RME ADI-8 QS Converters (AD+DA)" samples={latency.rmeConverters.samples} ms={latency.rmeConverters.ms} color="#2563eb" />
               </>
             )}
             
@@ -391,8 +391,8 @@ export default function MOTURMEPage() {
           </Box>
 
           {/* Educational Info */}
-          <Alert severity="info" icon={<Info size={20} />} style={{ marginTop: 16, background: 'rgba(0, 212, 255, 0.1)', border: '1px solid rgba(0, 212, 255, 0.3)' }}>
-            <Typography variant="body2" style={{ color: '#E0E0E5', fontSize: 12, lineHeight: 1.6 }}>
+          <Alert severity="info" icon={<Info size={20} weight="duotone" />} style={{ marginTop: 16, background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
+            <Typography variant="body2" style={{ color: '#f3f4f6', fontSize: 12, lineHeight: 1.6 }}>
               <strong>ADAT Latency:</strong> Pure ADAT Lightpipe transmission ≈6-10 samples round-trip. RME ADI-8 QS converters add ≈20-24 samples. 
               Total ADAT path: ≈26-34 samples (≈0.54-0.71 ms @ 48kHz). ADAT transmission itself is negligible compared to converters or analog gear.
             </Typography>
@@ -401,14 +401,14 @@ export default function MOTURMEPage() {
       </Card>
 
       {/* Signal Flow Visualizer */}
-      <Card style={{ background: '#1a1a2e', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+      <Card style={{ background: '#111111', border: '1px solid rgba(96, 165, 250, 0.3)' }}>
         <CardContent>
-          <Typography variant="h6" style={{ color: '#E0E0E5', marginBottom: 16, fontWeight: 600 }}>
+          <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
             Signal Flow Diagram
           </Typography>
           
           <Box sx={{ 
-            background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(168, 85, 247, 0.05))',
+            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(96, 165, 250, 0.05))',
             borderRadius: 3,
             padding: 4,
             display: 'flex',
@@ -417,14 +417,14 @@ export default function MOTURMEPage() {
             flexWrap: 'wrap',
             gap: 3,
           }}>
-            <SignalNode label="DAW" color="#a855f7" />
+            <SignalNode label="DAW" color="#60a5fa" />
             <Arrow />
             <SignalNode label="MOTU USB" color="#00FF9D" latency={`${latency.motuConverters.ms.toFixed(2)}ms`} />
             
             {(latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') && (
               <>
                 <Arrow label="ADAT" />
-                <SignalNode label="RME ADI-8" color="#00D4FF" latency={`${latency.rmeConverters.ms.toFixed(2)}ms`} />
+                <SignalNode label="RME ADI-8" color="#2563eb" latency={`${latency.rmeConverters.ms.toFixed(2)}ms`} />
               </>
             )}
             
@@ -437,7 +437,7 @@ export default function MOTURMEPage() {
           </Box>
           
           <Typography variant="caption" style={{ color: '#6b7280', display: 'block', marginTop: 16, textAlign: 'center' }}>
-            Current mode: <strong style={{ color: '#00D4FF' }}>
+            Current mode: <strong style={{ color: '#2563eb' }}>
               {latencyMode === 'motu-only' ? 'MOTU Only (8ch direct)' : 
                latencyMode === 'adat-expanded' ? 'ADAT Expanded (16ch total)' : 
                'Outboard Inserts (analog processing loop)'}
@@ -490,8 +490,8 @@ function SignalNode({ label, color, latency }: { label: string; color: string; l
         justifyContent: 'center',
         gap: 1,
       }}>
-        <Activity size={24} style={{ color }} />
-        <Typography variant="body2" style={{ color: '#E0E0E5', fontWeight: 600, fontSize: 12 }}>
+        <Pulse size={24} weight="duotone" style={{ color }} />
+        <Typography variant="body2" style={{ color: '#f3f4f6', fontWeight: 600, fontSize: 12 }}>
           {label}
         </Typography>
         {latency && (
@@ -510,7 +510,7 @@ function Arrow({ label }: { label?: string }) {
       <div style={{ 
         width: 60, 
         height: 2, 
-        background: 'linear-gradient(90deg, #00D4FF, #a855f7)',
+        background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
         position: 'relative',
       }}>
         <div style={{
@@ -519,7 +519,7 @@ function Arrow({ label }: { label?: string }) {
           top: -4,
           width: 0,
           height: 0,
-          borderLeft: '8px solid #a855f7',
+          borderLeft: '8px solid #60a5fa',
           borderTop: '5px solid transparent',
           borderBottom: '5px solid transparent',
         }} />

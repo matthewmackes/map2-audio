@@ -3,7 +3,7 @@
  */
 
 import { Box, Paper, Grid, Link, Typography } from '@mui/material'
-import { ExternalLink } from 'lucide-react'
+import { ArrowSquareOut } from '@phosphor-icons/react'
 
 interface BrandingPanelProps {
   branding: {
@@ -150,7 +150,7 @@ export default function BrandingPanel({ branding }: BrandingPanelProps) {
                     '&:hover': { textDecoration: 'underline', color: '#fff' },
                   }}
                 >
-                  Official Support <ExternalLink size={14} />
+                  Official Support <ArrowSquareOut size={14} weight="duotone" />
                 </Link>
               )}
             </Box>

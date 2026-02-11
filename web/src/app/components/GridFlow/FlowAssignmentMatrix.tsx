@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCw, AlertTriangle, GitBranch } from 'lucide-react'
+import { ArrowsClockwise, Warning, GitBranch } from '@phosphor-icons/react'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -71,7 +71,7 @@ export function FlowAssignmentMatrix() {
     return (
       <div className="flow-assignment-matrix flow-assignment-compact">
         <div className="flow-assignment-header">
-          <GitBranch size={16} />
+          <GitBranch size={16} weight="duotone" />
           <h3>Flow Assignments</h3>
           <span className="cluster-aio-badge">ALL-IN-ONE</span>
           <span className="cluster-aio-status">Flows assigned to local node automatically</span>
@@ -107,7 +107,7 @@ export function FlowAssignmentMatrix() {
       <div className="flow-assignment-header">
         <h3>Flow Assignments ({assignments.length})</h3>
         <button className="flow-assignment-refresh" onClick={() => refetch()}>
-          <RefreshCw size={16} />
+          <ArrowsClockwise size={16} weight="duotone" />
         </button>
       </div>
 
@@ -137,7 +137,7 @@ export function FlowAssignmentMatrix() {
                   title="Failover"
                   onClick={() => handleFailover(assignment.flow_id)}
                 >
-                  <AlertTriangle size={14} />
+                  <Warning size={14} weight="duotone" />
                 </button>
               </div>
             </div>

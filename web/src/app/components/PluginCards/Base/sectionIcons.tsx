@@ -17,7 +17,7 @@ import {
   CabinetIcon,
   MultiEffectIcon,
 } from '../../icons/fontaudio'
-import { Clock, Volume2, Sliders, Settings } from 'lucide-react'
+import { Clock, SpeakerHigh, Sliders, GearSix } from '@phosphor-icons/react'
 
 /**
  * Get appropriate icon for a parameter section title
@@ -119,12 +119,12 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle === 'timing' ||
     (lowerTitle === 'time' && !title.toLowerCase().includes('delay'))
   ) {
-    return <Clock size={size} />
+    return <Clock size={size} weight="duotone" />
   }
 
   // Output/Mix icons
   if (lowerTitle.includes('output') || lowerTitle === 'mix') {
-    return <Volume2 size={size} />
+    return <SpeakerHigh size={size} weight="duotone" />
   }
 
   // Character/Shape/Waveform icons
@@ -135,7 +135,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('boss ce-2') ||
     lowerTitle.includes('boss bf-2')
   ) {
-    return <Sliders size={size} />
+    return <Sliders size={size} weight="duotone" />
   }
 
   // Expression/Settings icons
@@ -144,7 +144,7 @@ export function getSectionIcon(title: string, size: number = 14): React.ReactNod
     lowerTitle.includes('pedal') ||
     lowerTitle.includes('settings')
   ) {
-    return <Settings size={size} />
+    return <GearSix size={size} weight="duotone" />
   }
 
   // Multi-Effect/Misc icons (fallback for generic sections)

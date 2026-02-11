@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronRight, Activity, BarChart3, Clock, Radio } from 'lucide-react'
+import { CaretRight, Pulse, ChartBar, Clock, Broadcast } from '@phosphor-icons/react'
 import { SpectrumAnalyzer } from './SpectrumAnalyzer'
 import { LoudnessMeter } from './LoudnessMeter'
 import { CPUMeterPanel } from './CPUMeterPanel'
@@ -20,7 +20,7 @@ export function AudioMeteringCard({
   const [showMetering, setShowMetering] = useState(defaultExpanded)
   const [activeTab, setActiveTab] = useState<MeteringTab>('spectrum')
 
-  const accentColor = '#37d6c9'
+  const accentColor = '#2563eb'
 
   return (
     <div className="card" style={{
@@ -53,7 +53,7 @@ export function AudioMeteringCard({
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Activity size={18} style={{ color: accentColor }} />
+            <Pulse size={18} weight="duotone" style={{ color: accentColor }} />
           </div>
           <div>
             <span style={{
@@ -66,14 +66,15 @@ export function AudioMeteringCard({
             </span>
             <span style={{
               fontSize: 11,
-              color: '#666',
+              color: '#6b7280',
             }}>
               Spectrum • Loudness • CPU • Latency • Phase
             </span>
           </div>
         </div>
-        <ChevronRight
+        <CaretRight
           size={18}
+          weight="bold"
           style={{
             color: accentColor,
             transform: showMetering ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -101,11 +102,11 @@ export function AudioMeteringCard({
               flexWrap: 'wrap',
             }}>
               {[
-                { id: 'spectrum' as MeteringTab, label: 'Spectrum', icon: <BarChart3 size={14} /> },
-                { id: 'loudness' as MeteringTab, label: 'Loudness', icon: <Activity size={14} /> },
-                { id: 'cpu' as MeteringTab, label: 'CPU', icon: <Activity size={14} /> },
-                { id: 'latency' as MeteringTab, label: 'Latency', icon: <Clock size={14} /> },
-                { id: 'phase' as MeteringTab, label: 'Phase', icon: <Radio size={14} /> },
+                { id: 'spectrum' as MeteringTab, label: 'Spectrum', icon: <ChartBar size={14} weight="duotone" /> },
+                { id: 'loudness' as MeteringTab, label: 'Loudness', icon: <Pulse size={14} weight="duotone" /> },
+                { id: 'cpu' as MeteringTab, label: 'CPU', icon: <Pulse size={14} weight="duotone" /> },
+                { id: 'latency' as MeteringTab, label: 'Latency', icon: <Clock size={14} weight="duotone" /> },
+                { id: 'phase' as MeteringTab, label: 'Phase', icon: <Broadcast size={14} weight="duotone" /> },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -125,7 +126,7 @@ export function AudioMeteringCard({
                       : 'rgba(255, 255, 255, 0.05)',
                     border: `1px solid ${activeTab === tab.id ? `${accentColor}50` : 'rgba(255, 255, 255, 0.1)'}`,
                     borderRadius: 8,
-                    color: activeTab === tab.id ? accentColor : '#888',
+                    color: activeTab === tab.id ? accentColor : '#6b7280',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}

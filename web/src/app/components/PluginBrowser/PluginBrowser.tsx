@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { usePluginBrowser, PluginFormat, PluginInfo } from '../../hooks/usePluginBrowser';
-import { Search, RefreshCw, Filter, Plus, ChevronDown, Package } from 'lucide-react';
+import { MagnifyingGlass, ArrowsClockwise, Funnel, Plus, CaretDown, Package } from '@phosphor-icons/react';
 
 interface PluginBrowserProps {
   /** Callback when a plugin is loaded */
@@ -66,7 +66,7 @@ const PluginCard: React.FC<{
           flexShrink: 0,
         }}
       >
-        <Package size={compact ? 14 : 18} style={{ color: FORMAT_COLORS[plugin.format] }} />
+        <Package size={compact ? 14 : 18} weight="duotone" style={{ color: FORMAT_COLORS[plugin.format] }} />
       </div>
 
       {/* Plugin info */}
@@ -83,7 +83,7 @@ const PluginCard: React.FC<{
         </div>
         <div style={{
           fontSize: compact ? 10 : 11,
-          color: '#666',
+          color: '#6b7280',
           display: 'flex',
           alignItems: 'center',
           gap: 8,
@@ -118,7 +118,7 @@ const PluginCard: React.FC<{
       {!compact && (
         <div style={{
           fontSize: 10,
-          color: '#666',
+          color: '#6b7280',
           flexShrink: 0,
           textAlign: 'center',
         }}>
@@ -148,9 +148,9 @@ const PluginCard: React.FC<{
         title="Add to chain"
       >
         {isLoading ? (
-          <RefreshCw size={14} className="animate-spin" />
+          <ArrowsClockwise size={14} weight="duotone" className="animate-spin" />
         ) : (
-          <Plus size={14} />
+          <Plus size={14} weight="bold" />
         )}
       </button>
     </div>
@@ -207,7 +207,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
         marginBottom: 16,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Package size={20} style={{ color: '#37d6c9' }} />
+          <Package size={20} weight="duotone" style={{ color: '#37d6c9' }} />
           <span style={{
             fontSize: 16,
             fontWeight: 600,
@@ -245,7 +245,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
             cursor: isScanningPlugins ? 'wait' : 'pointer',
           }}
         >
-          <RefreshCw size={14} className={isScanningPlugins ? 'animate-spin' : ''} />
+          <ArrowsClockwise size={14} weight="duotone" className={isScanningPlugins ? 'animate-spin' : ''} />
           {isScanningPlugins ? 'Scanning...' : 'Rescan'}
         </button>
       </div>
@@ -302,7 +302,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 6,
         }}>
-          <Search size={14} style={{ color: '#666' }} />
+          <MagnifyingGlass size={14} weight="duotone" style={{ color: '#6b7280' }} />
           <input
             type="text"
             placeholder="Search plugins..."
@@ -333,10 +333,10 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
             cursor: 'pointer',
           }}
         >
-          <Filter size={14} />
-          <ChevronDown
+          <Funnel size={14} weight="duotone" />
+          <CaretDown
             size={14}
-            style={{
+            weight="bold"            style={{
               transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease',
             }}
@@ -385,7 +385,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
         }}>
           <div style={{
             fontSize: 11,
-            color: '#888',
+            color: '#6b7280',
             marginBottom: 8,
           }}>
             Category
@@ -442,18 +442,18 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
           <div style={{
             padding: 40,
             textAlign: 'center',
-            color: '#666',
+            color: '#6b7280',
           }}>
-            <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px' }} />
+            <ArrowsClockwise size={24} weight="duotone" className="animate-spin" style={{ margin: '0 auto 12px' }} />
             Loading plugins...
           </div>
         ) : plugins.length === 0 ? (
           <div style={{
             padding: 40,
             textAlign: 'center',
-            color: '#666',
+            color: '#6b7280',
           }}>
-            <Package size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+            <Package size={32} weight="duotone" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
             <div>No plugins found</div>
             <div style={{ fontSize: 12, marginTop: 4 }}>
               Try scanning for plugins or adjusting your filters

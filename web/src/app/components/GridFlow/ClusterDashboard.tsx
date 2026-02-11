@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { RefreshCw, Cpu, HardDrive, Zap, Monitor } from 'lucide-react'
+import { ArrowsClockwise, Cpu, HardDrive, Lightning, Monitor } from '@phosphor-icons/react'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -82,7 +82,7 @@ export function ClusterDashboard() {
     return (
       <div className="cluster-dashboard cluster-dashboard-compact">
         <div className="cluster-dashboard-header">
-          <Monitor size={16} />
+          <Monitor size={16} weight="duotone" />
           <h3>Cluster Nodes</h3>
           <span className="cluster-aio-badge">ALL-IN-ONE</span>
           <span className="cluster-aio-status">All services running on local node</span>
@@ -118,7 +118,7 @@ export function ClusterDashboard() {
       <div className="cluster-dashboard-header">
         <h3>Cluster Nodes ({nodes.length})</h3>
         <button className="cluster-dashboard-refresh" onClick={() => refetch()}>
-          <RefreshCw size={16} />
+          <ArrowsClockwise size={16} weight="duotone" />
         </button>
       </div>
 
@@ -173,7 +173,7 @@ function ClusterNodeCard({ node, onToggleMaintenance }: { node: ClusterNode; onT
 
       <div className="cluster-node-resources">
         <div className="cluster-resource-row">
-          <Cpu size={14} />
+          <Cpu size={14} weight="duotone" />
           <span className="cluster-resource-label">CPU</span>
           <div className="cluster-resource-bar">
             <div className="cluster-resource-bar-fill" style={{ width: `${cpuPercent}%`, backgroundColor: cpuBarColor }} />
@@ -182,7 +182,7 @@ function ClusterNodeCard({ node, onToggleMaintenance }: { node: ClusterNode; onT
         </div>
 
         <div className="cluster-resource-row">
-          <HardDrive size={14} />
+          <HardDrive size={14} weight="duotone" />
           <span className="cluster-resource-label">RAM</span>
           <div className="cluster-resource-bar">
             <div className="cluster-resource-bar-fill" style={{ width: `${memoryPercent}%`, backgroundColor: '#3b82f6' }} />
@@ -195,7 +195,7 @@ function ClusterNodeCard({ node, onToggleMaintenance }: { node: ClusterNode; onT
 
       <div className="cluster-node-flows">
         <div className="cluster-node-flows-header">
-          <Zap size={12} />
+          <Lightning size={12} weight="duotone" />
           <span>Flows: {node.flow_count ?? (node.assigned_flows?.length ?? 0)}</span>
         </div>
         <div className="cluster-node-flows-list">

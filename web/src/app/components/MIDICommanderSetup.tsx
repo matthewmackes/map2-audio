@@ -27,18 +27,18 @@ import {
 } from '@mui/material'
 import { NumberInput } from '../../map2/components/NumberInput'
 import {
-  Settings,
-  Zap,
-  RefreshCw,
+  GearSix,
+  Lightning,
+  ArrowsClockwise,
   Check,
-  AlertTriangle,
-  Upload,
-  Music,
+  Warning,
+  UploadSimple,
+  MusicNote,
   Sliders,
-  Download,
-  ChevronRight,
-  ChevronDown,
-} from 'lucide-react'
+  DownloadSimple,
+  CaretRight,
+  CaretDown,
+} from '@phosphor-icons/react'
 import { midiApiV2 } from '../../map2/api'
 import type {
   MIDIDeviceProfile,
@@ -118,7 +118,7 @@ function ProfileCard({ profile, isActive, onApply, isApplying }: ProfileCardProp
         )}
         {profile.supports_firmware_update && (
           <Chip
-            icon={<Upload size={12} />}
+            icon={<UploadSimple size={12} weight="duotone" />}
             label="DFU"
             size="small"
             variant="outlined"
@@ -247,7 +247,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
                 borderRadius: 4,
               }}
             >
-              <Sliders size={16} style={{ marginBottom: 4 }} />
+              <Sliders size={16} weight="duotone" style={{ marginBottom: 4 }} />
               <div style={{ fontSize: 12, fontWeight: 600 }}>{ep.pedal_id}</div>
               <div className="subtitle" style={{ fontSize: 10 }}>
                 CC {ep.cc_number} - {ep.label}
@@ -329,7 +329,7 @@ function ExpressionCalibrationPanel({
         onClick={() => setExpanded(!expanded)}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Sliders size={20} />
+          <Sliders size={20} weight="duotone" />
           <div>
             <h4 style={{ margin: 0 }}>{pedalId}</h4>
             <p className="subtitle" style={{ margin: 0 }}>{label}</p>
@@ -345,7 +345,7 @@ function ExpressionCalibrationPanel({
               </div>
             </div>
           )}
-          {expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+          {expanded ? <CaretDown size={20} weight="bold" /> : <CaretRight size={20} weight="bold" />}
         </div>
       </div>
 
@@ -468,7 +468,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
   return (
     <div className="card" style={{ padding: 16 }}>
       <h3 style={{ marginBottom: 16 }}>
-        <Upload size={20} style={{ marginRight: 8 }} />
+        <UploadSimple size={20} weight="duotone" style={{ marginRight: 8 }} />
         Firmware Update
       </h3>
 
@@ -535,7 +535,7 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Button onClick={() => dfuStatusQuery.refetch()}>
-                <RefreshCw size={16} /> Refresh
+                <ArrowsClockwise size={16} weight="duotone" /> Refresh
               </Button>
               <Button
                 variant="contained"
@@ -670,7 +670,7 @@ export function MIDICommanderSetup() {
           onClick={() => setSelectedSection('profiles')}
           size="small"
         >
-          <Settings size={16} style={{ marginRight: 4 }} /> Profiles
+          <GearSix size={16} weight="duotone" style={{ marginRight: 4 }} /> Profiles
         </Button>
         <Button
           variant={selectedSection === 'calibration' ? 'contained' : 'outlined'}
@@ -678,7 +678,7 @@ export function MIDICommanderSetup() {
           size="small"
           disabled={!activeProfile}
         >
-          <Sliders size={16} style={{ marginRight: 4 }} /> Calibration
+          <Sliders size={16} weight="duotone" style={{ marginRight: 4 }} /> Calibration
         </Button>
         <Button
           variant={selectedSection === 'firmware' ? 'contained' : 'outlined'}
@@ -686,7 +686,7 @@ export function MIDICommanderSetup() {
           size="small"
           disabled={!activeProfile?.supports_firmware_update}
         >
-          <Upload size={16} style={{ marginRight: 4 }} /> Firmware
+          <UploadSimple size={16} weight="duotone" style={{ marginRight: 4 }} /> Firmware
         </Button>
       </div>
 
@@ -716,7 +716,7 @@ export function MIDICommanderSetup() {
           {activeProfile && (
             <div className="card" style={{ padding: 16, marginTop: 16 }}>
               <h4 style={{ marginBottom: 16 }}>
-                <Music size={18} style={{ marginRight: 8 }} />
+                <MusicNote size={18} weight="duotone" style={{ marginRight: 8 }} />
                 {activeProfile.name} Layout
               </h4>
 

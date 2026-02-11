@@ -9,7 +9,8 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Drum, Music, Upload, FolderOpen, RefreshCw, Play, Square, ChevronDown } from 'lucide-react'
+// Note: Phosphor has no Drum icon — MusicNote used as closest match
+import { MusicNote, UploadSimple, FolderOpen, ArrowsClockwise, Play, Square, CaretDown } from '@phosphor-icons/react'
 import { PageHeader } from '../components/PageHeader'
 import { drumsApi } from '../../map2/api'
 import type { DrumMachineState, DrumPack } from '../../map2/types'
@@ -50,8 +51,8 @@ export function DrumsPage() {
     <div
       key={pack.pack_id}
       style={{
-        background: '#1a1a2e',
-        border: '1px solid #333',
+        background: '#0a0a0a',
+        border: '1px solid #222222',
         borderRadius: 10,
         padding: 16,
         display: 'flex',
@@ -59,15 +60,15 @@ export function DrumsPage() {
         gap: 8,
       }}
     >
-      <div style={{ fontWeight: 600, fontSize: 14, color: '#fff' }}>{pack.name}</div>
-      <div style={{ fontSize: 12, color: '#888' }}>{pack.description}</div>
+      <div style={{ fontWeight: 600, fontSize: 14, color: '#f3f4f6' }}>{pack.name}</div>
+      <div style={{ fontSize: 12, color: '#6b7280' }}>{pack.description}</div>
       <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
         <span style={{
           fontSize: 11,
           padding: '2px 8px',
-          background: '#333',
+          background: '#222222',
           borderRadius: 4,
-          color: '#aaa',
+          color: '#9ca3af',
         }}>
           {pack.source}
         </span>
@@ -80,20 +81,20 @@ export function DrumsPage() {
       <PageHeader
         title="Drum Machine"
         subtitle="Practice patterns, factory packs & user drum kits"
-        icon={<Drum size={32} style={{ color: '#f59e0b' }} />}
+        icon={<MusicNote size={32} weight="duotone" style={{ color: '#60a5fa' }} />}
       />
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #333', paddingBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #222222', paddingBottom: 16 }}>
         {(['player', 'factory', 'user'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
-              background: activeTab === tab ? '#444' : '#222',
-              border: `1px solid ${activeTab === tab ? '#666' : '#444'}`,
+              background: activeTab === tab ? '#1e293b' : '#111111',
+              border: `1px solid ${activeTab === tab ? '#6b7280' : '#1e293b'}`,
               borderRadius: 6,
-              color: activeTab === tab ? '#fff' : '#888',
+              color: activeTab === tab ? '#f3f4f6' : '#6b7280',
               fontSize: 13,
               padding: '8px 16px',
               cursor: 'pointer',
@@ -109,7 +110,7 @@ export function DrumsPage() {
       {/* Player Tab */}
       {activeTab === 'player' && (
         <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ margin: '0 0 16px', color: '#fff' }}>Drum Player</h3>
+          <h3 style={{ margin: '0 0 16px', color: '#f3f4f6' }}>Drum Player</h3>
 
           {/* Mode selector */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
@@ -119,8 +120,8 @@ export function DrumsPage() {
                 onClick={() => updateState.mutate({ ui_mode: mode })}
                 style={{
                   padding: '10px 20px',
-                  background: state?.ui_mode === mode ? '#f59e0b' : '#2a2a3e',
-                  color: state?.ui_mode === mode ? '#000' : '#ccc',
+                  background: state?.ui_mode === mode ? '#2563eb' : '#111111',
+                  color: state?.ui_mode === mode ? '#f3f4f6' : '#d1d5db',
                   border: 'none',
                   borderRadius: 8,
                   fontWeight: 600,
@@ -138,35 +139,35 @@ export function DrumsPage() {
           {state?.ui_mode === 'practice' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Variation</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Variation</label>
                 <input
                   type="number"
                   value={state.practice_variation}
                   onChange={e => updateState.mutate({ practice_variation: Number(e.target.value) })}
                   min={0}
-                  style={{ width: '100%', padding: 8, background: '#1a1a2e', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Count-in Bars</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Count-in Bars</label>
                 <input
                   type="number"
                   value={state.practice_count_in_bars}
                   onChange={e => updateState.mutate({ practice_count_in_bars: Number(e.target.value) })}
                   min={0}
                   max={4}
-                  style={{ width: '100%', padding: 8, background: '#1a1a2e', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Quantization</label>
+                <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Quantization</label>
                 <input
                   type="number"
                   value={state.practice_change_quantization}
                   onChange={e => updateState.mutate({ practice_change_quantization: Number(e.target.value) })}
                   min={1}
                   max={8}
-                  style={{ width: '100%', padding: 8, background: '#1a1a2e', border: '1px solid #444', borderRadius: 6, color: '#fff' }}
+                  style={{ width: '100%', padding: 8, background: '#0a0a0a', border: '1px solid #1e293b', borderRadius: 6, color: '#f3f4f6' }}
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -175,14 +176,14 @@ export function DrumsPage() {
                   checked={state.practice_auto_fill}
                   onChange={e => updateState.mutate({ practice_auto_fill: e.target.checked })}
                 />
-                <label style={{ fontSize: 13, color: '#ccc' }}>Auto Fill</label>
+                <label style={{ fontSize: 13, color: '#d1d5db' }}>Auto Fill</label>
               </div>
             </div>
           )}
 
           {!state && (
-            <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>
-              <RefreshCw size={24} style={{ marginBottom: 8, opacity: 0.5 }} />
+            <div style={{ color: '#6b7280', textAlign: 'center', padding: 40 }}>
+              <ArrowsClockwise size={24} weight="duotone" style={{ marginBottom: 8, opacity: 0.5 }} />
               <div>Loading drum machine state...</div>
             </div>
           )}
@@ -192,11 +193,11 @@ export function DrumsPage() {
       {/* Factory Packs Tab */}
       {activeTab === 'factory' && (
         <div>
-          <h3 style={{ margin: '0 0 16px', color: '#fff' }}>
+          <h3 style={{ margin: '0 0 16px', color: '#f3f4f6' }}>
             Factory Drum Packs ({factoryPacks.length})
           </h3>
           {factoryPacks.length === 0 ? (
-            <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>
+            <div style={{ color: '#6b7280', textAlign: 'center', padding: 40 }}>
               No factory packs found. Check data/drums/factory_packs directory.
             </div>
           ) : (
@@ -211,13 +212,13 @@ export function DrumsPage() {
       {activeTab === 'user' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ margin: 0, color: '#fff' }}>
+            <h3 style={{ margin: 0, color: '#f3f4f6' }}>
               My Drum Packs ({generatedPacks.length})
             </h3>
           </div>
           {generatedPacks.length === 0 ? (
-            <div style={{ color: '#666', textAlign: 'center', padding: 40 }}>
-              <FolderOpen size={24} style={{ marginBottom: 8, opacity: 0.5 }} />
+            <div style={{ color: '#6b7280', textAlign: 'center', padding: 40 }}>
+              <FolderOpen size={24} weight="duotone" style={{ marginBottom: 8, opacity: 0.5 }} />
               <div>No user packs yet. Upload a drum pack JSON to get started.</div>
             </div>
           ) : (

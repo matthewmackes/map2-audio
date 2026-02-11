@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { X, Sliders, Save, Trash2, AlertCircle } from 'lucide-react'
+import { X, Sliders, FloppyDisk, Trash, WarningCircle } from '@phosphor-icons/react'
 import type { Plugin, PluginParameter, MIDIMappingV2, MIDICurveType } from '../../../../map2/types'
 import { midiApiV2 } from '../../../../map2/api'
 
@@ -252,7 +252,7 @@ export function MidiMappingDialog({
         {/* Header */}
         <div className="midi-mapping-dialog-header">
           <div className="midi-mapping-dialog-title">
-            <Sliders size={18} />
+            <Sliders size={18} weight="duotone" />
             <span>MIDI Mappings - {plugin.name}</span>
           </div>
           <button
@@ -260,14 +260,14 @@ export function MidiMappingDialog({
             onClick={handleClose}
             title="Close"
           >
-            <X size={18} />
+            <X size={18} weight="bold" />
           </button>
         </div>
 
         {/* Error banner */}
         {error && (
           <div className="midi-mapping-dialog-error">
-            <AlertCircle size={14} />
+            <WarningCircle size={14} weight="duotone" />
             <span>{error}</span>
           </div>
         )}
@@ -357,7 +357,7 @@ export function MidiMappingDialog({
                           onClick={() => clearMapping(row.paramIndex)}
                           title="Clear mapping"
                         >
-                          <Trash2 size={14} />
+                          <Trash size={14} weight="duotone" />
                         </button>
                       )}
                     </td>
@@ -389,7 +389,7 @@ export function MidiMappingDialog({
               disabled={isSaving || !hasUnsavedChanges}
             >
               {isSaving ? 'Saving...' : 'Save'}
-              {!isSaving && <Save size={14} />}
+              {!isSaving && <FloppyDisk size={14} weight="duotone" />}
             </button>
           </div>
         </div>
@@ -408,7 +408,7 @@ export function MidiMappingDialog({
         }
 
         .midi-mapping-dialog {
-          background: #1a1a1a;
+          background: #0a0a0a;
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
           width: 90%;
@@ -438,7 +438,7 @@ export function MidiMappingDialog({
         }
 
         .midi-mapping-dialog-title svg {
-          color: var(--primary, #00d4ff);
+          color: var(--primary, #2563eb);
         }
 
         .midi-mapping-dialog-close {
@@ -450,7 +450,7 @@ export function MidiMappingDialog({
           border: none;
           border-radius: 6px;
           background: transparent;
-          color: #888;
+          color: #6b7280;
           cursor: pointer;
           transition: all 0.15s ease;
         }
@@ -481,7 +481,7 @@ export function MidiMappingDialog({
         .midi-mapping-dialog-empty {
           padding: 40px 20px;
           text-align: center;
-          color: #888;
+          color: #6b7280;
           font-size: 14px;
         }
 
@@ -493,7 +493,7 @@ export function MidiMappingDialog({
         .midi-mapping-table thead {
           position: sticky;
           top: 0;
-          background: #1a1a1a;
+          background: #0a0a0a;
           z-index: 1;
         }
 
@@ -504,7 +504,7 @@ export function MidiMappingDialog({
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          color: #888;
+          color: #6b7280;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
@@ -519,7 +519,7 @@ export function MidiMappingDialog({
         }
 
         .midi-mapping-table tr.mapped {
-          background: rgba(0, 212, 255, 0.03);
+          background: rgba(37, 99, 235, 0.03);
         }
 
         .midi-mapping-table tr.dirty .param-name::after {
@@ -567,7 +567,7 @@ export function MidiMappingDialog({
 
         .cc-input:focus {
           outline: none;
-          border-color: var(--primary, #00d4ff);
+          border-color: var(--primary, #2563eb);
         }
 
         .cc-input::placeholder {
@@ -594,7 +594,7 @@ export function MidiMappingDialog({
         .channel-select:focus,
         .scope-select:focus {
           outline: none;
-          border-color: var(--primary, #00d4ff);
+          border-color: var(--primary, #2563eb);
         }
 
         .clear-btn {
@@ -656,7 +656,7 @@ export function MidiMappingDialog({
 
         .btn-cancel {
           background: rgba(255, 255, 255, 0.08);
-          color: #aaa;
+          color: #9ca3af;
         }
 
         .btn-cancel:hover:not(:disabled) {
@@ -665,7 +665,7 @@ export function MidiMappingDialog({
         }
 
         .btn-save {
-          background: var(--primary, #00d4ff);
+          background: var(--primary, #2563eb);
           color: #000;
         }
 

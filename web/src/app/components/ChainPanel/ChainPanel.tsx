@@ -5,7 +5,7 @@
  * Each chain gets its own panel with header controls and HorizontalSignalChain.
  */
 
-import { Volume2, VolumeX, Disc, Trash2 } from 'lucide-react'
+import { SpeakerHigh, SpeakerX, Disc, Trash } from '@phosphor-icons/react'
 import type { Chain, ChainPlugin, Plugin } from '../../../map2/types'
 import { HorizontalSignalChain } from '../HorizontalSignalChain'
 
@@ -109,7 +109,7 @@ export function ChainPanel({
           onClick={(e) => { e.stopPropagation(); onMuteToggle(); }}
           title={slot.muted ? 'Unmute' : 'Mute'}
         >
-          {slot.muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          {slot.muted ? <SpeakerX size={14} weight="duotone" /> : <SpeakerHigh size={14} weight="duotone" />}
           <span>M</span>
         </button>
 
@@ -119,7 +119,7 @@ export function ChainPanel({
           onClick={(e) => { e.stopPropagation(); onSoloToggle(); }}
           title={slot.solo ? 'Unsolo' : 'Solo'}
         >
-          <Disc size={14} />
+          <Disc size={14} weight="duotone" />
           <span>S</span>
         </button>
       </div>
@@ -159,7 +159,7 @@ export function ChainPanel({
             title={`Delete flow ${slot.label}`}
             style={{ '--slot-color': slot.color } as React.CSSProperties}
           >
-            <Trash2 size={16} />
+            <Trash size={16} weight="duotone" />
           </button>
         )}
       </div>

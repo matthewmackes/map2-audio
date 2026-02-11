@@ -20,7 +20,7 @@ import {
   TextField,
   Button,
 } from '@mui/material'
-import { BadgeCheck, Loader2, Plus, Power, Trash2, Link2 } from 'lucide-react'
+import { SealCheck, SpinnerGap, Plus, Power, Trash, Link } from '@phosphor-icons/react'
 import type { Chain, ChainsResponse } from '../../map2/types'
 import { chainsApi } from '../../map2/api'
 import { PageHeader } from '../components/PageHeader'
@@ -118,14 +118,14 @@ export function ChainsPage() {
       <PageHeader
         title="Chains"
         subtitle="Curate and activate processing chains with Ariakit dialogs and menus."
-        icon={<Link2 size={32} style={{ color: '#3b82f6' }} />}
+        icon={<Link size={32} weight="duotone" style={{ color: '#2563eb' }} />}
         actions={
           <div className="flex" style={{ gap: 8 }}>
             <a className="btn btn-ghost" href="/grid">
-              <Plus size={16} /> Grid view
+              <Plus size={16} weight="bold" /> Grid view
             </a>
             <button className="btn btn-primary" onClick={() => setCreateDialogOpen(true)}>
-              <Plus size={16} /> New chain
+              <Plus size={16} weight="bold" /> New chain
             </button>
           </div>
         }
@@ -176,7 +176,7 @@ export function ChainsPage() {
 
         {chainsQuery.isLoading ? (
           <div className="flex" style={{ padding: '12px 4px' }}>
-            <Loader2 className="spin" size={18} /> Loading chains...
+            <SpinnerGap className="spin" size={18} weight="duotone" /> Loading chains...
           </div>
         ) : chainsQuery.error ? (
           <div className="pill warn">Failed to load chains</div>
@@ -216,7 +216,7 @@ export function ChainsPage() {
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
         <DialogTitle>Create a new chain</DialogTitle>
         <DialogContent sx={{ minWidth: '400px' }}>
-          <p style={{ marginBottom: '16px', color: '#999' }}>
+          <p style={{ marginBottom: '16px', color: '#6b7280' }}>
             Name it, then add plugins from the Plugins view.
           </p>
           <TextField
@@ -247,7 +247,7 @@ export function ChainsPage() {
             variant="contained"
             disabled={createChain.isPending || !chainName.trim()}
           >
-            {createChain.isPending ? <Loader2 className="spin" size={16} /> : <Plus size={16} />} Create
+            {createChain.isPending ? <SpinnerGap className="spin" size={16} weight="duotone" /> : <Plus size={16} weight="bold" />} Create
           </Button>
         </DialogActions>
       </Dialog>
@@ -289,7 +289,7 @@ function ChainRow({
       <td>{pluginCount} plugin{pluginCount === 1 ? '' : 's'}</td>
       <td>
         <span className={`pill ${chain.is_active ? 'success' : 'muted'}`}>
-          {chain.is_active ? <BadgeCheck size={14} /> : null}
+          {chain.is_active ? <SealCheck size={14} weight="duotone" /> : null}
           {chain.is_active ? 'Active' : 'Idle'}
         </span>
       </td>
@@ -302,11 +302,11 @@ function ChainRow({
           <Menu store={menu} className="menu">
             {!chain.is_active ? (
               <MenuItem className="menu-item" onClick={onActivate} disabled={disableActions}>
-                <Power size={16} /> Activate
+                <Power size={16} weight="duotone" /> Activate
               </MenuItem>
             ) : (
               <MenuItem className="menu-item" onClick={onDeactivate} disabled={disableActions}>
-                <Power size={16} /> Deactivate
+                <Power size={16} weight="duotone" /> Deactivate
               </MenuItem>
             )}
             <MenuItem
@@ -328,7 +328,7 @@ function ChainRow({
               }} 
               disabled={disableActions}
             >
-              <Trash2 size={16} /> Delete
+              <Trash size={16} weight="duotone" /> Delete
             </MenuItem>
           </Menu>
         </MenuProvider>
@@ -337,7 +337,7 @@ function ChainRow({
         <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)}>
           <DialogTitle>Rename chain</DialogTitle>
           <DialogContent sx={{ minWidth: '400px' }}>
-            <p style={{ marginBottom: '16px', color: '#999' }}>
+            <p style={{ marginBottom: '16px', color: '#6b7280' }}>
               Update the chain name and keep routing intact.
             </p>
             <TextField

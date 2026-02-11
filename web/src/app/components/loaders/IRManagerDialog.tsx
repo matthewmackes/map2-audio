@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Loader2, RefreshCw, Speaker, Upload, Waves, X } from 'lucide-react'
+import { Check, SpinnerGap, ArrowsClockwise, SpeakerHigh, UploadSimple, WaveSine, X } from '@phosphor-icons/react'
 import { irApi } from '../../../map2/api'
 import type { IRsResponse, IRStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
@@ -15,7 +15,7 @@ interface IRTypeConfig {
   emptyMessage: string
   loadingMessage: string
   defaultLabel: string
-  icon: typeof Speaker
+  icon: typeof SpeakerHigh
   iconColor: string
   listQueryFn: () => Promise<IRsResponse>
   loadFn: (name: string) => Promise<any>
@@ -32,8 +32,8 @@ const IR_CONFIGS: Record<IRType, IRTypeConfig> = {
     emptyMessage: 'No cabinet IRs found. Upload WAV files to get started.',
     loadingMessage: 'Loading cabinet IRs...',
     defaultLabel: 'Cabinet IR',
-    icon: Speaker,
-    iconColor: '#37d6c9',
+    icon: SpeakerHigh,
+    iconColor: '#2563eb',
     listQueryFn: irApi.listCabinets,
     loadFn: irApi.loadCabinet,
     uploadFn: irApi.uploadCabinet,
@@ -47,7 +47,7 @@ const IR_CONFIGS: Record<IRType, IRTypeConfig> = {
     emptyMessage: 'No reverb IRs found. Upload WAV files to get started.',
     loadingMessage: 'Loading reverb IRs...',
     defaultLabel: 'Reverb IR',
-    icon: Waves,
+    icon: WaveSine,
     iconColor: '#2196f3',
     listQueryFn: irApi.listReverbs,
     loadFn: irApi.loadReverb,
@@ -168,7 +168,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
             <h3 style={{ margin: 0 }}>{config.title}</h3>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -189,7 +189,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
               onClick={handleUpload}
               disabled={uploading}
             >
-              <Upload size={16} />
+              <UploadSimple size={16} weight="duotone" />
               {uploading ? 'Uploading...' : 'Upload'}
             </button>
             <button
@@ -197,7 +197,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
               onClick={handleRefresh}
               disabled={irsQuery.isFetching}
             >
-              <RefreshCw size={16} className={irsQuery.isFetching ? 'spin' : ''} />
+              <ArrowsClockwise size={16} weight="duotone" className={irsQuery.isFetching ? 'spin' : ''} />
             </button>
           </div>
         </div>
@@ -213,7 +213,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
         {loadedIR && (
           <div className="flex" style={{ marginBottom: 12 }}>
             <span className="pill success">
-              <Check size={14} />
+              <Check size={14} weight="bold" />
               Active: {loadedIR}
             </span>
           </div>
@@ -221,7 +221,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
 
         {irsQuery.isLoading ? (
           <div className="flex" style={{ padding: 16, justifyContent: 'center' }}>
-            <Loader2 className="spin" size={20} />
+            <SpinnerGap className="spin" size={20} weight="duotone" />
             <span className="muted">{config.loadingMessage}</span>
           </div>
         ) : irsQuery.error ? (
@@ -252,7 +252,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
                   </div>
                   {isActive ? (
                     <span className="pill success" style={{ padding: '4px 8px' }}>
-                      <Check size={12} />
+                      <Check size={12} weight="bold" />
                       Active
                     </span>
                   ) : (
@@ -262,7 +262,7 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
                       disabled={loadMutation.isPending}
                     >
                       {isLoading ? (
-                        <Loader2 className="spin" size={14} />
+                        <SpinnerGap className="spin" size={14} weight="duotone" />
                       ) : (
                         'Load'
                       )}

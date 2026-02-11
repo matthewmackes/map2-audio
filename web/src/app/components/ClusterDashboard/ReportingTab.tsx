@@ -1,4 +1,4 @@
-import { Download, FileText, BarChart3, Filter } from 'lucide-react'
+import { DownloadSimple, FileText, ChartBar, Funnel } from '@phosphor-icons/react'
 import { useState } from 'react'
 
 export function ReportingTab() {
@@ -88,7 +88,7 @@ export function ReportingTab() {
         }}
       >
         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 12, color: '#d0d0d0' }}>
-          <Filter size={14} style={{ display: 'inline', marginRight: 6 }} />
+          <Funnel size={14} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
           Time Range
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -104,9 +104,9 @@ export function ReportingTab() {
               onClick={() => setSelectedDateRange(range.value)}
               style={{
                 padding: '8px 14px',
-                background: selectedDateRange === range.value ? '#00d4ff' : 'rgba(255, 255, 255, 0.05)',
+                background: selectedDateRange === range.value ? '#2563eb' : 'rgba(255, 255, 255, 0.05)',
                 color: selectedDateRange === range.value ? '#000' : '#d0d0d0',
-                border: `1px solid ${selectedDateRange === range.value ? '#00d4ff' : '#333'}`,
+                border: `1px solid ${selectedDateRange === range.value ? '#2563eb' : '#333'}`,
                 borderRadius: 6,
                 cursor: 'pointer',
                 fontSize: 12,
@@ -149,7 +149,7 @@ export function ReportingTab() {
               disabled={isExporting || (report as any).disabled}
               style={{
                 padding: '10px 14px',
-                background: (report as any).disabled ? '#333' : '#00d4ff',
+                background: (report as any).disabled ? '#333' : '#2563eb',
                 color: (report as any).disabled ? '#666' : '#000',
                 border: 'none',
                 borderRadius: 6,
@@ -164,7 +164,7 @@ export function ReportingTab() {
                 transition: 'opacity 0.2s',
               }}
             >
-              <Download size={14} />
+              <DownloadSimple size={14} weight="duotone" />
               {isExporting ? 'Exporting...' : (report as any).disabled ? 'Not Available' : `Export ${report.format}`}
             </button>
           </div>
@@ -181,7 +181,7 @@ export function ReportingTab() {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: '#d0d0d0' }}>
-          <BarChart3 size={16} style={{ display: 'inline', marginRight: 6 }} />
+          <ChartBar size={16} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
           Analysis Features
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -214,13 +214,13 @@ export function ReportingTab() {
       {/* Scheduled Reports */}
       <div
         style={{
-          background: 'rgba(0, 212, 255, 0.1)',
-          border: '1px solid #00d4ff',
+          background: 'rgba(37, 99, 235, 0.1)',
+          border: '1px solid #2563eb',
           borderRadius: 8,
           padding: '16px',
         }}
       >
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#00d4ff', marginBottom: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>
           📧 Scheduled Reports
         </div>
         <div style={{ fontSize: 12, color: '#d0d0d0', lineHeight: 1.6 }}>

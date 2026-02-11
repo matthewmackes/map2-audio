@@ -28,11 +28,11 @@ const eventTypeIcons = {
 export function LCDEventFeed({ events, onEventClick, maxHeight = '400px' }: LCDEventFeedProps) {
   return (
     <div 
-      className="bg-gray-900 border border-cyan-500 rounded-lg overflow-y-auto"
+      className="bg-[#0a0a0a] border border-blue-600 rounded-lg overflow-y-auto"
       style={{ maxHeight }}
     >
       {events.length === 0 ? (
-        <div className="p-4 text-gray-400 text-center">No events</div>
+        <div className="p-4 text-[#9ca3af] text-center">No events</div>
       ) : (
         <div className="divide-y divide-gray-700">
           {events.map((event) => (
@@ -54,11 +54,11 @@ export function LCDEventFeed({ events, onEventClick, maxHeight = '400px' }: LCDE
                   
                   <p className="text-sm text-gray-300 mt-1 line-clamp-2">{event.message}</p>
                   
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-3 mt-2 text-xs text-[#9ca3af]">
                     <span>{event.source_node}</span>
                     <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
                     {event.broadcast ? (
-                      <span className="text-cyan-400">📡 Broadcast</span>
+                      <span className="text-blue-400">📡 Broadcast</span>
                     ) : (
                       <span className="text-yellow-600">🎯 Targeted</span>
                     )}
@@ -88,7 +88,7 @@ export function CompactLCDEventFeed({ events, maxItems = 5 }: { events: LCDEvent
               {event.severity[0].toUpperCase()}
             </span>
           </div>
-          <p className="text-gray-400 text-xs ml-6 line-clamp-1">{event.message}</p>
+          <p className="text-[#9ca3af] text-xs ml-6 line-clamp-1">{event.message}</p>
         </div>
       ))}
     </div>

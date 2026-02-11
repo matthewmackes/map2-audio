@@ -3,7 +3,7 @@
  */
 
 import { Box, Paper, Button, Grid, LinearProgress, Typography } from '@mui/material'
-import { RefreshCw, Zap, Thermometer, Wind } from 'lucide-react'
+import { ArrowsClockwise, Lightning, Thermometer, Wind } from '@phosphor-icons/react'
 import { useState } from 'react'
 import type { SystemHealthOverview } from '@/map2/types'
 
@@ -45,7 +45,7 @@ export default function HealthMonitor({ healthOverview }: HealthMonitorProps) {
             <Typography sx={{ fontWeight: 700, fontSize: 16 }}>System Health</Typography>
             <Button
               size="small"
-              startIcon={<RefreshCw size={16} />}
+              startIcon={<ArrowsClockwise size={16} weight="duotone" />}
               onClick={() => {
                 setRefreshing(true)
                 setTimeout(() => setRefreshing(false), 1000)

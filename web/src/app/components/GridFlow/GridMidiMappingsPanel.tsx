@@ -4,7 +4,7 @@
  */
 
 import { memo } from 'react'
-import { Music, X, Trash2, Settings2 } from 'lucide-react'
+import { MusicNote, X, Trash, GearSix } from '@phosphor-icons/react'
 
 export interface MidiMapping {
   id: string
@@ -35,10 +35,10 @@ export const GridMidiMappingsPanel = memo(function GridMidiMappingsPanel({
     <div className="grid-midi-panel">
       {/* Header */}
       <div className="grid-midi-panel-header">
-        <Music size={20} style={{ color: 'var(--primary)' }} />
+        <MusicNote size={20} weight="duotone" style={{ color: 'var(--primary)' }} />
         <h3>MIDI Mappings</h3>
         <button className="grid-midi-panel-close" onClick={onClose}>
-          <X size={18} />
+          <X size={18} weight="bold" />
         </button>
       </div>
 
@@ -46,7 +46,7 @@ export const GridMidiMappingsPanel = memo(function GridMidiMappingsPanel({
       <div className="grid-midi-panel-content">
         {mappings.length === 0 ? (
           <div className="grid-midi-panel-empty">
-            <Music size={32} style={{ color: 'var(--muted)', marginBottom: 12 }} />
+            <MusicNote size={32} weight="duotone" style={{ color: 'var(--muted)', marginBottom: 12 }} />
             <p>No MIDI mappings</p>
             <span>Use MIDI Learn mode to create mappings</span>
           </div>
@@ -90,14 +90,14 @@ export const GridMidiMappingsPanel = memo(function GridMidiMappingsPanel({
                     onClick={() => onUpdate(mapping.id, { inverted: !mapping.inverted })}
                     title="Invert"
                   >
-                    <Settings2 size={14} />
+                    <GearSix size={14} weight="duotone" />
                   </button>
                   <button
                     className="grid-midi-btn delete"
                     onClick={() => onDelete(mapping.id)}
                     title="Delete mapping"
                   >
-                    <Trash2 size={14} />
+                    <Trash size={14} weight="duotone" />
                   </button>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { Dialog, DialogDismiss, DialogHeading, DialogProvider, useDialogStore } from '@ariakit/react'
-import { X } from 'lucide-react'
+import { X } from '@phosphor-icons/react'
 
 interface ConfirmationDialogProps {
   open: boolean
@@ -53,7 +53,7 @@ export function ConfirmationDialog({
         <div className="toolbar-confirmation-header">
           <DialogHeading className="toolbar-confirmation-title">{title}</DialogHeading>
           <DialogDismiss className="toolbar-confirmation-close">
-            <X size={20} />
+            <X size={20} weight="bold" />
           </DialogDismiss>
         </div>
 

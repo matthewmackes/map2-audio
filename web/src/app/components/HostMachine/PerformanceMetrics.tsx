@@ -5,7 +5,7 @@
 import { Box, Paper, Button, Grid, Switch, FormControlLabel, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { RefreshCw } from 'lucide-react'
+import { ArrowsClockwise } from '@phosphor-icons/react'
 
 interface PerformanceMetricsProps {
   autoRefresh: boolean
@@ -78,7 +78,7 @@ export default function PerformanceMetrics({
             }
             label="Auto-refresh"
           />
-          <Button size="small" startIcon={<RefreshCw size={16} />}>
+          <Button size="small" startIcon={<ArrowsClockwise size={16} weight="duotone" />}>
             Refresh
           </Button>
         </Box>

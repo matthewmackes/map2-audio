@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Usb, BookOpen, Monitor, Menu, X, Server, Flame, Layers, Cpu } from 'lucide-react'
+import { SquaresFour, Sparkle, Info, Package, Waveform, MusicNotes, GridFour, Pulse, Usb, BookOpen, Monitor, List, X, HardDrives, Fire, Stack, Cpu } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
@@ -13,7 +13,7 @@ const underTheHoodItems = [
   {
     to: '/',
     label: 'Overview',
-    icon: Sparkles,
+    icon: Sparkle,
     description: 'System status & quick actions',
     color: '#f59e0b',  // Amber
     group: 'System',
@@ -21,7 +21,7 @@ const underTheHoodItems = [
   {
     to: '/presets',
     label: 'Presets',
-    icon: PanelsTopLeft,
+    icon: SquaresFour,
     description: 'Save & recall your sounds',
     color: '#22c55e',  // Green
     group: 'System',
@@ -40,7 +40,7 @@ const underTheHoodItems = [
   {
     to: '/library',
     label: 'IR & NAM Library',
-    icon: AudioLines,
+    icon: Waveform,
     description: 'Impulse responses & NAM models',
     color: '#06b6d4',  // Teal
     group: 'Content & Plugins',
@@ -50,7 +50,7 @@ const underTheHoodItems = [
   {
     to: '/engine',
     label: 'Audio Engine',
-    icon: Activity,
+    icon: Pulse,
     description: 'Engine cluster, metering, signal path & diagnostics',
     color: '#3b82f6',  // Blue
     dividerBefore: true,
@@ -61,7 +61,7 @@ const underTheHoodItems = [
   {
     to: '/midi',
     label: 'MIDI',
-    icon: Piano,
+    icon: MusicNotes,
     description: 'MIDI mapping & control',
     color: '#ec4899',  // Pink
     dividerBefore: true,
@@ -89,7 +89,7 @@ const underTheHoodItems = [
   {
     to: '/motu-rme',
     label: 'MOTU + RME ADAT',
-    icon: Layers,
+    icon: Stack,
     description: 'MOTU UltraLite-mk5 + RME ADI-8 QS monitoring',
     color: '#00D4FF',  // Cyan
     group: 'Hardware & Interfaces',
@@ -97,7 +97,7 @@ const underTheHoodItems = [
   {
     to: '/hotone-jogg',
     label: 'HoTone JoGG',
-    icon: AudioLines,
+    icon: Waveform,
     description: 'HoTone audio interface',
     color: '#e53935',  // HoTone red
     group: 'Hardware & Interfaces',
@@ -106,9 +106,9 @@ const underTheHoodItems = [
   {
     to: '/host-machine',
     label: 'Host Machine',
-    icon: Server,
+    icon: HardDrives,
     description: 'Hardware info & real-time health',
-    color: '#3b82f6',  // Blue
+    color: '#2563eb',  // Blue
     dividerBefore: true,
     group: 'Infrastructure',
   },
@@ -123,9 +123,9 @@ const underTheHoodItems = [
   {
     to: '/cluster-dashboard',
     label: 'Cluster Dashboard',
-    icon: Server,
+    icon: HardDrives,
     description: 'Multi-node cluster monitoring & simulation',
-    color: '#00d4ff',  // Cyan
+    color: '#2563eb',  // Blue
     group: 'Infrastructure',
   },
   {
@@ -145,16 +145,16 @@ const navItemsLeft = [
     label: 'Guide',
     icon: BookOpen,
     description: 'Platform guide & concepts',
-    color: '#22c55e'  // Green
+    color: '#60a5fa'
   },
   {
     to: '/grid',
     label: 'Grid',
-    icon: LayoutGrid,
+    icon: GridFour,
     description: 'Cortex-style grid editor',
-    color: '#f97316'  // Orange
+    color: '#2563eb'
   },
-  ...(enableLegacy ? [{ to: '/legacy', label: 'Legacy', icon: Sparkles, description: 'Classic interface', color: '#ec4899' }] : []),
+  ...(enableLegacy ? [{ to: '/legacy', label: 'Legacy', icon: Sparkle, description: 'Classic interface', color: '#60a5fa' }] : []),
 ]
 
 // Right-side navigation items (About)
@@ -164,7 +164,7 @@ const navItemsRight = [
     label: 'About',
     icon: Info,
     description: 'System info',
-    color: '#64748b'  // Slate
+    color: '#9ca3af'
   },
 ]
 
@@ -243,7 +243,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         title={item.description}
       >
         <span className="nav-tab-icon" style={{ '--tab-color': item.color } as React.CSSProperties}>
-          <Icon size={16} aria-hidden />
+          <Icon size={16} weight="duotone" aria-hidden />
         </span>
         <span className="nav-tab-label">{item.label}</span>
       </NavLink>
@@ -264,7 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="nav-active-display"
             style={{ '--active-color': activeNav.item.color } as React.CSSProperties}
           >
-            <activeNav.item.icon size={22} className="nav-active-icon" aria-hidden />
+            <activeNav.item.icon size={22} weight="duotone" className="nav-active-icon" aria-hidden />
             <span className="nav-active-text">{activeNav.item.label}</span>
           </div>
         </div>
@@ -279,20 +279,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                   className="nav-tab-item"
                   style={{
                     background: 'none',
-                    border: '1px solid rgba(220, 38, 38, 0.3)',
+                    border: '1px solid rgba(37, 99, 235, 0.3)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    transition: 'all 150ms',
+                    transition: 'background 150ms, border-color 150ms',
                   }}
                   onClick={() => setAdvancedMenuOpen(!advancedMenuOpen)}
                   title="Advanced settings & configuration"
                 >
-                  <Flame size={16} style={{ color: '#dc2626' }} />
-                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#dc2626' }}>Advanced</span>
+                  <Fire size={16} weight="duotone" style={{ color: '#60a5fa' }} />
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#60a5fa' }}>Advanced</span>
                 </button>
                 
                 {advancedMenuOpen && (
@@ -301,8 +301,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                       position: 'absolute',
                       right: 0,
                       top: 'calc(100% + 8px)',
-                      background: 'linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(25, 30, 45, 0.95) 100%)',
-                      border: '1px solid rgba(220, 38, 38, 0.3)',
+                      background: '#111111',
+                      border: '1px solid rgba(37, 99, 235, 0.15)',
                       borderRadius: '8px',
                       boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
                       minWidth: '260px',
@@ -316,7 +316,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           <>
                             <div style={{
                               height: '1px',
-                              background: 'rgba(220, 38, 38, 0.2)',
+                              background: 'rgba(37, 99, 235, 0.1)',
                               margin: '8px 0 0 0'
                             }} />
                             {item.group && (
@@ -326,7 +326,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 fontWeight: 600,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.08em',
-                                color: '#71717a',
+                                color: '#6b7280',
                               }}>
                                 {item.group}
                               </div>
@@ -343,19 +343,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                             padding: '12px 16px',
                             textDecoration: 'none',
                             transition: 'background 150ms',
-                            color: '#f2f6ff',
+                            color: '#f3f4f6',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)'
+                            e.currentTarget.style.background = 'rgba(37, 99, 235, 0.08)'
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background = 'transparent'
                           }}
                         >
-                          <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
+                          <item.icon size={16} weight="duotone" style={{ color: '#60a5fa', flexShrink: 0 }} />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '13px', fontWeight: 500 }}>{item.label}</div>
-                            <div style={{ fontSize: '11px', color: '#71717a', marginTop: '2px' }}>
+                            <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
                               {item.description}
                             </div>
                           </div>
@@ -377,7 +377,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-label="Toggle navigation menu"
             title="Toggle menu"
           >
-            {navOpen ? <X size={20} /> : <Menu size={20} />}
+            {navOpen ? <X size={20} weight="bold" /> : <List size={20} weight="bold" />}
           </button>
         </div>
 
@@ -396,7 +396,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     style={{ '--item-color': item.color } as React.CSSProperties}
                     onClick={() => setNavOpen(false)}
                   >
-                    <Icon size={18} aria-hidden />
+                    <Icon size={18} weight="duotone" aria-hidden />
                     <span>{item.label}</span>
                   </NavLink>
                 )
@@ -407,7 +407,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div style={{
                   padding: '20px',
                   textAlign: 'center',
-                  color: '#71717a',
+                  color: '#6b7280',
                   fontSize: '13px',
                 }}>
                   Advanced features not enabled.

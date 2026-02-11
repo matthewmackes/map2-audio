@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, ShieldCheck, RefreshCw } from 'lucide-react'
+import { CheckCircle, XCircle, ShieldCheck, ArrowsClockwise } from '@phosphor-icons/react'
 
 interface TestResult {
   timestamp: string
@@ -97,8 +97,8 @@ export function RealtimeTestResults() {
 
   const getStatusIcon = (passed: boolean) => {
     return passed
-      ? <CheckCircle size={16} className="text-green-500" style={{ color: 'var(--success)', flexShrink: 0 }} />
-      : <XCircle size={16} className="text-red-500" style={{ color: 'var(--error)', flexShrink: 0 }} />
+      ? <CheckCircle size={16} weight="duotone" className="text-green-500" style={{ color: 'var(--success)', flexShrink: 0 }} />
+      : <XCircle size={16} weight="duotone" className="text-red-500" style={{ color: 'var(--error)', flexShrink: 0 }} />
   }
 
   // Get key tests from categories for display
@@ -139,7 +139,7 @@ export function RealtimeTestResults() {
     <div className="card">
       <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 12, justifyContent: 'space-between' }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-          <ShieldCheck size={20} />
+          <ShieldCheck size={20} weight="duotone" />
           <h3 style={{ margin: 0 }}>Realtime testing & scoring</h3>
         </div>
         <button
@@ -148,7 +148,7 @@ export function RealtimeTestResults() {
           className="btn btn-ghost btn-sm"
           style={{ padding: '4px 8px' }}
         >
-          <RefreshCw size={16} className={runningTest ? 'animate-spin' : ''} />
+          <ArrowsClockwise size={16} weight="duotone" className={runningTest ? 'animate-spin' : ''} />
         </button>
       </div>
 

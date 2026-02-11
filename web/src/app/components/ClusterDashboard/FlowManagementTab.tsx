@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { GitBranch, AlertCircle } from 'lucide-react'
+import { GitBranch, WarningCircle } from '@phosphor-icons/react'
 
 export function FlowManagementTab() {
   const { data: flows } = useQuery({
@@ -49,7 +49,7 @@ export function FlowManagementTab() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#d0d0d0' }}>
-                    <GitBranch size={14} style={{ display: 'inline', marginRight: 6 }} />
+                    <GitBranch size={14} weight="duotone" style={{ display: 'inline', marginRight: 6 }} />
                     {flow.flow_id || `Flow ${idx + 1}`}
                   </div>
                   <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 4 }}>
@@ -115,7 +115,7 @@ export function FlowManagementTab() {
             color: '#a0a0a0',
           }}
         >
-          <GitBranch size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+          <GitBranch size={32} weight="duotone" style={{ margin: '0 auto 12px', opacity: 0.5 }} />
           <div>No flows currently assigned</div>
           <div style={{ fontSize: 12, marginTop: 8 }}>
             Create flows in the Grid interface to see distributions here.
@@ -126,13 +126,13 @@ export function FlowManagementTab() {
       {/* Flow Distribution Benefits */}
       <div
         style={{
-          background: 'rgba(0, 212, 255, 0.1)',
-          border: '1px solid #00d4ff',
+          background: 'rgba(37, 99, 235, 0.1)',
+          border: '1px solid #2563eb',
           borderRadius: 8,
           padding: '16px',
         }}
       >
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#00d4ff', marginBottom: 8 }}>💡 Distribution Tips</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>💡 Distribution Tips</div>
         <ul style={{ fontSize: 12, color: '#d0d0d0', margin: 0, paddingLeft: 20, lineHeight: 1.6 }}>
           <li>Assign heavy flows to nodes with more available DSP</li>
           <li>Use standby nodes for critical audio flows</li>

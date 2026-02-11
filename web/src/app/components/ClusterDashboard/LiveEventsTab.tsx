@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { AlertCircle, CheckCircle, Info, Zap } from 'lucide-react'
+import { WarningCircle, CheckCircle, Info, Lightning } from '@phosphor-icons/react'
 
 interface LCDEvent {
   event_id: string
@@ -84,7 +84,7 @@ export function LiveEventsTab() {
       case 'warning':
         return '#ffaa00'
       default:
-        return '#00d4ff'
+        return '#60a5fa'
     }
   }
 
@@ -92,11 +92,11 @@ export function LiveEventsTab() {
     switch (severity) {
       case 'critical':
       case 'error':
-        return <AlertCircle size={14} />
+        return <WarningCircle size={14} weight="duotone" />
       case 'warning':
-        return <Zap size={14} />
+        return <Lightning size={14} weight="duotone" />
       default:
-        return <Info size={14} />
+        return <Info size={14} weight="duotone" />
     }
   }
 

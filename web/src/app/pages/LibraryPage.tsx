@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Library, Mic, Zap, Waves, Music, HardDrive, ChevronDown, ChevronUp, Copy, Check, RefreshCw, Speaker } from 'lucide-react'
+import { Books, Microphone, Lightning, WaveSine, MusicNote, HardDrive, CaretDown, CaretUp, Copy, Check, ArrowsClockwise, SpeakerHigh } from '@phosphor-icons/react'
 import { LibrarySources } from '../components/library/LibrarySources'
 import { DownloadManager } from '../components/library/DownloadManager'
 import { InstalledBrowser } from '../components/library/InstalledBrowser'
@@ -12,7 +12,7 @@ interface PathInfo {
   label: string
   path: string
   displayPath: string
-  icon: typeof Library
+  icon: typeof Books
   description: string
 }
 
@@ -46,28 +46,27 @@ export function LibraryPage() {
       label: 'NAM Models',
       path: pathsQuery.data.nam_models,
       displayPath: pathsQuery.data.nam_models_display,
-      icon: Music,
-      description: 'Neural Amp Models (.nam files)',
+      icon: MusicNote,
     },
     {
       label: 'Cabinet IRs',
       path: pathsQuery.data.ir_cabinets,
       displayPath: pathsQuery.data.ir_cabinets_display,
-      icon: Speaker,
+      icon: SpeakerHigh,
       description: 'Guitar/Bass cabinet impulse responses',
     },
     {
       label: 'Reverb IRs',
       path: pathsQuery.data.ir_reverbs,
       displayPath: pathsQuery.data.ir_reverbs_display,
-      icon: Waves,
+      icon: WaveSine,
       description: 'Reverb impulse responses (.wav, .flac)',
     },
     {
       label: 'User Uploads',
       path: pathsQuery.data.ir_user_uploads,
       displayPath: pathsQuery.data.ir_user_uploads?.replace(/^\/home\/[^/]+/, '~') || '',
-      icon: Music,
+      icon: MusicNote,
       description: 'Your custom imported IRs',
     },
   ] : []
@@ -77,7 +76,7 @@ export function LibraryPage() {
       {/* Header */}
       <div className="flex-between">
         <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-          <Library size={28} style={{ color: 'var(--primary)' }} />
+          <Books size={28} weight="duotone" style={{ color: 'var(--primary)' }} />
           <div>
             <h1 style={{ margin: 0, fontSize: 24 }}>Library</h1>
             <p className="muted" style={{ margin: 0, fontSize: 14 }}>
@@ -90,21 +89,21 @@ export function LibraryPage() {
 
       {/* Sound Asset Library Overview & Paths */}
       <div className="card" style={{
-        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.05))',
-        borderColor: 'rgba(139, 92, 246, 0.4)',
-        borderLeft: '6px solid #8b5cf6',
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.05))',
+        borderColor: 'rgba(37, 99, 235, 0.4)',
+        borderLeft: '6px solid #2563eb',
         padding: 32
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
-          <Library size={36} style={{ color: '#8b5cf6', flexShrink: 0, marginTop: 4 }} />
+          <Books size={36} weight="duotone" style={{ color: '#60a5fa', flexShrink: 0, marginTop: 4 }} />
           <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 22, fontWeight: 700, color: '#a78bfa', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 22, fontWeight: 700, color: '#60a5fa', marginBottom: 12 }}>
               Sound Asset Library
             </h3>
             <p style={{ fontSize: 16, color: '#d1d5db', lineHeight: 1.7, marginBottom: 24 }}>
               High-quality impulse responses, neural amp models, and instrument samples for use with the
-              <strong style={{ color: '#a78bfa' }}> ConvolutionProcessor</strong> and
-              <strong style={{ color: '#a78bfa' }}> NAMProcessor</strong> native DSP modules:
+              <strong style={{ color: '#60a5fa' }}> ConvolutionProcessor</strong> and
+              <strong style={{ color: '#60a5fa' }}> NAMProcessor</strong> native DSP modules:
             </p>
 
             {/* Asset Types Chart */}
@@ -116,57 +115,57 @@ export function LibraryPage() {
             }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
                 <thead>
-                  <tr style={{ background: 'rgba(139, 92, 246, 0.15)' }}>
-                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#a78bfa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(139, 92, 246, 0.2)' }}>Asset Type</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#a78bfa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(139, 92, 246, 0.2)' }}>Description</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#a78bfa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(139, 92, 246, 0.2)' }}>Formats</th>
-                    <th style={{ padding: '16px 20px', textAlign: 'right', color: '#a78bfa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(139, 92, 246, 0.2)' }}>Used By</th>
+                  <tr style={{ background: 'rgba(37, 99, 235, 0.15)' }}>
+                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Asset Type</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Description</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'left', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Formats</th>
+                    <th style={{ padding: '16px 20px', textAlign: 'right', color: '#60a5fa', fontWeight: 700, fontSize: 16, borderBottom: '1px solid rgba(37, 99, 235, 0.2)' }}>Used By</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px 20px', color: '#f97316' }}>
+                    <td style={{ padding: '16px 20px', color: '#60a5fa' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Mic size={20} /> Cabinet IRs
+                        <Microphone size={20} weight="duotone" /> Cabinet IRs
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Guitar & bass cabinet impulse responses</td>
                     <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.wav, .flac (44.1-96kHz)</td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#a78bfa', fontWeight: 600 }}>ConvolutionProcessor</div>
+                      <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600 }}>ConvolutionProcessor</div>
                       <div style={{ fontSize: 11, color: '#6b7280' }}>Zero-latency IR</div>
                     </td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px 20px', color: '#ff6b6b' }}>
+                    <td style={{ padding: '16px 20px', color: '#60a5fa' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Zap size={20} /> NAM Models
+                        <Lightning size={20} weight="duotone" /> NAM Models
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Neural Amp Modeler captures</td>
                     <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.nam (JSON model files)</td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#ff6b6b', fontWeight: 600 }}>NAMProcessor</div>
+                      <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600 }}>NAMProcessor</div>
                       <div style={{ fontSize: 11, color: '#6b7280' }}>ML inference</div>
                     </td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '16px 20px', color: '#a855f7' }}>
+                    <td style={{ padding: '16px 20px', color: '#60a5fa' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Waves size={20} /> Reverb IRs
+                        <WaveSine size={20} weight="duotone" /> Reverb IRs
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Room, hall, plate, and space impulses</td>
                     <td style={{ padding: '16px 20px', color: '#9ca3af', fontSize: 14 }}>.wav, .flac (stereo/mono)</td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontSize: 12, color: '#a855f7', fontWeight: 600 }}>ConvolutionProcessor</div>
+                      <div style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600 }}>ConvolutionProcessor</div>
                       <div style={{ fontSize: 11, color: '#6b7280' }}>Space simulation</div>
                     </td>
                   </tr>
                   <tr>
                     <td style={{ padding: '16px 20px', color: '#22c55e' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 500 }}>
-                        <Music size={20} /> SoundFonts
+                        <MusicNote size={20} weight="duotone" /> SoundFonts
                       </div>
                     </td>
                     <td style={{ padding: '16px 20px', color: '#e5e7eb', fontWeight: 600, fontSize: 15 }}>Sampled instrument libraries</td>
@@ -202,7 +201,7 @@ export function LibraryPage() {
                 }}
               >
                 <div className="flex" style={{ gap: 12, alignItems: 'center' }}>
-                  <HardDrive size={18} style={{ color: 'var(--secondary)' }} />
+                  <HardDrive size={18} weight="duotone" style={{ color: 'var(--secondary)' }} />
                   <span style={{ fontWeight: 600, fontSize: 15 }}>File Locations</span>
                 </div>
                 <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
@@ -214,9 +213,9 @@ export function LibraryPage() {
                     }}
                     title="Refresh paths"
                   >
-                    <RefreshCw size={14} className={pathsQuery.isFetching ? 'spin' : ''} />
+                    <ArrowsClockwise size={14} weight="duotone" className={pathsQuery.isFetching ? 'spin' : ''} />
                   </button>
-                  {pathsExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  {pathsExpanded ? <CaretUp size={18} weight="bold" /> : <CaretDown size={18} weight="bold" />}
                 </div>
               </button>
 
@@ -280,11 +279,11 @@ export function LibraryPage() {
                           >
                             {copiedPath === path ? (
                               <>
-                                <Check size={14} style={{ color: 'var(--success)' }} />
+                                <Check size={14} weight="bold" style={{ color: 'var(--success)' }} />
                               </>
                             ) : (
                               <>
-                                <Copy size={14} />
+                                <Copy size={14} weight="duotone" />
                               </>
                             )}
                           </button>

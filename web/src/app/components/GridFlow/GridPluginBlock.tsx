@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState, memo } from 'react'
-import { X, Power } from 'lucide-react'
+import { X, Power } from '@phosphor-icons/react'
 import { getCategoryConfig, getCategoryIcon } from './categoryConfig'
 import type { ChainPlugin, Plugin } from '../../../map2/types'
 
@@ -132,7 +132,7 @@ export const GridPluginBlock = memo(function GridPluginBlock({
       {/* Bypass indicator */}
       {plugin.bypassed && (
         <div className="grid-plugin-bypass-badge">
-          <Power size={10} />
+          <Power size={10} weight="duotone" />
         </div>
       )}
 
@@ -146,7 +146,7 @@ export const GridPluginBlock = memo(function GridPluginBlock({
           }}
           title="Remove plugin"
         >
-          <X size={12} />
+          <X size={12} weight="bold" />
         </button>
       )}
 

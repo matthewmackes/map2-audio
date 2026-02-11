@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { presetManager, type Preset } from '../services/presetManager'
-import { Trash2, Edit2, Download, Upload, Search, X } from 'lucide-react'
+import { Trash, PencilSimple, DownloadSimple, UploadSimple, MagnifyingGlass, X } from '@phosphor-icons/react'
 
 interface PresetsWindowProps {
   isOpen: boolean
@@ -102,28 +102,28 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
     }}>
       <div style={{
         background: 'linear-gradient(135deg, rgba(14, 22, 37, 0.95), rgba(20, 30, 50, 0.9))',
-        border: '1px solid rgba(0, 212, 255, 0.3)',
+        border: '1px solid rgba(37, 99, 235, 0.3)',
         borderRadius: 12,
         width: '100%',
         maxWidth: 900,
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 212, 255, 0.2)',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.2)',
       }}>
         {/* Header */}
         <div style={{
           padding: 20,
-          borderBottom: '1px solid rgba(0, 212, 255, 0.2)',
+          borderBottom: '1px solid rgba(37, 99, 235, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#00d4ff', margin: 0, marginBottom: 4 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2563eb', margin: 0, marginBottom: 4 }}>
               Preset Manager
             </h2>
-            <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>
               {presets.length} preset{presets.length !== 1 ? 's' : ''} saved
             </p>
           </div>
@@ -132,7 +132,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#888',
+              color: '#6b7280',
               cursor: 'pointer',
               fontSize: 24,
             }}
@@ -144,7 +144,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
         {/* Search & Controls */}
         <div style={{
           padding: 16,
-          borderBottom: '1px solid rgba(0, 212, 255, 0.2)',
+          borderBottom: '1px solid rgba(37, 99, 235, 0.2)',
           display: 'flex',
           gap: 8,
         }}>
@@ -158,22 +158,22 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                 width: '100%',
                 padding: '10px 12px 10px 36px',
                 background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(0, 212, 255, 0.2)',
+                border: '1px solid rgba(37, 99, 235, 0.2)',
                 borderRadius: 6,
                 color: '#fff',
                 fontSize: 12,
               }}
             />
-            <Search size={16} style={{ position: 'absolute', left: 10, top: 12, color: '#666' }} />
+            <MagnifyingGlass size={16} weight="duotone" style={{ position: 'absolute', left: 10, top: 12, color: '#6b7280' }} />
           </div>
           <button
             onClick={handleExport}
             title="Export all presets"
             style={{
               padding: '10px 14px',
-              background: 'rgba(0, 212, 255, 0.1)',
-              border: '1px solid rgba(0, 212, 255, 0.3)',
-              color: '#00d4ff',
+              background: 'rgba(37, 99, 235, 0.1)',
+              border: '1px solid rgba(37, 99, 235, 0.3)',
+              color: '#2563eb',
               borderRadius: 6,
               cursor: 'pointer',
               fontSize: 12,
@@ -183,16 +183,16 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
               gap: 6,
             }}
           >
-            <Download size={14} /> Export
+            <DownloadSimple size={14} weight="duotone" /> Export
           </button>
           <button
             onClick={handleImport}
             title="Import presets"
             style={{
               padding: '10px 14px',
-              background: 'rgba(0, 212, 255, 0.1)',
-              border: '1px solid rgba(0, 212, 255, 0.3)',
-              color: '#00d4ff',
+              background: 'rgba(37, 99, 235, 0.1)',
+              border: '1px solid rgba(37, 99, 235, 0.3)',
+              color: '#2563eb',
               borderRadius: 6,
               cursor: 'pointer',
               fontSize: 12,
@@ -202,7 +202,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
               gap: 6,
             }}
           >
-            <Upload size={14} /> Import
+            <UploadSimple size={14} weight="duotone" /> Import
           </button>
         </div>
 
@@ -220,7 +220,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
               gridColumn: '1 / -1',
               textAlign: 'center',
               padding: 40,
-              color: '#888',
+              color: '#6b7280',
             }}>
               <p style={{ fontSize: 14, marginBottom: 8 }}>No presets found</p>
               <p style={{ fontSize: 12 }}>
@@ -237,23 +237,23 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                 style={{
                   padding: 12,
                   background: selectedPreset?.id === preset.id
-                    ? 'linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0,0,0,0.4))'
+                    ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(0,0,0,0.4))'
                     : 'rgba(0, 0, 0, 0.2)',
                   border: selectedPreset?.id === preset.id
-                    ? '2px solid rgba(0, 212, 255, 0.6)'
-                    : '1px solid rgba(0, 212, 255, 0.2)',
+                    ? '2px solid rgba(37, 99, 235, 0.6)'
+                    : '1px solid rgba(37, 99, 235, 0.2)',
                   borderRadius: 8,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(0, 212, 255, 0.5)'
-                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 212, 255, 0.2)'
+                  e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.5)'
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(37, 99, 235, 0.2)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = selectedPreset?.id === preset.id
-                    ? 'rgba(0, 212, 255, 0.6)'
-                    : 'rgba(0, 212, 255, 0.2)'
+                    ? 'rgba(37, 99, 235, 0.6)'
+                    : 'rgba(37, 99, 235, 0.2)'
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               >
@@ -273,7 +273,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                         flex: 1,
                         padding: '6px 8px',
                         background: 'rgba(0, 0, 0, 0.5)',
-                        border: '1px solid rgba(0, 212, 255, 0.4)',
+                        border: '1px solid rgba(37, 99, 235, 0.4)',
                         borderRadius: 4,
                         color: '#fff',
                         fontSize: 12,
@@ -281,10 +281,10 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                     />
                   ) : (
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#00d4ff', marginBottom: 2 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', marginBottom: 2 }}>
                         {preset.name}
                       </div>
-                      <div style={{ fontSize: 10, color: '#888' }}>
+                      <div style={{ fontSize: 10, color: '#6b7280' }}>
                         {preset.pluginUri.split('/').pop()}
                       </div>
                     </div>
@@ -299,12 +299,12 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#666',
+                        color: '#6b7280',
                         cursor: 'pointer',
                         padding: 4,
                       }}
                     >
-                      <Edit2 size={14} />
+                      <PencilSimple size={14} weight="duotone" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -315,16 +315,16 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#666',
+                        color: '#6b7280',
                         cursor: 'pointer',
                         padding: 4,
                       }}
                     >
-                      <Trash2 size={14} />
+                      <Trash size={14} weight="duotone" />
                     </button>
                   </div>
                 </div>
-                <div style={{ fontSize: 10, color: '#666' }}>
+                <div style={{ fontSize: 10, color: '#6b7280' }}>
                   {Object.keys(preset.parameters).length} parameters
                 </div>
               </div>
@@ -335,7 +335,7 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
         {/* Footer */}
         <div style={{
           padding: 16,
-          borderTop: '1px solid rgba(0, 212, 255, 0.2)',
+          borderTop: '1px solid rgba(37, 99, 235, 0.2)',
           display: 'flex',
           gap: 8,
           justifyContent: 'flex-end',
@@ -344,9 +344,9 @@ export function PresetsWindow({ isOpen, onClose }: PresetsWindowProps) {
             onClick={onClose}
             style={{
               padding: '10px 16px',
-              background: 'rgba(0, 212, 255, 0.1)',
-              border: '1px solid rgba(0, 212, 255, 0.3)',
-              color: '#00d4ff',
+              background: 'rgba(37, 99, 235, 0.1)',
+              border: '1px solid rgba(37, 99, 235, 0.3)',
+              color: '#2563eb',
               borderRadius: 6,
               cursor: 'pointer',
               fontSize: 12,

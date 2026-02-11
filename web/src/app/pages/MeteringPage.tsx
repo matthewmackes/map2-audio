@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react'
-import { BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChartBar, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
@@ -54,11 +54,11 @@ export function MeteringPage() {
         borderBottom: '2px solid rgba(59, 130, 246, 0.2)'
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <BarChart3 size={36} style={{ color: '#3b82f6', marginRight: 8, flexShrink: 0 }} />
+          <ChartBar size={36} weight="duotone" style={{ color: '#2563eb', marginRight: 8, flexShrink: 0 }} />
           <h1 style={{
             fontSize: 32,
             fontWeight: 800,
-            color: '#f2f6ff',
+            color: '#f3f4f6',
             margin: 0,
             letterSpacing: '-0.5px'
           }}>
@@ -67,7 +67,7 @@ export function MeteringPage() {
           <span style={{
             fontSize: 24,
             fontWeight: 700,
-            color: '#3b82f6',
+            color: '#2563eb',
             margin: 0
           }}>
             : Meters
@@ -75,7 +75,7 @@ export function MeteringPage() {
         </div>
         <p style={{
           fontSize: 13,
-          color: '#888',
+          color: '#6b7280',
           margin: '12px 0 0',
           fontWeight: 500
         }}>
@@ -102,7 +102,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#3b82f6',
+              color: '#2563eb',
               marginBottom: 16,
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
@@ -156,7 +156,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#3b82f6',
+              color: '#2563eb',
               marginBottom: 16,
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
@@ -175,7 +175,7 @@ export function MeteringPage() {
         <div style={{ gridColumn: 'span 4' }}>
           <div style={{
             background: 'rgba(15, 20, 35, 0.6)',
-            border: '1px solid rgba(236, 72, 153, 0.2)',
+            border: '1px solid rgba(96, 165, 250, 0.2)',
             borderRadius: 12,
             padding: 20,
             backdropFilter: 'blur(8px)'
@@ -183,7 +183,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#ec4899',
+              color: '#60a5fa',
               marginBottom: 16,
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
@@ -281,7 +281,7 @@ export function MeteringPage() {
       <div style={{
         marginTop: 32,
         padding: 16,
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%)',
         borderRadius: 12,
         border: '1px solid rgba(59, 130, 246, 0.15)',
         backdropFilter: 'blur(8px)'
@@ -291,15 +291,15 @@ export function MeteringPage() {
           gridTemplateColumns: '1fr 1fr',
           gap: 20,
           fontSize: 12,
-          color: '#888'
+          color: '#6b7280'
         }}>
           <div>
-            <span style={{ color: '#3b82f6', fontWeight: 600 }}>Engine Specifications</span>
+            <span style={{ color: '#2563eb', fontWeight: 600 }}>Engine Specifications</span>
             <br />
             ITU-R BS.1770-4 LUFS | 2048-point FFT @ 30fps | True Peak with 4x oversampling
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ color: '#37d6c9', fontWeight: 600 }}>Status</span>
+            <span style={{ color: '#60a5fa', fontWeight: 600 }}>Status</span>
             <br />
             Real-time updates via WebSocket | <span style={{ color: '#22c55e' }}>● Active</span>
           </div>
@@ -352,9 +352,9 @@ export function MeteringPage() {
             </span>
           </div>
           {showApiReference ? (
-            <ChevronUp size={20} style={{ color: '#64748b' }} />
+            <CaretUp size={20} weight="bold" style={{ color: '#64748b' }} />
           ) : (
-            <ChevronDown size={20} style={{ color: '#64748b' }} />
+            <CaretDown size={20} weight="bold" style={{ color: '#64748b' }} />
           )}
         </button>
 
@@ -381,7 +381,7 @@ export function MeteringPage() {
                   }}
                 >
                   <div style={{
-                    color: '#3b82f6',
+                    color: '#2563eb',
                     fontFamily: 'monospace',
                     fontWeight: 600,
                     marginBottom: 4,
@@ -410,9 +410,9 @@ export function MeteringPage() {
               color: '#64748b',
               lineHeight: '1.5'
             }}>
-              <strong style={{ color: '#3b82f6' }}>Base URL:</strong> {window.location.origin}/api
+              <strong style={{ color: '#2563eb' }}>Base URL:</strong> {window.location.origin}/api
               <br />
-              <strong style={{ color: '#3b82f6' }}>WebSocket:</strong> {window.location.origin.replace(/^http/, 'ws')}/ws/metering (real-time updates)
+              <strong style={{ color: '#2563eb' }}>WebSocket:</strong> {window.location.origin.replace(/^http/, 'ws')}/ws/metering (real-time updates)
             </div>
           </div>
         )}

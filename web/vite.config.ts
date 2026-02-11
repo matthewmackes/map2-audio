@@ -33,6 +33,10 @@ export default defineConfig({
           // Function form gives us substring matching so react-dom/client,
           // scheduler, etc. all land in the correct chunk.
           if (id.includes('node_modules')) {
+            // Phosphor Icons (large icon library, cache separately)
+            if (id.includes('/@phosphor-icons/')) {
+              return 'vendor-icons'
+            }
             // React core runtime
             if (
               id.includes('/react/') ||

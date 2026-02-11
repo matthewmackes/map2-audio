@@ -16,7 +16,7 @@ import {
   TableCell,
   Link as MuiLink,
 } from '@mui/material'
-import { X, ExternalLink, Star, CheckCircle, AlertCircle, Info } from 'lucide-react'
+import { X, ArrowSquareOut, Star, CheckCircle, WarningCircle, Info } from '@phosphor-icons/react'
 
 interface ProductDetailDialogProps {
   open: boolean
@@ -52,8 +52,8 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'S+': return '#a855f7'
-      case 'S': return '#06b6d4'
+      case 'S+': return '#60a5fa'
+      case 'S': return '#2563eb'
       case 'A+': return '#22c55e'
       case 'A': return '#22c55e'
       case 'B': return '#f59e0b'
@@ -69,18 +69,18 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
       fullWidth
       PaperProps={{
         style: {
-          background: '#1a1a2e',
+          background: '#0a0a0a',
           border: '1px solid rgba(59, 130, 246, 0.3)',
         }
       }}
     >
       <DialogTitle style={{ borderBottom: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 600, color: '#f2f6ff' }}>{product.model}</div>
-          <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 4 }}>{product.manufacturer}</div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: '#f3f4f6' }}>{product.model}</div>
+          <div style={{ fontSize: 13, color: '#d1d5db', marginTop: 4 }}>{product.manufacturer}</div>
         </div>
         <Button onClick={onClose} style={{ minWidth: 40, padding: 8 }}>
-          <X size={20} />
+          <X size={20} weight="bold" />
         </Button>
       </DialogTitle>
 
@@ -102,7 +102,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
               <div style={{
                 width: '100%',
                 height: 300,
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1))',
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1))',
                 border: '2px dashed rgba(59, 130, 246, 0.3)',
                 borderRadius: 8,
                 display: 'flex',
@@ -139,9 +139,9 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
                   </div>
                 </div>
 
-                <div className="card" style={{ padding: 16, background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+                <div className="card" style={{ padding: 16, background: 'rgba(37, 99, 235, 0.05)', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
                   <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>Round-Trip Latency</div>
-                  <div style={{ fontSize: 20, fontWeight: 600, color: '#a855f7' }}>
+                  <div style={{ fontSize: 20, fontWeight: 600, color: '#60a5fa' }}>
                     {product.latency_ms === 0 ? 'ADAT Expander' : `${product.latency_ms.toFixed(1)}ms`}
                   </div>
                 </div>
@@ -214,10 +214,10 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
 
               <div className="card" style={{ padding: 16, background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <Info size={16} style={{ color: '#f59e0b' }} />
+                  <Info size={16} weight="duotone" style={{ color: '#f59e0b' }} />
                   <span style={{ fontSize: 14, fontWeight: 600, color: '#f59e0b' }}>Technical Note</span>
                 </div>
-                <div style={{ fontSize: 13, color: '#cbd5e1' }}>
+                <div style={{ fontSize: 13, color: '#d1d5db' }}>
                   Detailed specifications including ADC/DAC chips, sample rate support, bit depth, and connection types would appear here.
                   Data sourced from manufacturer documentation and community testing.
                 </div>
@@ -230,7 +230,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="card" style={{ padding: 16, background: 'rgba(34, 197, 94, 0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <CheckCircle size={20} style={{ color: '#22c55e' }} />
+                  <CheckCircle size={20} weight="duotone" style={{ color: '#22c55e' }} />
                   <span style={{ fontSize: 16, fontWeight: 600, color: '#22c55e' }}>Linux Compatibility: {product.linux_support}</span>
                 </div>
                 <Rating value={getLinuxRating(product.linux_support)} readOnly />
@@ -238,7 +238,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
 
               <div className="card" style={{ padding: 16, background: 'rgba(59, 130, 246, 0.05)' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#3b82f6', marginBottom: 12 }}>📋 Setup Instructions</div>
-                <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 13, color: '#d1d5db', lineHeight: 1.6 }}>
                   {product.linux_support === 'Excellent' ? (
                     <>
                       <strong>✅ Plug & Play</strong>
@@ -259,19 +259,19 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
                 </div>
               </div>
 
-              <div className="card" style={{ padding: 16, background: 'rgba(168, 85, 247, 0.05)' }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#a855f7', marginBottom: 12 }}>🔧 JACK Configuration</div>
-                <div style={{ fontSize: 13, color: '#cbd5e1', fontFamily: 'monospace', background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 4 }}>
+              <div className="card" style={{ padding: 16, background: 'rgba(37, 99, 235, 0.05)' }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 12 }}>🔧 JACK Configuration</div>
+                <div style={{ fontSize: 13, color: '#d1d5db', fontFamily: 'monospace', background: 'rgba(0,0,0,0.3)', padding: 12, borderRadius: 4 }}>
                   jackd -d alsa -d hw:{product.model.toLowerCase().replace(/\s/g, '')} -r 48000 -p 64 -n 2
                 </div>
               </div>
 
               <div className="card" style={{ padding: 16, background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <AlertCircle size={16} style={{ color: '#f59e0b' }} />
+                  <WarningCircle size={16} weight="duotone" style={{ color: '#f59e0b' }} />
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#f59e0b' }}>Community Resources</span>
                 </div>
-                <div style={{ fontSize: 12, color: '#cbd5e1' }}>
+                <div style={{ fontSize: 12, color: '#d1d5db' }}>
                   • LinuxMusicians forum discussions
                   <br />
                   • Arch Wiki audio configuration
@@ -291,7 +291,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
                     key={i}
                     style={{
                       height: 150,
-                      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(168, 85, 247, 0.05))',
+                      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05))',
                       border: '1px dashed rgba(59, 130, 246, 0.3)',
                       borderRadius: 8,
                       display: 'flex',
@@ -319,7 +319,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
         </Button>
         <Button
           variant="contained"
-          endIcon={<ExternalLink size={16} />}
+          endIcon={<ArrowSquareOut size={16} weight="duotone" />}
           onClick={() => {
             window.open(`https://www.google.com/search?q=${encodeURIComponent(product.model + ' audio interface')}`, '_blank')
           }}

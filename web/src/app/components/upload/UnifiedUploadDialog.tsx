@@ -2,19 +2,19 @@ import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  Upload,
+  UploadSimple,
   X,
-  Zap,
-  Speaker,
-  Waves,
-  Puzzle,
+  Lightning,
+  SpeakerHigh,
+  WaveSine,
+  PuzzlePiece,
   FileAudio,
   CheckCircle,
-  AlertCircle,
-  Loader2,
+  WarningCircle,
+  SpinnerGap,
   FolderOpen,
-  Trash2,
-} from 'lucide-react'
+  Trash,
+} from '@phosphor-icons/react'
 import { uploadApi } from '../../../map2/api'
 import { useToasts } from '../Toasts'
 
@@ -44,7 +44,7 @@ const ASSET_CONFIGS: Record<
   AssetType,
   {
     name: string
-    icon: typeof Zap
+    icon: typeof Lightning
     color: string
     extensions: string[]
     description: string
@@ -52,28 +52,28 @@ const ASSET_CONFIGS: Record<
 > = {
   nam: {
     name: 'NAM Model',
-    icon: Zap,
+    icon: Lightning,
     color: '#f6c452',
     extensions: ['.nam'],
     description: 'Neural amp/pedal models',
   },
   cabinet_ir: {
     name: 'Cabinet IR',
-    icon: Speaker,
+    icon: SpeakerHigh,
     color: '#37d6c9',
     extensions: ['.wav', '.aif', '.aiff', '.flac'],
     description: 'Speaker cabinet IRs',
   },
   reverb_ir: {
     name: 'Reverb IR',
-    icon: Waves,
+    icon: WaveSine,
     color: '#2196f3',
     extensions: ['.wav', '.aif', '.aiff', '.flac'],
     description: 'Reverb/room IRs',
   },
   vst3: {
     name: 'VST3 Plugin',
-    icon: Puzzle,
+    icon: PuzzlePiece,
     color: '#a855f7',
     extensions: ['.vst3', '.zip'],
     description: 'VST3 plugin bundles',
@@ -349,11 +349,11 @@ export function UnifiedUploadDialog({
         {/* Header */}
         <div className="flex-between" style={{ marginBottom: 12 }}>
           <div className="flex" style={{ gap: 10, alignItems: 'center' }}>
-            <Upload size={22} style={{ color: 'var(--primary)' }} />
+            <UploadSimple size={22} weight="duotone" style={{ color: 'var(--primary)' }} />
             <h3 style={{ margin: 0 }}>Upload Audio Assets</h3>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
+            <X size={18} weight="bold" />
           </button>
         </div>
 
@@ -402,12 +402,12 @@ export function UnifiedUploadDialog({
             padding: 32,
             textAlign: 'center',
             cursor: 'pointer',
-            background: isDragOver ? 'rgba(0, 212, 255, 0.05)' : 'transparent',
+            background: isDragOver ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
             transition: 'all 0.2s ease',
             marginBottom: 16,
           }}
         >
-          <FolderOpen size={40} style={{ color: 'var(--muted)', marginBottom: 12 }} />
+          <FolderOpen size={40} weight="duotone" style={{ color: 'var(--muted)', marginBottom: 12 }} />
           <p style={{ margin: '0 0 8px', fontWeight: 500 }}>
             {isDragOver ? 'Drop files here...' : 'Drag & drop files here'}
           </p>
@@ -489,13 +489,13 @@ export function UnifiedUploadDialog({
 
                         {/* Status indicators */}
                         {file.status === 'success' && (
-                          <CheckCircle size={18} style={{ color: 'var(--success)' }} />
+                          <CheckCircle size={18} weight="duotone" style={{ color: 'var(--success)' }} />
                         )}
                         {file.status === 'error' && (
-                          <AlertCircle size={18} style={{ color: 'var(--danger)' }} />
+                          <WarningCircle size={18} weight="duotone" style={{ color: 'var(--danger)' }} />
                         )}
                         {file.status === 'uploading' && (
-                          <Loader2 size={18} className="spin" style={{ color: 'var(--primary)' }} />
+                          <SpinnerGap size={18} weight="duotone" className="spin" style={{ color: 'var(--primary)' }} />
                         )}
 
                         {/* Remove button */}
@@ -505,7 +505,7 @@ export function UnifiedUploadDialog({
                             onClick={() => removeFile(file.id)}
                             style={{ padding: 4 }}
                           >
-                            <Trash2 size={14} />
+                            <Trash size={14} weight="duotone" />
                           </button>
                         )}
                       </div>
@@ -552,12 +552,12 @@ export function UnifiedUploadDialog({
               >
                 {stats.uploading > 0 ? (
                   <>
-                    <Loader2 size={16} className="spin" />
+                    <SpinnerGap size={16} weight="duotone" className="spin" />
                     Uploading...
                   </>
                 ) : (
                   <>
-                    <Upload size={16} />
+                    <UploadSimple size={16} weight="duotone" />
                     Upload {stats.pending} file(s)
                   </>
                 )}

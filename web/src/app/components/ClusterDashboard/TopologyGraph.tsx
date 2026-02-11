@@ -11,7 +11,7 @@ import ReactFlow, {
   Position,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { Wifi, Zap, Database, AlertCircle, CheckCircle } from 'lucide-react'
+import { WifiHigh, Lightning, Database, WarningCircle, CheckCircle } from '@phosphor-icons/react'
 
 interface ClusterNode {
   node_id: string
@@ -79,13 +79,13 @@ function AudioNodeVisual({ data }: any) {
       <div style={{ marginBottom: 12, padding: '8px 10px', background: 'rgba(0,0,0,0.3)', borderRadius: 6 }}>
         <div style={{ fontSize: 10, color: '#a0a0a0', marginBottom: 4 }}>Health</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#00d4ff' }}>{healthScore.toFixed(0)}%</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#2563eb' }}>{healthScore.toFixed(0)}%</div>
           {healthScore >= 80 ? (
-            <CheckCircle size={12} color="#00ff41" />
+            <CheckCircle size={12} weight="duotone" color="#00ff41" />
           ) : healthScore >= 60 ? (
-            <AlertCircle size={12} color="#ffaa00" />
+            <WarningCircle size={12} weight="duotone" color="#ffaa00" />
           ) : (
-            <AlertCircle size={12} color="#ff3333" />
+            <WarningCircle size={12} weight="duotone" color="#ff3333" />
           )}
         </div>
       </div>
@@ -131,7 +131,7 @@ function AudioNodeVisual({ data }: any) {
 }
 
 function ManagementNodeVisual({ data }: any) {
-  const statusColor = data.status === 'ONLINE' ? '#00d4ff' : '#ff3333'
+  const statusColor = data.status === 'ONLINE' ? '#2563eb' : '#ff3333'
 
   return (
     <div
@@ -158,7 +158,7 @@ function ManagementNodeVisual({ data }: any) {
           }}
         />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#00d4ff' }}>{data.hostname}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>{data.hostname}</div>
           <div style={{ fontSize: 10, color: '#a0a0a0' }}>{data.role}</div>
         </div>
       </div>
@@ -168,10 +168,10 @@ function ManagementNodeVisual({ data }: any) {
         <div style={{ fontSize: 10, color: '#a0a0a0', marginBottom: 6 }}>Services</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: 9, color: '#d0d0d0', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Database size={10} /> CMDB
+            <Database size={10} weight="duotone" /> CMDB
           </div>
           <div style={{ fontSize: 9, color: '#d0d0d0', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Wifi size={10} /> Orchestrator
+            <WifiHigh size={10} weight="duotone" /> Orchestrator
           </div>
         </div>
       </div>
@@ -269,7 +269,7 @@ export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: T
           label: node.latency_ms ? `${node.latency_ms.toFixed(1)}ms` : undefined,
           animated: node.status === 'ONLINE',
           style: {
-            stroke: node.latency_ms && node.latency_ms > 50 ? '#ffaa00' : '#00d4ff',
+            stroke: node.latency_ms && node.latency_ms > 50 ? '#ffaa00' : '#2563eb',
             strokeWidth: 2,
           },
         })
@@ -316,7 +316,7 @@ export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: T
             background: 'rgba(0,0,0,0.5)',
             border: '1px solid #333',
           }}
-          nodeColor="#00d4ff"
+          nodeColor="#2563eb"
         />
       </ReactFlow>
 

@@ -29,10 +29,10 @@ import type {
 import { 
   Activity, 
   Radio, 
-  BarChart2, 
+  ChartBar, 
   Eye,
-  EyeOff
-} from 'lucide-react';
+  EyeSlash
+} from '@phosphor-icons/react';
 
 export interface PluginOutputData {
   uri: string;
@@ -126,7 +126,7 @@ const OutputPortMeter: React.FC<{
               style={{
                 fontSize: variant === 'inline' ? 8 : 10,
                 fontFamily: 'monospace',
-                color: '#fff',
+                color: '#f3f4f6',
               }}
             >
               {(normalizedValue * 100).toFixed(0)}%
@@ -175,7 +175,7 @@ const EmptyVisualization: React.FC<{ message: string }> = ({ message }) => (
       gap: 8,
     }}
   >
-    <Activity size={24} />
+    <Activity size={24} weight="duotone" />
     <span style={{ fontSize: 11 }}>{message}</span>
   </div>
 );
@@ -254,8 +254,8 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
         
         {/* Indicator icons for available visualizations */}
         <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
-          {has_tuner && <Radio size={12} style={{ color: '#22c55e' }} />}
-          {has_spectrum && <BarChart2 size={12} style={{ color: '#3b82f6' }} />}
+          {has_tuner && <Radio size={12} weight="duotone" style={{ color: '#22c55e' }} />}
+          {has_spectrum && <ChartBar size={12} weight="duotone" style={{ color: '#3b82f6' }} />}
         </div>
       </div>
     );
@@ -291,7 +291,7 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
         onClick={handleToggleExpand}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Activity size={14} style={{ color: '#22c55e' }} />
+          <Activity size={14} weight="duotone" style={{ color: '#22c55e' }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255, 255, 255, 0.8)' }}>
             {pluginName || 'Output'}
           </span>
@@ -329,8 +329,8 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
                 style={{ 
                   fontSize: 8, 
                   padding: '2px 6px', 
-                  background: 'rgba(168, 85, 247, 0.2)', 
-                  color: '#a855f7',
+                  background: 'rgba(37, 99, 235, 0.2)', 
+                  color: '#60a5fa',
                   borderRadius: 4,
                 }}
               >
@@ -349,7 +349,7 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
             color: 'rgba(255, 255, 255, 0.5)',
           }}
         >
-          {isExpanded ? <EyeOff size={14} /> : <Eye size={14} />}
+          {isExpanded ? <EyeSlash size={14} weight="duotone" /> : <Eye size={14} weight="duotone" />}
         </button>
       </div>
       

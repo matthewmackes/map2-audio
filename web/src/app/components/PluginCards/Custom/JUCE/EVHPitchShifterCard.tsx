@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { ChevronDown, Link2, Link2Off, Music2, Disc3, Calendar } from 'lucide-react'
+import { CaretDown, Link, LinkBreak, MusicNotes, Disc, Calendar } from '@phosphor-icons/react'
 import { usePitchShifter, VAN_HALEN_PRESETS } from '../../../../hooks/useModulation'
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import { ParameterSection } from '../../Base/ParameterSection'
@@ -150,18 +150,18 @@ function EVHPitchShifterCardBase({
           onClick={() => setShowPresetBrowser(!showPresetBrowser)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Music2 size={14} />
+          <MusicNotes size={14} weight="duotone" />
           <span className="evh-preset-name">{currentPreset.name}</span>
           {currentPreset.index > 0 && (
             <span className="evh-preset-song">"{currentPreset.song}"</span>
           )}
-          <ChevronDown size={14} className={showPresetBrowser ? 'rotated' : ''} />
+          <CaretDown size={14} weight="bold" className={showPresetBrowser ? 'rotated' : ''} />
         </button>
 
         {currentPreset.index > 0 && (
           <div className="evh-preset-info">
-            <span><Disc3 size={12} /> {currentPreset.album}</span>
-            <span><Calendar size={12} /> {currentPreset.year}</span>
+            <span><Disc size={12} weight="duotone" /> {currentPreset.album}</span>
+            <span><Calendar size={12} weight="duotone" /> {currentPreset.year}</span>
           </div>
         )}
 
@@ -248,7 +248,7 @@ function EVHPitchShifterCardBase({
             style={{ '--accent': accentColor } as React.CSSProperties}
             title={linkLR ? 'Mirrored L/R' : 'Independent L/R'}
           >
-            {linkLR ? <Link2 size={16} /> : <Link2Off size={16} />}
+            {linkLR ? <Link size={16} weight="duotone" /> : <LinkBreak size={16} weight="duotone" />}
           </button>
 
           <ParameterKnob

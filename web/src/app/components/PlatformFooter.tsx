@@ -1,4 +1,4 @@
-import { Code2, Github, Heart } from 'lucide-react'
+import { Code, GithubLogo, Heart } from '@phosphor-icons/react'
 
 interface Partner {
   name: string
@@ -217,32 +217,32 @@ export function PlatformFooter() {
 
         {/* Row 3: Acknowledgments - Horizontal Flex */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ padding: 8, background: 'rgba(129,199,132,0.05)', border: '1px solid rgba(129,199,132,0.2)', borderRadius: 4, fontSize: 10, color: '#aaa', flex: '1 1 auto', minWidth: '180px' }}>
+          <div style={{ padding: 8, background: 'rgba(129,199,132,0.05)', border: '1px solid rgba(129,199,132,0.2)', borderRadius: 4, fontSize: 10, color: '#9ca3af', flex: '1 1 auto', minWidth: '180px' }}>
             <div style={{ fontWeight: 700, color: '#81c784', marginBottom: 2, fontSize: 9 }}>🎸 Audio</div>
             <div style={{ fontSize: 9, lineHeight: 1.3 }}>NAM, LV2, IR</div>
           </div>
           
-          <div style={{ padding: 8, background: 'rgba(255,167,38,0.05)', border: '1px solid rgba(255,167,38,0.2)', borderRadius: 4, fontSize: 10, color: '#aaa', flex: '1 1 auto', minWidth: '180px' }}>
+          <div style={{ padding: 8, background: 'rgba(255,167,38,0.05)', border: '1px solid rgba(255,167,38,0.2)', borderRadius: 4, fontSize: 10, color: '#9ca3af', flex: '1 1 auto', minWidth: '180px' }}>
             <div style={{ fontWeight: 700, color: '#ffa726', marginBottom: 2, fontSize: 9 }}>🔧 Engine</div>
             <div style={{ fontSize: 9, lineHeight: 1.3 }}>JUCE, ALSA</div>
           </div>
           
-          <div style={{ padding: 8, background: 'rgba(100,181,246,0.05)', border: '1px solid rgba(100,181,246,0.2)', borderRadius: 4, fontSize: 10, color: '#aaa', flex: '1 1 auto', minWidth: '180px' }}>
+          <div style={{ padding: 8, background: 'rgba(100,181,246,0.05)', border: '1px solid rgba(100,181,246,0.2)', borderRadius: 4, fontSize: 10, color: '#9ca3af', flex: '1 1 auto', minWidth: '180px' }}>
             <div style={{ fontWeight: 700, color: '#64b5f6', marginBottom: 2, fontSize: 9 }}>⚙️ Backend</div>
             <div style={{ fontSize: 9, lineHeight: 1.3 }}>Python, FastAPI</div>
           </div>
           
-          <div style={{ padding: 8, background: 'rgba(239,83,80,0.05)', border: '1px solid rgba(239,83,80,0.2)', borderRadius: 4, fontSize: 10, color: '#aaa', flex: '1 1 auto', minWidth: '180px' }}>
+          <div style={{ padding: 8, background: 'rgba(239,83,80,0.05)', border: '1px solid rgba(239,83,80,0.2)', borderRadius: 4, fontSize: 10, color: '#9ca3af', flex: '1 1 auto', minWidth: '180px' }}>
             <div style={{ fontWeight: 700, color: '#ef5350', marginBottom: 2, fontSize: 9 }}>⏱️ OS</div>
             <div style={{ fontSize: 9, lineHeight: 1.3 }}>Fedora PREEMPT_RT</div>
           </div>
 
-          <div style={{ padding: 8, background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.2)', borderRadius: 4, fontSize: 10, color: '#aaa', flex: '1 1 auto', minWidth: '180px' }}>
+          <div style={{ padding: 8, background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.2)', borderRadius: 4, fontSize: 10, color: '#9ca3af', flex: '1 1 auto', minWidth: '180px' }}>
             <div style={{ fontWeight: 700, color: '#4caf50', marginBottom: 2, fontSize: 9 }}>🤝 Community</div>
             <div style={{ fontSize: 9, lineHeight: 1.3 }}>Open Source</div>
           </div>
 
-          <div style={{ padding: 8, background: 'rgba(156,39,176,0.05)', border: '1px solid rgba(156,39,176,0.2)', borderRadius: 4, fontSize: 10, color: '#aaa', flex: '1 1 auto', minWidth: '180px' }}>
+          <div style={{ padding: 8, background: 'rgba(156,39,176,0.05)', border: '1px solid rgba(156,39,176,0.2)', borderRadius: 4, fontSize: 10, color: '#9ca3af', flex: '1 1 auto', minWidth: '180px' }}>
             <div style={{ fontWeight: 700, color: '#ab47bc', marginBottom: 2, fontSize: 9 }}>💡 Innovation</div>
             <div style={{ fontSize: 9, lineHeight: 1.3 }}>Musicians & Devs</div>
           </div>
@@ -251,15 +251,15 @@ export function PlatformFooter() {
         {/* Footer Links */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', paddingTop: 8, fontSize: 10, borderTop: '1px solid rgba(100,181,246,0.1)' }}>
           <a href="https://github.com" target="_blank" rel="noreferrer" style={{ color: '#64b5f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, transition: 'color 150ms ease' }} onMouseEnter={(e) => e.currentTarget.style.color = '#fff'} onMouseLeave={(e) => e.currentTarget.style.color = '#64b5f6'}>
-            <Github size={12} /> GitHub
+            <GithubLogo size={12} weight="duotone" /> GitHub
           </a>
-          <div style={{ color: '#666' }}>•</div>
+          <div style={{ color: '#6b7280' }}>•</div>
           <a href="https://juce.com/" target="_blank" rel="noreferrer" style={{ color: '#64b5f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, transition: 'color 150ms ease' }} onMouseEnter={(e) => e.currentTarget.style.color = '#fff'} onMouseLeave={(e) => e.currentTarget.style.color = '#64b5f6'}>
-            <Code2 size={12} /> JUCE
+            <Code size={12} weight="duotone" /> JUCE
           </a>
-          <div style={{ color: '#666' }}>•</div>
-          <div style={{ color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Heart size={12} style={{ color: '#ef5350' }} /> Made with passion
+          <div style={{ color: '#6b7280' }}>•</div>
+          <div style={{ color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Heart size={12} weight="duotone" style={{ color: '#ef5350' }} /> Made with passion
           </div>
         </div>
       </div>

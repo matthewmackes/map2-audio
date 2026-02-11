@@ -29,7 +29,7 @@ import {
   Collapse,
   IconButton,
 } from '@mui/material'
-import { ShoppingCart, ExternalLink, TrendingUp, DollarSign, Search, Filter, Info, Zap, GitCompare, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
+import { ShoppingCart, ArrowSquareOut, TrendUp, CurrencyDollar, MagnifyingGlass, Funnel, Info, Lightning, GitDiff, CaretDown, CaretUp, Warning } from '@phosphor-icons/react'
 import { API_BASE } from '../../map2/api'
 import { ProductDetailDialog } from './ProductDetailDialog'
 
@@ -200,8 +200,8 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'S+': return '#a855f7'
-      case 'S': return '#06b6d4'
+      case 'S+': return '#60a5fa'
+      case 'S': return '#2563eb'
       case 'A+': return '#22c55e'
       case 'A': return '#22c55e'
       case 'B': return '#f59e0b'
@@ -223,7 +223,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
       fullWidth
       PaperProps={{
         style: {
-          background: '#1a1a2e',
+          background: '#0a0a0a',
           border: '1px solid rgba(59, 130, 246, 0.3)',
           maxHeight: '90vh',
         }
@@ -231,10 +231,10 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
     >
       <DialogTitle style={{ borderBottom: '1px solid rgba(59, 130, 246, 0.3)', background: 'rgba(59, 130, 246, 0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <ShoppingCart size={24} style={{ color: '#3b82f6' }} />
+          <ShoppingCart size={24} weight="duotone" style={{ color: '#3b82f6' }} />
           <div>
-            <div style={{ fontSize: 20, fontWeight: 600, color: '#f2f6ff' }}>Find Your Next Audio Interface</div>
-            <div style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 400, marginTop: 4 }}>
+            <div style={{ fontSize: 20, fontWeight: 600, color: '#f3f4f6' }}>Find Your Next Audio Interface</div>
+            <div style={{ fontSize: 13, color: '#d1d5db', fontWeight: 400, marginTop: 4 }}>
               Search eBay, ShopGoodwill, and Reverb for rackmount audio interfaces
             </div>
           </div>
@@ -245,7 +245,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
         {/* Collapsible Disclaimer */}
         <Alert
           severity="warning"
-          icon={<AlertTriangle size={20} />}
+          icon={<Warning size={20} weight="duotone" />}
           style={{
             marginBottom: 16,
             background: 'rgba(245, 158, 11, 0.1)',
@@ -257,7 +257,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
               onClick={() => setDisclaimerOpen(!disclaimerOpen)}
               style={{ color: '#f59e0b' }}
             >
-              {disclaimerOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              {disclaimerOpen ? <CaretUp size={18} weight="bold" /> : <CaretDown size={18} weight="bold" />}
             </IconButton>
           }
         >
@@ -265,7 +265,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
             AI-Generated Recommendations - Not Verified
           </div>
           <Collapse in={disclaimerOpen}>
-            <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 13, color: '#d1d5db', lineHeight: 1.6 }}>
               These audio interfaces have been algorithmically matched based on specifications, Linux compatibility databases, and community reports. 
               <strong> None have been physically tested or validated with MAP2 systems.</strong>
               <br /><br />
@@ -300,7 +300,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
             onChange={(e) => setSearchFilter(e.target.value)}
             placeholder="Filter by model, source..."
             InputProps={{
-              startAdornment: <InputAdornment position="start"><Search size={16} /></InputAdornment>,
+              startAdornment: <InputAdornment position="start"><MagnifyingGlass size={16} weight="duotone" /></InputAdornment>,
             }}
             style={{ flex: 1, minWidth: 200 }}
             size="small"
@@ -309,7 +309,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
             variant="contained"
             onClick={handleSearch}
             disabled={loading}
-            startIcon={loading ? <CircularProgress size={16} /> : <Filter />}
+            startIcon={loading ? <CircularProgress size={16} /> : <Funnel weight="duotone" />}
           >
             {loading ? 'Searching...' : 'Search'}
           </Button>
@@ -343,7 +343,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
               setCompareMode(!compareMode)
               setSelectedForCompare([])
             }}
-            startIcon={<GitCompare size={16} />}
+            startIcon={<GitDiff size={16} weight="duotone" />}
             size="small"
           >
             Compare Mode {compareMode && `(${selectedForCompare.length}/3)`}
@@ -501,7 +501,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
                                 }
                               }}
                             >
-                              {result.matched_device?.model || 'Unknown'} <Info size={12} style={{ display: 'inline', marginLeft: 4 }} />
+                              {result.matched_device?.model || 'Unknown'} <Info size={12} weight="duotone" style={{ display: 'inline', marginLeft: 4 }} />
                             </div>
                             {result.matched_device && (
                               <div style={{ fontSize: 11, color: '#94a3b8' }}>
@@ -525,7 +525,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
                               rel="noopener noreferrer"
                               style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 4 }}
                             >
-                              <ExternalLink size={14} /> View
+                              <ArrowSquareOut size={14} weight="duotone" /> View
                             </MuiLink>
                           </TableCell>
                         </TableRow>
@@ -563,7 +563,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
                     color="success"
                     href={recommendations.adat.url}
                     target="_blank"
-                    endIcon={<ExternalLink size={16} />}
+                    endIcon={<ArrowSquareOut size={16} weight="duotone" />}
                   >
                     View on {recommendations.adat.source}
                   </Button>
@@ -572,7 +572,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
             )}
 
             {recommendations.lowLatency && (
-              <div className="card" style={{ padding: 16, background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+              <div className="card" style={{ padding: 16, background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                   <div style={{ fontSize: 24 }}>⚡</div>
                   <div>
@@ -590,10 +590,10 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
                   </div>
                   <Button
                     variant="contained"
-                    style={{ background: '#a855f7' }}
+                    style={{ background: '#2563eb' }}
                     href={recommendations.lowLatency.url}
                     target="_blank"
-                    endIcon={<ExternalLink size={16} />}
+                    endIcon={<ArrowSquareOut size={16} weight="duotone" />}
                   >
                     View on {recommendations.lowLatency.source}
                   </Button>
@@ -623,7 +623,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
                     style={{ background: '#f59e0b' }}
                     href={recommendations.bestValue.url}
                     target="_blank"
-                    endIcon={<ExternalLink size={16} />}
+                    endIcon={<ArrowSquareOut size={16} weight="duotone" />}
                   >
                     View on {recommendations.bestValue.source}
                   </Button>

@@ -1,27 +1,27 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  SlidersHorizontal,
-  Save,
+  Faders,
+  FloppyDisk,
   FolderOpen,
   Star,
-  RotateCcw,
+  ArrowCounterClockwise,
   Copy,
   Clipboard,
-  ChevronDown,
-  ChevronRight,
-  Search,
+  CaretDown,
+  CaretRight,
+  MagnifyingGlass,
   Gauge,
-  Activity,
-  Radio,
-  BarChart2,
+  Pulse,
+  Broadcast,
+  ChartBar,
   Plus,
-  AlertTriangle,
+  Warning,
   CheckCircle,
-  Loader2,
+  SpinnerGap,
   X,
-  Settings2,
-} from 'lucide-react'
+  GearSix,
+} from '@phosphor-icons/react'
 import { pluginsApi, pluginPresetsApi, chainsApi } from '../../map2/api'
 import { usePluginOutput } from '../hooks/usePluginOutputs'
 import { NumberInput } from './Controls/NumberInput'
@@ -370,7 +370,7 @@ function PresetCard({
             color: preset.is_favorite ? '#fbbf24' : '#666',
           }}
         >
-          <Star size={14} fill={preset.is_favorite ? '#fbbf24' : 'none'} />
+          <Star size={14} weight={preset.is_favorite ? 'fill' : 'duotone'} style={{ color: preset.is_favorite ? '#fbbf24' : undefined }} />
         </button>
       </div>
       <div style={{
@@ -650,9 +650,9 @@ export function LV2PluginParameterEditor({
                 animation: 'slideIn 0.3s ease',
               }}
             >
-              {alert.type === 'success' && <CheckCircle size={16} />}
-              {alert.type === 'error' && <AlertTriangle size={16} />}
-              {alert.type === 'warning' && <AlertTriangle size={16} />}
+              {alert.type === 'success' && <CheckCircle size={16} weight="duotone" />}
+              {alert.type === 'error' && <Warning size={16} weight="duotone" />}
+              {alert.type === 'warning' && <Warning size={16} weight="duotone" />}
               {alert.message}
             </div>
           ))}
@@ -685,7 +685,7 @@ export function LV2PluginParameterEditor({
               border: `1px solid ${accentColor}40`,
               boxShadow: `0 0 12px ${accentColor}30`,
             }}>
-              <SlidersHorizontal size={20} style={{ color: accentColor }} />
+              <Faders size={20} weight="duotone" style={{ color: accentColor }} />
             </div>
             <div>
               <h3 style={{
@@ -764,7 +764,7 @@ export function LV2PluginParameterEditor({
               fontWeight: 600,
               border: '1px solid rgba(59, 130, 246, 0.3)',
             }}>
-              <Settings2 size={12} /> Native GUI
+              <GearSix size={12} weight="duotone" /> Native GUI
             </span>
           )}
           {hasMeters && (
@@ -780,7 +780,7 @@ export function LV2PluginParameterEditor({
               fontWeight: 600,
               border: '1px solid rgba(16, 185, 129, 0.3)',
             }}>
-              <Gauge size={12} /> Meters
+              <Gauge size={12} weight="duotone" /> Meters
             </span>
           )}
           {uiInfo?.has_tuner && (
@@ -796,7 +796,7 @@ export function LV2PluginParameterEditor({
               fontWeight: 600,
               border: '1px solid rgba(34, 211, 238, 0.3)',
             }}>
-              <Radio size={12} /> Tuner
+              <Broadcast size={12} weight="duotone" /> Tuner
             </span>
           )}
           {uiInfo?.has_spectrum && (
@@ -812,7 +812,7 @@ export function LV2PluginParameterEditor({
               fontWeight: 600,
               border: '1px solid rgba(168, 85, 247, 0.3)',
             }}>
-              <BarChart2 size={12} /> Spectrum
+              <ChartBar size={12} weight="duotone" /> Spectrum
             </span>
           )}
         </div>
@@ -837,7 +837,7 @@ export function LV2PluginParameterEditor({
             alignItems: 'center',
             gap: 6,
           }}>
-            <Activity size={14} />
+            <Pulse size={14} weight="duotone" />
             Output Meters
           </div>
           <div style={{
@@ -902,7 +902,7 @@ export function LV2PluginParameterEditor({
             cursor: 'pointer',
           }}
         >
-          <Save size={14} />
+          <FloppyDisk size={14} weight="duotone" />
           Save
         </button>
 
@@ -922,7 +922,7 @@ export function LV2PluginParameterEditor({
             cursor: 'pointer',
           }}
         >
-          <RotateCcw size={14} />
+          <ArrowCounterClockwise size={14} weight="duotone" />
           Reset
         </button>
 
@@ -942,7 +942,7 @@ export function LV2PluginParameterEditor({
             cursor: 'pointer',
           }}
         >
-          <Copy size={14} />
+          <Copy size={14} weight="duotone" />
           Copy
         </button>
 
@@ -963,7 +963,7 @@ export function LV2PluginParameterEditor({
               cursor: 'pointer',
             }}
           >
-            <Clipboard size={14} />
+            <Clipboard size={14} weight="duotone" />
             Paste
           </button>
         )}
@@ -973,7 +973,7 @@ export function LV2PluginParameterEditor({
         {/* Search */}
         {(plugin.parameters?.length || 0) > 8 && (
           <div style={{ position: 'relative' }}>
-            <Search size={14} style={{
+            <MagnifyingGlass size={14} weight="duotone" style={{
               position: 'absolute',
               left: 10,
               top: '50%',
@@ -1023,7 +1023,7 @@ export function LV2PluginParameterEditor({
                 cursor: 'pointer',
               }}
             >
-              <X size={16} />
+              <X size={16} weight="bold" />
             </button>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -1060,9 +1060,9 @@ export function LV2PluginParameterEditor({
               }}
             >
               {savePresetMutation.isPending ? (
-                <Loader2 size={14} className="animate-spin" />
+                <SpinnerGap size={14} weight="duotone" className="animate-spin" />
               ) : (
-                <Save size={14} />
+                <FloppyDisk size={14} weight="duotone" />
               )}
               Save
             </button>
@@ -1095,7 +1095,7 @@ export function LV2PluginParameterEditor({
 
           {presetsQuery.isLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
-              <Loader2 size={20} className="animate-spin" style={{ color: accentColor }} />
+              <SpinnerGap size={20} weight="duotone" className="animate-spin" style={{ color: accentColor }} />
             </div>
           ) : presetsQuery.data?.presets && presetsQuery.data.presets.length > 0 ? (
             <div style={{
@@ -1185,9 +1185,9 @@ export function LV2PluginParameterEditor({
                       gap: 8,
                     }}>
                       {isExpanded ? (
-                        <ChevronDown size={14} style={{ color: accentColor }} />
+                        <CaretDown size={14} weight="bold" style={{ color: accentColor }} />
                       ) : (
-                        <ChevronRight size={14} style={{ color: '#888' }} />
+                        <CaretRight size={14} weight="bold" style={{ color: '#888' }} />
                       )}
                       <span style={{
                         fontSize: 12,
@@ -1254,7 +1254,7 @@ export function LV2PluginParameterEditor({
             alignItems: 'center',
             gap: 6,
           }}>
-            <Plus size={14} />
+            <Plus size={14} weight="bold" />
             Add to Chain
           </div>
           <div style={{
@@ -1286,7 +1286,7 @@ export function LV2PluginParameterEditor({
                   cursor: 'pointer',
                 }}
               >
-                <Plus size={14} />
+                <Plus size={14} weight="bold" />
                 {chain.name}
                 {chain.is_active && (
                   <span style={{

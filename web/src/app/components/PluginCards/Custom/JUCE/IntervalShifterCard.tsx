@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { ChevronUp, ChevronDown, Link2, Link2Off, Music, Zap } from 'lucide-react'
+import { CaretUp, CaretDown, Link, LinkBreak, MusicNote, Lightning } from '@phosphor-icons/react'
 import {
   useIntervalShifter,
   MUSICAL_INTERVALS,
@@ -118,7 +118,7 @@ function IntervalShifterCardBase({
               } as React.CSSProperties}
             >
               {shiftL !== 0 && (
-                shiftL > 0 ? <ChevronUp size={20} /> : <ChevronDown size={20} />
+                shiftL > 0 ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />
               )}
             </div>
             <div
@@ -129,7 +129,7 @@ function IntervalShifterCardBase({
               } as React.CSSProperties}
             >
               {shiftR !== 0 && (
-                shiftR > 0 ? <ChevronUp size={20} /> : <ChevronDown size={20} />
+                shiftR > 0 ? <CaretUp size={20} weight="bold" /> : <CaretDown size={20} weight="bold" />
               )}
             </div>
           </div>
@@ -188,9 +188,9 @@ function IntervalShifterCardBase({
           onClick={() => setShowPresets(!showPresets)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Zap size={14} />
+          <Lightning size={14} weight="duotone" />
           <span>Quick Presets</span>
-          <ChevronDown size={14} className={showPresets ? 'rotated' : ''} />
+          <CaretDown size={14} weight="bold" className={showPresets ? 'rotated' : ''} />
         </button>
 
         {showPresets && (
@@ -235,7 +235,7 @@ function IntervalShifterCardBase({
             style={{ '--accent': accentColor } as React.CSSProperties}
             title={linkLR ? 'Linked L/R' : 'Independent L/R'}
           >
-            {linkLR ? <Link2 size={16} /> : <Link2Off size={16} />}
+            {linkLR ? <Link size={16} weight="duotone" /> : <LinkBreak size={16} weight="duotone" />}
           </button>
 
           {/* Right Channel */}

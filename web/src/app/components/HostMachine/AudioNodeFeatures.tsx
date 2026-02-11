@@ -3,7 +3,7 @@
  */
 
 import { Box, Paper, Grid, Typography, List, ListItem, ListItemIcon, ListItemText, Chip } from '@mui/material'
-import { Music, Zap, Wind, Gauge, Shield, TrendingUp } from 'lucide-react'
+import { MusicNote, Lightning, Wind, Gauge, Shield, TrendUp } from '@phosphor-icons/react'
 import type { HostMachineInfo, SystemHealthOverview, BrandingAssets } from '@/map2/types'
 
 interface AudioFeaturesProps {
@@ -26,37 +26,37 @@ export default function AudioNodeFeatures({
 }: AudioFeaturesProps) {
   const features: AudioFeature[] = [
     {
-      icon: <Zap size={20} />,
+      icon: <Lightning size={20} weight="duotone" />,
       title: 'Multi-Core Processing',
       description: `${machineInfo.cpu_threads} logical CPUs available for parallel audio DSP and plugin processing`,
       status: machineInfo.cpu_cores >= 4 ? 'optimal' : machineInfo.cpu_cores >= 2 ? 'good' : 'warning',
     },
     {
-      icon: <Music size={20} />,
+      icon: <MusicNote size={20} weight="duotone" />,
       title: 'Large Buffer Support',
       description: `${(machineInfo.total_memory_mb / 1024).toFixed(1)} GB RAM supports large buffer sizes for ultra-low latency monitoring`,
       status: machineInfo.total_memory_mb >= 8192 ? 'optimal' : machineInfo.total_memory_mb >= 4096 ? 'good' : 'warning',
     },
     {
-      icon: <Wind size={20} />,
+      icon: <Wind size={20} weight="duotone" />,
       title: 'Thermal Management',
       description: `${branding.sff_optimized ? 'Optimized small form factor' : 'Compact'} design with efficient cooling for sustained real-time audio`,
       status: healthOverview?.overall_health === 'excellent' ? 'optimal' : 'good',
     },
     {
-      icon: <Gauge size={20} />,
+      icon: <Gauge size={20} weight="duotone" />,
       title: 'Real-Time Capable',
       description: 'CPU frequency scaling and RT scheduling support for predictable audio performance',
       status: machineInfo.cpu_cores >= 4 ? 'optimal' : 'good',
     },
     {
-      icon: <TrendingUp size={20} />,
+      icon: <TrendUp size={20} weight="duotone" />,
       title: 'Performance Metrics',
       description: 'Live monitoring of CPU, memory, temperature, and latency for audio optimization',
       status: 'info',
     },
     {
-      icon: <Shield size={20} />,
+      icon: <Shield size={20} weight="duotone" />,
       title: 'Audio Node Operations',
       description: 'Dedicated CPU cores for JUCE audio engine, LV2 plugins, and DSP graph processing',
       status: 'info',

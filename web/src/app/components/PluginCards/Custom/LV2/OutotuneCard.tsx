@@ -13,7 +13,7 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { TunerDisplay } from '../../Visualizations/TunerDisplay'
-import { Music, Zap, Waves } from 'lucide-react'
+import { MusicNote, Lightning, WaveSine } from '@phosphor-icons/react'
 import type { PluginCardProps } from '../../types'
 import './OutotuneCard.css'
 
@@ -172,7 +172,7 @@ export function OutotuneCard({
             onClick={() => applyPreset(preset)}
             style={{ '--accent': accentColor } as React.CSSProperties}
           >
-            {preset.name === 'T-Pain' ? <Zap size={10} /> : null}
+            {preset.name === 'T-Pain' ? <Lightning size={10} weight="duotone" /> : null}
             {preset.name}
           </button>
         ))}
@@ -291,11 +291,11 @@ export function OutotuneCard({
       {/* Footer info */}
       <div className="outotune-footer">
         <div className="outotune-footer-item">
-          <Music size={10} />
+          <MusicNote size={10} weight="duotone" />
           <span>{NOTES[selectedKey]} {SCALES[selectedScale].name}</span>
         </div>
         <div className="outotune-footer-item">
-          <Waves size={10} />
+          <WaveSine size={10} weight="duotone" />
           <span>Latency: 23ms</span>
         </div>
       </div>

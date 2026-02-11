@@ -18,7 +18,7 @@ import {
   Grid,
   Button,
 } from '@mui/material'
-import { Server, AlertTriangle, Check, RefreshCw } from 'lucide-react'
+import { DesktopTower, Warning, Check, ArrowsClockwise } from '@phosphor-icons/react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
@@ -77,7 +77,7 @@ export function HostMachinePage() {
         <PageHeader
           title="Host Machine"
           subtitle="Hardware Information & Monitoring"
-          icon={<Server size={32} style={{ color: '#ef4444' }} />}
+          icon={<DesktopTower size={32} weight="duotone" style={{ color: '#ef4444' }} />}
         />
         <Alert severity="error" sx={{ mt: 3 }}>
           {error instanceof Error ? error.message : 'Failed to load host machine information. Please try again later.'}
@@ -109,13 +109,13 @@ export function HostMachinePage() {
           <PageHeader
             title="Host Machine"
             subtitle="Complete Hardware Information & Real-Time Health Monitoring"
-            icon={<Server size={32} style={{ color: brandingData.brand_color }} />}
+            icon={<DesktopTower size={32} weight="duotone" style={{ color: brandingData.brand_color }} />}
           />
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="outlined"
               size="small"
-              startIcon={<RefreshCw size={16} />}
+              startIcon={<ArrowsClockwise size={16} weight="duotone" />}
               onClick={handleManualRefresh}
             >
               Refresh
@@ -237,7 +237,7 @@ export function HostMachinePage() {
                     }}
                   >
                     <div style={{ fontWeight: 600, marginBottom: 8 }}>Service Information</div>
-                    <div style={{ fontSize: 12, color: '#666', lineHeight: 1.8 }}>
+                    <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.8 }}>
                       <div>
                         <strong>System UUID:</strong> {machineInfo.system_uuid || 'N/A'}
                       </div>
@@ -276,7 +276,7 @@ export function HostMachinePage() {
                     }}
                   >
                     <div style={{ fontWeight: 600, marginBottom: 8 }}>System Export</div>
-                    <div style={{ fontSize: 12, color: '#666' }}>
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>
                       <button
                         onClick={() => {
                           const data = {
@@ -314,7 +314,7 @@ export function HostMachinePage() {
         </Paper>
 
         {/* Refresh Status */}
-        <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1, fontSize: 12, color: '#666' }}>
+        <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1, fontSize: 12, color: '#6b7280' }}>
           <span>
             {autoRefresh ? '🔄 Auto-refresh enabled' : '⏸️ Auto-refresh disabled'}
           </span>

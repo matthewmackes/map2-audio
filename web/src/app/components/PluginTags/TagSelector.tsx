@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from 'react'
 import { usePluginTags, usePluginMetadata } from '../../hooks/usePluginTags'
-import { Star, StarOff, Eye, EyeOff, X, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Star, Eye, EyeSlash, X, CaretDown, CaretUp, Check } from '@phosphor-icons/react'
 
 interface TagSelectorProps {
   pluginUri: string
@@ -124,7 +124,7 @@ export function TagSelector({
           <h3>{pluginName || 'Plugin Tags'}</h3>
           {onClose && (
             <button className="close-btn" onClick={onClose} title="Close">
-              <X size={18} />
+              <X size={18} weight="bold" />
             </button>
           )}
         </div>
@@ -137,7 +137,7 @@ export function TagSelector({
             disabled={isUpdating}
             title={metadata?.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
           >
-            {metadata?.is_favorite ? <Star size={16} /> : <StarOff size={16} />}
+            {metadata?.is_favorite ? <Star size={16} weight="fill" /> : <Star size={16} weight="duotone" />}
             <span>Favorite</span>
           </button>
           <button
@@ -146,7 +146,7 @@ export function TagSelector({
             disabled={isUpdating}
             title={metadata?.is_hidden ? 'Show plugin' : 'Hide plugin'}
           >
-            {metadata?.is_hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+            {metadata?.is_hidden ? <EyeSlash size={16} weight="duotone" /> : <Eye size={16} weight="duotone" />}
             <span>Hidden</span>
           </button>
         </div>
@@ -169,7 +169,7 @@ export function TagSelector({
                 onClick={() => toggleTag(tag)}
               >
                 {tag}
-                <X size={12} />
+                <X size={12} weight="bold" />
               </span>
             ))}
           </div>
@@ -186,7 +186,7 @@ export function TagSelector({
         />
         {searchQuery && (
           <button className="clear-search" onClick={() => setSearchQuery('')}>
-            <X size={14} />
+            <X size={14} weight="bold" />
           </button>
         )}
       </div>
@@ -203,9 +203,9 @@ export function TagSelector({
               <span className="category-name">{categoryLabels[category] || category}</span>
               <span className="category-count">{tags.length}</span>
               {expandedCategories.has(category) ? (
-                <ChevronUp size={14} />
+                <CaretUp size={14} weight="bold" />
               ) : (
-                <ChevronDown size={14} />
+                <CaretDown size={14} weight="bold" />
               )}
             </button>
 
@@ -223,7 +223,7 @@ export function TagSelector({
                         '--tag-color': categoryColors[category]
                       } as React.CSSProperties}
                     >
-                      {isSelected && <Check size={12} />}
+                      {isSelected && <Check size={12} weight="bold" />}
                       {tag}
                     </button>
                   )
@@ -236,8 +236,8 @@ export function TagSelector({
 
       <style>{`
         .tag-selector {
-          background: #1a1a1a;
-          border: 1px solid #333;
+          background: #0a0a0a;
+          border: 1px solid #1e293b;
           border-radius: 8px;
           padding: 16px;
           max-width: 400px;
@@ -256,14 +256,14 @@ export function TagSelector({
           justify-content: center;
           gap: 8px;
           min-height: 100px;
-          color: #888;
+          color: #6b7280;
         }
 
         .loading-spinner {
           width: 20px;
           height: 20px;
-          border: 2px solid #333;
-          border-top-color: #888;
+          border: 2px solid #222222;
+          border-top-color: #6b7280;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
@@ -296,7 +296,7 @@ export function TagSelector({
         .close-btn {
           background: none;
           border: none;
-          color: #666;
+          color: #6b7280;
           cursor: pointer;
           padding: 4px;
           display: flex;
@@ -316,10 +316,10 @@ export function TagSelector({
           display: flex;
           align-items: center;
           gap: 4px;
-          background: #222;
-          border: 1px solid #444;
+          background: #111111;
+          border: 1px solid #1e293b;
           border-radius: 4px;
-          color: #888;
+          color: #6b7280;
           font-size: 11px;
           padding: 4px 8px;
           cursor: pointer;
@@ -327,7 +327,7 @@ export function TagSelector({
         }
 
         .action-btn:hover {
-          background: #333;
+          background: #222222;
           color: #fff;
         }
 
@@ -346,7 +346,7 @@ export function TagSelector({
         .selected-tags {
           margin-bottom: 12px;
           padding: 8px;
-          background: #222;
+          background: #111111;
           border-radius: 6px;
         }
 
@@ -356,13 +356,13 @@ export function TagSelector({
           align-items: center;
           margin-bottom: 8px;
           font-size: 11px;
-          color: #888;
+          color: #6b7280;
         }
 
         .clear-btn {
           background: none;
           border: none;
-          color: #666;
+          color: #6b7280;
           font-size: 10px;
           cursor: pointer;
         }
@@ -381,7 +381,7 @@ export function TagSelector({
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          background: #444;
+          background: #1e293b;
           border-radius: 4px;
           padding: 2px 6px;
           font-size: 11px;
@@ -390,7 +390,7 @@ export function TagSelector({
         }
 
         .selected-tag:hover {
-          background: #555;
+          background: #334155;
         }
 
         .tag-search {
@@ -400,8 +400,8 @@ export function TagSelector({
 
         .tag-search input {
           width: 100%;
-          background: #222;
-          border: 1px solid #444;
+          background: #111111;
+          border: 1px solid #1e293b;
           border-radius: 4px;
           padding: 8px 30px 8px 10px;
           font-size: 12px;
@@ -410,7 +410,7 @@ export function TagSelector({
 
         .tag-search input:focus {
           outline: none;
-          border-color: #666;
+          border-color: #6b7280;
         }
 
         .clear-search {
@@ -420,7 +420,7 @@ export function TagSelector({
           transform: translateY(-50%);
           background: none;
           border: none;
-          color: #666;
+          color: #6b7280;
           cursor: pointer;
           display: flex;
         }
@@ -436,7 +436,7 @@ export function TagSelector({
         }
 
         .tag-category {
-          border: 1px solid #333;
+          border: 1px solid #1e293b;
           border-radius: 6px;
           overflow: hidden;
         }
@@ -446,7 +446,7 @@ export function TagSelector({
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #222;
+          background: #111111;
           border: none;
           padding: 8px 10px;
           cursor: pointer;
@@ -467,8 +467,8 @@ export function TagSelector({
 
         .category-count {
           font-size: 10px;
-          color: #666;
-          background: #333;
+          color: #6b7280;
+          background: #222222;
           padding: 2px 6px;
           border-radius: 10px;
         }
@@ -478,7 +478,7 @@ export function TagSelector({
           flex-wrap: wrap;
           gap: 4px;
           padding: 8px;
-          background: #1a1a1a;
+          background: #0a0a0a;
         }
 
         .tag-chip {
@@ -486,24 +486,24 @@ export function TagSelector({
           align-items: center;
           gap: 4px;
           background: #2a2a2a;
-          border: 1px solid #444;
+          border: 1px solid #1e293b;
           border-radius: 4px;
           padding: 4px 8px;
           font-size: 11px;
-          color: #aaa;
+          color: #9ca3af;
           cursor: pointer;
           transition: all 0.15s;
         }
 
         .tag-chip:hover {
-          background: #333;
-          border-color: var(--tag-color, #666);
+          background: #222222;
+          border-color: var(--tag-color, #6b7280);
           color: #fff;
         }
 
         .tag-chip.selected {
-          background: color-mix(in srgb, var(--tag-color, #666) 20%, #1a1a1a);
-          border-color: var(--tag-color, #666);
+          background: color-mix(in srgb, var(--tag-color, #6b7280) 20%, #0a0a0a);
+          border-color: var(--tag-color, #6b7280);
           color: var(--tag-color, #fff);
         }
 

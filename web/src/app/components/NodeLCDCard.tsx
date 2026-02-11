@@ -34,8 +34,8 @@ export function NodeLCDCard({ node, onClick, selected = false }: NodeLCDCardProp
     <div
       className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
         selected 
-          ? 'ring-2 ring-cyan-400 shadow-lg shadow-cyan-500/50' 
-          : 'hover:border-cyan-400'
+          ? 'ring-2 ring-blue-500 shadow-lg shadow-blue-500/50' 
+          : 'hover:border-blue-500'
       } ${statusColor}`}
       onClick={onClick}
     >

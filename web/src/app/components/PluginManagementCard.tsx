@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, RefreshCw, Loader2, AlertTriangle, Check } from 'lucide-react'
+import { Trash, ArrowsClockwise, SpinnerGap, Warning, Check } from '@phosphor-icons/react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
 
@@ -173,12 +173,12 @@ export function PluginManagementCard() {
             >
               {isRefreshing ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" />
+                  <SpinnerGap size={14} weight="duotone" className="animate-spin" />
                   Refreshing...
                 </>
               ) : (
                 <>
-                  <RefreshCw size={14} />
+                  <ArrowsClockwise size={14} weight="duotone" />
                   Refresh
                 </>
               )}
@@ -191,12 +191,12 @@ export function PluginManagementCard() {
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" />
+                  <SpinnerGap size={14} weight="duotone" className="animate-spin" />
                   Deleting...
                 </>
               ) : (
                 <>
-                  <Trash2 size={14} />
+                  <Trash size={14} weight="duotone" />
                   Delete Selected
                 </>
               )}
@@ -210,7 +210,7 @@ export function PluginManagementCard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div className="card" style={{ maxWidth: 400, padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, color: '#ff6b6b' }}>
-              <AlertTriangle size={24} />
+              <Warning size={24} weight="duotone" />
               <h2 style={{ fontSize: 16, fontWeight: 600, color: 'white' }}>Delete Plugins</h2>
             </div>
             <p style={{ color: '#888', marginBottom: 24 }}>
@@ -233,12 +233,12 @@ export function PluginManagementCard() {
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <Loader2 size={14} className="animate-spin" />
+                    <SpinnerGap size={14} weight="duotone" className="animate-spin" />
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <Trash2 size={14} />
+                    <Trash size={14} weight="duotone" />
                     Delete
                   </>
                 )}
@@ -258,7 +258,7 @@ export function PluginManagementCard() {
 
       {deleteMutation.isSuccess && (
         <div className="pill" style={{ marginBottom: 16, background: 'rgba(34, 197, 94, 0.2)', borderLeft: '4px solid #22c55e', color: '#22c55e', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Check size={16} />
+          <Check size={16} weight="bold" />
           <p style={{ fontWeight: 600 }}>Plugins deleted successfully</p>
         </div>
       )}
@@ -266,7 +266,7 @@ export function PluginManagementCard() {
       {/* Plugin Table */}
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
-          <Loader2 className="animate-spin" size={24} />
+          <SpinnerGap className="animate-spin" size={24} weight="duotone" />
         </div>
       ) : isError ? (
         <div className="pill warn">Failed to load plugins</div>

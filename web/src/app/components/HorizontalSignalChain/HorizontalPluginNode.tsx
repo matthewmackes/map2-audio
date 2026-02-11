@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react'
-import { Power, Trash2, Link2 } from 'lucide-react'
+import { Power, Trash, Link } from '@phosphor-icons/react'
 import type { HorizontalPluginNodeProps } from './types'
 import { getIconForCategory } from './icons'
 
@@ -134,7 +134,7 @@ export function HorizontalPluginNode({
             : 'Click to configure sidechain input'
           }
         >
-          <Link2 size={10} />
+          <Link size={10} weight="duotone" />
           <span className="h-sidechain-label">SC</span>
         </button>
       )}
@@ -160,7 +160,7 @@ export function HorizontalPluginNode({
           onClick={handleBypassClick}
           title={plugin.bypassed ? 'Enable' : 'Bypass'}
         >
-          <Power size={12} />
+          <Power size={12} weight="duotone" />
         </button>
         {onDelete && (
           <button
@@ -168,7 +168,7 @@ export function HorizontalPluginNode({
             onClick={handleDeleteClick}
             title="Delete"
           >
-            <Trash2 size={12} />
+            <Trash size={12} weight="duotone" />
           </button>
         )}
       </div>

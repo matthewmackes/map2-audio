@@ -1,25 +1,25 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
-  LayoutGrid,
+  GridFour,
   Play,
-  Save,
-  Zap,
+  FloppyDisk,
+  Lightning,
   ArrowRight,
-  Radio,
+  Broadcast,
   Keyboard,
   Terminal,
   Globe,
   Cpu,
   GitBranch,
-  CheckCircle2,
+  CheckCircle,
   BookOpen,
   FileText,
-  Search,
+  MagnifyingGlass,
   X,
-  ExternalLink,
-  Loader
-} from 'lucide-react'
+  ArrowSquareOut,
+  SpinnerGap
+} from '@phosphor-icons/react'
 
 // SVG Diagram showing the Flow -> Chain -> Activation concept
 function PlatformDiagram() {
@@ -50,8 +50,8 @@ function PlatformDiagram() {
       }}>
         {/* Stage 1: Build */}
         <div style={{
-          background: 'rgba(249, 115, 22, 0.1)',
-          border: '2px solid rgba(249, 115, 22, 0.3)',
+          background: 'rgba(37, 99, 235, 0.1)',
+          border: '2px solid rgba(37, 99, 235, 0.3)',
           borderRadius: 12,
           padding: 20,
           textAlign: 'center',
@@ -62,7 +62,7 @@ function PlatformDiagram() {
             top: -12,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#f97316',
+            background: '#2563eb',
             color: 'white',
             fontSize: 10,
             fontWeight: 700,
@@ -72,8 +72,8 @@ function PlatformDiagram() {
           }}>
             STEP 1
           </div>
-          <LayoutGrid size={40} style={{ color: '#f97316', margin: '12px auto 12px' }} />
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: '#f97316' }}>
+          <GridFour size={40} weight="duotone" style={{ color: '#2563eb', margin: '12px auto 12px' }} />
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: '#2563eb' }}>
             Build a Flow
           </h4>
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
@@ -98,16 +98,16 @@ function PlatformDiagram() {
             <div style={{
               flex: 1,
               height: 2,
-              background: 'linear-gradient(90deg, rgba(249, 115, 22, 0.5) 0%, rgba(34, 197, 94, 0.5) 100%)',
+              background: 'linear-gradient(90deg, rgba(37, 99, 235, 0.5) 0%, rgba(96, 165, 250, 0.5) 100%)',
             }} />
-            <ArrowRight size={24} style={{ color: '#22c55e', margin: '0 -4px' }} />
+            <ArrowRight size={24} weight="bold" style={{ color: '#60a5fa', margin: '0 -4px' }} />
           </div>
         </div>
 
         {/* Stage 2: Save */}
         <div style={{
-          background: 'rgba(34, 197, 94, 0.1)',
-          border: '2px solid rgba(34, 197, 94, 0.3)',
+          background: 'rgba(96, 165, 250, 0.1)',
+          border: '2px solid rgba(96, 165, 250, 0.3)',
           borderRadius: 12,
           padding: 20,
           textAlign: 'center',
@@ -118,7 +118,7 @@ function PlatformDiagram() {
             top: -12,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#22c55e',
+            background: '#60a5fa',
             color: 'white',
             fontSize: 10,
             fontWeight: 700,
@@ -126,10 +126,10 @@ function PlatformDiagram() {
             borderRadius: 12,
             letterSpacing: '0.05em',
           }}>
-            STEP 2
-          </div>
-          <Save size={40} style={{ color: '#22c55e', margin: '12px auto 12px' }} />
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: '#22c55e' }}>
+          STEP 2
+        </div>
+        <FloppyDisk size={40} weight="duotone" style={{ color: '#60a5fa', margin: '12px auto 12px' }} />
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 6, color: '#60a5fa' }}>
             Save as Chain
           </h4>
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
@@ -140,8 +140,8 @@ function PlatformDiagram() {
 
       {/* Stage 3: Activate - Full width */}
       <div style={{
-        background: 'rgba(0, 212, 255, 0.1)',
-        border: '2px solid rgba(0, 212, 255, 0.3)',
+        background: 'rgba(37, 99, 235, 0.1)',
+        border: '2px solid rgba(37, 99, 235, 0.3)',
         borderRadius: 12,
         padding: 24,
         textAlign: 'center',
@@ -162,7 +162,7 @@ function PlatformDiagram() {
         }}>
           STEP 3
         </div>
-        <Zap size={36} style={{ color: 'var(--primary)', margin: '8px auto 12px' }} />
+        <Lightning size={36} weight="duotone" style={{ color: 'var(--primary)', margin: '8px auto 12px' }} />
         <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: 'var(--primary)' }}>
           Activate to Go Live
         </h4>
@@ -178,11 +178,11 @@ function PlatformDiagram() {
           justifyContent: 'center',
         }}>
           {[
-            { icon: Radio, label: 'MIDI', color: '#ec4899' },
-            { icon: Cpu, label: 'API', color: '#8b5cf6' },
-            { icon: Keyboard, label: 'Keyboard', color: '#f59e0b' },
-            { icon: Terminal, label: 'TUI', color: '#10b981' },
-            { icon: Globe, label: 'Web Interface', color: '#00d4ff' },
+            { icon: Broadcast, label: 'MIDI', color: '#60a5fa' },
+            { icon: Cpu, label: 'API', color: '#60a5fa' },
+            { icon: Keyboard, label: 'Keyboard', color: '#60a5fa' },
+            { icon: Terminal, label: 'TUI', color: '#60a5fa' },
+            { icon: Globe, label: 'Web Interface', color: '#2563eb' },
           ].map(method => (
             <div
               key={method.label}
@@ -219,43 +219,43 @@ function PlatformDiagram() {
           alignItems: 'center',
           gap: 4,
           padding: '6px 12px',
-          background: 'rgba(249, 115, 22, 0.2)',
+          background: 'rgba(37, 99, 235, 0.2)',
           borderRadius: 6,
           fontSize: 11,
           fontWeight: 500,
-          color: '#f97316',
+          color: '#2563eb',
         }}>
-          <GitBranch size={12} />
+          <GitBranch size={12} weight="duotone" />
           Flow (Editing)
         </div>
-        <ArrowRight size={16} style={{ color: 'var(--muted)' }} />
+        <ArrowRight size={16} weight="bold" style={{ color: 'var(--muted)' }} />
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: 4,
           padding: '6px 12px',
-          background: 'rgba(34, 197, 94, 0.2)',
+          background: 'rgba(96, 165, 250, 0.2)',
           borderRadius: 6,
           fontSize: 11,
           fontWeight: 500,
-          color: '#22c55e',
+          color: '#60a5fa',
         }}>
-          <Save size={12} />
+          <FloppyDisk size={12} weight="duotone" />
           Chain (Saved)
         </div>
-        <ArrowRight size={16} style={{ color: 'var(--muted)' }} />
+        <ArrowRight size={16} weight="bold" style={{ color: 'var(--muted)' }} />
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: 4,
           padding: '6px 12px',
-          background: 'rgba(0, 212, 255, 0.2)',
+          background: 'rgba(37, 99, 235, 0.2)',
           borderRadius: 6,
           fontSize: 11,
           fontWeight: 500,
           color: 'var(--primary)',
         }}>
-          <Play size={12} />
+          <Play size={12} weight="duotone" />
           Active (Live Audio)
         </div>
       </div>
@@ -270,7 +270,7 @@ function ConceptCard({
   description,
   color
 }: {
-  icon: typeof LayoutGrid
+  icon: typeof GridFour
   title: string
   description: string
   color: string
@@ -307,7 +307,7 @@ export function WelcomePage() {
       {/* Hero Section */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <Zap size={32} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #00ff88 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }} />
+          <Lightning size={32} weight="duotone" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #60a5fa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }} />
           <h1 style={{
             fontSize: 28,
             fontWeight: 700,
@@ -345,7 +345,7 @@ export function WelcomePage() {
           alignItems: 'center',
           gap: 8,
         }}>
-          <CheckCircle2 size={18} style={{ color: 'var(--success)' }} />
+          <CheckCircle size={18} weight="duotone" style={{ color: 'var(--success)' }} />
           Key Concepts
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
@@ -353,33 +353,33 @@ export function WelcomePage() {
             icon={GitBranch}
             title="Flow"
             description="A Flow is an arrangement of effects in the Grid Editor. You can freely edit, rearrange, and experiment without affecting live audio."
-            color="#f97316"
+            color="#2563eb"
           />
           <ConceptCard
-            icon={Save}
+            icon={FloppyDisk}
             title="Chain"
             description="A Chain is a saved Flow. Think of it as a preset that captures your entire signal routing. Chains wait in standby until activated."
-            color="#22c55e"
+            color="#60a5fa"
           />
           <ConceptCard
-            icon={Zap}
+            icon={Lightning}
             title="Activation"
             description="Activating a Chain makes it live and processes actual audio. You can switch between Chains instantly via MIDI, keyboard, or the web interface."
-            color="#00d4ff"
+            color="#2563eb"
           />
           <ConceptCard
-            icon={LayoutGrid}
+            icon={GridFour}
             title="Parallel Routing"
             description="The Grid Editor supports parallel signal paths, allowing you to layer effects, create wet/dry blends, and build complex routing configurations."
-            color="#8b5cf6"
+            color="#60a5fa"
           />
         </div>
       </div>
 
       {/* Important Note */}
       <div style={{
-        background: 'rgba(249, 115, 22, 0.1)',
-        border: '1px solid rgba(249, 115, 22, 0.3)',
+        background: 'rgba(37, 99, 235, 0.1)',
+        border: '1px solid rgba(37, 99, 235, 0.3)',
         borderRadius: 'var(--border-radius-md)',
         padding: 20,
         display: 'flex',
@@ -387,15 +387,15 @@ export function WelcomePage() {
         alignItems: 'flex-start',
       }}>
         <div style={{
-          background: 'rgba(249, 115, 22, 0.2)',
+          background: 'rgba(37, 99, 235, 0.2)',
           borderRadius: '50%',
           padding: 8,
           flexShrink: 0,
         }}>
-          <Play size={18} style={{ color: '#f97316' }} />
+          <Play size={18} weight="duotone" style={{ color: '#2563eb' }} />
         </div>
         <div>
-          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: '#f97316' }}>
+          <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: '#2563eb' }}>
             Editing is Non-Destructive
           </h4>
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
@@ -431,14 +431,14 @@ export function WelcomePage() {
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 212, 255, 0.4)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.4)'
           }}
           onMouseLeave={e => {
             e.currentTarget.style.transform = 'translateY(0)'
             e.currentTarget.style.boxShadow = 'none'
           }}
         >
-          <LayoutGrid size={18} />
+          <GridFour size={18} weight="duotone" />
           Open Grid Editor
         </Link>
         <Link
@@ -535,7 +535,7 @@ function DocumentLibrary() {
         alignItems: 'center',
         gap: 12
       }}>
-        <BookOpen size={28} style={{ color: '#3b82f6' }} />
+        <BookOpen size={28} weight="duotone" style={{ color: '#2563eb' }} />
         <div>
           <h2 style={{
             fontSize: 24,
@@ -587,7 +587,7 @@ function DocumentLibrary() {
               gap: 8,
               marginBottom: '8px'
             }}>
-              <Search size={16} style={{ color: 'rgba(242, 246, 255, 0.5)' }} />
+              <MagnifyingGlass size={16} weight="duotone" style={{ color: 'rgba(242, 246, 255, 0.5)' }} />
               <input
                 type="text"
                 placeholder="Search docs..."
@@ -679,7 +679,7 @@ function DocumentLibrary() {
                 height: 200,
                 color: 'rgba(242, 246, 255, 0.5)'
               }}>
-                <Loader size={20} style={{ 
+                <SpinnerGap size={20} weight="duotone" style={{ 
                   animation: 'rotate 1s linear infinite',
                   transformOrigin: 'center'
                 }} />
@@ -734,7 +734,7 @@ function DocumentLibrary() {
                       : 'rgba(59, 130, 246, 0.2)'
                   }}
                 >
-                  <FileText size={14} style={{ flexShrink: 0, color: '#3b82f6' }} />
+                  <FileText size={14} weight="duotone" style={{ flexShrink: 0, color: '#2563eb' }} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {doc.name.replace(/\.md$/, '').replace(/_/g, ' ')}
                   </span>
@@ -800,7 +800,7 @@ function DocumentLibrary() {
                   e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'
                 }}
               >
-                <X size={18} />
+                <X size={18} weight="bold" />
               </button>
             </div>
 
@@ -956,7 +956,7 @@ ${selectedDoc.content}
             textAlign: 'center'
           }}>
             <div>
-              <FileText size={48} style={{ marginBottom: 16, opacity: 0.3 }} />
+              <FileText size={48} weight="duotone" style={{ marginBottom: 16, opacity: 0.3 }} />
               <p>Select a document to read</p>
             </div>
           </div>

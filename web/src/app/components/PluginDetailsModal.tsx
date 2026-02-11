@@ -1,5 +1,5 @@
 import { Dialog, DialogDismiss, DialogHeading, DialogProvider, useDialogStore } from '@ariakit/react'
-import { Copy, X } from 'lucide-react'
+import { Copy, X } from '@phosphor-icons/react'
 import type { Plugin } from '../../map2/types'
 import { useToasts } from './Toasts'
 
@@ -29,7 +29,7 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
         <div className="modal-header">
           <DialogHeading className="modal-title">{plugin.name}</DialogHeading>
           <DialogDismiss className="btn btn-ghost btn-sm">
-            <X size={16} />
+            <X size={16} weight="bold" />
           </DialogDismiss>
         </div>
 
@@ -86,7 +86,7 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
 
         <div className="modal-footer">
           <button className="btn btn-ghost" onClick={copyUri}>
-            <Copy size={14} /> Copy URI
+            <Copy size={14} weight="duotone" /> Copy URI
           </button>
           {onAdd && (
             <button className="btn btn-primary" onClick={() => onAdd(plugin.uri)}>

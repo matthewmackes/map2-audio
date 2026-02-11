@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronRight, Check, AlertCircle, Server, Network, Shield, FileCheck } from 'lucide-react'
+import { CaretRight, Check, WarningCircle, DesktopTower, Graph, Shield, FileText } from '@phosphor-icons/react'
 
 interface WizardStep {
   id: number
@@ -9,11 +9,11 @@ interface WizardStep {
 }
 
 const WIZARD_STEPS: WizardStep[] = [
-  { id: 1, title: 'Deployment Mode', icon: <Server size={20} />, completed: false },
-  { id: 2, title: 'Node Discovery', icon: <Network size={20} />, completed: false },
-  { id: 3, title: 'Network Config', icon: <Network size={20} />, completed: false },
-  { id: 4, title: 'Certificate Setup', icon: <Shield size={20} />, completed: false },
-  { id: 5, title: 'Review & Confirm', icon: <FileCheck size={20} />, completed: false },
+  { id: 1, title: 'Deployment Mode', icon: <DesktopTower size={20} weight="duotone" />, completed: false },
+  { id: 2, title: 'Node Discovery', icon: <Graph size={20} weight="duotone" />, completed: false },
+  { id: 3, title: 'Network Config', icon: <Graph size={20} weight="duotone" />, completed: false },
+  { id: 4, title: 'Certificate Setup', icon: <Shield size={20} weight="duotone" />, completed: false },
+  { id: 5, title: 'Review & Confirm', icon: <FileText size={20} weight="duotone" />, completed: false },
 ]
 
 export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
@@ -116,7 +116,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
       <div
         style={{
           background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
-          border: '2px solid #00d4ff',
+          border: '2px solid #2563eb',
           borderRadius: 12,
           padding: 24,
           textAlign: 'center',
@@ -142,12 +142,12 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               padding: 12,
               background:
                 currentStep === step.id
-                  ? 'rgba(0, 212, 255, 0.15)'
+                  ? 'rgba(37, 99, 235, 0.15)'
                   : currentStep > step.id
                   ? 'rgba(0, 255, 65, 0.1)'
                   : 'rgba(255, 255, 255, 0.05)',
               border: `2px solid ${
-                currentStep === step.id ? '#00d4ff' : currentStep > step.id ? '#00ff41' : '#333'
+                currentStep === step.id ? '#2563eb' : currentStep > step.id ? '#00ff41' : '#333'
               }`,
               borderRadius: 8,
               transition: 'all 0.3s',
@@ -163,14 +163,14 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: '50%',
                 background:
                   currentStep === step.id
-                    ? '#00d4ff'
+                    ? '#2563eb'
                     : currentStep > step.id
                     ? '#00ff41'
                     : 'rgba(255, 255, 255, 0.1)',
                 color: currentStep >= step.id ? '#000' : '#666',
               }}
             >
-              {currentStep > step.id ? <Check size={16} /> : step.icon}
+              {currentStep > step.id ? <Check size={16} weight="bold" /> : step.icon}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, color: '#888' }}>Step {step.id}</div>
@@ -192,7 +192,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
         >
           {errors.map((err, idx) => (
             <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <AlertCircle size={16} color="#ff3333" />
+              <WarningCircle size={16} weight="duotone" color="#ff3333" />
               <span style={{ color: '#ff3333' }}>{err}</span>
             </div>
           ))}
@@ -211,7 +211,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
       >
         {currentStep === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#00d4ff' }}>Step 1: Choose Deployment Mode</h3>
+            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 1: Choose Deployment Mode</h3>
             <p style={{ color: '#a0a0a0' }}>Select how you want to deploy your MAP2 Audio cluster:</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -225,8 +225,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                   style={{
                     display: 'block',
                     padding: 16,
-                    background: deploymentMode === mode.value ? 'rgba(0, 212, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                    border: `2px solid ${deploymentMode === mode.value ? '#00d4ff' : '#333'}`,
+                    background: deploymentMode === mode.value ? 'rgba(37, 99, 235, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                    border: `2px solid ${deploymentMode === mode.value ? '#2563eb' : '#333'}`,
                     borderRadius: 8,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
@@ -250,12 +250,12 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               style={{
                 marginTop: 16,
                 padding: 16,
-                background: 'rgba(0, 212, 255, 0.05)',
-                border: '1px solid rgba(0, 212, 255, 0.3)',
+                background: 'rgba(37, 99, 235, 0.05)',
+                border: '1px solid rgba(37, 99, 235, 0.3)',
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#00d4ff' }}>📖 Mode Details:</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>📖 Mode Details:</div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
                 • <strong>ALL-IN-ONE:</strong> Fastest setup, no network required, limited scalability
                 <br />
@@ -269,7 +269,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#00d4ff' }}>Step 2: Node Discovery</h3>
+            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 2: Node Discovery</h3>
             <p style={{ color: '#a0a0a0' }}>Discover nodes on your network or manually add them:</p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -308,8 +308,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                       style={{
                         padding: 12,
                         marginBottom: 8,
-                        background: 'rgba(0, 212, 255, 0.05)',
-                        border: '1px solid rgba(0, 212, 255, 0.3)',
+                        background: 'rgba(37, 99, 235, 0.05)',
+                        border: '1px solid rgba(37, 99, 235, 0.3)',
                         borderRadius: 6,
                       }}
                     >
@@ -328,12 +328,12 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             <div
               style={{
                 padding: 16,
-                background: 'rgba(0, 212, 255, 0.05)',
-                border: '1px solid rgba(0, 212, 255, 0.3)',
+                background: 'rgba(37, 99, 235, 0.05)',
+                border: '1px solid rgba(37, 99, 235, 0.3)',
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#00d4ff' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
                 📖 Discovery Methods:
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
@@ -349,7 +349,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#00d4ff' }}>Step 3: Network Configuration</h3>
+            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 3: Network Configuration</h3>
             <p style={{ color: '#a0a0a0' }}>Configure cluster networking and communication:</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
@@ -459,12 +459,12 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             <div
               style={{
                 padding: 16,
-                background: 'rgba(0, 212, 255, 0.05)',
-                border: '1px solid rgba(0, 212, 255, 0.3)',
+                background: 'rgba(37, 99, 235, 0.05)',
+                border: '1px solid rgba(37, 99, 235, 0.3)',
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#00d4ff' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
                 📖 Configuration Tips:
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
@@ -482,7 +482,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 4 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#00d4ff' }}>Step 4: Certificate Setup</h3>
+            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 4: Certificate Setup</h3>
             <p style={{ color: '#a0a0a0' }}>
               Configure SSL/TLS certificates for secure communication:
             </p>
@@ -498,8 +498,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                   style={{
                     display: 'block',
                     padding: 16,
-                    background: certMode === mode.value ? 'rgba(0, 212, 255, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                    border: `2px solid ${certMode === mode.value ? '#00d4ff' : '#333'}`,
+                    background: certMode === mode.value ? 'rgba(37, 99, 235, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                    border: `2px solid ${certMode === mode.value ? '#2563eb' : '#333'}`,
                     borderRadius: 8,
                     cursor: 'pointer',
                   }}
@@ -520,12 +520,12 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             <div
               style={{
                 padding: 16,
-                background: 'rgba(0, 212, 255, 0.05)',
-                border: '1px solid rgba(0, 212, 255, 0.3)',
+                background: 'rgba(37, 99, 235, 0.05)',
+                border: '1px solid rgba(37, 99, 235, 0.3)',
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#00d4ff' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
                 📖 Certificate Options:
               </div>
               <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
@@ -541,18 +541,18 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 5 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#00d4ff' }}>Step 5: Review Configuration</h3>
+            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 5: Review Configuration</h3>
             <p style={{ color: '#a0a0a0' }}>Review your cluster configuration before applying:</p>
 
             <div
               style={{
                 padding: 20,
                 background: '#111',
-                border: '2px solid #00d4ff',
+                border: '2px solid #2563eb',
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#00d4ff' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#2563eb' }}>
                 📋 Configuration Summary:
               </div>
 

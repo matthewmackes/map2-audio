@@ -3,7 +3,7 @@
  */
 
 import { Box, Paper, Grid, LinearProgress, Typography, Chip } from '@mui/material'
-import { HardDrive, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
+import { HardDrive, Warning, CheckCircle, WarningCircle } from '@phosphor-icons/react'
 import type { DiskHealthData } from '@/map2/types'
 
 interface DiskHealthCardProps {
@@ -26,13 +26,13 @@ const getHealthColor = (status: string) => {
 const getHealthIcon = (status: string) => {
   switch (status) {
     case 'passing':
-      return <CheckCircle size={16} />
+      return <CheckCircle size={16} weight="duotone" />
     case 'warning':
-      return <AlertCircle size={16} />
+      return <WarningCircle size={16} weight="duotone" />
     case 'failing':
-      return <AlertTriangle size={16} />
+      return <Warning size={16} weight="duotone" />
     default:
-      return <HardDrive size={16} />
+      return <HardDrive size={16} weight="duotone" />
   }
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Speaker } from 'lucide-react'
+import { SpeakerHigh } from '@phosphor-icons/react'
 import { irApi } from '../../../map2/api'
 import type { IRStatus } from '../../../map2/types'
 import { CabinetIRManagerDialog } from './CabinetIRManagerDialog'
@@ -25,7 +25,7 @@ export function CabinetIRLoaderCard({ onLoadCabinetIR }: CabinetIRLoaderCardProp
       <div className="loader-card cabinet">
         <div className="loader-card-header">
           <div className="loader-card-icon cabinet">
-            <Speaker size={22} />
+            <SpeakerHigh size={22} weight="duotone" />
           </div>
           <div className="loader-card-info">
             <h4 className="loader-card-title">Cabinet IR</h4>

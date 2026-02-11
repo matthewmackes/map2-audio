@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertCircle, CheckCircle, Zap, Cpu, HardDrive, Wifi } from 'lucide-react'
+import { WarningCircle, CheckCircle, Lightning, Cpu, HardDrive, WifiHigh } from '@phosphor-icons/react'
 import { useMemo } from 'react'
 
 interface ClusterOverviewTabProps {
@@ -80,7 +80,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         <div
           className="stat-card"
           style={{
-            background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(0, 212, 255, 0.1))`,
+            background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(37, 99, 235, 0.1))`,
             borderColor: healthColor,
           }}
         >
@@ -98,13 +98,13 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 width: 40,
                 height: 40,
                 borderRadius: 8,
-                background: `rgba(0, 212, 255, 0.1)`,
+                background: `rgba(37, 99, 235, 0.1)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {stats.healthScore >= 80 ? <CheckCircle size={20} color={healthColor} /> : <AlertCircle size={20} color={healthColor} />}
+              {stats.healthScore >= 80 ? <CheckCircle size={20} weight="duotone" color={healthColor} /> : <WarningCircle size={20} weight="duotone" color={healthColor} />}
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>
@@ -117,7 +117,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#00d4ff', marginTop: 8 }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
                 {stats.onlineCount}/{stats.nodeCount}
               </div>
             </div>
@@ -126,13 +126,13 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 width: 40,
                 height: 40,
                 borderRadius: 8,
-                background: 'rgba(0, 212, 255, 0.1)',
+                background: 'rgba(37, 99, 235, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Wifi size={20} color="#00d4ff" />
+              <WifiHigh size={20} weight="duotone" color="#2563eb" />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>
@@ -162,7 +162,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <Cpu size={20} color="#ffa726" />
+              <Cpu size={20} weight="duotone" color="#ffa726" />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>{stats.totalCpu} cores available</div>
@@ -190,7 +190,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <HardDrive size={20} color="#3b82f6" />
+              <HardDrive size={20} weight="duotone" color="#3b82f6" />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>{stats.totalMemory} GB available</div>
@@ -218,7 +218,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <Zap size={20} color="#22c55e" />
+              <Lightning size={20} weight="duotone" color="#22c55e" />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>Cluster audio load</div>
@@ -246,7 +246,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
                 justifyContent: 'center',
               }}
             >
-              <Wifi size={20} color="#fbbf24" />
+              <WifiHigh size={20} weight="duotone" color="#fbbf24" />
             </div>
           </div>
           <div style={{ fontSize: 11, color: '#a0a0a0' }}>Inter-node latency</div>
@@ -264,7 +264,7 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
           }}
         >
           <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8 }}>Deployment Mode</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#00d4ff' }}>{deploymentMode.mode}</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: '#2563eb' }}>{deploymentMode.mode}</div>
           <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 12, lineHeight: 1.6 }}>
             {deploymentMode.mode === 'ALL-IN-ONE' &&
               'All services running on a single node. Multi-node deployments provide redundancy and load distribution.'}

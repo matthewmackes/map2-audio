@@ -15,15 +15,15 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
-  Speaker,
-  Mic,
+  SpeakerHigh,
+  Microphone,
   X,
-  Zap,
-  RotateCcw,
-  Link2,
-  Unlink2,
-  ChevronRight,
-} from 'lucide-react'
+  Lightning,
+  ArrowCounterClockwise,
+  Link,
+  LinkBreak,
+  CaretRight,
+} from '@phosphor-icons/react'
 import { audioApi } from '../../../map2/api'
 import type { AudioPort, AudioPortPreset } from '../../../map2/api'
 
@@ -313,7 +313,7 @@ export function AudioPortSelector({
                       boxShadow: isSelected ? `0 0 8px ${catColor}40` : 'none',
                     }}>
                       {isSelected ? (
-                        <Check size={12} style={{ color: '#fff' }} />
+                        <Check size={12} weight="bold" style={{ color: '#fff' }} />
                       ) : (
                         <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
                           {port.index + 1}
@@ -334,7 +334,7 @@ export function AudioPortSelector({
                     </div>
 
                     {isStereoPaired && (
-                      <Link2 size={10} style={{ color: catColor, opacity: 0.6, flexShrink: 0 }} />
+                      <Link size={10} weight="duotone" style={{ color: catColor, opacity: 0.6, flexShrink: 0 }} />
                     )}
                   </button>
                 )
@@ -434,7 +434,7 @@ export function AudioPortSelector({
                 fontWeight: 600,
               }}
             >
-              {linkStereo ? <Link2 size={12} /> : <Unlink2 size={12} />}
+              {linkStereo ? <Link size={12} weight="duotone" /> : <LinkBreak size={12} weight="duotone" />}
               {linkStereo ? 'Linked' : 'Unlinked'}
             </button>
             <button
@@ -448,7 +448,7 @@ export function AudioPortSelector({
                 borderRadius: 6,
               }}
             >
-              <X size={18} />
+              <X size={18} weight="bold" />
             </button>
           </div>
         </div>
@@ -470,7 +470,7 @@ export function AudioPortSelector({
               fontSize: 11,
               color: hasOverride ? accentColor : 'rgba(255,255,255,0.4)',
             }}>
-              <ChevronRight size={12} />
+              <CaretRight size={12} weight="bold" />
               {hasOverride
                 ? `Custom routing for Flow ${flowLabel || ''}`
                 : `Using global routing`}
@@ -492,7 +492,7 @@ export function AudioPortSelector({
                   fontWeight: 600,
                 }}
               >
-                <RotateCcw size={10} />
+                <ArrowCounterClockwise size={10} weight="duotone" />
                 Revert to Global
               </button>
             )}
@@ -540,7 +540,7 @@ export function AudioPortSelector({
                     }}
                     title={preset.description}
                   >
-                    <Zap size={10} />
+                    <Lightning size={10} weight="duotone" />
                     {preset.name}
                   </button>
                 )
@@ -561,7 +561,7 @@ export function AudioPortSelector({
             const tabColor = tab === 'input' ? '#22c55e' : '#a855f7'
             const count = tab === 'input' ? selectedInputs.length : selectedOutputs.length
             const total = tab === 'input' ? inputPorts.length : outputPorts.length
-            const Icon = tab === 'input' ? Mic : Speaker
+            const Icon = tab === 'input' ? Microphone : SpeakerHigh
             return (
               <button
                 key={tab}
@@ -642,7 +642,7 @@ export function AudioPortSelector({
               borderRadius: 8,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <Mic size={11} style={{ color: '#22c55e' }} />
+                <Microphone size={11} weight="duotone" style={{ color: '#22c55e' }} />
                 <span style={{ fontSize: 10, fontWeight: 700, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Input
                 </span>
@@ -665,7 +665,7 @@ export function AudioPortSelector({
               borderRadius: 8,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <Speaker size={11} style={{ color: '#a855f7' }} />
+                <SpeakerHigh size={11} weight="duotone" style={{ color: '#a855f7' }} />
                 <span style={{ fontSize: 10, fontWeight: 700, color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Output
                 </span>

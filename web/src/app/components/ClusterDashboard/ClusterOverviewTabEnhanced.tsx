@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertCircle, CheckCircle, Zap, Cpu, HardDrive, Wifi, Play, Pause, RotateCcw } from 'lucide-react'
+import { WarningCircle, CheckCircle, Lightning, Cpu, HardDrive, WifiHigh, Play, Pause, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
 import { TopologyGraph } from './TopologyGraph'
 import { useClusterSimulation } from '../../hooks/useClusterSimulation'
@@ -119,14 +119,14 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
     <div className="cluster-overview-tab" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Quick Stats */}
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-        <div className="stat-card" style={{ background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(0, 212, 255, 0.1))`, borderColor: healthColor }}>
+        <div className="stat-card" style={{ background: `linear-gradient(155deg, rgba(0, 255, 65, 0.1), rgba(37, 99, 235, 0.1))`, borderColor: healthColor }}>
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Health</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: healthColor, marginTop: 8 }}>{stats.healthScore.toFixed(0)}%</div>
         </div>
 
         <div className="stat-card">
           <div style={{ fontSize: 11, color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: 1 }}>Nodes</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#00d4ff', marginTop: 8 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb', marginTop: 8 }}>
             {stats.onlineCount}/{stats.nodeCount}
           </div>
         </div>
@@ -204,7 +204,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <Zap size={14} />
+              <Lightning size={14} weight="duotone" />
               Simulate High Load
             </button>
 
@@ -231,7 +231,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <AlertCircle size={14} />
+              <WarningCircle size={14} weight="duotone" />
               Degrade Node
             </button>
 
@@ -258,7 +258,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <Wifi size={14} />
+              <WifiHigh size={14} weight="duotone" />
               Node Failure
             </button>
 
@@ -285,7 +285,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 opacity: simulationScenario !== null ? 0.5 : 1,
               }}
             >
-              <CheckCircle size={14} />
+              <CheckCircle size={14} weight="duotone" />
               Trigger Failover
             </button>
 
@@ -309,7 +309,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
                 gap: 6,
               }}
             >
-              <RotateCcw size={14} />
+              <ArrowCounterClockwise size={14} weight="duotone" />
               Clear Scenario
             </button>
           </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Server } from 'lucide-react'
+import { DesktopTower } from '@phosphor-icons/react'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -106,7 +106,7 @@ export function FlowAssignmentDialog({
                   onClick={() => isSuitableNode(node) && setSelectedNodeId(node.node_id)}
                 >
                   <div className="flow-assignment-node-header">
-                    <Server size={16} />
+                    <DesktopTower size={16} weight="duotone" />
                     <span>{node.hostname}</span>
                     {node.has_gpu && <span className="flow-assignment-gpu">🎮</span>}
                   </div>

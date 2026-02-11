@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState, memo, useRef } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus } from '@phosphor-icons/react'
 import { GridPluginBlock } from './GridPluginBlock'
 import { SignalCable } from './SignalCable'
 import { getCategoryColor } from './categoryConfig'
@@ -168,7 +168,7 @@ return (
               onClick={handleAddButtonClick}
               title="Add plugin"
             >
-              <Plus size={16} />
+              <Plus size={16} weight="bold" />
             </button>
           </div>
         )}

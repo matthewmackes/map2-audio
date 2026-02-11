@@ -13,7 +13,7 @@ import { ParameterSection } from '../../Base/ParameterSection'
 import { ParameterRow } from '../../Base/ParameterRow'
 import { ParameterKnob } from '../../../Controls/ParameterKnob'
 import { PitchDisplay } from '../../Visualizations/PitchDisplay'
-import { ArrowUp, ArrowDown, Link, Unlink } from 'lucide-react'
+import { ArrowUp, ArrowDown, Link, LinkBreak } from '@phosphor-icons/react'
 import type { PluginCardProps } from '../../types'
 import './WhammyCard.css'
 
@@ -128,7 +128,7 @@ export function WhammyCard({
       {/* Pitch Display */}
       <div className="whammy-pitch-display">
         <div className={`whammy-shift-indicator ${currentShift > 0 ? 'up' : currentShift < 0 ? 'down' : ''}`}>
-          {currentShift > 0 ? <ArrowUp size={20} /> : currentShift < 0 ? <ArrowDown size={20} /> : null}
+          {currentShift > 0 ? <ArrowUp size={20} weight="duotone" /> : currentShift < 0 ? <ArrowDown size={20} weight="duotone" /> : null}
           <span className="whammy-shift-value">
             {currentShift >= 0 ? '+' : ''}{currentShift.toFixed(1)}
           </span>
@@ -153,7 +153,7 @@ export function WhammyCard({
           onClick={() => setIsHarmonyMode(false)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Unlink size={12} />
+          <LinkBreak size={12} weight="duotone" />
           Whammy
         </button>
         <button
@@ -161,7 +161,7 @@ export function WhammyCard({
           onClick={() => setIsHarmonyMode(true)}
           style={{ '--accent': accentColor } as React.CSSProperties}
         >
-          <Link size={12} />
+          <Link size={12} weight="duotone" />
           Harmony
         </button>
       </div>
@@ -176,7 +176,7 @@ export function WhammyCard({
               onClick={() => handleModeChange(index)}
               style={{ '--accent': accentColor } as React.CSSProperties}
             >
-              {mode.icon === 'up' ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+              {mode.icon === 'up' ? <ArrowUp size={10} weight="duotone" /> : <ArrowDown size={10} weight="duotone" />}
               {mode.name}
             </button>
           ))}

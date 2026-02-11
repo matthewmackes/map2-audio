@@ -1,4 +1,4 @@
-import { FileMusic } from 'lucide-react'
+import { FileDashed } from '@phosphor-icons/react'
 import type { SoundFont } from '../../types/library'
 
 interface SFItemCardProps {
@@ -24,7 +24,7 @@ export function SFItemCard({ soundfont }: SFItemCardProps) {
     <div className="model-item">
       <div className="model-item-info">
         <div className="flex" style={{ gap: 8, alignItems: 'center' }}>
-          <FileMusic size={16} style={{ color: 'var(--muted)' }} />
+          <FileDashed size={16} weight="duotone" style={{ color: 'var(--muted)' }} />
           <div className="model-item-name">{soundfont.name}</div>
         </div>
         <div className="model-item-meta">

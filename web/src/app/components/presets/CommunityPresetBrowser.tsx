@@ -11,18 +11,18 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import {
-  Search,
-  Download,
+  MagnifyingGlass,
+  DownloadSimple,
   Star,
-  Upload,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  CloudDownload,
-  AlertCircle,
-  Loader2,
-  RefreshCw,
-} from 'lucide-react'
+  UploadSimple,
+  Funnel,
+  CaretLeft,
+  CaretRight,
+  CloudArrowDown,
+  WarningCircle,
+  SpinnerGap,
+  ArrowsClockwise,
+} from '@phosphor-icons/react'
 
 interface CommunityPreset {
   uuid: string
@@ -209,7 +209,7 @@ export function CommunityPresetBrowser({
               color: 'var(--text-primary, #fff)',
             }}
           >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            <ArrowsClockwise size={16} weight="duotone" className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
           {onUploadClick && (
@@ -228,7 +228,7 @@ export function CommunityPresetBrowser({
                 fontWeight: 500,
               }}
             >
-              <Upload size={16} />
+              <UploadSimple size={16} weight="duotone" />
               Upload
             </button>
           )}
@@ -246,8 +246,9 @@ export function CommunityPresetBrowser({
       >
         {/* Search */}
         <div style={{ flex: '1 1 200px', position: 'relative' }}>
-          <Search
+          <MagnifyingGlass
             size={16}
+            weight="duotone"
             style={{
               position: 'absolute',
               left: '12px',
@@ -338,7 +339,7 @@ export function CommunityPresetBrowser({
             marginBottom: '16px',
           }}
         >
-          <AlertCircle size={18} style={{ color: '#ef4444' }} />
+          <WarningCircle size={18} weight="duotone" style={{ color: '#ef4444' }} />
           <span style={{ color: '#ef4444' }}>{error}</span>
         </div>
       )}
@@ -354,7 +355,7 @@ export function CommunityPresetBrowser({
             color: 'var(--text-secondary, #888)',
           }}
         >
-          <Loader2 size={24} className="animate-spin" />
+          <SpinnerGap size={24} weight="duotone" className="animate-spin" />
           <span style={{ marginLeft: '12px' }}>Loading presets...</span>
         </div>
       )}
@@ -419,7 +420,7 @@ export function CommunityPresetBrowser({
               color: 'var(--text-primary, #fff)',
             }}
           >
-            <ChevronLeft size={18} />
+            <CaretLeft size={18} weight="bold" />
             Previous
           </button>
           <span style={{ color: 'var(--text-secondary, #888)' }}>
@@ -441,7 +442,7 @@ export function CommunityPresetBrowser({
             }}
           >
             Next
-            <ChevronRight size={18} />
+            <CaretRight size={18} weight="bold" />
           </button>
         </div>
       )}
@@ -524,7 +525,7 @@ function PresetCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <CloudDownload size={14} />
+          <CloudArrowDown size={14} weight="duotone" />
           {preset.downloads}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -533,9 +534,8 @@ function PresetCard({
             <Star
               key={star}
               size={14}
-              fill={star <= (hoverRating || preset.rating) ? '#fbbf24' : 'transparent'}
-              stroke={star <= (hoverRating || preset.rating) ? '#fbbf24' : '#666'}
-              style={{ cursor: 'pointer' }}
+              weight={star <= (hoverRating || preset.rating) ? 'fill' : 'duotone'}
+              style={{ cursor: 'pointer', color: star <= (hoverRating || preset.rating) ? '#fbbf24' : '#666' }}
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => onRate(star)}
@@ -563,7 +563,7 @@ function PresetCard({
           gap: '6px',
         }}
       >
-        <Download size={16} />
+        <DownloadSimple size={16} weight="duotone" />
         Download
       </button>
     </div>

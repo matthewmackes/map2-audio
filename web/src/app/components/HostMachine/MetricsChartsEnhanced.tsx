@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from 'react'
 import { Box, Paper, Grid, Typography, Select, MenuItem, FormControl, Button, ToggleButton, ToggleButtonGroup } from '@mui/material'
-import { DownloadCloud, TrendingUp } from 'lucide-react'
+import { CloudArrowDown } from '@phosphor-icons/react'
 import {
   LineChart,
   Line,
@@ -140,7 +140,7 @@ export default function MetricsCharts({
           </ToggleButtonGroup>
         </Box>
 
-        <Button size="small" startIcon={<DownloadCloud size={16} />} onClick={handleExportCSV}>
+        <Button size="small" startIcon={<CloudArrowDown size={16} weight="duotone" />} onClick={handleExportCSV}>
           Export CSV
         </Button>
       </Paper>

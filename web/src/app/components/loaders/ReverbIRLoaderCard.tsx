@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Waves } from 'lucide-react'
+import { WaveSine } from '@phosphor-icons/react'
 import { irApi } from '../../../map2/api'
 import type { IRStatus } from '../../../map2/types'
 import { ReverbIRManagerDialog } from './ReverbIRManagerDialog'
@@ -25,7 +25,7 @@ export function ReverbIRLoaderCard({ onLoadReverbIR }: ReverbIRLoaderCardProps) 
       <div className="loader-card reverb">
         <div className="loader-card-header">
           <div className="loader-card-icon reverb">
-            <Waves size={22} />
+            <WaveSine size={22} weight="duotone" />
           </div>
           <div className="loader-card-info">
             <h4 className="loader-card-title">Reverb IR</h4>
