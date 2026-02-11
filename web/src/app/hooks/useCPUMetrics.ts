@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { getWsUrl, API_BASE } from '../../map2/api'
 
 export interface CPUMetrics {
   totalCpuPercent: number
@@ -61,7 +62,7 @@ export function useCPUMetrics(options: UseCPUMetricsOptions = {}) {
   useEffect(() => {
     if (!useWebSocket) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -111,11 +112,11 @@ export function useCPUMetrics(options: UseCPUMetricsOptions = {}) {
     }
   }, [useWebSocket])
 
-  // Polling fallback
+  // Polling — always enabled for initial load + fallback
   const pollingQuery = useQuery<CPUMetrics>({
     queryKey: ['cpu-metrics'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/cpu')
+      const res = await fetch(`${API_BASE}/engine/cpu`)
       if (!res.ok) throw new Error('Failed to fetch CPU metrics')
       const data = await res.json()
       return {
@@ -131,13 +132,14 @@ export function useCPUMetrics(options: UseCPUMetricsOptions = {}) {
         running: data.running ?? true
       }
     },
-    refetchInterval: useWebSocket ? false : pollingInterval,
-    enabled: !useWebSocket
+    refetchInterval: useWebSocket ? 5000 : pollingInterval,
+    enabled: true
   })
 
-  const currentMetrics = useWebSocket
+  const wsHasData = useWebSocket && metrics.running
+  const currentMetrics = wsHasData
     ? metrics
-    : (pollingQuery.data || DEFAULT_CPU_METRICS)
+    : (pollingQuery.data || metrics)
 
   // Status helpers
   const status = currentMetrics.totalCpuPercent >= criticalThreshold

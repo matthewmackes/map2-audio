@@ -1,5 +1,23 @@
 # React + TypeScript + Vite
 
+## ⚠️ CRITICAL PORT INFORMATION
+
+**Port 3000** = **PRODUCTION ONLY** - Serves pre-built `dist/` folder via `serve` (static files, NO hot-reload)  
+**Port 3001** = **DEVELOPMENT** - Vite dev server with hot module replacement (HMR) and source maps
+
+**Common Mistake:** Assuming port 3000 is the dev server! It's not. Use 3001 for development.
+
+```bash
+# Development (hot-reload, source maps)
+npm run dev          # → http://localhost:3001
+
+# Production (static build)
+npm run build        # Builds to dist/
+npm run serve        # → http://localhost:3000 (serves dist/)
+```
+
+---
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

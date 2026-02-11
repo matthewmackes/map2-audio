@@ -50,9 +50,12 @@ The welcome message displays these service endpoints:
 
 - **Backend API**: `http://localhost:8080`
 - **API Docs**: `http://localhost:8080/docs`
-- **Web Dashboard**: `http://localhost:3000`
+- **Web Dashboard (PROD)**: `http://localhost:3000` ← **PRODUCTION** static build (no hot-reload)
+- **Web Dashboard (DEV)**: `http://localhost:3001` ← **DEVELOPMENT** server (hot-reload, use for coding!)
 - **Prometheus**: `http://localhost:9090`
 - **LCD Display**: I2C 0x27, 0x3F
+
+**⚠️ IMPORTANT:** Port 3000 serves static files, port 3001 is the live dev server. See `/web/PORTS.md` for details.
 
 ## Customization
 

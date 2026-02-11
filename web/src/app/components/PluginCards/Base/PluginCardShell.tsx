@@ -86,8 +86,8 @@ export function PluginCardShell({
         '--header-padding': '12px 16px',
         '--knob-size': '56px',
         '--font-scale': '1',
-        '--viz-width-base': '280px',
-        '--viz-height-base': '100px',
+        '--viz-width-base': '392px',
+        '--viz-height-base': '140px',
         containerType: 'inline-size',
         containerName: 'plugin-card',
       } as React.CSSProperties}
@@ -429,8 +429,8 @@ export function PluginCardShell({
             --header-padding: 6px 10px;
             --knob-size: 36px;
             --font-scale: 0.85;
-            --viz-width-base: 200px;
-            --viz-height-base: 70px;
+            --viz-width-base: 280px;
+            --viz-height-base: 98px;
           }
 
           .plugin-card-header {
@@ -458,8 +458,8 @@ export function PluginCardShell({
             --header-padding: 8px 12px;
             --knob-size: 44px;
             --font-scale: 0.9;
-            --viz-width-base: 240px;
-            --viz-height-base: 85px;
+            --viz-width-base: 336px;
+            --viz-height-base: 119px;
           }
         }
 
@@ -471,8 +471,8 @@ export function PluginCardShell({
             --header-padding: 12px 16px;
             --knob-size: 56px;
             --font-scale: 1;
-            --viz-width-base: 280px;
-            --viz-height-base: 100px;
+            --viz-width-base: 392px;
+            --viz-height-base: 140px;
           }
         }
 
@@ -484,8 +484,8 @@ export function PluginCardShell({
             --header-padding: 14px 18px;
             --knob-size: 64px;
             --font-scale: 1.05;
-            --viz-width-base: 320px;
-            --viz-height-base: 115px;
+            --viz-width-base: 448px;
+            --viz-height-base: 161px;
           }
         }
 
@@ -497,8 +497,8 @@ export function PluginCardShell({
             --header-padding: 16px 20px;
             --knob-size: 72px;
             --font-scale: 1.1;
-            --viz-width-base: 360px;
-            --viz-height-base: 130px;
+            --viz-width-base: 504px;
+            --viz-height-base: 182px;
           }
         }
 
@@ -509,8 +509,8 @@ export function PluginCardShell({
           --header-padding: 8px 12px;
           --knob-size: 40px;
           --font-scale: 0.85;
-          --viz-width-base: 200px;
-          --viz-height-base: 70px;
+          --viz-width-base: 280px;
+          --viz-height-base: 98px;
         }
       `}</style>
     </div>

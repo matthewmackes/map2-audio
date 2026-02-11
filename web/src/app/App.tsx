@@ -16,11 +16,12 @@ import { DSPPage } from './pages/DSPPage'
 import { EdirolUA1000Page } from './pages/EdirolUA1000Page'
 import { HoToneJoGGPage } from './pages/HoToneJoGGPage'
 import { HostMachinePage } from './pages/HostMachinePage'
-import { MeteringPage } from './pages/MeteringPage'
+import { AudioEnginePage } from './pages/AudioEnginePage'
+import MOTURMEPage from './pages/MOTURMEPage'
+import CPUPerformancePage from './pages/CPUPerformancePage'
 import { WelcomePage } from './pages/WelcomePage'
 import { LCDPage } from './pages/LCDPage'
 import { ClusterDashboardPage } from './pages/ClusterDashboardPage'
-import { PipeWirePage } from './pages/PipeWirePage'
 import { DrumsPage } from './pages/DrumsPage'
 import MultiSystemDashboard from './pages/MultiSystemDashboardPage'
 import { MidiLearnProvider } from './hooks/useMidiLearn'
@@ -57,13 +58,16 @@ export function App() {
                 <Route path="/grid" element={<GridFlowPage />} />
                 <Route path="/dsp" element={<DSPPage />} />
                 <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
+                <Route path="/motu-rme" element={<MOTURMEPage />} />
                 <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
                 <Route path="/host-machine" element={<HostMachinePage />} />
-                <Route path="/metering" element={<MeteringPage />} />
+                <Route path="/cpu-performance" element={<CPUPerformancePage />} />
+                <Route path="/engine" element={<AudioEnginePage />} />
+                <Route path="/metering" element={<Navigate to="/engine" replace />} />
+                <Route path="/pipewire" element={<Navigate to="/engine" replace />} />
                 <Route path="/welcome" element={<WelcomePage />} />
                 <Route path="/lcd" element={<LCDPage />} />
                 <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
-                <Route path="/pipewire" element={<PipeWirePage />} />
                 <Route path="/drums" element={<DrumsPage />} />
                 <Route path="/multi-system" element={<MultiSystemDashboard />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

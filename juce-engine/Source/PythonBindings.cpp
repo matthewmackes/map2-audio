@@ -2264,6 +2264,69 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "Get per-plugin latency breakdown")
 
         // ========================================
+        // Audio I/O Diagnostics (NEW - xrun/jitter/health)
+        // ========================================
+
+        .def("get_audio_io_stats", [](const Map2AudioEngine& self) {
+            auto stats = self.getAudioIOStats();
+            py::dict d;
+            d["cpu_usage"] = stats.cpuUsage;
+            d["xrun_count"] = stats.xrunCount;
+            d["xruns_since_reset"] = stats.xrunsSinceReset;
+            d["latency_ms"] = stats.latencyMs;
+            d["samples_processed"] = stats.samplesProcessed;
+            // Callback timing analysis
+            d["callback_jitter_ms"] = stats.callbackJitterMs;
+            d["peak_callback_jitter_ms"] = stats.peakCallbackJitterMs;
+            d["avg_callback_duration_ms"] = stats.avgCallbackDurationMs;
+            d["peak_callback_duration_ms"] = stats.peakCallbackDurationMs;
+            d["callback_budget_ms"] = stats.callbackBudgetMs;
+            d["budget_utilization"] = stats.budgetUtilization;
+            // Connection health
+            d["device_connected"] = stats.deviceConnected;
+            d["recovery_count"] = stats.recoveryCount;
+            d["uptime_seconds"] = stats.uptimeSeconds;
+            d["last_xrun_timestamp"] = stats.lastXrunTimestamp;
+            // Latency measurement
+            d["measured_round_trip_ms"] = stats.measuredRoundTripMs;
+            d["measured_input_latency_ms"] = stats.measuredInputLatencyMs;
+            d["measured_output_latency_ms"] = stats.measuredOutputLatencyMs;
+            return d;
+        }, "Get comprehensive audio I/O statistics with xrun/jitter analysis")
+
+        .def("get_connection_health", [](const Map2AudioEngine& self) {
+            auto health = self.getConnectionHealth();
+            py::dict d;
+            d["device_connected"] = health.deviceConnected;
+            d["jack_server_running"] = health.jackServerRunning;
+            d["current_backend"] = health.currentBackend;
+            d["recovery_attempts"] = health.recoveryAttempts;
+            d["successful_recoveries"] = health.successfulRecoveries;
+            d["last_recovery_time_sec"] = health.lastRecoveryTimeSec;
+            d["last_error"] = health.lastError;
+            return d;
+        }, "Get audio device connection health")
+
+        .def("get_xrun_history", [](const Map2AudioEngine& self) {
+            auto history = self.getXrunHistory();
+            py::list result;
+            for (auto ts : history) {
+                result.append(ts);
+            }
+            return result;
+        }, "Get timestamps of recent xruns (last 64)")
+
+        .def("reset_xrun_counter", &Map2AudioEngine::resetXrunCounter,
+             "Reset the xrun counter without resetting other stats")
+
+        .def("set_measured_round_trip_latency", &Map2AudioEngine::setMeasuredRoundTripLatency,
+             py::arg("ms"),
+             "Report measured round-trip latency from external loopback test")
+
+        .def("get_device_reported_latency_ms", &Map2AudioEngine::getDeviceReportedLatencyMs,
+             "Get device-reported total I/O latency in milliseconds")
+
+        // ========================================
         // Convolution / Cabinet IR (NEW)
         // ========================================
 

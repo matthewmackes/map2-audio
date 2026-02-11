@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { getWsUrl, API_BASE } from '../../map2/api'
 
 export interface VuLevels {
   inputLeft: number
@@ -95,7 +96,7 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
   useEffect(() => {
     if (!useWebSocket) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -132,11 +133,11 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
     }
   }, [useWebSocket])
 
-  // Polling fallback
+  // Polling — always enabled for initial load + fallback
   const pollingQuery = useQuery<VuLevels>({
     queryKey: ['vu-meters'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/meters')
+      const res = await fetch(`${API_BASE}/engine/meters`)
       if (!res.ok) throw new Error('Failed to fetch VU meters')
       const data = await res.json()
       return {
@@ -147,11 +148,12 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
         running: data.running ?? false
       }
     },
-    refetchInterval: useWebSocket ? false : pollingInterval,
-    enabled: !useWebSocket
+    refetchInterval: useWebSocket ? 5000 : pollingInterval,
+    enabled: true
   })
 
-  const currentLevels = useWebSocket ? levels : (pollingQuery.data || DEFAULT_LEVELS)
+  const wsHasData = useWebSocket && levels.running
+  const currentLevels = wsHasData ? levels : (pollingQuery.data || levels)
 
   // Reset peaks
   const resetPeaks = () => {

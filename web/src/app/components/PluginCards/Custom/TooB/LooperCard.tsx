@@ -64,7 +64,7 @@ export function LooperCard({
               key={i}
               onClick={() => setSelectedTrack(i)}
               style={{
-                padding: '12px 8px',
+                padding: '17px 11px',
                 background: selectedTrack === i ? TRACK_COLORS[i] + '30' : '#1a1a1a',
                 border: `2px solid ${selectedTrack === i ? TRACK_COLORS[i] : '#333'}`,
                 borderRadius: '8px',

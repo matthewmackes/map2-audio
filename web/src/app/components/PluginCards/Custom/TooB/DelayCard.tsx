@@ -43,8 +43,8 @@ export function DelayCard({
     <DelayTapGrid
       delayTimeL={getValue('time', 350)}
       feedback={getValue('feedback', 40)}
-      width={compact ? 200 : 280}
-      height={compact ? 60 : 80}
+      width={compact ? 280 : 392}
+      height={compact ? 84 : 112}
       accentColor={accentColor}
       maxTaps={8}
     />

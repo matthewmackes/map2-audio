@@ -349,6 +349,14 @@ export const PLUGIN_DESCRIPTIONS: Record<string, { description: string; category
     tips: 'Great for fat bass; use MIDI for control',
   },
 
+  // JUCE Native Processors
+  'Drum Machine': {
+    description: 'Sophisticated drum machine with practice patterns and backing tracks',
+    category: 'Drums',
+    function: 'Full-featured drum sequencer with factory/user drum packs, tempo sync, and multiple play modes',
+    tips: 'Perfect for practicing scales and rhythm patterns with backing drums',
+  },
+
   // Default catch-all for unmapped plugins
 };
 

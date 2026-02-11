@@ -72,7 +72,7 @@
   background: linear-gradient(180deg, #0a0a0a 0%, #000000 50%, #050505 100%);
   border: 2px solid #1a1a1a;
   border-radius: 10px;
-  padding: 16px;
+  padding: 22px;
   box-shadow:
     inset 0 3px 8px rgba(0, 0, 0, 0.9),
     inset 0 -2px 4px rgba(0, 0, 0, 0.5),
@@ -95,12 +95,12 @@
   background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
   border: 1px solid #111111;
   border-radius: 6px;
-  padding: 16px 20px;
+  padding: 22px 28px;
   font-family: 'Arial', 'Helvetica', sans-serif;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 /* 7-Segment LED Number Display */
@@ -113,7 +113,7 @@
 }
 
 .h9-led-digit {
-  font-size: 64px;
+  font-size: 90px;
   font-weight: 900;
   color: var(--h9-led-red);
   text-shadow:
@@ -125,7 +125,7 @@
   letter-spacing: 4px;
   line-height: 1;
   text-align: center;
-  min-width: 80px;
+  min-width: 112px;
   animation: led-pulse 2s ease-in-out infinite;
 }
 
@@ -149,7 +149,7 @@
 /* Algorithm Name Display */
 .h9-led-name {
   text-align: center;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: bold;
   color: var(--h9-led-red);
   text-shadow:
@@ -187,7 +187,7 @@
 
 .h9-led-meter-bar {
   flex: 1;
-  height: 6px;
+  height: 8px;
   background: #111111;
   border: 1px solid #2a2a2a;
   border-radius: 2px;

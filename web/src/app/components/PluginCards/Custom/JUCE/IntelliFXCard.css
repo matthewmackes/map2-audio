@@ -138,8 +138,8 @@
 .intellifx-visualization {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 17px;
+  padding: 17px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 }
@@ -147,8 +147,8 @@
 .intellifx-voices-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
-  height: 80px;
+  gap: 8px;
+  height: 112px;
   position: relative;
 }
 

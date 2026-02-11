@@ -50,8 +50,8 @@ export function DragonflyHallCard({
       preDelay={getValue('predelay', 25)}
       earlyReflections={getValue('early_level', 40)}
       damping={100 - (getValue('high_cut', 6000) / 16000) * 100}
-      width={compact ? 240 : 320}
-      height={compact ? 80 : 100}
+      width={compact ? 336 : 448}
+      height={compact ? 112 : 140}
       accentColor={accentColor}
     />
   )

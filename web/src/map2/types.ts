@@ -1219,6 +1219,12 @@ export interface ParallelBranch {
 
 export interface DrumMachineState {
   ui_mode: 'practice' | 'advanced' | 'backing_tracks';
+  bpm: number;
+  volume: number;
+  pattern: number;
+  variation: number;
+  transport: boolean;
+  active_pack: string | null;
   practice_style_id: string | null;
   practice_variation: number;
   practice_change_quantization: number;

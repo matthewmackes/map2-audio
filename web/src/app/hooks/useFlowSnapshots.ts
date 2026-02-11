@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { FlowSnapshotData } from '../../map2/types'
+import { getWsUrl } from '../../map2/api'
 
 export interface FlowSnapshotEvent {
   snapshot_id: number
@@ -39,7 +40,7 @@ export function useFlowSnapshots(options: UseFlowSnapshotsOptions = {}) {
   useEffect(() => {
     if (!enabled) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {

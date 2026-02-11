@@ -9,6 +9,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_formats/juce_audio_formats.h>
+#include <memory>
 #include "Common.h"
 
 namespace map2 {
@@ -184,14 +185,14 @@ public:
 
 private:
     // JUCE DSP components
-    juce::dsp::Convolution convolution_;
+    std::unique_ptr<juce::dsp::Convolution> convolution_;
     juce::dsp::DryWetMixer<float> dryWetMixer_;
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Linear> preDelay_;
 
     // State
     std::atomic<bool> irLoaded_{false};
     bool bypass_ = false;
-    Mode mode_ = Mode::LowLatency;
+    Mode mode_ = Mode::ZeroLatency;
 
     // Parameters
     float dryWetMix_ = 1.0f;  // 100% wet by default

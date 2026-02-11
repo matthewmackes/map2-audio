@@ -28,8 +28,8 @@
 .boss-visualization {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 17px;
+  padding: 17px;
   background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
   border-radius: 8px;
   border: 1px solid rgba(255, 102, 0, 0.2);
@@ -51,7 +51,7 @@
 
 .boss-pitch-bar {
   width: 100%;
-  height: 8px;
+  height: 11px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   position: relative;
@@ -72,7 +72,7 @@
 }
 
 .boss-pitch-value {
-  font-size: 24px;
+  font-size: 34px;
   font-weight: 700;
   color: #ff6600;
   font-family: 'Courier New', monospace;
@@ -110,7 +110,7 @@
 
 .boss-meter-bar {
   flex: 1;
-  height: 4px;
+  height: 6px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   overflow: hidden;

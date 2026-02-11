@@ -37,6 +37,9 @@ HAS_PW_DUMP = shutil.which("pw-dump") is not None
 HAS_PW_METADATA = shutil.which("pw-metadata") is not None
 HAS_WPCTL = shutil.which("wpctl") is not None
 
+# Constants for wpctl parsing
+_STREAM_SUBPORT_INDENT_THRESHOLD = 10  # Deeper indents are sub-ports, not top-level streams
+
 
 # ============================================================================
 # Data Classes
@@ -167,7 +170,12 @@ class PipeWireService:
                 proc.communicate(), timeout=timeout
             )
             if proc.returncode != 0:
-                logger.debug(f"Command {cmd[0]} returned {proc.returncode}: {stderr.decode().strip()}")
+                stderr_msg = stderr.decode().strip()
+                # Use warning for critical commands, debug for informational
+                if cmd[0] in ['wpctl', 'pw-dump', 'pw-metadata']:
+                    logger.warning(f"Command {cmd[0]} returned {proc.returncode}: {stderr_msg}")
+                else:
+                    logger.debug(f"Command {cmd[0]} returned {proc.returncode}: {stderr_msg}")
             return stdout.decode()
         except asyncio.TimeoutError:
             logger.warning(f"Command {cmd[0]} timed out after {timeout}s")
@@ -260,8 +268,12 @@ class PipeWireService:
         def strip_tree(line: str) -> str:
             return re.sub(r"[│├└─┬┼┤┘┐┌┏┗┃┠┣┛┓]", " ", line)
 
-        # Entry pattern: optional *, digits, dot, name, optional [info]
-        entry_re = re.compile(r"(\*?)\s*(\d+)\.\s+(.+?)(?:\s+\[(.+)\])?\s*$")
+        # Entry pattern: optional *, digits, dot, name, optional [last bracket info]
+        # Use a greedy name match anchored to the LAST [...] bracket pair
+        # This correctly handles names with brackets like 'WirePlumber [export]'
+        entry_re = re.compile(r"(\*?)\s*(\d+)\.\s+(.+?)\s+\[([^\[\]]+)\]\s*$")
+        # Fallback for entries without info brackets (name only)
+        entry_no_info_re = re.compile(r"(\*?)\s*(\d+)\.\s+(.+?)\s*$")
 
         for raw_line in output.split("\n"):
             clean = strip_tree(raw_line)
@@ -308,22 +320,30 @@ class PipeWireService:
 
             # For streams: only match top-level entries (not sub-ports)
             # Sub-ports have much deeper indentation
-            m = entry_re.search(stripped)
-            if not m:
-                continue
 
             # Determine indentation level from cleaned line
             indent = len(clean) - len(clean.lstrip())
 
-            # In streams section, sub-ports are at indent ~13
-            # while top-level stream entries are at indent ~8
-            if current_section == "streams" and indent > 10:
+            # In streams section, sub-ports have deeper indentation
+            # Skip them to only get top-level stream entries
+            if current_section == "streams" and indent > _STREAM_SUBPORT_INDENT_THRESHOLD:
                 continue  # skip sub-port entries
 
-            is_default = m.group(1) == "*"
-            obj_id = int(m.group(2))
-            name = m.group(3).strip()
-            info_str = m.group(4) or ""
+            # Try matching with info brackets first, then without
+            m = entry_re.search(stripped)
+            if m:
+                is_default = m.group(1) == "*"
+                obj_id = int(m.group(2))
+                name = m.group(3).strip()
+                info_str = m.group(4) or ""
+            else:
+                m2 = entry_no_info_re.search(stripped)
+                if not m2:
+                    continue
+                is_default = m2.group(1) == "*"
+                obj_id = int(m2.group(2))
+                name = m2.group(3).strip()
+                info_str = ""
 
             entry = {
                 "id": obj_id,
@@ -360,9 +380,44 @@ class PipeWireService:
 
         return devices
 
-    async def get_nodes(self) -> List[PipeWireNodeInfo]:
-        """Get sink and source nodes from PipeWire."""
+    async def _get_pw_dump_nodes(self, dump: Optional[List] = None) -> Dict[int, Dict[str, Any]]:
+        """Get a map of node_id -> pw-dump node info for enrichment."""
+        if dump is None:
+            if not HAS_PW_DUMP:
+                return {}
+            dump = await self._run_cmd_json(["pw-dump"])
+        if not isinstance(dump, list):
+            return {}
+
+        node_map: Dict[int, Dict[str, Any]] = {}
+        for obj in dump:
+            if obj.get("type") != "PipeWire:Interface:Node":
+                continue
+            nid = obj.get("id", 0)
+            info = obj.get("info", {})
+            props = info.get("props", {})
+            node_map[nid] = {
+                "state": info.get("state", ""),
+                "is_driver": bool(props.get("node.driver", False)),
+                "media_class": props.get("media.class", ""),
+                "name": props.get("node.name", ""),
+                "nick": props.get("node.nick", props.get("node.description", "")),
+                "description": props.get("node.description", ""),
+                "sample_rate": props.get("audio.rate") or props.get("object.rate"),
+                "channels": props.get("audio.channels", 0),
+                "format": props.get("audio.format", ""),
+                "device_id": props.get("device.id"),
+            }
+        return node_map
+
+    async def get_nodes(self, dump: Optional[List] = None) -> List[PipeWireNodeInfo]:
+        """Get sink and source nodes from PipeWire.
+        
+        Combines wpctl status (for defaults/volume) with pw-dump (for state,
+        driver flag, channels, sample rate).
+        """
         status = await self._parse_wpctl_status()
+        pw_nodes = await self._get_pw_dump_nodes(dump)
         nodes = []
 
         for section, media_class in [("sinks", "Audio/Sink"), ("sources", "Audio/Source")]:
@@ -379,19 +434,47 @@ class PipeWireService:
                 info = entry.get("info", "")
                 vol_m = re.search(r"vol:\s*([\d.]+)", info)
                 if vol_m:
-                    node.volume = float(vol_m.group(1))
+                    try:
+                        node.volume = float(vol_m.group(1))
+                    except (ValueError, AttributeError):
+                        node.volume = 1.0
                 if "MUTED" in info:
                     node.muted = True
+
+                # Enrich from pw-dump
+                pw_info = pw_nodes.get(entry["id"])
+                if pw_info:
+                    node.state = pw_info["state"]
+                    node.is_driver = pw_info["is_driver"]
+                    if pw_info.get("nick"):
+                        node.nick = pw_info["nick"]
+                    if pw_info.get("description"):
+                        node.description = pw_info["description"]
+                    if pw_info["sample_rate"]:
+                        node.sample_rate = int(pw_info["sample_rate"])
+                    if pw_info["channels"]:
+                        node.channels = int(pw_info["channels"])
+                    if pw_info["format"]:
+                        node.format = pw_info["format"]
+                    if pw_info.get("device_id") is not None:
+                        node.device_id = int(pw_info["device_id"])
 
                 nodes.append(node)
 
         return nodes
 
-    async def get_streams(self) -> List[PipeWireStreamInfo]:
-        """Get active audio streams from PipeWire."""
+    async def get_streams(self, dump: Optional[List] = None) -> List[PipeWireStreamInfo]:
+        """Get active audio streams from PipeWire.
+        
+        Discovers streams from both wpctl status AND pw-dump.
+        Client nodes like JUCEJack/PortAudio that have active links
+        are included as streams even if wpctl doesn't list them.
+        """
         status = await self._parse_wpctl_status()
         streams = []
+        seen_ids = set()
 
+        # 1) Streams from wpctl status
         for entry in status.get("streams", []):
             stream = PipeWireStreamInfo(
                 id=entry["id"],
@@ -401,10 +484,96 @@ class PipeWireService:
             # Extract PID from name like "PipeWire ALSA [python3.14]"
             pid_m = re.search(r"\[([^\]]+)\]", entry["name"])
             if pid_m:
-                proc_name = pid_m.group(1)
-                stream.media_name = proc_name
-
+                stream.media_name = pid_m.group(1)
             streams.append(stream)
+            seen_ids.add(entry["id"])
+
+        # 2) Discover client nodes from pw-dump that are connected
+        #    but not listed by wpctl (e.g. JUCEJack, PortAudio)
+        if not HAS_PW_DUMP:
+            return streams
+
+        if dump is None:
+            dump = await self._run_cmd_json(["pw-dump"])
+        if not isinstance(dump, list):
+            return streams
+
+        # Collect IDs of known sinks/sources/devices from wpctl
+        sink_source_ids = set()
+        for section in ("sinks", "sources", "devices"):
+            for entry in status.get(section, []):
+                sink_source_ids.add(entry["id"])
+
+        # Find node IDs that participate in active links
+        linked_node_ids = set()
+        for obj in dump:
+            if obj.get("type") != "PipeWire:Interface:Link":
+                continue
+            info = obj.get("info", {})
+            props = info.get("props", {})
+            if info.get("state") in ("active", "paused"):
+                linked_node_ids.add(props.get("link.output.node", 0))
+                linked_node_ids.add(props.get("link.input.node", 0))
+
+        # Find audio client nodes that are linked but not sinks/sources
+        for obj in dump:
+            if obj.get("type") != "PipeWire:Interface:Node":
+                continue
+            nid = obj.get("id", 0)
+            if nid in seen_ids or nid in sink_source_ids:
+                continue
+            info = obj.get("info", {})
+            props = info.get("props", {})
+            state = info.get("state", "")
+
+            # Skip internal driver nodes (Dummy-Driver, Freewheel, etc.)
+            media_class = props.get("media.class", "")
+            node_name = props.get("node.name", "")
+            if props.get("node.driver") and not media_class:
+                continue
+
+            # Include if: node is running/idle AND has active links
+            if state in ("running", "idle") and nid in linked_node_ids:
+                nick = props.get("node.nick", props.get("node.description", node_name))
+                client_pid = 0
+                # Try to find client PID
+                client_id = props.get("client.id")
+                if client_id:
+                    for cobj in dump:
+                        if cobj.get("type") == "PipeWire:Interface:Client" and cobj.get("id") == client_id:
+                            cpid = cobj.get("info", {}).get("props", {}).get("application.process.id", 0)
+                            if cpid:
+                                client_pid = int(cpid)
+                            break
+
+                direction = ""
+                # Determine direction from links
+                is_output = any(
+                    o.get("info", {}).get("props", {}).get("link.output.node") == nid
+                    for o in dump if o.get("type") == "PipeWire:Interface:Link"
+                )
+                is_input = any(
+                    o.get("info", {}).get("props", {}).get("link.input.node") == nid
+                    for o in dump if o.get("type") == "PipeWire:Interface:Link"
+                )
+                if is_output and is_input:
+                    direction = "duplex"
+                elif is_output:
+                    direction = "output"
+                elif is_input:
+                    direction = "input"
+
+                streams.append(PipeWireStreamInfo(
+                    id=nid,
+                    client_name=nick or node_name,
+                    client_pid=client_pid,
+                    media_name=node_name,
+                    direction=direction,
+                    state=state,
+                    channels=int(props.get("audio.channels", 0)),
+                    sample_rate=int(props["audio.rate"]) if props.get("audio.rate") else None,
+                ))
+                seen_ids.add(nid)
 
         return streams
 
@@ -420,15 +589,24 @@ class PipeWireService:
     # Links (requires pw-dump)
     # ---------------------------------------------------------------
 
-    async def get_links(self) -> List[PipeWireLinkInfo]:
+    async def get_links(self, dump: Optional[List] = None) -> List[PipeWireLinkInfo]:
         """Get port connections from PipeWire graph."""
-        if not HAS_PW_DUMP:
-            return []
+        if dump is None:
+            if not HAS_PW_DUMP:
+                return []
+            dump = await self._run_cmd_json(["pw-dump"])
+        return self._extract_links(dump)
 
-        dump = await self._run_cmd_json(["pw-dump"])
+    async def _get_links_from_dump(self, dump: Optional[List]) -> List[PipeWireLinkInfo]:
+        """Get links from a pre-fetched pw-dump."""
+        if dump is None:
+            return []
+        return self._extract_links(dump)
+
+    def _extract_links(self, dump: List) -> List[PipeWireLinkInfo]:
+        """Extract link info from pw-dump data."""
         if not isinstance(dump, list):
             return []
-
         links = []
         for obj in dump:
             if obj.get("type") != "PipeWire:Interface:Link":
@@ -443,7 +621,6 @@ class PipeWireService:
                 input_port=str(props.get("link.input.port", "")),
                 state=info.get("state", ""),
             ))
-
         return links
 
     # ---------------------------------------------------------------
@@ -519,7 +696,9 @@ class PipeWireService:
             logger.error("pw-metadata not available - cannot set rate")
             return False
 
-        valid_rates = [0, 44100, 48000, 88200, 96000, 176400, 192000]
+        # Get current allowed rates from PipeWire settings
+        settings = await self.get_settings()
+        valid_rates = [0] + settings.clock_allowed_rates
         if rate not in valid_rates:
             logger.error(f"Invalid rate {rate}: must be one of {valid_rates}")
             return False
@@ -562,12 +741,22 @@ class PipeWireService:
     # XRun detection (from pw-dump driver stats)
     # ---------------------------------------------------------------
 
-    async def _get_driver_xruns(self) -> int:
+    async def _get_driver_xruns(self, dump: Optional[List] = None) -> int:
         """Get xrun count from PipeWire driver nodes."""
-        if not HAS_PW_DUMP:
-            return 0
+        if dump is None:
+            if not HAS_PW_DUMP:
+                return 0
+            dump = await self._run_cmd_json(["pw-dump"])
+        return self._extract_xruns(dump)
 
-        dump = await self._run_cmd_json(["pw-dump"])
+    async def _get_xruns_from_dump(self, dump: Optional[List]) -> int:
+        """Get xruns from a pre-fetched pw-dump."""
+        if dump is None:
+            return 0
+        return self._extract_xruns(dump)
+
+    def _extract_xruns(self, dump: List) -> int:
+        """Extract xrun count from pw-dump data."""
         if not isinstance(dump, list):
             return 0
 
@@ -577,12 +766,15 @@ class PipeWireService:
                 continue
             info = obj.get("info", {})
             props = info.get("props", {})
-            # Driver nodes have "node.driver" = true
             if props.get("node.driver"):
-                # xruns tracked in info.params if available
                 params = info.get("params", {})
                 for p in params.get("ProcessLatency", []):
                     xruns = p.get("xrun", p.get("xrun-count", 0))
+                    if isinstance(xruns, (int, float)):
+                        total_xruns += int(xruns)
+                driver_stats = info.get("driver-stats", {})
+                if isinstance(driver_stats, dict):
+                    xruns = driver_stats.get("xrun-count", 0)
                     if isinstance(xruns, (int, float)):
                         total_xruns += int(xruns)
 
@@ -616,6 +808,7 @@ class PipeWireService:
         """Get a complete PipeWire metrics snapshot.
 
         Results are cached for _cache_ttl seconds to avoid excessive subprocess calls.
+        Fetches pw-dump ONCE and shares it across all methods that need it.
         """
         now = time.monotonic()
         if self._cached_snapshot and (now - self._cache_time) < self._cache_ttl:
@@ -630,14 +823,21 @@ class PipeWireService:
                          "message": "PipeWire daemon is not running"}],
             )
 
-        # Gather all data concurrently
+        # Fetch pw-dump ONCE — shared by nodes, streams, links, xruns
+        dump = None
+        if HAS_PW_DUMP:
+            dump = await self._run_cmd_json(["pw-dump"])
+            if not isinstance(dump, list):
+                dump = None
+
+        # Gather data concurrently (pass shared dump where needed)
         settings_task = self.get_settings()
-        nodes_task = self.get_nodes()
+        nodes_task = self.get_nodes(dump=dump)
         devices_task = self.get_devices()
-        streams_task = self.get_streams()
-        links_task = self.get_links()
+        streams_task = self.get_streams(dump=dump)
+        links_task = self._get_links_from_dump(dump)
         clients_task = self.get_clients()
-        xruns_task = self._get_driver_xruns()
+        xruns_task = self._get_xruns_from_dump(dump)
 
         settings, nodes, devices, streams, links, clients, xruns = await asyncio.gather(
             settings_task, nodes_task, devices_task, streams_task,
@@ -650,8 +850,8 @@ class PipeWireService:
         default_sink = next((n for n in nodes if n.media_class == "Audio/Sink" and n.is_default), None)
         default_source = next((n for n in nodes if n.media_class == "Audio/Source" and n.is_default), None)
 
-        # Check for alerts
-        alerts = self._check_alerts(daemon, devices, streams, xruns, latency["total_latency_ms"])
+        # Check for alerts (include links to avoid false "no streams" alarm)
+        alerts = self._check_alerts(daemon, devices, streams, links, xruns, latency["total_latency_ms"])
 
         metrics = PipeWireMetrics(
             daemon=daemon,
@@ -684,6 +884,7 @@ class PipeWireService:
         daemon: PipeWireDaemonInfo,
         devices: List[PipeWireDeviceInfo],
         streams: List[PipeWireStreamInfo],
+        links: List[PipeWireLinkInfo],
         xruns: int,
         total_latency_ms: float,
     ) -> List[Dict[str, str]]:
@@ -720,7 +921,8 @@ class PipeWireService:
             })
             self._last_xrun_count = xruns
 
-        if not streams:
+        # Only alert if no streams AND no active links
+        if not streams and not links:
             alerts.append({
                 "type": "pipewire_no_streams",
                 "severity": "info",

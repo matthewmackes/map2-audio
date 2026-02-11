@@ -62,8 +62,8 @@ export function DragonflyRoomCard({
       preDelay={getValue('predelay', 10)}
       earlyReflections={getValue('early_level', 60)}
       damping={100 - (getValue('high_cut', 8000) / 16000) * 100}
-      width={compact ? 240 : 320}
-      height={compact ? 80 : 100}
+      width={compact ? 336 : 448}
+      height={compact ? 112 : 140}
       accentColor={accentColor}
     />
   )

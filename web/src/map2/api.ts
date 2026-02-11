@@ -96,7 +96,30 @@ const RAW_API_BASE = (() => {
   // or the Vite dev server on 3001), call the backend on port 8080 directly.
   return `http://${window.location.hostname}:8080/api`
 })()
-const API_BASE = RAW_API_BASE.endsWith('/') ? RAW_API_BASE.slice(0, -1) : RAW_API_BASE
+export const API_BASE = RAW_API_BASE.endsWith('/') ? RAW_API_BASE.slice(0, -1) : RAW_API_BASE
+
+/**
+ * Get the WebSocket base URL that correctly targets the backend.
+ * Mirrors the API_BASE logic: on port 80/8080/localhost use relative ws,
+ * on any other port (3000, 3001) target ws://hostname:8080 directly.
+ */
+export function getWsBaseUrl(): string {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const hostname = window.location.hostname
+  const port = window.location.port
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
+
+  if (isLocalhost || port === '' || port === '80' || port === '8080') {
+    return `${protocol}//${window.location.host}`
+  }
+  // Port 3000/3001 or other dev ports — connect directly to backend
+  return `${protocol}//${hostname}:8080`
+}
+
+/** Get the main WebSocket endpoint URL (e.g. ws://host:8080/ws) */
+export function getWsUrl(): string {
+  return `${getWsBaseUrl()}/ws`
+}
 
 // Batching configuration
 const BATCH_DELAY_MS = 50;
@@ -2946,6 +2969,50 @@ export const backupApi = {
     }),
 };
 
+// ==================== Shopping ====================
+
+export const shoppingApi = {
+  /** Search audio interfaces across marketplaces */
+  search: (maxPrice: number = 150) =>
+    fetchJson<{
+      results: Array<{
+        title: string;
+        price: number;
+        url: string;
+        source: string;
+        condition: string;
+        shipping: number | null;
+        matched_device: {
+          model: string;
+          io_count: string;
+          latency_ms: number;
+          tier: string;
+          score: number;
+          linux_support: string;
+          notes: string;
+        } | null;
+        score: number;
+      }>;
+      total_count: number;
+      max_price: number;
+      search_time_seconds: number;
+      recommendations?: Record<string, any>;
+    }>(`${API_BASE}/shopping/search?max_price=${maxPrice}`),
+
+  /** Get quick recommendations */
+  getRecommendations: () =>
+    fetchJson<{
+      top_picks: Array<{
+        rank: number;
+        model: string;
+        typical_price: string;
+        tier: string;
+        reason: string;
+        search_url: string;
+      }>;
+    }>(`${API_BASE}/shopping/recommendations`),
+};
+
 // ==================== Export all APIs ====================
 
 export const map2Api = {
@@ -2994,6 +3061,7 @@ export const map2Api = {
   spectrum: spectrumApi,
   cpuMetrics: cpuMetricsApi,
   backup: backupApi,
+  shopping: shoppingApi,
 };
 
 export default map2Api;

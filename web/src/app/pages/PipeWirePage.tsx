@@ -106,8 +106,10 @@ function NodesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
                 {n.media_class.includes('Sink') ? 'Sink' : 'Source'}
               </span>
             </td>
-            <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>
-              {(n.volume * 100).toFixed(0)}%
+            <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>
+              <span style={{ color: n.volume > 1.0 ? '#f59e0b' : '#e2e8f0' }}>
+                {(n.volume * 100).toFixed(0)}%
+              </span>
             </td>
             <td style={{ padding: '8px 12px' }}>
               {n.muted
@@ -167,7 +169,16 @@ function LinksTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
             <td style={{ padding: '8px 12px', color: '#60a5fa' }}>→</td>
             <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.input_node}:{l.input_port}</td>
             <td style={{ padding: '8px 12px' }}>
-              <span style={{ color: l.state === 'active' ? '#22c55e' : '#f59e0b', fontWeight: 600, fontSize: 12 }}>{l.state}</span>
+              <span style={{ 
+                color: l.state === 'active' || l.state === 'running' ? '#22c55e' 
+                     : l.state === 'error' ? '#ef4444'
+                     : l.state === 'paused' ? '#f59e0b'
+                     : '#94a3b8',
+                fontWeight: 600,
+                fontSize: 12
+              }}>
+                {l.state || 'unknown'}
+              </span>
             </td>
           </tr>
         ))}
@@ -196,49 +207,53 @@ function AlertsList({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
 }
 
 function QuantumControl({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
-  const quantumValues = [32, 64, 128, 256, 512, 1024, 2048]
   const currentForced = pw.settings.clock_force_quantum
-
-  const handleChange = async (q: number) => {
-    try {
-      await pw.setQuantum(q)
-    } catch (e) {
-      console.error('Failed to set quantum:', e)
-    }
-  }
+  const currentQuantum = pw.settings.clock_quantum
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button
-          onClick={() => handleChange(0)}
-          disabled={pw.isSettingQuantum}
-          style={{
-            padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-            backgroundColor: currentForced === 0 ? '#3b82f6' : '#334155',
-            color: currentForced === 0 ? '#fff' : '#94a3b8',
-          }}
-        >
-          Auto
-        </button>
-        {quantumValues.map(q => (
-          <button
-            key={q}
-            onClick={() => handleChange(q)}
-            disabled={pw.isSettingQuantum}
-            style={{
-              padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              fontFamily: 'monospace',
-              backgroundColor: currentForced === q ? '#3b82f6' : '#334155',
-              color: currentForced === q ? '#fff' : '#94a3b8',
-            }}
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: '#64748b' }}>
-        Latency per quantum: {quantumValues.map(q => `${q}→${((q / pw.effectiveRate) * 1000).toFixed(1)}ms`).join(', ')}
+      <div style={{ 
+        padding: '16px 20px', 
+        borderRadius: 8, 
+        backgroundColor: '#1e293b',
+        border: '2px solid #475569' 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <span style={{ fontSize: 14, color: '#94a3b8', fontWeight: 600 }}>🔒 LOCKED FOR TIER A PERFORMANCE</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Current Quantum</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#60a5fa', fontFamily: 'monospace' }}>
+              {currentQuantum} samples
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Forced Quantum</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: currentForced === 64 ? '#22c55e' : '#f59e0b', fontFamily: 'monospace' }}>
+              {currentForced || 'auto'}
+            </div>
+          </div>
+        </div>
+        <div style={{ 
+          marginTop: 16, 
+          padding: 12, 
+          backgroundColor: '#0f172a', 
+          borderRadius: 6,
+          fontSize: 12,
+          color: '#94a3b8',
+          lineHeight: 1.6
+        }}>
+          <strong style={{ color: '#e2e8f0' }}>Quantum is locked at 64 samples for professional guitar processing.</strong><br/>
+          • Target latency: &lt;3ms round-trip (Tier A)<br/>
+          • Prevents buffer size mismatch with JUCE engine<br/>
+          • To change: Edit systemd service (<code style={{ color: '#60a5fa' }}>map2-backend.service</code>) and restart<br/>
+          <br/>
+          Graph latency: 64→{((64 / pw.effectiveRate) * 1000).toFixed(1)}ms, 
+          128→{((128 / pw.effectiveRate) * 1000).toFixed(1)}ms, 
+          256→{((256 / pw.effectiveRate) * 1000).toFixed(1)}ms
+          <span style={{ marginLeft: 8, opacity: 0.7 }}>(×2 for round-trip)</span>
+        </div>
       </div>
     </div>
   )

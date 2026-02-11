@@ -53,6 +53,10 @@ FetchContent_MakeAvailable(JUCE)
 # ========================================
 # Python/pybind11
 # ========================================
+# CRITICAL FIX: Disable LTO - causes 5+ minute link times on large C++ projects
+# Re-enable for production builds if needed
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG QUIET)
 
@@ -85,14 +89,36 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # JACK (optional) - now provided by PipeWire JACK compatibility layer
-# For direct JACK linking, add: link_directories(/usr/lib64/pipewire-0.3/jack)
+# PipeWire provides libjack.so.0 in /usr/lib64/pipewire-0.3/jack/
 pkg_check_modules(JACK jack QUIET)
 if(NOT JACK_FOUND)
-    # Try PipeWire JACK libraries
-    find_library(JACK_LIBRARY NAMES jack PATHS /usr/lib64/pipewire-0.3/jack QUIET)
+    # Try PipeWire JACK libraries - look for both libjack.so and libjack.so.0
+    find_library(JACK_LIBRARY NAMES jack
+        PATHS /usr/lib64/pipewire-0.3/jack /usr/lib/pipewire-0.3/jack
+        NO_DEFAULT_PATH
+    )
+    if(NOT JACK_LIBRARY)
+        # Fallback: look for the versioned .so directly
+        find_file(JACK_LIBRARY_FILE NAMES libjack.so.0
+            PATHS /usr/lib64/pipewire-0.3/jack /usr/lib/pipewire-0.3/jack
+            NO_DEFAULT_PATH
+        )
+        if(JACK_LIBRARY_FILE)
+            set(JACK_LIBRARY ${JACK_LIBRARY_FILE})
+        endif()
+    endif()
     if(JACK_LIBRARY)
         set(JACK_FOUND TRUE)
         set(JACK_LIBRARIES ${JACK_LIBRARY})
+        message(STATUS "JACK: Found PipeWire JACK library: ${JACK_LIBRARY}")
+    endif()
+endif()
+
+# Find JACK headers
+if(JACK_FOUND)
+    find_path(JACK_INCLUDE_DIR jack/jack.h PATHS /usr/include)
+    if(JACK_INCLUDE_DIR)
+        set(JACK_INCLUDE_DIRS ${JACK_INCLUDE_DIR})
     endif()
 endif()
 
@@ -265,6 +291,9 @@ target_include_directories(map2_audio_engine PRIVATE
 
 if(UNIX AND NOT APPLE)
     target_include_directories(map2_audio_engine PRIVATE ${ALSA_INCLUDE_DIRS})
+    if(JACK_FOUND AND JACK_INCLUDE_DIRS)
+        target_include_directories(map2_audio_engine PRIVATE ${JACK_INCLUDE_DIRS})
+    endif()
 endif()
 
 # NAM include directories
@@ -302,6 +331,17 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(JACK_FOUND)
+    # PipeWire's JACK library lives in a non-standard path
+    # We need to add the link directory so the linker can find -ljack
+    # Use JACK_LIBRARY_DIRS (from pkg-config) which has the correct PipeWire path
+    if(JACK_LIBRARY_DIRS)
+        target_link_directories(map2_audio_engine PRIVATE ${JACK_LIBRARY_DIRS})
+    endif()
+    # Also add fallback PipeWire JACK paths
+    target_link_directories(map2_audio_engine PRIVATE
+        /usr/lib64/pipewire-0.3/jack
+        /usr/lib/pipewire-0.3/jack
+    )
     target_link_libraries(map2_audio_engine PRIVATE ${JACK_LIBRARIES})
 endif()
 
@@ -320,6 +360,11 @@ target_compile_definitions(map2_audio_engine PRIVATE
     JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_REPORT_APP_USAGE=0
     JUCE_USE_DARK_SPLASH_SCREEN=0
+
+    # Audio backend support
+    # CRITICAL: JUCE_JACK=1 enables JUCE's JACK audio device type.
+    # Without this, JUCE only has ALSA and cannot connect to PipeWire via JACK.
+    JUCE_JACK=$<BOOL:${JACK_FOUND}>
 
     # Plugin format support
     JUCE_PLUGINHOST_VST3=$<BOOL:${JUCE_PLUGINHOST_VST3}>
@@ -394,6 +439,13 @@ if(UNIX AND NOT APPLE)
     message(STATUS "  ALSA: ${ALSA_VERSION}")
 endif()
 message(STATUS "  JACK: ${JACK_FOUND}")
+if(JACK_FOUND)
+    message(STATUS "  JACK library: ${JACK_LIBRARIES}")
+    message(STATUS "  JUCE_JACK: ENABLED (JUCE JACK audio backend)")
+else()
+    message(WARNING "  JACK: NOT FOUND - JUCE will fall back to ALSA only!")
+    message(STATUS "  Install: sudo dnf install pipewire-jack-audio-connection-kit-devel")
+endif()
 message(STATUS "")
 message(STATUS "Neural Processing:")
 message(STATUS "  NAM (Neural Amp Modeler): ${USE_NAM}")

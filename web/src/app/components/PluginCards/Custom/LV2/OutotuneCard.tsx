@@ -148,8 +148,8 @@ export function OutotuneCard({
         cents={pitchData.cents}
         noteName={pitchData.noteName}
         confidence={pitchData.confidence}
-        width={compact ? 220 : 280}
-        height={compact ? 100 : 120}
+        width={compact ? 308 : 392}
+        height={compact ? 140 : 168}
         accentColor={accentColor}
       />
     </div>

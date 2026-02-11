@@ -106,7 +106,7 @@ export function REEVRCard({
   // Visualization component
   const visualization = (
     <div className="reevr-visualization">
-      <svg width="260" height="80" viewBox="0 0 260 80" className="reevr-decay-curve">
+      <svg width="364" height="112" viewBox="0 0 260 80" className="reevr-decay-curve">
         <defs>
           <linearGradient id="reevr-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={accentColor} stopOpacity="0.6" />

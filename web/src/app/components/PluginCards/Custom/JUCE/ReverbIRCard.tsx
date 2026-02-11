@@ -108,8 +108,8 @@ function ReverbIRCardBase({
       {/* Decay Visualization */}
       <ReverbDecayCurve
         decayTime={status?.decayTime || 2}
-        width={compact ? 200 : 280}
-        height={compact ? 60 : 80}
+        width={compact ? 280 : 392}
+        height={compact ? 84 : 112}
         accentColor={accentColor}
       />
 

@@ -156,7 +156,7 @@ function NAMCardBase({
         <div
           style={{
             width: '12px',
-            height: compact ? 80 : 100,
+            height: compact ? 112 : 140,
             background: '#222',
             borderRadius: '2px',
             overflow: 'hidden',
@@ -228,7 +228,7 @@ function NAMCardBase({
         <div
           style={{
             width: '12px',
-            height: compact ? 80 : 100,
+            height: compact ? 112 : 140,
             background: '#222',
             borderRadius: '2px',
             overflow: 'hidden',

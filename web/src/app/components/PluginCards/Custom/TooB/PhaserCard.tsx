@@ -44,8 +44,8 @@ export function PhaserCard({
       rate={getValue('rate', 0.5)}
       depth={getValue('depth', 70)}
       waveform="sine"
-      width={compact ? 200 : 280}
-      height={compact ? 60 : 80}
+      width={compact ? 280 : 392}
+      height={compact ? 84 : 112}
       accentColor={accentColor}
       animated
     />

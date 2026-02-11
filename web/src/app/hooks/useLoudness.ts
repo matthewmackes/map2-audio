@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getWsUrl, API_BASE } from '../../map2/api'
 
 export interface LufsLevels {
   momentary: number      // 400ms window (LUFS)
@@ -73,7 +74,7 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
   useEffect(() => {
     if (!useWebSocket) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -134,11 +135,11 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
     }
   }, [useWebSocket])
 
-  // Polling fallback for LUFS
+  // Polling — always enabled for initial load + fallback
   const lufsQuery = useQuery<LufsLevels>({
     queryKey: ['loudness', 'lufs'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/loudness/lufs')
+      const res = await fetch(`${API_BASE}/engine/loudness/lufs`)
       if (!res.ok) throw new Error('Failed to fetch LUFS levels')
       const data = await res.json()
       return {
@@ -152,15 +153,15 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
         running: data.running ?? true
       }
     },
-    refetchInterval: useWebSocket ? false : pollingInterval,
-    enabled: !useWebSocket
+    refetchInterval: useWebSocket ? 5000 : pollingInterval,
+    enabled: true
   })
 
-  // Polling fallback for stereo info
+  // Polling — always enabled for initial load + fallback
   const stereoQuery = useQuery<StereoInfo>({
     queryKey: ['loudness', 'stereo'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/loudness/stereo')
+      const res = await fetch(`${API_BASE}/engine/loudness/stereo`)
       if (!res.ok) throw new Error('Failed to fetch stereo info')
       const data = await res.json()
       return {
@@ -170,14 +171,14 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
         running: data.running ?? true
       }
     },
-    refetchInterval: useWebSocket ? false : pollingInterval,
-    enabled: !useWebSocket
+    refetchInterval: useWebSocket ? 5000 : pollingInterval,
+    enabled: true
   })
 
   // Reset integrated loudness mutation
   const resetMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/engine/loudness/reset', { method: 'POST' })
+      const res = await fetch(`${API_BASE}/engine/loudness/reset`, { method: 'POST' })
       if (!res.ok) throw new Error('Failed to reset integrated loudness')
       return res.json()
     },
@@ -186,8 +187,10 @@ export function useLoudness(options: UseLoudnessOptions = {}) {
     }
   })
 
-  const currentLufs = useWebSocket ? lufs : (lufsQuery.data || DEFAULT_LUFS)
-  const currentStereo = useWebSocket ? stereo : (stereoQuery.data || DEFAULT_STEREO)
+  const wsHasLufs = useWebSocket && lufs.running
+  const wsHasStereo = useWebSocket && stereo.running
+  const currentLufs = wsHasLufs ? lufs : (lufsQuery.data || lufs)
+  const currentStereo = wsHasStereo ? stereo : (stereoQuery.data || stereo)
 
   // Helper: Check if levels are within spec
   const isWithinSpec = useCallback(() => {

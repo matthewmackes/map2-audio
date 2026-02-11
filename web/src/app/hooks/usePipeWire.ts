@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { pipewireApi } from '../../map2/api'
+import { pipewireApi, getWsUrl } from '../../map2/api'
 import type {
   PipeWireMetrics,
   PipeWireAlert,
@@ -67,41 +67,72 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
   const queryClient = useQueryClient()
 
   // ---------------------------------------------------------------
-  // WebSocket real-time path
+  // WebSocket real-time path with reconnection
   // ---------------------------------------------------------------
   useEffect(() => {
     if (!useWs) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
-    wsRef.current = ws
+    let reconnectAttempts = 0
+    let reconnectTimeout: NodeJS.Timeout | null = null
+    let mounted = true
 
-    ws.onopen = () => {
-      setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'pipewire' }))
-    }
+    const connect = () => {
+      if (!mounted) return
 
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data)
-        if (message.type === 'pipewire_metrics' && message.data) {
-          setMetrics(message.data as PipeWireMetrics)
+      const ws = new WebSocket(getWsUrl())
+      wsRef.current = ws
+
+      ws.onopen = () => {
+        setIsConnected(true)
+        reconnectAttempts = 0  // Reset on successful connection
+        ws.send(JSON.stringify({ action: 'subscribe', topic: 'pipewire' }))
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data)
+          if (message.type === 'pipewire_metrics' && message.data) {
+            setMetrics(message.data as PipeWireMetrics)
+          }
+        } catch {
+          // ignore parse errors
         }
-      } catch {
-        // ignore parse errors
+      }
+
+      ws.onclose = () => {
+        setIsConnected(false)
+        wsRef.current = null
+        
+        // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+        if (mounted) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000)
+          reconnectAttempts++
+          reconnectTimeout = setTimeout(connect, delay)
+        }
+      }
+
+      ws.onerror = () => {
+        setIsConnected(false)
+        ws.close()  // Trigger onclose which will reconnect
       }
     }
 
-    ws.onclose = () => setIsConnected(false)
-    ws.onerror = () => setIsConnected(false)
+    connect()
 
     return () => {
-      ws.close()
-      wsRef.current = null
+      mounted = false
+      if (reconnectTimeout) clearTimeout(reconnectTimeout)
+      if (wsRef.current) {
+        wsRef.current.close()
+        wsRef.current = null
+      }
     }
   }, [useWs])
 
   // ---------------------------------------------------------------
-  // Polling fallback via react-query
+  // REST polling — always enabled for initial load + fallback
+  // When WebSocket is active, polls slowly (every 5s) as a safety net.
+  // When WebSocket is disabled, polls at the configured interval.
   // ---------------------------------------------------------------
   const pollingQuery = useQuery<PipeWireMetrics>({
     queryKey: ['pipewire-status'],
@@ -109,35 +140,59 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
       const data = await pipewireApi.getStatus()
       return data
     },
-    refetchInterval: useWs ? false : pollingInterval,
-    enabled: !useWs,
+    refetchInterval: useWs ? 5000 : pollingInterval,
+    enabled: true,
   })
 
-  const current = useWs ? metrics : (pollingQuery.data ?? DEFAULT_METRICS)
+  // If WebSocket has delivered data, prefer it (real-time).
+  // Otherwise fall back to the REST query result.
+  const wsHasData = useWs && metrics.daemon.running
+  const current = wsHasData ? metrics : (pollingQuery.data ?? metrics)
 
   // ---------------------------------------------------------------
   // Mutations (quantum, rate, volume, mute)
   // ---------------------------------------------------------------
   const setQuantumMutation = useMutation({
     mutationFn: (quantum: number) => pipewireApi.setQuantum(quantum),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pipewire-status'] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      // In WebSocket mode, force a refresh by briefly fetching
+      if (useWs) {
+        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+      }
+    },
   })
 
   const setRateMutation = useMutation({
     mutationFn: (rate: number) => pipewireApi.setRate(rate),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pipewire-status'] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      if (useWs) {
+        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+      }
+    },
   })
 
   const setVolumeMutation = useMutation({
     mutationFn: ({ nodeId, volume }: { nodeId: number; volume: number }) =>
       pipewireApi.setVolume(nodeId, volume),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pipewire-status'] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      if (useWs) {
+        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+      }
+    },
   })
 
   const setMuteMutation = useMutation({
     mutationFn: ({ nodeId, mute }: { nodeId: number; mute: boolean }) =>
       pipewireApi.setMute(nodeId, mute),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pipewire-status'] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pipewire-status'] })
+      if (useWs) {
+        queryClient.refetchQueries({ queryKey: ['pipewire-status'] })
+      }
+    },
   })
 
   // ---------------------------------------------------------------
@@ -204,11 +259,15 @@ export function usePipeWire(options: UsePipeWireOptions = {}) {
     // Mutations
     setQuantum: setQuantumMutation.mutateAsync,
     isSettingQuantum: setQuantumMutation.isPending,
+    quantumError: setQuantumMutation.error,
     setRate: setRateMutation.mutateAsync,
     isSettingRate: setRateMutation.isPending,
+    rateError: setRateMutation.error,
     setVolume: (nodeId: number, volume: number) =>
       setVolumeMutation.mutateAsync({ nodeId, volume }),
+    volumeError: setVolumeMutation.error,
     setMute: (nodeId: number, mute: boolean) =>
       setMuteMutation.mutateAsync({ nodeId, mute }),
+    muteError: setMuteMutation.error,
   }
 }

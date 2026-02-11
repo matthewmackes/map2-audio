@@ -259,7 +259,7 @@ function CelestialCompressorCardBase({
           />
           <GainReductionMeter
             gainReduction={metering.gainReduction}
-            height={compact ? 80 : 100}
+            height={compact ? 112 : 140}
           />
           <button
             className={`toggle-btn ${parameters.autoMakeup ? 'active' : ''}`}

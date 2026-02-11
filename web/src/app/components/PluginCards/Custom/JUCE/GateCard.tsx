@@ -62,8 +62,8 @@ function GateCardBase({
       {/* Gate Open/Closed Indicator */}
       <div
         style={{
-          width: compact ? 60 : 80,
-          height: compact ? 60 : 80,
+          width: compact ? 84 : 112,
+          height: compact ? 84 : 112,
           borderRadius: '50%',
           background: isOpen
             ? `radial-gradient(circle, ${accentColor} 0%, ${accentColor}80 50%, ${accentColor}20 100%)`

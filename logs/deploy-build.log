@@ -1,0 +1,4 @@
+
+> mackes-audio-platform-2-web@3.0.0-FEB2026 build
+> tsc -b && vite build
+

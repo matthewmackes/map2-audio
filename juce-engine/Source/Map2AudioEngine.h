@@ -41,6 +41,8 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
 #include <atomic>
+#include <array>
+#include <cstring>
 
 namespace map2 {
 
@@ -213,6 +215,44 @@ public:
     int getTotalLatencySamples() const;
     double getTotalLatencyMs() const;
     std::map<InstanceId, int> getPerPluginLatency() const;
+
+    // ========================================
+    // Audio I/O Diagnostics (NEW)
+    // ========================================
+
+    /**
+     * Get comprehensive audio I/O statistics including:
+     * - Callback timing jitter (xrun detection)
+     * - Budget utilization
+     * - Connection health
+     * - Device-reported latency
+     */
+    JuceAudioIO::AudioStats getAudioIOStats() const;
+
+    /**
+     * Get connection health for the audio device
+     */
+    JuceAudioIO::ConnectionHealth getConnectionHealth() const;
+
+    /**
+     * Get xrun history (timestamps of recent xruns)
+     */
+    std::vector<int64_t> getXrunHistory() const;
+
+    /**
+     * Reset xrun counter without resetting other stats
+     */
+    void resetXrunCounter();
+
+    /**
+     * Set measured round-trip latency (from external loopback test)
+     */
+    void setMeasuredRoundTripLatency(double ms);
+
+    /**
+     * Get device-reported total latency in ms
+     */
+    double getDeviceReportedLatencyMs() const;
 
     // ========================================
     // Convolution (NEW - replaces Python ReevR)
@@ -1049,18 +1089,21 @@ private:
     PhaseCorrelationMeter phaseCorrelation_;
     CPUMonitor cpuMonitor_;
     
-    // Metering thread and lock-free FIFO (Option 3)
+    // Metering thread and lock-free ring buffer (Option 3 - RT-safe)
     std::thread meteringThread_;
     std::atomic<bool> meteringRunning_{false};
+
+    // Lock-free metering ring buffer — zero allocations, zero locks in audio callback
+    static constexpr int METERING_RING_SIZE = 8;
+    static constexpr int METERING_MAX_SAMPLES = 1024;  // Covers up to quantum 1024
     struct MeteringFrame {
-        std::vector<float> channels[2];
+        float channels[2][METERING_MAX_SAMPLES];  // Pre-allocated, no heap alloc
         int numSamples = 0;
     };
-    // Lock-free queue for metering data (producer: audio thread, consumer: metering thread)
-    std::queue<MeteringFrame> meteringQueue_;
-    std::mutex meteringQueueMutex_;
-    std::condition_variable meteringQueueCV_;
-    static constexpr int METERING_QUEUE_DEPTH = 4;
+    std::array<MeteringFrame, METERING_RING_SIZE> meteringRing_;
+    juce::AbstractFifo meteringFifo_{METERING_RING_SIZE};
+    std::atomic<bool> meteringDataReady_{false};
+    static constexpr int METERING_QUEUE_DEPTH = METERING_RING_SIZE;  // Compat alias
 
     // Metering thread entry point
     void meteringThreadFunc();

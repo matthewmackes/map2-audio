@@ -5,6 +5,8 @@
 #include "JuceAudioIO.h"
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <thread>
+#include <iostream>
+#include <chrono>
 
 // Fix #10: CPU Core Affinity for audio thread
 #if defined(__linux__)
@@ -123,15 +125,22 @@ bool JuceAudioIO::initialize(const std::string& preferredDeviceName,
     // - PipeWire plugin routing
     // - PulseAudio compatibility via pipewire-pulse
     bool jackTypeSet = false;
+    
+    // Log available device types for diagnostics
+    std::cout << "  Available audio device types:" << std::endl;
     for (auto& deviceType : deviceManager_.getAvailableDeviceTypes()) {
+        std::cout << "    - " << deviceType->getTypeName() << std::endl;
         if (deviceType->getTypeName().containsIgnoreCase("JACK")) {
             deviceManager_.setCurrentAudioDeviceType(deviceType->getTypeName(), true);
             jackTypeSet = true;
-            break;
+            std::cout << "  >> Selected JACK audio device type (PipeWire JACK)" << std::endl;
         }
     }
-    // If JACK not found, JUCE will fall back to system default (ALSA)
-    // This is acceptable as a fallback only
+    if (!jackTypeSet) {
+        std::cerr << "  WARNING: JACK device type NOT found! Falling back to ALSA." << std::endl;
+        std::cerr << "  Audio will route through PipeWire ALSA emulation (suboptimal)." << std::endl;
+        std::cerr << "  Ensure JUCE was built with JUCE_JACK=1 and libjack is available." << std::endl;
+    }
 
     // Initialize the device manager with the requested channel configuration
     juce::String error = deviceManager_.initialise(
@@ -362,13 +371,107 @@ void JuceAudioIO::setProcessCallback(ProcessCallback callback) {
 
 JuceAudioIO::AudioStats JuceAudioIO::getStats() const {
     std::lock_guard<std::mutex> lock(statsMutex_);
-    return stats_;
+    AudioStats s = stats_;
+    // Fill in live atomic values
+    s.callbackJitterMs = callbackJitterSmoothed_.load(std::memory_order_relaxed);
+    s.peakCallbackJitterMs = peakJitter_.load(std::memory_order_relaxed);
+    s.avgCallbackDurationMs = callbackDurationSmoothed_.load(std::memory_order_relaxed);
+    s.peakCallbackDurationMs = peakCallbackDuration_.load(std::memory_order_relaxed);
+    s.callbackBudgetMs = (currentBufferSize_ / currentSampleRate_) * 1000.0;
+    s.budgetUtilization = s.callbackBudgetMs > 0 ? (s.avgCallbackDurationMs / s.callbackBudgetMs) * 100.0 : 0.0;
+    s.deviceConnected = connectionState_.deviceConnected.load();
+    s.recoveryCount = connectionState_.successfulRecoveries.load();
+    s.measuredRoundTripMs = measuredRoundTripMs_.load();
+    // Compute uptime
+    if (audioRunning_.load()) {
+        auto now = std::chrono::steady_clock::now();
+        s.uptimeSeconds = std::chrono::duration<double>(now - connectionState_.audioStartTime).count();
+    }
+    // Device-reported latency
+    auto* device = deviceManager_.getCurrentAudioDevice();
+    if (device) {
+        double inputLatSamples = device->getInputLatencyInSamples();
+        double outputLatSamples = device->getOutputLatencyInSamples();
+        s.measuredInputLatencyMs = (inputLatSamples / currentSampleRate_) * 1000.0;
+        s.measuredOutputLatencyMs = (outputLatSamples / currentSampleRate_) * 1000.0;
+    }
+    return s;
 }
 
 void JuceAudioIO::resetStats() {
     std::lock_guard<std::mutex> lock(statsMutex_);
     stats_ = AudioStats{};
     stats_.latencyMs = (currentBufferSize_ / currentSampleRate_) * 1000.0;
+    firstCallback_ = true;
+    callbackJitterSmoothed_ = 0.0;
+    peakJitter_ = 0.0;
+    peakCallbackDuration_ = 0.0;
+    callbackDurationSmoothed_ = 0.0;
+}
+
+void JuceAudioIO::resetXrunCounter() {
+    std::lock_guard<std::mutex> lock(statsMutex_);
+    stats_.xrunsSinceReset = 0;
+}
+
+std::vector<int64_t> JuceAudioIO::getXrunHistory() const {
+    std::vector<int64_t> history;
+    int head = xrunHistoryHead_.load(std::memory_order_relaxed);
+    for (int i = 0; i < XRUN_HISTORY_SIZE; ++i) {
+        int idx = (head - 1 - i + XRUN_HISTORY_SIZE) % XRUN_HISTORY_SIZE;
+        int64_t ts = xrunHistory_[idx];
+        if (ts > 0) history.push_back(ts);
+    }
+    return history;
+}
+
+void JuceAudioIO::recordXrun() {
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()).count();
+    int idx = xrunHistoryHead_.fetch_add(1, std::memory_order_relaxed) % XRUN_HISTORY_SIZE;
+    xrunHistory_[idx] = ms;
+    {
+        std::unique_lock<std::mutex> lock(statsMutex_, std::try_to_lock);
+        if (lock.owns_lock()) {
+            stats_.xrunCount++;
+            stats_.xrunsSinceReset++;
+            stats_.lastXrunTimestamp = ms;
+        }
+    }
+}
+
+JuceAudioIO::ConnectionHealth JuceAudioIO::getConnectionHealth() const {
+    ConnectionHealth h;
+    h.deviceConnected = connectionState_.deviceConnected.load();
+    h.recoveryAttempts = connectionState_.recoveryAttempts.load();
+    h.successfulRecoveries = connectionState_.successfulRecoveries.load();
+    h.lastError = lastError_;
+    h.currentBackend = connectionState_.currentBackend;
+    // Check if JACK server is running
+    h.jackServerRunning = false;
+    auto* device = deviceManager_.getCurrentAudioDevice();
+    if (device != nullptr) {
+        h.jackServerRunning = device->getTypeName().containsIgnoreCase("JACK");
+    }
+    if (connectionState_.lastRecoveryTime != std::chrono::steady_clock::time_point{}) {
+        auto now = std::chrono::steady_clock::now();
+        h.lastRecoveryTimeSec = std::chrono::duration<double>(now - connectionState_.lastRecoveryTime).count();
+    }
+    return h;
+}
+
+void JuceAudioIO::setMeasuredRoundTripLatency(double ms) {
+    measuredRoundTripMs_.store(ms);
+}
+
+double JuceAudioIO::getDeviceReportedLatencyMs() const {
+    auto* device = deviceManager_.getCurrentAudioDevice();
+    if (!device) return 0.0;
+    double totalSamples = device->getInputLatencyInSamples() +
+                         device->getOutputLatencyInSamples() +
+                         currentBufferSize_;
+    return (totalSamples / currentSampleRate_) * 1000.0;
 }
 
 // ========================================
@@ -385,6 +488,34 @@ void JuceAudioIO::audioDeviceIOCallbackWithContext(
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
+    // === Callback timing jitter analysis (xrun detection) ===
+    if (!firstCallback_) {
+        double intervalMs = std::chrono::duration<double, std::milli>(
+            startTime - lastCallbackTime_).count();
+        double expectedIntervalMs = (numSamples / currentSampleRate_) * 1000.0;
+
+        // Update smoothed interval and jitter
+        double jitter = std::abs(intervalMs - expectedIntervalMs);
+        double prevJitter = callbackJitterSmoothed_.load(std::memory_order_relaxed);
+        callbackJitterSmoothed_.store(
+            prevJitter * (1.0 - JITTER_SMOOTHING) + jitter * JITTER_SMOOTHING,
+            std::memory_order_relaxed);
+
+        // Track peak jitter
+        double currentPeak = peakJitter_.load(std::memory_order_relaxed);
+        if (jitter > currentPeak) {
+            peakJitter_.store(jitter, std::memory_order_relaxed);
+        }
+
+        // Detect xrun by timing: interval > 2x expected means we missed a callback
+        if (intervalMs > expectedIntervalMs * XRUN_JITTER_THRESHOLD) {
+            recordXrun();
+        }
+    } else {
+        firstCallback_ = false;
+    }
+    lastCallbackTime_ = startTime;
+
     // Clear output buffers first
     for (int ch = 0; ch < numOutputChannels; ++ch) {
         if (outputChannelData[ch] != nullptr) {
@@ -400,23 +531,37 @@ void JuceAudioIO::audioDeviceIOCallbackWithContext(
                     numSamples);
     }
 
-    // Update statistics
+    // === Processing time measurement ===
     auto endTime = std::chrono::high_resolution_clock::now();
-    double processingTime = std::chrono::duration<double>(endTime - startTime).count();
-    // Don't lock mutex in audio thread - updateStats already handles lock-free atomics
-    // The rest of stats are updated safely
+    double processingTimeMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
+
+    // Update smoothed duration (lock-free)
+    double prevDur = callbackDurationSmoothed_.load(std::memory_order_relaxed);
+    callbackDurationSmoothed_.store(
+        prevDur * (1.0 - DURATION_SMOOTHING) + processingTimeMs * DURATION_SMOOTHING,
+        std::memory_order_relaxed);
+
+    // Track peak callback duration
+    double currentPeakDur = peakCallbackDuration_.load(std::memory_order_relaxed);
+    if (processingTimeMs > currentPeakDur) {
+        peakCallbackDuration_.store(processingTimeMs, std::memory_order_relaxed);
+    }
+
+    // Detect budget overrun (processing took longer than available time)
+    double budgetMs = (numSamples / currentSampleRate_) * 1000.0;
+    if (processingTimeMs > budgetMs) {
+        recordXrun();  // Processing overrun = xrun
+    }
+
+    // Update CPU stats (try_lock to avoid blocking RT thread)
     {
-        double availableTime = numSamples / currentSampleRate_;
-        double cpuUsage = (processingTime / availableTime) * 100.0;
-        
-        // Use try_lock to avoid blocking RT thread
+        double cpuUsage = budgetMs > 0 ? (processingTimeMs / budgetMs) * 100.0 : 0.0;
         std::unique_lock<std::mutex> lock(statsMutex_, std::try_to_lock);
         if (lock.owns_lock()) {
             const double smoothing = 0.1;
             stats_.cpuUsage = stats_.cpuUsage * (1.0 - smoothing) + cpuUsage * smoothing;
             stats_.samplesProcessed += numSamples;
         }
-        // If lock not acquired, skip this sample - next callback will update
     }
 }
 
@@ -432,51 +577,93 @@ void JuceAudioIO::audioDeviceAboutToStart(juce::AudioIODevice* device) {
     {
         std::lock_guard<std::mutex> lock(statsMutex_);
         stats_.latencyMs = (currentBufferSize_ / currentSampleRate_) * 1000.0;
+        stats_.deviceConnected = true;
+        // Compute device-reported latency
+        stats_.measuredInputLatencyMs = (device->getInputLatencyInSamples() / currentSampleRate_) * 1000.0;
+        stats_.measuredOutputLatencyMs = (device->getOutputLatencyInSamples() / currentSampleRate_) * 1000.0;
     }
 
+    // Update connection state
+    connectionState_.deviceConnected.store(true);
+    connectionState_.audioStartTime = std::chrono::steady_clock::now();
+    connectionState_.currentBackend = device->getTypeName().toStdString();
+
     lastCallbackTime_ = std::chrono::high_resolution_clock::now();
+    firstCallback_ = true;
 }
 
 void JuceAudioIO::audioDeviceStopped() {
     audioRunning_ = false;
+    connectionState_.deviceConnected.store(false);
 }
 
 void JuceAudioIO::audioDeviceError(const juce::String& errorMessage) {
     lastError_ = errorMessage.toStdString();
+    connectionState_.lastError = lastError_;
+    connectionState_.deviceConnected.store(false);
 
-    // Increment xrun counter for underruns/overruns
-    // Consider device reconnection if errors are persistent
-    std::lock_guard<std::mutex> lock(statsMutex_);
-    stats_.xrunCount++;
+    // Record xrun for device error
+    recordXrun();
 
-    // Attempt auto-recovery on device errors (USB disconnect, graph reset)
+    // Attempt auto-recovery with exponential backoff
     if (recoveryEnabled_ && !recoveryInProgress_.exchange(true)) {
+        connectionState_.recoveryAttempts.fetch_add(1);
         std::thread([this]() {
-            bool wasRunning = audioRunning_.load();
-            stopAudio();
-            deviceManager_.closeAudioDevice();
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-
-            juce::String error = deviceManager_.setAudioDeviceSetup(lastSetup_, true);
-            if (error.isNotEmpty()) {
-                deviceManager_.initialise(
-                    numInputChannels_,
-                    numOutputChannels_,
-                    nullptr,
-                    true,
-                    lastSetup_.outputDeviceName,
-                    nullptr
-                );
-            }
-
-            if (wasRunning) {
-                startAudio();
-            }
-
+            attemptRecovery(0);
             recoveryInProgress_.store(false);
         }).detach();
     }
+}
+
+bool JuceAudioIO::attemptRecovery(int attempt) {
+    if (attempt >= MAX_RECOVERY_ATTEMPTS) {
+        std::cerr << "[MAP2-AUDIO] Recovery failed after " << MAX_RECOVERY_ATTEMPTS
+                  << " attempts. Audio device unrecoverable." << std::endl;
+        return false;
+    }
+
+    // Exponential backoff: 500ms, 1s, 2s, 4s, 8s
+    int delayMs = RECOVERY_BACKOFF_MS * (1 << attempt);
+    std::cerr << "[MAP2-AUDIO] Recovery attempt " << (attempt + 1)
+              << "/" << MAX_RECOVERY_ATTEMPTS
+              << " (backoff: " << delayMs << "ms)" << std::endl;
+
+    bool wasRunning = audioRunning_.load();
+    stopAudio();
+    deviceManager_.closeAudioDevice();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+
+    // Try to restore with last known good setup
+    juce::String error = deviceManager_.setAudioDeviceSetup(lastSetup_, true);
+    if (error.isNotEmpty()) {
+        // Try full re-initialization
+        error = deviceManager_.initialise(
+            numInputChannels_,
+            numOutputChannels_,
+            nullptr,
+            true,
+            lastSetup_.outputDeviceName,
+            nullptr
+        );
+
+        if (error.isNotEmpty()) {
+            std::cerr << "[MAP2-AUDIO] Recovery attempt " << (attempt + 1)
+                      << " failed: " << error.toStdString() << std::endl;
+            return attemptRecovery(attempt + 1);
+        }
+    }
+
+    if (wasRunning) {
+        startAudio();
+    }
+
+    connectionState_.successfulRecoveries.fetch_add(1);
+    connectionState_.lastRecoveryTime = std::chrono::steady_clock::now();
+    connectionState_.deviceConnected.store(true);
+
+    std::cerr << "[MAP2-AUDIO] Recovery successful on attempt " << (attempt + 1) << std::endl;
+    return true;
 }
 
 // ========================================

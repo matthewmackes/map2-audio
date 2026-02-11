@@ -7,7 +7,8 @@
 namespace map2 {
 
 ConvolutionProcessor::ConvolutionProcessor()
-    : preDelay_(48000)  // 1 second max pre-delay at 48kHz
+    : convolution_(std::make_unique<juce::dsp::Convolution>(juce::dsp::Convolution::Latency{0})),
+      preDelay_(48000)  // 1 second max pre-delay at 48kHz
 {
     // Register common audio formats
     formatManager_.registerBasicFormats();
@@ -27,8 +28,10 @@ void ConvolutionProcessor::prepare(double sampleRate, int samplesPerBlock, int n
     spec.maximumBlockSize = static_cast<juce::uint32>(samplesPerBlock);
     spec.numChannels = static_cast<juce::uint32>(numChannels);
 
-    // Prepare convolution with current mode
-    convolution_.prepare(spec);
+    // Reconstruct convolution with correct latency hint for current mode
+    // The latency hint is only accepted at construction time by JUCE dsp::Convolution
+    convolution_ = std::make_unique<juce::dsp::Convolution>(getModeLatency());
+    convolution_->prepare(spec);
 
     // Prepare dry/wet mixer
     dryWetMixer_.prepare(spec);
@@ -45,7 +48,7 @@ void ConvolutionProcessor::prepare(double sampleRate, int samplesPerBlock, int n
 }
 
 void ConvolutionProcessor::reset() {
-    convolution_.reset();
+    if (convolution_) convolution_->reset();
     dryWetMixer_.reset();
     preDelay_.reset();
 }
@@ -78,7 +81,7 @@ bool ConvolutionProcessor::loadImpulseResponse(const std::string& irPath) {
                 0, true, true);
 
     // Load into convolution engine
-    convolution_.loadImpulseResponse(
+    convolution_->loadImpulseResponse(
         std::move(irBuffer),
         reader->sampleRate,
         juce::dsp::Convolution::Stereo::yes,
@@ -120,7 +123,7 @@ bool ConvolutionProcessor::loadImpulseResponseFromData(const float* data,
     }
 
     // Load into convolution engine
-    convolution_.loadImpulseResponse(
+    convolution_->loadImpulseResponse(
         std::move(irBuffer),
         irSampleRate,
         numChannels >= 2 ? juce::dsp::Convolution::Stereo::yes
@@ -146,7 +149,7 @@ bool ConvolutionProcessor::loadImpulseResponseFromData(const float* data,
 
 void ConvolutionProcessor::unloadImpulseResponse() {
     // Reset convolution (clears IR)
-    convolution_.reset();
+    if (convolution_) convolution_->reset();
 
     {
         std::lock_guard<std::mutex> lock(irMutex_);
@@ -189,7 +192,7 @@ void ConvolutionProcessor::process(juce::AudioBuffer<float>& buffer) {
     // Process through convolution
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
-    convolution_.process(context);
+    convolution_->process(context);
 
     // Apply dry/wet mix
     dryWetMixer_.mixWetSamples(block);
@@ -229,8 +232,28 @@ void ConvolutionProcessor::setMode(Mode mode) {
 
     mode_ = mode;
 
-    // Note: Changing mode may require re-preparing the convolution
-    // This would typically be done by reloading the IR
+    // Reconstruct convolution with new latency hint and re-prepare
+    if (sampleRate_ > 0 && blockSize_ > 0) {
+        juce::dsp::ProcessSpec spec;
+        spec.sampleRate = sampleRate_;
+        spec.maximumBlockSize = static_cast<juce::uint32>(blockSize_);
+        spec.numChannels = static_cast<juce::uint32>(numChannels_);
+
+        convolution_ = std::make_unique<juce::dsp::Convolution>(getModeLatency());
+        convolution_->prepare(spec);
+
+        // Reload IR if one was loaded, so it's processed with the new mode
+        if (irLoaded_.load()) {
+            std::string currentPath;
+            {
+                std::lock_guard<std::mutex> lock(irMutex_);
+                currentPath = irPath_;
+            }
+            if (!currentPath.empty() && currentPath != "<memory>") {
+                loadImpulseResponse(currentPath);
+            }
+        }
+    }
 }
 
 int ConvolutionProcessor::getLatency() const {

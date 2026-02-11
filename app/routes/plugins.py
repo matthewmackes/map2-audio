@@ -222,6 +222,10 @@ try:
             return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": True}
 
         # Always include JUCE native processors (best-in-class built-in effects)
+        # Clear JUCE cache on refresh to pick up config changes
+        if refresh:
+            global _juce_processors_cache
+            _juce_processors_cache = []
         juce_processors = _get_juce_processors()
         logger.info(f"Including {len(juce_processors)} JUCE native processors")
 

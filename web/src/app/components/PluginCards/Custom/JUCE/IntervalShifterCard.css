@@ -25,7 +25,7 @@
 
 /* Visualization */
 .interval-visualization {
-  padding: 12px;
+  padding: 17px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
 }
@@ -54,14 +54,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 12px;
+  padding: 11px 17px;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   border: 1px solid var(--accent, #8b5cf6);
 }
 
 .interval-semitones {
-  font-size: 24px;
+  font-size: 34px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   color: var(--accent, #8b5cf6);
@@ -91,12 +91,12 @@
 .interval-piano {
   display: flex;
   justify-content: center;
-  height: 32px;
+  height: 45px;
   position: relative;
 }
 
 .piano-key {
-  width: 10px;
+  width: 14px;
   height: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
   margin-right: 1px;
@@ -110,7 +110,7 @@
 
 .piano-key.black {
   background: rgba(0, 0, 0, 0.4);
-  width: 7px;
+  width: 10px;
   height: 60%;
   margin-left: -4px;
   margin-right: -3px;

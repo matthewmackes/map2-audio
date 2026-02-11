@@ -5,6 +5,7 @@
 
 import { useEffect, useCallback, useRef } from 'react'
 import type { SystemHealthOverview, DiskHealthData } from '@/map2/types'
+import { getWsBaseUrl } from '../../map2/api'
 
 export interface WebSocketConfig {
   url: string
@@ -14,7 +15,7 @@ export interface WebSocketConfig {
 }
 
 export const DEFAULT_WS_CONFIG: WebSocketConfig = {
-  url: `${typeof window !== 'undefined' ? window.location.origin.replace('http', 'ws') : 'ws://localhost:5000'}/ws/system/metrics`,
+  url: `${typeof window !== 'undefined' ? getWsBaseUrl() : 'ws://localhost:8080'}/ws/system/metrics`,
   reconnectInterval: 3000,
   maxReconnectAttempts: 5,
   heartbeatInterval: 30000,

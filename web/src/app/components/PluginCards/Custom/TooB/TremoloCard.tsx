@@ -46,8 +46,8 @@ export function TremoloCard({
       rate={getValue('rate', 4)}
       depth={getValue('depth', 50)}
       waveform={waveformName}
-      width={compact ? 200 : 280}
-      height={compact ? 60 : 80}
+      width={compact ? 280 : 392}
+      height={compact ? 84 : 112}
       accentColor={accentColor}
       animated
     />

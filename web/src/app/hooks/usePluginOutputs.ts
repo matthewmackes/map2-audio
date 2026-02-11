@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { getWsBaseUrl } from '../../map2/api';
 import type {
   PeakData,
   OutputPortValue,
@@ -57,7 +58,7 @@ export interface UsePluginOutputsOptions {
 
 export function usePluginOutputs(options: UsePluginOutputsOptions = {}) {
   const {
-    wsUrl = `ws://${window.location.host}/api/ws`,
+    wsUrl = `${getWsBaseUrl()}/api/ws`,
     autoConnect = true,
     pluginUris = EMPTY_PLUGIN_URIS,
   } = options;

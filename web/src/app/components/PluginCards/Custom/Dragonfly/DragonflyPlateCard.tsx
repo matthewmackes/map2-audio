@@ -42,8 +42,8 @@ export function DragonflyPlateCard({
       decayTime={getValue('decay', 2.0)}
       preDelay={getValue('predelay', 5)}
       damping={getValue('damping', 50)}
-      width={compact ? 240 : 320}
-      height={compact ? 80 : 100}
+      width={compact ? 336 : 448}
+      height={compact ? 112 : 140}
       accentColor={accentColor}
     />
   )

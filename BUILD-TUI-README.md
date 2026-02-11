@@ -40,16 +40,18 @@ MATTS-BUILD-TUI --state
 ## Features
 
 ### 🎯 Build Operations
-- **Production Web Build** (Port 3000) - Optimized bundle for deployment
-- **Development Web Build** (Port 3001) - Hot-reload with source maps
+- **Production Web Build** (Port 3000) - **⚠️ PRODUCTION ONLY** - Serves pre-built `dist/` folder via `serve` (NO hot-reload)
+- **Development Web Build** (Port 3001) - **🔥 DEVELOPMENT** - Vite dev server with hot-reload and source maps
 - **JUCE Plugin Compilation** - Multi-threaded native plugin builds
 - **Clean Build Artifacts** - Safe removal of build outputs
+
+**IMPORTANT PORT NOTE:** Port 3000 is PRODUCTION (static files), Port 3001 is DEV (live reload). Common mistake: assuming 3000 is dev server!
 
 ### 🔍 System Monitoring
 - **Disk Space Check** - Requires minimum 5GB free
 - **Memory Validation** - Requires minimum 2GB available
 - **CPU Load Assessment** - Monitors core utilization
-- **Port Availability** - Tracks ports 3000, 3001, 5000
+- **Port Availability** - Tracks ports 3000 (PROD), 3001 (DEV), 5000
 - **Build Tools Detection** - Verifies Node.js, npm, cmake, gcc, g++
 - **Running Process Detection** - Prevents build conflicts
 

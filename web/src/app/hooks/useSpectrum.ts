@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { getWsUrl, API_BASE } from '../../map2/api'
 
 export interface SpectrumData {
   magnitudes: number[]
@@ -50,7 +51,7 @@ export function useSpectrum(options: UseSpectrumOptions = {}) {
   useEffect(() => {
     if (!useWebSocket) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -96,11 +97,11 @@ export function useSpectrum(options: UseSpectrumOptions = {}) {
     }
   }, [useWebSocket])
 
-  // Polling fallback when WebSocket is not used
+  // Polling — always enabled for initial load + fallback
   const pollingQuery = useQuery<SpectrumData>({
     queryKey: ['spectrum'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/spectrum')
+      const res = await fetch(`${API_BASE}/engine/spectrum`)
       if (!res.ok) throw new Error('Failed to fetch spectrum')
       const data = await res.json()
       return {
@@ -111,14 +112,15 @@ export function useSpectrum(options: UseSpectrumOptions = {}) {
         spectralCentroid: data.spectral_centroid || 0
       }
     },
-    refetchInterval: useWebSocket ? false : pollingInterval,
-    enabled: !useWebSocket
+    refetchInterval: useWebSocket ? 5000 : pollingInterval,
+    enabled: true
   })
 
-  // Get current spectrum data
-  const currentSpectrum = useWebSocket
+  // Get current spectrum data - prefer WS if it has real data, else use polling
+  const wsHasData = useWebSocket && spectrum.magnitudes.length > 0
+  const currentSpectrum = wsHasData
     ? spectrum
-    : (pollingQuery.data || DEFAULT_SPECTRUM)
+    : (pollingQuery.data || spectrum)
 
   // Get peak info for tuner-like displays
   const getPeakInfo = useCallback(() => {

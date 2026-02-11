@@ -208,6 +208,22 @@ async def lifespan(app):
         # Start MIDI broadcast service (real-time MIDI events via WebSocket)
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
 
+        # Start PipeWire crash recovery watchdog
+        try:
+            from app.services.pipewire_recovery import get_pipewire_recovery_service
+            pw_recovery = get_pipewire_recovery_service()
+            # Connect to JUCE engine if available
+            try:
+                from app.services.juce_engine_service import get_engine_service
+                engine_svc = get_engine_service()
+                if engine_svc and hasattr(engine_svc, 'engine'):
+                    pw_recovery.set_engine(engine_svc.engine)
+            except Exception:
+                pass
+            await safe_start_service(logger, "PipeWire recovery watchdog", pw_recovery.start)
+        except Exception as e:
+            logger.warning(f"PipeWire recovery watchdog not started: {e}")
+
         # Start cluster monitoring services (only in multi-node modes)
         heartbeat = None
         failover = None
@@ -323,7 +339,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping']
 
         for route_name in route_modules:
             try:

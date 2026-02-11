@@ -7,8 +7,8 @@
 .sampler-visualization {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 17px;
+  padding: 17px;
   background: linear-gradient(180deg, #0a1628 0%, #0a0a0a 100%);
   border-radius: 8px;
 }
@@ -62,7 +62,7 @@
 /* Mini Keyboard */
 .sampler-mini-keyboard {
   display: flex;
-  height: 32px;
+  height: 45px;
   background: #111;
   border-radius: 4px;
   overflow: hidden;

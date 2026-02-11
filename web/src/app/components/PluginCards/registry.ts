@@ -267,6 +267,7 @@ import Peavey5150Card from './Custom/JUCE/Peavey5150Card'
 import TweedBassmanCard from './Custom/JUCE/TweedBassmanCard'
 import PassionFXCard from './Custom/JUCE/PassionFXCard'
 import CelestialCompressorCard from './Custom/JUCE/CelestialCompressorCard'
+import DrumMachineCard from './Custom/JUCE/DrumMachineCard'
 
 // JUCE Dynamics
 registerPluginCard('map2://juce/dynamics/compressor', {
@@ -371,6 +372,11 @@ registerPluginCard('map2://juce/amp/tweedbassman', {
 // JUCE Multi-Effect - PassionFX (Steve Vai Passion & Warfare)
 registerPluginCard('map2://juce/multieffect/passionfx', {
   component: PassionFXCard,
+})
+
+// JUCE Drums - Sophisticated Drum Machine
+registerPluginCard('map2://juce/drums', {
+  component: DrumMachineCard,
 })
 
 // ==================== Dragonfly Reverbs ====================

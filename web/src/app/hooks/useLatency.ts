@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { getWsUrl, API_BASE } from '../../map2/api'
 
 export interface PluginLatency {
   pluginId: string | number
@@ -53,7 +54,7 @@ export function useLatency(options: UseLatencyOptions = {}) {
   useEffect(() => {
     if (!useWebSocket) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -102,11 +103,11 @@ export function useLatency(options: UseLatencyOptions = {}) {
     }
   }, [useWebSocket])
 
-  // Polling fallback
+  // Polling — always enabled for initial load + fallback
   const pollingQuery = useQuery<LatencyInfo>({
     queryKey: ['latency'],
     queryFn: async () => {
-      const res = await fetch('/api/engine/loudness/latency')
+      const res = await fetch(`${API_BASE}/engine/loudness/latency`)
       if (!res.ok) throw new Error('Failed to fetch latency')
       const data = await res.json()
       return {
@@ -121,13 +122,14 @@ export function useLatency(options: UseLatencyOptions = {}) {
         running: true
       }
     },
-    refetchInterval: useWebSocket ? false : pollingInterval,
-    enabled: !useWebSocket
+    refetchInterval: useWebSocket ? 5000 : pollingInterval,
+    enabled: true
   })
 
-  const currentLatency = useWebSocket
+  const wsHasData = useWebSocket && latency.running
+  const currentLatency = wsHasData
     ? latency
-    : (pollingQuery.data || DEFAULT_LATENCY)
+    : (pollingQuery.data || latency)
 
   // Calculate statistics
   const stats = useMemo(() => {

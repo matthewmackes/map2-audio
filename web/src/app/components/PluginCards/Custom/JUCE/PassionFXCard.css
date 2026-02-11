@@ -70,7 +70,7 @@
 
 .passionfx-visualization {
   position: relative;
-  padding: 10px 8px;
+  padding: 14px 11px;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 77, 37, 0.15) 100%);
   border-radius: 8px;
   border: 1px solid rgba(0, 200, 83, 0.2);
@@ -151,8 +151,8 @@
 /* ------------------------------------------------------------------ */
 
 .passionfx-chain-line {
-  width: 8px;
-  height: 2px;
+  width: 11px;
+  height: 3px;
   background: rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
   transition: background 0.2s ease;
@@ -168,8 +168,8 @@
 
 .passionfx-chain-dot {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 39px;
+  height: 39px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.5);

@@ -5,6 +5,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { LCDEvent } from '../models/lcd_event';
+import { getWsBaseUrl } from '../../map2/api';
 
 interface useLCDEventsOptions {
   autoConnect?: boolean;
@@ -21,8 +22,7 @@ export function useLCDEvents(options: useLCDEventsOptions = {}) {
   
   const connect = useCallback(() => {
     try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const url = `${protocol}//${window.location.host}/api/lcd/ws/events`;
+      const url = `${getWsBaseUrl()}/api/lcd/ws/events`;
       
       const ws = new WebSocket(url);
       

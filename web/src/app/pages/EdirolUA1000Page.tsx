@@ -57,12 +57,14 @@ import {
   Loader2,
   Info,
   ListChecks,
+  ShoppingCart,
 } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
 import { audioApi, diagnosticsApi, pipewireApi } from '../../map2/api'
 import { usePipeWire } from '../hooks/usePipeWire'
+import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
 import type { AudioStatus } from '../../map2/types'
 import type { AudioHealth, XrunStats, BufferPreset, JuceMetrics, DiagnosticResult, FullDiagnosticResult } from '../../map2/api'
 
@@ -91,6 +93,7 @@ export function EdirolUA1000Page() {
   const queryClient = useQueryClient()
   const [selectedTab, setSelectedTab] = useState('engine')
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
+  const [shoppingDialogOpen, setShoppingDialogOpen] = useState(false)
   const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
 
   // Real-time WebSocket data
@@ -570,6 +573,33 @@ export function EdirolUA1000Page() {
         </TabProvider>
       </div>
 
+      {/* Help Me Find a Unit Button */}
+      <div className="card" style={{ padding: 24, textAlign: 'center', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ margin: 0, marginBottom: 8, fontSize: 20 }}>Looking to Upgrade or Expand?</h3>
+          <p style={{ margin: 0, color: '#94a3b8', fontSize: 14 }}>
+            Search eBay, ShopGoodwill, and Reverb for rackmount audio interfaces and ADAT expanders
+          </p>
+        </div>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={() => setShoppingDialogOpen(true)}
+          startIcon={<ShoppingCart size={20} />}
+          style={{
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            padding: '12px 32px',
+            fontSize: 16,
+            fontWeight: 600,
+          }}
+        >
+          Help Me Find a Unit
+        </Button>
+        <div style={{ marginTop: 12, fontSize: 12, color: '#94a3b8' }}>
+          Live marketplace search • Price sorted • Latency ranked
+        </div>
+      </div>
+
       {/* Configuration Dialog */}
       <ConfigDialog
         open={configDialogOpen}
@@ -577,6 +607,12 @@ export function EdirolUA1000Page() {
         status={status}
         bufferPresets={bufferPresetsQuery.data}
         onConfigured={() => queryClient.invalidateQueries({ queryKey: ['audio'] })}
+      />
+
+      {/* Shopping Search Dialog */}
+      <ShoppingSearchDialog
+        open={shoppingDialogOpen}
+        onClose={() => setShoppingDialogOpen(false)}
       />
     </div>
   )

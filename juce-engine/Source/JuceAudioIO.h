@@ -115,18 +115,66 @@ public:
     void setProcessCallback(ProcessCallback callback);
 
     // ========================================
-    // Statistics
+    // Statistics & Diagnostics
     // ========================================
 
     struct AudioStats {
         double cpuUsage = 0.0;
-        int xrunCount = 0;
-        double latencyMs = 0.0;
+        int xrunCount = 0;              // Total xruns detected
+        int xrunsSinceReset = 0;        // Xruns since last reset
+        double latencyMs = 0.0;         // Buffer latency
         int64_t samplesProcessed = 0;
+        // Callback timing analysis
+        double callbackJitterMs = 0.0;       // Smoothed jitter (std dev of callback interval)
+        double peakCallbackJitterMs = 0.0;   // Peak jitter observed
+        double avgCallbackDurationMs = 0.0;  // Average processing time per callback
+        double peakCallbackDurationMs = 0.0; // Peak processing time
+        double callbackBudgetMs = 0.0;       // Available time per callback
+        double budgetUtilization = 0.0;      // % of budget used (>100 = overrun)
+        // Connection health
+        bool deviceConnected = false;
+        int recoveryCount = 0;               // Number of auto-recoveries
+        double uptimeSeconds = 0.0;          // Time since last successful start
+        int64_t lastXrunTimestamp = 0;       // Unix timestamp of last xrun
+        // Latency measurement
+        double measuredRoundTripMs = -1.0;   // -1 = not measured yet
+        double measuredInputLatencyMs = 0.0;
+        double measuredOutputLatencyMs = 0.0;
     };
 
     AudioStats getStats() const;
     void resetStats();
+    void resetXrunCounter();
+
+    /**
+     * Get xrun history (timestamps of recent xruns)
+     * @return Vector of unix timestamps (ms) for last N xruns
+     */
+    std::vector<int64_t> getXrunHistory() const;
+
+    /**
+     * Get connection health summary
+     */
+    struct ConnectionHealth {
+        bool deviceConnected = false;
+        bool jackServerRunning = false;
+        std::string currentBackend;        // "JACK", "ALSA", etc.
+        int recoveryAttempts = 0;
+        int successfulRecoveries = 0;
+        double lastRecoveryTimeSec = 0.0;
+        std::string lastError;
+    };
+    ConnectionHealth getConnectionHealth() const;
+
+    /**
+     * Report measured round-trip latency (from external loopback test)
+     */
+    void setMeasuredRoundTripLatency(double ms);
+
+    /**
+     * Get the device-reported input + output latency in ms
+     */
+    double getDeviceReportedLatencyMs() const;
 
     // ========================================
     // JUCE AudioIODeviceCallback interface
@@ -167,18 +215,52 @@ private:
     mutable std::mutex statsMutex_;
     AudioStats stats_;
     std::chrono::high_resolution_clock::time_point lastCallbackTime_;
+    bool firstCallback_ = true;  // Skip jitter calc on first callback
+
+    // Callback timing analysis (lock-free atomics for RT safety)
+    std::atomic<double> callbackIntervalSmoothed_{0.0};
+    std::atomic<double> callbackJitterSmoothed_{0.0};
+    std::atomic<double> peakJitter_{0.0};
+    std::atomic<double> peakCallbackDuration_{0.0};
+    std::atomic<double> callbackDurationSmoothed_{0.0};
+    static constexpr double JITTER_SMOOTHING = 0.05;  // EMA alpha
+    static constexpr double DURATION_SMOOTHING = 0.1;
+    static constexpr double XRUN_JITTER_THRESHOLD = 2.0; // 2x expected interval = xrun
+
+    // Xrun history ring buffer (last 64 xrun timestamps)
+    static constexpr int XRUN_HISTORY_SIZE = 64;
+    std::array<int64_t, XRUN_HISTORY_SIZE> xrunHistory_{};
+    std::atomic<int> xrunHistoryHead_{0};
+    void recordXrun();  // Thread-safe xrun recording
 
     // Error handling
     std::string lastError_;
+
+    // Connection health
+    struct ConnectionState {
+        std::atomic<bool> deviceConnected{false};
+        std::atomic<int> recoveryAttempts{0};
+        std::atomic<int> successfulRecoveries{0};
+        std::chrono::steady_clock::time_point lastRecoveryTime{};
+        std::chrono::steady_clock::time_point audioStartTime{};
+        std::string lastError;
+        std::string currentBackend;
+    } connectionState_;
 
     // Device recovery
     std::atomic<bool> recoveryInProgress_{false};
     juce::AudioDeviceManager::AudioDeviceSetup lastSetup_{};
     bool recoveryEnabled_ = true;
+    static constexpr int MAX_RECOVERY_ATTEMPTS = 5;
+    static constexpr int RECOVERY_BACKOFF_MS = 500;  // Doubles each attempt
+
+    // Measured latency (from external loopback test)
+    std::atomic<double> measuredRoundTripMs_{-1.0};
 
     // Helper methods
     AudioDeviceInfo deviceToInfo(juce::AudioIODevice* device) const;
     void updateStats(int numSamples, double processingTime);
+    bool attemptRecovery(int attempt = 0);
 };
 
 } // namespace map2

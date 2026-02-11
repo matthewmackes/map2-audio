@@ -5,8 +5,12 @@
   "description": "Mackes Audio Platform 3.0 FEB2026 (Multinode) - Professional Guitar Effects Processor Web Interface with Cluster Management",
   "type": "module",
   "scripts": {
+    "_comment_ports": "IMPORTANT: Port 3000 = PRODUCTION (serves dist/), Port 3001 = DEVELOPMENT (vite dev server with HMR). Do NOT confuse these!",
     "dev": "vite --host 0.0.0.0 --port 3001",
     "build": "tsc -b && vite build",
+    "deploy": "../scripts/build/deploy",
+    "deploy:restart": "../scripts/build/deploy --skip-build",
+    "deploy:status": "../scripts/build/deploy --status",
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "serve": "npx serve dist -l 3000 --no-clipboard -s",

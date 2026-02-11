@@ -53,11 +53,11 @@ function LimiterCardBase({
     <div className="limiter-viz" style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center' }}>
       <GainReductionMeter
         gainReduction={metering.gainReduction}
-        height={compact ? 100 : 140}
+        height={compact ? 140 : 196}
         width={24}
       />
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '32px', fontWeight: 'bold', color: accentColor, fontFamily: 'monospace' }}>
+        <div style={{ fontSize: '45px', fontWeight: 'bold', color: accentColor, fontFamily: 'monospace' }}>
           {parameters.threshold.toFixed(1)}
         </div>
         <div style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>

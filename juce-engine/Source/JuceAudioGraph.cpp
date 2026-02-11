@@ -451,14 +451,16 @@ std::map<InstanceId, int> JuceAudioGraph::getPerPluginLatency() const {
 }
 
 void JuceAudioGraph::process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiBuffer) {
-    // Update input meters
+    // Update input meters (outside lock — metering doesn't need graph consistency)
     updateMeters(buffer, true);
 
-    // Process through the graph
-    const juce::SpinLock::ScopedLockType lock(graphLock_);
-    graph_->processBlock(buffer, midiBuffer);
+    // Process through the graph (lock scoped tightly around processBlock only)
+    {
+        const juce::SpinLock::ScopedLockType lock(graphLock_);
+        graph_->processBlock(buffer, midiBuffer);
+    }
 
-    // Update output meters
+    // Update output meters (outside lock)
     updateMeters(buffer, false);
 }
 

@@ -79,7 +79,7 @@ function CompressorCardBase({
 
   const visualization = (
     <div className="compressor-viz" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-      <GainReductionMeter gainReduction={metering.gainReduction} height={compact ? 100 : 120} />
+      <GainReductionMeter gainReduction={metering.gainReduction} height={compact ? 140 : 168} />
       <TransferCurve
         threshold={parameters.threshold}
         ratio={parameters.ratio}
@@ -88,8 +88,8 @@ function CompressorCardBase({
         inputLevel={metering.inputLevel}
         outputLevel={metering.outputLevel}
         accentColor={accentColor}
-        width={compact ? 160 : 200}
-        height={compact ? 100 : 120}
+        width={compact ? 224 : 280}
+        height={compact ? 140 : 168}
       />
     </div>
   )

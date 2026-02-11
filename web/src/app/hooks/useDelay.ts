@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getWsUrl } from '../../map2/api'
 
 // ========================================
 // Types
@@ -238,7 +239,7 @@ export function useDelay(options: UseDelayOptions = {}) {
   useEffect(() => {
     if (!useWebSocket) return
 
-    const ws = new WebSocket(`ws://${window.location.host}/ws`)
+    const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {

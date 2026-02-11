@@ -75,29 +75,27 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
                             false, false, true);
 
     // ============================================================================
-    // REALTIME OPTIMIZATION: Lock audio buffer to RAM to prevent page faults
-    // Page faults cause 1–10 ms latency spikes; mlock() pins memory to prevent swaps
+    // REALTIME OPTIMIZATION: Lock ALL memory to RAM to prevent page faults
+    // Page faults cause 1–10 ms latency spikes; mlockall() pins ALL pages —
+    // code, stack, heap, shared libraries, NAM model weights, IR data.
+    // Requires CAP_IPC_LOCK or LimitMEMLOCK=infinity (set in systemd service).
     // ============================================================================
-    try {
-        // Lock callback buffer to RAM
+    if (mlockall(MCL_CURRENT | MCL_FUTURE) == 0) {
+        std::cout << "  All memory locked to RAM (mlockall)" << std::endl;
+    } else {
+        int err = errno;
+        std::cerr << "  WARNING: mlockall failed (errno=" << err << "). "
+                  << "Falling back to per-buffer mlock. May experience latency spikes." << std::endl;
+        // Fallback: lock just the audio buffer
         float* bufferData = callbackBuffer_.getWritePointer(0);
         if (bufferData) {
-            size_t bufferBytes = static_cast<size_t>(callbackBuffer_.getNumSamples()) 
-                                * callbackBuffer_.getNumChannels() 
+            size_t bufferBytes = static_cast<size_t>(callbackBuffer_.getNumSamples())
+                                * callbackBuffer_.getNumChannels()
                                 * sizeof(float);
-            
             if (mlock(bufferData, bufferBytes) == 0) {
                 std::cout << "  Audio buffer locked to RAM (" << (bufferBytes / 1024) << " KB)" << std::endl;
-            } else {
-                int err = errno;
-                std::cerr << "  WARNING: Failed to mlock audio buffer (errno=" << err << "). "
-                          << "System may experience latency spikes during memory pressure." << std::endl;
-                // Continue anyway—not fatal, just suboptimal
             }
         }
-    } catch (const std::exception& e) {
-        std::cerr << "  Exception locking audio buffer: " << e.what() << std::endl;
-        // Continue—audio can still run without mlock
     }
 
     // Initialize MIDI
@@ -117,10 +115,11 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     cpuMonitor_.prepare(sampleRate_, bufferSize_);
 
     // Initialize convolution processors
-    cabinetProcessor_.prepare(sampleRate_, bufferSize_, 2);
+    // Set mode BEFORE prepare — prepare() uses the mode to construct the convolution engine
     cabinetProcessor_.setMode(ConvolutionProcessor::Mode::ZeroLatency);
-    reverbProcessor_.prepare(sampleRate_, bufferSize_, 2);
+    cabinetProcessor_.prepare(sampleRate_, bufferSize_, 2);
     reverbProcessor_.setMode(ConvolutionProcessor::Mode::ZeroLatency);
+    reverbProcessor_.prepare(sampleRate_, bufferSize_, 2);
 
     // Initialize dynamics processors
     compressor_.prepare(sampleRate_, bufferSize_, 2);
@@ -184,9 +183,9 @@ void Map2AudioEngine::shutdown() {
 
     stopAudio();
     
-    // Stop metering thread (Option 3)
+    // Stop metering thread (Option 3 - lock-free ring buffer)
     meteringRunning_.store(false);
-    meteringQueueCV_.notify_one();
+    // No condition variable to notify — metering thread polls with sleep
     if (meteringThread_.joinable()) {
         meteringThread_.join();
     }
@@ -247,14 +246,19 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // GUARDED: assert buffer is large enough (setSize only called in non-RT context)
     jassert(callbackBuffer_.getNumChannels() >= numOutputs && callbackBuffer_.getNumSamples() >= numSamples);
     auto& buffer = callbackBuffer_;
-    buffer.clear();
     juce::MidiBuffer midiBuffer;
 
-    // Copy input to buffer
+    // Copy input to buffer (overwrites all channels — no need to clear first)
     for (int ch = 0; ch < std::min(numInputs, numOutputs); ++ch) {
         if (inputs[ch] != nullptr) {
             buffer.copyFrom(ch, 0, inputs[ch], numSamples);
+        } else {
+            buffer.clear(ch, 0, numSamples);  // Only clear if input is null
         }
+    }
+    // Clear any extra output channels beyond input count
+    for (int ch = numInputs; ch < numOutputs; ++ch) {
+        buffer.clear(ch, 0, numSamples);
     }
 
     // Process parameter updates from queue
@@ -650,6 +654,34 @@ double Map2AudioEngine::getTotalLatencyMs() const {
 
 std::map<InstanceId, int> Map2AudioEngine::getPerPluginLatency() const {
     return audioGraph_->getPerPluginLatency();
+}
+
+// ========================================
+// Audio I/O Diagnostics
+// ========================================
+
+JuceAudioIO::AudioStats Map2AudioEngine::getAudioIOStats() const {
+    return audioIO_.getStats();
+}
+
+JuceAudioIO::ConnectionHealth Map2AudioEngine::getConnectionHealth() const {
+    return audioIO_.getConnectionHealth();
+}
+
+std::vector<int64_t> Map2AudioEngine::getXrunHistory() const {
+    return audioIO_.getXrunHistory();
+}
+
+void Map2AudioEngine::resetXrunCounter() {
+    audioIO_.resetXrunCounter();
+}
+
+void Map2AudioEngine::setMeasuredRoundTripLatency(double ms) {
+    audioIO_.setMeasuredRoundTripLatency(ms);
+}
+
+double Map2AudioEngine::getDeviceReportedLatencyMs() const {
+    return audioIO_.getDeviceReportedLatencyMs();
 }
 
 // ========================================
@@ -2389,69 +2421,75 @@ int Map2AudioEngine::getPassionFXNumPresets() {
 }
 
 // ========================================
-// Option 3: Off-thread Metering
+// Option 3: Off-thread Metering (Lock-Free)
 // ========================================
 
 void Map2AudioEngine::pushMeteringData(const juce::AudioBuffer<float>& buffer) {
-    // Try to push metering frame to queue (non-blocking)
-    // If queue is full, drop the frame (acceptable - metering is non-critical)
-    std::unique_lock<std::mutex> lock(meteringQueueMutex_, std::try_to_lock);
-    if (!lock.owns_lock() || meteringQueue_.size() >= METERING_QUEUE_DEPTH) {
-        return;  // Queue full or locked - drop this frame (RT-safe)
-    }
+    // RT-SAFE: Lock-free write to pre-allocated ring buffer
+    // Zero heap allocations, zero mutex locks, zero syscalls
+    int start1, size1, start2, size2;
+    meteringFifo_.prepareToWrite(1, start1, size1, start2, size2);
 
-    // Create metering frame (copies only pointers, not audio data)
-    MeteringFrame frame;
-    frame.numSamples = buffer.getNumSamples();
-    
-    // Copy channel pointers for metering thread
-    int numChannels = std::min(buffer.getNumChannels(), 2);
-    for (int ch = 0; ch < numChannels; ++ch) {
-        frame.channels[ch].assign(
-            buffer.getReadPointer(ch),
-            buffer.getReadPointer(ch) + buffer.getNumSamples()
-        );
+    if (size1 > 0) {
+        auto& frame = meteringRing_[static_cast<size_t>(start1)];
+        frame.numSamples = std::min(buffer.getNumSamples(), METERING_MAX_SAMPLES);
+        int numChannels = std::min(buffer.getNumChannels(), 2);
+        for (int ch = 0; ch < numChannels; ++ch) {
+            std::memcpy(frame.channels[ch], buffer.getReadPointer(ch),
+                       static_cast<size_t>(frame.numSamples) * sizeof(float));
+        }
+        // Zero-fill unused channel if mono input
+        for (int ch = numChannels; ch < 2; ++ch) {
+            std::memset(frame.channels[ch], 0,
+                       static_cast<size_t>(frame.numSamples) * sizeof(float));
+        }
+        meteringFifo_.finishedWrite(1);
+        meteringDataReady_.store(true, std::memory_order_release);
     }
-
-    meteringQueue_.push(std::move(frame));
-    lock.unlock();
-    meteringQueueCV_.notify_one();
+    // If ring is full, silently drop (acceptable — metering is non-critical)
 }
 
 void Map2AudioEngine::meteringThreadFunc() {
     // Low-priority metering thread
-    // Runs independently from audio callback
-    while (meteringRunning_.load()) {
-        std::unique_lock<std::mutex> lock(meteringQueueMutex_);
-        
-        // Wait for metering data or shutdown signal
-        meteringQueueCV_.wait(lock, [this]() {
-            return !meteringQueue_.empty() || !meteringRunning_.load();
-        });
-
-        if (!meteringRunning_.load()) {
-            break;
-        }
-
-        if (meteringQueue_.empty()) {
+    // Polls lock-free ring buffer instead of blocking on condition variable
+    while (meteringRunning_.load(std::memory_order_acquire)) {
+        if (!meteringDataReady_.load(std::memory_order_acquire)) {
+            // No data ready — sleep briefly to avoid busy-waiting
+            std::this_thread::sleep_for(std::chrono::microseconds(500));
             continue;
         }
 
-        MeteringFrame frame = std::move(meteringQueue_.front());
-        meteringQueue_.pop();
-        lock.unlock();
+        int numReady = meteringFifo_.getNumReady();
+        if (numReady <= 0) {
+            meteringDataReady_.store(false, std::memory_order_release);
+            continue;
+        }
+
+        // Read all available frames, but only process the LATEST one
+        // (skip stale frames — metering only needs the most recent data)
+        int start1, size1, start2, size2;
+        meteringFifo_.prepareToRead(numReady, start1, size1, start2, size2);
+
+        // Find the last (most recent) frame index
+        int lastIdx;
+        if (size2 > 0) {
+            lastIdx = start2 + size2 - 1;
+        } else {
+            lastIdx = start1 + size1 - 1;
+        }
+
+        auto& frame = meteringRing_[static_cast<size_t>(lastIdx)];
 
         // Process metering off the audio thread (no RT constraints)
         juce::AudioBuffer<float> tempBuffer(2, frame.numSamples);
-        
-        if (!frame.channels[0].empty()) {
-            std::copy(frame.channels[0].begin(), frame.channels[0].end(),
-                     tempBuffer.getWritePointer(0));
-        }
-        if (!frame.channels[1].empty()) {
-            std::copy(frame.channels[1].begin(), frame.channels[1].end(),
-                     tempBuffer.getWritePointer(1));
-        }
+        std::memcpy(tempBuffer.getWritePointer(0), frame.channels[0],
+                   static_cast<size_t>(frame.numSamples) * sizeof(float));
+        std::memcpy(tempBuffer.getWritePointer(1), frame.channels[1],
+                   static_cast<size_t>(frame.numSamples) * sizeof(float));
+
+        // Mark all frames as consumed (including skipped stale ones)
+        meteringFifo_.finishedRead(numReady);
+        meteringDataReady_.store(false, std::memory_order_release);
 
         // Update metering components (all off-thread, no RT pressure)
         spectrumAnalyzer_.pushBuffer(tempBuffer);

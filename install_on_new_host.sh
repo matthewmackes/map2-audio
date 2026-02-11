@@ -191,6 +191,7 @@ case "$DISTRO" in
             pipewire-jack-audio-connection-kit pipewire-jack-audio-connection-kit-devel \
             pipewire-alsa pipewire-pulseaudio pipewire-utils \
             jack-audio-connection-kit jack-audio-connection-kit-devel \
+            jack-example-tools \
             alsa-lib alsa-lib-devel alsa-utils alsa-plugins-jack \
             rtkit
 
@@ -245,7 +246,7 @@ case "$DISTRO" in
         run_cmd apt update
         run_cmd apt install -y build-essential cmake ninja-build git curl wget pkg-config \
             python3 python3-dev python3-pip python3-venv \
-            libasound2-dev libjack-jackd2-dev \
+            libasound2-dev libjack-jackd2-dev jack-tools \
             pipewire pipewire-jack pipewire-alsa \
             lv2-dev liblilv-dev libsuil-dev libserd-dev libsord-dev libsratom-dev \
             libsndfile1-dev libfftw3-dev libsamplerate0-dev \
@@ -270,7 +271,7 @@ case "$DISTRO" in
             base-devel cmake ninja git curl wget pkg-config \
             python python-pip python-virtualenv \
             pipewire pipewire-jack pipewire-alsa \
-            jack2 alsa-lib alsa-utils \
+            jack2 jack-example-tools alsa-lib alsa-utils \
             lv2 lilv suil serd sord sratom \
             libsndfile fftw libsamplerate portaudio \
             sqlite systemd avahi \

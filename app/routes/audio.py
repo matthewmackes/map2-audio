@@ -227,6 +227,15 @@ try:
 
         # Update sample rate if provided
         if sample_rate is not None:
+            # Check if sample_rate is locked
+            from app.config import get_config
+            cfg = get_config()
+            if hasattr(cfg, 'is_locked') and cfg.is_locked('audio.sample_rate'):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Sample rate is LOCKED for Tier A performance. Must be changed in systemd service and restart."
+                )
+            
             supported_rates = [44100, 48000, 96000, 192000]
             if sample_rate not in supported_rates:
                 raise HTTPException(status_code=400, detail=f"Unsupported sample rate. Must be one of: {supported_rates}")
@@ -237,6 +246,15 @@ try:
 
         # Update buffer size if provided
         if buffer_size is not None:
+            # Check if buffer_size is locked
+            from app.config import get_config
+            cfg = get_config()
+            if hasattr(cfg, 'is_locked') and cfg.is_locked('audio.buffer_size'):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Buffer size is LOCKED at 64 samples for <3ms latency. Must be changed in systemd service and restart."
+                )
+            
             supported_sizes = [64, 128, 256, 512, 1024]
             if buffer_size not in supported_sizes:
                 raise HTTPException(status_code=400, detail=f"Unsupported buffer size. Must be one of: {supported_sizes}")

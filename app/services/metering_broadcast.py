@@ -114,7 +114,8 @@ class MeteringBroadcastService:
     async def _get_spectrum(self) -> Optional[dict]:
         """Get spectrum data from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             # Return empty spectrum with running=false
             return {
                 "magnitudes": [],
@@ -131,7 +132,8 @@ class MeteringBroadcastService:
     async def _get_lufs(self) -> Optional[dict]:
         """Get LUFS loudness data from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             # Return default values with running=false so frontend knows engine state
             return {
                 "momentary": -100.0,
@@ -150,7 +152,8 @@ class MeteringBroadcastService:
     async def _get_cpu(self) -> Optional[dict]:
         """Get CPU metrics from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             # Return default values with running=false so frontend knows engine state
             return {
                 "total_cpu_percent": 0,
@@ -171,7 +174,8 @@ class MeteringBroadcastService:
     async def _get_phase(self) -> Optional[dict]:
         """Get phase correlation data from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             # Return default values with running=false so frontend knows engine state
             return {
                 "phase_correlation": 0.0,
@@ -186,7 +190,8 @@ class MeteringBroadcastService:
     async def _get_meters(self) -> Optional[dict]:
         """Get VU meter data from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             # Return silence levels with running=false
             return {
                 "input_left": -60.0,
@@ -202,7 +207,8 @@ class MeteringBroadcastService:
     async def _get_latency(self) -> Optional[dict]:
         """Get latency info from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             return {
                 "total_samples": 0,
                 "total_ms": 0.0,
@@ -219,7 +225,8 @@ class MeteringBroadcastService:
     async def _get_dynamics(self) -> Optional[dict]:
         """Get dynamics processor metering from audio engine"""
         service = get_audio_engine()
-        if not service.is_running:
+        audio_active = service.is_running and service.is_audio_running()
+        if not audio_active:
             empty_metering = {
                 "input_level": -100.0,
                 "output_level": -100.0,

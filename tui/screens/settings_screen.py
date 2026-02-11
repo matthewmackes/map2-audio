@@ -122,6 +122,9 @@ class AudioSettingsWidget(Static):
             actions.add_row("X", "Stop", "Stop audio engine")
             actions.add_row("t", "Test", "Run audio latency test")
             actions.add_row("r", "Restart", "Restart audio services")
+            actions.add_row("", "", "")
+            actions.add_row("NOTE:", "Locked Settings", "Buffer/Rate locked for Tier A performance")
+            actions.add_row("", "", "Edit systemd service to change")
 
     async def on_mount(self) -> None:
         """Start periodic data refresh on mount."""
@@ -202,13 +205,13 @@ class AudioSettingsWidget(Static):
             engine_status = "🟢 Running" if running else "🔴 Stopped"
             table.add_row("Audio Engine", engine, engine_status)
 
-            # Sample rate
+            # Sample rate (LOCKED for Tier A)
             sample_rate = self._audio_status.get("sample_rate", 48000)
-            table.add_row("Sample Rate", f"{sample_rate} Hz", "🟢 OK")
+            table.add_row("Sample Rate", f"{sample_rate} Hz", "🔒 LOCKED (Tier A)")
 
-            # Buffer size
-            buffer_size = self._audio_status.get("buffer_size", 256)
-            table.add_row("Buffer Size", str(buffer_size), "🟢 OK")
+            # Buffer size (LOCKED for Tier A)
+            buffer_size = self._audio_status.get("buffer_size", 64)
+            table.add_row("Buffer Size", f"{buffer_size} samples", "🔒 LOCKED (Tier A)")
 
             # Latency
             latency = self._audio_latency.get("latency_ms", 0) if isinstance(self._audio_latency, dict) else 0

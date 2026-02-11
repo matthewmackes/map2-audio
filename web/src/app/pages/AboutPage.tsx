@@ -1,4 +1,4 @@
-import { Github, ExternalLink, Info, Music, Code2, Zap, Server, PenTool, Cpu, PanelsTopLeft, Sparkles, Package, AudioLines, Piano, Activity, Sliders, Usb, Palette, ChevronDown, Scale, Database, Globe, Layers, Box, Terminal, FileCode, Headphones, Radio, BookOpen, Shield, Heart, Monitor, Drum } from 'lucide-react'
+import { Github, ExternalLink, Info, Music, Code2, Zap, Server, PenTool, Cpu, PanelsTopLeft, Sparkles, Package, AudioLines, Piano, Activity, Sliders, Usb, Palette, ChevronDown, Scale, Database, Globe, Layers, Box, Terminal, FileCode, Headphones, Radio, BookOpen, Shield, Heart, Monitor, Drum, TrendingUp } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
@@ -7,6 +7,7 @@ import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
+import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 // Dragon icon for "hic sunt dracones" menu
@@ -67,30 +68,15 @@ const underTheHoodItems = [
 
   // ── Audio Processing ──
   {
-    to: '/metering',
-    label: 'Metering',
-    icon: Activity,
-    description: 'Audio analysis & monitoring',
-    color: '#37d6c9',  // Cyan-teal
+    to: '/pipewire',
+    label: 'PipeWire',
+    icon: Radio,
+    description: 'Audio server graph, latency & controls',
+    color: '#a78bfa',  // Purple
     dividerBefore: true,
     group: 'Audio Processing',
   },
-  {
-    to: '/dsp',
-    label: 'DSP',
-    icon: Sliders,
-    description: 'Dynamics & EQ processors',
-    color: '#ff6644',  // Orange-red
-    group: 'Audio Processing',
-  },
-  {
-    to: '/drums',
-    label: 'Drums',
-    icon: Drum,
-    description: 'Drum machine & practice patterns',
-    color: '#f59e0b',  // Amber
-    group: 'Audio Processing',
-  },
+
 
   // ── Control ──
   {
@@ -129,15 +115,6 @@ const underTheHoodItems = [
     color: '#e53935',  // HoTone red
     group: 'Hardware & Interfaces',
   },
-  {
-    to: '/pipewire',
-    label: 'PipeWire',
-    icon: Radio,
-    description: 'Audio server graph, latency & controls',
-    color: '#a78bfa',  // Purple
-    group: 'Hardware & Interfaces',
-  },
-
   // ── Infrastructure ──
   {
     to: '/host-machine',
@@ -662,6 +639,7 @@ export function AboutPage() {
   const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
+  const [showShoppingDialog, setShowShoppingDialog] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
 
   const refreshCustomThemes = useCallback(() => {
@@ -1551,6 +1529,170 @@ export function AboutPage() {
         )}
       </div>
 
+      {/* Help Me Find Hardware! Section */}
+      <div style={{
+        marginTop: 32,
+        padding: 24,
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%)',
+        borderRadius: 12,
+        border: '1px solid rgba(59, 130, 246, 0.2)',
+        backdropFilter: 'blur(8px)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 20
+        }}>
+          <Headphones size={24} style={{ color: '#3b82f6' }} />
+          <h2 style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#f2f6ff',
+            margin: 0
+          }}>
+            Help Me Find Hardware!
+          </h2>
+        </div>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: 16
+        }}>
+          {/* Button 1: CPU Performance */}
+          <NavLink
+            to="/cpu-performance"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: 20,
+              background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(59, 130, 246, 0.1))',
+              borderRadius: 8,
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              textDecoration: 'none',
+              transition: 'all 200ms',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.2)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <Cpu size={32} style={{ color: '#3b82f6', marginBottom: 12 }} />
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
+              CPU Performance Guide
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
+              Compare Intel generations & capacity
+            </div>
+          </NavLink>
+
+          {/* Button 2: Multi Channel ADAT Is Magic */}
+          <NavLink
+            to="/motu-rme"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: 20,
+              background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(34, 197, 94, 0.1))',
+              borderRadius: 8,
+              border: '1px solid rgba(0, 212, 255, 0.3)',
+              textDecoration: 'none',
+              transition: 'all 200ms',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 212, 255, 0.2)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <Layers size={32} style={{ color: '#00D4FF', marginBottom: 12 }} />
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
+              Multi Channel ADAT Is Magic
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
+              MOTU + RME ADAT monitoring
+            </div>
+          </NavLink>
+
+          {/* Button 3: Find a Pro Interface */}
+          <button
+            onClick={() => setShowShoppingDialog(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: 20,
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(245, 158, 11, 0.1))',
+              borderRadius: 8,
+              border: '1px solid rgba(34, 197, 94, 0.3)',
+              cursor: 'pointer',
+              transition: 'all 200ms'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(34, 197, 94, 0.2)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <Package size={32} style={{ color: '#22c55e', marginBottom: 12 }} />
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
+              Find a Pro Interface
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
+              Search eBay, Reverb & ShopGoodwill
+            </div>
+          </button>
+
+          {/* Button 4: Does CPU Matter */}
+          <NavLink
+            to="/cpu-performance"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: 20,
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1))',
+              borderRadius: 8,
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              textDecoration: 'none',
+              transition: 'all 200ms',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.2)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <TrendingUp size={32} style={{ color: '#a855f7', marginBottom: 12 }} />
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#f2f6ff', textAlign: 'center', marginBottom: 4 }}>
+              Does CPU Matter?
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
+              Performance gains by generation
+            </div>
+          </NavLink>
+        </div>
+      </div>
+
       {/* Advanced Settings Menu (hic sunt dracones) - Bottom Button */}
       <div style={{
         marginTop: 32,
@@ -1713,6 +1855,12 @@ export function AboutPage() {
         isOpen={showSpecialSettings}
         onClose={() => setShowSpecialSettings(false)}
         onSave={handleSettingsSave}
+      />
+
+      {/* Shopping Search Dialog */}
+      <ShoppingSearchDialog
+        open={showShoppingDialog}
+        onClose={() => setShowShoppingDialog(false)}
       />
     </div>
   )

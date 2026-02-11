@@ -191,8 +191,8 @@ function NativeDelayCardBase({
       pingPong={parameters.stereoMode === 2}
       modulationRate={parameters.modRate}
       modulationDepth={parameters.modDepth}
-      width={compact ? 220 : 320}
-      height={compact ? 60 : 80}
+      width={compact ? 308 : 448}
+      height={compact ? 84 : 112}
       accentColor={accentColor}
       maxTaps={8}
     />

@@ -65,7 +65,7 @@
   background: linear-gradient(180deg, #0a1a0a 0%, #051505 100%);
   border: 2px solid #003300;
   border-radius: 6px;
-  padding: 12px;
+  padding: 17px;
   box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.5),
     0 0 15px rgba(0, 255, 0, 0.1);
@@ -76,7 +76,7 @@
   background: linear-gradient(180deg, #0a0f0a 0%, #050805 100%);
   border: 1px solid #002200;
   border-radius: 4px;
-  padding: 10px 14px;
+  padding: 14px 20px;
   font-family: 'Courier New', 'Consolas', monospace;
 }
 
@@ -99,7 +99,7 @@
 }
 
 .lexi-lcd-value {
-  font-size: 15px;
+  font-size: 21px;
   font-weight: bold;
   color: var(--lexi-lcd-green);
   text-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
@@ -107,7 +107,7 @@
 }
 
 .lexi-lcd-decay-bar {
-  height: 8px;
+  height: 11px;
   background: #051505;
   border-radius: 4px;
   overflow: hidden;

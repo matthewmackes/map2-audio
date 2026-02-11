@@ -8,7 +8,7 @@ Provides graph topology, latency settings, volume control, and real-time metrics
 import logging
 from dataclasses import asdict
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -20,16 +20,38 @@ router = APIRouter(prefix="/api/pipewire", tags=["pipewire"])
 # ============================================================================
 
 class SetQuantumRequest(BaseModel):
-    quantum: int  # 0 = auto, or 32-8192 (power of 2)
+    quantum: int = Field(..., description="0 = auto, or 32-8192 (power of 2)")
+    
+    @field_validator('quantum')
+    @classmethod
+    def validate_quantum(cls, v: int) -> int:
+        if v == 0:
+            return v
+        if v < 16 or v > 8192:
+            raise ValueError("quantum must be 0 (auto) or between 16 and 8192")
+        # Check if power of 2
+        if v & (v - 1) != 0:
+            raise ValueError("quantum must be a power of 2")
+        return v
 
 
 class SetRateRequest(BaseModel):
-    rate: int  # 0 = auto, or 44100/48000/88200/96000/176400/192000
+    rate: int = Field(..., description="0 = auto, or valid sample rate")
+    
+    @field_validator('rate')
+    @classmethod
+    def validate_rate(cls, v: int) -> int:
+        if v == 0:
+            return v
+        valid_rates = [44100, 48000, 88200, 96000, 176400, 192000]
+        if v not in valid_rates:
+            raise ValueError(f"rate must be 0 (auto) or one of {valid_rates}")
+        return v
 
 
 class SetVolumeRequest(BaseModel):
     node_id: int
-    volume: float  # 0.0 to 1.5
+    volume: float = Field(..., ge=0.0, le=1.5, description="Volume level 0.0 to 1.5")
 
 
 class SetMuteRequest(BaseModel):
@@ -144,36 +166,26 @@ async def get_pipewire_settings():
 
 @router.post("/quantum")
 async def set_pipewire_quantum(req: SetQuantumRequest):
-    """Set PipeWire DSP quantum (buffer period). 0 = automatic."""
-    try:
-        from app.services.pipewire_service import get_pipewire_service
-        svc = get_pipewire_service()
-        ok = await svc.set_quantum(req.quantum)
-        if not ok:
-            raise HTTPException(400, detail="Failed to set quantum")
-        settings = await svc.get_settings()
-        return {"success": True, "quantum": req.quantum, "settings": asdict(settings)}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(500, detail=str(e))
+    """Set PipeWire DSP quantum (buffer period). LOCKED for Tier A performance."""
+    # Tier A: Quantum is locked at 64 via systemd service ExecStartPre
+    raise HTTPException(
+        status_code=403,
+        detail="PipeWire quantum is LOCKED at 64 samples for Tier A performance (<3ms latency). "
+               "Changes must be made in systemd service (map2-backend.service) and service restarted. "
+               "Current quantum is enforced via ExecStartPre: pw-metadata -n settings 0 clock.force-quantum 64"
+    )
 
 
 @router.post("/rate")
 async def set_pipewire_rate(req: SetRateRequest):
-    """Set PipeWire forced sample rate. 0 = automatic."""
-    try:
-        from app.services.pipewire_service import get_pipewire_service
-        svc = get_pipewire_service()
-        ok = await svc.set_rate(req.rate)
-        if not ok:
-            raise HTTPException(400, detail="Failed to set rate")
-        settings = await svc.get_settings()
-        return {"success": True, "rate": req.rate, "settings": asdict(settings)}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(500, detail=str(e))
+    """Set PipeWire forced sample rate. LOCKED for Tier A performance."""
+    # Tier A: Sample rate is locked at 48000 Hz via systemd service ExecStartPre
+    raise HTTPException(
+        status_code=403,
+        detail="PipeWire sample rate is LOCKED at 48000 Hz for Tier A performance. "
+               "Changes must be made in systemd service (map2-backend.service) and service restarted. "
+               "Current rate is enforced via ExecStartPre: pw-metadata -n settings 0 clock.force-rate 48000"
+    )
 
 
 # ============================================================================

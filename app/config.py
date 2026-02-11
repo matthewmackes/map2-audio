@@ -43,6 +43,7 @@ class ConfigOption:
     choices: Optional[List[Any]] = None
     sensitive: bool = False  # Don't log sensitive values
     restart_required: bool = False  # Requires restart to apply
+    locked: bool = False  # Locked settings cannot be changed at runtime (systemd service only)
 
 
 class ConfigSection(Enum):
@@ -113,20 +114,22 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
     "audio.sample_rate": ConfigOption(
         key="audio.sample_rate",
         default=48000,
-        description="Audio sample rate in Hz",
+        description="Audio sample rate in Hz (LOCKED for Tier A performance - set in systemd service only)",
         value_type=int,
         env_var="MAP2_SAMPLE_RATE",
         choices=[44100, 48000, 88200, 96000, 192000],
         restart_required=True,
+        locked=True,  # Tier A: prevent runtime changes, must restart service
     ),
     "audio.buffer_size": ConfigOption(
         key="audio.buffer_size",
         default=64,
-        description="Audio buffer size in samples",
+        description="Audio buffer size in samples (LOCKED at 64 for <3ms latency - set in systemd service only)",
         value_type=int,
         env_var="MAP2_BUFFER_SIZE",
         choices=[64, 128, 256, 512, 1024, 2048],
         restart_required=True,
+        locked=True,  # Tier A: 64 samples @ 48kHz = 1.33ms - prevent runtime changes
     ),
     "audio.channels": ConfigOption(
         key="audio.channels",
@@ -148,11 +151,12 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
     "audio.backend": ConfigOption(
         key="audio.backend",
         default="pipewire",
-        description="Audio backend: 'pipewire' (recommended), 'jack', or 'alsa' (direct)",
+        description="Audio backend (LOCKED at 'pipewire' for Tier A stability - set in systemd service only)",
         value_type=str,
         env_var="MAP2_AUDIO_BACKEND",
         choices=["pipewire", "jack", "alsa"],
         restart_required=True,
+        locked=True,  # Tier A: prevent runtime backend switching
     ),
     "audio.pipewire_use_jack": ConfigOption(
         key="audio.pipewire_use_jack",
@@ -650,7 +654,18 @@ class ConfigManager:
 
         Returns:
             True if value was set successfully
+            
+        Raises:
+            ValueError: If the setting is locked for Tier A performance
         """
+        # Check if setting is locked (Tier A performance protection)
+        if self.is_locked(key):
+            raise ValueError(
+                f"Configuration key '{key}' is LOCKED for Tier A professional guitar processor performance. "
+                f"This setting can only be changed in the systemd service (map2-backend.service) and requires a service restart. "
+                f"Locked settings ensure <3ms round-trip latency and prevent buffer size mismatches."
+            )
+        
         if not self._validate_value(key, value):
             return False
 
@@ -665,6 +680,22 @@ class ConfigManager:
             self.save()
 
         return True
+    
+    def is_locked(self, key: str) -> bool:
+        """
+        Check if a configuration key is locked (cannot be changed at runtime).
+        
+        Locked settings are critical for Tier A performance and can only be
+        changed in the systemd service configuration.
+        
+        Args:
+            key: Configuration key to check
+            
+        Returns:
+            True if the setting is locked, False otherwise
+        """
+        option = CONFIG_SCHEMA.get(key)
+        return option.locked if option else False
 
     def save(self) -> bool:
         """Save configuration to file."""

@@ -48,7 +48,7 @@ export function TunerCard({
       {/* Main Note Display */}
       <div
         style={{
-          fontSize: compact ? '48px' : '72px',
+          fontSize: compact ? '67px' : '101px',
           fontWeight: 'bold',
           color: inTune ? accentColor : '#fff',
           fontFamily: 'monospace',
@@ -84,7 +84,7 @@ export function TunerCard({
         <div
           style={{
             flex: 1,
-            height: '12px',
+            height: '17px',
             background: '#222',
             borderRadius: '6px',
             position: 'relative',

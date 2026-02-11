@@ -1175,6 +1175,28 @@
           {"id": "love_secrets", "name": "Love Secrets", "description": "Tight delay shredding tone"}
         ]
       }
+    },
+    {
+      "uri": "map2://juce/drums",
+      "name": "Drum Machine",
+      "category": "Drums",
+      "description": "Sophisticated drum machine with practice patterns, advanced editing, and backing track modes. Supports factory and user-generated drum packs with multiple play styles.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 0,
+        "outputs": 2
+      },
+      "priority": 9,
+      "is_native": true,
+      "api_base": "/api/engine/drums",
+      "features": ["drum-patterns", "practice-modes", "pattern-browser", "backing-tracks", "drum-packs", "performance-mode"],
+      "parameters": [
+        {"name": "BPM", "symbol": "bpm", "min": 40, "max": 300, "default": 120, "unit": "bpm"},
+        {"name": "Volume", "symbol": "volume", "min": 0, "max": 100, "default": 80, "unit": "%"},
+        {"name": "Pattern", "symbol": "pattern", "min": 0, "max": 127, "default": 0},
+        {"name": "Variation", "symbol": "variation", "min": 0, "max": 10, "default": 0},
+        {"name": "Transport", "symbol": "transport", "type": "toggle", "default": false}
+      ]
     }
   ]
 }

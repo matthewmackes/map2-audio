@@ -56,9 +56,9 @@ echo -e "  ${GREEN}✓${NC} USB power management rules created"
 echo -e "\n${GREEN}[2/7]${NC} Optimizing USB buffer sizes..."
 sudo tee /etc/modprobe.d/usb-audio-buffer.conf > /dev/null <<'EOF'
 # Increase USB audio buffer for lower latency and better stability
-# nrpacks: number of packets per URB (default 1, increase for stability)
+# nrpacks: number of packets per URB (1 = minimum latency for isochronous transfers)
 # async_unlink: enable async unlinking for lower latency
-options snd-usb-audio nrpacks=2 async_unlink=1
+options snd-usb-audio nrpacks=1 async_unlink=1
 
 # xHCI controller optimizations
 # Increase URB pool size for better throughput

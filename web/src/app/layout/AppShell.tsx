@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X, Server, Radio, Flame, Drum, Guitar } from 'lucide-react'
+import { PanelsTopLeft, Sparkles, Info, Package, AudioLines, Piano, LayoutGrid, Activity, Sliders, Usb, BookOpen, Monitor, Menu, X, Server, Radio, Flame, Drum, Guitar, Layers, Cpu } from 'lucide-react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
@@ -48,28 +48,12 @@ const underTheHoodItems = [
 
   // ── Audio Processing ──
   {
-    to: '/metering',
-    label: 'Metering',
+    to: '/engine',
+    label: 'Audio Engine',
     icon: Activity,
-    description: 'Audio analysis & monitoring',
-    color: '#37d6c9',  // Cyan-teal
+    description: 'Engine cluster, metering, signal path & diagnostics',
+    color: '#3b82f6',  // Blue
     dividerBefore: true,
-    group: 'Audio Processing',
-  },
-  {
-    to: '/dsp',
-    label: 'DSP',
-    icon: Sliders,
-    description: 'Native JUCE processors — dynamics, EQ, delay, modulation, pitch, reverb, amps & multi-FX',
-    color: '#ff6644',  // Orange-red
-    group: 'Audio Processing',
-  },
-  {
-    to: '/drums',
-    label: 'Drums',
-    icon: Drum,
-    description: 'Drum machine & practice patterns',
-    color: '#f59e0b',  // Amber
     group: 'Audio Processing',
   },
 
@@ -103,6 +87,14 @@ const underTheHoodItems = [
     group: 'Hardware & Interfaces',
   },
   {
+    to: '/motu-rme',
+    label: 'MOTU + RME ADAT',
+    icon: Layers,
+    description: 'MOTU UltraLite-mk5 + RME ADI-8 QS monitoring',
+    color: '#00D4FF',  // Cyan
+    group: 'Hardware & Interfaces',
+  },
+  {
     to: '/hotone-jogg',
     label: 'HoTone JoGG',
     icon: AudioLines,
@@ -110,15 +102,6 @@ const underTheHoodItems = [
     color: '#e53935',  // HoTone red
     group: 'Hardware & Interfaces',
   },
-  {
-    to: '/pipewire',
-    label: 'PipeWire',
-    icon: Radio,
-    description: 'Audio server graph, latency & controls',
-    color: '#a78bfa',  // Purple
-    group: 'Hardware & Interfaces',
-  },
-
   // ── Infrastructure ──
   {
     to: '/host-machine',
@@ -127,6 +110,14 @@ const underTheHoodItems = [
     description: 'Hardware info & real-time health',
     color: '#3b82f6',  // Blue
     dividerBefore: true,
+    group: 'Infrastructure',
+  },
+  {
+    to: '/cpu-performance',
+    label: 'CPU Performance',
+    icon: Cpu,
+    description: 'Intel generation comparison & capacity analysis',
+    color: '#0066FF',  // Intel blue
     group: 'Infrastructure',
   },
   {
