@@ -120,20 +120,30 @@ class MDNSPeerDiscovery:
         try:
             import zeroconf
             
-            class ServiceBrowser(zeroconf.ServiceBrowser):
-                def __init__(self, zeroconf, service_type, handler):
+            class ServiceListener:
+                """Listener for zeroconf service events."""
+                def __init__(self, zc, handler):
+                    self.zc = zc
                     self.handler = handler
-                    super().__init__(zeroconf, service_type, self)
-                
-                def update_record(self, zeroconf, service_type, name):
-                    info = zeroconf.get_service_info(service_type, name)
+
+                def add_service(self, zc, service_type, name):
+                    info = zc.get_service_info(service_type, name)
                     if info:
                         self.handler(info)
-            
-            browser = ServiceBrowser(
+
+                def remove_service(self, zc, service_type, name):
+                    pass  # handled via heartbeat timeout
+
+                def update_service(self, zc, service_type, name):
+                    info = zc.get_service_info(service_type, name)
+                    if info:
+                        self.handler(info)
+
+            listener = ServiceListener(self.zeroconf, self._on_service_found)
+            browser = zeroconf.ServiceBrowser(
                 self.zeroconf,
                 "_map2-node._tcp.local.",
-                self._on_service_found
+                listener
             )
             
             # Keep discovering

@@ -790,3 +790,12 @@ def start_metrics_collection(interval: float = 1.0) -> None:
     thread = threading.Thread(target=_collection_loop, daemon=True, name="metrics-collector")
     thread.start()
     logger.info(f"Started metrics collection (interval={interval}s, history={_metrics_collector.max_history})")
+
+
+def stop_metrics_collection() -> None:
+    """Stop background metrics collection (called by service orchestrator)."""
+    global _metrics_collector
+    with _collector_lock:
+        if _metrics_collector is not None:
+            _metrics_collector.is_collecting = False
+            logger.info("Stopped metrics collection")

@@ -109,6 +109,10 @@ class LCDDisplay:
         command = f"L{line}:{formatted_text}\n"
         
         try:
+            if self.serial is None:
+                self.connected = False
+                self.lines[line] = formatted_text
+                return
             self.serial.write(command.encode())
             logger.debug(f"LCD Line {line}: {formatted_text}")
         except Exception as e:
