@@ -1,10 +1,8 @@
 /**
- * GlitchShifter Custom Plugin Card
+ * Airwindows Plugin Cards
  *
- * Airwindows GlitchShifter - Granular pitch shifter/harmonizer
- * LV2 port by Hannes Braun: https://github.com/hannesbraun/airwindows-lv2
- *
- * This card provides a world-class interface for the GlitchShifter plugin.
+ * ⚠️  All cards are lazy-loaded via registry.ts — do NOT add eager exports.
+ * See Custom/index.ts for documentation.
  */
 
-export { GlitchShifterCard } from './GlitchShifterCard'
+// Intentionally empty — cards loaded via registry.ts

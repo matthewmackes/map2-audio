@@ -1,18 +1,8 @@
 /**
- * TooB Plugin Cards
+ * TooB Plugin Cards (ToobAmp LV2)
  *
- * Custom parameter cards for ToobAmp LV2 plugins (PiPedal project).
+ * ⚠️  All cards are lazy-loaded via registry.ts — do NOT add eager exports.
+ * See Custom/index.ts for documentation.
  */
 
-// Modulation Effects
-export { CE2ChorusCard } from './CE2ChorusCard'
-export { BF2FlangerCard } from './BF2FlangerCard'
-export { PhaserCard as TooBPhaserCard } from './PhaserCard'
-export { TremoloCard } from './TremoloCard'
-
-// Time-Based Effects
-export { DelayCard } from './DelayCard'
-
-// Utility
-export { TunerCard } from './TunerCard'
-export { LooperCard } from './LooperCard'
+// Intentionally empty — cards loaded via registry.ts

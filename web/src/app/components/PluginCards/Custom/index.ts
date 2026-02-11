@@ -1,21 +1,17 @@
 /**
  * Custom Plugin Cards
  *
- * Plugin-specific cards with tailored interfaces for flagship plugins.
- * Organized by plugin family/format.
+ * ⚠️  DO NOT add eager `export *` re-exports here.
+ *
+ * All custom cards are lazy-loaded via the plugin registry in registry.ts.
+ * Each card is only downloaded when the user opens that specific plugin.
+ * Adding eager exports here would pull ~40 card components (~500KB)
+ * into the initial bundle.
+ *
+ * To add a new card: register it in registry.ts with a `loader` function:
+ *   registerPluginCard('map2://juce/my-effect', {
+ *     loader: () => import('./JUCE/MyEffectCard'),
+ *   })
  */
 
-// JUCE Native Processors (best-in-class built-in effects)
-export * from './JUCE'
-
-// Dragonfly Reverbs (best-in-class algorithmic reverbs)
-export * from './Dragonfly'
-
-// TooB Plugins (ToobAmp/PiPedal LV2 collection)
-export * from './TooB'
-
-// LV2 Plugin Cards
-export * from './LV2'
-
-// Airwindows Plugin Cards (legendary free plugin collection)
-export * from './Airwindows'
+// Intentionally empty — cards loaded via registry.ts

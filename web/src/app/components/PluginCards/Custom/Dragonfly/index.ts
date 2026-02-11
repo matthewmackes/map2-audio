@@ -1,10 +1,8 @@
 /**
  * Dragonfly Reverb Cards
  *
- * Custom parameter cards for Dragonfly Reverb LV2 plugins.
- * Best-in-class algorithmic reverbs.
+ * ⚠️  All cards are lazy-loaded via registry.ts — do NOT add eager exports.
+ * See Custom/index.ts for documentation.
  */
 
-export { DragonflyRoomCard } from './DragonflyRoomCard'
-export { DragonflyHallCard } from './DragonflyHallCard'
-export { DragonflyPlateCard } from './DragonflyPlateCard'
+// Intentionally empty — cards loaded via registry.ts

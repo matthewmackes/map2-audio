@@ -1,12 +1,8 @@
 /**
  * Plugin Card Templates
+ *
+ * ⚠️  All templates are lazy-loaded via registerTemplateLazy() in
+ * PluginCards/index.ts — do NOT add eager exports here.
  */
 
-export { DynamicsTemplate } from './DynamicsTemplate'
-export { ReverbTemplate } from './ReverbTemplate'
-export { EQTemplate } from './EQTemplate'
-export { DelayTemplate } from './DelayTemplate'
-export { DistortionTemplate } from './DistortionTemplate'
-export { ModulationTemplate } from './ModulationTemplate'
-export { UtilityTemplate } from './UtilityTemplate'
-export { PitchTemplate } from './PitchTemplate'
+// Intentionally empty — templates loaded via registerTemplateLazy()
