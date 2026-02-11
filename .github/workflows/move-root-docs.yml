@@ -1,0 +1,57 @@
+name: Move root markdown files to docs/
+
+on:
+  schedule:
+    # 4:00 AM Eastern Standard Time = 9:00 AM UTC
+    # (During EDT/daylight saving, this runs at 5:00 AM Eastern)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  move-markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Move root .md files to docs/
+        run: |
+          shopt -s nullglob
+          files=(*.md)
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No markdown files found in root. Nothing to do."
+            exit 0
+          fi
+
+          mkdir -p docs
+
+          moved=0
+          for f in "${files[@]}"; do
+            # Skip README.md — it belongs in the root
+            if [ "$f" = "README.md" ]; then
+              echo "Skipping $f (should stay in root)"
+              continue
+            fi
+            echo "Moving $f → docs/$f"
+            git mv "$f" "docs/$f"
+            moved=$((moved + 1))
+          done
+
+          if [ "$moved" -eq 0 ]; then
+            echo "No files to move (only README.md in root)."
+            exit 0
+          fi
+
+          echo "moved_count=$moved" >> "$GITHUB_ENV"
+
+      - name: Commit and push
+        if: env.moved_count != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: move ${{ env.moved_count }} root markdown file(s) to docs/"
+          git push
