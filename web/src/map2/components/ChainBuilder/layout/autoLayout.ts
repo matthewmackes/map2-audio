@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - React Flow Auto-Layout
 // Automatic node positioning for signal chains

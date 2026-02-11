@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - useChainFlow Hook
 // State management for React Flow nodes and edges

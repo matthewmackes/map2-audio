@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - React Flow Position Storage
 // Persists node positions to localStorage per chain ID

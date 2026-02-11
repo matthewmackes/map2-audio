@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Audio Connection Edge Component
 // Custom React Flow edge for audio connections with channel indicators

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Snapshot Bar Component
 // 6-slot snapshot management for chain state save/recall

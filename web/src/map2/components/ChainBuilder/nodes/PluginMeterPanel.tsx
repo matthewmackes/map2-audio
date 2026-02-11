@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Plugin Meter Panel Component
 // Expandable per-plugin metering panel with VU, Spectrum, and Info tabs

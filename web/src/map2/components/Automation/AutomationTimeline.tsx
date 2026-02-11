@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Automation Timeline Component
 // Main timeline panel with transport controls and automation lanes

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Signal Chain Builder Component
 // Visual editor inspired by PiPedal's professional pedalboard interface

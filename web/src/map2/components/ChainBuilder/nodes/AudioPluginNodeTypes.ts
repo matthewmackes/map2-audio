@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Audio Plugin Node Type Definitions
 // TypeScript interfaces for React Flow custom audio plugin nodes

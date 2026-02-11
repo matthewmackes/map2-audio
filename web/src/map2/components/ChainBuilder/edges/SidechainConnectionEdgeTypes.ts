@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Sidechain Connection Edge Type Definitions
 // TypeScript interfaces for React Flow custom sidechain connection edges

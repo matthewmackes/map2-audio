@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Automation Lane Component
 // Single automation lane with point editing and curve visualization

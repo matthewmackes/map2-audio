@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Audio Connection Edge Type Definitions
 // TypeScript interfaces for React Flow custom audio connection edges

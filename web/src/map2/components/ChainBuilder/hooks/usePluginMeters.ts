@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Plugin Meters Hook
 // Manages per-plugin metering data with WebSocket subscriptions

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - MIDI Mappings Panel Component
 // Table of all active MIDI CC mappings with edit/delete functionality

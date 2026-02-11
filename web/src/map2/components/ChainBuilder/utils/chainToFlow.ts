@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Chain to React Flow Transformer
 // Converts backend Chain model to React Flow nodes and edges

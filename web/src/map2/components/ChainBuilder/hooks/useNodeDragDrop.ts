@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Node Drag-Drop Hook
 // Utilities for dragging plugins from browser to canvas

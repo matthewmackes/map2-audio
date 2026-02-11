@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Audio Plugin Node Component
 // Custom React Flow node for audio plugins with Material-UI styling

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Transport Controls Component
 // Play, Stop, Record, Loop controls for automation playback

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Chain Flow Canvas Component
 // Main React Flow container for signal chain visualization

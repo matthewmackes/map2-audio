@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Audio Configuration Dialog
 // Device selection, sample rate, buffer size, and advanced audio settings

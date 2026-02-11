@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - ChainBuilder Module Exports
 // Re-exports for backward compatibility and new JUCE integration features

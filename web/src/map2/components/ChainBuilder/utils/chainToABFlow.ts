@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Chain to A/B React Flow Transformer
 // Converts two chains (A and B) into a unified parallel routing visualization

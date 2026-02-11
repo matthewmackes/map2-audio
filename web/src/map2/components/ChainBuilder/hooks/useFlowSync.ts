@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - useFlowSync Hook
 // Real-time synchronization between React Flow and backend

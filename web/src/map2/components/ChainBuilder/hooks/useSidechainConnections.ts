@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Sidechain Connections Hook
 // Manages sidechain routing state and API interactions

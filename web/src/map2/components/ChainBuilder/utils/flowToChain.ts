@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - React Flow to Chain Transformer
 // Extracts plugin order from React Flow node positions

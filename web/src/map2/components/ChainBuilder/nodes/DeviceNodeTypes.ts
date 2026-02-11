@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Device Node Type Definitions
 // Lightweight nodes representing input/output devices in the chain

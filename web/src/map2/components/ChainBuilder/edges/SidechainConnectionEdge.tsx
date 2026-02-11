@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Sidechain Connection Edge Component
 // Custom React Flow edge for sidechain connections with animated flow

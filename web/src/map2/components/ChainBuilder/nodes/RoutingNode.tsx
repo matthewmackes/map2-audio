@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Routing Node Component
 // Visual representation of signal split and blend points for A/B routing

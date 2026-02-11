@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MAP2 Audio Platform - Routing Node Type Definitions
 // Nodes for A/B split and blend routing visualization
