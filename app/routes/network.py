@@ -3,6 +3,7 @@ Network Configuration API Routes
 Comprehensive network management for Fedora-based systems using NetworkManager
 """
 
+import asyncio
 import logging
 import subprocess
 import re
@@ -45,10 +46,10 @@ class ServiceAction(BaseModel):
 
 # ==================== Helper Functions ====================
 
-def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
+async def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
     """Run a shell command safely."""
     try:
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             cmd,
             capture_output=True,
             text=True,
@@ -63,10 +64,10 @@ def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProce
         raise HTTPException(status_code=500, detail=f"Command failed: {e.stderr}")
 
 
-def get_nmcli_connections() -> List[Dict[str, str]]:
+async def get_nmcli_connections() -> List[Dict[str, str]]:
     """Get all NetworkManager connections."""
     try:
-        result = run_command(["nmcli", "-t", "-f", "NAME,UUID,TYPE,DEVICE", "connection", "show"], check=False)
+        result = await run_command(["nmcli", "-t", "-f", "NAME,UUID,TYPE,DEVICE", "connection", "show"], check=False)
         connections = []
         for line in result.stdout.strip().split('\n'):
             if line:
@@ -84,7 +85,7 @@ def get_nmcli_connections() -> List[Dict[str, str]]:
         return []
 
 
-def get_interface_details(iface: str) -> Dict[str, Any]:
+async def get_interface_details(iface: str) -> Dict[str, Any]:
     """Get detailed information about a network interface."""
     details = {
         "name": iface,
@@ -100,7 +101,7 @@ def get_interface_details(iface: str) -> Dict[str, Any]:
 
     try:
         # Get interface state
-        result = run_command(["ip", "-j", "addr", "show", iface], check=False)
+        result = await run_command(["ip", "-j", "addr", "show", iface], check=False)
         if result.returncode == 0 and result.stdout.strip():
             data = json.loads(result.stdout)
             if data:
@@ -118,7 +119,7 @@ def get_interface_details(iface: str) -> Dict[str, Any]:
                         details["netmask"] = prefix_to_netmask(prefix_len)
 
         # Get gateway
-        result = run_command(["ip", "-j", "route", "show", "default"], check=False)
+        result = await run_command(["ip", "-j", "route", "show", "default"], check=False)
         if result.returncode == 0 and result.stdout.strip():
             routes = json.loads(result.stdout)
             for route in routes:
@@ -129,7 +130,7 @@ def get_interface_details(iface: str) -> Dict[str, Any]:
         # Get speed for ethernet
         if iface.startswith("e"):
             try:
-                result = run_command(["ethtool", iface], check=False)
+                result = await run_command(["ethtool", iface], check=False)
                 for line in result.stdout.split('\n'):
                     if "Speed:" in line:
                         details["speed"] = line.split(':')[1].strip()
@@ -138,7 +139,7 @@ def get_interface_details(iface: str) -> Dict[str, Any]:
                 pass
 
         # Check if DHCP
-        result = run_command(["nmcli", "-t", "-f", "ipv4.method", "connection", "show", iface], check=False)
+        result = await run_command(["nmcli", "-t", "-f", "ipv4.method", "connection", "show", iface], check=False)
         if result.returncode == 0:
             details["dhcp"] = "auto" in result.stdout
 
@@ -154,10 +155,10 @@ def prefix_to_netmask(prefix: int) -> str:
     return f"{(mask >> 24) & 0xff}.{(mask >> 16) & 0xff}.{(mask >> 8) & 0xff}.{mask & 0xff}"
 
 
-def get_wifi_interface() -> Optional[str]:
+async def get_wifi_interface() -> Optional[str]:
     """Get the primary WiFi interface name."""
     try:
-        result = run_command(["nmcli", "-t", "-f", "DEVICE,TYPE", "device"], check=False)
+        result = await run_command(["nmcli", "-t", "-f", "DEVICE,TYPE", "device"], check=False)
         for line in result.stdout.strip().split('\n'):
             if ':wifi' in line:
                 return line.split(':')[0]
@@ -185,26 +186,26 @@ async def get_network_status() -> Dict[str, Any]:
 
     try:
         # Get hostname
-        result = run_command(["hostname"], check=False)
+        result = await run_command(["hostname"], check=False)
         status["hostname"] = result.stdout.strip()
 
         # Get domain
-        result = run_command(["hostname", "-d"], check=False)
+        result = await run_command(["hostname", "-d"], check=False)
         status["domain"] = result.stdout.strip() or "local"
 
         # Get all interfaces
-        result = run_command(["ip", "-j", "link", "show"], check=False)
+        result = await run_command(["ip", "-j", "link", "show"], check=False)
         if result.returncode == 0:
             interfaces = json.loads(result.stdout)
             for iface in interfaces:
                 name = iface.get("ifname", "")
                 if name.startswith("e") and name != "lo":  # Ethernet
-                    details = get_interface_details(name)
+                    details = await get_interface_details(name)
                     status["ethernet"].append(details)
                 elif name.startswith("w"):  # WiFi
-                    details = get_interface_details(name)
+                    details = await get_interface_details(name)
                     # Get WiFi-specific info
-                    wifi_result = run_command(["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY", "device", "wifi", "list", "ifname", name], check=False)
+                    wifi_result = await run_command(["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY", "device", "wifi", "list", "ifname", name], check=False)
                     if wifi_result.returncode == 0:
                         for line in wifi_result.stdout.strip().split('\n')[:1]:  # Current connection
                             parts = line.split(':')
@@ -215,18 +216,18 @@ async def get_network_status() -> Dict[str, Any]:
                     status["wifi"].append(details)
 
         # Get DNS servers
-        result = run_command(["cat", "/etc/resolv.conf"], check=False)
+        result = await run_command(["cat", "/etc/resolv.conf"], check=False)
         for line in result.stdout.split('\n'):
             if line.startswith("nameserver"):
                 dns = line.split()[1]
                 status["dns_servers"].append(dns)
 
         # Check internet connectivity
-        result = run_command(["ping", "-c", "1", "-W", "2", "8.8.8.8"], check=False)
+        result = await run_command(["ping", "-c", "1", "-W", "2", "8.8.8.8"], check=False)
         status["internet_connected"] = result.returncode == 0
 
         # Get routes
-        result = run_command(["ip", "-j", "route", "show"], check=False)
+        result = await run_command(["ip", "-j", "route", "show"], check=False)
         if result.returncode == 0:
             routes = json.loads(result.stdout)
             for route in routes:
@@ -254,16 +255,16 @@ async def get_network_status() -> Dict[str, Any]:
                 "description": ""
             }
 
-            result = run_command(["systemctl", "is-active", service_name], check=False)
+            result = await run_command(["systemctl", "is-active", service_name], check=False)
             service_info["running"] = result.stdout.strip() == "active"
 
-            result = run_command(["systemctl", "is-enabled", service_name], check=False)
+            result = await run_command(["systemctl", "is-enabled", service_name], check=False)
             service_info["enabled"] = result.stdout.strip() == "enabled"
 
             status["services"].append(service_info)
 
         # Get firewall zones
-        result = run_command(["firewall-cmd", "--list-all-zones"], check=False)
+        result = await run_command(["firewall-cmd", "--list-all-zones"], check=False)
         if result.returncode == 0:
             current_zone = None
             for line in result.stdout.split('\n'):
@@ -291,16 +292,16 @@ async def get_network_status() -> Dict[str, Any]:
 @router.get("/wifi/scan")
 async def scan_wifi_networks() -> Dict[str, List[Dict[str, Any]]]:
     """Scan for available WiFi networks."""
-    wifi_iface = get_wifi_interface()
+    wifi_iface = await get_wifi_interface()
     if not wifi_iface:
         return {"networks": []}
 
     try:
         # Trigger a rescan
-        run_command(["nmcli", "device", "wifi", "rescan", "ifname", wifi_iface], check=False)
+        await run_command(["nmcli", "device", "wifi", "rescan", "ifname", wifi_iface], check=False)
 
         # Get networks
-        result = run_command(["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY,BSSID,CHAN", "device", "wifi", "list", "ifname", wifi_iface], check=False)
+        result = await run_command(["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY,BSSID,CHAN", "device", "wifi", "list", "ifname", wifi_iface], check=False)
 
         networks = []
         seen_ssids = set()
@@ -332,7 +333,7 @@ async def scan_wifi_networks() -> Dict[str, List[Dict[str, Any]]]:
 @router.post("/wifi/connect")
 async def connect_wifi(request: WiFiConnectRequest) -> Dict[str, str]:
     """Connect to a WiFi network."""
-    wifi_iface = get_wifi_interface()
+    wifi_iface = await get_wifi_interface()
     if not wifi_iface:
         raise HTTPException(status_code=404, detail="No WiFi interface found")
 
@@ -342,7 +343,7 @@ async def connect_wifi(request: WiFiConnectRequest) -> Dict[str, str]:
             cmd.extend(["password", request.password])
         cmd.extend(["ifname", wifi_iface])
 
-        result = run_command(cmd, check=False)
+        result = await run_command(cmd, check=False)
 
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail=f"Failed to connect: {result.stderr}")
@@ -360,7 +361,7 @@ async def connect_wifi(request: WiFiConnectRequest) -> Dict[str, str]:
 async def disconnect_wifi(interface: str) -> Dict[str, str]:
     """Disconnect from WiFi."""
     try:
-        result = run_command(["nmcli", "device", "disconnect", interface], check=False)
+        result = await run_command(["nmcli", "device", "disconnect", interface], check=False)
 
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail=f"Failed to disconnect: {result.stderr}")
@@ -379,7 +380,7 @@ async def toggle_interface(interface: str, enabled: bool) -> Dict[str, Any]:
     """Enable or disable a network interface."""
     try:
         action = "connect" if enabled else "disconnect"
-        result = run_command(["nmcli", "device", action, interface], check=False)
+        result = await run_command(["nmcli", "device", action, interface], check=False)
 
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail=f"Failed to {action} interface: {result.stderr}")
@@ -398,17 +399,17 @@ async def set_dhcp(interface: str, enabled: bool) -> Dict[str, Any]:
     """Enable or disable DHCP on an interface."""
     try:
         if enabled:
-            result = run_command([
+            result = await run_command([
                 "nmcli", "connection", "modify", interface,
                 "ipv4.method", "auto"
             ], check=False)
         else:
             # Keep current IP as static
-            details = get_interface_details(interface)
+            details = await get_interface_details(interface)
             if not details.get("ip_address"):
                 raise HTTPException(status_code=400, detail="Cannot disable DHCP without an IP address")
 
-            result = run_command([
+            result = await run_command([
                 "nmcli", "connection", "modify", interface,
                 "ipv4.method", "manual"
             ], check=False)
@@ -417,8 +418,8 @@ async def set_dhcp(interface: str, enabled: bool) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"Failed to configure DHCP: {result.stderr}")
 
         # Restart the connection
-        run_command(["nmcli", "connection", "down", interface], check=False)
-        run_command(["nmcli", "connection", "up", interface], check=False)
+        await run_command(["nmcli", "connection", "down", interface], check=False)
+        await run_command(["nmcli", "connection", "up", interface], check=False)
 
         return {"status": "success", "interface": interface, "dhcp": enabled}
 
@@ -437,7 +438,7 @@ async def set_static_ip(interface: str, config: IPConfiguration) -> Dict[str, An
         netmask_parts = [int(x) for x in config.netmask.split('.')]
         prefix = sum([bin(x).count('1') for x in netmask_parts])
 
-        result = run_command([
+        result = await run_command([
             "nmcli", "connection", "modify", interface,
             "ipv4.method", "manual",
             "ipv4.addresses", f"{config.ip_address}/{prefix}",
@@ -448,8 +449,8 @@ async def set_static_ip(interface: str, config: IPConfiguration) -> Dict[str, An
             raise HTTPException(status_code=400, detail=f"Failed to set static IP: {result.stderr}")
 
         # Restart the connection
-        run_command(["nmcli", "connection", "down", interface], check=False)
-        run_command(["nmcli", "connection", "up", interface], check=False)
+        await run_command(["nmcli", "connection", "down", interface], check=False)
+        await run_command(["nmcli", "connection", "up", interface], check=False)
 
         return {"status": "success", "interface": interface, "config": config.dict()}
 
@@ -465,7 +466,7 @@ async def set_dns_servers(config: DNSConfiguration) -> Dict[str, Any]:
     """Set DNS servers system-wide."""
     try:
         # Get the active connection
-        result = run_command(["nmcli", "-t", "-f", "NAME,DEVICE", "connection", "show", "--active"], check=False)
+        result = await run_command(["nmcli", "-t", "-f", "NAME,DEVICE", "connection", "show", "--active"], check=False)
 
         active_conn = None
         for line in result.stdout.strip().split('\n'):
@@ -479,7 +480,7 @@ async def set_dns_servers(config: DNSConfiguration) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail="No active network connection found")
 
         dns_string = ",".join(config.servers)
-        result = run_command([
+        result = await run_command([
             "nmcli", "connection", "modify", active_conn,
             "ipv4.dns", dns_string,
             "ipv4.ignore-auto-dns", "yes"
@@ -489,8 +490,8 @@ async def set_dns_servers(config: DNSConfiguration) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"Failed to set DNS: {result.stderr}")
 
         # Restart the connection to apply
-        run_command(["nmcli", "connection", "down", active_conn], check=False)
-        run_command(["nmcli", "connection", "up", active_conn], check=False)
+        await run_command(["nmcli", "connection", "down", active_conn], check=False)
+        await run_command(["nmcli", "connection", "up", active_conn], check=False)
 
         return {"status": "success", "dns_servers": config.servers}
 
@@ -514,7 +515,7 @@ async def manage_service(request: ServiceAction) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=f"Action not allowed: {request.action}")
 
     try:
-        result = run_command(["systemctl", request.action, request.service], check=False)
+        result = await run_command(["systemctl", request.action, request.service], check=False)
 
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail=f"Failed to {request.action} {request.service}: {result.stderr}")
@@ -532,7 +533,7 @@ async def manage_service(request: ServiceAction) -> Dict[str, Any]:
 async def get_hostname() -> Dict[str, str]:
     """Get the system hostname."""
     try:
-        result = run_command(["hostname"], check=False)
+        result = await run_command(["hostname"], check=False)
         return {"hostname": result.stdout.strip()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -542,7 +543,7 @@ async def get_hostname() -> Dict[str, str]:
 async def set_hostname(hostname: str) -> Dict[str, str]:
     """Set the system hostname."""
     try:
-        result = run_command(["hostnamectl", "set-hostname", hostname], check=False)
+        result = await run_command(["hostnamectl", "set-hostname", hostname], check=False)
         if result.returncode != 0:
             raise HTTPException(status_code=400, detail=f"Failed to set hostname: {result.stderr}")
         return {"status": "success", "hostname": hostname}

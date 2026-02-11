@@ -98,7 +98,7 @@ def _check_status(condition: bool, name: str, good_msg: str, bad_msg: str, fix: 
 def _run_cmd_sync(cmd: str) -> str:
     """Run a shell command synchronously and return output."""
     try:
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+        result = await asyncio.to_thread(subprocess.run,cmd, shell=True, capture_output=True, text=True, timeout=5)
         return result.stdout.strip()
     except Exception:
         return ""
@@ -1085,7 +1085,7 @@ async def verify_core_config():
                 # Try to read actual CPU affinity from system
                 try:
                     # Get CPU affinity for this core
-                    result = subprocess.run(
+                    result = await asyncio.to_thread(subprocess.run,
                         ['taskset', '-c', '-p', str(i)],
                         capture_output=True,
                         text=True,
@@ -1213,7 +1213,7 @@ async def get_cpu_info():
         
         # CPU governor
         try:
-            result = subprocess.run(
+            result = await asyncio.to_thread(subprocess.run,
                 ['cat', '/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'],
                 capture_output=True, text=True
             )
@@ -1226,7 +1226,7 @@ async def get_cpu_info():
         cpu_info['isolation_available'] = False
         
         try:
-            result = subprocess.run(['cat', '/proc/cmdline'], capture_output=True, text=True)
+            result = await asyncio.to_thread(subprocess.run,['cat', '/proc/cmdline'], capture_output=True, text=True)
             cmdline = result.stdout.strip() if result.returncode == 0 else ''
             cpu_info['isolation_available'] = 'isolcpus=' in cmdline
             cpu_info['kernel_cmdline'] = cmdline
@@ -1278,7 +1278,7 @@ async def get_realtime_capabilities():
         # Check CPU governor
         governor = 'Unknown'
         try:
-            result = subprocess.run(
+            result = await asyncio.to_thread(subprocess.run,
                 ['cat', '/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'],
                 capture_output=True, text=True
             )
@@ -1295,7 +1295,7 @@ async def get_realtime_capabilities():
         # Check for CPU isolation
         isolation_available = False
         try:
-            result = subprocess.run(['cat', '/proc/cmdline'], capture_output=True, text=True)
+            result = await asyncio.to_thread(subprocess.run,['cat', '/proc/cmdline'], capture_output=True, text=True)
             cmdline = result.stdout.strip() if result.returncode == 0 else ''
             isolation_available = 'isolcpus=' in cmdline
         except Exception:
@@ -2144,7 +2144,7 @@ async def get_cpu_isolation_status():
         sysctl_settings = {}
         try:
             for param in ["kernel.sched_rt_runtime_us", "vm.swappiness", "kernel.nmi_watchdog"]:
-                result = subprocess.run(["sysctl", "-n", param], capture_output=True, text=True, timeout=2)
+                result = await asyncio.to_thread(subprocess.run,["sysctl", "-n", param], capture_output=True, text=True, timeout=2)
                 if result.returncode == 0:
                     sysctl_settings[param] = result.stdout.strip()
         except Exception:
@@ -2154,13 +2154,13 @@ async def get_cpu_isolation_status():
         backend_running = False
         pipewire_running = False
         try:
-            result = subprocess.run(["pgrep", "-f", "uvicorn app.main"], capture_output=True, timeout=2)
+            result = await asyncio.to_thread(subprocess.run,["pgrep", "-f", "uvicorn app.main"], capture_output=True, timeout=2)
             backend_running = result.returncode == 0
         except Exception:
             pass
         
         try:
-            result = subprocess.run(["pgrep", "pipewire"], capture_output=True, timeout=2)
+            result = await asyncio.to_thread(subprocess.run,["pgrep", "pipewire"], capture_output=True, timeout=2)
             pipewire_running = result.returncode == 0
         except Exception:
             pass
@@ -2216,7 +2216,7 @@ async def verify_cpu_isolation():
     Returns detailed report including actual vs configured state.
     """
     try:
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             ["/bin/bash", "/usr/local/bin/map2-verify-isolation.sh", "--verbose"],
             capture_output=True,
             text=True,
@@ -2280,7 +2280,7 @@ async def reset_to_mode_configuration():
         
         # Reload systemd configuration
         try:
-            subprocess.run(["systemctl", "daemon-reload"], check=True, timeout=5)
+            await asyncio.to_thread(subprocess.run,["systemctl", "daemon-reload"], check=True, timeout=5)
             changes_applied.append("systemd daemon reloaded")
         except Exception as e:
             warnings.append(f"Failed to reload systemd: {str(e)}")
@@ -2288,7 +2288,7 @@ async def reset_to_mode_configuration():
         # Restart map2-backend service to apply new settings
         service_restarted = False
         try:
-            subprocess.run(["systemctl", "restart", "map2-backend"], check=True, timeout=15)
+            await asyncio.to_thread(subprocess.run,["systemctl", "restart", "map2-backend"], check=True, timeout=15)
             changes_applied.append("map2-backend service restarted")
             service_restarted = True
         except Exception as e:
@@ -2352,11 +2352,11 @@ async def get_cpu_isolation_metrics():
         
         # Get backend process stats
         try:
-            result = subprocess.run(["pgrep", "-f", "uvicorn app.main"], capture_output=True, text=True)
+            result = await asyncio.to_thread(subprocess.run,["pgrep", "-f", "uvicorn app.main"], capture_output=True, text=True)
             if result.returncode == 0:
                 pid = result.stdout.strip().split()[0]
                 # Use ps to get CPU usage
-                result = subprocess.run(
+                result = await asyncio.to_thread(subprocess.run,
                     ["ps", "-p", pid, "-o", "%cpu,%mem,cmd"],
                     capture_output=True,
                     text=True

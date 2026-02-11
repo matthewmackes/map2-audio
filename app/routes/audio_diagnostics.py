@@ -235,7 +235,7 @@ try:
         Returns estimated latency without requiring loopback cable.
         """
         try:
-            proc = subprocess.run(
+            proc = await asyncio.to_thread(subprocess.run,
                 ["/home/mm/map2-audio/scripts/measure_latency.sh",
                  "--internal", "--json", "--duration", "5"],
                 capture_output=True, text=True, timeout=30

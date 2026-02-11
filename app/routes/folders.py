@@ -3,6 +3,7 @@ Folder Scanner API Routes
 Scan and manage audio file folders.
 """
 
+import asyncio
 import logging
 from typing import Dict
 from fastapi import APIRouter, HTTPException, BackgroundTasks
@@ -271,9 +272,9 @@ async def get_network_share_status() -> Dict:
         local_ip = result["local_ip"]
 
         # Check if SMB ports are listening
-        def check_port(port: int) -> bool:
+        async def check_port(port: int) -> bool:
             try:
-                proc = subprocess.run(
+                proc = await asyncio.to_thread(subprocess.run,
                     ["ss", "-tln"],
                     capture_output=True, text=True, timeout=5
                 )
@@ -281,13 +282,13 @@ async def get_network_share_status() -> Dict:
             except Exception:
                 return False
 
-        result["smb_port_445"] = check_port(445)
-        result["smb_port_139"] = check_port(139)
+        result["smb_port_445"] = await check_port(445)
+        result["smb_port_139"] = await check_port(139)
         result["smb_enabled"] = result["smb_port_445"] or result["smb_port_139"]
 
         # Check SMB service status
         try:
-            proc = subprocess.run(
+            proc = await asyncio.to_thread(subprocess.run,
                 ["systemctl", "is-active", "smb"],
                 capture_output=True, text=True, timeout=5
             )

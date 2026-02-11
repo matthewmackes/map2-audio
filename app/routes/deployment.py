@@ -113,7 +113,7 @@ async def set_deployment_mode(request: SetModeRequest):
     config.set_mode(mode)
     
     # Also update the system-level config files so all stores agree
-    _sync_system_config(mode)
+    await _sync_system_config(mode)
     
     logger.info(f"Deployment mode switched from {old_mode} to {request.mode}")
     
@@ -123,7 +123,7 @@ async def set_deployment_mode(request: SetModeRequest):
     )
 
 
-def _sync_system_config(mode: DeploymentMode):
+async def _sync_system_config(mode: DeploymentMode):
     """
     Sync the deployment mode to all system config stores.
     

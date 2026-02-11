@@ -10,6 +10,7 @@ Endpoints for:
 - POST /api/ssh/keys/distribute - Distribute public key to peer
 """
 
+import asyncio
 import logging
 import subprocess
 from typing import List, Dict, Optional
@@ -131,7 +132,7 @@ async def generate_ssh_keys(request: GenerateKeyRequest):
     
     # Generate new key
     try:
-        subprocess.run([
+        await asyncio.to_thread(subprocess.run,[
             'ssh-keygen',
             '-t', request.key_type,
             '-b', str(request.key_bits),
@@ -147,7 +148,7 @@ async def generate_ssh_keys(request: GenerateKeyRequest):
             public_key = f.read().strip()
         
         # Calculate fingerprint
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             ['ssh-keygen', '-l', '-f', f"{ssh_key_path}.pub"],
             capture_output=True,
             text=True,
@@ -180,7 +181,7 @@ async def add_peer_trust(request: AddTrustRequest):
         with open(temp_key_file, 'w') as f:
             f.write(request.peer_public_key)
         
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             ['ssh-keygen', '-l', '-f', str(temp_key_file)],
             capture_output=True,
             text=True,
@@ -321,7 +322,7 @@ async def distribute_ssh_key(request: DistributeKeyRequest):
             "chmod 600 ~/.ssh/authorized_keys"
         )
         
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             [
                 'ssh',
                 f"{request.peer_user}@{request.peer_host}",

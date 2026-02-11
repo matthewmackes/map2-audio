@@ -3,6 +3,7 @@ Core Plugins API Routes
 Endpoints for managing and verifying core plugin installations (ToobAmp, etc.)
 """
 
+import asyncio
 import os
 import json
 import logging
@@ -246,11 +247,11 @@ try:
 
         return "unknown"
 
-    def _check_plugin_installed(uri: str) -> tuple[bool, Optional[str]]:
+    async def _check_plugin_installed(uri: str) -> tuple[bool, Optional[str]]:
         """Check if a specific plugin URI is available."""
         try:
             # Use lv2ls if available
-            result = subprocess.run(
+            result = await asyncio.to_thread(subprocess.run,
                 ["lv2ls"],
                 capture_output=True,
                 text=True,
@@ -379,9 +380,9 @@ try:
             }
 
         # Run installation in background
-        def run_install():
+        async def run_install():
             try:
-                result = subprocess.run(
+                result = await asyncio.to_thread(subprocess.run,
                     ["bash", str(script_path)],
                     capture_output=True,
                     text=True,

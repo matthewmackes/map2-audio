@@ -8,6 +8,7 @@ Provides API endpoints for:
 - ALSA configuration
 """
 
+import asyncio
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -266,7 +267,7 @@ async def get_usb_diagnostics():
 
     # Kernel modules
     try:
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             ["lsmod"],
             capture_output=True,
             text=True,
@@ -313,7 +314,7 @@ async def list_usb_devices() -> List[Dict[str, Any]]:
 
     try:
         # Use lsusb to get all USB devices
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             ["lsusb"],
             capture_output=True,
             text=True,
@@ -404,7 +405,7 @@ async def reset_usb_device(device_id: str) -> Dict[str, Any]:
 
         # Try using usbreset if available
         try:
-            result = subprocess.run(
+            result = await asyncio.to_thread(subprocess.run,
                 ["usbreset", usb_path],
                 capture_output=True,
                 text=True,

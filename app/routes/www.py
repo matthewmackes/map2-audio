@@ -3,6 +3,7 @@ Web Services Configuration API Routes
 Comprehensive web server and API management
 """
 
+import asyncio
 import logging
 import subprocess
 import os
@@ -48,10 +49,10 @@ class ConfigUpdate(BaseModel):
 
 # ==================== Helper Functions ====================
 
-def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
+async def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
     """Run a shell command safely."""
     try:
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             cmd,
             capture_output=True,
             text=True,
@@ -66,10 +67,10 @@ def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProce
         raise HTTPException(status_code=500, detail=f"Command failed: {e.stderr}")
 
 
-def check_service_running(service: str) -> bool:
+async def check_service_running(service: str) -> bool:
     """Check if a systemd service is running."""
     try:
-        result = subprocess.run(
+        result = await asyncio.to_thread(subprocess.run,
             ["systemctl", "is-active", service],
             capture_output=True,
             text=True,
@@ -174,7 +175,7 @@ async def get_www_status() -> Dict[str, Any]:
             status["ssl_cert"] = str(ssl_cert_path)
             # Get expiry date (would need openssl)
             try:
-                result = run_command([
+                result = await run_command([
                     "openssl", "x509", "-enddate", "-noout", "-in", str(ssl_cert_path)
                 ], check=False)
                 if result.returncode == 0:
@@ -250,7 +251,7 @@ async def restart_service(service: str) -> Dict[str, str]:
         if service == "backend":
             # Find and restart the uvicorn process
             # This is typically done by a process manager like systemd
-            result = run_command(["systemctl", "restart", "map2-backend"], check=False)
+            result = await run_command(["systemctl", "restart", "map2-backend"], check=False)
             if result.returncode != 0:
                 # Try a graceful restart signal
                 for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
@@ -265,7 +266,7 @@ async def restart_service(service: str) -> Dict[str, str]:
                 return {"status": "not_managed", "service": service, "message": "Backend is not managed by systemd"}
 
         elif service == "frontend":
-            result = run_command(["systemctl", "restart", "map2-frontend"], check=False)
+            result = await run_command(["systemctl", "restart", "map2-frontend"], check=False)
             if result.returncode != 0:
                 return {"status": "not_managed", "service": service, "message": "Frontend is not managed by systemd"}
 
