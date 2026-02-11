@@ -140,10 +140,10 @@ class LV2PluginInfo:
 
 
 class LV2PluginService(Singleton):
-    \"\"\"Enhanced LV2 plugin service with full spec compliance.\"\"\"
+    """Enhanced LV2 plugin service with full spec compliance."""
     
     def __init__(self):
-        \"\"\"Initialize enhanced LV2 service.\"\"\"
+        """Initialize enhanced LV2 service."""
         super().__init__()
         self.plugins: Dict[str, LV2PluginInfo] = {}
         self.loaded_instances: Dict[str, Any] = {}

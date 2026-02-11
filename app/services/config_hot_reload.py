@@ -13,8 +13,15 @@ import json
 import yaml
 import hashlib
 import logging
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileModifiedEvent
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler, FileModifiedEvent
+    HAS_WATCHDOG = True
+except ImportError:
+    Observer = None  # type: ignore
+    FileSystemEventHandler = object  # type: ignore
+    FileModifiedEvent = None  # type: ignore
+    HAS_WATCHDOG = False
 import asyncio
 from copy import deepcopy
 
@@ -419,6 +426,10 @@ class ConfigurationHotReloader:
     
     def start_watching(self) -> None:
         """Start watching config file for changes."""
+        if not HAS_WATCHDOG:
+            logger.warning("watchdog package not installed — file watching disabled")
+            return
+        
         if self.watch_enabled:
             logger.warning("File watching already enabled")
             return

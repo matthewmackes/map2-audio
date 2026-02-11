@@ -20,9 +20,9 @@ class IRPluginInfo:
     # Core plugin metadata
     uri: str
     name: str
-    author: str = "MAP2 Audio"
     category: str  # "Amplifier" for cabinets, "Reverb" for reverbs
     class_label: str
+    author: str = "MAP2 Audio"
     version: str = "1.0.0"
     license: str = "Apache-2.0"
     ir_type: str = "cabinet"  # 'cabinet' or 'reverb'

@@ -1,7 +1,5 @@
-/**
- * Prometheus Metrics Exporter
- * Exports system metrics in Prometheus format for integration with monitoring stacks
- */
+# Prometheus Metrics Exporter
+# Exports system metrics in Prometheus format for integration with monitoring stacks
 
 from fastapi import APIRouter, Response
 from typing import Dict, List
