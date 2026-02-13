@@ -1,0 +1,121 @@
+      {/* JUCE AudioProcessorGraph Signal Flow Visualization with Routing Controls */}
+      <div className="grid-routing-viz-container">
+        {/* Vertical Title Tab */}
+        <div className="grid-routing-vertical-tab">
+          <span>ROUTING</span>
+        </div>
+
+        {/* Vertical Routing Buttons */}
+        <div className="grid-routing-vertical-controls">
+          <ToolbarTooltip content="Series (Sequential)" shortcut="">
+            <button
+              className={`grid-routing-mode-btn ${routing.mode === 'series' ? 'active' : ''}`}
+              onClick={() => setRoutingMode('series')}
+              onMouseEnter={() => setRoutingPreview('series')}
+              onMouseLeave={() => setRoutingPreview(null)}
+              title="Series"
+            >
+              <ArrowsLeftRight size={18} weight="duotone" />
+            </button>
+          </ToolbarTooltip>
+          
+          <ToolbarTooltip content="Parallel Blend" shortcut="">
+            <button
+              className={`grid-routing-mode-btn ${routing.mode === 'parallel_blend' ? 'active' : ''}`}
+              onClick={() => setRoutingMode('parallel_blend')}
+              onMouseEnter={() => setRoutingPreview('parallel_blend')}
+              onMouseLeave={() => setRoutingPreview(null)}
+              title="Parallel"
+            >
+              <GitBranch size={18} weight="duotone" />
+            </button>
+          </ToolbarTooltip>
+          
+          <ToolbarTooltip content="A/B Switch" shortcut="">
+            <button
+              className={`grid-routing-mode-btn ${routing.mode === 'ab_switch' ? 'active' : ''}`}
+              onClick={() => setRoutingMode('ab_switch')}
+              onMouseEnter={() => setRoutingPreview('ab_switch')}
+              onMouseLeave={() => setRoutingPreview(null)}
+              title="A/B Switch"
+            >
+              <Shuffle size={18} weight="duotone" />
+            </button>
+          </ToolbarTooltip>
+          
+          <ToolbarTooltip content="Parameter Morph" shortcut="">
+            <button
+              className={`grid-routing-mode-btn ${routing.mode === 'parameter_morph' ? 'active' : ''}`}
+              onClick={() => setRoutingMode('parameter_morph')}
+              onMouseEnter={() => setRoutingPreview('parameter_morph')}
+              onMouseLeave={() => setRoutingPreview(null)}
+              title="Morph"
+            >
+              <GearSix size={18} weight="duotone" />
+            </button>
+          </ToolbarTooltip>
+          
+          <ToolbarTooltip content="Sidechain View" shortcut="">
+            <button
+              className={`grid-routing-mode-btn ${routing.mode === 'sidechain' ? 'active' : ''}`}
+              onClick={() => setRoutingMode('sidechain')}
+              onMouseEnter={() => setRoutingPreview('sidechain')}
+              onMouseLeave={() => setRoutingPreview(null)}
+              title="Sidechain"
+            >
+              <Link size={18} weight="duotone" />
+            </button>
+          </ToolbarTooltip>
+
+          {/* Flow Selection for A/B Mode */}
+          {routing.mode === 'ab_switch' && (
+            <div className="grid-routing-ab-selector">
+              {flowSlots.slice(0, 4).map((slot, idx) => (
+                <button
+                  key={slot.id}
+                  className={`grid-routing-flow-btn ${routing.activeSlotId === slot.id ? 'active' : ''}`}
+                  style={{ '--flow-color': slot.color } as React.CSSProperties}
+                  onClick={() => setRouting(prev => ({ ...prev, activeSlotId: slot.id }))}
+                  title={slot.label}
+                >
+                  {SLOT_COLORS[idx]?.label || String.fromCharCode(65 + idx)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Morph Control */}
+          {routing.mode === 'parameter_morph' && (
+            <div className="grid-routing-morph-control">
+              <div className="grid-routing-morph-value">
+                {(routing.morphProgress * 100).toFixed(0)}%
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={routing.morphProgress * 100}
+                onChange={(e) => setMorphProgress(Number(e.target.value) / 100)}
+                className="grid-routing-morph-slider"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Visualization Card */}
+        <JuceAudioGraphViz 
+          chains={chains}
+          routingMode={routing.mode}
+          flowSlots={flowSlots.map(slot => ({
+            id: slot.id,
+            chainId: slot.chainId,
+            label: slot.label,
+            color: slot.color,
+            muted: slot.muted,
+          }))}
+          activeFlowId={routing.activeSlotId}
+          morphSourceId={routing.morphSourceSlotId}
+          morphTargetId={routing.morphTargetId}
+          morphProgress={routing.morphProgress}
+        />
+      </div>

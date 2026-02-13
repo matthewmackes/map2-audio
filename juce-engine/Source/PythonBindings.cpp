@@ -2820,7 +2820,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "Get phaser metering (input, output, LFO phase)")
 
         // ========================================
-        // Pitch Shifter / EVH Harmonizer (NEW)
+        // Pitch Shifter / EVH--IN-STYLE Harmonizer (NEW)
         // ========================================
 
         .def("set_pitch_shifter_pitch_l", &Map2AudioEngine::setPitchShifterPitchL,
@@ -3265,7 +3265,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_lexilove_low_cut", &Map2AudioEngine::getLexiLoveLowCut,
              "Get Lexi Love low cut frequency")
 
-        // Multi-band decay (Lexicon signature)
+        // Multi-band decay (Lexicon--IN-STYLE signature)
         .def("set_lexilove_low_decay_mult", &Map2AudioEngine::setLexiLoveLowDecayMult,
              py::arg("mult"),
              "Set Lexi Love low frequency decay multiplier (0.25-2.0)")

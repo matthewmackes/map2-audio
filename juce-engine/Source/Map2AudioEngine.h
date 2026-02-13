@@ -474,7 +474,7 @@ public:
     PhaserProcessor& getPhaser() { return phaser_; }
 
     // ========================================
-    // Pitch Shifter / EVH Harmonizer (NEW)
+    // Pitch Shifter / EVH--IN-STYLE Harmonizer (NEW)
     // ========================================
 
     void setPitchShifterPitchL(float cents);
@@ -686,7 +686,7 @@ public:
     void setLexiLoveLowCut(float hz);
     float getLexiLoveLowCut() const;
 
-    // Multi-band decay (Lexicon signature)
+    // Multi-band decay (Lexicon--IN-STYLE signature)
     void setLexiLoveLowDecayMult(float mult);
     float getLexiLoveLowDecayMult() const;
     void setLexiLoveHighDecayMult(float mult);

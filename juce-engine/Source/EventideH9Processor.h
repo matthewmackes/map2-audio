@@ -1,10 +1,10 @@
 #pragma once
 
 /**
- * MAP2 Audio Engine - Eventide H9 Effect Processor
+ * MAP2 Audio Engine - Eventide--IN-STYLE H9 Effect Processor
  * Top 10 Algorithms emulation with professional-grade DSP
  * 
- * This processor implements Eventide's iconic algorithms:
+ * This processor implements Eventide--IN-STYLE's iconic algorithms:
  * 1. MicroPitch - Detuned copies with continuous modulation
  * 2. UltraShift - High-quality pitch shifter with formant correction
  * 3. SmartShift - Intelligent pitch shifting with pitch detection

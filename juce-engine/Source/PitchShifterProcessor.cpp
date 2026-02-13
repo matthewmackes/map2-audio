@@ -1,7 +1,7 @@
 /**
  * MAP2 Audio Engine - Pitch Shifter Processor Implementation
  *
- * Implements an Eventide-style dual granular pitch shifter optimized
+ * Implements an Eventide--IN-STYLE-style dual granular pitch shifter optimized
  * for the classic Van Halen "brown sound" micropitch/detune effect.
  *
  * Technical approach:
@@ -250,8 +250,8 @@ float PitchShifterProcessor::centsToRatio(float cents) const {
 }
 
 void PitchShifterProcessor::applyPreset(Preset preset) {
-    // Van Halen preset settings based on documented Eventide settings
-    // Sources: Eventide forums, VHLinks, Metropoulos Forum discussions
+    // Van Halen preset settings based on documented Eventide--IN-STYLE settings
+    // Sources: Eventide--IN-STYLE forums, VHLinks, Metropoulos Forum discussions
 
     switch (preset) {
         case Preset::Manual:
@@ -311,7 +311,7 @@ void PitchShifterProcessor::applyPreset(Preset preset) {
             break;
 
         case Preset::Panama:
-            // 1984 - classic EVH 949 detune
+            // 1984 - classic EVH--IN-STYLE 949 detune
             pitchL_.store(7.0f);
             pitchR_.store(-9.0f);
             delayL_.store(8.0f);

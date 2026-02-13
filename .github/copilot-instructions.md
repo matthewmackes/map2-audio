@@ -1,5 +1,8 @@
 # GitHub Copilot Instructions for MAP2 Audio Platform
 
+> Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
+
+
 > **Last Updated**: February 12, 2026 (MIDI Device Selection)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants

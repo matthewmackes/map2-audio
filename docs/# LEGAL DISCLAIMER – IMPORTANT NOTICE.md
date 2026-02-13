@@ -12,7 +12,7 @@ All trademarks, service marks, trade names, brand names, product names, model de
 
 This project claims **no ownership**, license, permission, authorization, sponsorship, or other right to use any such intellectual property.
 
-References to any brand, product, model, algorithm name, effect name, hardware unit, software title, or related terminology are made **solely for educational, historical, descriptive, comparative, and referential purposes** — including (but not limited to):
+References to any brand, product, model, algorithm name, effect name, hardware unit, software title, or related terminology are made **solely for educational, historical,descriptive, comparative, and referential purposes** — including (but not limited to):
 
 - identifying well-known audio effects processors, algorithms, or sonic characteristics that are widely discussed in public-domain literature, academic papers, textbooks, tutorials, forums, and engineering communities  
 - helping learners understand historically significant signal-processing techniques  
@@ -72,3 +72,11 @@ By accessing, studying, compiling, modifying, running, or distributing any part 
 We respectfully ask all users to honor the intellectual property rights of the many talented engineers, designers, and companies that have advanced the field of audio signal processing.
 
 Thank you for using this educational resource responsibly.
+
+---
+
+Important Disclaimer
+This educational platform and its associated code, documentation, or examples may inadvertently reference or mention trademarks, product names, brand names, manufacturers, or commercial software/hardware. (Eventide, Boss, Lexicon, et)
+Any such references are purely incidental — they are artifacts of the "Vibe Coding" explanatory process used to illustrate general concepts, techniques, or comparisons. This project has no affiliation with, is not endorsed by, and is not connected in any way to those companies, products, or brands.
+This is a free, non-commercial, educational resource only — not for sale, not for resale, and not intended as a product, replacement, substitute, alternative, or competitor to any commercial offering.
+The referenced commercial products are superior in quality, support, features, reliability, and every other respect. We strongly encourage users to purchase legitimate commercial products from their official sources and to support the developers and companies behind them — their work sustains jobs, innovation, and the broader community that benefits everyone, including educational efforts like this one.wou

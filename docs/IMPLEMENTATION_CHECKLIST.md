@@ -351,7 +351,7 @@ All fixes are considered successful when:
    - TweedBassman adds saturation
    - H3000 adds reverb/ambience
    - BossXS1 applies polyphonic shift
-   - LexiLove adds Lexicon-style reverb
+   - LexiLove adds Lexicon--IN-STYLE-style reverb
 
 3. ✅ **API Performance:**
    - Plugin loading doesn't freeze API

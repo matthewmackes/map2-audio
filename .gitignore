@@ -44,3 +44,10 @@ dist/
 
 # Generated/local drum content (do not commit)
 data/drums/generated/
+
+# Gemini CLI added temporary files
+data/map2.db-shm
+data/map2.db-wal
+logs/
+.copilot-notes/
+.gemini/

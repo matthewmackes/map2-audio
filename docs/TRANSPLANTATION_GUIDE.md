@@ -245,7 +245,7 @@ CMAKE_BUILD_TYPE=Release (forced)
 ### 4.5 Custom DSP Processors (37 source files)
 
 The engine includes custom implementations of:
-- Eventide H9, H3000 multi-effects
+- Eventide--IN-STYLE H9, H3000 multi-effects
 - Peavey 5150 Block Letter amp sim
 - Tweed Bassman 5F6-A amp sim
 - PassionFX (Steve Vai Passion & Warfare)

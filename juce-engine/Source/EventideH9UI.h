@@ -1,12 +1,12 @@
 #pragma once
 
 /**
- * MAP2 Audio Engine - Eventide H9 UI Component
+ * MAP2 Audio Engine - Eventide--IN-STYLE H9 UI Component
  * 
  * Visual Design:
  * - Red-on-Black Multi-Segment LED display (7-segment for algorithm)
  * - Black-on-White design accents
- * - Eventide H9-inspired hardware aesthetic
+ * - Eventide--IN-STYLE H9-inspired hardware aesthetic
  * - Real-time algorithm indicator with smooth transitions
  * - Touch-friendly parameter knobs
  * - Professional metering displays
@@ -327,7 +327,7 @@ public:
     }
     
     void paint(juce::Graphics& g) override {
-        // Eventide H9 aesthetic: Matte black background with white accents
+        // Eventide--IN-STYLE H9 aesthetic: Matte black background with white accents
         g.fillAll(juce::Colour(0xff1a1a1a));
         
         // Top panel - black on white
@@ -338,7 +338,7 @@ public:
         // Title
         g.setColour(juce::Colours::black);
         g.setFont(juce::Font(18.0f, juce::Font::bold));
-        g.drawText("EVENTIDE H9", topPanel, juce::Justification::centred, true);
+        g.drawText("EVENTIDE--IN-STYLE H9", topPanel, juce::Justification::centred, true);
     }
     
     void resized() override {

@@ -1,0 +1,232 @@
+# Vite Build & Server Troubleshooting Guide
+## Postmortem: "Server Down" Issue (February 12, 2026)
+
+### Incident Summary
+**Reported Issue**: "Pages are not loading correctly" / "Server down"  
+**Actual Cause**: Build folder (`dist/`) was deleted, rebuild in progress, server waiting for files  
+**Resolution Time**: ~60 seconds (build completion time)  
+**Root Cause**: `rm -rf dist` removed build output; vite preview server was running but serving empty folder
+
+---
+
+## Critical Diagnostic Steps (DO THESE FIRST)
+
+### 1. Check the FULL Stack Status
+**DO NOT assume server down = pages broken**. Check ALL layers:
+
+```bash
+# Layer 1: Is the build complete?
+ls -lh /home/mm/map2-audio/web/dist/index.html 2>&1 | head -1
+
+# Layer 2: Is the server process running?
+ps aux | grep -E "vite preview|node.*3000" | grep -v grep
+
+# Layer 3: Is the server responding?
+curl -s -I http://localhost:3000/ 2>&1 | head -1
+
+# Layer 4: What files are being served?
+curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js' | head -1
+```
+
+### 2. Identify the Actual Problem
+
+| Symptom | Diagnosis | Fix |
+|---------|-----------|-----|
+| `dist/index.html` missing | Build incomplete/failed | Wait or rebuild |
+| Server process not found | Server not running | Start server |
+| Server responds but 404 | Wrong port/path | Check logs/config |
+| Old files being served | Stale cache | Clear browser cache |
+
+---
+
+## Common Scenarios & Solutions
+
+### Scenario A: Build Deleted, Server Running
+**Symptoms**:
+- Server process exists
+- `dist/` folder missing or empty
+- Server responds with errors or empty page
+
+**Solution**:
+```bash
+# Check if build is already running
+ps aux | grep "vite build" | grep -v grep
+
+# If not running, start build
+cd /home/mm/map2-audio/web && npx vite build
+
+# Wait for completion (~30 seconds)
+while [ ! -f /home/mm/map2-audio/web/dist/index.html ]; do 
+  sleep 2
+done
+echo "Build complete!"
+
+# Server will automatically serve new files
+```
+
+**⚠️ DO NOT**:
+- Kill and restart server unnecessarily
+- Run multiple builds in parallel
+- Use `rm -rf dist` during active development
+
+---
+
+### Scenario B: Stale Browser Cache
+**Symptoms**:
+- Build has correct files (verified with `grep`)
+- Server serving correct files
+- Browser shows old version
+
+**Solution**:
+```bash
+# Verify build has changes
+grep -c '00d9ff' /home/mm/map2-audio/web/dist/assets/GridFlowPage-*.js
+
+# If build is correct, problem is browser cache
+# Instruct user to:
+# 1. Open DevTools (F12)
+# 2. Network tab → Disable cache checkbox
+# 3. Hard reload (Ctrl+Shift+R)
+# 4. Or: Application → Clear storage → Clear site data
+```
+
+---
+
+### Scenario C: Server Actually Down
+**Symptoms**:
+- No vite preview process
+- `curl` connection refused
+
+**Solution**:
+```bash
+# Start server
+cd /home/mm/map2-audio/web
+nohup npx vite preview --host 0.0.0.0 --port 3000 > /tmp/vite-preview.log 2>&1 &
+
+# Wait for startup
+sleep 3
+
+# Verify
+curl -s -I http://localhost:3000/ | head -1
+# Should see: HTTP/1.1 200 OK
+```
+
+---
+
+## Best Practices for AI Agents
+
+### ✅ DO
+
+1. **Check build status first** before assuming server issues
+   ```bash
+   test -f /home/mm/map2-audio/web/dist/index.html && echo "Built" || echo "Building"
+   ```
+
+2. **Wait for long-running processes** (builds take ~30s)
+   ```bash
+   timeout 60 bash -c 'while [ ! -f dist/index.html ]; do sleep 2; done'
+   ```
+
+3. **Verify the complete chain**:
+   - Source has changes
+   - Build includes changes  
+   - Server serves build
+   - Browser receives server output
+
+4. **Use background processes properly**:
+   ```bash
+   nohup command > logfile 2>&1 &  # Correct
+   command &  # Wrong - will stop when terminal closes
+   ```
+
+5. **Check logs before making assumptions**:
+   ```bash
+   tail -20 /tmp/vite-preview.log
+   tail -20 /tmp/build.log
+   ```
+
+### ❌ DON'T
+
+1. **Don't kill servers unnecessarily** - vite preview auto-reloads when dist/ changes
+2. **Don't run parallel builds** - causes conflicts and wasted resources
+3. **Don't use `rm -rf dist`** during development - breaks hot module reload
+4. **Don't assume terminal output = ground truth** - verify with filesystem checks
+5. **Don't interrupt build processes** - let them complete (~30s)
+
+---
+
+## Quick Reference Commands
+
+### Health Check (Copy-Paste)
+```bash
+echo "=== BUILD STATUS ===" && \
+test -f /home/mm/map2-audio/web/dist/index.html && echo "✓ Built" || echo "✗ Missing" && \
+echo "=== SERVER STATUS ===" && \
+ps aux | grep "vite preview" | grep -v grep && echo "✓ Running" || echo "✗ Stopped" && \
+echo "=== SERVER RESPONSE ===" && \
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/ || echo "✗ No response"
+```
+
+### Full Recovery (Copy-Paste)
+```bash
+# Clean restart
+cd /home/mm/map2-audio/web && \
+npx vite build && \
+sudo pkill -9 -f "vite preview" 2>/dev/null ; \
+nohup npx vite preview --host 0.0.0.0 --port 3000 > /tmp/vite-preview.log 2>&1 & \
+sleep 3 && \
+curl -s http://localhost:3000/ | head -5
+```
+
+---
+
+## Debugging Checklist
+
+When a user reports "pages not loading" or "server down":
+
+- [ ] Check if `dist/index.html` exists
+- [ ] Check if vite preview process is running
+- [ ] Check if build process is running
+- [ ] Test server response with curl
+- [ ] Verify build output contains expected changes
+- [ ] Check for port conflicts (`sudo lsof -ti:3000`)
+- [ ] Review server logs (`/tmp/vite-preview.log`)
+- [ ] Review build logs (`/tmp/build.log`)
+- [ ] Only after ALL checks: restart server
+
+---
+
+## Common Mistakes Made in This Incident
+
+1. ✗ Assumed server down when actually build was incomplete
+2. ✗ Tried multiple redundant rebuilds
+3. ✗ Killed server unnecessarily (it was working fine)
+4. ✗ Didn't wait for long-running build to complete
+5. ✓ Eventually verified the full stack and found build was the issue
+
+## Lessons Learned
+
+1. **Build takes time** (~30s) - don't panic and restart
+2. **Server auto-serves new files** - no need to restart after build
+3. **Check filesystem first** - more reliable than terminal output
+4. **One fix at a time** - don't compound problems
+5. **Browser cache is sneaky** - always verify server-side first
+
+---
+
+## File Locations Reference
+
+| File | Purpose |
+|------|---------|
+| `/home/mm/map2-audio/web/dist/` | Build output folder |
+| `/home/mm/map2-audio/web/src/` | Source files |
+| `/tmp/vite-preview.log` | Server log |
+| `/tmp/build.log` | Build log |
+| `http://localhost:3000/` | Local server |
+| `http://172.20.234.234:3000/` | Network server |
+
+---
+
+**Last Updated**: February 12, 2026  
+**Incident**: Pages not loading (build in progress)  
+**Resolution**: Wait for build completion, verify stack, no server restart needed

@@ -1,7 +1,7 @@
 /**
  * MAP2 Audio Engine - H3000 Harmonizer Processor
  *
- * Emulates the legendary Eventide H3000 Ultra-Harmonizer (1988)
+ * Emulates the legendary Eventide--IN-STYLE H3000 Ultra-Harmonizer (1988)
  * Known for its crystal-clear pitch shifting and studio-quality effects.
  *
  * Key characteristics:

@@ -303,13 +303,13 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         tweedBassman_.process(buffer);    // Tweed Bassman amp sim
     }
     if (!h3000_.isBypassed()) {
-        h3000_.process(buffer);           // Eventide H3000-style reverb
+        h3000_.process(buffer);           // Eventide--IN-STYLE H3000-style reverb
     }
     if (bossXS1_.isActive()) {
         bossXS1_.process(buffer);         // Boss XS-1 multi-effect
     }
     if (!lexiLove_.isBypassed()) {
-        lexiLove_.process(buffer);        // Lexicon-style reverb
+        lexiLove_.process(buffer);        // Lexicon--IN-STYLE-style reverb
     }
 
     // Process cabinet IR (if loaded)
@@ -1160,7 +1160,7 @@ PhaserProcessor::Metering Map2AudioEngine::getPhaserMetering() const {
 }
 
 // ========================================
-// Pitch Shifter / EVH Harmonizer
+// Pitch Shifter / EVH--IN-STYLE Harmonizer
 // ========================================
 
 void Map2AudioEngine::setPitchShifterPitchL(float cents) {
