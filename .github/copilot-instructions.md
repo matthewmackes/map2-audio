@@ -942,20 +942,22 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Edit systemd service file, restart service
 - **Test**: `python3 test_tier_a_locks.py` must show ✅
 
-**15. MIDI Device Selection (SOLVED - Feb 12, 2026)**
-- **File**: `juce-engine/Source/MidiHandler.cpp:193`
+**15. MIDI Device Selection (✅ SOLVED - Feb 12, 2026)**
+- **File**: `juce-engine/Source/MidiHandler.cpp:190-410`, `MidiHandler.h:321-327`
 - **Problem**: `openInputDevice()` stored device name but didn't actually connect
 - **Symptom**: All MIDI devices sent events to MAP2 regardless of selection
 - **Root Cause**: TODO stub accepted connections from any device
-- **Fix**: Implemented proper ALSA sequencer subscriptions
+- **Fix**: Implemented proper ALSA sequencer subscriptions (~150 lines)
   - Parse device name format: `"ClientName:PortName"`
   - Search ALSA clients/ports via `snd_seq_query_next_client()`
-  - Create specific subscription: device → MAP2 input port
-  - Track connections for proper cleanup
-- **Code**: See `MidiHandler::openInputDevice()` for full implementation
+  - Create specific subscription: device → MAP2 input port (input) or MAP2 output port → device (output)
+  - Track connections via `std::vector<AlsaConnection>` for proper cleanup
+  - Implement `closeInputDevice()` / `closeOutputDevice()` with proper unsubscribe
+- **Code**: `MidiHandler::openInputDevice()`, `MidiHandler::openOutputDevice()`, `MidiHandler::closeInputDevice()`, `MidiHandler::closeOutputDevice()`
 - **Test**: `engine.set_midi_device("DeviceName:Port")` now filters to that device only
+- **Commit**: `54d6dfd` - Pushed to GitHub master
 - **Docs**: `docs/MIDI_DEVICE_SELECTION_COMPLETE.md`
-- **Lesson**: ALSA device selection requires explicit port subscriptions, not just name storage
+- **Lesson**: ALSA device selection requires explicit `snd_seq_subscribe_port()` calls with proper sender/dest addresses. Device names must match exactly "ClientName:PortName" format from `snd_seq_client_info_get_name()` + `snd_seq_port_info_get_name()`
 
 ---
 
@@ -1178,13 +1180,15 @@ Target: < 5 ms total
 
 ## Update Log
 
-### [2026-02-12] - MIDI Device Selection Implementation
+### [2026-02-12] - MIDI Device Selection Implementation (COMPLETE)
 - **Section**: Gotchas & Learned Fixes (#15)
 - **Change**: Documented complete MIDI device selection implementation
 - **Reason**: Resolved TODO stub that allowed all devices instead of selected device
-- **Impact**: MIDI input now properly filters to user-selected device via ALSA subscriptions
+- **Impact**: MIDI input/output now properly filters to user-selected device via ALSA subscriptions
 - **Files**: MidiHandler.h/cpp (~150 lines), docs/MIDI_DEVICE_SELECTION_COMPLETE.md
-- **Key Lesson**: ALSA requires explicit port subscriptions, not just device name storage
+- **Commit**: `54d6dfd` - Pushed to GitHub master branch
+- **Key Lesson**: ALSA requires explicit `snd_seq_subscribe_port()` with sender/dest addresses
+- **Status**: ✅ Production-ready, tested, documented, committed, and pushed
 
 ---
 
