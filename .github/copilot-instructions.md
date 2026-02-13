@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: February 12, 2026 (MIDI Device Selection)
+> **Last Updated**: February 13, 2026 (Git Workflow Preferences)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -81,24 +81,36 @@ When adding significant updates, append to this log:
 
 ---
 
+## User Preferences
+
+### Git Workflow
+- **Always push to BOTH GitHub and GitLab simultaneously**
+  - GitHub remote: `origin` → https://github.com/matthewmackes/map2-audio
+  - GitLab remote: `gitlab` → https://gitlab.com/matthewmackes-group/matthewmackes-project
+  - When user requests push/sync: `git push origin master && git push gitlab master`
+  - Both repositories must stay in sync at all times
+
+---
+
 ## Table of Contents
 
 1. [🧠 IT REMEMBERS - Memory & Self-Improvement Protocol](#-it-remembers---memory--self-improvement-protocol)
-2. [Tech Stack & Versions](#tech-stack--versions)
-3. [Build & Test Commands](#build--test-commands)
-4. [Essential Files to Read First](#essential-files-to-read-first)
-5. [Server Management Patterns](#server-management-patterns)
-6. [Build & Deployment Workflow](#build--deployment-workflow)
-7. [Web Development Guidelines](#web-development-guidelines)
-8. [Code Quality Standards](#code-quality-standards)
-9. [Style & Architecture Rules](#style--architecture-rules)
-10. [Golden Example Files](#golden-example-files)
-11. [Critical System Rules](#critical-system-rules)
-12. [Performance & Latency](#performance--latency)
-13. [Gotchas & Learned Fixes](#gotchas--learned-fixes)
-14. [Plan-First Meta Rule](#plan-first-meta-rule)
-15. [Quick Reference Commands](#quick-reference-commands)
-16. [Common Pitfalls to Avoid](#common-pitfalls-to-avoid)
+2. [User Preferences](#user-preferences)
+3. [Tech Stack & Versions](#tech-stack--versions)
+4. [Build & Test Commands](#build--test-commands)
+5. [Essential Files to Read First](#essential-files-to-read-first)
+6. [Server Management Patterns](#server-management-patterns)
+7. [Build & Deployment Workflow](#build--deployment-workflow)
+8. [Web Development Guidelines](#web-development-guidelines)
+9. [Code Quality Standards](#code-quality-standards)
+10. [Style & Architecture Rules](#style--architecture-rules)
+11. [Golden Example Files](#golden-example-files)
+12. [Critical System Rules](#critical-system-rules)
+13. [Performance & Latency](#performance--latency)
+14. [Gotchas & Learned Fixes](#gotchas--learned-fixes)
+15. [Plan-First Meta Rule](#plan-first-meta-rule)
+16. [Quick Reference Commands](#quick-reference-commands)
+17. [Common Pitfalls to Avoid](#common-pitfalls-to-avoid)
 
 ---
 
@@ -1182,6 +1194,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-02-13] - Git Workflow Preferences Added
+- **Section**: User Preferences (new section)
+- **Change**: Added dual-push workflow for GitHub + GitLab
+- **Reason**: User requires both repositories to stay synchronized at all times
+- **Impact**: All push operations must target both `origin` (GitHub) and `gitlab` (GitLab) remotes
+- **Command**: `git push origin master && git push gitlab master`
 
 ### [2026-02-12] - MIDI Device Selection Implementation (COMPLETE)
 - **Section**: Gotchas & Learned Fixes (#15)
