@@ -61,6 +61,12 @@ check_dependencies() {
         log_error "Plymouth not found. Install with: dnf install plymouth plymouth-theme-*"
         exit 1
     fi
+
+    # Check for Plymouth script plugin
+    if [ ! -f "/usr/lib64/plymouth/script.so" ] && [ ! -f "/usr/lib/plymouth/script.so" ]; then
+        log_error "Plymouth script plugin not found. Install with: dnf install plymouth-plugin-script"
+        exit 1
+    fi
     
     # Check for logo file
     if [ ! -f "$LOGO_SOURCE" ]; then
@@ -94,8 +100,8 @@ install_boot_splash() {
     fi
     
     # Check if branding files exist
-    if [ ! -f "$MAP2_DIR/branding/map2-boot-splash.plymouth" ]; then
-        log_error "Plymouth config file not found: $MAP2_DIR/branding/map2-boot-splash.plymouth"
+    if [ ! -f "$MAP2_DIR/branding/map2.plymouth" ]; then
+        log_error "Plymouth config file not found: $MAP2_DIR/branding/map2.plymouth"
         return 1
     fi
     
@@ -105,7 +111,7 @@ install_boot_splash() {
     fi
     
     # Copy Plymouth configuration files
-    cp "$MAP2_DIR/branding/map2-boot-splash.plymouth" "$PLYMOUTH_THEME_DIR/"
+    cp "$MAP2_DIR/branding/map2.plymouth" "$PLYMOUTH_THEME_DIR/"
     cp "$MAP2_DIR/branding/map2-boot-splash.script" "$PLYMOUTH_THEME_DIR/"
     
     # Set permissions
@@ -116,7 +122,7 @@ install_boot_splash() {
     
     # Verify files
     log_info "Verifying installation..."
-    for file in "MACKESAUDIOPLATFORM.png" "map2-boot-splash.plymouth" "map2-boot-splash.script"; do
+    for file in "MACKESAUDIOPLATFORM.png" "map2.plymouth" "map2-boot-splash.script"; do
         if [ -f "$PLYMOUTH_THEME_DIR/$file" ]; then
             log_success "  $file - OK"
         else
@@ -129,8 +135,8 @@ install_boot_splash() {
     log_info "Configuring Plymouth theme..."
     
     # Set as default theme
-    if plymouth-set-default-theme map2-boot-splash; then
-        log_success "Plymouth theme set to map2-boot-splash"
+    if plymouth-set-default-theme map2; then
+        log_success "Plymouth theme set to map2"
     else
         log_error "Failed to set Plymouth theme"
         return 1
@@ -175,7 +181,7 @@ show_status() {
     
     # Check current theme
     current_theme=$(plymouth-set-default-theme 2>/dev/null || echo "unknown")
-    if [ "$current_theme" = "map2-boot-splash" ]; then
+    if [ "$current_theme" = "map2" ]; then
         log_success "MAP2 boot splash is ACTIVE"
     else
         log_warning "MAP2 boot splash is INACTIVE (current: $current_theme)"
@@ -200,7 +206,7 @@ show_status() {
             log_error "  Platform logo: MISSING"
         fi
         
-        if [ -f "$PLYMOUTH_THEME_DIR/map2-boot-splash.plymouth" ]; then
+        if [ -f "$PLYMOUTH_THEME_DIR/map2.plymouth" ]; then
             log_success "  Plymouth config: PRESENT"
         else
             log_error "  Plymouth config: MISSING"
@@ -273,7 +279,7 @@ repair_logo() {
         
         # Set theme and rebuild initramfs
         log_info "Updating Plymouth configuration..."
-        plymouth-set-default-theme map2-boot-splash
+        plymouth-set-default-theme map2
         
         log_info "Rebuilding initramfs..."
         dracut --regenerate-all --force
