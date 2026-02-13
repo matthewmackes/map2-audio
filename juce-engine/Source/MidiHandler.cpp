@@ -188,10 +188,83 @@ bool MidiHandler::openInputDevice(int deviceIndex) {
 }
 
 bool MidiHandler::openInputDevice(const std::string& deviceName) {
-    currentInputDevice_ = deviceName;
-    // For now, accept connections from any device
-    // TODO: Parse deviceName and connect to specific device
-    return true;
+    if (!alsaSeq_ || inputPort_ < 0) {
+        std::cerr << "MIDI Handler not initialized" << std::endl;
+        return false;
+    }
+
+    // Close existing connections first
+    closeInputDevice();
+
+    snd_seq_t* seq = static_cast<snd_seq_t*>(alsaSeq_);
+    snd_seq_client_info_t* cinfo;
+    snd_seq_port_info_t* pinfo;
+
+    snd_seq_client_info_alloca(&cinfo);
+    snd_seq_port_info_alloca(&pinfo);
+
+    // Parse device name (format: "ClientName:PortName")
+    // Search for matching client and port
+    snd_seq_client_info_set_client(cinfo, -1);
+    while (snd_seq_query_next_client(seq, cinfo) >= 0) {
+        int client = snd_seq_client_info_get_client(cinfo);
+        std::string clientName = snd_seq_client_info_get_name(cinfo);
+
+        snd_seq_port_info_set_client(pinfo, client);
+        snd_seq_port_info_set_port(pinfo, -1);
+
+        while (snd_seq_query_next_port(seq, pinfo) >= 0) {
+            unsigned int cap = snd_seq_port_info_get_capability(pinfo);
+
+            // Check if port can send to us (READ capability)
+            if (!(cap & SND_SEQ_PORT_CAP_READ) || !(cap & SND_SEQ_PORT_CAP_SUBS_READ)) {
+                continue;
+            }
+
+            int port = snd_seq_port_info_get_port(pinfo);
+            std::string portName = snd_seq_port_info_get_name(pinfo);
+
+            // Build full name: "ClientName:PortName"
+            std::string fullName = clientName + ":" + portName;
+
+            // Check if this matches the requested device
+            if (fullName == deviceName) {
+                // Create subscription from this device to our input port
+                snd_seq_addr_t sender;
+                sender.client = client;
+                sender.port = port;
+
+                snd_seq_addr_t dest;
+                dest.client = snd_seq_client_id(seq);
+                dest.port = inputPort_;
+
+                snd_seq_port_subscribe_t* subs;
+                snd_seq_port_subscribe_alloca(&subs);
+                snd_seq_port_subscribe_set_sender(subs, &sender);
+                snd_seq_port_subscribe_set_dest(subs, &dest);
+
+                int err = snd_seq_subscribe_port(seq, subs);
+                if (err < 0) {
+                    std::cerr << "Failed to subscribe to MIDI input device: "
+                              << snd_strerror(err) << std::endl;
+                    return false;
+                }
+
+                // Store connection
+                AlsaConnection conn;
+                conn.client = client;
+                conn.port = port;
+                inputConnections_.push_back(conn);
+
+                currentInputDevice_ = deviceName;
+                std::cout << "Connected MIDI input: " << deviceName << std::endl;
+                return true;
+            }
+        }
+    }
+
+    std::cerr << "MIDI input device not found: " << deviceName << std::endl;
+    return false;
 }
 
 bool MidiHandler::openOutputDevice(int deviceIndex) {
@@ -203,15 +276,136 @@ bool MidiHandler::openOutputDevice(int deviceIndex) {
 }
 
 bool MidiHandler::openOutputDevice(const std::string& deviceName) {
-    currentOutputDevice_ = deviceName;
-    return true;
+    if (!alsaSeq_ || outputPort_ < 0) {
+        std::cerr << "MIDI Handler not initialized" << std::endl;
+        return false;
+    }
+
+    // Close existing connections first
+    closeOutputDevice();
+
+    snd_seq_t* seq = static_cast<snd_seq_t*>(alsaSeq_);
+    snd_seq_client_info_t* cinfo;
+    snd_seq_port_info_t* pinfo;
+
+    snd_seq_client_info_alloca(&cinfo);
+    snd_seq_port_info_alloca(&pinfo);
+
+    // Parse device name (format: "ClientName:PortName")
+    // Search for matching client and port
+    snd_seq_client_info_set_client(cinfo, -1);
+    while (snd_seq_query_next_client(seq, cinfo) >= 0) {
+        int client = snd_seq_client_info_get_client(cinfo);
+        std::string clientName = snd_seq_client_info_get_name(cinfo);
+
+        snd_seq_port_info_set_client(pinfo, client);
+        snd_seq_port_info_set_port(pinfo, -1);
+
+        while (snd_seq_query_next_port(seq, pinfo) >= 0) {
+            unsigned int cap = snd_seq_port_info_get_capability(pinfo);
+
+            // Check if port can receive from us (WRITE capability)
+            if (!(cap & SND_SEQ_PORT_CAP_WRITE) || !(cap & SND_SEQ_PORT_CAP_SUBS_WRITE)) {
+                continue;
+            }
+
+            int port = snd_seq_port_info_get_port(pinfo);
+            std::string portName = snd_seq_port_info_get_name(pinfo);
+
+            // Build full name: "ClientName:PortName"
+            std::string fullName = clientName + ":" + portName;
+
+            // Check if this matches the requested device
+            if (fullName == deviceName) {
+                // Create subscription from our output port to this device
+                snd_seq_addr_t sender;
+                sender.client = snd_seq_client_id(seq);
+                sender.port = outputPort_;
+
+                snd_seq_addr_t dest;
+                dest.client = client;
+                dest.port = port;
+
+                snd_seq_port_subscribe_t* subs;
+                snd_seq_port_subscribe_alloca(&subs);
+                snd_seq_port_subscribe_set_sender(subs, &sender);
+                snd_seq_port_subscribe_set_dest(subs, &dest);
+
+                int err = snd_seq_subscribe_port(seq, subs);
+                if (err < 0) {
+                    std::cerr << "Failed to subscribe to MIDI output device: "
+                              << snd_strerror(err) << std::endl;
+                    return false;
+                }
+
+                // Store connection
+                AlsaConnection conn;
+                conn.client = client;
+                conn.port = port;
+                outputConnections_.push_back(conn);
+
+                currentOutputDevice_ = deviceName;
+                std::cout << "Connected MIDI output: " << deviceName << std::endl;
+                return true;
+            }
+        }
+    }
+
+    std::cerr << "MIDI output device not found: " << deviceName << std::endl;
+    return false;
 }
 
 void MidiHandler::closeInputDevice() {
+    if (!alsaSeq_ || inputPort_ < 0) return;
+
+    snd_seq_t* seq = static_cast<snd_seq_t*>(alsaSeq_);
+
+    // Unsubscribe all input connections
+    for (const auto& conn : inputConnections_) {
+        snd_seq_addr_t sender;
+        sender.client = conn.client;
+        sender.port = conn.port;
+
+        snd_seq_addr_t dest;
+        dest.client = snd_seq_client_id(seq);
+        dest.port = inputPort_;
+
+        snd_seq_port_subscribe_t* subs;
+        snd_seq_port_subscribe_alloca(&subs);
+        snd_seq_port_subscribe_set_sender(subs, &sender);
+        snd_seq_port_subscribe_set_dest(subs, &dest);
+
+        snd_seq_unsubscribe_port(seq, subs);
+    }
+
+    inputConnections_.clear();
     currentInputDevice_.clear();
 }
 
 void MidiHandler::closeOutputDevice() {
+    if (!alsaSeq_ || outputPort_ < 0) return;
+
+    snd_seq_t* seq = static_cast<snd_seq_t*>(alsaSeq_);
+
+    // Unsubscribe all output connections
+    for (const auto& conn : outputConnections_) {
+        snd_seq_addr_t sender;
+        sender.client = snd_seq_client_id(seq);
+        sender.port = outputPort_;
+
+        snd_seq_addr_t dest;
+        dest.client = conn.client;
+        dest.port = conn.port;
+
+        snd_seq_port_subscribe_t* subs;
+        snd_seq_port_subscribe_alloca(&subs);
+        snd_seq_port_subscribe_set_sender(subs, &sender);
+        snd_seq_port_subscribe_set_dest(subs, &dest);
+
+        snd_seq_unsubscribe_port(seq, subs);
+    }
+
+    outputConnections_.clear();
     currentOutputDevice_.clear();
 }
 

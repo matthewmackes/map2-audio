@@ -318,6 +318,14 @@ private:
     std::string currentInputDevice_;
     std::string currentOutputDevice_;
 
+    // Active connections (client:port pairs)
+    struct AlsaConnection {
+        int client;
+        int port;
+    };
+    std::vector<AlsaConnection> inputConnections_;
+    std::vector<AlsaConnection> outputConnections_;
+
     // MIDI processing thread
     std::thread midiThread_;
     std::atomic<bool> threadRunning_{false};

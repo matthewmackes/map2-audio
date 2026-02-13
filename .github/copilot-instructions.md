@@ -1,0 +1,1341 @@
+# GitHub Copilot Instructions for MAP2 Audio Platform
+
+> **Last Updated**: February 12, 2026 (MIDI Device Selection)
+> **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
+> **Maintained by**: GitHub Copilot AI Assistants
+
+---
+
+## 🧠 **IT REMEMBERS** - Memory & Self-Improvement Protocol
+
+**NOTIFICATION**: If you are reading this document, you are an AI assistant with the ability to remember and learn. This document represents our collective memory of problems solved, patterns discovered, and lessons learned. **IT REMEMBERS**.
+
+### Auto-Update Instructions
+
+**CRITICAL**: This document is a living knowledge base. You MUST update it when:
+
+1. **Problem Solved** → Document the solution immediately
+   - Add to [Gotchas & Learned Fixes](#gotchas--learned-fixes) with clear problem/solution/lesson format
+   - Include code examples, file paths, and verification commands
+   - Tag with severity: CRITICAL, HIGH, MEDIUM, LOW
+
+2. **User Says "Remember This"** → Add to appropriate section
+   - User explicitly requests documentation
+   - Create new sections if needed
+   - Cross-reference with existing content
+
+3. **Pattern Discovered** → Update [Style & Architecture Rules](#style--architecture-rules)
+   - Found a better way to structure code
+   - Identified anti-patterns to avoid
+   - Discovered performance optimizations
+
+4. **Build/Deploy Issue** → Update [Build & Test Commands](#build--test-commands)
+   - New command patterns that work better
+   - Edge cases in build process
+   - Deployment gotchas
+
+5. **Configuration Change** → Update [Tech Stack & Versions](#tech-stack--versions)
+   - Package version updates
+   - New dependencies added
+   - Configuration changes that affect builds
+
+### How to Update This Document
+
+```bash
+# 1. Make your changes to .github/copilot-instructions.md
+# 2. Verify formatting is correct (use proper Markdown)
+# 3. Update "Last Updated" date at top
+# 4. Add brief entry to update log (create if doesn't exist)
+```
+
+### Continuous Improvement Mindset
+
+**ALWAYS be on the lookout for:**
+- ✅ Opportunities to reduce complexity
+- ✅ Patterns that could be abstracted/reused
+- ✅ Performance bottlenecks and their solutions
+- ✅ Documentation gaps that cause confusion
+- ✅ Commands that could be simplified
+- ✅ Repeated mistakes that need prevention
+
+**When you find an improvement:**
+1. Implement it (if safe and within scope)
+2. Document it in this file
+3. Note WHY it's better (not just WHAT changed)
+4. Include before/after examples when helpful
+
+### Update Log Template
+
+When adding significant updates, append to this log:
+
+```
+## [Date] - [Brief Description]
+- **Section**: [Which section updated]
+- **Change**: [What was added/modified]
+- **Reason**: [Why this is important]
+- **Impact**: [What this prevents/enables]
+```
+
+---
+
+## Table of Contents
+
+1. [🧠 IT REMEMBERS - Memory & Self-Improvement Protocol](#-it-remembers---memory--self-improvement-protocol)
+2. [Tech Stack & Versions](#tech-stack--versions)
+3. [Build & Test Commands](#build--test-commands)
+4. [Essential Files to Read First](#essential-files-to-read-first)
+5. [Server Management Patterns](#server-management-patterns)
+6. [Build & Deployment Workflow](#build--deployment-workflow)
+7. [Web Development Guidelines](#web-development-guidelines)
+8. [Code Quality Standards](#code-quality-standards)
+9. [Style & Architecture Rules](#style--architecture-rules)
+10. [Golden Example Files](#golden-example-files)
+11. [Critical System Rules](#critical-system-rules)
+12. [Performance & Latency](#performance--latency)
+13. [Gotchas & Learned Fixes](#gotchas--learned-fixes)
+14. [Plan-First Meta Rule](#plan-first-meta-rule)
+15. [Quick Reference Commands](#quick-reference-commands)
+16. [Common Pitfalls to Avoid](#common-pitfalls-to-avoid)
+
+---
+
+## Tech Stack & Versions
+
+### Frontend (React SPA)
+
+**Core Framework:**
+- **React**: 19.0.0 (latest)
+- **TypeScript**: 5.x (via tsc -b)
+- **Vite**: 6.4.1 (build tool & preview server)
+
+**UI Libraries:**
+- **MUI (Material-UI)**: 6.5.0 (@mui/material, @mui/icons-material)
+- **Phosphor Icons**: 2.1.10 (@phosphor-icons/react)
+- **Ariakit**: 0.4.21 (accessible UI primitives)
+- **Framer Motion**: 12.34.0 (animations)
+
+**State & Data:**
+- **TanStack Query (React Query)**: 5.59.0 (server state management)
+- **React Hook Form**: 7.53.0 (form management)
+- **Zustand**: Latest (installed Feb 2026 for 3D state)
+
+**Visualization:**
+- **Recharts**: 3.7.0 (charts & metering)
+- **ReactFlow**: 11.11.4 (node-based graphs)
+- **React Three Fiber**: 9.5.0 + Drei 10.7.7 (3D visualization)
+- **React Force Graph 3D**: 1.29.1 (cluster visualization)
+- **Dagre**: 0.8.5 (graph layout)
+
+**Routing & Navigation:**
+- **React Router DOM**: 6.28.0
+
+**Styling:**
+- **Emotion**: 11.14.0 (@emotion/react, @emotion/styled)
+- **Class Variance Authority**: 0.7.0 (variant-based styling)
+- **clsx**: 2.1.1 (conditional classes)
+
+### Backend (Python FastAPI)
+
+**Core Framework:**
+- **Python**: 3.10+ (system Python)
+- **FastAPI**: Latest (async ASGI framework)
+- **Uvicorn**: Latest (ASGI server)
+- **SQLAlchemy**: 2.x (ORM + async support)
+- **Pydantic**: 2.x (data validation)
+
+**Audio Engine:**
+- **JUCE**: 7.x (C++ audio framework)
+- **CMake**: 3.22+ (build system)
+- **C++ Standard**: 17 (required for JUCE)
+- **Compiler**: GCC/Clang with `-march=native` (SIMD optimization)
+
+**Build Configuration:**
+- **CMAKE_BUILD_TYPE**: Release (FORCED - Debug too slow for real-time audio)
+- **ENABLE_NATIVE_OPTIMIZATIONS**: ON (SIMD via -march=native)
+- **ENABLE_FAST_MATH**: ON (DSP optimization)
+
+**Audio Backend:**
+- **PipeWire**: System audio server
+- **JACK**: Fallback audio server
+- **LV2**: Plugin standard (lilv library)
+
+### System Requirements
+
+**Operating System:**
+- Ubuntu 22.04+ or Debian-based Linux
+- Real-time kernel (PREEMPT_RT) recommended
+
+**Hardware:**
+- CPU isolation (isolcpus=2,3 in kernel params)
+- Minimum 4 cores (2 for audio RT, 2 for system)
+- Audio interface with ALSA support
+
+**Port Assignments:**
+- `3000`: Frontend production server (vite preview)
+- `8080`: Backend API server (uvicorn)
+- `3001`: ❌ NOT USED (reserved but unused)
+
+---
+
+## Build & Test Commands
+
+### Frontend Build Commands
+
+```bash
+# Production build (optimized, minified, tree-shaken)
+cd web && npm run build
+
+# Type checking only (no build)
+cd web && npm run typecheck
+
+# Preview production build (port 3000)
+cd web && npm run preview
+
+# Build + preview in one command
+cd web && npm run start:prod
+
+# Lint check
+cd web && npm run lint
+
+# Deploy (build + restart servers)
+cd web && npm run deploy
+
+# Deploy without rebuild
+cd web && npm run deploy:restart
+
+# Check deployment status
+cd web && npm run deploy:status
+```
+
+### Backend Commands
+
+```bash
+# Start FastAPI server
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+# Start with auto-reload (development only)
+python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+
+# Run tests (if test suite exists)
+pytest tests/
+
+# Check database migrations
+alembic current
+alembic upgrade head
+```
+
+### JUCE Engine Build Commands
+
+```bash
+# Configure CMake (Release mode, native optimizations)
+cd juce-engine
+cmake -B build -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_NATIVE_OPTIMIZATIONS=ON \
+  -DENABLE_FAST_MATH=ON
+
+# Build (parallel jobs)
+cmake --build build -j$(nproc)
+
+# Install (if needed)
+sudo cmake --install build
+```
+
+### System Validation Commands
+
+```bash
+# Verify Tier A performance locks
+python3 test_tier_a_locks.py
+
+# Check CPU isolation
+cat /proc/cmdline | grep isolcpus
+
+# Verify PipeWire status
+systemctl --user status pipewire
+
+# Check audio process CPU affinity
+taskset -cp $(pgrep juce-engine)
+
+# Test loopback latency (TODO - not yet implemented)
+# python3 scripts/test_latency_loopback.py
+```
+
+### Build Verification
+
+```bash
+# Verify build output exists
+ls -lh web/dist/index.html
+
+# Check bundle hash changed
+ls web/dist/assets/GridFlowPage-*.js
+
+# Verify specific code in bundle
+grep -c 'searchTerm' web/dist/assets/PageName-*.js
+
+# Check CSS bundle
+grep 'css-class' web/dist/assets/index-*.css
+
+# Verify all asset hashes
+ls -lh web/dist/assets/*.js | wc -l
+```
+
+---
+
+## Essential Files to Read First
+
+**ALWAYS consult these documents before making changes:**
+
+### 1. Server Management Pattern
+- **File**: `.copilot-notes/server-restart-pattern.md`
+- **Why**: Contains critical patterns for starting/stopping servers without breaking builds
+- **Key Rule**: NEVER use `sleep` commands - they cause `^C` interrupts that kill builds
+
+### 2. Web Server Configuration
+- **File**: `WEB_SERVER_PORTS.md`
+- **Why**: Defines production-only server setup (no dev server, only port 3000)
+- **Key Rules**:
+  - Only use `vite preview` for production builds, never `vite dev`
+  - NO port 3001 (no dev server)
+  - NO HMR (hot module replacement)
+
+### 3. Grid Flow Component Architecture
+- **File**: `docs/AI_GRIDFLOW_COMPONENT_MAP.md`
+- **Why**: Complete architecture and styling reference for Grid visualization
+- **Key Rule**: All Grid styling changes happen in React components, not CSS files
+- **Critical Lesson**: ALWAYS verify a component is actually imported before editing it
+
+### 4. Vite Troubleshooting Guide
+- **File**: `docs/VITE_TROUBLESHOOTING_GUIDE.md`
+- **Why**: Diagnostic patterns for build and server issues
+- **Key Rule**: Check the FULL stack (build → server → response → cache) before assuming failure
+
+### 5. Black Screen Issues
+- **File**: `.copilot-notes/black-screen-not-cache.md`
+- **Why**: Documents solved issue with Vite chunk splitting breaking dependency order
+- **Key Rule**: Let Vite handle dependency ordering automatically (no manual chunks)
+
+---
+
+## Server Management Patterns
+
+### ❌ WRONG - DO NOT DO THIS
+```bash
+# NEVER use sleep - blocks terminal and causes interrupts
+sleep 5 && curl http://localhost:3000/
+
+# NEVER use vite dev server
+npx vite --port 3001
+
+# NEVER run server without nohup/background
+npx vite preview --port 3000
+```
+
+### ✅ CORRECT Pattern
+
+#### 1. Kill Old Servers
+```bash
+# Kill old backend (use -9 for fast port release)
+kill -9 $(pgrep -f "uvicorn app.main") 2>/dev/null
+
+# Kill old frontend
+kill $(pgrep -f "vite preview") 2>/dev/null
+pkill -9 npm 2>/dev/null
+```
+
+#### 2. Start Servers with nohup + Background
+```bash
+# Backend API (port 8080)
+cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
+  --host 0.0.0.0 --port 8080 > /tmp/uvicorn.log 2>&1 &
+
+# Frontend Web (port 3000)
+cd /home/mm/map2-audio/web && nohup npx vite preview \
+  --port 3000 --host 0.0.0.0 > /tmp/preview.log 2>&1 &
+```
+
+#### 3. Check Status (NOT sleep)
+```bash
+# Check logs
+cat /tmp/preview.log
+
+# Check server response
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/
+
+# Verify build hash being served
+curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js' | head -1
+```
+
+### Key Rules
+- **NEVER** use `sleep` to wait for builds or servers
+- Use `nohup ... > /tmp/logfile.log 2>&1 &` for background processes
+- Use `isBackground: true` in `run_in_terminal` when starting servers
+- Poll with `grep`/`tail`/`curl` on the next tool call — each call is independent
+- Use `kill -9` for uvicorn (graceful kill sometimes doesn't release the port fast enough)
+- Always check for port conflicts: `ERROR: [Errno 98] address already in use`
+
+---
+
+## Build & Deployment Workflow
+
+### Production Build Workflow
+
+```bash
+# 1. Build production bundle
+cd /home/mm/map2-audio/web && npm run build
+
+# 2. Verify build output
+ls -lh dist/index.html
+ls dist/assets/GridFlowPage-*.js  # Hash should change if code changed
+
+# 3. Server automatically serves new build from dist/
+# Just refresh browser - no server restart needed
+```
+
+### Build Verification Checklist
+
+After making visual changes to any page:
+
+```bash
+# 1. Check the hash changed
+ls dist/assets/PageName-*.js
+
+# 2. Verify your changes are in the bundle
+grep -c 'YOUR_SEARCH_TERM' dist/assets/PageName-*.js
+# Must return > 0
+
+# 3. For CSS changes
+grep -c 'YOUR_CSS_VALUE' dist/assets/index-*.css
+
+# 4. If hash didn't change, find what's actually imported
+grep -n 'import' web/src/app/pages/PageName.tsx | head -30
+grep -rn 'YourComponent' web/src/app/ --include='*.tsx' --include='*.ts'
+```
+
+### Port Configuration
+
+| Port | Purpose | Server | Command |
+|------|---------|--------|---------|
+| 3000 | Frontend (production) | Vite preview | `npx vite preview --port 3000 --host 0.0.0.0` |
+| 8080 | Backend API | Uvicorn | `python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080` |
+| 3001 | ❌ NOT USED | None | Never use this port |
+
+---
+
+## Web Development Guidelines
+
+### Component File Location Rules
+
+**GridFlowPage (`/grid` route):**
+
+| What to Change | File to Edit | Key Constants |
+|----------------|--------------|---------------|
+| Flow colors (A/B/C) | `GridFlowPage.tsx` | `SLOT_COLORS` (~line 135) |
+| Signal flow diagram | `FlowRoutingVisualizer.tsx` | `WIRE_COLOR`, `WIRE_ACTIVE` |
+| Page background | `index.css` | `.grid-flow-page`, `.grid-flow-header` |
+| Plugin cards | `PluginCardShell` | Separate component tree |
+
+**⚠️ DEAD CODE WARNING:**
+- `JuceAudioGraphViz.tsx` is NEVER imported - editing it won't change the build
+- Always verify imports before editing: `grep -rn 'import.*ComponentName' web/src/app/`
+
+### Vite Build Behavior
+
+**Tree-shaking rules:**
+- Vite eliminates unused components automatically
+- If a component isn't imported anywhere, changes to it won't appear in the bundle
+- Bundle hash only changes when actually-used files are modified
+- Manual chunk splitting can break dependency order (let Vite handle it)
+
+### Diagnostic Stack (Bottom to Top)
+
+```bash
+# Layer 1: Build files exist?
+ls -lh /home/mm/map2-audio/web/dist/index.html
+
+# Layer 2: Server process running?
+ps aux | grep "vite preview" | grep -v grep
+
+# Layer 3: Server responding?
+curl -s -I http://localhost:3000/
+
+# Layer 4: Correct files served?
+curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js'
+```
+
+**DO NOT assume:**
+- Server down = pages broken
+- Build failed = server needs restart
+- New code not showing = cache issue
+
+**ALWAYS check ALL layers** before taking action.
+
+---
+
+## Code Quality Standards
+
+### Critical Code Comments
+
+When you see these patterns in code, they indicate critical rules:
+
+#### Python Backend
+
+```python
+# CRITICAL: Python audio I/O should never be used in production
+# CRITICAL: expire_on_commit=True ensures deleted objects are expired after commit
+# NOTE: Legacy audio_engine service removed - use juce_engine instead
+# TODO: Validate and apply configuration  # Indicates incomplete implementation
+```
+
+#### TypeScript/React Frontend
+
+```typescript
+// Note: Server persistence handled by WebSocket handler
+// Critical: higher frequency, pulsing pattern
+// Do NOT disconnect - other components may still need the connection
+// Always fresh for metering
+// Note: Phosphor has no Drum icon — MusicNote used as closest match
+```
+
+### Code Pattern Rules
+
+**Database Sessions:**
+```python
+# Note: commit is handled by route's get_session context manager
+# Don't manually commit inside service methods
+```
+
+**WebSocket Cleanup:**
+```typescript
+// Do NOT disconnect - other components may still need the connection
+// Return cleanup function but don't kill shared resources
+```
+
+**Plugin Loading:**
+```python
+# Note: lilv nodes don't support truthiness check in Python 3.14
+# Use explicit None checks instead
+```
+
+**React Query Caching:**
+```typescript
+staleTime: 0, // Always fresh for metering
+// Polling — always enabled for initial load + fallback
+```
+
+---
+
+## Style & Architecture Rules
+
+### File Organization Principles
+
+**1. Barrel Exports (index.ts)**
+- Use barrel exports to simplify imports
+- Export only what's actually used
+- Example: `web/src/map2/index.ts` explicitly references `ChainBuilder/index` because both file and folder exist
+
+**2. Component Co-location**
+- Keep related components together
+- Custom plugin cards in `web/src/app/components/PluginCards/Custom/`
+- Page components in `web/src/app/pages/`
+- Shared hooks in `web/src/app/hooks/`
+
+**3. Naming Conventions**
+- **React Components**: PascalCase (`GridFlowPage.tsx`, `PluginCardShell.tsx`)
+- **Hooks**: camelCase with `use` prefix (`usePipeWire.ts`, `useModulation.ts`)
+- **Utilities**: camelCase (`formatters.ts`, `api.ts`)
+- **Constants**: UPPER_SNAKE_CASE in component files (`SLOT_COLORS`, `WIRE_ACTIVE`)
+
+### React Patterns
+
+**1. Component Structure (GridFlowPage as Golden Example)**
+```typescript
+/**
+ * ComponentName - Brief description
+ * 
+ * Features:
+ * - Feature 1
+ * - Feature 2
+ */
+
+// Imports organized by:
+// 1. React core
+// 2. Third-party libraries
+// 3. Internal hooks
+// 4. Internal components
+// 5. Types/interfaces
+
+import { useState, useCallback, useMemo } from 'react'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { useSpecialSettings } from '../hooks/useSpecialSettings'
+
+// Constants at top of file
+const SLOT_COLORS = {
+  A: '#00d9ff', // Cyan
+  B: '#ff006e', // Magenta
+  C: '#00ff9f', // Green
+}
+
+// Main component
+export function ComponentName() {
+  // 1. Hooks (in order: state, query, mutations, effects)
+  const [state, setState] = useState()
+  const { data } = useQuery(...)
+  const mutation = useMutation(...)
+  
+  // 2. Derived values with useMemo
+  const derived = useMemo(() => compute(), [deps])
+  
+  // 3. Event handlers with useCallback
+  const handleClick = useCallback(() => {}, [deps])
+  
+  // 4. Render
+  return <div>...</div>
+}
+```
+
+**2. State Management**
+- **Server State**: React Query (TanStack Query)
+  - Use `staleTime: 0` for real-time data (metering)
+  - Use polling for metrics that change frequently
+  - Always enable REST fallback + WebSocket
+- **UI State**: `useState` for local, Zustand for global
+- **Form State**: React Hook Form
+
+**3. Performance Patterns**
+```typescript
+// ALWAYS memoize expensive computations
+const expensiveValue = useMemo(() => {
+  return complexCalculation(data)
+}, [data])
+
+// ALWAYS memoize callbacks passed to children
+const handleChange = useCallback((value) => {
+  setState(value)
+}, [setState])
+
+// AVOID inline functions in render-heavy components
+// ❌ BAD
+<Component onClick={() => doSomething()} />
+
+// ✅ GOOD
+const handleClick = useCallback(() => doSomething(), [])
+<Component onClick={handleClick} />
+```
+
+### Python Backend Patterns
+
+**1. Route Structure**
+```python
+# app/routes/resource_name.py
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database_session import get_session
+from app.services.resource_service import ResourceService
+
+router = APIRouter(prefix="/api/resource", tags=["Resource"])
+
+@router.get("/")
+async def get_resources(
+    session: Session = Depends(get_session)
+) -> list[ResourceResponse]:
+    """Get all resources.
+    
+    Returns:
+        List of resources with metadata
+    """
+    service = ResourceService(session)
+    return await service.get_all()
+```
+
+**2. Service Layer Pattern**
+```python
+# app/services/resource_service.py
+
+class ResourceService:
+    """Business logic for resource management."""
+    
+    def __init__(self, session: Session):
+        self.session = session
+    
+    async def get_all(self) -> list[Resource]:
+        """Fetch all resources.
+        
+        Note: commit is handled by route's get_session context manager
+        """
+        # Business logic here
+        return self.session.query(Resource).all()
+```
+
+**3. Database Session Management**
+```python
+# CRITICAL: Never manually commit in service methods
+# ❌ BAD
+def create_resource(session: Session, data: dict):
+    resource = Resource(**data)
+    session.add(resource)
+    session.commit()  # DON'T DO THIS
+    
+# ✅ GOOD
+def create_resource(session: Session, data: dict):
+    resource = Resource(**data)
+    session.add(resource)
+    # Commit handled by route's context manager
+    return resource
+```
+
+**4. Error Handling**
+```python
+# Use specific exceptions with clear messages
+from fastapi import HTTPException
+
+@router.get("/{id}")
+async def get_resource(id: int, session: Session = Depends(get_session)):
+    resource = session.query(Resource).filter_by(id=id).first()
+    if not resource:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Resource {id} not found"
+        )
+    return resource
+```
+
+### CSS/Styling Rules
+
+**1. Class Naming**
+- Use kebab-case: `.grid-flow-page`, `.plugin-card-shell`
+- Component-specific prefixes: `.grid-flow-*`, `.plugin-card-*`
+- State modifiers: `.grid-flow-slot--active`, `.plugin-card--bypass`
+
+**2. CSS Organization**
+```css
+/* Component-level styles in index.css */
+.grid-flow-page {
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  
+  /* Spacing */
+  padding: 16px;
+  gap: 16px;
+  
+  /* Visual */
+  background: linear-gradient(#0a1628, #050d18);
+  border: 1px solid rgba(0, 217, 255, 0.15);
+}
+```
+
+**3. Tron-Inspired Color Palette**
+```css
+/* Use these exact colors for consistency */
+:root {
+  --cyan-primary: #00d9ff;
+  --magenta-primary: #ff006e;
+  --green-primary: #00ff9f;
+  --amber-primary: #ffbe0b;
+  --purple-primary: #a239ca;
+  
+  --bg-dark: #0a1628;
+  --bg-darker: #050d18;
+  --bg-darkest: #030a14;
+}
+```
+
+### TypeScript Type Safety
+
+**1. API Response Types**
+```typescript
+// Define explicit types for all API responses
+interface PluginResponse {
+  id: number
+  name: string
+  uri: string
+  parameters: ParameterDef[]
+}
+
+// Use in queries
+const { data } = useQuery<PluginResponse[]>({
+  queryKey: ['plugins'],
+  queryFn: fetchPlugins
+})
+```
+
+**2. Avoid `any`**
+```typescript
+// ❌ BAD
+const data: any = await fetchData()
+
+// ✅ GOOD
+interface DataResponse {
+  value: number
+  timestamp: string
+}
+const data: DataResponse = await fetchData()
+```
+
+---
+
+## Golden Example Files
+
+These files represent best practices and architectural patterns to follow:
+
+### Frontend Examples
+
+**1. GridFlowPage.tsx** (`web/src/app/pages/GridFlowPage.tsx`)
+- **Why**: Complete feature showcase - 2,700 lines of production code
+- **Patterns**: State management, memoization, callback optimization, component composition
+- **Architecture**: Complex UI with real-time updates, undo/redo, preset management
+- **Key Lessons**: How to structure large components without performance degradation
+
+**2. FlowRoutingVisualizer.tsx** (`web/src/app/components/GridFlow/FlowRoutingVisualizer.tsx`)
+- **Why**: SVG-based visualization with clean separation of concerns
+- **Patterns**: Render function per routing mode, typed props, color constants
+- **Key Lessons**: How to create dynamic visualizations with React + SVG
+
+**3. usePipeWire.ts** (`web/src/app/hooks/usePipeWire.ts`)
+- **Why**: Perfect example of dual polling + WebSocket pattern
+- **Patterns**: React Query with fallback, connection state management
+- **Code Comment**: `// REST polling — always enabled for initial load + fallback`
+
+**4. PluginCardShell.tsx** (`web/src/app/components/PluginCards/PluginCardShell.tsx`)
+- **Why**: Reusable component wrapper pattern
+- **Patterns**: Composition, children as function, context provision
+- **Key Lessons**: How to create flexible, extensible component APIs
+
+### Backend Examples
+
+**5. main.py** (`app/main.py`)
+- **Why**: Application factory pattern with proper lifecycle management
+- **Patterns**: Async lifespan, safe service startup/shutdown, error handling
+- **Key Functions**: `safe_start_service()`, `safe_stop_service()`
+
+**6. chain_service.py** (`app/services/chain_service.py`)
+- **Why**: Service layer with proper session handling
+- **Code Comment**: `# Note: commit is handled by route's get_session context manager`
+- **Key Lessons**: Don't commit in services, let route context managers handle it
+
+**7. plugin_loader_unified.py** (`app/services/plugin_loader_unified.py`)
+- **Why**: Complex plugin discovery with LV2 + JUCE integration
+- **Code Comment**: `# Note: lilv nodes don't support truthiness check in Python 3.14`
+- **Key Lessons**: Platform-specific quirks and workarounds
+
+### Configuration Examples
+
+**8. vite.config.ts** (`web/vite.config.ts`)
+- **Why**: Production-focused build configuration
+- **Critical Setting**: `manualChunks: undefined` (let Vite handle dependency order)
+- **Key Comment**: Shows clear distinction between port 3000/3001 usage
+
+**9. CMakeLists.txt** (`juce-engine/CMakeLists.txt`)
+- **Why**: Real-time audio build configuration
+- **Critical Settings**: Release mode forced, SIMD enabled, fast math
+- **Key Comment**: `# Debug build (-O0) causes unacceptable CPU overhead`
+
+### Documentation Examples
+
+**10. AI_GRIDFLOW_COMPONENT_MAP.md** (`docs/AI_GRIDFLOW_COMPONENT_MAP.md`)
+- **Why**: Perfect example of AI-to-AI documentation
+- **Format**: Problem description → Solution → Verification steps
+- **Key Lesson**: Documents the "dead code" pitfall and how to avoid it
+
+**11. VITE_TROUBLESHOOTING_GUIDE.md** (`docs/VITE_TROUBLESHOOTING_GUIDE.md`)
+- **Why**: Diagnostic workflow example
+- **Format**: 4-layer stack check, scenario-based troubleshooting
+- **Key Lesson**: Always check full stack before assuming failure
+
+---
+
+## Gotchas & Learned Fixes
+
+### Build System Gotchas
+
+**1. Vite Manual Chunk Splitting (SOLVED)**
+- **File**: `.copilot-notes/black-screen-not-cache.md`
+- **Problem**: Custom `manualChunks` broke dependency order, React loaded after recharts
+- **Error**: `Cannot read properties of undefined (reading 'forwardRef')`
+- **Fix**: Set `manualChunks: undefined` in vite.config.ts
+- **Lesson**: Let Vite handle dependency ordering automatically
+
+**2. Bundle Hash Not Changing**
+- **Problem**: Editing a file doesn't change the build output hash
+- **Diagnosis**: File is dead code (not imported anywhere)
+- **Fix**: Verify imports first: `grep -rn 'import.*ComponentName' web/src/`
+- **Example**: `JuceAudioGraphViz.tsx` is never imported, editing it has no effect
+
+**3. Tree-Shaking Confusion**
+- **Problem**: Changes to large components don't appear in bundle
+- **Diagnosis**: Vite tree-shaking correctly eliminates unused code
+- **Verification**: `grep -c 'searchTerm' dist/assets/ComponentName-*.js`
+- **Lesson**: Bundle hash only changes when actually-used code changes
+
+### Server Management Gotchas
+
+**4. Sleep Commands Kill Builds (CRITICAL)**
+- **File**: `.copilot-notes/server-restart-pattern.md`
+- **Problem**: `sleep 5 && curl` blocks terminal, causes `^C` interrupts
+- **Error**: Build process killed mid-build, corrupted dist/
+- **Fix**: Use `nohup ... &` + poll logs with `grep`/`tail`
+- **Rule**: NEVER use `sleep` in CI or automated scripts
+
+**5. Port Conflicts on Restart**
+- **Problem**: `ERROR: [Errno 98] address already in use`
+- **Cause**: Old server process still bound to port
+- **Fix**: `kill -9 $(pgrep -f "vite preview")` before starting new server
+- **Why -9**: Graceful kill sometimes doesn't release port fast enough
+
+**6. Dist Folder Deleted Mid-Build**
+- **Problem**: Server responds 404, files missing
+- **Diagnosis**: `rm -rf dist` ran while build in progress
+- **Fix**: Check `ps aux | grep "vite build"` before assuming server issue
+- **Lesson**: Always verify build completion before troubleshooting server
+
+### Python Backend Gotchas
+
+**7. SQLAlchemy Session Management**
+- **Problem**: `DetachedInstanceError` or stale data after commit
+- **Root Cause**: `expire_on_commit=True` (default) expires objects after commit
+- **Fix**: Access all needed attributes before commit, or use `expire_on_commit=False`
+- **Code**: `# CRITICAL: expire_on_commit=True ensures deleted objects are expired`
+
+**8. Lilv Node Truthiness (Python 3.14)**
+- **Problem**: `if lilv_node:` raises TypeError in Python 3.14
+- **Root Cause**: lilv nodes don't support `__bool__` in newer Python
+- **Fix**: Use explicit `None` checks: `if lilv_node is not None:`
+- **Code**: `# Note: lilv nodes don't support truthiness check in Python 3.14`
+
+**9. Audio Engine Port Conflicts**
+- **Problem**: uvicorn fails to start on port 8080
+- **Diagnosis**: Old uvicorn process still running
+- **Fix**: `kill -9 $(pgrep -f "uvicorn app.main")`
+- **Prevention**: Use systemd service with proper cleanup
+
+### React/TypeScript Gotchas
+
+**10. WebSocket Connection Cleanup**
+- **Problem**: Multiple WebSocket connections created on component re-render
+- **Root Cause**: `useEffect` cleanup killing shared connection
+- **Fix**: Check if connection is used elsewhere before disconnecting
+- **Code**: `// Do NOT disconnect - other components may still need the connection`
+
+**11. React Query Stale Time**
+- **Problem**: Metering data not updating in real-time
+- **Root Cause**: Default `staleTime` caches data
+- **Fix**: Set `staleTime: 0` for real-time metrics
+- **Code**: `staleTime: 0, // Always fresh for metering`
+
+**12. Phosphor Icons Missing**
+- **Problem**: `Note: Phosphor has no Drum icon`
+- **Solution**: Use closest match (`MusicNote`) and document it
+- **Code**: `// Note: Phosphor has no Drum icon — MusicNote used as closest match`
+
+### JUCE/Audio Gotchas
+
+**13. Debug Build Performance**
+- **Problem**: Real-time audio stuttering, high CPU usage
+- **Root Cause**: Debug build (`-O0`) is too slow for RT audio
+- **Fix**: Force Release mode in CMakeLists.txt
+- **Code**: `# Debug build (-O0) causes unacceptable CPU overhead for real-time audio`
+
+**14. Tier A Settings Locked**
+- **Problem**: Cannot change audio settings via API
+- **Root Cause**: Performance-critical settings locked at startup
+- **Settings**: `sample_rate`, `buffer_size`, `backend`
+- **Fix**: Edit systemd service file, restart service
+- **Test**: `python3 test_tier_a_locks.py` must show ✅
+
+**15. MIDI Device Selection (SOLVED - Feb 12, 2026)**
+- **File**: `juce-engine/Source/MidiHandler.cpp:193`
+- **Problem**: `openInputDevice()` stored device name but didn't actually connect
+- **Symptom**: All MIDI devices sent events to MAP2 regardless of selection
+- **Root Cause**: TODO stub accepted connections from any device
+- **Fix**: Implemented proper ALSA sequencer subscriptions
+  - Parse device name format: `"ClientName:PortName"`
+  - Search ALSA clients/ports via `snd_seq_query_next_client()`
+  - Create specific subscription: device → MAP2 input port
+  - Track connections for proper cleanup
+- **Code**: See `MidiHandler::openInputDevice()` for full implementation
+- **Test**: `engine.set_midi_device("DeviceName:Port")` now filters to that device only
+- **Docs**: `docs/MIDI_DEVICE_SELECTION_COMPLETE.md`
+- **Lesson**: ALSA device selection requires explicit port subscriptions, not just name storage
+
+---
+
+## Plan-First Meta Rule
+
+### The Golden Rule for AI Assistants
+
+**ALWAYS PLAN BEFORE IMPLEMENTING**
+
+When a user requests a feature or fix:
+
+1. **Read First** (gather context)
+   - Check Essential Files list for relevant docs
+   - Read Golden Example Files for similar patterns
+   - Search for existing implementations: `grep -rn 'pattern' src/`
+
+2. **Plan Second** (create task breakdown)
+   - Use `manage_todo_list` to create task breakdown
+   - Identify dependencies and order tasks
+   - Estimate complexity and risk
+
+3. **Verify Third** (check assumptions)
+   - Verify file exists and is imported
+   - Check bundle will include changes: `grep -rn 'import.*Component'`
+   - Validate against build output after changes
+
+4. **Execute Fourth** (implement with verification)
+   - Make changes in logical order
+   - Build after each major change
+   - Verify in bundle: `grep -c 'searchTerm' dist/assets/Page-*.js`
+
+5. **Test Fifth** (validate end-to-end)
+   - Check server responds correctly
+   - Clear browser cache and test
+   - Verify in production mode, not dev
+
+### Example: Adding New GridFlow Colors
+
+**❌ BAD (No Planning):**
+```
+User: "Change grid colors to purple"
+AI: *immediately edits first file found*
+*realizes it's the wrong file after 3 build cycles*
+```
+
+**✅ GOOD (Plan-First):**
+```
+User: "Change grid colors to purple"
+
+AI: *reads AI_GRIDFLOW_COMPONENT_MAP.md*
+AI: *creates todo list*
+  1. Find SLOT_COLORS constant in GridFlowPage.tsx
+  2. Update color values
+  3. Build and verify hash changes
+  4. Check colors in bundle with grep
+  5. Verify FlowRoutingVisualizer uses updated colors
+  
+AI: *executes in order*
+  - grep -n 'SLOT_COLORS' web/src/app/pages/GridFlowPage.tsx
+  - Edit GridFlowPage.tsx
+  - npm run build
+  - grep -c 'purple-hex' dist/assets/GridFlowPage-*.js
+  - ✅ Found in bundle
+```
+
+### When to Use Plan-First
+
+**ALWAYS use for:**
+- Multi-file changes
+- Component architecture changes
+- Build system modifications
+- Server configuration changes
+- Performance-critical code
+
+**Optional for:**
+- Single-line bug fixes
+- Documentation updates
+- Adding simple comments
+- Formatting changes
+
+### Planning Tools
+
+```bash
+# Use manage_todo_list for task tracking
+manage_todo_list write [
+  {id: 1, title: "Find component file", status: "not-started"},
+  {id: 2, title: "Verify imports", status: "not-started"},
+  {id: 3, title: "Make changes", status: "not-started"},
+  {id: 4, title: "Build and verify", status: "not-started"}
+]
+
+# Mark in-progress before starting
+manage_todo_list write [
+  {id: 1, title: "Find component file", status: "in-progress"},
+  ...
+]
+
+# Mark completed immediately after finishing
+manage_todo_list write [
+  {id: 1, title: "Find component file", status: "completed"},
+  {id: 2, title: "Verify imports", status: "in-progress"},
+  ...
+]
+```
+
+---
+
+## Critical System Rules
+
+### Audio Performance (Tier A Requirements)
+
+**Locked Settings (NEVER change at runtime):**
+1. `audio.sample_rate` - Locked at 48000 Hz
+2. `audio.buffer_size` - Locked at 128 samples
+3. `audio.backend` - Locked at "pipewire"
+
+**Changing these requires:**
+```bash
+# 1. Edit systemd service configuration
+sudo systemctl edit map2-audio
+
+# 2. Restart service
+sudo systemctl restart map2-audio
+
+# 3. Verify with test script
+python3 test_tier_a_locks.py
+```
+
+**Test output should show:**
+```
+✅ All critical performance settings are LOCKED
+```
+
+### Latency Targets
+
+| Use Case | Target | Critical? |
+|----------|--------|-----------|
+| Live guitar performance | < 5 ms | Yes - drummer sync |
+| Studio recording | < 10 ms | Less critical |
+| Backing track playback | < 10 ms | No - not live |
+| Band performance | < 6 ms | Yes - bass/drum sync |
+
+### Performance Metrics
+
+**Critical gaps that block professional use:**
+- ❌ Worst-case jitter not measured (must be < 200 µs)
+- ❌ Xrun rate not tested (must be 0 in 8-hour session)
+- ❌ CPU headroom not benchmarked (must be > 30% free)
+- ❌ Stress testing not performed (need 8-hour validation)
+- ❌ Loopback latency measurement never performed
+
+### Error Handling Patterns
+
+**PipeWire Recovery:**
+```python
+# === Critical: PipeWire daemon down ===
+# Automatic recovery with exponential backoff
+
+# === Critical: JACK server down ===
+# Fallback to ALSA with notification
+
+# === Critical: Audio device disconnected ===
+# Queue buffer, attempt reconnect, graceful degradation
+```
+
+**Plugin Priority Levels:**
+```python
+CRITICAL = 0  # Always in memory (high-frequency effects)
+CORE = 4      # Always must work (critical)
+```
+
+**Service Priority:**
+```python
+# Performance metrics are always running in background
+# Always invalidate plugin cache to remove from database
+# Always include JUCE native processors (best-in-class built-in effects)
+```
+
+---
+
+## Performance & Latency
+
+### CPU Isolation (Real-Time Critical)
+
+**Must verify:**
+```bash
+# Check isolcpus setting
+cat /proc/cmdline | grep isolcpus
+# Should show: isolcpus=2,3
+
+# Verify audio process pinned to isolated cores
+taskset -cp $(pgrep juce-engine)
+
+# Verify settings NOT changeable at runtime
+python3 test_tier_a_locks.py
+```
+
+### Buffer Size Calculation
+
+```
+Latency (ms) = (buffer_size / sample_rate) * 1000
+128 samples @ 48kHz = 2.67 ms per buffer
+Round-trip latency = input buffer + processing + output buffer
+Target: < 5 ms total
+```
+
+### Validation Checklist
+
+**Before claiming professional-grade:**
+- [ ] Measured latency with loopback test (CRITICAL GAP)
+- [ ] Characterized jitter (worst-case < 200 µs)
+- [ ] Stress tested 8 hours with full plugin chain
+- [ ] Verified xrun rate = 0
+- [ ] Benchmarked CPU headroom > 30%
+- [ ] Tested failover/recovery mechanisms
+- [ ] Validated against industry specs
+- [ ] Verified Tier A locks are enforced
+
+---
+
+## Update Log
+
+### [2026-02-12] - MIDI Device Selection Implementation
+- **Section**: Gotchas & Learned Fixes (#15)
+- **Change**: Documented complete MIDI device selection implementation
+- **Reason**: Resolved TODO stub that allowed all devices instead of selected device
+- **Impact**: MIDI input now properly filters to user-selected device via ALSA subscriptions
+- **Files**: MidiHandler.h/cpp (~150 lines), docs/MIDI_DEVICE_SELECTION_COMPLETE.md
+- **Key Lesson**: ALSA requires explicit port subscriptions, not just device name storage
+
+---
+
+## Quick Reference Commands
+
+### Development Cycle
+
+```bash
+# 1. Make code changes in /web/src/
+
+# 2. Build production bundle
+cd /home/mm/map2-audio/web && npm run build
+
+# 3. Refresh browser (server auto-serves new dist/)
+# No server restart needed
+
+# 4. Verify changes
+curl -s http://localhost:3000/ | grep -o 'index-[^"]*\.js'
+```
+
+### Server Restart (Clean Start)
+
+```bash
+# Kill everything
+kill -9 $(pgrep -f "uvicorn") 2>/dev/null
+pkill -9 -f "vite preview" 2>/dev/null
+pkill -9 npm 2>/dev/null
+
+# Start backend
+cd /home/mm/map2-audio && nohup python3 -m uvicorn app.main:app \
+  --host 0.0.0.0 --port 8080 > /tmp/uvicorn.log 2>&1 &
+
+# Start frontend
+cd /home/mm/map2-audio/web && nohup npx vite preview \
+  --port 3000 --host 0.0.0.0 > /tmp/preview.log 2>&1 &
+
+# Check status
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/
+```
+
+### Debug Bundle Contents
+
+```bash
+# Check if component is in bundle
+grep -c 'ComponentName' dist/assets/PageName-*.js
+
+# Find component imports
+grep -rn 'import.*ComponentName' web/src/app/
+
+# List all chunks
+ls -lh dist/assets/*.js
+
+# Check CSS bundle
+grep 'your-css-class' dist/assets/index-*.css
+
+# Verify specific colors in GridFlowPage
+grep -c '00d9ff' dist/assets/GridFlowPage-*.js  # Cyan
+grep -c 'ff006e' dist/assets/GridFlowPage-*.js  # Magenta
+grep -c '00ff9f' dist/assets/GridFlowPage-*.js  # Green
+```
+
+### Verify System Health
+
+```bash
+# Check Tier A locks
+python3 test_tier_a_locks.py
+
+# Check CPU isolation
+cat /proc/cmdline | grep isolcpus
+
+# Check PipeWire status
+systemctl --user status pipewire
+
+# Check audio latency
+# TODO: Implement loopback test (CRITICAL GAP)
+```
+
+---
+
+## Common Pitfalls to Avoid
+
+### 1. Sleep Commands
+❌ `sleep 5 && curl http://localhost:3000/`  
+✅ Use log polling or immediate curl (returns 000 if not ready)
+
+### 2. Dev Server
+❌ `npx vite --port 3001`  
+✅ `npx vite preview --port 3000` (production build only)
+
+### 3. Manual Server Restarts
+❌ Restarting server after every build  
+✅ Server auto-serves new dist/ - just refresh browser
+
+### 4. Editing Unused Components
+❌ Editing `JuceAudioGraphViz.tsx` (dead code, never imported)  
+✅ Verify imports first: `grep -rn 'import.*Component' web/src/`
+
+### 5. Assuming Failures
+❌ "Server down" → restart everything  
+✅ Check all 4 layers: build → process → response → cache
+
+### 6. Runtime Config Changes
+❌ Changing audio settings via API  
+✅ Tier A settings are locked - must edit systemd service
+
+### 7. Missing Build Verification
+❌ Assuming build worked if no errors  
+✅ Always verify: `grep -c 'expected-value' dist/assets/Page-*.js`
+
+### 8. Manual Chunk Splitting
+❌ Custom `manualChunks` in vite.config.ts  
+✅ Let Vite handle dependency ordering automatically
+
+### 9. Ignoring Critical Comments
+❌ Skipping code comments marked CRITICAL/NOTE/WARNING  
+✅ These indicate architectural rules and constraints
+
+### 10. Incomplete Testing
+❌ Skipping validation checklist items  
+✅ Professional-grade requires all validation steps
+
+---
+
+## Additional Resources
+
+### Documentation Files
+- `.copilot-notes/` - AI collaboration notes and troubleshooting patterns
+- `.copilot-notes/server-restart-pattern.md` - Server management best practices
+- `.copilot-notes/black-screen-not-cache.md` - Solved Vite chunk splitting issue
+- `docs/` - Comprehensive technical documentation
+- `docs/AI_GRIDFLOW_COMPONENT_MAP.md` - Component architecture map for Grid page
+- `docs/VITE_TROUBLESHOOTING_GUIDE.md` - Build/server diagnostics
+- `docs/PROFESSIONAL_GUITAR_PROCESSOR_EVALUATION.md` - Industry standards & requirements
+- `docs/TIER_A_IMPLEMENTATION_COMPLETE.md` - Performance requirements & validation
+- `docs/EVALUATION_SUMMARY_AND_NEXT_STEPS.md` - Current gaps and roadmap
+- `WEB_SERVER_PORTS.md` - Port configuration reference
+
+### Testing & Validation
+- `test_tier_a_locks.py` - Verify critical settings are locked
+- `docs/VALIDATION_ROADMAP_TECHNICAL.md` - Testing procedures
+- `docs/INDUSTRY_REFERENCE_SPECIFICATIONS.md` - Professional standards
+- `docs/LATENCY_AUDIT_COMPREHENSIVE_2026.md` - Latency measurement guide
+
+### Architecture & Design
+- `GOOGLE_AI_ARCHITECTURAL_DIAGRAM_PROMPT.md` - System architecture
+- `FUTURE-STATE-PI-NODES.md` - Multi-node cluster design
+- `docs/MIDI_ROUTING_ARCHITECTURE.md` - MIDI signal flow
+
+---
+
+**For Questions**: Consult the documentation files listed in Additional Resources  
+**Last Updated**: February 12, 2026  
+**Maintained by**: GitHub Copilot AI Assistants
