@@ -19,9 +19,13 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 from datetime import datetime, timedelta
 import uuid
-import aiofiles
 import os
 from pathlib import Path
+
+try:
+    import aiofiles
+except ModuleNotFoundError:  # Optional dependency in minimal environments
+    aiofiles = None
 
 logger = logging.getLogger(__name__)
 
@@ -377,12 +381,28 @@ class RequestQueue:
         """Check if any pending requests are ready to retry."""
         # Implementation for checking retry times
         pass
+
+    @staticmethod
+    def _append_line(path: str, line: str) -> None:
+        """Write a single line to a file (sync helper for thread offload)."""
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(line)
+
+    @staticmethod
+    def _read_lines(path: str) -> List[str]:
+        """Read all lines from a file (sync helper for thread offload)."""
+        with open(path, "r", encoding="utf-8") as handle:
+            return handle.readlines()
     
     async def _persist_request(self, request: QueuedRequest, filepath: str) -> None:
         """Persist request to disk in JSONL format."""
         try:
-            async with aiofiles.open(filepath, 'a') as f:
-                await f.write(json.dumps(request.to_dict()) + '\n')
+            line = json.dumps(request.to_dict()) + "\n"
+            if aiofiles is not None:
+                async with aiofiles.open(filepath, "a") as f:
+                    await f.write(line)
+            else:
+                await asyncio.to_thread(self._append_line, filepath, line)
         except Exception as e:
             logger.error(f"Error persisting request: {e}")
     
@@ -391,8 +411,17 @@ class RequestQueue:
         try:
             # Load pending requests
             if os.path.exists(self.pending_file):
-                async with aiofiles.open(self.pending_file, 'r') as f:
-                    async for line in f:
+                if aiofiles is not None:
+                    async with aiofiles.open(self.pending_file, "r") as f:
+                        async for line in f:
+                            if line.strip():
+                                data = json.loads(line)
+                                request = QueuedRequest.from_dict(data)
+                                request.status = RequestStatus.PENDING
+                                priority = -request.priority.value
+                                await self.pending_queue.put((priority, request.request_id, request))
+                else:
+                    for line in await asyncio.to_thread(self._read_lines, self.pending_file):
                         if line.strip():
                             data = json.loads(line)
                             request = QueuedRequest.from_dict(data)
@@ -404,8 +433,15 @@ class RequestQueue:
             
             # Load dead letter requests
             if os.path.exists(self.dead_letter_file):
-                async with aiofiles.open(self.dead_letter_file, 'r') as f:
-                    async for line in f:
+                if aiofiles is not None:
+                    async with aiofiles.open(self.dead_letter_file, "r") as f:
+                        async for line in f:
+                            if line.strip():
+                                data = json.loads(line)
+                                request = QueuedRequest.from_dict(data)
+                                self.dead_letter.append(request)
+                else:
+                    for line in await asyncio.to_thread(self._read_lines, self.dead_letter_file):
                         if line.strip():
                             data = json.loads(line)
                             request = QueuedRequest.from_dict(data)

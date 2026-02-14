@@ -9,8 +9,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import os
+import re
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
@@ -23,11 +24,12 @@ SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
 
 # Use TLS if credentials provided
 USE_TLS = SMTP_USERNAME is not None and SMTP_PASSWORD is not None
+EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class EmailAlertRequest(BaseModel):
     """Model for email alert request"""
-    recipients: List[EmailStr]
+    recipients: List[str]
     type: str  # 'temperature' | 'cpu' | 'memory' | 'disk'
     severity: str  # 'warning' | 'critical'
     value: float
@@ -37,12 +39,22 @@ class EmailAlertRequest(BaseModel):
 
 class TestEmailRequest(BaseModel):
     """Model for test email request"""
-    recipients: List[EmailStr]
+    recipients: List[str]
 
 
 class EmailVerificationRequest(BaseModel):
     """Model for email verification request"""
-    recipients: List[EmailStr]
+    recipients: List[str]
+
+
+def _validate_recipients(recipients: List[str]) -> None:
+    """Validate recipient list with lightweight email pattern."""
+    invalid = [email for email in recipients if not EMAIL_REGEX.match(email)]
+    if invalid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid recipient email(s): {', '.join(invalid)}",
+        )
 
 
 def send_email(
@@ -188,6 +200,8 @@ async def send_alert_email(request: EmailAlertRequest):
     Send email alert for system condition
     """
     try:
+        _validate_recipients(request.recipients)
+
         subject, html_body = get_alert_email_template(
             request.type,
             request.severity,
@@ -227,6 +241,8 @@ async def send_test_email(request: TestEmailRequest):
     Send test email to verify configuration
     """
     try:
+        _validate_recipients(request.recipients)
+
         subject = "🧪 Test Email - Host Machine Monitoring"
         html_body = """
 <html>
@@ -267,9 +283,10 @@ async def verify_emails(request: EmailVerificationRequest):
     """
     Verify email addresses format
     """
+    _validate_recipients(request.recipients)
     results = {}
     for email in request.recipients:
-        # Basic email validation (already done by EmailStr in Pydantic)
+        # Basic validation was already performed by _validate_recipients.
         results[email] = True
 
     return results

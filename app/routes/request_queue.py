@@ -265,7 +265,7 @@ def _get_health_recommendations(status: str, metrics: Any) -> List[str]:
     if metrics.pending > 1000:
         recommendations.append("Queue is building up - check processing speed")
     
-    if len(metrics.dead_letter) > 100:
+    if metrics.dead_letter > 100:
         recommendations.append("Large dead letter queue - review failed requests")
     
     if not recommendations:
