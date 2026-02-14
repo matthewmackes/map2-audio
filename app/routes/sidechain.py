@@ -6,7 +6,9 @@ Manage sidechain connections between plugins
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-import uuid
+import json
+import threading
+from pathlib import Path
 
 from app.services.juce_engine_service import get_audio_engine
 
@@ -45,8 +47,52 @@ class ToggleSidechainRequest(BaseModel):
     active: bool
 
 
-# In-memory storage for sidechain connections (would be persisted in real app)
+# Sidechain cache persisted to disk for restart resilience.
 _sidechain_connections: dict[str, SidechainConnection] = {}
+_sidechain_lock = threading.RLock()
+_sidechain_store_path = Path("/home/mm/map2-audio/.map2/sidechain_connections.json")
+
+
+def _persist_sidechain_connections_to_disk() -> None:
+    """Persist sidechain connections to disk (best effort)."""
+    try:
+        with _sidechain_lock:
+            payload = [
+                conn.model_dump()
+                for conn in _sidechain_connections.values()
+            ]
+        _sidechain_store_path.parent.mkdir(parents=True, exist_ok=True)
+        _sidechain_store_path.write_text(
+            json.dumps(payload, indent=2),
+            encoding="utf-8",
+        )
+    except Exception:
+        # Persistence failures should not break routing API behavior.
+        pass
+
+
+def _load_sidechain_connections_from_disk() -> None:
+    """Load persisted sidechain connections from disk."""
+    global _sidechain_connections
+
+    if not _sidechain_store_path.exists():
+        return
+
+    try:
+        payload = json.loads(_sidechain_store_path.read_text(encoding="utf-8"))
+        loaded: dict[str, SidechainConnection] = {}
+        if isinstance(payload, list):
+            for item in payload:
+                if not isinstance(item, dict):
+                    continue
+                conn = SidechainConnection(**item)
+                loaded[conn.id] = conn
+        with _sidechain_lock:
+            _sidechain_connections = loaded
+    except Exception:
+        # Keep default empty cache when file is malformed.
+        with _sidechain_lock:
+            _sidechain_connections = {}
 
 
 @router.get("/sidechain", response_model=List[SidechainConnection])
@@ -72,12 +118,16 @@ async def get_sidechain_connections():
                 active=conn.get("active", True)
             )
             connections.append(connection)
-            _sidechain_connections[conn_id] = connection
+            with _sidechain_lock:
+                _sidechain_connections[conn_id] = connection
+
+        _persist_sidechain_connections_to_disk()
 
         return connections
     except Exception as e:
         # Return cached connections if engine call fails
-        return list(_sidechain_connections.values())
+        with _sidechain_lock:
+            return list(_sidechain_connections.values())
 
 
 @router.get("/sidechain-plugins", response_model=List[SidechainCapablePlugin])
@@ -138,7 +188,9 @@ async def create_sidechain_connection(request: CreateSidechainRequest):
             active=True
         )
 
-        _sidechain_connections[conn_id] = connection
+        with _sidechain_lock:
+            _sidechain_connections[conn_id] = connection
+        _persist_sidechain_connections_to_disk()
         return connection
 
     except HTTPException:
@@ -151,10 +203,10 @@ async def create_sidechain_connection(request: CreateSidechainRequest):
 async def delete_sidechain_connection(connection_id: str):
     """Delete a sidechain connection"""
     try:
-        if connection_id not in _sidechain_connections:
+        with _sidechain_lock:
+            conn = _sidechain_connections.get(connection_id)
+        if conn is None:
             raise HTTPException(status_code=404, detail="Connection not found")
-
-        conn = _sidechain_connections[connection_id]
 
         service = get_audio_engine()
 
@@ -171,7 +223,9 @@ async def delete_sidechain_connection(connection_id: str):
                 detail=result.get("error", "Failed to delete sidechain connection")
             )
 
-        del _sidechain_connections[connection_id]
+        with _sidechain_lock:
+            del _sidechain_connections[connection_id]
+        _persist_sidechain_connections_to_disk()
 
         return {"success": True, "message": "Connection deleted"}
 
@@ -185,10 +239,10 @@ async def delete_sidechain_connection(connection_id: str):
 async def toggle_sidechain_connection(connection_id: str, request: ToggleSidechainRequest):
     """Toggle a sidechain connection active state"""
     try:
-        if connection_id not in _sidechain_connections:
+        with _sidechain_lock:
+            conn = _sidechain_connections.get(connection_id)
+        if conn is None:
             raise HTTPException(status_code=404, detail="Connection not found")
-
-        conn = _sidechain_connections[connection_id]
 
         service = get_audio_engine()
 
@@ -215,7 +269,9 @@ async def toggle_sidechain_connection(connection_id: str, request: ToggleSidecha
 
         # Update local state
         conn.active = request.active
-        _sidechain_connections[connection_id] = conn
+        with _sidechain_lock:
+            _sidechain_connections[connection_id] = conn
+        _persist_sidechain_connections_to_disk()
 
         return {"success": True, "active": request.active}
 
@@ -223,3 +279,6 @@ async def toggle_sidechain_connection(connection_id: str, request: ToggleSidecha
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+_load_sidechain_connections_from_disk()
