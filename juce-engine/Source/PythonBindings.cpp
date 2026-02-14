@@ -3851,7 +3851,63 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             }
             d["items"] = items;
             return d;
-        }, "Get current pedalboard configuration");
+        }, "Get current pedalboard configuration")
+
+        // ========================================
+        // AVDECC Entity Methods (Phase 10)
+        // ========================================
+
+        #ifdef HAS_AVDECC
+        .def("get_avdecc_entities", [](const Map2AudioEngine& self) {
+            py::list entities;
+
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) {
+                return entities;  // Empty list if AVDECC not initialized
+            }
+
+            auto discovered = avdecc->getDiscoveredEntities();
+            for (const auto& entity : discovered) {
+                py::dict d;
+                d["entity_id"] = py::str(juce::String::toHexString((int64_t)entity.entity_id).toStdString());
+                d["entity_model_id"] = py::str(juce::String::toHexString((int64_t)entity.entity_model_id).toStdString());
+                d["entity_name"] = entity.entity_name;
+                d["firmware_version"] = entity.firmware_version;
+                d["group_name"] = entity.group_name;
+                d["serial_number"] = entity.serial_number;
+                d["vendor_id"] = entity.vendor_id;
+                d["model_id"] = entity.model_id;
+                d["available"] = entity.available;
+                d["has_model"] = (entity.model_ != nullptr);
+                entities.append(d);
+            }
+
+            return entities;
+        }, "Get list of discovered AVDECC entities")
+
+        .def("get_avdecc_entity_model", [](const Map2AudioEngine& self, uint64_t entity_id) -> py::object {
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) {
+                return py::none();
+            }
+
+            auto discovered = avdecc->getDiscoveredEntities();
+            for (const auto& entity : discovered) {
+                if (entity.entity_id == entity_id && entity.model_) {
+                    // Convert EntityModel to JSON dict
+                    auto json_str = entity.model_->toJSON();
+
+                    // Parse JSON string to Python dict
+                    py::module_ json_module = py::module_::import("json");
+                    return json_module.attr("loads")(json_str);
+                }
+            }
+
+            return py::none();
+        }, py::arg("entity_id"),
+           "Get complete entity model as JSON dict")
+        #endif
+        ;
 
     // ========================================
     // Factory Functions

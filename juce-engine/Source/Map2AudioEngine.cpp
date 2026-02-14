@@ -165,6 +165,32 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     meteringRunning_.store(true);
     meteringThread_ = std::thread([this]() { meteringThreadFunc(); });
 
+#ifdef HAS_AVDECC
+    // Phase 10: Initialize AVDECC entity if enabled
+    // Get interface from environment or use default
+    const char* avdecc_iface_env = std::getenv("MAP2_AVB_INTERFACE");
+    std::string avdecc_interface = avdecc_iface_env ? avdecc_iface_env : "eth0";
+
+    try {
+        avdeccEntity_ = std::make_unique<Map2Audio::AvdeccEntity>(
+            avdecc_interface,
+            "MAP2-AudioEngine",
+            8,  // Max talker streams
+            8   // Max listener streams
+        );
+
+        if (!avdeccEntity_->start()) {
+            std::cerr << "Warning: Failed to start AVDECC entity (non-fatal)" << std::endl;
+            avdeccEntity_.reset();
+        } else {
+            std::cout << "  AVDECC Entity: Started on " << avdecc_interface << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Warning: AVDECC initialization failed: " << e.what() << " (non-fatal)" << std::endl;
+        avdeccEntity_.reset();
+    }
+#endif
+
     initialized_ = true;
 
     std::cout << "MAP2 Audio Engine initialized successfully" << std::endl;
@@ -193,6 +219,15 @@ void Map2AudioEngine::shutdown() {
     midiHandler_.shutdown();
     pluginHost_.shutdown();
     audioIO_.shutdown();
+
+#ifdef HAS_AVDECC
+    // Phase 10: Shutdown AVDECC entity
+    if (avdeccEntity_) {
+        avdeccEntity_->stop();
+        avdeccEntity_.reset();
+        std::cout << "  AVDECC Entity: Stopped" << std::endl;
+    }
+#endif
 
     initialized_ = false;
 }

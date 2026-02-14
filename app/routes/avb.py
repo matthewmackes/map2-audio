@@ -1050,22 +1050,22 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                 detail="AVDECC not compiled (USE_AVDECC=OFF)"
             )
 
-        # Get entity model (currently placeholder - returns None)
+        # Get entity model via engine method (Phase 10 integration complete)
         model_json = await asyncio.to_thread(
-            map2_audio_engine.get_avdecc_entity_model,
+            engine.get_avdecc_entity_model,
             entity_id_int
         )
 
         if model_json is None:
             # Entity not found or not enumerated yet
             # Check if entity exists in discovered list
-            entities = await asyncio.to_thread(map2_audio_engine.get_avdecc_entities)
+            entities = await asyncio.to_thread(engine.get_avdecc_entities)
 
-            # For now, return placeholder indicating entity not found
+            # Return detailed error
             raise HTTPException(
                 status_code=404,
                 detail=f"Entity {entity_id} not found or not enumerated. "
-                       f"Note: Full AVDECC integration pending (Map2AudioEngine.getAvdeccEntity() required)"
+                       f"Found {len(entities)} total entities."
             )
 
         # Return model with metadata

@@ -26,6 +26,10 @@
 #include "NAMProcessor.h"
 #endif
 
+#ifdef HAS_AVDECC
+#include "AvdeccEntity.h"
+#endif
+
 #include "ChorusProcessor.h"
 #include "PhaserProcessor.h"
 #include "PitchShifterProcessor.h"
@@ -1046,6 +1050,11 @@ public:
     PhaseCorrelationMeter& getPhaseCorrelation() { return phaseCorrelation_; }
     CPUMonitor& getCPUMonitor() { return cpuMonitor_; }
 
+#ifdef HAS_AVDECC
+    // AVDECC Entity accessor (Phase 10)
+    Map2Audio::AvdeccEntity* getAvdeccEntity() { return avdeccEntity_.get(); }
+#endif
+
 private:
     // JUCE Components (NEW)
     JuceAudioIO audioIO_;
@@ -1081,6 +1090,11 @@ private:
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)
     NAMProcessor namProcessor_;
+#endif
+
+#ifdef HAS_AVDECC
+    // AVDECC Entity for network audio discovery/enumeration (Phase 10)
+    std::unique_ptr<Map2Audio::AvdeccEntity> avdeccEntity_;
 #endif
 
     // Metering (NEW) - OFF AUDIO THREAD (Option 3)
