@@ -186,8 +186,19 @@ class AvbService:
         if not self.is_available():
             return {"error": "AVB not available", "code": "AVB_DISABLED"}
 
+        stream_id = config.stream_id if isinstance(config.stream_id, str) else ""
+        stream_id = stream_id.strip()
+        if not stream_id:
+            return {"error": "Invalid stream_id", "code": "INVALID_CONFIG"}
+
+        if config.channels <= 0 or config.sample_rate <= 0 or config.buffer_size <= 0:
+            return {"error": "Invalid stream configuration", "code": "INVALID_CONFIG"}
+
+        if stream_id != config.stream_id:
+            config.stream_id = stream_id
+
         # Check if stream already exists
-        if config.stream_id in self.streams:
+        if stream_id in self.streams:
             return {"error": "Stream already exists", "code": "STREAM_EXISTS"}
 
         try:
@@ -213,12 +224,12 @@ class AvbService:
                 stats=AvbStreamStats()
             )
 
-            self.streams[config.stream_id] = stream_info
+            self.streams[stream_id] = stream_info
 
-            logger.info(f"Created AVB {config.direction.value} stream: {config.stream_id}")
+            logger.info(f"Created AVB {config.direction.value} stream: {stream_id}")
 
             return {
-                "stream_id": config.stream_id,
+                "stream_id": stream_id,
                 "status": "created"
             }
 

@@ -352,10 +352,22 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
         if not avb_service.is_available():
             raise HTTPException(status_code=503, detail="AVB not available")
 
+        stream_id = config.get("stream_id")
+        if not isinstance(stream_id, str) or not stream_id.strip():
+            raise HTTPException(status_code=400, detail="stream_id is required")
+
+        direction_raw = config.get("direction")
+        if not isinstance(direction_raw, str):
+            raise HTTPException(status_code=400, detail="direction must be 'talker' or 'listener'")
+        try:
+            direction = StreamDirection(direction_raw)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="direction must be 'talker' or 'listener'") from exc
+
         # Parse config
         stream_config = AvbStreamConfig(
-            stream_id=config.get("stream_id"),
-            direction=StreamDirection(config.get("direction")),
+            stream_id=stream_id,
+            direction=direction,
             channels=config.get("channels", 2),
             sample_rate=config.get("sample_rate", 48000),
             buffer_size=config.get("buffer_size", 256),
@@ -374,6 +386,8 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
 
     except HTTPException:
         raise
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=f"Invalid stream config: {e}")
     except Exception as e:
         logger.error(f"Error creating AVB stream: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
