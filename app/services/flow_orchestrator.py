@@ -163,6 +163,19 @@ class FlowOrchestrator:
             result = await session.execute(select(FlowAssignment))
             return list(result.scalars().all())
 
+    async def _get_chain_id_for_flow(self, flow_id: str) -> Optional[int]:
+        """Resolve chain_id for a flow from memory, then persisted assignment."""
+        deployment = self.active_deployments.get(flow_id)
+        if deployment:
+            return deployment.chain_id
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(FlowAssignment).where(FlowAssignment.flow_id == flow_id)
+            )
+            assignment = result.scalar_one_or_none()
+            return assignment.chain_id if assignment else None
+
     async def deploy_flow(self, deployment: FlowDeploymentInfo, chain: Dict) -> bool:
         """Deploy a chain to assigned nodes via HTTP API."""
         try:
@@ -298,16 +311,46 @@ class FlowOrchestrator:
         node = self.registry.get_node(node_id)
         if not node:
             return False
-        
+
+        chain_id = await self._get_chain_id_for_flow(flow_id)
+
         hostname = node.get("hostname") or node.get("ip_address") or node_id
         url = f"http://{hostname}:8080/api/flows/{flow_id}/activate"
-        
+
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
-                    url, timeout=aiohttp.ClientTimeout(total=10)
+                    url,
+                    json={"chain_id": chain_id} if chain_id is not None else {},
+                    timeout=aiohttp.ClientTimeout(total=10),
                 ) as resp:
-                    return resp.status == 200
+                    if resp.status != 200:
+                        logger.error(
+                            "Activate flow request failed (flow=%s node=%s status=%s)",
+                            flow_id,
+                            node_id,
+                            resp.status,
+                        )
+                        return False
+
+                    try:
+                        body = await resp.json(content_type=None)
+                    except Exception:
+                        logger.error("Activate flow response is not valid JSON for flow=%s node=%s", flow_id, node_id)
+                        return False
+
+                    if body.get("applied") is True:
+                        return True
+                    if str(body.get("status", "")).lower() in {"activated", "promoted", "success"}:
+                        return True
+
+                    logger.error(
+                        "Flow activation not applied (flow=%s node=%s body=%s)",
+                        flow_id,
+                        node_id,
+                        body,
+                    )
+                    return False
             except Exception as e:
                 logger.error(f"Failed to activate flow {flow_id} on node {node_id}: {e}")
                 return False
@@ -347,7 +390,31 @@ class FlowOrchestrator:
             assignment_type='primary',
             reason=f'Reassigned from {old_primary.assigned_node_id}'
         )
-        
+
+        # Deploy the existing chain to the reassigned node.
+        try:
+            from app.services.chain_service import ChainService
+
+            async with get_session() as session:
+                chain_service = ChainService(session)
+                chain = await chain_service.get_chain(deployment.chain_id)
+
+            if not chain:
+                logger.error(
+                    "Cannot reassign flow %s: chain %s not found",
+                    flow_id,
+                    deployment.chain_id,
+                )
+                return False
+
+            deployed = await self._deploy_to_node(node_id, chain, mode="active")
+            if not deployed:
+                logger.error("Cannot reassign flow %s: deploy to node %s failed", flow_id, node_id)
+                return False
+        except Exception as e:
+            logger.error(f"Failed to deploy reassigned flow {flow_id} to {node_id}: {e}")
+            return False
+
         await self.save_deployment(deployment)
         return True
 
@@ -357,16 +424,44 @@ class FlowOrchestrator:
         if not node:
             return False
 
+        chain_id = await self._get_chain_id_for_flow(flow_id)
+
         hostname = node.get("hostname") or node.get("ip_address") or node_id
         url = f"http://{hostname}:8080/api/flows/promote-standby"
-        payload = {"flow_id": flow_id}
+        payload = {"flow_id": flow_id, "chain_id": chain_id}
 
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
                     url, json=payload, timeout=aiohttp.ClientTimeout(total=10)
                 ) as resp:
-                    return resp.status == 200
+                    if resp.status != 200:
+                        logger.error(
+                            "Promote standby request failed (flow=%s node=%s status=%s)",
+                            flow_id,
+                            node_id,
+                            resp.status,
+                        )
+                        return False
+
+                    try:
+                        body = await resp.json(content_type=None)
+                    except Exception:
+                        logger.error("Promote standby response is not valid JSON for flow=%s node=%s", flow_id, node_id)
+                        return False
+
+                    if body.get("applied") is True:
+                        return True
+                    if str(body.get("status", "")).lower() in {"promoted", "activated", "success"}:
+                        return True
+
+                    logger.error(
+                        "Standby promotion not applied (flow=%s node=%s body=%s)",
+                        flow_id,
+                        node_id,
+                        body,
+                    )
+                    return False
             except Exception as e:
                 logger.error(f"Failed to promote standby on {node_id}: {e}")
                 return False
