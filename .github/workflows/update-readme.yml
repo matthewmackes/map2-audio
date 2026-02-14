@@ -1,0 +1,60 @@
+name: Update README
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+      - 'requirements*.txt'
+      - 'package.json'
+      - 'branding/**'
+      - '.github/scripts/update_readme.py'
+  schedule:
+    # Daily at 6:00 AM Eastern (10:00 UTC)
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git log and doc dates
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate README sections
+        run: python .github/scripts/update_readme.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Auto-commit updated README
+        uses: stefanzweifel/git-auto-commit-action@v5
+        id: auto-commit
+        with:
+          commit_message: 'chore: auto-update README with latest docs & activity'
+          file_pattern: README.md
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Push to GitLab mirror
+        if: steps.auto-commit.outputs.changes_detected == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITLAB_DEPLOY_KEY }}" > ~/.ssh/gitlab_key
+          chmod 600 ~/.ssh/gitlab_key
+          ssh-keyscan -t ed25519 gitlab.com >> ~/.ssh/known_hosts 2>/dev/null
+          git remote add gitlab git@gitlab.com:matthewmackes-group/matthewmackes-project.git || true
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/gitlab_key -o StrictHostKeyChecking=accept-new" \
+            git push gitlab master
+        env:
+          GIT_SSH_COMMAND: "ssh -i ~/.ssh/gitlab_key"
