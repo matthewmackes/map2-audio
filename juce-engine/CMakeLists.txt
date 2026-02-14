@@ -154,6 +154,50 @@ if(USE_NAM)
 endif()
 
 # ========================================
+# AVB/TSN Network Audio Transport (Optional)
+# ========================================
+option(USE_AVB "Enable AVB/TSN network audio transport" OFF)
+if(USE_AVB)
+    pkg_check_modules(AVTP libavtp QUIET)
+    pkg_check_modules(LIBCAP libcap QUIET)
+
+    if(AVTP_FOUND AND LIBCAP_FOUND)
+        message(STATUS "AVB/TSN: ENABLED (libavtp ${AVTP_VERSION})")
+        set(AVB_AVAILABLE TRUE)
+    else()
+        message(STATUS "AVB/TSN: DISABLED (dependencies not found)")
+        if(NOT AVTP_FOUND)
+            message(STATUS "  Missing: libavtp (install libavtp-dev or build from source)")
+        endif()
+        if(NOT LIBCAP_FOUND)
+            message(STATUS "  Missing: libcap (install libcap-dev)")
+        endif()
+        set(AVB_AVAILABLE FALSE)
+    endif()
+else()
+    message(STATUS "AVB/TSN: DISABLED (USE_AVB=OFF)")
+    set(AVB_AVAILABLE FALSE)
+endif()
+
+# ========================================
+# AVDECC (IEEE 1722.1) Third-Party Interop (Optional)
+# ========================================
+option(USE_AVDECC "Enable AVDECC for third-party AVB device interop" OFF)
+if(USE_AVDECC)
+    if(AVB_AVAILABLE)
+        message(STATUS "AVDECC: ENABLED (IEEE 1722.1 interoperability)")
+        set(AVDECC_AVAILABLE TRUE)
+    else()
+        message(STATUS "AVDECC: DISABLED (requires AVB to be enabled first)")
+        message(STATUS "  Enable AVB first with: cmake -DUSE_AVB=ON -DUSE_AVDECC=ON")
+        set(AVDECC_AVAILABLE FALSE)
+    endif()
+else()
+    message(STATUS "AVDECC: DISABLED (USE_AVDECC=OFF)")
+    set(AVDECC_AVAILABLE FALSE)
+endif()
+
+# ========================================
 # Source files - JUCE-based engine
 # ========================================
 set(SOURCES
@@ -219,6 +263,23 @@ if(USE_NAM)
     )
 endif()
 
+# Add AVB sources if available
+if(AVB_AVAILABLE)
+    list(APPEND SOURCES
+        Source/AvbStream.cpp
+        Source/AvbAudioIODeviceType.cpp
+        Source/AvbAudioIODevice.cpp
+    )
+endif()
+
+# Add AVDECC sources if available
+if(AVDECC_AVAILABLE)
+    list(APPEND SOURCES
+        Source/AvdeccEntity.cpp
+        Source/AvdeccEntityModel.cpp
+    )
+endif()
+
 set(HEADERS
     Source/Common.h
     Source/Map2AudioEngine.h
@@ -276,6 +337,26 @@ if(USE_NAM)
     list(APPEND HEADERS Source/NAMProcessor.h)
 endif()
 
+# Add AVB headers if available
+if(AVB_AVAILABLE)
+    list(APPEND HEADERS
+        Source/AvbException.h
+        Source/AvbRingBuffer.h
+        Source/AvbStream.h
+        Source/AvbAudioIODeviceType.h
+        Source/AvbAudioIODevice.h
+    )
+endif()
+
+# Add AVDECC headers if available
+if(AVDECC_AVAILABLE)
+    list(APPEND HEADERS
+        Source/AvdeccEntity.h
+        Source/AvdeccDescriptors.h
+        Source/AvdeccEntityModel.h
+    )
+endif()
+
 # ========================================
 # Create Python module
 # ========================================
@@ -302,6 +383,14 @@ if(USE_NAM)
         ${NAM_CORE_PATH}
         ${NAM_EIGEN_PATH}
         ${NAM_JSON_PATH}
+    )
+endif()
+
+# AVB include directories
+if(AVB_AVAILABLE)
+    target_include_directories(map2_audio_engine PRIVATE
+        ${AVTP_INCLUDE_DIRS}
+        ${LIBCAP_INCLUDE_DIRS}
     )
 endif()
 
@@ -343,6 +432,13 @@ if(JACK_FOUND)
         /usr/lib/pipewire-0.3/jack
     )
     target_link_libraries(map2_audio_engine PRIVATE ${JACK_LIBRARIES})
+endif()
+
+if(AVB_AVAILABLE)
+    target_link_libraries(map2_audio_engine PRIVATE
+        ${AVTP_LIBRARIES}
+        ${LIBCAP_LIBRARIES}
+    )
 endif()
 
 # ========================================
@@ -389,6 +485,18 @@ if(USE_NAM)
     if(UNIX AND NOT APPLE)
         target_link_libraries(map2_audio_engine PRIVATE stdc++fs)
     endif()
+endif()
+
+if(AVB_AVAILABLE)
+    target_compile_definitions(map2_audio_engine PRIVATE
+        HAS_AVB=1
+    )
+endif()
+
+if(AVDECC_AVAILABLE)
+    target_compile_definitions(map2_audio_engine PRIVATE
+        HAS_AVDECC=1
+    )
 endif()
 
 # ========================================
@@ -449,5 +557,16 @@ endif()
 message(STATUS "")
 message(STATUS "Neural Processing:")
 message(STATUS "  NAM (Neural Amp Modeler): ${USE_NAM}")
+message(STATUS "")
+message(STATUS "Network Audio:")
+message(STATUS "  AVB/TSN Transport: ${AVB_AVAILABLE}")
+if(AVB_AVAILABLE)
+    message(STATUS "  libavtp: ${AVTP_VERSION}")
+    message(STATUS "  HAS_AVB: ENABLED")
+else()
+    if(USE_AVB)
+        message(STATUS "  Note: USE_AVB=ON but dependencies not found")
+    endif()
+endif()
 message(STATUS "========================================")
 message(STATUS "")
