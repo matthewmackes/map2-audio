@@ -15,7 +15,7 @@ import asyncio
 
 import aiohttp
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from app.database import FlowAssignment, FlowDeployment
 from app.database_session import get_session
@@ -123,6 +123,12 @@ class FlowOrchestrator:
         strategy: str,
     ) -> None:
         async with get_session() as session:
+            # flow_assignments currently stores one row per flow_id (unique constraint).
+            # Replace existing assignment atomically when reassigned.
+            await session.execute(
+                delete(FlowAssignment).where(FlowAssignment.flow_id == primary.flow_id)
+            )
+
             session.add(
                 FlowAssignment(
                     flow_id=primary.flow_id,
@@ -132,15 +138,10 @@ class FlowOrchestrator:
                     assignment_strategy=strategy,
                 )
             )
-            for standby_assignment in standby:
-                session.add(
-                    FlowAssignment(
-                        flow_id=standby_assignment.flow_id,
-                        chain_id=standby_assignment.chain_id,
-                        assigned_node_id=standby_assignment.assigned_node_id,
-                        assignment_type=standby_assignment.assignment_type,
-                        assignment_strategy="redundancy",
-                    )
+            if standby:
+                logger.debug(
+                    "Standby assignments for flow %s are tracked in deployment metadata",
+                    primary.flow_id,
                 )
 
     async def save_deployment(self, deployment: FlowDeploymentInfo) -> None:

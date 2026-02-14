@@ -50,7 +50,7 @@ try:
 
     @router.post("/flows/assign")
     async def assign_flow_to_node(request: FlowAssignRequest):
-        """Assign a flow to a specific node."""
+        """Assign and deploy a flow to a specific node."""
         orchestrator = _get_orchestrator()
 
         deployment = await orchestrator.assign_flow_to_node(
@@ -64,10 +64,36 @@ try:
         if deployment is None:
             raise HTTPException(status_code=400, detail="Assignment failed")
 
+        # Resolve chain payload and push it to the assigned node(s).
+        from app.database import get_session
+        from app.services.chain_service import ChainService
+
+        async with get_session() as session:
+            chain_service = ChainService(session)
+            chain = await chain_service.get_chain(request.chain_id)
+
+        if chain is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Chain {request.chain_id} not found for deployment",
+            )
+
+        deployed = await orchestrator.deploy_flow(deployment, chain)
+        if not deployed:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Flow assigned but deployment failed on target node. "
+                    "Check node reachability and /api/chains/deploy response."
+                ),
+            )
+
         return {
-            "status": "assigned",
+            "status": "deployed",
             "flow_id": request.flow_id,
             "node_id": request.node_id,
+            "chain_id": request.chain_id,
+            "redundancy_enabled": request.redundancy_enabled,
         }
 
     @router.get("/nodes")
