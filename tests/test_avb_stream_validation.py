@@ -62,6 +62,12 @@ def test_avb_service_create_stream_trims_stream_id():
     service = AvbService()
     service.is_available = lambda: True
 
+    class _Engine:
+        def create_avb_stream(self, _config):
+            return True
+
+    service.set_engine(_Engine())
+
     config = AvbStreamConfig(
         stream_id="  stream-02  ",
         direction=StreamDirection.LISTENER,

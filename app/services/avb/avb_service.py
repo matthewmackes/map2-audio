@@ -201,6 +201,14 @@ class AvbService:
         return False, None, None
 
     @staticmethod
+    def _missing_engine_stream_api_error(operation: str) -> Dict[str, Any]:
+        """Standardized error payload for unavailable engine AVB stream hooks."""
+        return {
+            "error": f"Engine AVB stream {operation} API unavailable",
+            "code": "ENGINE_METHOD_UNAVAILABLE",
+        }
+
+    @staticmethod
     def _coerce_non_negative_int(value: Any, default: int) -> int:
         """Coerce values into non-negative integers, preserving defaults on failure."""
         try:
@@ -297,6 +305,8 @@ class AvbService:
                 ],
                 engine_config,
             )
+            if not found:
+                return self._missing_engine_stream_api_error("create")
             if found and not success:
                 return {"error": error or "Engine create_stream failed", "code": "CREATION_FAILED"}
 
@@ -350,6 +360,8 @@ class AvbService:
                 ],
                 stream_id,
             )
+            if not found:
+                return self._missing_engine_stream_api_error("delete")
             if found and not success:
                 return {"error": error or "Engine delete_stream failed", "code": "DELETE_FAILED"}
 
@@ -391,6 +403,10 @@ class AvbService:
                 ],
                 stream_id,
             )
+            if not found:
+                stream.state = StreamState.ERROR
+                stream.error = self._missing_engine_stream_api_error("start")["error"]
+                return self._missing_engine_stream_api_error("start")
             if found and not success:
                 stream.state = StreamState.ERROR
                 stream.error = error or "Engine start_stream failed"
@@ -438,6 +454,10 @@ class AvbService:
                 ],
                 stream_id,
             )
+            if not found:
+                stream.state = StreamState.ERROR
+                stream.error = self._missing_engine_stream_api_error("stop")["error"]
+                return self._missing_engine_stream_api_error("stop")
             if found and not success:
                 stream.state = StreamState.ERROR
                 stream.error = error or "Engine stop_stream failed"
