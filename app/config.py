@@ -60,6 +60,7 @@ class ConfigSection(Enum):
     MONITORING = "monitoring"
     BACKUP = "backup"
     STORAGE = "storage"
+    AVB = "avb"  # AVB/TSN network audio transport
 
 
 # Configuration schema with all options
@@ -440,6 +441,80 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         default=["~/Impulses", "~/IRs", "/usr/share/map2/ir", "/usr/share/impulses"],
         description="Additional IR discovery paths",
         value_type=list,
+    ),
+
+    # AVB/TSN Network Audio Transport settings
+    "avb.enabled": ConfigOption(
+        key="avb.enabled",
+        default=False,
+        description="Enable AVB/TSN network audio transport (requires compatible NIC)",
+        value_type=bool,
+        env_var="MAP2_AVB_ENABLED",
+        restart_required=True,
+    ),
+    "avb.interface": ConfigOption(
+        key="avb.interface",
+        default="",
+        description="Network interface for AVB/TSN (e.g., enp3s0, eth0)",
+        value_type=str,
+        env_var="MAP2_AVB_INTERFACE",
+        restart_required=True,
+    ),
+    "avb.ptp_domain": ConfigOption(
+        key="avb.ptp_domain",
+        default=0,
+        description="PTP domain number (0-255)",
+        value_type=int,
+        min_value=0,
+        max_value=255,
+        restart_required=True,
+    ),
+    "avb.ptp_priority1": ConfigOption(
+        key="avb.ptp_priority1",
+        default=128,
+        description="PTP priority1 for grandmaster election (lower = higher priority)",
+        value_type=int,
+        min_value=0,
+        max_value=255,
+        restart_required=True,
+    ),
+    "avb.auto_connect": ConfigOption(
+        key="avb.auto_connect",
+        default=False,
+        description="Automatically connect to discovered AVB streams on startup",
+        value_type=bool,
+    ),
+    "avb.avdecc_enabled": ConfigOption(
+        key="avb.avdecc_enabled",
+        default=False,
+        description="Enable AVDECC (IEEE 1722.1) discovery/control for third-party AVB devices",
+        value_type=bool,
+        env_var="MAP2_AVDECC_ENABLED",
+        restart_required=True,
+    ),
+    "avb.max_streams": ConfigOption(
+        key="avb.max_streams",
+        default=8,
+        description="Maximum number of concurrent AVB streams",
+        value_type=int,
+        min_value=1,
+        max_value=32,
+    ),
+    "avb.default_buffer_depth": ConfigOption(
+        key="avb.default_buffer_depth",
+        default=8,
+        description="Ring buffer depth in periods (higher = more latency but safer)",
+        value_type=int,
+        min_value=2,
+        max_value=16,
+    ),
+    "avb.presentation_offset_us": ConfigOption(
+        key="avb.presentation_offset_us",
+        default=2000,
+        description="Presentation time offset in microseconds",
+        value_type=int,
+        min_value=500,
+        max_value=10000,
     ),
 }
 

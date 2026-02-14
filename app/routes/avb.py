@@ -24,6 +24,65 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/avb", tags=["AVB/TSN"])
 
 
+def _is_avdecc_enabled() -> bool:
+    """
+    Check AVDECC feature flag with backward-compatible key fallback.
+
+    Canonical key: avb.avdecc_enabled
+    Legacy keys kept for existing config files:
+    - avdecc.enabled
+    - avb.discovery.avdecc_enabled
+    """
+    canonical = config_get("avb.avdecc_enabled", None)
+    if canonical is not None:
+        return bool(canonical)
+
+    legacy = config_get("avdecc.enabled", None)
+    if legacy is not None:
+        return bool(legacy)
+
+    return bool(config_get("avb.discovery.avdecc_enabled", False))
+
+
+def _resolve_entity_capability_enum():
+    """Resolve AVDECC EntityCapability enum from bindings when available."""
+    try:
+        from app.services.juce_engine_service import juce_engine
+
+        avdecc_cls = getattr(juce_engine, "Avdecc", None)
+        if avdecc_cls is None:
+            return None
+        return getattr(avdecc_cls, "EntityCapability", None)
+    except Exception:
+        return None
+
+
+def _entity_supports_gptp(entity: Any) -> bool:
+    """Best-effort gPTP capability check for AVDECC entities."""
+    gptp_supported = getattr(entity, "gptp_supported", None)
+    if gptp_supported is not None:
+        return bool(gptp_supported)
+
+    has_capability = getattr(entity, "hasCapability", None)
+    if not callable(has_capability):
+        return False
+
+    enum_container = getattr(entity, "EntityCapability", None)
+    if enum_container is None:
+        enum_container = _resolve_entity_capability_enum()
+    if enum_container is None:
+        return False
+
+    gptp_capability = getattr(enum_container, "GPTP_SUPPORTED", None)
+    if gptp_capability is None:
+        return False
+
+    try:
+        return bool(has_capability(gptp_capability))
+    except Exception:
+        return False
+
+
 @router.get("/ptp/status")
 async def get_ptp_status() -> Dict[str, Any]:
     """
@@ -538,7 +597,7 @@ async def get_avdecc_entities() -> Dict[str, Any]:
         List of discovered AVDECC entities with capabilities.
     """
     try:
-        if not config_get("avb.avdecc_enabled", False):
+        if not _is_avdecc_enabled():
             return {
                 "enabled": False,
                 "entities": [],
@@ -573,7 +632,7 @@ async def get_avdecc_entities() -> Dict[str, Any]:
                     "listener_streams": e.listener_stream_sinks,
                     "is_audio_talker": e.isAudioTalker(),
                     "is_audio_listener": e.isAudioListener(),
-                    "gptp_supported": e.hasCapability(Avdecc.EntityCapability.GPTP_SUPPORTED)
+                    "gptp_supported": _entity_supports_gptp(e)
                 },
                 "ptp": {
                     "grandmaster_id": format(e.gptp_grandmaster_id, '016x'),
@@ -603,7 +662,7 @@ async def get_avdecc_entities() -> Dict[str, Any]:
 async def get_avdecc_entity(entity_id: str) -> Dict[str, Any]:
     """Get specific AVDECC entity by ID"""
     try:
-        if not config_get("avb.avdecc_enabled", False):
+        if not _is_avdecc_enabled():
             raise HTTPException(status_code=503, detail="AVDECC not enabled")
 
         from app.services.avb.avb_router import get_avb_router
@@ -651,7 +710,7 @@ async def get_avdecc_entity(entity_id: str) -> Dict[str, Any]:
 async def get_avdecc_stats() -> Dict[str, Any]:
     """Get AVDECC protocol statistics"""
     try:
-        if not config_get("avb.avdecc_enabled", False):
+        if not _is_avdecc_enabled():
             return {
                 "enabled": False,
                 "error": "AVDECC not enabled"
@@ -1010,7 +1069,7 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
     """
     try:
         # Check if AVDECC is enabled
-        if not config_get("avdecc.enabled", False):
+        if not _is_avdecc_enabled():
             raise HTTPException(
                 status_code=503,
                 detail="AVDECC not enabled in configuration"
@@ -1032,22 +1091,35 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                 detail=f"Invalid entity ID format: {entity_id} (expected hex)"
             )
 
-        # Get entity model via Python bindings
-        from app.services.juce_engine_service import get_juce_engine
-        import map2_audio_engine
+        # Resolve low-level C++ engine from JUCE service singleton.
+        from app.services.juce_engine_service import get_audio_engine, JUCE_AVAILABLE, juce_engine
 
-        engine = get_juce_engine()
-        if not engine:
+        engine_service = get_audio_engine()
+        if not engine_service:
             raise HTTPException(
                 status_code=503,
                 detail="Audio engine not available"
             )
 
-        # Check if AVDECC is available (compile-time check)
-        if not map2_audio_engine.is_avdecc_available():
+        engine = getattr(engine_service, "_engine", None)
+        if engine is None:
             raise HTTPException(
                 status_code=503,
-                detail="AVDECC not compiled (USE_AVDECC=OFF)"
+                detail="Audio engine not initialized"
+            )
+
+        # Check if AVDECC is available (compile-time check)
+        if JUCE_AVAILABLE and juce_engine and hasattr(juce_engine, "is_avdecc_available"):
+            if not juce_engine.is_avdecc_available():
+                raise HTTPException(
+                    status_code=503,
+                    detail="AVDECC not compiled (USE_AVDECC=OFF)"
+                )
+
+        if not hasattr(engine, "get_avdecc_entity_model") or not hasattr(engine, "get_avdecc_entities"):
+            raise HTTPException(
+                status_code=503,
+                detail="AVDECC entity model API not available in engine build"
             )
 
         # Get entity model via engine method (Phase 10 integration complete)
