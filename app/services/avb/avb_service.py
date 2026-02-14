@@ -9,7 +9,7 @@ Manages AVB/TSN audio streams:
 """
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 
@@ -128,6 +128,51 @@ class AvbService:
             logger.debug(f"AVB availability check failed: {e}")
             return False
 
+    def _call_engine_stream_api(
+        self,
+        method_candidates: List[str],
+        *args: Any,
+    ) -> Tuple[bool, bool, Optional[str]]:
+        """
+        Try calling a stream-related engine method by candidate names.
+
+        Returns:
+            (method_found, success, error_message)
+        """
+        self._ensure_engine_bound()
+        if self._engine is None:
+            return False, False, "Engine not initialized"
+
+        for method_name in method_candidates:
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+
+            try:
+                result = method(*args)
+
+                if isinstance(result, bool):
+                    return True, result, None if result else f"{method_name} returned False"
+
+                if isinstance(result, dict):
+                    if result.get("error"):
+                        return True, False, str(result.get("error"))
+                    if "success" in result:
+                        ok = bool(result.get("success"))
+                        return True, ok, None if ok else str(result.get("message", "engine call failed"))
+                    return True, True, None
+
+                if result is None:
+                    return True, True, None
+
+                ok = bool(result)
+                return True, ok, None if ok else f"{method_name} returned falsy result"
+
+            except Exception as exc:
+                return True, False, str(exc)
+
+        return False, False, None
+
     async def create_stream(self, config: AvbStreamConfig) -> Dict[str, Any]:
         """
         Create new AVB stream.
@@ -146,9 +191,19 @@ class AvbService:
             return {"error": "Stream already exists", "code": "STREAM_EXISTS"}
 
         try:
-            # Create stream in JUCE engine
-            # This would call into C++ to create AvbAudioIODevice
-            # For now, create placeholder
+            engine_config = asdict(config)
+            engine_config["direction"] = config.direction.value
+            found, success, error = self._call_engine_stream_api(
+                [
+                    "create_avb_stream",
+                    "createAvbStream",
+                    "add_avb_stream",
+                    "addAvbStream",
+                ],
+                engine_config,
+            )
+            if found and not success:
+                return {"error": error or "Engine create_stream failed", "code": "CREATION_FAILED"}
 
             stream_info = AvbStreamInfo(
                 stream_id=config.stream_id,
@@ -191,8 +246,17 @@ class AvbService:
             if stream.state == StreamState.RUNNING:
                 await self.stop_stream(stream_id)
 
-            # Delete from engine
-            # (Would call C++ to destroy AvbAudioIODevice)
+            found, success, error = self._call_engine_stream_api(
+                [
+                    "delete_avb_stream",
+                    "deleteAvbStream",
+                    "remove_avb_stream",
+                    "removeAvbStream",
+                ],
+                stream_id,
+            )
+            if found and not success:
+                return {"error": error or "Engine delete_stream failed", "code": "DELETE_FAILED"}
 
             del self.streams[stream_id]
 
@@ -225,8 +289,17 @@ class AvbService:
 
             stream.state = StreamState.STARTING
 
-            # Start in JUCE engine
-            # (Would call C++ AvbAudioIODevice::start())
+            found, success, error = self._call_engine_stream_api(
+                [
+                    "start_avb_stream",
+                    "startAvbStream",
+                ],
+                stream_id,
+            )
+            if found and not success:
+                stream.state = StreamState.ERROR
+                stream.error = error or "Engine start_stream failed"
+                return {"error": stream.error, "code": "START_FAILED"}
 
             stream.state = StreamState.RUNNING
 
@@ -263,8 +336,17 @@ class AvbService:
 
             stream.state = StreamState.STOPPING
 
-            # Stop in JUCE engine
-            # (Would call C++ AvbAudioIODevice::stop())
+            found, success, error = self._call_engine_stream_api(
+                [
+                    "stop_avb_stream",
+                    "stopAvbStream",
+                ],
+                stream_id,
+            )
+            if found and not success:
+                stream.state = StreamState.ERROR
+                stream.error = error or "Engine stop_stream failed"
+                return {"error": stream.error, "code": "STOP_FAILED"}
 
             stream.state = StreamState.STOPPED
 
