@@ -499,6 +499,33 @@ async def get_stream_stats(stream_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/streams/{stream_id}/stats/reset")
+async def reset_stream_stats(stream_id: str) -> Dict[str, Any]:
+    """Reset AVB stream statistics"""
+    try:
+        from app.services.avb.avb_service import get_avb_service
+
+        avb_service = get_avb_service()
+
+        if not avb_service.is_available():
+            raise HTTPException(status_code=503, detail="AVB not available")
+
+        if avb_service.get_stream(stream_id) is None:
+            raise HTTPException(status_code=404, detail="Stream not found")
+
+        success = avb_service.reset_stream_stats(stream_id)
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to reset stream stats")
+
+        return {"status": "reset", "stream_id": stream_id}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resetting AVB stream stats: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============================================================================
 # Discovery Endpoints
 # ============================================================================

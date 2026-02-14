@@ -173,6 +173,90 @@ class AvbService:
 
         return False, False, None
 
+    def _call_engine_stream_data_api(
+        self,
+        method_candidates: List[str],
+        *args: Any,
+    ) -> Tuple[bool, Optional[Any], Optional[str]]:
+        """
+        Try calling a stream-related engine method that returns data.
+
+        Returns:
+            (method_found, data, error_message)
+        """
+        self._ensure_engine_bound()
+        if self._engine is None:
+            return False, None, "Engine not initialized"
+
+        for method_name in method_candidates:
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+
+            try:
+                return True, method(*args), None
+            except Exception as exc:
+                return True, None, str(exc)
+
+        return False, None, None
+
+    @staticmethod
+    def _coerce_non_negative_int(value: Any, default: int) -> int:
+        """Coerce values into non-negative integers, preserving defaults on failure."""
+        try:
+            parsed = int(value)
+            if parsed < 0:
+                return default
+            return parsed
+        except Exception:
+            return default
+
+    @classmethod
+    def _normalize_stream_stats(
+        cls,
+        raw_stats: Any,
+        fallback: AvbStreamStats,
+    ) -> AvbStreamStats:
+        """Normalize engine stats payload (dict/object) into AvbStreamStats."""
+        values = asdict(fallback)
+        aliases = {
+            "frames_sent": ("frames_sent", "framesSent"),
+            "frames_received": ("frames_received", "framesReceived"),
+            "send_errors": ("send_errors", "sendErrors"),
+            "receive_errors": ("receive_errors", "receiveErrors"),
+            "underruns": ("underruns",),
+            "overruns": ("overruns",),
+            "timestamp_errors": ("timestamp_errors", "timestampErrors"),
+            "sequence_errors": ("sequence_errors", "sequenceErrors"),
+            "bytes_transferred": ("bytes_transferred", "bytesTransferred"),
+            "max_latency_ns": ("max_latency_ns", "maxLatencyNs"),
+            "min_latency_ns": ("min_latency_ns", "minLatencyNs"),
+        }
+
+        for field_name, candidate_keys in aliases.items():
+            candidate_value = None
+
+            if isinstance(raw_stats, dict):
+                for key in candidate_keys:
+                    if key in raw_stats:
+                        candidate_value = raw_stats[key]
+                        break
+            else:
+                for key in candidate_keys:
+                    if hasattr(raw_stats, key):
+                        candidate_value = getattr(raw_stats, key)
+                        break
+
+            if candidate_value is None:
+                continue
+
+            values[field_name] = cls._coerce_non_negative_int(
+                candidate_value,
+                values[field_name],
+            )
+
+        return AvbStreamStats(**values)
+
     async def create_stream(self, config: AvbStreamConfig) -> Dict[str, Any]:
         """
         Create new AVB stream.
@@ -383,19 +467,46 @@ class AvbService:
     def get_stream_stats(self, stream_id: str) -> Optional[Dict[str, Any]]:
         """Get stream statistics"""
         stream = self.streams.get(stream_id)
-        if stream:
-            # In real implementation, would query C++ AvbStream::getStats()
-            return asdict(stream.stats)
-        return None
+        if not stream:
+            return None
+
+        found, raw_stats, error = self._call_engine_stream_data_api(
+            [
+                "get_avb_stream_stats",
+                "getAvbStreamStats",
+            ],
+            stream_id,
+        )
+        if found:
+            if error:
+                stream.error = error
+            elif raw_stats is not None:
+                stream.stats = self._normalize_stream_stats(raw_stats, stream.stats)
+                stream.error = None
+
+        return asdict(stream.stats)
 
     def reset_stream_stats(self, stream_id: str) -> bool:
         """Reset stream statistics"""
         stream = self.streams.get(stream_id)
-        if stream:
-            # In real implementation, would call C++ AvbStream::resetStats()
-            stream.stats = AvbStreamStats()
-            return True
-        return False
+        if not stream:
+            return False
+
+        found, success, error = self._call_engine_stream_api(
+            [
+                "reset_avb_stream_stats",
+                "resetAvbStreamStats",
+            ],
+            stream_id,
+        )
+        if found and not success:
+            stream.error = error or "Engine reset_stream_stats failed"
+            return False
+
+        stream.stats = AvbStreamStats()
+        if found:
+            stream.error = None
+        return True
 
     def _stream_to_dict(self, stream: AvbStreamInfo) -> Dict[str, Any]:
         """Convert stream info to dict for JSON serialization"""

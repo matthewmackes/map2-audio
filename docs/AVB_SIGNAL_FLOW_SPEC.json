@@ -616,7 +616,7 @@
       "id": "overlay_stream_placeholder_paths",
       "severity": "medium",
       "status": "partial",
-      "description": "Some AVB stream lifecycle internals are placeholder in Python and C++.",
+      "description": "Python AVB stream lifecycle now includes validated create/start/stop flows plus engine-backed stats/reset hooks; C++ AVB dataplane internals remain partial.",
       "affected_nodes": [
         "n_a_talker_device",
         "n_a_avb_stream_send",
@@ -625,8 +625,8 @@
         "n_net_avtp"
       ],
       "refs": [
-        "app/services/avb/avb_service.py:132",
-        "app/services/avb/avb_service.py:211",
+        "app/services/avb/avb_service.py:467",
+        "app/routes/avb.py:502",
         "juce-engine/Source/AvbStream.cpp:156"
       ]
     }
