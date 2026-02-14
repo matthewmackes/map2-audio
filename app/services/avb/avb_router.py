@@ -13,6 +13,8 @@ Architecture:
 
 import asyncio
 import logging
+import hashlib
+import json
 from typing import Any, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -140,6 +142,40 @@ class AvbRouter:
     # Discovery
     # ========================================================================
 
+    @staticmethod
+    def _normalize_entity_id(raw_entity_id: Any, fallback_seed: str) -> str:
+        """Return a 16-char hex entity ID string with deterministic fallback."""
+        if raw_entity_id is not None:
+            value = str(raw_entity_id).lower().replace("0x", "").strip()
+            if len(value) <= 16 and all(ch in "0123456789abcdef" for ch in value):
+                return value.zfill(16)
+
+        digest = hashlib.sha1(fallback_seed.encode("utf-8")).hexdigest()
+        return digest[:16]
+
+    @staticmethod
+    def _coerce_metadata(node: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize node metadata from registry row into a dictionary."""
+        metadata = node.get("metadata")
+        if isinstance(metadata, dict):
+            return metadata
+        if isinstance(metadata, str) and metadata:
+            try:
+                parsed = json.loads(metadata)
+                if isinstance(parsed, dict):
+                    return parsed
+            except Exception:
+                return {}
+        return {}
+
+    @staticmethod
+    def _coerce_int(value: Any, fallback: int) -> int:
+        """Parse int-like values safely."""
+        try:
+            return int(value)
+        except Exception:
+            return fallback
+
     async def _discovery_loop(self):
         """Periodically discover endpoints"""
         while self._running:
@@ -157,17 +193,66 @@ class AvbRouter:
             return
 
         try:
-            # Query cluster nodes
-            # (Assumes cluster has discovery service integrated)
-            # For now, placeholder - would integrate with existing MAP2 discovery
+            from app.services.cluster.registry import get_cluster_registry
 
-            # Example: Get nodes from cluster manager
-            # nodes = await cluster_manager.get_nodes()
-            # for node in nodes:
-            #     if node.avb_enabled:
-            #         await self._register_map2_node(node)
+            registry = get_cluster_registry()
+            nodes = await asyncio.to_thread(registry.get_all_nodes)
 
-            pass
+            for node in nodes:
+                status = str(node.get("status", "")).lower()
+                if status in {"offline", "failed"}:
+                    continue
+
+                metadata = self._coerce_metadata(node)
+                if metadata.get("avb_enabled") is False:
+                    continue
+
+                node_id = str(node.get("id") or node.get("hostname") or "map2-node")
+                entity_id = self._normalize_entity_id(
+                    metadata.get("avb_entity_id"),
+                    fallback_seed=node_id,
+                )
+                device_name = str(node.get("hostname") or node_id)
+                mac_address = node.get("mac_address") or metadata.get("mac_address")
+                ip_address = node.get("ip_address") or metadata.get("ip_address")
+                node_address = f"http://{ip_address}:8080" if ip_address else None
+
+                streams = metadata.get("avb_streams") or []
+                if not streams:
+                    streams = [
+                        {"direction": "talker", "channels": 2, "sample_rate": 48000, "format": "24-bit PCM"},
+                        {"direction": "listener", "channels": 2, "sample_rate": 48000, "format": "24-bit PCM"},
+                    ]
+
+                for index, stream in enumerate(streams):
+                    direction_raw = str(stream.get("direction", "")).lower()
+                    if direction_raw == "talker":
+                        direction = StreamDirection.TALKER
+                    elif direction_raw == "listener":
+                        direction = StreamDirection.LISTENER
+                    else:
+                        continue
+
+                    unique_id = self._coerce_int(stream.get("unique_id", index), index)
+                    channels = self._coerce_int(stream.get("channels", 2), 2)
+                    sample_rate = self._coerce_int(stream.get("sample_rate", 48000), 48000)
+                    audio_format = str(stream.get("format") or "24-bit PCM")
+
+                    endpoint = AudioEndpoint(
+                        entity_id=entity_id,
+                        unique_id=unique_id,
+                        direction=direction,
+                        device_type="map2",
+                        device_name=device_name,
+                        channels=max(1, channels),
+                        sample_rate=max(1, sample_rate),
+                        format=audio_format,
+                        mac_address=mac_address,
+                        node_address=node_address,
+                        available=True,
+                        last_seen=datetime.now(),
+                    )
+                    self.endpoints[endpoint.endpoint_id()] = endpoint
         except Exception as e:
             logger.error(f"MAP2 discovery error: {e}")
 
