@@ -7,6 +7,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 import time
+import json
+import threading
+from pathlib import Path
 
 from app.services.juce_engine_service import get_audio_engine
 
@@ -92,11 +95,44 @@ class DelayMetering(BaseModel):
 
 
 # ========================================
-# Tap tempo state (per-session in future, global for now)
+# Tap tempo state persisted to disk for restart resilience.
 # ========================================
 
 _tap_times: List[float] = []
 _MAX_TAPS = 8
+_tap_lock = threading.RLock()
+_tap_state_path = Path("/home/mm/map2-audio/.map2/delay_tap_tempo.json")
+
+
+def _persist_tap_tempo() -> None:
+    """Persist tap-tempo history to disk (best effort)."""
+    try:
+        with _tap_lock:
+            payload = {"tap_times": _tap_times[-_MAX_TAPS:]}
+        _tap_state_path.parent.mkdir(parents=True, exist_ok=True)
+        _tap_state_path.write_text(json.dumps(payload), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _load_tap_tempo() -> None:
+    """Load persisted tap-tempo history from disk."""
+    global _tap_times
+    if not _tap_state_path.exists():
+        return
+    try:
+        payload = json.loads(_tap_state_path.read_text(encoding="utf-8"))
+        raw = payload.get("tap_times", [])
+        parsed = []
+        if isinstance(raw, list):
+            for value in raw[-_MAX_TAPS:]:
+                if isinstance(value, (int, float)):
+                    parsed.append(float(value))
+        with _tap_lock:
+            _tap_times = parsed
+    except Exception:
+        with _tap_lock:
+            _tap_times = []
 
 
 # ========================================
@@ -231,27 +267,30 @@ async def tap_tempo(request: TapTempoRequest = None) -> TapTempoResponse:
     Returns the calculated tempo after 2+ taps.
     """
     global _tap_times
-
     # Use provided timestamp or server time
     now = request.timestamp if request and request.timestamp else time.time() * 1000
 
-    # Reset if more than 2 seconds since last tap
-    if _tap_times and (now - _tap_times[-1]) > 2000:
-        _tap_times = []
+    with _tap_lock:
+        # Reset if more than 2 seconds since last tap
+        if _tap_times and (now - _tap_times[-1]) > 2000:
+            _tap_times = []
 
-    # Record this tap
-    _tap_times.append(now)
+        # Record this tap
+        _tap_times.append(now)
 
-    # Keep only last N taps
-    if len(_tap_times) > _MAX_TAPS:
-        _tap_times = _tap_times[-_MAX_TAPS:]
+        # Keep only last N taps
+        if len(_tap_times) > _MAX_TAPS:
+            _tap_times = _tap_times[-_MAX_TAPS:]
+        tap_times = list(_tap_times)
+
+    _persist_tap_tempo()
 
     # Need at least 2 taps to calculate tempo
-    if len(_tap_times) < 2:
-        return TapTempoResponse(tempo=None, taps=len(_tap_times))
+    if len(tap_times) < 2:
+        return TapTempoResponse(tempo=None, taps=len(tap_times))
 
     # Calculate average interval
-    intervals = [_tap_times[i + 1] - _tap_times[i] for i in range(len(_tap_times) - 1)]
+    intervals = [tap_times[i + 1] - tap_times[i] for i in range(len(tap_times) - 1)]
     avg_interval = sum(intervals) / len(intervals)
 
     # Convert to BPM (60000ms / interval)
@@ -262,14 +301,16 @@ async def tap_tempo(request: TapTempoRequest = None) -> TapTempoResponse:
     engine = get_audio_engine()
     await engine.set_delay_tempo(tempo)
 
-    return TapTempoResponse(tempo=round(tempo, 1), taps=len(_tap_times))
+    return TapTempoResponse(tempo=round(tempo, 1), taps=len(tap_times))
 
 
 @router.post("/tap-tempo/clear")
 async def clear_tap_tempo() -> Dict[str, str]:
     """Clear tap tempo history."""
     global _tap_times
-    _tap_times = []
+    with _tap_lock:
+        _tap_times = []
+    _persist_tap_tempo()
     return {"status": "ok"}
 
 
@@ -340,3 +381,6 @@ async def calculate_delay_from_tempo(
         "beats": beats,
         "delay_ms": round(delay_ms, 1)
     }
+
+
+_load_tap_tempo()
