@@ -57,6 +57,122 @@ class FlowOrchestrator:
         self.node_flow_map: Dict[str, List[str]] = {}
         self.registry = get_cluster_registry()
 
+    @staticmethod
+    def _is_node_eligible_for_standby(node: Dict[str, Any]) -> bool:
+        """Best-effort eligibility check for standby placement."""
+        node_id = str(node.get("id", "")).strip()
+        if not node_id:
+            return False
+
+        status = str(node.get("status", "online")).lower()
+        if status in {"offline", "failed", "maintenance", "updating"}:
+            return False
+
+        return True
+
+    @staticmethod
+    def _coerce_float(value: Any, default: float) -> float:
+        """Parse float-like values safely."""
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    def _candidate_standby_nodes(self, excluded_node_ids: set[str]) -> List[Dict[str, Any]]:
+        """Return eligible standby candidate nodes sorted by current CPU load."""
+        candidates: List[Dict[str, Any]] = []
+        for node in self.registry.get_all_nodes():
+            if not self._is_node_eligible_for_standby(node):
+                continue
+
+            node_id = str(node.get("id", "")).strip()
+            if node_id in excluded_node_ids:
+                continue
+
+            candidates.append(node)
+
+        candidates.sort(key=lambda item: self._coerce_float(item.get("cpu_load", 100.0), 100.0))
+        return candidates
+
+    async def _load_chain_for_deployment(self, chain_id: int) -> Optional[Dict[str, Any]]:
+        """Load chain payload used for active/standby deploy actions."""
+        from app.services.chain_service import ChainService
+
+        async with get_session() as session:
+            chain_service = ChainService(session)
+            return await chain_service.get_chain(chain_id)
+
+    async def _ensure_minimum_standby_redundancy(
+        self,
+        deployment: FlowDeploymentInfo,
+        minimum_standby_count: int = 1,
+        excluded_node_ids: Optional[set[str]] = None,
+    ) -> Optional[str]:
+        """
+        Ensure a deployed flow retains at least N standby assignments.
+
+        Returns:
+            Warning string when replenishment is incomplete, otherwise None.
+        """
+        if minimum_standby_count <= 0:
+            return None
+        if len(deployment.standby_assignments) >= minimum_standby_count:
+            return None
+
+        excluded = set(excluded_node_ids or set())
+        excluded.add(deployment.primary_assignment.assigned_node_id)
+        excluded.update(s.assigned_node_id for s in deployment.standby_assignments)
+
+        chain = await self._load_chain_for_deployment(deployment.chain_id)
+        if not chain:
+            return (
+                "Standby replenishment incomplete: "
+                f"chain {deployment.chain_id} unavailable for standby deploy"
+            )
+
+        failed_nodes: List[str] = []
+
+        while len(deployment.standby_assignments) < minimum_standby_count:
+            candidates = self._candidate_standby_nodes(excluded)
+            if not candidates:
+                break
+
+            candidate = candidates[0]
+            candidate_id = str(candidate.get("id", "")).strip()
+            if not candidate_id:
+                continue
+
+            excluded.add(candidate_id)
+            standby_ok = await self._deploy_to_node(candidate_id, chain, mode="standby")
+            if not standby_ok:
+                failed_nodes.append(candidate_id)
+                continue
+
+            deployment.standby_assignments.append(
+                FlowAssignmentInfo(
+                    flow_id=deployment.flow_id,
+                    chain_id=deployment.chain_id,
+                    assigned_node_id=candidate_id,
+                    assignment_type="standby",
+                    reason="standby replenished",
+                )
+            )
+
+        if len(deployment.standby_assignments) >= minimum_standby_count:
+            return None
+
+        current = len(deployment.standby_assignments)
+        if failed_nodes:
+            return (
+                f"Standby replenishment incomplete ({current}/{minimum_standby_count}); "
+                f"failed nodes: {', '.join(sorted(failed_nodes))}"
+            )
+
+        return (
+            f"Standby replenishment incomplete ({current}/{minimum_standby_count}); "
+            "no eligible nodes available"
+        )
+
     @classmethod
     def initialize(cls) -> "FlowOrchestrator":
         if cls._instance is None:
@@ -463,8 +579,15 @@ class FlowOrchestrator:
             s for s in deployment.standby_assignments if s.assigned_node_id != standby_node_id
         ]
         deployment.is_deployed = True
-        deployment.error_message = None
         deployment.last_failover_timestamp = time.time()
+
+        replenish_warning = await self._ensure_minimum_standby_redundancy(
+            deployment,
+            minimum_standby_count=1,
+            excluded_node_ids={old_primary_node_id},
+        )
+        deployment.error_message = replenish_warning
+
         await self._persist_assignments(
             deployment.primary_assignment,
             deployment.standby_assignments,

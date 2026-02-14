@@ -603,14 +603,14 @@
       "id": "overlay_chain_deploy_placeholder",
       "severity": "high",
       "status": "partial",
-      "description": "Cluster flow deploy now enforces active/standby response semantics, records degraded standby failures, and promotes standby with activation-before-commit failover logic; automatic standby replenishment/rebalancing remains partial.",
+      "description": "Cluster flow deploy now enforces active/standby response semantics, records degraded standby failures, uses activation-before-commit standby promotion, and performs minimum standby replenishment after failover; broader standby rebalancing remains partial.",
       "affected_nodes": [
         "n2_ctrl_chain_deploy"
       ],
       "refs": [
-        "app/services/flow_orchestrator.py:252",
-        "app/services/flow_orchestrator.py:302",
-        "app/services/flow_orchestrator.py:427",
+        "app/services/flow_orchestrator.py:105",
+        "app/services/flow_orchestrator.py:368",
+        "app/services/flow_orchestrator.py:543",
         "app/routes/cluster_flows.py:91"
       ]
     },
