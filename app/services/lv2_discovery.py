@@ -296,13 +296,15 @@ class LV2PluginDiscovery:
         try:
             plugin_data = self.plugins[uri].copy()
             instance_id = f"{uri}_{len(self.loaded_plugins)}"
+            parameters = plugin_data.get("parameters")
+            if not isinstance(parameters, list) or not parameters:
+                parameters = self._get_default_parameters(uri)
             
-            # Create instance with empty parameters for now
             instance = {
                 "uri": uri,
                 "instance_id": instance_id,
                 "name": plugin_data.get("name", "Unknown"),
-                "parameters": self._get_default_parameters(uri),
+                "parameters": [dict(p) for p in parameters],
                 "is_active": False
             }
             
@@ -322,7 +324,7 @@ class LV2PluginDiscovery:
         Returns:
             List of parameter dicts
         """
-        # Default parameters - would be populated from real LV2 plugin data
+        # Fallback parameters used when plugin metadata has no control ports.
         return [
             {
                 "index": 0,
