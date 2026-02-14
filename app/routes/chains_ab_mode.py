@@ -57,11 +57,10 @@ try:
             for plugin in source_chain.get("plugins", []):
                 await service.add_plugin_to_chain(new_chain["id"], plugin["uri"])
                 
-                # If plugin has parameters, copy those too
+                # Parameter snapshots are not persisted in ChainPlugin rows.
+                # Runtime parameter state is managed by the engine layer.
                 if plugin.get("parameters"):
-                    for param_idx, param_value in enumerate(plugin["parameters"]):
-                        # Copy parameter values
-                        pass  # Parameter copying would be implemented here
+                    continue
             
             # Publish event
             await event_publisher.publish(
