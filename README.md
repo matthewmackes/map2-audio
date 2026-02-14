@@ -91,7 +91,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**552** Python | **602** TypeScript | **1555** C++/H | **74** Docs | **140** total commits | **0** stars | **0** forks | **0** open issues
+**544** Python | **602** TypeScript | **114** C++/H | **74** Docs | **141** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -130,6 +130,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d09a848`](https://github.com/matthewmackes/map2-audio/commit/d09a84818d8d35ebf3c762d43bdf83de5473af3b) | feat: add auto-updating README showcase with GitHub Actions | Map2 Audio | 2026-02-14 |
 | [`7e8d404`](https://github.com/matthewmackes/map2-audio/commit/7e8d404f4881aec108fb22773ad361fb500e92e2) | fix(avb): fail fast when engine stream lifecycle hooks ar... | Map2 Audio | 2026-02-14 |
 | [`1399772`](https://github.com/matthewmackes/map2-audio/commit/139977278ac2278095673bcfb24d46a37d458332) | feat(flow): replenish minimum standby assignment after fa... | Map2 Audio | 2026-02-14 |
 | [`2c4a0cd`](https://github.com/matthewmackes/map2-audio/commit/2c4a0cd7833381552101630d6efd09913255d526) | fix(flow): commit failover promotion only after activatio... | Map2 Audio | 2026-02-14 |
@@ -137,7 +138,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`1896fdc`](https://github.com/matthewmackes/map2-audio/commit/1896fdcfc22637e40a90d390c9370935766a105c) | feat(avb): add engine-backed stream stats hooks and reset... | Map2 Audio | 2026-02-14 |
 | [`8ff95c3`](https://github.com/matthewmackes/map2-audio/commit/8ff95c3a5333ccc0d2d7c4f1aec241b471e657a1) | fix(avb): validate stream config and return 400 on bad input | Map2 Audio | 2026-02-14 |
 | [`a20857e`](https://github.com/matthewmackes/map2-audio/commit/a20857e4f3deed30791b7b7aa289fbc0186ab355) | test(avb): cover router factory wiring and refresh flow o... | Map2 Audio | 2026-02-14 |
-| [`74fecfe`](https://github.com/matthewmackes/map2-audio/commit/74fecfe96f0fda3ab31a1dca34ae6eb6b2996cb2) | feat(delay): persist tap-tempo history with disk-backed s... | Map2 Audio | 2026-02-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
