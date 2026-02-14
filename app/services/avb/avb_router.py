@@ -15,10 +15,16 @@ import asyncio
 import logging
 import hashlib
 import json
+import socket
+from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+
+import httpx
+
+from app.config import config_get
 
 logger = logging.getLogger(__name__)
 
@@ -332,6 +338,167 @@ class AvbRouter:
     # Connection Management
     # ========================================================================
 
+    @staticmethod
+    def _build_stream_id(
+        endpoint: AudioEndpoint,
+        peer: AudioEndpoint,
+        direction: str,
+    ) -> str:
+        """Build deterministic stream id for connection lifecycle."""
+        return (
+            f"map2-{direction}-"
+            f"{endpoint.entity_id}-{endpoint.unique_id}-"
+            f"{peer.entity_id}-{peer.unique_id}"
+        )
+
+    @staticmethod
+    def _parse_host(node_address: Optional[str]) -> str:
+        """Extract host from node address."""
+        if not node_address:
+            return ""
+        try:
+            parsed = urlparse(node_address)
+            return (parsed.hostname or "").strip()
+        except Exception:
+            return ""
+
+    def _is_local_node_address(self, node_address: Optional[str]) -> bool:
+        """Best-effort check whether a node address points to this host."""
+        host = self._parse_host(node_address)
+        if not host:
+            return True
+        if host in {"localhost", "127.0.0.1", "::1"}:
+            return True
+
+        try:
+            local_hosts = {socket.gethostname(), socket.getfqdn()}
+            for h in list(local_hosts):
+                try:
+                    local_hosts.update(socket.gethostbyname_ex(h)[2])
+                except Exception:
+                    continue
+            return host in local_hosts
+        except Exception:
+            return False
+
+    async def _remote_post(self, node_address: str, path: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Issue POST request to remote MAP2 node and normalize result."""
+        url = f"{node_address.rstrip('/')}{path}"
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(url, json=payload or {})
+            if response.status_code >= 400:
+                return {"success": False, "error": f"{response.status_code} {response.text}"}
+            data = response.json() if response.content else {}
+            if isinstance(data, dict):
+                if data.get("error"):
+                    return {"success": False, "error": str(data["error"])}
+                return {"success": True, "data": data}
+            return {"success": True, "data": {}}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    async def _remote_delete(self, node_address: str, path: str) -> Dict[str, Any]:
+        """Issue DELETE request to remote MAP2 node and normalize result."""
+        url = f"{node_address.rstrip('/')}{path}"
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.delete(url)
+            if response.status_code == 404:
+                return {"success": True, "data": {"status": "not_found"}}
+            if response.status_code >= 400:
+                return {"success": False, "error": f"{response.status_code} {response.text}"}
+            data = response.json() if response.content else {}
+            return {"success": True, "data": data if isinstance(data, dict) else {}}
+        except Exception as exc:
+            return {"success": False, "error": str(exc)}
+
+    async def _provision_map2_stream(
+        self,
+        endpoint: AudioEndpoint,
+        stream_config: Dict[str, Any],
+    ) -> Tuple[bool, str]:
+        """Create and start a stream on local or remote MAP2 node."""
+        stream_id = str(stream_config["stream_id"])
+        is_local = self._is_local_node_address(endpoint.node_address)
+
+        if is_local:
+            from app.services.avb.avb_service import get_avb_service, AvbStreamConfig, StreamDirection
+
+            avb_service = get_avb_service()
+            direction = StreamDirection(stream_config["direction"])
+            cfg = AvbStreamConfig(
+                stream_id=stream_id,
+                direction=direction,
+                channels=int(stream_config.get("channels", 2)),
+                sample_rate=int(stream_config.get("sample_rate", 48000)),
+                buffer_size=int(stream_config.get("buffer_size", 256)),
+                interface=str(stream_config.get("interface", "")),
+                dest_mac=stream_config.get("dest_mac"),
+                presentation_offset_us=int(stream_config.get("presentation_offset_us", 2000)),
+                priority=int(stream_config.get("priority", 3)),
+            )
+
+            create_result = await avb_service.create_stream(cfg)
+            if create_result.get("error") and create_result.get("code") != "STREAM_EXISTS":
+                return False, str(create_result["error"])
+
+            start_result = await avb_service.start_stream(stream_id)
+            if start_result.get("error"):
+                return False, str(start_result["error"])
+
+            return True, ""
+
+        if not endpoint.node_address:
+            return False, "Missing node address for remote MAP2 endpoint"
+
+        create_res = await self._remote_post(endpoint.node_address, "/api/avb/streams", stream_config)
+        if not create_res.get("success"):
+            return False, str(create_res.get("error"))
+
+        start_res = await self._remote_post(endpoint.node_address, f"/api/avb/streams/{stream_id}/start")
+        if not start_res.get("success"):
+            return False, str(start_res.get("error"))
+
+        return True, ""
+
+    async def _deprovision_map2_stream(
+        self,
+        endpoint: AudioEndpoint,
+        stream_id: str,
+    ) -> Tuple[bool, str]:
+        """Stop and delete a stream on local or remote MAP2 node."""
+        is_local = self._is_local_node_address(endpoint.node_address)
+
+        if is_local:
+            from app.services.avb.avb_service import get_avb_service
+
+            avb_service = get_avb_service()
+            stop_result = await avb_service.stop_stream(stream_id)
+            if stop_result.get("error") and stop_result.get("code") != "NOT_FOUND":
+                return False, str(stop_result["error"])
+
+            delete_result = await avb_service.delete_stream(stream_id)
+            if delete_result.get("error") and delete_result.get("code") != "NOT_FOUND":
+                return False, str(delete_result["error"])
+
+            return True, ""
+
+        if not endpoint.node_address:
+            return False, "Missing node address for remote MAP2 endpoint"
+
+        stop_res = await self._remote_post(endpoint.node_address, f"/api/avb/streams/{stream_id}/stop")
+        if not stop_res.get("success"):
+            # Treat stream-not-found as best-effort success for idempotent disconnect.
+            if "404" not in str(stop_res.get("error", "")):
+                return False, str(stop_res.get("error"))
+
+        delete_res = await self._remote_delete(endpoint.node_address, f"/api/avb/streams/{stream_id}")
+        if not delete_res.get("success"):
+            return False, str(delete_res.get("error"))
+
+        return True, ""
+
     async def connect(self, talker_id: str, listener_id: str) -> bool:
         """
         Connect talker to listener.
@@ -432,34 +599,45 @@ class AvbRouter:
 
     async def _connect_map2_to_map2(self, connection: StreamConnection) -> bool:
         """Connect two MAP2 nodes directly"""
-        if not self.engine_service:
-            return False
-
         try:
-            # Use internal MAP2 stream management
-            # This would use the existing AvbStream C++ layer
-            # Talker creates output stream, listener creates input stream
+            interface = config_get("avb.interface", "")
+            buffer_size = int(config_get("audio.buffer_size", 256))
+            priority = int(config_get("avb.stream_priority", 3))
 
             talker_config = {
-                "stream_id": f"map2-{connection.talker.entity_id}-{connection.talker.unique_id}",
+                "stream_id": self._build_stream_id(connection.talker, connection.listener, "talker"),
                 "direction": "talker",
                 "channels": connection.talker.channels,
                 "sample_rate": connection.talker.sample_rate,
-                "destination_mac": connection.listener.mac_address or "91:e0:f0:00:fe:01"
+                "buffer_size": buffer_size,
+                "interface": interface,
+                "dest_mac": connection.listener.mac_address or "91:e0:f0:00:fe:01",
+                "presentation_offset_us": 2000,
+                "priority": priority,
             }
 
             listener_config = {
-                "stream_id": f"map2-{connection.listener.entity_id}-{connection.listener.unique_id}",
+                "stream_id": self._build_stream_id(connection.listener, connection.talker, "listener"),
                 "direction": "listener",
                 "channels": connection.listener.channels,
                 "sample_rate": connection.listener.sample_rate,
-                "source_mac": connection.talker.mac_address or "00:00:00:00:00:00"
+                "buffer_size": buffer_size,
+                "interface": interface,
+                "presentation_offset_us": 2000,
+                "priority": priority,
             }
 
-            # Create streams via engine service
-            # (Placeholder - actual implementation would use engine API)
-            # await self.engine_service.create_avb_stream(talker_config)
-            # await self.engine_service.create_avb_stream(listener_config)
+            talker_ok, talker_error = await self._provision_map2_stream(connection.talker, talker_config)
+            if not talker_ok:
+                connection.error_message = f"talker provision failed: {talker_error}"
+                return False
+
+            listener_ok, listener_error = await self._provision_map2_stream(connection.listener, listener_config)
+            if not listener_ok:
+                # Roll back talker if listener provisioning failed.
+                await self._deprovision_map2_stream(connection.talker, str(talker_config["stream_id"]))
+                connection.error_message = f"listener provision failed: {listener_error}"
+                return False
 
             return True
 
@@ -469,13 +647,17 @@ class AvbRouter:
 
     async def _disconnect_map2_to_map2(self, connection: StreamConnection) -> bool:
         """Disconnect two MAP2 nodes"""
-        if not self.engine_service:
-            return False
-
         try:
-            # Delete streams
-            # await self.engine_service.delete_avb_stream(talker_stream_id)
-            # await self.engine_service.delete_avb_stream(listener_stream_id)
+            talker_stream_id = self._build_stream_id(connection.talker, connection.listener, "talker")
+            listener_stream_id = self._build_stream_id(connection.listener, connection.talker, "listener")
+
+            talker_ok, talker_error = await self._deprovision_map2_stream(connection.talker, talker_stream_id)
+            listener_ok, listener_error = await self._deprovision_map2_stream(connection.listener, listener_stream_id)
+
+            if not talker_ok or not listener_ok:
+                errors = [err for err in [talker_error, listener_error] if err]
+                connection.error_message = "; ".join(errors) if errors else "Disconnect failed"
+                return False
 
             return True
 

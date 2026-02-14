@@ -213,9 +213,30 @@ class AvbDiscoveryService:
             txt_records["node_id"] = node_id
             txt_records["hostname"] = hostname
 
-            # Note: Actual mDNS registration would happen here via python-zeroconf or avahi-daemon
-            # For now, just log (actual implementation in Phase 7)
-            self.logger.info(f"Broadcasting AVB capabilities for {node_id}: {txt_records}")
+            addresses: List[str] = []
+            if self.mdns_discovery:
+                addresses = self.mdns_discovery.get_local_addresses()
+            if not addresses:
+                addresses = ["127.0.0.1"]
+
+            # Register local node in discovery caches so AVB endpoints and
+            # router discovery have concrete data even without external mDNS tooling.
+            node = self.add_discovered_node(
+                node_id=node_id,
+                hostname=hostname,
+                addresses=addresses,
+                txt_records=txt_records,
+                port=port,
+            )
+            if not node:
+                return False
+
+            self.logger.info(
+                "Broadcasted AVB capabilities for %s on %s:%s",
+                node_id,
+                addresses[0],
+                port,
+            )
 
             return True
 
