@@ -586,30 +586,30 @@
   "implementation_reality_overlays": [
     {
       "id": "overlay_router_factory_gap",
-      "severity": "high",
-      "status": "incomplete",
-      "description": "AVB router endpoints import get_avb_router, but factory wiring is currently incomplete in avb_router module.",
+      "severity": "low",
+      "status": "resolved",
+      "description": "AVB router singleton factory wiring is implemented, including resilient initialization and late binding of engine/AVDECC handles.",
       "affected_nodes": [
         "n_ctrl_avb_status",
         "n_ctrl_ptp_status",
         "n_ctrl_tsn_status"
       ],
       "refs": [
-        "app/routes/avb.py:548",
-        "app/services/avb/avb_router.py:514"
+        "app/routes/avb.py:607",
+        "app/services/avb/avb_router.py:819"
       ]
     },
     {
       "id": "overlay_chain_deploy_placeholder",
       "severity": "high",
       "status": "partial",
-      "description": "Cluster deploy endpoint currently acknowledges request; full engine activation flow is not completed.",
+      "description": "Cluster deploy endpoint stages chain/plugin state and can activate locally, but distributed activation semantics remain partial across cluster scenarios.",
       "affected_nodes": [
         "n2_ctrl_chain_deploy"
       ],
       "refs": [
-        "app/routes/chains.py:469",
-        "app/routes/chains.py:473"
+        "app/routes/chains.py:484",
+        "app/routes/chains.py:543"
       ]
     },
     {

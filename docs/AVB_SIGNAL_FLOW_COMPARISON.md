@@ -120,8 +120,8 @@ flowchart LR
 ```
 
 ## Implementation Reality Notes (Use Dotted Blocks In Diagram)
-- AVB router API references `get_avb_router`, but factory wiring is incomplete in current Python module.
-- `/api/chains/deploy` currently acknowledges deployment request but does not complete full engine activation pipeline.
+- AVB router API references `get_avb_router`, and factory wiring is implemented with graceful fallback and late binding.
+- `/api/chains/deploy` stages chain/plugin state and supports optional local activation, but full distributed activation semantics are still partial.
 - Some AVB stream internals are placeholders in both Python and C++ layers.
 
 Mark these as "planned/in-progress" to avoid presenting partial code as fully operational.
@@ -149,4 +149,3 @@ Mark these as "planned/in-progress" to avoid presenting partial code as fully op
   - audio-path health via `/api/audio-path/local`
 - Config labels:
   - `MAP2_AVB_ENABLED`, `MAP2_AVB_INTERFACE`
-
