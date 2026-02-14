@@ -44,6 +44,7 @@ class FlowDeploymentInfo:
     is_deployed: bool
     deployment_timestamp: float
     error_message: Optional[str] = None
+    last_failover_timestamp: Optional[float] = None
 
 
 class FlowOrchestrator:
@@ -148,6 +149,14 @@ class FlowOrchestrator:
     async def save_deployment(self, deployment: FlowDeploymentInfo) -> None:
         async with get_session() as session:
             status = "active" if deployment.is_deployed else "failed"
+            last_failover_time = None
+            if deployment.last_failover_timestamp is not None:
+                try:
+                    last_failover_time = datetime.utcfromtimestamp(
+                        float(deployment.last_failover_timestamp)
+                    )
+                except Exception:
+                    last_failover_time = None
             # Keep one latest deployment row per flow_id.
             await session.execute(
                 delete(FlowDeployment).where(FlowDeployment.flow_id == deployment.flow_id)
@@ -161,6 +170,7 @@ class FlowOrchestrator:
                     ],
                     deployment_status=status,
                     deployment_timestamp=datetime.utcnow(),
+                    last_failover_time=last_failover_time,
                     error_message=deployment.error_message,
                 )
             )
@@ -229,6 +239,11 @@ class FlowOrchestrator:
                 else time.time()
             ),
             error_message=row.error_message,
+            last_failover_timestamp=(
+                row.last_failover_time.timestamp()
+                if row.last_failover_time
+                else None
+            ),
         )
 
         self.active_deployments[flow_id] = deployment
@@ -366,20 +381,7 @@ class FlowOrchestrator:
             return False
 
         standby = deployment.standby_assignments[0]
-        success = await self._promote_standby_node(standby.assigned_node_id, flow_id)
-        if not success:
-            return False
-
-        deployment.primary_assignment = standby
-        deployment.standby_assignments = deployment.standby_assignments[1:]
-        deployment.is_deployed = True
-        await self._persist_assignments(
-            deployment.primary_assignment,
-            deployment.standby_assignments,
-            strategy="failover",
-        )
-        await self.save_deployment(deployment)
-        return True
+        return await self.promote_standby_to_primary(flow_id, standby.assigned_node_id)
 
     async def get_flows_on_node(self, node_id: str) -> List[Dict]:
         """Get all flows assigned to a specific node."""
@@ -429,21 +431,40 @@ class FlowOrchestrator:
             deployment = await self._load_deployment_from_db(flow_id)
         if not deployment:
             return False
-        
+
         # Find the standby assignment
-        standby = None
-        for s in deployment.standby_assignments:
-            if s.assigned_node_id == standby_node_id:
-                standby = s
-                deployment.standby_assignments.remove(s)
-                break
-        
+        standby = next(
+            (s for s in deployment.standby_assignments if s.assigned_node_id == standby_node_id),
+            None,
+        )
+
         if not standby:
             return False
-        
-        # Update deployment
-        deployment.primary_assignment = standby
+
+        # Promote on target node first; fallback to explicit activation endpoint.
+        promoted = await self._promote_standby_node(standby_node_id, flow_id)
+        if not promoted:
+            promoted = await self.activate_flow_on_node(flow_id, standby_node_id)
+        if not promoted:
+            deployment.error_message = (
+                f"Failed to activate promoted standby node {standby_node_id} for flow {flow_id}"
+            )
+            return False
+
+        old_primary_node_id = deployment.primary_assignment.assigned_node_id
+        deployment.primary_assignment = FlowAssignmentInfo(
+            flow_id=flow_id,
+            chain_id=deployment.chain_id,
+            assigned_node_id=standby_node_id,
+            assignment_type="primary",
+            reason=f"failover from {old_primary_node_id}",
+        )
+        deployment.standby_assignments = [
+            s for s in deployment.standby_assignments if s.assigned_node_id != standby_node_id
+        ]
         deployment.is_deployed = True
+        deployment.error_message = None
+        deployment.last_failover_timestamp = time.time()
         await self._persist_assignments(
             deployment.primary_assignment,
             deployment.standby_assignments,

@@ -132,15 +132,10 @@ class FailoverMonitor:
         
         logger.info(f"Promoting standby node {standby_node_id} to primary for flow {flow_id}")
         
-        # Update flow in registry
+        # Promote standby and activate chain on new primary.
         promoted = await self.flow_orchestrator.promote_standby_to_primary(flow_id, standby_node_id)
         if not promoted:
             raise Exception(f"Failed to promote standby assignment for flow {flow_id}")
-        
-        # Send activation command to new primary node
-        activated = await self.flow_orchestrator.activate_flow_on_node(flow_id, standby_node_id)
-        if not activated:
-            raise Exception(f"Failed to activate promoted standby node {standby_node_id} for flow {flow_id}")
         
         return {
             'action': 'promote_standby',
