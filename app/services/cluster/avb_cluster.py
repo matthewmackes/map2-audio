@@ -91,8 +91,8 @@ async def get_local_avb_metadata() -> Dict:
                     "stream_id": s.get("stream_id"),
                     "direction": s.get("direction"),
                     "state": s.get("state"),
-                    "channels": s.get("channels"),
-                    "sample_rate": s.get("sample_rate")
+                    "channels": (s.get("config") or {}).get("channels", s.get("channels")),
+                    "sample_rate": (s.get("config") or {}).get("sample_rate", s.get("sample_rate"))
                 }
                 for s in streams
             ]

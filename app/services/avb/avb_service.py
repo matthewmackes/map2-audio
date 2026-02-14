@@ -88,6 +88,21 @@ class AvbService:
         """Set JUCE audio engine reference"""
         self._engine = engine
 
+    def _ensure_engine_bound(self) -> None:
+        """Lazily bind to JUCE engine if available."""
+        if self._engine is not None:
+            return
+
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+
+            engine_service = get_audio_engine()
+            engine = getattr(engine_service, "_engine", None)
+            if engine is not None:
+                self._engine = engine
+        except Exception as e:
+            logger.debug(f"AVB engine bind skipped: {e}")
+
     def is_available(self) -> bool:
         """
         Check if AVB is available.
@@ -98,6 +113,8 @@ class AvbService:
         - No AVB hardware
         - ptp4l not running
         """
+        self._ensure_engine_bound()
+
         if self._engine is None:
             return False
 
@@ -308,4 +325,5 @@ def get_avb_service() -> AvbService:
     global _avb_service
     if _avb_service is None:
         _avb_service = AvbService()
+    _avb_service._ensure_engine_bound()
     return _avb_service

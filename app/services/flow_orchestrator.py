@@ -209,7 +209,29 @@ class FlowOrchestrator:
                 async with session.post(
                     url, json=payload, timeout=aiohttp.ClientTimeout(total=30)
                 ) as resp:
-                    return resp.status == 200
+                    if resp.status != 200:
+                        logger.error(f"Deploy request to node {node_id} failed with status {resp.status}")
+                        return False
+
+                    try:
+                        body = await resp.json(content_type=None)
+                    except Exception:
+                        logger.error(f"Deploy response from node {node_id} is not valid JSON")
+                        return False
+
+                    status = str(body.get("status", "")).lower()
+                    applied = bool(body.get("applied", False))
+
+                    if applied or status in {"deployed", "applied", "success"}:
+                        return True
+
+                    logger.error(
+                        "Node %s acknowledged deploy but did not apply it (status=%s, message=%s)",
+                        node_id,
+                        status or "unknown",
+                        body.get("message", ""),
+                    )
+                    return False
             except asyncio.TimeoutError:
                 logger.error(f"Timeout deploying to node {node_id}")
                 return False

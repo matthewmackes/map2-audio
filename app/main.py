@@ -217,10 +217,15 @@ async def lifespan(app):
             pw_recovery = get_pipewire_recovery_service()
             # Connect to JUCE engine if available
             try:
-                from app.services.juce_engine_service import get_engine_service
-                engine_svc = get_engine_service()
-                if engine_svc and hasattr(engine_svc, 'engine'):
-                    pw_recovery.set_engine(engine_svc.engine)
+                from app.services.juce_engine_service import get_audio_engine
+                from app.services.avb.avb_service import get_avb_service
+
+                engine_svc = get_audio_engine()
+                engine = getattr(engine_svc, "_engine", None)
+                if engine is not None:
+                    pw_recovery.set_engine(engine)
+                    # Share the same low-level engine with AVB service.
+                    get_avb_service().set_engine(engine)
             except Exception:
                 pass
             await safe_start_service(logger, "PipeWire recovery watchdog", pw_recovery.start)

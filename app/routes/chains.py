@@ -479,6 +479,8 @@ try:
 
         return {
             "status": "accepted",
+            "applied": False,
+            "message": "Chain deploy endpoint acknowledged request but did not apply it",
             "chain_id": request.chain_id,
             "chain_name": request.chain_name,
             "plugin_count": len(request.plugins),

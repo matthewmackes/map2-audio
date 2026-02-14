@@ -94,6 +94,11 @@ class JuceEngineService(Singleton):
         self._engine = None
         self._initialized = False
 
+    @property
+    def engine(self):
+        """Legacy compatibility accessor for the low-level C++ engine object."""
+        return self._engine
+
     async def initialize(self) -> bool:
         """Initialize engine with full configuration"""
         if not JUCE_AVAILABLE:
@@ -2809,6 +2814,11 @@ class JuceEngineService(Singleton):
 def get_audio_engine() -> JuceEngineService:
     """Get or create JUCE audio engine service instance."""
     return JuceEngineService.get_instance()
+
+
+def get_engine_service() -> JuceEngineService:
+    """Legacy alias retained for older callsites."""
+    return get_audio_engine()
 
 
 # PiPedal compatibility aliases (legacy API surface).

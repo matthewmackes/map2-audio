@@ -29,9 +29,9 @@ try:
     def _get_engine():
         """Get the JUCE engine instance."""
         try:
-            from app.services.juce_engine_service import get_engine_service
-            svc = get_engine_service()
-            return svc.engine if svc and hasattr(svc, 'engine') else None
+            from app.services.juce_engine_service import get_audio_engine
+            svc = get_audio_engine()
+            return svc.engine if svc and hasattr(svc, "engine") else None
         except Exception:
             return None
 

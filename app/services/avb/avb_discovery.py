@@ -13,6 +13,7 @@ Only runs when avb.enabled=true. Gracefully fails if mDNS unavailable.
 """
 
 import logging
+import asyncio
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -112,6 +113,26 @@ class AvbDiscoveryService:
         """Check if AVB discovery is enabled and available"""
         return self.enabled and self.mdns_discovery is not None
 
+    @staticmethod
+    def _try_sync_status(coro):
+        """
+        Run async status coroutine only when no event loop is active.
+
+        Returns None if called from an active event loop to avoid RuntimeError.
+        """
+        try:
+            asyncio.get_running_loop()
+            try:
+                coro.close()
+            except Exception:
+                pass
+        except RuntimeError:
+            try:
+                return asyncio.run(coro)
+            except Exception:
+                return None
+        return None
+
     def get_local_capabilities(self) -> Optional[AvbCapabilities]:
         """
         Get local node's AVB capabilities.
@@ -130,21 +151,15 @@ class AvbDiscoveryService:
 
             # Get PTP status
             ptp_monitor = get_ptp_monitor()
-            ptp_status = None
-            try:
-                import asyncio
-                ptp_status = asyncio.run(ptp_monitor.get_status())
-            except Exception:
-                pass
+            ptp_status = ptp_monitor.last_status
+            if ptp_status is None:
+                ptp_status = self._try_sync_status(ptp_monitor.get_status())
 
             # Get TSN status
             tsn_manager = get_tsn_qdisc_manager()
-            tsn_status = None
-            try:
-                import asyncio
-                tsn_status = asyncio.run(tsn_manager.get_status())
-            except Exception:
-                pass
+            tsn_status = tsn_manager.last_status
+            if tsn_status is None:
+                tsn_status = self._try_sync_status(tsn_manager.get_status())
 
             # Get stream counts
             avb_service = get_avb_service()
