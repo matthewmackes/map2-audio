@@ -26,6 +26,25 @@ try:
         mode: str = "active"  # active | standby
         activate: bool = True
 
+    def _normalize_deploy_plugins(plugins: List[dict]) -> List[dict]:
+        """Normalize deploy payload plugins into DB-ready entries."""
+        normalized = []
+        for index, plugin in enumerate(plugins or []):
+            if not isinstance(plugin, dict):
+                continue
+
+            uri = plugin.get("uri") or plugin.get("plugin_uri")
+            if not isinstance(uri, str) or not uri.strip():
+                continue
+
+            normalized.append({
+                "uri": uri.strip(),
+                "position": index,
+                "bypass": bool(plugin.get("bypassed", plugin.get("bypass", False))),
+            })
+
+        return normalized
+
     def validate_chain_name(name: str) -> bool:
         """Validate chain name (1-256 characters)."""
         return name and isinstance(name, str) and 1 <= len(name) <= 256
@@ -470,23 +489,143 @@ try:
     async def deploy_chain(request: ChainDeployRequest):
         """Deploy a chain configuration to this node (cluster use).
 
-        This endpoint is called by the management node to load a chain
-        on a target audio node. For now it returns success and should be
-        integrated with the audio engine in Phase 1.4+.
+        This endpoint is called by the management node to stage/update a
+        chain definition on a target node and optionally activate it in
+        the local audio engine.
         """
         if request.chain_id is None:
             raise HTTPException(status_code=400, detail="chain_id required")
+        if request.mode not in {"active", "standby"}:
+            raise HTTPException(status_code=400, detail="mode must be 'active' or 'standby'")
 
-        return {
-            "status": "accepted",
-            "applied": False,
-            "message": "Chain deploy endpoint acknowledged request but did not apply it",
-            "chain_id": request.chain_id,
-            "chain_name": request.chain_name,
-            "plugin_count": len(request.plugins),
-            "mode": request.mode,
-            "activate": request.activate,
-        }
+        from sqlalchemy import select, delete
+        from app.database import get_session, Chain, ChainPlugin
+        from app.services.juce_engine_service import get_audio_engine
+
+        normalized_plugins = _normalize_deploy_plugins(request.plugins)
+        chain_name = (request.chain_name or f"Chain {request.chain_id}").strip()[:255] or f"Chain {request.chain_id}"
+
+        try:
+            # Stage chain state in local DB (upsert chain + replace plugin list).
+            async with get_session() as session:
+                chain_result = await session.execute(
+                    select(Chain).filter(Chain.id == request.chain_id)
+                )
+                chain = chain_result.scalar_one_or_none()
+
+                if chain is None:
+                    chain = Chain(
+                        id=request.chain_id,
+                        name=chain_name,
+                        is_active=False,
+                    )
+                    session.add(chain)
+                    await session.flush()
+                else:
+                    chain.name = chain_name
+                    chain.is_active = False
+                    await session.flush()
+
+                await session.execute(
+                    delete(ChainPlugin).where(ChainPlugin.chain_id == request.chain_id)
+                )
+
+                for plugin in normalized_plugins:
+                    session.add(
+                        ChainPlugin(
+                            chain_id=request.chain_id,
+                            plugin_uri=plugin["uri"],
+                            position=plugin["position"],
+                            bypass=plugin["bypass"],
+                        )
+                    )
+                await session.flush()
+
+            activated = False
+            message = "Chain staged on node"
+            status = "staged"
+            applied = True
+
+            # Activate only when explicitly requested for active mode.
+            if request.activate and request.mode == "active":
+                engine_service = get_audio_engine()
+                if engine_service is None or getattr(engine_service, "_engine", None) is None:
+                    return {
+                        "status": "failed",
+                        "applied": False,
+                        "message": "Chain staged, but audio engine is not initialized",
+                        "chain_id": request.chain_id,
+                        "chain_name": chain_name,
+                        "plugin_count": len(normalized_plugins),
+                        "mode": request.mode,
+                        "activate": request.activate,
+                    }
+
+                async with get_session() as session:
+                    service = ChainService(session)
+                    activated = await service.activate_chain(request.chain_id)
+
+                if not activated:
+                    return {
+                        "status": "failed",
+                        "applied": False,
+                        "message": "Chain staged, but activation failed",
+                        "chain_id": request.chain_id,
+                        "chain_name": chain_name,
+                        "plugin_count": len(normalized_plugins),
+                        "mode": request.mode,
+                        "activate": request.activate,
+                    }
+
+                deployed_count = None
+                try:
+                    pedalboard = await engine_service.get_current_pedalboard()
+                    if isinstance(pedalboard, dict):
+                        if isinstance(pedalboard.get("items"), list):
+                            deployed_count = len(pedalboard["items"])
+                        elif isinstance(pedalboard.get("plugins"), list):
+                            deployed_count = len(pedalboard["plugins"])
+                except Exception:
+                    pass
+
+                if (
+                    deployed_count is not None
+                    and len(normalized_plugins) > 0
+                    and deployed_count < len(normalized_plugins)
+                ):
+                    return {
+                        "status": "failed",
+                        "applied": False,
+                        "message": (
+                            f"Chain staged, but engine deployment is incomplete "
+                            f"({deployed_count}/{len(normalized_plugins)} plugins)"
+                        ),
+                        "chain_id": request.chain_id,
+                        "chain_name": chain_name,
+                        "plugin_count": len(normalized_plugins),
+                        "mode": request.mode,
+                        "activate": request.activate,
+                    }
+
+                status = "deployed"
+                message = "Chain deployed and activated on node"
+
+            return {
+                "status": status,
+                "applied": applied,
+                "message": message,
+                "chain_id": request.chain_id,
+                "chain_name": chain_name,
+                "plugin_count": len(normalized_plugins),
+                "mode": request.mode,
+                "activate": request.activate,
+                "activated": activated,
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Deployment failed: {e}")
 
     # ==================== TEMPLATES (DEMO PEDALBOARDS) ====================
 
