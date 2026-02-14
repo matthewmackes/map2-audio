@@ -146,11 +146,113 @@
 - [ ] Concurrent enumeration of multiple entities
 
 ### Hardware Tests (Requires Intel I210 + MOTU 828es)
-- [ ] Enumerate real MOTU 828es (16 streams, ~20 descriptors)
-- [ ] Verify <5s enumeration time
-- [ ] Verify cache hit <100ms
-- [ ] Test format extraction (channels, sample_rate)
-- [ ] Test with MAP2_AVB_INTERFACE environment variable
+
+**Prerequisites:**
+- Intel I210/I225 NIC with IEEE 802.1AS support installed
+- AVDECC-capable device (MOTU 828es, PreSonus NSB, MOTU AVB Switch, etc.)
+- Both devices on same Layer 2 network
+- MAP2 built with `USE_AVDECC=ON`
+
+**Test 1: Basic Enumeration**
+- [ ] Connect MOTU 828es to same network as MAP2 node
+- [ ] Set `MAP2_AVB_INTERFACE=eth0` (or actual interface name)
+- [ ] Start MAP2 backend: `systemctl start map2-backend`
+- [ ] Watch logs: `journalctl -u map2-backend -f | grep AVDECC`
+- [ ] Verify entity discovery logged within 30s
+- [ ] Verify enumeration starts automatically
+- [ ] Verify `onEnumerationComplete()` called with success=true
+- [ ] Check logs for descriptor counts (expect ~20-30 for MOTU 828es)
+
+**Test 2: Entity Model Access via API**
+- [ ] Get discovered entities: `curl http://localhost:8080/api/avb/avdecc/entities`
+- [ ] Note entity_id from response (e.g., `0x001b21fffe123456`)
+- [ ] Get entity model: `curl http://localhost:8080/api/avb/avdecc/entities/{entity_id}/model`
+- [ ] Verify JSON response contains:
+  - `entity` descriptor (entity_name, vendor_id, model_id)
+  - `configurations[0]` descriptor
+  - `stream_inputs[]` and `stream_outputs[]` arrays
+  - Each stream has `current_format` (64-bit value)
+- [ ] Verify response time <2s (first enumeration)
+
+**Test 3: Cache Performance**
+- [ ] Get entity model (triggers enumeration if not cached)
+- [ ] Restart backend: `systemctl restart map2-backend`
+- [ ] Wait for discovery (~30s)
+- [ ] Get entity model again (should hit cache)
+- [ ] Check cache stats: `curl http://localhost:8080/api/avb/avdecc/cache/stats`
+- [ ] Verify:
+  - `hit_count` incremented
+  - `hit_rate_percent` > 0
+  - Response time <100ms (cache hit vs ~5s cache miss)
+
+**Test 4: Enumeration Timing**
+- [ ] Clear cache: Delete `~/.map2/aem_cache.db`
+- [ ] Restart backend
+- [ ] Time enumeration start to `onEnumerationComplete()` callback
+- [ ] Expected: <5s for MOTU 828es (16 streams, ~20 descriptors)
+- [ ] Check logs for timeout/retry events (should be none)
+- [ ] Verify `AvdeccEnumerator` stats via debug output:
+  - `sessions_completed` = 1
+  - `total_timeouts` = 0
+  - `total_retries` = 0
+
+**Test 5: Format Extraction**
+- [ ] Get entity model JSON
+- [ ] For each stream in `stream_inputs[]` and `stream_outputs[]`:
+  - Extract `current_format` (64-bit integer)
+  - Parse format: `sample_rate = (format & 0xFFFFFFFF)`, `channels = (format >> 32) & 0xFF`
+  - Verify matches device settings (e.g., 48000 Hz, 8 channels)
+- [ ] Compare with device front panel or web UI
+
+**Test 6: Multiple Entities**
+- [ ] Connect second AVDECC device (e.g., MOTU AVB Switch)
+- [ ] Verify both entities discovered
+- [ ] Verify both enumerated independently
+- [ ] Check concurrent enumeration handling (max 5 sessions)
+- [ ] Verify no cross-contamination of descriptor data
+
+**Test 7: Error Handling**
+- [ ] Disconnect AVDECC device mid-enumeration
+- [ ] Verify timeout (2s) and retry (3x) logic
+- [ ] Verify eventual failure (not crash)
+- [ ] Reconnect device, verify re-enumeration works
+
+**Test 8: Interface Configuration**
+- [ ] Test different interface names via `MAP2_AVB_INTERFACE`:
+  - `eth0`, `eth1`, `enp3s0`, etc.
+- [ ] Verify entity only initialized on correct interface
+- [ ] Verify graceful failure on invalid interface (logs warning, continues)
+
+**Test 9: Cache Cleanup**
+- [ ] Add 10 different entity models to cache (use different firmware versions)
+- [ ] Check `~/.map2/aem_cache.db` size
+- [ ] Modify `last_used` timestamps in DB to simulate old entries (>30 days)
+- [ ] Trigger cleanup: call `cleanup_old_entries()` or wait for background job
+- [ ] Verify old entries removed
+
+**Test 10: Long-Running Stability**
+- [ ] Leave MAP2 running with AVDECC device connected for 24 hours
+- [ ] Monitor memory usage (should be stable, no leaks)
+- [ ] Check for crashes or errors in logs
+- [ ] Verify cache remains consistent
+- [ ] Verify re-enumeration after device power cycle
+
+**Performance Benchmarks:**
+| Test | Target | Measured | Pass/Fail |
+|------|--------|----------|-----------|
+| Initial enumeration (16 streams) | <5s | ___ | [ ] |
+| Cache hit response | <100ms | ___ | [ ] |
+| Discovery to enumeration start | <2s | ___ | [ ] |
+| Cache write time | <50ms | ___ | [ ] |
+| Memory usage (per entity) | <500KB | ___ | [ ] |
+| CPU overhead (enumeration) | <5% | ___ | [ ] |
+
+**Known Devices to Test:**
+- [ ] MOTU 828es (16 streams, ~20 descriptors)
+- [ ] MOTU 1248 (32 streams, ~40 descriptors)
+- [ ] PreSonus NSB 16.8 (16 streams)
+- [ ] MOTU AVB Switch (infrastructure, minimal descriptors)
+- [ ] Luminex GigaCore switches (TSN/AVB switches)
 
 ---
 
