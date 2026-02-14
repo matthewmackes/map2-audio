@@ -10,6 +10,8 @@ import os
 import time
 import secrets
 import psutil
+import json
+import threading
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from pathlib import Path
@@ -19,12 +21,14 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/www", tags=["www"])
 
-# Store for access logs (in-memory for now)
+# Access logs are kept in memory and appended to disk for restart persistence.
 _access_logs: List[Dict[str, Any]] = []
 _max_logs = 1000
 _startup_time = datetime.now()
 _request_count = 0
 _api_key: Optional[str] = None
+_access_log_lock = threading.RLock()
+_access_log_path = Path("/home/mm/map2-audio/.map2/access_logs.jsonl")
 
 
 # ==================== Models ====================
@@ -48,6 +52,45 @@ class ConfigUpdate(BaseModel):
 
 
 # ==================== Helper Functions ====================
+
+def _persist_access_log(log_entry: Dict[str, Any]) -> None:
+    """Append access log entry to disk (best-effort)."""
+    try:
+        _access_log_path.parent.mkdir(parents=True, exist_ok=True)
+        with _access_log_path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry, separators=(",", ":")) + "\n")
+    except Exception as e:
+        logger.debug(f"Failed to persist access log: {e}")
+
+
+def _load_access_logs() -> None:
+    """Load recent access logs from disk on startup."""
+    global _access_logs, _request_count
+
+    if not _access_log_path.exists():
+        return
+
+    try:
+        with _access_log_path.open("r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f if line.strip()]
+
+        parsed: List[Dict[str, Any]] = []
+        for line in reversed(lines):
+            try:
+                obj = json.loads(line)
+                if isinstance(obj, dict):
+                    parsed.append(obj)
+                    if len(parsed) >= _max_logs:
+                        break
+            except Exception:
+                continue
+        parsed.reverse()
+
+        with _access_log_lock:
+            _access_logs = parsed
+            _request_count = len(parsed)
+    except Exception as e:
+        logger.debug(f"Failed to load access logs: {e}")
 
 async def run_command(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
     """Run a shell command safely."""
@@ -214,14 +257,21 @@ async def get_api_endpoints() -> Dict[str, List[Dict[str, Any]]]:
 @router.get("/logs")
 async def get_access_logs(limit: int = 50) -> Dict[str, List[Dict[str, Any]]]:
     """Get recent access logs."""
-    return {"logs": _access_logs[-limit:]}
+    with _access_log_lock:
+        return {"logs": _access_logs[-limit:]}
 
 
 @router.delete("/logs")
 async def clear_access_logs() -> Dict[str, str]:
     """Clear access logs."""
     global _access_logs
-    _access_logs = []
+    with _access_log_lock:
+        _access_logs = []
+    try:
+        _access_log_path.parent.mkdir(parents=True, exist_ok=True)
+        _access_log_path.write_text("", encoding="utf-8")
+    except Exception as e:
+        logger.debug(f"Failed to clear persisted access logs: {e}")
     return {"status": "cleared"}
 
 
@@ -341,8 +391,6 @@ def log_request(method: str, path: str, status_code: int, response_time: float, 
     """Log an API request (called from middleware)."""
     global _access_logs, _request_count
 
-    _request_count += 1
-
     log_entry = {
         "timestamp": datetime.now().isoformat(),
         "method": method,
@@ -352,11 +400,15 @@ def log_request(method: str, path: str, status_code: int, response_time: float, 
         "client_ip": client_ip
     }
 
-    _access_logs.append(log_entry)
+    with _access_log_lock:
+        _request_count += 1
+        _access_logs.append(log_entry)
 
-    # Keep only the last N logs
-    if len(_access_logs) > _max_logs:
-        _access_logs = _access_logs[-_max_logs:]
+        # Keep only the last N logs
+        if len(_access_logs) > _max_logs:
+            _access_logs = _access_logs[-_max_logs:]
+
+    _persist_access_log(log_entry)
 
 
 # Load API key on startup
@@ -371,3 +423,4 @@ def _load_api_key():
             pass
 
 _load_api_key()
+_load_access_logs()
