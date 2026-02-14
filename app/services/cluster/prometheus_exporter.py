@@ -10,6 +10,7 @@ from typing import Dict, List, Optional, Callable, Any
 from enum import Enum
 import time
 import logging
+import threading
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
@@ -304,7 +305,7 @@ class MetricStorage:
     def __init__(self):
         """Initialize metric storage."""
         self.metrics: Dict[str, List[MetricValue]] = {}
-        self.lock = None  # Thread-safety placeholder
+        self.lock = threading.RLock()
     
     def add_metric(self, metric_name: str, value: float, 
                    labels: Optional[Dict[str, str]] = None) -> None:
@@ -316,22 +317,26 @@ class MetricStorage:
             value: Metric value
             labels: Optional label dictionary
         """
-        if metric_name not in self.metrics:
-            self.metrics[metric_name] = []
-        
-        self.metrics[metric_name].append(MetricValue(
-            value=value,
-            timestamp=time.time(),
-            labels=labels or {}
-        ))
+        with self.lock:
+            if metric_name not in self.metrics:
+                self.metrics[metric_name] = []
+            
+            self.metrics[metric_name].append(MetricValue(
+                value=value,
+                timestamp=time.time(),
+                labels=labels or {}
+            ))
     
     def get_metric(self, metric_name: str) -> Optional[List[MetricValue]]:
         """Get all values for a metric."""
-        return self.metrics.get(metric_name)
+        with self.lock:
+            values = self.metrics.get(metric_name)
+            return list(values) if values is not None else None
     
     def clear(self) -> None:
         """Clear all metrics."""
-        self.metrics.clear()
+        with self.lock:
+            self.metrics.clear()
 
 
 # ============================================================================
