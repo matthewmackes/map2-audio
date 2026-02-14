@@ -5,6 +5,7 @@
 #ifdef HAS_AVDECC
 
 #include "AvdeccEntity.h"
+#include "AvdeccEnumerator.h"
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -173,6 +174,16 @@ AvdeccEntity::AvdeccEntity(const juce::String& interfaceName,
             static_cast<uint16_t>(Avdecc::ListenerCapability::IMPLEMENTED) |
             static_cast<uint16_t>(Avdecc::ListenerCapability::AUDIO_SINK);
     }
+
+    // Phase 10: Initialize enumerator
+    enumerator_ = std::make_unique<Avdecc::AvdeccEnumerator>();
+
+    // Set send function for AECP commands (placeholder - will be implemented when AECP TX is ready)
+    enumerator_->setSendFunction([this](const void* data, size_t length) {
+        // TODO: Implement AECP command sending via sendAecpCommand()
+        // For now, enumeration requests will be queued but not sent
+        return true;  // Placeholder
+    });
 }
 
 AvdeccEntity::~AvdeccEntity() {
@@ -400,7 +411,12 @@ void AvdeccEntity::acmpThread() {
     // ACMP is mostly reactive (responds to commands)
     // This thread could be used for periodic connection status checks
     while (running_.load(std::memory_order_acquire)) {
-        juce::Thread::sleep(1000);
+        // Phase 10: Update enumerator (check timeouts, process requests)
+        if (enumerator_) {
+            enumerator_->update();
+        }
+
+        juce::Thread::sleep(100);  // 100ms interval for responsive timeout handling
     }
 }
 
@@ -589,6 +605,18 @@ void AvdeccEntity::handleAdpMessage(const AdpPdu& pdu, const std::array<uint8_t,
 
             discovered_entities_.push_back(entity);
             DBG("Discovered new AVDECC entity: " << juce::String::toHexString(entity_id));
+
+            // Phase 10: Trigger enumeration for new entity
+            if (enumerator_) {
+                enumerator_->startEnumeration(
+                    entity.entity_id,
+                    entity.entity_model_id,
+                    "", // firmware_version (unknown yet - will be from ENTITY descriptor)
+                    [this](uint64_t eid, Avdecc::EntityModel model, bool success) {
+                        onEnumerationComplete(eid, std::move(model), success);
+                    }
+                );
+            }
         } else {
             // Update existing entity
             it->last_seen = std::chrono::steady_clock::now();
@@ -663,16 +691,55 @@ void AvdeccEntity::handleAecpAemCommand(const AecpPdu& pdu) {
 }
 
 void AvdeccEntity::handleAecpAemResponse(const AecpPdu& pdu) {
-    // Phase 9: AEM response infrastructure in place
-    // Phase 10: Will implement descriptor parsing for enumeration
-    // For now, just log the response
-    DBG("Received AEM response (parsing not yet implemented - Phase 10)");
+    // Phase 10: Forward to enumerator for descriptor parsing
+    if (enumerator_) {
+        // Extract payload (after AECP header)
+        // Note: Actual payload extraction will depend on PDU structure
+        // For now, using placeholder values
+        const uint8_t* payload = reinterpret_cast<const uint8_t*>(&pdu) + sizeof(AecpPdu);
+        size_t payload_size = 1500 - sizeof(AecpPdu);  // Max Ethernet payload - header
 
-    // TODO Phase 10:
-    // - Match sequence_id to pending request
-    // - Parse descriptor data from response payload
-    // - Store in EntityModel
-    // - Signal enumeration completion when all descriptors received
+        enumerator_->handleAemResponse(pdu, payload, payload_size);
+    }
+
+    // Legacy logging for visibility
+    DBG("Received AEM response (forwarded to enumerator)");
+}
+
+void AvdeccEntity::onEnumerationComplete(uint64_t entity_id,
+                                         Avdecc::EntityModel model,
+                                         bool success) {
+    juce::ScopedLock lock(state_mutex_);
+
+    if (!success) {
+        DBG("Enumeration failed for entity " << juce::String::toHexString(entity_id));
+        return;
+    }
+
+    // Find discovered entity and attach model
+    auto it = std::find_if(discovered_entities_.begin(), discovered_entities_.end(),
+                          [entity_id](const DiscoveredEntity& e) {
+                              return e.entity_id == entity_id;
+                          });
+
+    if (it != discovered_entities_.end()) {
+        it->model_ = std::make_shared<Avdecc::EntityModel>(std::move(model));
+
+        // Update entity info from model
+        const auto& entity = it->model_->getEntity();
+        it->entity_name = entity.entity_name.value;
+        it->firmware_version = entity.firmware_version.value;
+        it->group_name = entity.group_name.value;
+        it->serial_number = entity.serial_number.value;
+
+        DBG("Enumeration completed for entity " << juce::String::toHexString(entity_id)
+            << ": " << it->entity_name);
+
+        auto stats = it->model_->getStats();
+        DBG("  Configurations: " << stats.total_configurations);
+        DBG("  Stream Inputs: " << stats.total_stream_inputs);
+        DBG("  Stream Outputs: " << stats.total_stream_outputs);
+    }
 }
 
 // ============================================================================
