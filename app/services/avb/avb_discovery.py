@@ -14,6 +14,7 @@ Only runs when avb.enabled=true. Gracefully fails if mDNS unavailable.
 
 import logging
 import asyncio
+import socket
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
@@ -93,6 +94,10 @@ class AvbDiscoveryService:
         self.enabled = config_get("avb.enabled", False)
         self.mdns_discovery: Optional[EnhancedMDNSDiscovery] = None
         self.discovered_avb_nodes: Dict[str, AvbNode] = {}
+        self._zeroconf = None
+        self._zeroconf_mod = None
+        self._service_info = None
+        self._service_name: Optional[str] = None
         self.logger = logging.getLogger(__name__)
 
         if self.enabled:
@@ -187,6 +192,102 @@ class AvbDiscoveryService:
             self.logger.error(f"Failed to get local AVB capabilities: {e}")
             return None
 
+    def _ensure_zeroconf(self) -> bool:
+        """Initialize zeroconf publisher on first use."""
+        if self._zeroconf is not None and self._zeroconf_mod is not None:
+            return True
+
+        try:
+            import zeroconf  # type: ignore
+
+            self._zeroconf_mod = zeroconf
+            self._zeroconf = zeroconf.Zeroconf()
+            return True
+        except ImportError:
+            self.logger.debug("zeroconf package not installed; external AVB mDNS advertisement disabled")
+            return False
+        except Exception as e:
+            self.logger.warning(f"Failed to initialize zeroconf publisher: {e}")
+            return False
+
+    def _register_local_advertisement(
+        self,
+        node_id: str,
+        hostname: str,
+        port: int,
+        addresses: List[str],
+        txt_records: Dict[str, str],
+    ) -> bool:
+        """Register/update this node's AVB service on mDNS via zeroconf."""
+        if not self._ensure_zeroconf():
+            return False
+
+        try:
+            assert self._zeroconf_mod is not None
+            assert self._zeroconf is not None
+
+            service_type = "_map2-avb._tcp.local."
+            service_name = f"{node_id}.{service_type}"
+
+            ipv4_addr = next((addr for addr in addresses if "." in addr), None)
+            if not ipv4_addr:
+                try:
+                    ipv4_addr = socket.gethostbyname(hostname)
+                except Exception:
+                    ipv4_addr = "127.0.0.1"
+
+            properties = {
+                k.encode("utf-8"): str(v).encode("utf-8")
+                for k, v in txt_records.items()
+            }
+
+            server_name = hostname if hostname.endswith(".local.") else f"{hostname}.local."
+
+            service_info = self._zeroconf_mod.ServiceInfo(
+                service_type,
+                service_name,
+                addresses=[socket.inet_aton(ipv4_addr)],
+                port=port,
+                properties=properties,
+                server=server_name,
+            )
+
+            if self._service_info is None:
+                self._zeroconf.register_service(service_info)
+                self.logger.info("Registered AVB mDNS service %s on %s:%s", service_name, ipv4_addr, port)
+            else:
+                if self._service_name != service_name:
+                    self._zeroconf.unregister_service(self._service_info)
+                    self._zeroconf.register_service(service_info)
+                else:
+                    self._zeroconf.update_service(service_info)
+                self.logger.debug("Updated AVB mDNS service %s", service_name)
+
+            self._service_info = service_info
+            self._service_name = service_name
+            return True
+        except Exception as e:
+            self.logger.warning(f"Failed to register AVB mDNS service: {e}")
+            return False
+
+    def shutdown(self) -> None:
+        """Release local mDNS advertisement resources."""
+        try:
+            if self._zeroconf is not None and self._service_info is not None:
+                self._zeroconf.unregister_service(self._service_info)
+        except Exception as e:
+            self.logger.debug(f"Failed to unregister AVB mDNS service: {e}")
+        finally:
+            try:
+                if self._zeroconf is not None:
+                    self._zeroconf.close()
+            except Exception as e:
+                self.logger.debug(f"Failed to close zeroconf publisher: {e}")
+            self._zeroconf = None
+            self._zeroconf_mod = None
+            self._service_info = None
+            self._service_name = None
+
     def broadcast_local_node(self, node_id: str, hostname: str, port: int = 8000) -> bool:
         """
         Broadcast this node's AVB capabilities via mDNS.
@@ -230,6 +331,16 @@ class AvbDiscoveryService:
             )
             if not node:
                 return False
+
+            # Best-effort external network advertisement; fallback cache registration
+            # above already keeps local routing/discovery functional.
+            self._register_local_advertisement(
+                node_id=node_id,
+                hostname=hostname,
+                port=port,
+                addresses=addresses,
+                txt_records=txt_records,
+            )
 
             self.logger.info(
                 "Broadcasted AVB capabilities for %s on %s:%s",
