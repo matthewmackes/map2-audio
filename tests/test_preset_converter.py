@@ -340,6 +340,70 @@ class TestFXPPresetConverter:
         finally:
             tmp_path.unlink()
 
+    def test_import_fxb_regular_bank_first_program(self, converter):
+        """Test importing FXB regular bank extracts first program data."""
+        with tempfile.NamedTemporaryFile(suffix=".fxb", delete=False) as f:
+            # FXB header
+            f.write(b"CcnK")
+            f.write(struct.pack(">I", 0))
+            f.write(b"FxBk")
+            f.write(struct.pack(">I", 1))      # version
+            f.write(struct.pack(">I", 54321))  # fx_id
+            f.write(struct.pack(">I", 2))      # fx_version
+            f.write(struct.pack(">I", 2))      # num programs
+            f.write(b"\x00" * 128)            # future/reserved
+
+            # First program (FxCk)
+            f.write(b"CcnK")
+            f.write(struct.pack(">I", 0))
+            f.write(b"FxCk")
+            f.write(struct.pack(">I", 1))      # program version
+            f.write(struct.pack(">I", 54321))  # program fx_id
+            f.write(struct.pack(">I", 2))      # program fx_version
+            f.write(struct.pack(">I", 2))      # num params
+            name = b"BankPreset1"
+            f.write(name + b"\x00" * (28 - len(name)))
+            f.write(struct.pack(">f", 0.25))
+            f.write(struct.pack(">f", 0.75))
+
+            tmp_path = Path(f.name)
+
+        try:
+            result = converter.import_preset(tmp_path)
+            assert result.success
+            assert result.name == "BankPreset1"
+            assert abs(result.parameters["param_0"] - 0.25) < 0.0001
+            assert abs(result.parameters["param_1"] - 0.75) < 0.0001
+            assert any("FXB bank imported first program" in w for w in result.warnings)
+            assert result.metadata.get("item_count") == 2
+        finally:
+            tmp_path.unlink()
+
+    def test_import_fxb_opaque_bank_chunk(self, converter):
+        """Test importing FXB opaque bank preserves chunk data."""
+        chunk = b"bankchunk"
+        with tempfile.NamedTemporaryFile(suffix=".fxb", delete=False) as f:
+            f.write(b"CcnK")
+            f.write(struct.pack(">I", 0))
+            f.write(b"FBCh")
+            f.write(struct.pack(">I", 1))
+            f.write(struct.pack(">I", 11111))
+            f.write(struct.pack(">I", 3))
+            f.write(struct.pack(">I", 4))      # num programs metadata
+            f.write(b"\x00" * 128)
+            f.write(struct.pack(">I", len(chunk)))
+            f.write(chunk)
+            tmp_path = Path(f.name)
+
+        try:
+            result = converter.import_preset(tmp_path)
+            assert result.success
+            assert result.state_chunk == chunk
+            assert any("FXB opaque bank imported as chunk data" in w for w in result.warnings)
+            assert result.metadata.get("item_count") == 4
+        finally:
+            tmp_path.unlink()
+
     def test_export_not_supported(self, converter):
         """Test that FXP export is not supported (legacy format)."""
         with tempfile.NamedTemporaryFile(suffix=".fxp", delete=False) as f:

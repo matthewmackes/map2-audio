@@ -277,22 +277,23 @@ class FXPPresetConverter(BasePresetConverter):
         version = struct.unpack('>I', f.read(4))[0]
         fx_id = struct.unpack('>I', f.read(4))[0]
         fx_version = struct.unpack('>I', f.read(4))[0]
-        num_params = struct.unpack('>I', f.read(4))[0]
-
-        # Read preset name (28 bytes, null-terminated)
-        preset_name_bytes = f.read(28)
-        preset_name = preset_name_bytes.rstrip(b'\x00').decode('ascii', errors='ignore')
-        if not preset_name:
-            preset_name = default_name
+        item_count = struct.unpack('>I', f.read(4))[0]
 
         # Parse based on preset type
+        preset_name = default_name
         parameters = {}
         state_chunk = None
         warnings = []
 
         if fx_magic == self.FXP_REGULAR:
+            # Read preset name (28 bytes, null-terminated)
+            preset_name_bytes = f.read(28)
+            parsed_name = preset_name_bytes.rstrip(b'\x00').decode('ascii', errors='ignore')
+            if parsed_name:
+                preset_name = parsed_name
+
             # Regular preset with float parameters
-            for i in range(num_params):
+            for i in range(item_count):
                 try:
                     param_value = struct.unpack('>f', f.read(4))[0]
                     parameters[f"param_{i}"] = round(param_value, 6)
@@ -301,14 +302,68 @@ class FXPPresetConverter(BasePresetConverter):
                     break
 
         elif fx_magic == self.FXP_OPAQUE:
+            # Read preset name (28 bytes, null-terminated)
+            preset_name_bytes = f.read(28)
+            parsed_name = preset_name_bytes.rstrip(b'\x00').decode('ascii', errors='ignore')
+            if parsed_name:
+                preset_name = parsed_name
+
             # Opaque chunk - plugin-specific binary data
             chunk_size = struct.unpack('>I', f.read(4))[0]
             state_chunk = f.read(chunk_size)
             warnings.append("Opaque chunk preset - parameters may need plugin-specific mapping")
 
-        elif fx_magic in (self.FXB_REGULAR, self.FXB_OPAQUE):
-            # Bank file - for now just extract first preset info
-            warnings.append("FXB bank file detected - importing as single preset reference")
+        elif fx_magic == self.FXB_REGULAR:
+            # Regular bank file. We import the first program and include
+            # metadata about total programs in the bank.
+            num_programs = item_count
+            _ = f.read(128)  # future/reserved bytes in FXB header
+
+            if num_programs <= 0:
+                warnings.append("FXB bank has no programs")
+            else:
+                program_magic = f.read(4)
+                if program_magic != self.FXP_MAGIC:
+                    warnings.append("FXB bank first program header not found")
+                else:
+                    _ = struct.unpack('>I', f.read(4))[0]  # program byte_size
+                    program_type = f.read(4)
+                    _ = struct.unpack('>I', f.read(4))[0]  # program version
+                    fx_id = struct.unpack('>I', f.read(4))[0]
+                    fx_version = struct.unpack('>I', f.read(4))[0]
+                    num_program_params = struct.unpack('>I', f.read(4))[0]
+
+                    preset_name_bytes = f.read(28)
+                    parsed_name = preset_name_bytes.rstrip(b'\x00').decode('ascii', errors='ignore')
+                    if parsed_name:
+                        preset_name = parsed_name
+
+                    if program_type == self.FXP_REGULAR:
+                        for i in range(num_program_params):
+                            try:
+                                param_value = struct.unpack('>f', f.read(4))[0]
+                                parameters[f"param_{i}"] = round(param_value, 6)
+                            except struct.error:
+                                warnings.append(f"Failed to read bank parameter {i}")
+                                break
+                    elif program_type == self.FXP_OPAQUE:
+                        chunk_size = struct.unpack('>I', f.read(4))[0]
+                        state_chunk = f.read(chunk_size)
+                        warnings.append("FXB bank first program is opaque chunk")
+                    else:
+                        warnings.append(f"Unsupported FXB program type: {program_type!r}")
+
+            warnings.append(f"FXB bank imported first program of {num_programs} total")
+
+        elif fx_magic == self.FXB_OPAQUE:
+            # Opaque bank with plugin-specific chunk data.
+            num_programs = item_count
+            _ = f.read(128)  # future/reserved bytes
+            chunk_size = struct.unpack('>I', f.read(4))[0]
+            state_chunk = f.read(chunk_size)
+            warnings.append(
+                f"FXB opaque bank imported as chunk data ({num_programs} programs metadata)"
+            )
 
         else:
             return self._create_error_result(f"Unknown FXP type: {fx_magic}")
@@ -325,6 +380,7 @@ class FXPPresetConverter(BasePresetConverter):
                 "fx_version": fx_version,
                 "fxp_version": version,
                 "plugin_format": "vst2",
+                "item_count": item_count,
             },
             warnings=warnings
         )
