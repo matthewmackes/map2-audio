@@ -146,6 +146,10 @@ class FlowOrchestrator:
 
     async def save_deployment(self, deployment: FlowDeploymentInfo) -> None:
         async with get_session() as session:
+            # Keep one latest deployment row per flow_id.
+            await session.execute(
+                delete(FlowDeployment).where(FlowDeployment.flow_id == deployment.flow_id)
+            )
             session.add(
                 FlowDeployment(
                     flow_id=deployment.flow_id,
@@ -175,6 +179,56 @@ class FlowOrchestrator:
             )
             assignment = result.scalar_one_or_none()
             return assignment.chain_id if assignment else None
+
+    async def _load_deployment_from_db(self, flow_id: str) -> Optional[FlowDeploymentInfo]:
+        """Load deployment state from database when cache is empty."""
+        chain_id = await self._get_chain_id_for_flow(flow_id)
+        if chain_id is None:
+            return None
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(FlowDeployment)
+                .where(FlowDeployment.flow_id == flow_id)
+                .order_by(FlowDeployment.deployment_timestamp.desc())
+            )
+            row = result.scalars().first()
+
+        if row is None:
+            return None
+
+        standby_ids = row.standby_node_ids if isinstance(row.standby_node_ids, list) else []
+        deployment = FlowDeploymentInfo(
+            flow_id=flow_id,
+            chain_id=chain_id,
+            primary_assignment=FlowAssignmentInfo(
+                flow_id=flow_id,
+                chain_id=chain_id,
+                assigned_node_id=row.primary_node_id,
+                assignment_type="primary",
+                reason="rehydrated_from_db",
+            ),
+            standby_assignments=[
+                FlowAssignmentInfo(
+                    flow_id=flow_id,
+                    chain_id=chain_id,
+                    assigned_node_id=standby_id,
+                    assignment_type="standby",
+                    reason="rehydrated_from_db",
+                )
+                for standby_id in standby_ids
+                if isinstance(standby_id, str) and standby_id and standby_id != row.primary_node_id
+            ],
+            is_deployed=row.deployment_status == "active",
+            deployment_timestamp=(
+                row.deployment_timestamp.timestamp()
+                if row.deployment_timestamp
+                else time.time()
+            ),
+        )
+
+        self.active_deployments[flow_id] = deployment
+        return deployment
 
     async def deploy_flow(self, deployment: FlowDeploymentInfo, chain: Dict) -> bool:
         """Deploy a chain to assigned nodes via HTTP API."""
@@ -256,6 +310,8 @@ class FlowOrchestrator:
     async def failover_flow(self, flow_id: str) -> bool:
         """Promote standby to primary for given flow."""
         deployment = self.active_deployments.get(flow_id)
+        if not deployment:
+            deployment = await self._load_deployment_from_db(flow_id)
         if not deployment or not deployment.standby_assignments:
             return False
 
@@ -267,12 +323,18 @@ class FlowOrchestrator:
         deployment.primary_assignment = standby
         deployment.standby_assignments = deployment.standby_assignments[1:]
         deployment.is_deployed = True
+        await self._persist_assignments(
+            deployment.primary_assignment,
+            deployment.standby_assignments,
+            strategy="failover",
+        )
         await self.save_deployment(deployment)
         return True
 
     async def get_flows_on_node(self, node_id: str) -> List[Dict]:
         """Get all flows assigned to a specific node."""
         flows = []
+        seen_flow_ids = set()
         for flow_id, deployment in self.active_deployments.items():
             if deployment.primary_assignment.assigned_node_id == node_id:
                 flows.append({
@@ -282,11 +344,39 @@ class FlowOrchestrator:
                     'standby_node_id': deployment.standby_assignments[0].assigned_node_id if deployment.standby_assignments else None,
                     'is_deployed': deployment.is_deployed
                 })
+                seen_flow_ids.add(flow_id)
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(FlowDeployment)
+                .where(FlowDeployment.primary_node_id == node_id)
+                .order_by(FlowDeployment.deployment_timestamp.desc())
+            )
+            rows = result.scalars().all()
+
+        for row in rows:
+            flow_id = row.flow_id
+            if flow_id in seen_flow_ids:
+                continue
+
+            chain_id = await self._get_chain_id_for_flow(flow_id)
+            standby_ids = row.standby_node_ids if isinstance(row.standby_node_ids, list) else []
+            flows.append({
+                'id': flow_id,
+                'chain_id': chain_id,
+                'primary_node_id': row.primary_node_id,
+                'standby_node_id': standby_ids[0] if standby_ids else None,
+                'is_deployed': row.deployment_status == "active",
+            })
+            seen_flow_ids.add(flow_id)
+
         return flows
     
     async def promote_standby_to_primary(self, flow_id: str, standby_node_id: str) -> bool:
         """Promote a standby assignment to primary."""
         deployment = self.active_deployments.get(flow_id)
+        if not deployment:
+            deployment = await self._load_deployment_from_db(flow_id)
         if not deployment:
             return False
         
@@ -303,6 +393,12 @@ class FlowOrchestrator:
         
         # Update deployment
         deployment.primary_assignment = standby
+        deployment.is_deployed = True
+        await self._persist_assignments(
+            deployment.primary_assignment,
+            deployment.standby_assignments,
+            strategy="failover",
+        )
         await self.save_deployment(deployment)
         return True
     
@@ -379,6 +475,8 @@ class FlowOrchestrator:
         """Assign a flow to a node."""
         deployment = self.active_deployments.get(flow_id)
         if not deployment:
+            deployment = await self._load_deployment_from_db(flow_id)
+        if not deployment:
             return False
         
         # Update the primary assignment
@@ -415,6 +513,11 @@ class FlowOrchestrator:
             logger.error(f"Failed to deploy reassigned flow {flow_id} to {node_id}: {e}")
             return False
 
+        await self._persist_assignments(
+            deployment.primary_assignment,
+            deployment.standby_assignments,
+            strategy="reassign",
+        )
         await self.save_deployment(deployment)
         return True
 
