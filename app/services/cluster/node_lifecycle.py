@@ -685,3 +685,195 @@ def get_lifecycle_manager(node_id: str) -> NodeLifecycleManager:
     if node_id not in _lifecycle_managers:
         _lifecycle_managers[node_id] = NodeLifecycleManager(node_id)
     return _lifecycle_managers[node_id]
+
+
+@dataclass
+class DiagnosticsCheck:
+    """Single diagnostic check result."""
+
+    name: str
+    status: str
+    message: str
+    severity: int
+
+
+@dataclass
+class DiagnosticsReport:
+    """Diagnostics report payload returned to API routes."""
+
+    node_id: str
+    timestamp: datetime
+    overall_health: int
+    checks: List[DiagnosticsCheck]
+    services_status: Dict[str, str]
+    recommendations: List[str]
+
+
+class ClusterNodeLifecycleManager:
+    """
+    Backward-compatible lifecycle facade used by cluster routes.
+
+    This keeps legacy route expectations working while reusing the
+    node-scoped lifecycle state machine implementation.
+    """
+
+    def __init__(self):
+        self.registry = get_cluster_registry()
+
+    def _manager(self, node_id: str) -> NodeLifecycleManager:
+        return get_lifecycle_manager(node_id)
+
+    async def run_diagnostics(self, node_id: str) -> DiagnosticsReport:
+        """Run basic diagnostics for a node and return normalized report."""
+        node = self.registry.get_node(node_id)
+        if not node:
+            raise ValueError(f"Node {node_id} not found")
+
+        manager = self._manager(node_id)
+        diagnostics = await asyncio.to_thread(manager._collect_diagnostics)
+
+        checks: List[DiagnosticsCheck] = []
+        recommendations: List[str] = []
+
+        service_state = diagnostics.get("service_active", "unknown")
+        service_ok = service_state == "active"
+        checks.append(
+            DiagnosticsCheck(
+                name="map2-audio service",
+                status="passed" if service_ok else "failed",
+                message=f"Service state: {service_state}",
+                severity=0 if service_ok else 3,
+            )
+        )
+        if not service_ok:
+            recommendations.append("Restart map2-audio service and verify node logs")
+
+        ping_ok = bool(diagnostics.get("network_ping_ok"))
+        checks.append(
+            DiagnosticsCheck(
+                name="network connectivity",
+                status="passed" if ping_ok else "failed",
+                message="External network ping successful" if ping_ok else "Network ping failed",
+                severity=0 if ping_ok else 2,
+            )
+        )
+        if not ping_ok:
+            recommendations.append("Check node network connectivity and gateway reachability")
+
+        memory_snapshot = diagnostics.get("memory", "")
+        checks.append(
+            DiagnosticsCheck(
+                name="memory check",
+                status="passed" if memory_snapshot else "warning",
+                message="Memory snapshot collected" if memory_snapshot else "Memory snapshot unavailable",
+                severity=0 if memory_snapshot else 1,
+            )
+        )
+
+        disk_snapshot = diagnostics.get("disk", "")
+        checks.append(
+            DiagnosticsCheck(
+                name="disk check",
+                status="passed" if disk_snapshot else "warning",
+                message="Disk snapshot collected" if disk_snapshot else "Disk snapshot unavailable",
+                severity=0 if disk_snapshot else 1,
+            )
+        )
+
+        total_severity = sum(check.severity for check in checks)
+        overall_health = max(0, 100 - (total_severity * 15))
+
+        if not recommendations:
+            recommendations.append("No immediate remediation required")
+
+        return DiagnosticsReport(
+            node_id=node_id,
+            timestamp=datetime.utcnow(),
+            overall_health=overall_health,
+            checks=checks,
+            services_status={"map2-audio": service_state},
+            recommendations=recommendations,
+        )
+
+    async def recover_node(self, node_id: str) -> Dict:
+        """Attempt node recovery and report health delta."""
+        manager = self._manager(node_id)
+        before = await self.run_diagnostics(node_id)
+
+        await manager._attempt_recovery()
+
+        after = await self.run_diagnostics(node_id)
+        improved = after.overall_health >= before.overall_health
+
+        return {
+            "status": "ok" if improved else "partial",
+            "health_before": before.overall_health,
+            "health_after": after.overall_health,
+            "actions_taken": [
+                "restart_map2_audio",
+                "service_status_verification",
+            ],
+            "message": (
+                f"Recovery completed for {node_id}"
+                if improved
+                else f"Recovery attempted for {node_id}; health did not improve"
+            ),
+        }
+
+    async def graceful_shutdown(self, node_id: str) -> Dict:
+        """Gracefully stop node services and mark node offline."""
+        manager = self._manager(node_id)
+        await manager._perform_graceful_shutdown()
+        return {
+            "status": "ok",
+            "message": f"Graceful shutdown initiated for {node_id}",
+            "flows_drained": 0,
+        }
+
+    async def promote_node_role(self, node_id: str, new_role: str) -> Dict:
+        """Promote node role to MANAGEMENT-NODE."""
+        if new_role != "MANAGEMENT-NODE":
+            raise ValueError("Only promotion to MANAGEMENT-NODE is currently supported")
+
+        node = self.registry.get_node(node_id)
+        if not node:
+            raise ValueError(f"Node {node_id} not found")
+
+        old_role = node.get("role", "AUDIO-NODE")
+        manager = self._manager(node_id)
+        await manager._promote_node()
+
+        return {
+            "status": "ok",
+            "message": f"Node {node_id} promoted to {new_role}",
+            "old_role": old_role,
+            "new_role": new_role,
+        }
+
+    async def demote_node_role(self, node_id: str) -> Dict:
+        """Demote node role to AUDIO-NODE."""
+        node = self.registry.get_node(node_id)
+        if not node:
+            raise ValueError(f"Node {node_id} not found")
+
+        manager = self._manager(node_id)
+        await manager._demote_node()
+
+        return {
+            "status": "ok",
+            "message": f"Node {node_id} demoted to AUDIO-NODE",
+            "old_role": node.get("role", "MANAGEMENT-NODE"),
+            "new_role": "AUDIO-NODE",
+            "flows_drained": 0,
+        }
+
+
+_cluster_node_lifecycle_manager: Optional[ClusterNodeLifecycleManager] = None
+
+
+def get_node_lifecycle_manager() -> ClusterNodeLifecycleManager:
+    """Backward-compatible cluster lifecycle manager singleton."""
+    global _cluster_node_lifecycle_manager
+    if _cluster_node_lifecycle_manager is None:
+        _cluster_node_lifecycle_manager = ClusterNodeLifecycleManager()
+    return _cluster_node_lifecycle_manager

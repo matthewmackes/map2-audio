@@ -8,8 +8,11 @@ import asyncio
 import json
 from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from app.routes.system import router as system_router
-from app.models import SystemHealthOverview, DiskHealthData
+from app.response_models import SystemHealthOverview, DiskHealthData
+from app.routes.system import (
+    get_health_overview as fetch_health_overview,
+    get_disk_health as fetch_disk_health,
+)
 
 router = APIRouter(prefix="/ws", tags=["websocket"])
 
@@ -111,7 +114,7 @@ async def websocket_host_metrics(websocket: WebSocket):
             await asyncio.sleep(2)
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        await manager.disconnect(websocket)
     except Exception as e:
         print(f"WebSocket error: {e}")
         try:
@@ -203,11 +206,12 @@ async def websocket_metrics_stream(websocket: WebSocket):
 async def get_system_health_overview() -> SystemHealthOverview | None:
     """Get current system health overview"""
     try:
-        # This would integrate with your existing system monitoring
-        # For now, return a mock implementation
-        from app.services.cluster import ClusterHealthService
-        service = ClusterHealthService()
-        return await service.get_health_overview()
+        payload = await fetch_health_overview()
+        if isinstance(payload, SystemHealthOverview):
+            return payload
+        if isinstance(payload, dict):
+            return SystemHealthOverview(**payload)
+        return None
     except Exception as e:
         print(f"Error getting health overview: {e}")
         return None
@@ -216,10 +220,12 @@ async def get_system_health_overview() -> SystemHealthOverview | None:
 async def get_disk_health() -> DiskHealthData | None:
     """Get current disk health data"""
     try:
-        # This would integrate with your existing disk monitoring
-        from app.services.cluster import ClusterHealthService
-        service = ClusterHealthService()
-        return await service.get_disk_health()
+        payload = await fetch_disk_health()
+        if isinstance(payload, DiskHealthData):
+            return payload
+        if isinstance(payload, dict):
+            return DiskHealthData(**payload)
+        return None
     except Exception as e:
         print(f"Error getting disk health: {e}")
         return None

@@ -12,7 +12,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 from app.services.cluster.map2_git_updater import MAP2GitUpdater, get_git_updater
-from app.services.cluster.fedora_package_manager import FedoraPackageManager
+from app.services.cluster.fedora_package_manager import FedoraDNFManager
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class HybridUpdateManager:
         """
         self.config = config or HybridUpdateConfig()
         self.git_updater = get_git_updater(self.config.app_path)
-        self.rpm_updater = FedoraPackageManager()
+        self.rpm_updater = FedoraDNFManager()
         self.mode = self._detect_update_mode()
 
         logger.info(f"Hybrid update manager initialized: mode={self.mode}, env={self.config.environment}")
@@ -140,7 +140,7 @@ class HybridUpdateManager:
         logger.info(f"Triggering system update on {node_id or 'local'}")
         
         try:
-            updates = self.rpm_updater.check_updates()
+            updates = self.rpm_updater.check_for_updates()
             
             if not updates:
                 return {
@@ -149,12 +149,9 @@ class HybridUpdateManager:
                     "updates_available": 0
                 }
 
-            # Download packages
-            package_names = [u.name for u in updates]
-            self.rpm_updater.download_packages(package_names)
-
-            # Apply updates
-            success = self.rpm_updater.apply_updates(package_names)
+            package_names = [u.package_name for u in updates]
+            update_result = self.rpm_updater.apply_updates(packages=package_names)
+            success = bool(update_result.get("success"))
 
             if success:
                 return {
@@ -166,7 +163,8 @@ class HybridUpdateManager:
             else:
                 return {
                     "status": "error",
-                    "message": "Failed to apply system updates"
+                    "message": "Failed to apply system updates",
+                    "details": update_result.get("stderr") or update_result.get("error", "")
                 }
 
         except Exception as e:

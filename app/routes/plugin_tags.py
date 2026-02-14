@@ -8,10 +8,9 @@ Allows users to categorize plugins with predefined and custom tags.
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from app.database import get_async_session, Plugin
+from app.database import get_session, Plugin
 
 router = APIRouter(prefix="/api/plugins/tags", tags=["plugin-tags"])
 
@@ -180,7 +179,7 @@ async def get_available_tags():
 @router.get("/plugin/{uri:path}", response_model=PluginTagsResponse)
 async def get_plugin_tags(uri: str):
     """Get tags and metadata for a specific plugin."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.uri == uri)
         )
@@ -210,7 +209,7 @@ async def get_plugin_tags(uri: str):
 @router.patch("/plugin/{uri:path}", response_model=PluginTagsResponse)
 async def update_plugin_metadata(uri: str, request: PluginMetadataRequest):
     """Update tags and metadata for a plugin."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.uri == uri)
         )
@@ -254,7 +253,7 @@ async def update_plugin_metadata(uri: str, request: PluginMetadataRequest):
 @router.post("/plugin/{uri:path}/add")
 async def add_tags_to_plugin(uri: str, request: PluginTagsRequest):
     """Add tags to a plugin (without removing existing ones)."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.uri == uri)
         )
@@ -284,7 +283,7 @@ async def add_tags_to_plugin(uri: str, request: PluginTagsRequest):
 @router.post("/plugin/{uri:path}/remove")
 async def remove_tags_from_plugin(uri: str, request: PluginTagsRequest):
     """Remove specific tags from a plugin."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.uri == uri)
         )
@@ -309,7 +308,7 @@ async def remove_tags_from_plugin(uri: str, request: PluginTagsRequest):
 @router.post("/bulk")
 async def bulk_update_tags(request: BulkTagRequest):
     """Update tags for multiple plugins at once."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         updated_count = 0
 
         for uri in request.uris:
@@ -353,7 +352,7 @@ async def search_plugins_by_tags(
     if not tag_list:
         raise HTTPException(status_code=400, detail="No tags provided")
 
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.tags.isnot(None))
         )
@@ -394,7 +393,7 @@ async def search_plugins_by_tags(
 @router.get("/favorites")
 async def get_favorite_plugins():
     """Get all plugins marked as favorites."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.is_favorite == True)
         )
@@ -417,7 +416,7 @@ async def get_favorite_plugins():
 @router.post("/plugin/{uri:path}/favorite")
 async def toggle_favorite(uri: str, is_favorite: bool = True):
     """Toggle favorite status for a plugin."""
-    async with get_async_session() as session:
+    async with get_session() as session:
         result = await session.execute(
             select(Plugin).where(Plugin.uri == uri)
         )

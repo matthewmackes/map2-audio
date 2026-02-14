@@ -131,13 +131,16 @@ async def get_application_versions():
         manager = get_hybrid_update_manager()
         registry = get_cluster_registry()
         
-        nodes = registry.get_nodes()
+        nodes = registry.get_all_nodes()
         versions = {}
         
         for node in nodes:
             # In real implementation, would query each node's status
             # For now, return current node info
-            versions[node.id] = {
+            node_id = node.get("id")
+            if not node_id:
+                continue
+            versions[node_id] = {
                 "version": manager.get_current_version(),
                 "mode": manager.mode.value,
                 "updated_at": None,
