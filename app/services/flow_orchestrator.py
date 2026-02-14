@@ -7,7 +7,7 @@ Manages flow-to-node assignments for multi-node Grid Flow execution.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import logging
 import time
 from datetime import datetime
@@ -43,6 +43,7 @@ class FlowDeploymentInfo:
     standby_assignments: List[FlowAssignmentInfo]
     is_deployed: bool
     deployment_timestamp: float
+    error_message: Optional[str] = None
 
 
 class FlowOrchestrator:
@@ -146,6 +147,7 @@ class FlowOrchestrator:
 
     async def save_deployment(self, deployment: FlowDeploymentInfo) -> None:
         async with get_session() as session:
+            status = "active" if deployment.is_deployed else "failed"
             # Keep one latest deployment row per flow_id.
             await session.execute(
                 delete(FlowDeployment).where(FlowDeployment.flow_id == deployment.flow_id)
@@ -157,8 +159,9 @@ class FlowOrchestrator:
                     standby_node_ids=[
                         s.assigned_node_id for s in deployment.standby_assignments
                     ],
-                    deployment_status="active" if deployment.is_deployed else "deploying",
+                    deployment_status=status,
                     deployment_timestamp=datetime.utcnow(),
+                    error_message=deployment.error_message,
                 )
             )
 
@@ -225,6 +228,7 @@ class FlowOrchestrator:
                 if row.deployment_timestamp
                 else time.time()
             ),
+            error_message=row.error_message,
         )
 
         self.active_deployments[flow_id] = deployment
@@ -239,22 +243,67 @@ class FlowOrchestrator:
                 mode="active",
             )
             if not primary_ok:
+                deployment.is_deployed = False
+                deployment.error_message = (
+                    f"Primary deployment failed on node {deployment.primary_assignment.assigned_node_id}"
+                )
+                self.active_deployments[deployment.flow_id] = deployment
+                await self.save_deployment(deployment)
                 return False
 
+            standby_failures: List[str] = []
             for standby in deployment.standby_assignments:
-                await self._deploy_to_node(
+                standby_ok = await self._deploy_to_node(
                     node_id=standby.assigned_node_id,
                     chain=chain,
                     mode="standby",
                 )
+                if not standby_ok:
+                    standby_failures.append(standby.assigned_node_id)
 
             deployment.is_deployed = True
+            if standby_failures:
+                deployment.error_message = (
+                    "Standby deployment failed on nodes: " + ", ".join(sorted(standby_failures))
+                )
+                logger.warning(
+                    "Flow %s deployed on primary node, but standby deployment failed for nodes: %s",
+                    deployment.flow_id,
+                    ", ".join(sorted(standby_failures)),
+                )
+            else:
+                deployment.error_message = None
             self.active_deployments[deployment.flow_id] = deployment
             await self.save_deployment(deployment)
             return True
         except Exception as e:
             logger.error(f"Failed to deploy flow {deployment.flow_id}: {e}")
+            deployment.is_deployed = False
+            deployment.error_message = str(e)
+            self.active_deployments[deployment.flow_id] = deployment
+            await self.save_deployment(deployment)
             return False
+
+    @staticmethod
+    def _is_successful_deploy_response(mode: str, body: Dict[str, Any]) -> bool:
+        """Evaluate /api/chains/deploy response with mode-aware semantics."""
+        status = str(body.get("status", "")).lower()
+        applied = bool(body.get("applied", False))
+        activated = body.get("activated")
+
+        if mode == "active":
+            # Active deploy must not explicitly report non-activation.
+            if activated is False:
+                return False
+            return applied or status in {"deployed", "activated", "applied", "success"}
+
+        if mode == "standby":
+            # Standby deploy should stage only; explicit activation is a mismatch.
+            if activated is True:
+                return False
+            return applied or status in {"staged", "deployed", "applied", "success"}
+
+        return applied or status in {"staged", "deployed", "activated", "applied", "success"}
 
     async def _deploy_to_node(self, node_id: str, chain: Dict, mode: str) -> bool:
         """Send chain configuration to node via HTTP."""
@@ -287,16 +336,17 @@ class FlowOrchestrator:
                         logger.error(f"Deploy response from node {node_id} is not valid JSON")
                         return False
 
-                    status = str(body.get("status", "")).lower()
-                    applied = bool(body.get("applied", False))
-
-                    if applied or status in {"deployed", "applied", "success"}:
+                    if self._is_successful_deploy_response(mode, body):
                         return True
 
                     logger.error(
-                        "Node %s acknowledged deploy but did not apply it (status=%s, message=%s)",
+                        "Node %s returned deploy response that does not satisfy %s semantics "
+                        "(status=%s, applied=%s, activated=%s, message=%s)",
                         node_id,
-                        status or "unknown",
+                        mode,
+                        str(body.get("status", "")).lower() or "unknown",
+                        bool(body.get("applied", False)),
+                        body.get("activated"),
                         body.get("message", ""),
                     )
                     return False

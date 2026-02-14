@@ -121,7 +121,7 @@ flowchart LR
 
 ## Implementation Reality Notes (Use Dotted Blocks In Diagram)
 - AVB router API references `get_avb_router`, and factory wiring is implemented with graceful fallback and late binding.
-- `/api/chains/deploy` stages chain/plugin state and supports optional local activation, but full distributed activation semantics are still partial.
+- Cluster flow deployment enforces active/standby response semantics and reports degraded standby failures; full failover/promotion orchestration is still partial.
 - AVB stream lifecycle/stat hooks are implemented in Python service/routes, while C++ AVB dataplane internals remain partial.
 
 Mark these as "planned/in-progress" to avoid presenting partial code as fully operational.

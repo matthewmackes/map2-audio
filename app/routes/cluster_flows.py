@@ -88,13 +88,21 @@ try:
                 ),
             )
 
-        return {
+        response = {
             "status": "deployed",
             "flow_id": request.flow_id,
             "node_id": request.node_id,
             "chain_id": request.chain_id,
             "redundancy_enabled": request.redundancy_enabled,
         }
+
+        if deployment.error_message:
+            response["degraded"] = True
+            response["warning"] = deployment.error_message
+        else:
+            response["degraded"] = False
+
+        return response
 
     @router.get("/nodes")
     async def get_cluster_nodes():

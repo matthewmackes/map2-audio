@@ -603,13 +603,14 @@
       "id": "overlay_chain_deploy_placeholder",
       "severity": "high",
       "status": "partial",
-      "description": "Cluster deploy endpoint stages chain/plugin state and can activate locally, but distributed activation semantics remain partial across cluster scenarios.",
+      "description": "Cluster flow deploy now enforces active/standby response semantics and records degraded standby failures, but full multi-node failover/promotion orchestration remains partial.",
       "affected_nodes": [
         "n2_ctrl_chain_deploy"
       ],
       "refs": [
-        "app/routes/chains.py:484",
-        "app/routes/chains.py:543"
+        "app/services/flow_orchestrator.py:237",
+        "app/services/flow_orchestrator.py:287",
+        "app/routes/cluster_flows.py:91"
       ]
     },
     {
