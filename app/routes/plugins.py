@@ -315,6 +315,7 @@ try:
 
         # Instantiate the plugin in the audio engine
         engine_loaded = False
+        instance_id = None
         try:
             from app.services.juce_engine_service import get_audio_engine
             engine = get_audio_engine()
@@ -326,8 +327,12 @@ try:
         except Exception as e:
             logger.error(f"Error loading plugin in audio engine: {e}")
 
-        _loaded_plugins[uri] = plugin_info
-        return {"status": "loaded", "plugin": plugin_info, "engine_loaded": engine_loaded}
+        loaded_plugin = dict(plugin_info)
+        loaded_plugin["instance_id"] = instance_id
+        loaded_plugin["engine_loaded"] = engine_loaded
+
+        _loaded_plugins[uri] = loaded_plugin
+        return {"status": "loaded", "plugin": loaded_plugin, "engine_loaded": engine_loaded}
 
     @router.post("/unload")
     async def unload_plugin(uri: str):
@@ -343,8 +348,19 @@ try:
             from app.services.juce_engine_service import get_audio_engine
             engine = get_audio_engine()
             if engine.is_available and engine.is_running:
-                # Note: Would need to look up instance_id from URI
-                engine_unloaded = True  # Simplified for now
+                loaded_entry = _loaded_plugins.get(uri, {})
+                instance_id = loaded_entry.get("instance_id")
+
+                if not isinstance(instance_id, int) or instance_id <= 0:
+                    resolver = getattr(engine, "_get_instance_id_for_uri", None)
+                    if callable(resolver):
+                        instance_id = resolver(uri)
+
+                if isinstance(instance_id, int) and instance_id > 0:
+                    engine_unloaded = await engine.unload_plugin(instance_id)
+                else:
+                    logger.warning(f"No instance_id found for loaded plugin {uri}; skipping engine unload")
+
                 if not engine_unloaded:
                     logger.warning(f"Failed to unload plugin from audio engine: {uri}")
         except Exception as e:
