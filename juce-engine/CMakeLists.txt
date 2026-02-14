@@ -277,6 +277,7 @@ if(AVDECC_AVAILABLE)
     list(APPEND SOURCES
         Source/AvdeccEntity.cpp
         Source/AvdeccEntityModel.cpp
+        Source/AvdeccEnumerator.cpp
     )
 endif()
 
@@ -354,6 +355,7 @@ if(AVDECC_AVAILABLE)
         Source/AvdeccEntity.h
         Source/AvdeccDescriptors.h
         Source/AvdeccEntityModel.h
+        Source/AvdeccEnumerator.h
     )
 endif()
 

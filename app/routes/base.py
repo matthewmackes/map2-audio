@@ -22,7 +22,6 @@ from functools import wraps
 from fastapi import HTTPException, status
 from typing import Callable, Any, Optional, Dict
 import logging
-import traceback
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -137,43 +136,52 @@ def require_service(service_name: str, error_message: Optional[str] = None):
             return {"status": "ok"}
     """
     def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def async_wrapper(*args, **kwargs):
-            # Check service availability
-            # This is a placeholder - would integrate with service orchestrator
-            error_msg = error_message or f"Required service '{service_name}' not available"
-            
-            # Check if service is running
+        def _service_available(name: str) -> bool:
+            """Check service availability using orchestrator, then legacy manager fallback."""
+            # Preferred: service orchestrator
             try:
                 from app.services.service_orchestrator import get_orchestrator
                 orchestrator = get_orchestrator()
-                
-                if not orchestrator.is_service_running(service_name):
-                    raise HTTPException(
-                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                        detail=error_msg
-                    )
-            except Exception:
-                # If orchestrator not available, just proceed
-                pass
+                service = orchestrator.get_service_status(name)
+                if service:
+                    state = (service.get("state") or "").lower()
+                    return state in {"running", "degraded"}
+            except Exception as e:
+                logger.debug(f"Orchestrator lookup failed for '{name}': {e}")
+
+            # Fallback: legacy service manager aggregated status
+            try:
+                from app.services.service_manager import get_service_manager
+                svc_mgr = get_service_manager()
+                status = svc_mgr.get_service_status()
+                if name in status and isinstance(status[name], bool):
+                    return bool(status[name])
+            except Exception as e:
+                logger.debug(f"ServiceManager lookup failed for '{name}': {e}")
+
+            # Unknown service state should be treated as unavailable for strictness.
+            return False
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            error_msg = error_message or f"Required service '{service_name}' not available"
+            if not _service_available(service_name):
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=error_msg
+                )
             
             return await func(*args, **kwargs)
         
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             error_msg = error_message or f"Required service '{service_name}' not available"
-            
-            try:
-                from app.services.service_orchestrator import get_orchestrator
-                orchestrator = get_orchestrator()
-                
-                if not orchestrator.is_service_running(service_name):
-                    raise HTTPException(
-                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                        detail=error_msg
-                    )
-            except Exception:
-                pass
+
+            if not _service_available(service_name):
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=error_msg
+                )
             
             return func(*args, **kwargs)
         

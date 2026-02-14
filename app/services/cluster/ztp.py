@@ -13,6 +13,7 @@ Handles automatic node configuration on first boot:
 import asyncio
 import logging
 import os
+import socket
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
@@ -255,22 +256,21 @@ class ZTPBootstrap:
                 return False
 
             self.logger.info("ZTP: Registering with cluster...")
-
-            # This will be implemented in Task 6 (CA) and Task 4 (mDNS discovery)
-            # For now, just log that registration would happen
             node_id = self.node_identity.get_node_id()
-            self.logger.info(f"ZTP: Would register {node_id} with management node")
-
-            # Get node identity
-            node_id = self.node_identity.get_node_id()
-            node_name = self.node_identity.get_hostname()
+            node_cfg = getattr(self.node_identity, "config", None)
+            node_name = node_cfg.hostname if node_cfg else socket.gethostname()
+            node_ip = management_node_ip or self._resolve_primary_ip(node_name)
+            role = self.node_identity.get_role()
+            caps = self.node_identity.get_capabilities()
             
             # Import required services
-            from app.services.cluster.cluster_registry import get_cluster_registry
-            from app.services.cluster.certificate_authority import get_certificate_authority
+            from app.services.cluster.registry import get_cluster_registry
+            from app.services.cluster.certificate_authority import get_cluster_ca
+            from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
             
             registry = get_cluster_registry()
-            ca = get_certificate_authority()
+            ca = get_cluster_ca()
+            mdns = get_enhanced_mdns_discovery()
             
             if not registry or not ca:
                 self.logger.warning("ZTP: Registry or CA not available, proceeding anyway")
@@ -278,12 +278,18 @@ class ZTPBootstrap:
             # 1. Register node in cluster registry
             if registry:
                 try:
-                    registry.register_node(
+                    registry.add_or_update_node(
                         node_id=node_id,
-                        node_name=node_name,
-                        node_type="audio",
-                        ip_address=self.node_identity.get_primary_ip(),
-                        status="provisioning"
+                        hostname=node_name,
+                        ip_address=node_ip,
+                        role=role,
+                        deployment_mode=role,
+                        cpu_cores=caps.cpu_cores,
+                        total_memory_gb=caps.total_memory_gb,
+                        audio_devices=caps.audio_interfaces,
+                        storage_gb=caps.storage_gb,
+                        status="online",
+                        metadata={"ztp_registered_at": datetime.utcnow().isoformat()},
                     )
                     self.logger.info(f"ZTP: Registered {node_id} in cluster registry")
                 except Exception as e:
@@ -293,35 +299,49 @@ class ZTPBootstrap:
             # 2. Request certificate from CA
             if ca:
                 try:
-                    cert = ca.issue_certificate(
+                    if not ca.has_root_ca():
+                        ca.generate_root_ca()
+
+                    ca.issue_node_certificate(
                         node_id=node_id,
-                        node_name=node_name,
-                        ip_addresses=[self.node_identity.get_primary_ip()],
-                        cert_type="node"
+                        common_name=node_name,
+                        sans=[node_name, node_ip],
                     )
                     self.logger.info(f"ZTP: Issued certificate for {node_id}")
                 except Exception as e:
                     self.logger.error(f"ZTP: Failed to issue certificate: {e}")
                     # Don't fail registration - continue without cert for now
             
-            # 3. Update registry status to active
-            if registry:
-                try:
-                    registry.update_node_status(node_id, "active")
-                    self.logger.info(f"ZTP: Set {node_id} status to active")
-                except Exception as e:
-                    self.logger.error(f"ZTP: Failed to update node status: {e}")
+            # 3. Broadcast in mDNS discovery cache
+            try:
+                mdns.add_discovered_node(
+                    node_id=node_id,
+                    hostname=node_name,
+                    addresses=[node_ip],
+                    txt_records={
+                        "cpu_cores": str(caps.cpu_cores),
+                        "cpu_model": caps.cpu_model,
+                        "memory_gb": str(caps.total_memory_gb),
+                        "audio": ",".join(caps.audio_interfaces),
+                        "storage_gb": str(caps.storage_gb),
+                        "kernel": caps.kernel_version,
+                        "gpu": "yes" if caps.has_gpuapu else "no",
+                        "role": role,
+                        "manager": "true" if role != "AUDIO-NODE" else "false",
+                        "health": "100.0",
+                    },
+                    port=8000,
+                )
+                self.logger.info(f"ZTP: Added {node_id} to mDNS discovery cache")
+            except Exception as e:
+                self.logger.warning(f"ZTP: Failed to update mDNS cache: {e}")
             
             # 4. Add to Prometheus monitoring targets
             try:
                 from app.services.cluster.prometheus_exporter import get_prometheus_exporter
                 prom = get_prometheus_exporter()
                 if prom:
-                    prom.add_target(
-                        name=node_name,
-                        address=self.node_identity.get_primary_ip(),
-                        port=9090
-                    )
+                    prom.add_target(name=node_name, address=node_ip, port=9090)
                     self.logger.info(f"ZTP: Added {node_id} to Prometheus monitoring")
             except Exception as e:
                 self.logger.warning(f"ZTP: Failed to add Prometheus monitoring: {e}")
@@ -332,6 +352,27 @@ class ZTPBootstrap:
         except Exception as e:
             self.logger.error(f"ZTP: Registration failed: {e}", exc_info=True)
             return False
+
+    def _resolve_primary_ip(self, hostname: str) -> str:
+        """Resolve a routable IP for this node, fallback to loopback."""
+        try:
+            addr = socket.gethostbyname(hostname)
+            if addr and not addr.startswith("127."):
+                return addr
+        except Exception:
+            pass
+
+        try:
+            test_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            test_sock.connect(("8.8.8.8", 80))
+            return test_sock.getsockname()[0]
+        except Exception:
+            return "127.0.0.1"
+        finally:
+            try:
+                test_sock.close()
+            except Exception:
+                pass
 
 
 # Global ZTP instance

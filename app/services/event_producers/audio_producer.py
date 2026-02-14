@@ -12,8 +12,6 @@ Monitors JUCE audio engine and generates LCD events for:
 
 import asyncio
 import logging
-from datetime import datetime
-import psutil
 
 from app.services.lcd_event_bus import LCDEventBus, create_audio_event, create_alert_event
 from app.lcd_models.lcd_event import EventSeverity
@@ -74,12 +72,32 @@ class AudioEventProducer:
     
     async def _check_audio_status(self):
         """Check current audio engine status"""
-        # TODO: Replace with actual audio engine API calls
-        # For now, simulate with placeholder logic
-        
-        # Simulate checking if audio is running
-        # In real implementation: check JUCE audio device state
-        pass
+        from app.services import service_manager
+
+        status = service_manager.get_audio_status() or {}
+        running = bool(status.get("running"))
+        sample_rate = int(status.get("sample_rate") or 0)
+        buffer_size = int(status.get("buffer_size") or 0)
+        latency_ms = float(status.get("latency_ms") or 0.0)
+        cpu_percent = float(status.get("cpu_load") or 0.0)
+        xrun_count = int((status.get("underruns") or 0) + (status.get("overruns") or 0))
+
+        # Engine start/stop transitions
+        if running and not self.audio_running:
+            await self.on_audio_started(
+                device_name="JUCE Engine",
+                sample_rate=sample_rate,
+                buffer_size=buffer_size,
+                latency_ms=latency_ms,
+            )
+        elif not running and self.audio_running:
+            await self.on_audio_stopped()
+
+        # XRUN, CPU, and latency drift monitoring while running
+        if running:
+            await self.on_xrun_detected(xrun_count)
+            await self.on_cpu_spike(cpu_percent)
+            await self.on_latency_change(latency_ms)
     
     async def on_audio_started(self, device_name: str, sample_rate: int, buffer_size: int, latency_ms: float):
         """Called when audio engine starts"""

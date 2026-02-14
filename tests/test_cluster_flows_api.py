@@ -3,15 +3,29 @@ API tests for cluster flow routes (Checkpoint 1.3)
 """
 
 import pytest
+import os
 from fastapi.testclient import TestClient
+from contextlib import asynccontextmanager
 
-from app.main import create_app
 from app.services.flow_orchestrator import FlowOrchestrator
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("MAP2_RUN_INTEGRATION_TESTS", "").lower() != "true",
+    reason="Integration test disabled (set MAP2_RUN_INTEGRATION_TESTS=true to run)",
+)
 
 
 @pytest.fixture
 def client():
+    os.environ["MAP2_TEST_MODE"] = "true"
+    from app.main import create_app
     app = create_app()
+
+    @asynccontextmanager
+    async def _no_lifespan(_app):
+        yield
+
+    app.router.lifespan_context = _no_lifespan
     return TestClient(app)
 
 

@@ -2,9 +2,13 @@
  * Peavey 5150 Block Letter Amp Simulator Hook
  * 6-stage preamp with cold clipper, Yeh/Smith tone stack,
  * push-pull 6L6GC power amp with supply sag and transformer saturation
+ *
+ * Uses RT WebSocket for parameter control (no polling pop-back).
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useJucePluginRT, type JuceParamDef } from './useJucePluginRT'
 
 // ========================================
 // Types
@@ -40,8 +44,37 @@ export interface Peavey5150Preset {
 }
 
 // ========================================
-// Preset Definitions
+// Constants
 // ========================================
+
+const PEAVEY5150_URI = 'map2://juce/amp/peavey5150'
+
+const PEAVEY5150_PARAMS: JuceParamDef[] = [
+  { symbol: 'pre_gain', default: 5.0 },
+  { symbol: 'post_gain', default: 3.0 },
+  { symbol: 'low', default: 5.0 },
+  { symbol: 'mid', default: 5.0 },
+  { symbol: 'high', default: 5.0 },
+  { symbol: 'presence', default: 5.0 },
+  { symbol: 'resonance', default: 5.0 },
+  { symbol: 'bright', default: 0 },
+  { symbol: 'bias', default: 3.0 },
+  { symbol: 'bypass', default: 0 },
+]
+
+// Parameter indices for direct access
+const P = {
+  PRE_GAIN: 0,
+  POST_GAIN: 1,
+  LOW: 2,
+  MID: 3,
+  HIGH: 4,
+  PRESENCE: 5,
+  RESONANCE: 6,
+  BRIGHT: 7,
+  BIAS: 8,
+  BYPASS: 9,
+} as const
 
 export const PEAVEY5150_PRESETS: Peavey5150Preset[] = [
   { id: 'manual', name: 'Manual', description: 'User-defined settings' },
@@ -59,29 +92,15 @@ export const PEAVEY5150_PRESETS: Peavey5150Preset[] = [
 export function usePeavey5150() {
   const queryClient = useQueryClient()
 
-  const { data: ampData, isLoading, error } = useQuery({
-    queryKey: ['peavey5150'],
-    queryFn: async () => {
-      const response = await fetch('/api/engine/amp/peavey5150')
-      if (!response.ok) throw new Error('Failed to fetch Peavey 5150 data')
-      return response.json()
-    },
-    refetchInterval: 100,
+  // RT WebSocket for parameter control
+  const rt = useJucePluginRT({
+    pluginUri: PEAVEY5150_URI,
+    params: PEAVEY5150_PARAMS,
+    meteringEndpoint: '/api/engine/amp/peavey5150/metering',
+    meteringInterval: 500,
   })
 
-  const updateParam = useMutation({
-    mutationFn: async (params: Record<string, any>) => {
-      const response = await fetch('/api/engine/amp/peavey5150/parameters', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
-      })
-      if (!response.ok) throw new Error('Failed to update Peavey 5150')
-      return response.json()
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['peavey5150'] }),
-  })
-
+  // Preset loading still via REST (one-shot operation)
   const setPresetMutation = useMutation({
     mutationFn: async (presetName: string) => {
       const response = await fetch(`/api/engine/amp/peavey5150/preset/${presetName}`, {
@@ -90,42 +109,31 @@ export function usePeavey5150() {
       if (!response.ok) throw new Error('Failed to set preset')
       return response.json()
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['peavey5150'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [PEAVEY5150_URI, 'metering'] }),
   })
 
-  const setBypassMutation = useMutation({
-    mutationFn: async (bypass: boolean) => {
-      const response = await fetch(`/api/engine/amp/peavey5150/bypass/${bypass}`, {
-        method: 'POST',
-      })
-      if (!response.ok) throw new Error('Failed to set bypass')
-      return response.json()
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['peavey5150'] }),
-  })
+  const parameters: Peavey5150Parameters = useMemo(() => ({
+    preGain: rt.values.pre_gain ?? 5.0,
+    postGain: rt.values.post_gain ?? 3.0,
+    low: rt.values.low ?? 5.0,
+    mid: rt.values.mid ?? 5.0,
+    high: rt.values.high ?? 5.0,
+    presence: rt.values.presence ?? 5.0,
+    resonance: rt.values.resonance ?? 5.0,
+    bright: !!(rt.values.bright),
+    bias: rt.values.bias ?? 3.0,
+    preset: rt.values.preset ?? 0,
+    bypass: !!(rt.values.bypass),
+  }), [rt.values])
 
-  const parameters: Peavey5150Parameters = {
-    preGain: ampData?.parameters?.pre_gain ?? 5.0,
-    postGain: ampData?.parameters?.post_gain ?? 3.0,
-    low: ampData?.parameters?.low ?? 5.0,
-    mid: ampData?.parameters?.mid ?? 5.0,
-    high: ampData?.parameters?.high ?? 5.0,
-    presence: ampData?.parameters?.presence ?? 5.0,
-    resonance: ampData?.parameters?.resonance ?? 5.0,
-    bright: ampData?.parameters?.bright ?? false,
-    bias: ampData?.parameters?.bias ?? 3.0,
-    preset: ampData?.parameters?.preset ?? 0,
-    bypass: ampData?.parameters?.bypass ?? false,
-  }
-
-  const metering: Peavey5150Metering = {
-    inputLevel: ampData?.metering?.input_level ?? -100,
-    outputLevel: ampData?.metering?.output_level ?? -100,
-    preampLevel: ampData?.metering?.preamp_level ?? -100,
-    powerLevel: ampData?.metering?.power_level ?? -100,
-    supplySag: ampData?.metering?.supply_sag ?? 1.0,
-    cpuLoad: ampData?.metering?.cpu_load ?? 0,
-  }
+  const metering: Peavey5150Metering = useMemo(() => ({
+    inputLevel: rt.metering?.input_level ?? -100,
+    outputLevel: rt.metering?.output_level ?? -100,
+    preampLevel: rt.metering?.preamp_level ?? -100,
+    powerLevel: rt.metering?.power_level ?? -100,
+    supplySag: rt.metering?.supply_sag ?? 1.0,
+    cpuLoad: rt.metering?.cpu_load ?? 0,
+  }), [rt.metering])
 
   const currentPreset = PEAVEY5150_PRESETS[parameters.preset] || PEAVEY5150_PRESETS[0]
 
@@ -134,22 +142,22 @@ export function usePeavey5150() {
     metering,
     presets: PEAVEY5150_PRESETS,
     currentPreset,
-    isLoading,
-    error,
-    setPreGain: (v: number) => updateParam.mutate({ pre_gain: v }),
-    setPostGain: (v: number) => updateParam.mutate({ post_gain: v }),
-    setLow: (v: number) => updateParam.mutate({ low: v }),
-    setMid: (v: number) => updateParam.mutate({ mid: v }),
-    setHigh: (v: number) => updateParam.mutate({ high: v }),
-    setPresence: (v: number) => updateParam.mutate({ presence: v }),
-    setResonance: (v: number) => updateParam.mutate({ resonance: v }),
-    setBright: (v: boolean) => updateParam.mutate({ bright: v }),
-    setBias: (v: number) => updateParam.mutate({ bias: v }),
-    setBypass: (v: boolean) => setBypassMutation.mutate(v),
+    isLoading: false,
+    error: null,
+    setPreGain: (v: number) => rt.setParamByIndex(P.PRE_GAIN, v),
+    setPostGain: (v: number) => rt.setParamByIndex(P.POST_GAIN, v),
+    setLow: (v: number) => rt.setParamByIndex(P.LOW, v),
+    setMid: (v: number) => rt.setParamByIndex(P.MID, v),
+    setHigh: (v: number) => rt.setParamByIndex(P.HIGH, v),
+    setPresence: (v: number) => rt.setParamByIndex(P.PRESENCE, v),
+    setResonance: (v: number) => rt.setParamByIndex(P.RESONANCE, v),
+    setBright: (v: boolean) => rt.setParamByIndex(P.BRIGHT, v ? 1 : 0),
+    setBias: (v: number) => rt.setParamByIndex(P.BIAS, v),
+    setBypass: (v: boolean) => rt.setParamByIndex(P.BYPASS, v ? 1 : 0),
     setPreset: (presetName: string) => setPresetMutation.mutate(presetName),
-    updateParameters: (params: Record<string, any>) => updateParam.mutate(params),
-    isConnected: !!ampData,
-    isPending: updateParam.isPending || setPresetMutation.isPending || setBypassMutation.isPending,
+    updateParameters: (params: Record<string, any>) => rt.updateParams(params),
+    isConnected: rt.isConnected,
+    isPending: setPresetMutation.isPending,
   }
 }
 

@@ -16,10 +16,10 @@ import json
 import logging
 import time
 from typing import List, Dict, Any, Optional, ClassVar
-from app.services import service_manager
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from .command_queue import CommandQueue, CommandType
+from app.services.plugin_loader_unified import get_plugin_loader
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class ChainService:
         class-level cache with all available plugin metadata.
         """
         start_time = time.time()
-        loader = service_manager.get_plugin_loader()
+        loader = get_plugin_loader()
 
         if not loader:
             logger.warning("Plugin loader not available for cache initialization")
@@ -167,7 +167,7 @@ class ChainService:
             return self._plugin_meta_cache[plugin_uri]
 
         # Slow path: try direct lookup from loader
-        loader = service_manager.get_plugin_loader()
+        loader = get_plugin_loader()
         if not loader:
             return {}
 
@@ -470,9 +470,8 @@ class ChainService:
                 logger.warning(f"Chain {chain_id} not found")
                 return False
             
-            # Get NAM service for active model
-            nam_service = service_manager.get_nam_service() if hasattr(service_manager, 'get_nam_service') else None
-            active_model = nam_service.active_model.name if nam_service and nam_service.active_model else "default"
+            # NAM service integration is optional; default to generic model label.
+            active_model = "default"
             
             # Get max position
             pos_result = await self.session.execute(
@@ -539,13 +538,11 @@ class ChainService:
                 logger.warning(f"Chain {chain_id} not found")
                 return False
             
-            # Get IR service for active IR
-            ir_service = service_manager.get_ir_service() if hasattr(service_manager, 'get_ir_service') else None
             if ir_type == "cabinet":
-                active_ir = ir_service.active_cabinet_ir.name if ir_service and ir_service.active_cabinet_ir else "default"
+                active_ir = "default"
                 plugin_uri = "urn:map2:ir-cabinet"
             else:
-                active_ir = ir_service.active_reverb_ir.name if ir_service and ir_service.active_reverb_ir else "default"
+                active_ir = "default"
                 plugin_uri = "urn:map2:ir-reverb"
             
             # Get max position
@@ -1217,4 +1214,3 @@ class ChainService:
         except Exception as e:
             logger.error(f"Error listing templates: {e}")
             return []
-

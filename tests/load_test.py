@@ -5,7 +5,11 @@ Run with:
   locust -f tests/load_test.py
 """
 
-from locust import HttpUser, task, between
+try:
+    from locust import HttpUser, task, between
+except ModuleNotFoundError:
+    import pytest
+    pytest.skip("locust not installed; skipping load test module", allow_module_level=True)
 
 
 class ClusterApiUser(HttpUser):

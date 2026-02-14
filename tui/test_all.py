@@ -4,6 +4,9 @@ Comprehensive TUI Element Testing
 Tests all components of the TUI without running the display
 """
 
+import pytest
+pytest.skip("tui/test_all.py is a standalone utility script, not a pytest module", allow_module_level=True)
+
 import sys
 import traceback
 from typing import Callable, Tuple, List

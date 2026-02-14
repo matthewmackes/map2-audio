@@ -37,11 +37,13 @@ def test_config_locking():
     
     if all_locked:
         print(f"\n✅ All critical performance settings are LOCKED")
-        return True
     else:
         print(f"\n❌ ERROR: Not all critical settings are locked!")
-        return False
+    assert all_locked
 
 if __name__ == '__main__':
-    success = test_config_locking()
-    sys.exit(0 if success else 1)
+    try:
+        test_config_locking()
+        sys.exit(0)
+    except AssertionError:
+        sys.exit(1)

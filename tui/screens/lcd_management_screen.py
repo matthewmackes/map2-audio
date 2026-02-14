@@ -40,6 +40,9 @@ class LCDManagementScreen:
         # Display state
         self.history_page = 0
         self.events_per_page = 10
+        self.backlight_level = 100
+        self.backlight_control_mode = False
+        self.backlight_schedule_enabled = False
         
     async def render(self):
         """Render the full screen"""
@@ -206,6 +209,9 @@ class LCDManagementScreen:
     
     async def handle_input(self, key: str):
         """Handle keyboard input"""
+        if self.backlight_control_mode:
+            return await self._handle_backlight_input(key)
+
         if key.lower() == 'h':
             await self._show_history_details()
         elif key.lower() == 'f':
@@ -228,8 +234,28 @@ class LCDManagementScreen:
     
     async def _show_history_details(self):
         """Show detailed event history"""
-        self.console.print("[cyan]Event History - Coming Soon[/cyan]")
-        await asyncio.sleep(1)
+        events = self.lcd_manager.get_all_recent_events(200)
+        start = self.history_page * self.events_per_page
+        page_events = events[start:start + self.events_per_page]
+        table = Table(
+            title=f"[bold]DETAILED EVENT HISTORY[/bold] (page {self.history_page + 1})",
+            show_header=True,
+        )
+        table.add_column("Timestamp", style="cyan", width=19)
+        table.add_column("Node", style="yellow", width=16)
+        table.add_column("Type", style="magenta", width=10)
+        table.add_column("Severity", width=9)
+        table.add_column("Title", width=20)
+        for event in page_events:
+            table.add_row(
+                event.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                event.source_node[:16],
+                event.event_type.value,
+                event.severity.value.upper(),
+                event.title[:20],
+            )
+        self.console.print(table)
+        await asyncio.sleep(0.9)
     
     async def _toggle_filters(self):
         """Toggle filter options"""
@@ -238,10 +264,52 @@ class LCDManagementScreen:
     
     async def _control_backlight(self):
         """Control LCD backlight"""
+        self.backlight_control_mode = True
         self.console.print("[cyan]Backlight Control:[/cyan]")
-        self.console.print("  Current: 100%")
-        self.console.print("  [1-9] Set brightness | [+/-] Adjust | [S] Schedule | [Q] Back")
-        # TODO: Implement backlight control
+        self.console.print(f"  Current: {self.backlight_level}%")
+        self.console.print(
+            "  [1-9] Set brightness | [+/-] Adjust | [0] Off | [S] Toggle schedule | [Q] Back"
+        )
+
+    async def _handle_backlight_input(self, key: str) -> bool:
+        """Handle input when backlight control is active."""
+        k = key.lower()
+        if k == "q":
+            self.backlight_control_mode = False
+            return True
+
+        if key in "123456789":
+            self.backlight_level = int(key) * 10
+            await self._apply_backlight()
+            return True
+
+        if key == "0":
+            self.backlight_level = 0
+            await self._apply_backlight()
+            return True
+
+        if key == "+":
+            self.backlight_level = min(100, self.backlight_level + 10)
+            await self._apply_backlight()
+            return True
+
+        if key == "-":
+            self.backlight_level = max(0, self.backlight_level - 10)
+            await self._apply_backlight()
+            return True
+
+        if k == "s":
+            self.backlight_schedule_enabled = not self.backlight_schedule_enabled
+            status = "enabled" if self.backlight_schedule_enabled else "disabled"
+            self.console.print(f"[cyan]Backlight schedule {status}[/cyan]")
+            return True
+
+        return True
+
+    async def _apply_backlight(self):
+        """Apply selected backlight level to LCD."""
+        await self.lcd_manager.lcd.set_backlight(self.backlight_level)
+        self.console.print(f"[green]Backlight set to {self.backlight_level}%[/green]")
     
     async def _dismiss_all_events(self):
         """Dismiss all events from queue"""

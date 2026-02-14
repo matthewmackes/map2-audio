@@ -139,7 +139,12 @@ class NotificationWidget(Static):
         
         # Auto-dismiss if duration specified
         if duration_seconds:
-            asyncio.create_task(self._auto_dismiss(notification, duration_seconds))
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._auto_dismiss(notification, duration_seconds))
+            except RuntimeError:
+                # No running loop (e.g., synchronous unit tests) - keep notification.
+                pass
     
     async def _auto_dismiss(self, notification: Notification, delay: float) -> None:
         """Auto-dismiss notification after delay."""

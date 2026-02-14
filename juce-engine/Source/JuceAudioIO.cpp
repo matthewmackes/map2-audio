@@ -125,7 +125,12 @@ bool JuceAudioIO::initialize(const std::string& preferredDeviceName,
     // - PipeWire plugin routing
     // - PulseAudio compatibility via pipewire-pulse
     bool jackTypeSet = false;
-    
+
+    #ifdef HAS_AVB
+    // Register AVB/TSN device type if available
+    deviceManager_.addAudioDeviceType(std::make_unique<Map2Audio::AvbAudioIODeviceType>());
+    #endif
+
     // Log available device types for diagnostics
     std::cout << "  Available audio device types:" << std::endl;
     for (auto& deviceType : deviceManager_.getAvailableDeviceTypes()) {

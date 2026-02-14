@@ -61,56 +61,41 @@ async def connect_parameter_routing():
     except Exception as e:
         logger.warning(f"Failed to connect automation engine to RT bridge: {e}")
 
-    # Connect RT Bridge -> Audio Engine
+    # Connect RT Bridge -> Audio Engine via JUCE RT Dispatcher
     try:
-        from app.services.service_orchestrator import get_orchestrator
         from app.services.juce_engine_service import get_audio_engine
+        from app.services.juce_rt_dispatcher import juce_rt_dispatcher
 
-        orchestrator = get_orchestrator()
         engine = get_audio_engine()
-        
-        if engine and engine.is_available:
+        if engine:
+            # Load parameter definitions and wire up dispatcher
+            juce_rt_dispatcher.load()
+            juce_rt_dispatcher.set_engine(engine)
+
             def rt_to_engine(plugin_uri: str, param_index: int, value: float):
                 """
                 Non-blocking callback to audio engine.
-                This is called from the RT bridge's processing loop.
+                Routes through JUCE RT dispatcher for native plugins,
+                falls back to generic set_parameter for LV2 plugins.
                 """
                 try:
-                    # Use JUCE engine directly
-                    engine.set_parameter(plugin_uri, param_index, value)
+                    # Try JUCE native dispatch first
+                    if plugin_uri.startswith("map2://juce/"):
+                        juce_rt_dispatcher.dispatch(plugin_uri, param_index, value)
+                    else:
+                        # Generic LV2 plugin path
+                        instance_id = engine._get_instance_id_for_uri(plugin_uri)
+                        if instance_id:
+                            engine._engine.set_parameter(instance_id, param_index, value)
                 except Exception as e:
                     logger.debug(f"Engine parameter set error: {e}")
 
             rt_parameter_bridge.set_engine_callback(rt_to_engine)
-            logger.info("RT Parameter Bridge -> Audio Engine connected")
+            logger.info("RT Parameter Bridge -> Audio Engine connected (JUCE dispatcher)")
     except ImportError as e:
-        logger.debug(f"Service manager not available for routing: {e}")
+        logger.debug(f"Audio engine not available for routing: {e}")
     except Exception as e:
         logger.warning(f"Failed to connect RT bridge to audio engine: {e}")
-
-    # Try connecting to JUCE audio engine as alternative
-    try:
-        from app.services.juce_engine_service import get_audio_engine, JUCE_AVAILABLE
-
-        if JUCE_AVAILABLE:
-            engine = get_audio_engine()
-            if engine:
-                def rt_to_juce(plugin_uri: str, param_index: int, value: float):
-                    """Route to JUCE audio engine."""
-                    try:
-                        # JUCE engine uses instance IDs, need to look up from URI
-                        instance_id = engine._get_instance_id_for_uri(plugin_uri)
-                        if instance_id:
-                            engine.set_parameter_direct(instance_id, str(param_index), value)
-                    except Exception as e:
-                        logger.debug(f"JUCE engine parameter set error: {e}")
-
-                rt_parameter_bridge.set_engine_callback(rt_to_juce)
-                logger.info("RT Parameter Bridge -> JUCE Audio Engine connected")
-    except ImportError:
-        logger.debug("JUCE audio engine not available for routing")
-    except Exception as e:
-        logger.debug(f"JUCE engine routing not available: {e}")
 
     logger.info("Parameter routing initialized")
 

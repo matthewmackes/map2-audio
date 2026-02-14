@@ -10,8 +10,7 @@ Power-Failure Resilience:
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, JSON, Index, create_engine, event, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, Session
+from sqlalchemy.orm import relationship, sessionmaker, Session, declarative_base
 from sqlalchemy.engine import Engine
 from datetime import datetime
 import json
@@ -1030,4 +1029,3 @@ async def set_system_config(session: AsyncSession, key: str, value: str) -> None
     else:
         session.add(SystemConfig(key=key, value=value))
     await session.flush()
-

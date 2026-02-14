@@ -13,10 +13,14 @@ FastAPI routes for cluster administration and monitoring:
 All endpoints protected by mTLS and RBAC.
 """
 
+import asyncio
 import logging
-from typing import Dict, List, Optional
+import sqlite3
+import socket
+import subprocess
+from typing import Any, Dict, List, Optional
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, status
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.health_aggregator import get_health_aggregator
@@ -311,7 +315,7 @@ async def get_node_health(node_id: str) -> Dict:
 
 
 @router.get("/metrics")
-async def get_metrics(node_id: Optional[str] = None) -> Dict:
+async def get_metrics(node_id: Optional[str] = None, limit: int = 500) -> Dict:
     """
     Get time series metrics.
 
@@ -322,14 +326,32 @@ async def get_metrics(node_id: Optional[str] = None) -> Dict:
         Metrics data with timestamps
     """
     try:
-        # TODO: Implement metrics time series retrieval
-        # This would query the metrics_history table in the registry
+        registry = get_cluster_registry()
+        query = """
+            SELECT
+                node_id, timestamp, cpu_percent, memory_percent,
+                dsp_load_percent, xrun_count, latency_ms
+            FROM node_metrics_history
+        """
+        params: List[Any] = []
+        if node_id:
+            query += " WHERE node_id = ?"
+            params.append(node_id)
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(max(1, min(limit, 5000)))
 
+        with sqlite3.connect(str(registry.db_path)) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        metrics = [dict(row) for row in rows]
         return {
             "status": "ok",
             "timestamp": datetime.utcnow().isoformat(),
-            "metrics": [],
-            "note": "Metrics endpoint will be implemented in metrics service",
+            "count": len(metrics),
+            "metrics": metrics,
         }
 
     except Exception as e:
@@ -410,16 +432,55 @@ async def reboot_node(node_id: str, force: bool = False) -> Dict:
                 detail=f"Node {node_id} not found",
             )
 
-        # TODO: Implement actual reboot command
-        # This would use systemd or SSH to reboot the node
+        node_ip = (
+            node.get("ip_address")
+            or node.get("ip")
+            or node.get("host")
+            or node.get("hostname")
+            or ""
+        )
+        local_names = {"127.0.0.1", "localhost", socket.gethostname()}
+
+        if node_ip in local_names or node_id in local_names:
+            # Local reboot path.
+            command = ["systemctl", "reboot"] if force else ["shutdown", "-r", "+1", "MAP2 API requested reboot"]
+            proc = await asyncio.to_thread(
+                subprocess.run,
+                command,
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            if proc.returncode != 0:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Local reboot command failed: {proc.stderr.strip() or proc.stdout.strip()}",
+                )
+            action = "reboot_forced" if force else "reboot_scheduled"
+        else:
+            # Remote reboot path via existing hybrid node client.
+            from app.services.cluster.integration_helpers import HybridNodeClient
+
+            client = HybridNodeClient(node_id, node_ip, f"http://{node_ip}:8080")
+            rc, _, stderr = client.execute_command(
+                "systemctl reboot",
+                timeout=10,
+                check_returncode=False,
+            )
+            if rc != 0:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Remote reboot failed for {node_id}: {stderr.strip()}",
+                )
+            action = "reboot_requested"
 
         return {
             "status": "ok",
             "node_id": node_id,
-            "action": "reboot_requested",
+            "action": action,
             "force": force,
             "timestamp": datetime.utcnow().isoformat(),
-            "note": "Reboot implementation will be completed in Phase 3",
         }
 
     except HTTPException:
@@ -450,7 +511,7 @@ async def get_summary() -> Dict:
         return {
             "status": "ok",
             "timestamp": datetime.utcnow().isoformat(),
-            "cluster_name": "MAP2 Audio Cluster",  # TODO: Get from config
+            "cluster_name": get_config_manager().get("cluster_name", "MAP2 Audio Cluster"),
             "total_nodes": cluster_summary.get("total_nodes", 0),
             "online_nodes": cluster_summary.get("online_nodes", 0),
             "management_nodes": cluster_summary.get("management_nodes", 0),
@@ -642,13 +703,59 @@ async def get_update_history(limit: int = 50) -> Dict:
         - updates: List of past update operations with results
     """
     try:
-        registry = get_cluster_registry()
-        
-        # TODO: Query registry for update history
+        safe_limit = max(1, min(limit, 500))
+        updates: List[Dict[str, Any]] = []
+
+        # Primary source: distributed event log (persisted).
+        event_bus = get_event_bus()
+        update_event_types = [
+            EventType.UPDATE_STARTED,
+            EventType.UPDATE_COMPLETED,
+            EventType.UPDATE_FAILED,
+            EventType.UPDATE_ROLLED_BACK,
+        ]
+        for event_type in update_event_types:
+            for event in event_bus.get_events(event_type=event_type, hours=24 * 30, limit=safe_limit):
+                updates.append(
+                    {
+                        "event_type": event.event_type.value,
+                        "timestamp": event.timestamp.isoformat(),
+                        "severity": event.severity.value,
+                        "source_node_id": event.source_node_id,
+                        "message": event.message,
+                        "details": event.details,
+                        "correlation_id": event.correlation_id,
+                    }
+                )
+
+        # Fallback/additional source: current scheduler report job history.
+        scheduler = get_update_scheduler()
+        report = getattr(scheduler, "current_report", None)
+        if report and report.job_history:
+            for node, job in report.job_history.items():
+                updates.append(
+                    {
+                        "event_type": f"update.job.{job.status.value}",
+                        "timestamp": (
+                            job.end_time.isoformat()
+                            if job.end_time
+                            else (job.start_time.isoformat() if job.start_time else datetime.utcnow().isoformat())
+                        ),
+                        "severity": "info" if "success" in job.status.value else "warning",
+                        "source_node_id": node,
+                        "message": "Update job status",
+                        "details": job.to_dict(),
+                        "correlation_id": "",
+                    }
+                )
+
+        updates.sort(key=lambda u: u["timestamp"], reverse=True)
+        updates = updates[:safe_limit]
+
         return {
-            "updates": [],
-            "total": 0,
-            "limit": limit,
+            "updates": updates,
+            "total": len(updates),
+            "limit": safe_limit,
         }
     except Exception as e:
         logger.error(f"Failed to get update history: {e}")

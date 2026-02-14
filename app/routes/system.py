@@ -4,7 +4,6 @@ Provides endpoints for system restart, backend restart, and real-time audio stat
 """
 
 import os
-import sys
 import signal
 import asyncio
 import logging
@@ -13,7 +12,8 @@ import subprocess
 import time
 import multiprocessing
 import re
-from typing import Dict, Any, List, Optional
+import json
+from typing import Dict, Any, List
 from fastapi import APIRouter, HTTPException
 
 from app.middleware.rate_limiting import get_rate_limiting_enabled, set_rate_limiting_enabled
@@ -24,6 +24,140 @@ router = APIRouter(prefix="/api/system", tags=["system"])
 
 # Global state for core configurations (persists during runtime)
 _core_config_state: Dict[int, Dict[str, Any]] = {}
+_core_config_loaded = False
+_core_config_file = os.getenv("MAP2_CORE_CONFIG_FILE", "/tmp/map2_core_config_state.json")
+
+
+def _get_available_activities() -> List[Dict[str, str]]:
+    """Available activity types for CPU assignment."""
+    return [
+        {"id": "juce_audio_engine", "label": "JUCE Audio Engine", "description": "ALSA backend, buffer management, audio I/O", "category": "JUCE"},
+        {"id": "juce_dsp_graph", "label": "JUCE DSP Graph", "description": "Effect processing, plugin chains", "category": "JUCE"},
+        {"id": "juce_midi_io", "label": "JUCE MIDI / I/O", "description": "MIDI input events, control surfaces", "category": "JUCE"},
+        {"id": "juce_monitoring", "label": "JUCE Monitoring", "description": "Watchdog, performance monitoring", "category": "JUCE"},
+        {"id": "all_plugins", "label": "All Plugins (LV2)", "description": "All loaded LV2 audio plugins", "category": "Plugins"},
+        {"id": "nam_processing", "label": "NAM Models", "description": "Neural amp modeling plugins", "category": "Plugins"},
+        {"id": "ir_processing", "label": "IR Processing (Cabinet/Reverb)", "description": "Impulse response convolution", "category": "Plugins"},
+        {"id": "ui_api", "label": "UI / API Server", "description": "Web interface, REST API, WebSocket", "category": "System"},
+        {"id": "meters_ui", "label": "Meters / Visualization", "description": "Level metering, UI updates", "category": "System"},
+        {"id": "background", "label": "Background Tasks", "description": "Logging, maintenance, housekeeping", "category": "System"},
+    ]
+
+
+def _get_default_assignments() -> List[Dict[str, Any]]:
+    """Default workload distribution used for unconfigured cores."""
+    return [
+        {"services": ["UI / API Server", "Background Tasks"], "priority": "normal", "isolated": False},
+        {"services": ["JUCE Audio Engine", "JUCE MIDI / I/O"], "priority": "SCHED_FIFO", "isolated": True},
+        {"services": ["JUCE DSP Graph"], "priority": "SCHED_FIFO", "isolated": True},
+        {"services": ["All Plugins (LV2)"], "priority": "SCHED_FIFO", "isolated": False},
+        {"services": ["JUCE Monitoring", "Meters / Visualization"], "priority": "SCHED_RR", "isolated": False},
+        {"services": [], "priority": "normal", "isolated": False},
+    ]
+
+
+def _allowed_service_labels() -> set[str]:
+    return {a["label"] for a in _get_available_activities()}
+
+
+def _load_core_config_state() -> None:
+    """Load persisted core config state from disk once per process."""
+    global _core_config_loaded
+    if _core_config_loaded:
+        return
+
+    _core_config_loaded = True
+    if not os.path.exists(_core_config_file):
+        return
+
+    try:
+        with open(_core_config_file, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        state = payload.get("state", {})
+        for key, value in state.items():
+            try:
+                _core_config_state[int(key)] = value
+            except (TypeError, ValueError):
+                continue
+    except Exception as e:
+        logger.warning(f"Failed to load core config state from {_core_config_file}: {e}")
+
+
+def _save_core_config_state() -> None:
+    """Persist current core config state to disk."""
+    try:
+        payload = {
+            "saved_at": time.time(),
+            "state": {str(k): v for k, v in _core_config_state.items()},
+        }
+        with open(_core_config_file, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except Exception as e:
+        logger.warning(f"Failed to persist core config state to {_core_config_file}: {e}")
+
+
+def _validate_core_config_payload(config_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate and normalize incoming core config payload."""
+    required_fields = ["core_id", "services", "priority", "isolated"]
+    if not all(field in config_data for field in required_fields):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required fields. Required: {required_fields}",
+        )
+
+    core_id = config_data["core_id"]
+    services = config_data["services"]
+    priority = config_data["priority"]
+    isolated = config_data["isolated"]
+
+    cpu_count = multiprocessing.cpu_count()
+    if not isinstance(core_id, int) or not (0 <= core_id < cpu_count):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid core_id {core_id}. Valid range: 0-{cpu_count - 1}",
+        )
+
+    if not isinstance(services, list) or any(not isinstance(s, str) for s in services):
+        raise HTTPException(status_code=400, detail="services must be a list of strings")
+
+    if len(services) > 4:
+        raise HTTPException(status_code=400, detail="Maximum 4 services per core allowed")
+
+    valid_priorities = ["normal", "SCHED_FIFO", "SCHED_RR"]
+    if priority not in valid_priorities:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid priority {priority}. Valid options: {valid_priorities}",
+        )
+
+    if not isinstance(isolated, bool):
+        raise HTTPException(status_code=400, detail="isolated must be a boolean")
+
+    allowed_labels = _allowed_service_labels()
+    unknown_services = [s for s in services if s not in allowed_labels]
+    if unknown_services:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown service labels: {unknown_services}",
+        )
+
+    warnings: List[str] = []
+    realtime_assigned = any(
+        s in {"JUCE Audio Engine", "JUCE DSP Graph", "All Plugins (LV2)", "NAM Models", "IR Processing (Cabinet/Reverb)"}
+        for s in services
+    )
+    if realtime_assigned and priority == "normal":
+        warnings.append("Realtime workloads are assigned with normal priority")
+    if isolated and not services:
+        warnings.append("Core is isolated but no services are assigned")
+
+    return {
+        "core_id": core_id,
+        "services": list(dict.fromkeys(services)),
+        "priority": priority,
+        "isolated": isolated,
+        "warnings": warnings,
+    }
 
 
 @router.post("/restart-backend")
@@ -864,6 +998,7 @@ async def get_core_config():
         dict: Current core configuration with utilization data
     """
     try:
+        _load_core_config_state()
         import multiprocessing
         import psutil
         
@@ -893,19 +1028,8 @@ async def get_core_config():
             logger.warning(f"Error getting CPU utilization: {e}")
             cpu_utilization = [0.0] * cpu_count
         
-        # Mock configuration data (in real implementation, this would come from config files)
-        # This matches the structure expected by the frontend
         mock_cores = []
-        
-        # Define typical real-time audio workload distribution (defaults)
-        default_assignments = [
-            {'services': ['UI / API Server', 'Background Tasks'], 'priority': 'normal', 'isolated': False},
-            {'services': ['JUCE Audio Engine', 'JUCE MIDI / I/O'], 'priority': 'SCHED_FIFO', 'isolated': True},
-            {'services': ['JUCE DSP Graph'], 'priority': 'SCHED_FIFO', 'isolated': True},
-            {'services': ['All Plugins (LV2)'], 'priority': 'SCHED_FIFO', 'isolated': False},
-            {'services': ['JUCE Monitoring', 'Meters / Visualization'], 'priority': 'SCHED_RR', 'isolated': False},
-            {'services': [], 'priority': 'normal', 'isolated': False},
-        ]
+        default_assignments = _get_default_assignments()
         
         for i in range(cpu_count):
             # Use persisted state if available, otherwise use defaults
@@ -922,22 +1046,7 @@ async def get_core_config():
                 'utilization': cpu_utilization[i] if i < len(cpu_utilization) else 0.0,
             })
         
-        # Available activity types for assignment (matches CPUStatusOverview.tsx)
-        available_activities = [
-            # JUCE Audio Engine
-            {'id': 'juce_audio_engine', 'label': 'JUCE Audio Engine', 'description': 'ALSA backend, buffer management, audio I/O', 'category': 'JUCE'},
-            {'id': 'juce_dsp_graph', 'label': 'JUCE DSP Graph', 'description': 'Effect processing, plugin chains', 'category': 'JUCE'},
-            {'id': 'juce_midi_io', 'label': 'JUCE MIDI / I/O', 'description': 'MIDI input events, control surfaces', 'category': 'JUCE'},
-            {'id': 'juce_monitoring', 'label': 'JUCE Monitoring', 'description': 'Watchdog, performance monitoring', 'category': 'JUCE'},
-            # Plugins
-            {'id': 'all_plugins', 'label': 'All Plugins (LV2)', 'description': 'All loaded LV2 audio plugins', 'category': 'Plugins'},
-            {'id': 'nam_processing', 'label': 'NAM Models', 'description': 'Neural amp modeling plugins', 'category': 'Plugins'},
-            {'id': 'ir_processing', 'label': 'IR Processing (Cabinet/Reverb)', 'description': 'Impulse response convolution', 'category': 'Plugins'},
-            # System
-            {'id': 'ui_api', 'label': 'UI / API Server', 'description': 'Web interface, REST API, WebSocket', 'category': 'System'},
-            {'id': 'meters_ui', 'label': 'Meters / Visualization', 'description': 'Level metering, UI updates', 'category': 'System'},
-            {'id': 'background', 'label': 'Background Tasks', 'description': 'Logging, maintenance, housekeeping', 'category': 'System'},
-        ]
+        available_activities = _get_available_activities()
         
         return {
             'cores': mock_cores,
@@ -964,60 +1073,25 @@ async def update_core_config(config_data: dict):
         dict: Updated configuration confirmation
     """
     try:
-        # Validate the configuration data
-        required_fields = ['core_id', 'services', 'priority', 'isolated']
-        
-        if not all(field in config_data for field in required_fields):
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Missing required fields. Required: {required_fields}"
-            )
-        
-        core_id = config_data['core_id']
-        services = config_data['services']
-        priority = config_data['priority']
-        isolated = config_data['isolated']
-        
-        # Validate core_id
-        cpu_count = multiprocessing.cpu_count()
-        if not (0 <= core_id < cpu_count):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid core_id {core_id}. Valid range: 0-{cpu_count-1}"
-            )
-        
-        # Validate priority
-        valid_priorities = ['normal', 'SCHED_FIFO', 'SCHED_RR']
-        if priority not in valid_priorities:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid priority {priority}. Valid options: {valid_priorities}"
-            )
-        
-        # Validate services (max 4)
-        if len(services) > 4:
-            raise HTTPException(
-                status_code=400,
-                detail="Maximum 4 services per core allowed"
-            )
-        
-        # In a real implementation, this would:
-        # 1. Update configuration files (e.g., systemd service files)
-        # 2. Apply CPU governor settings
-        # 3. Configure process isolation (cgroups, taskset)
-        # 4. Restart affected services
+        _load_core_config_state()
+        normalized = _validate_core_config_payload(config_data)
+        core_id = normalized["core_id"]
+        services = normalized["services"]
+        priority = normalized["priority"]
+        isolated = normalized["isolated"]
+        warnings = normalized["warnings"]
         
         logger.info(f"Core {core_id} configuration updated:")
         logger.info(f"  Services: {services}")
         logger.info(f"  Priority: {priority}")
         logger.info(f"  Isolated: {isolated}")
         
-        # PERSIST the configuration change in global state
         _core_config_state[core_id] = {
             'services': services,
             'priority': priority,
             'isolated': isolated,
         }
+        _save_core_config_state()
         
         # Configuration persistence confirmation
         config_applied = {
@@ -1029,17 +1103,13 @@ async def update_core_config(config_data: dict):
             'success': True,
         }
         
-        # In production, you would implement actual system changes here:
-        # - Update /etc/systemd/system/ service files with CPU affinity
-        # - Apply CPU governor via /sys/devices/system/cpu/cpuX/cpufreq/scaling_governor
-        # - Configure process isolation via cgroups or kernel command line
-        
         return {
             'success': True,
             'message': f'Core {core_id} configuration updated successfully',
             'configuration': config_applied,
+            'warnings': warnings,
             'next_steps': [
-                'Restart audio services to apply changes',
+                'Restart audio services to apply process affinity changes',
                 'Monitor core utilization for effectiveness',
                 'Verify real-time performance metrics'
             ]
@@ -1052,6 +1122,47 @@ async def update_core_config(config_data: dict):
         raise HTTPException(status_code=500, detail=f"Failed to update core configuration: {str(e)}")
 
 
+@router.post("/core-assignments")
+async def update_core_assignments(payload: dict):
+    """
+    Compatibility endpoint for frontend bulk apply.
+
+    Accepts:
+      {"cores": [{"core_id": ..., "services": [...], "priority": "...", "isolated": ...}, ...]}
+    """
+    try:
+        _load_core_config_state()
+        cores = payload.get("cores")
+        if not isinstance(cores, list):
+            raise HTTPException(status_code=400, detail="payload.cores must be a list")
+
+        updated = []
+        warnings: List[str] = []
+        for raw in cores:
+            normalized = _validate_core_config_payload(raw)
+            core_id = normalized["core_id"]
+            _core_config_state[core_id] = {
+                "services": normalized["services"],
+                "priority": normalized["priority"],
+                "isolated": normalized["isolated"],
+            }
+            updated.append(core_id)
+            warnings.extend([f"core {core_id}: {w}" for w in normalized["warnings"]])
+
+        _save_core_config_state()
+        return {
+            "success": True,
+            "updated_cores": sorted(updated),
+            "warnings": warnings,
+            "message": f"Updated {len(updated)} core assignments",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating core assignments: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update core assignments: {e}")
+
+
 @router.get("/core-config/verify")
 async def verify_core_config():
     """
@@ -1062,6 +1173,7 @@ async def verify_core_config():
         dict: Verification result with status, details, and any mismatches
     """
     try:
+        _load_core_config_state()
         import multiprocessing
         import psutil
         import subprocess
@@ -1558,7 +1670,6 @@ async def get_host_machine_info():
               CPU, RAM, motherboard, and system identifiers
     """
     try:
-        from app.response_models import HostMachineInfo
         import platform
         import socket
         
@@ -1702,7 +1813,6 @@ async def get_disk_health():
               SMART status, and estimated lifespan
     """
     try:
-        from app.response_models import DiskHealthData, DiskInfo
         from datetime import datetime
         
         disks = []

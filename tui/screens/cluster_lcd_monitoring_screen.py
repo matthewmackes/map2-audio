@@ -34,6 +34,7 @@ class ClusterLCDMonitoringScreen:
         self.events_per_page = 15
         self.auto_refresh = True
         self.refresh_rate = 2  # seconds
+        self.min_severity: Optional[EventSeverity] = None
         
     async def render(self):
         """Render the full cluster monitoring screen"""
@@ -58,6 +59,14 @@ class ClusterLCDMonitoringScreen:
     async def _render_cluster_events(self):
         """Render cluster-wide event feed"""
         all_events = self.lcd_manager.get_all_recent_events(50)
+        if self.selected_node:
+            all_events = [e for e in all_events if e.source_node == self.selected_node]
+        if self.min_severity:
+            min_level = self._severity_rank(self.min_severity)
+            all_events = [
+                e for e in all_events
+                if self._severity_rank(e.severity) >= min_level
+            ]
         
         table = Table(
             title=f"[bold]CLUSTER EVENT FEED[/bold] ({len(all_events)} events)",
@@ -210,38 +219,62 @@ class ClusterLCDMonitoringScreen:
     
     async def _select_node(self):
         """Select a specific node to monitor"""
-        active_nodes = self.lcd_manager.remote_aggregator.get_active_nodes()
-        active_nodes.append(self.lcd_manager.node_label)
-        
-        self.console.print("[cyan]Select node:[/cyan]")
-        for i, node in enumerate(sorted(set(active_nodes)), 1):
-            marker = ">" if node == self.selected_node else " "
-            self.console.print(f"  {marker} [{i}] {node}")
-        
-        # TODO: Implement node selection
+        active_nodes = sorted(
+            set(
+                self.lcd_manager.remote_aggregator.get_active_nodes()
+                + [self.lcd_manager.node_label]
+            )
+        )
+        cycle = [None] + active_nodes
+        try:
+            current_idx = cycle.index(self.selected_node)
+        except ValueError:
+            current_idx = 0
+        self.selected_node = cycle[(current_idx + 1) % len(cycle)]
+        label = self.selected_node if self.selected_node else "ALL NODES"
+        self.console.print(f"[cyan]Node focus:[/cyan] {label}")
+        await asyncio.sleep(0.4)
     
     async def _show_history(self):
         """Show event history for selected node"""
         if self.selected_node:
-            events = self.lcd_manager.remote_aggregator.get_events_by_node(self.selected_node, 50)
-            self.console.print(f"[cyan]History for {self.selected_node}:[/cyan]")
-            self.console.print(f"  {len(events)} events in history")
+            events = self.lcd_manager.remote_aggregator.get_events_by_node(
+                self.selected_node, 100
+            )
+            title = f"History: {self.selected_node}"
         else:
-            self.console.print("[yellow]Select a node first[/yellow]")
-        
-        await asyncio.sleep(1)
+            events = self.lcd_manager.get_all_recent_events(100)
+            title = "History: ALL NODES"
+
+        start = self.history_page * self.events_per_page
+        page_events = events[start:start + self.events_per_page]
+        table = Table(title=f"[bold]{title}[/bold] (page {self.history_page + 1})")
+        table.add_column("Time", style="cyan", width=10)
+        table.add_column("Node", style="yellow", width=18)
+        table.add_column("Severity", width=10)
+        table.add_column("Message", width=48)
+        for event in page_events:
+            sev = event.severity.value.upper()
+            table.add_row(
+                event.timestamp.strftime("%H:%M:%S"),
+                event.source_node[:18],
+                sev,
+                f"{event.icon} {event.message[:46]}",
+            )
+        self.console.print(table)
+        await asyncio.sleep(0.8)
     
     async def _show_filters(self):
         """Show filter options"""
-        self.console.print("""[cyan]Filter Options:[/cyan]
-  [1] Info
-  [2] Warning
-  [3] Error
-  [4] Critical
-  [A] All events
-  [Q] Back
-""")
-        # TODO: Implement filtering
+        cycle = [None, EventSeverity.INFO, EventSeverity.WARNING, EventSeverity.ERROR, EventSeverity.CRITICAL]
+        try:
+            idx = cycle.index(self.min_severity)
+        except ValueError:
+            idx = 0
+        self.min_severity = cycle[(idx + 1) % len(cycle)]
+        label = self.min_severity.value.upper() if self.min_severity else "ALL"
+        self.console.print(f"[cyan]Event filter:[/cyan] >= {label}")
+        await asyncio.sleep(0.4)
     
     async def _show_statistics(self):
         """Show cluster statistics"""
@@ -261,3 +294,12 @@ class ClusterLCDMonitoringScreen:
         
         self.console.print(table)
         await asyncio.sleep(2)
+
+    def _severity_rank(self, severity: EventSeverity) -> int:
+        order = {
+            EventSeverity.INFO: 1,
+            EventSeverity.WARNING: 2,
+            EventSeverity.ERROR: 3,
+            EventSeverity.CRITICAL: 4,
+        }
+        return order.get(severity, 0)

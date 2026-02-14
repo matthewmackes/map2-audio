@@ -141,6 +141,14 @@ const underTheHoodItems = [
     color: '#38bdf8',  // Sky blue
     group: 'Infrastructure',
   },
+  {
+    to: '/avb-network',
+    label: 'AVB Network',
+    icon: Broadcast,
+    description: 'Real-time AVB/TSN network topology & stream monitoring',
+    color: '#6366f1',  // Indigo
+    group: 'Infrastructure',
+  },
 ]
 
 interface VersionInfo {

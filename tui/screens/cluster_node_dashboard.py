@@ -73,22 +73,26 @@ class NodeMetricsPanel(Static):
         if not node.metrics:
             return
         
-        temperature = (
-            f"{node.metrics.temperature_c:.1f}°C"
-            if node.metrics.temperature_c is not None
-            else "N/A"
-        )
-        uptime_hours = int(node.metrics.uptime_seconds / 3600)
-        uptime_minutes = int((node.metrics.uptime_seconds % 3600) / 60)
-        
+        def _to_float(value: Any, default: float = 0.0) -> float:
+            try:
+                return float(value)
+            except Exception:
+                return default
+
+        temperature_c = getattr(node.metrics, "temperature_c", None)
+        temperature = f"{_to_float(temperature_c):.1f}°C" if temperature_c is not None else "N/A"
+        uptime_seconds = _to_float(getattr(node.metrics, "uptime_seconds", 0.0))
+        uptime_hours = int(uptime_seconds / 3600)
+        uptime_minutes = int((uptime_seconds % 3600) / 60)
+
         metrics_text = (
-            f"CPU:             {node.metrics.cpu_percent:.1f}%\n"
-            f"Memory:          {node.metrics.memory_percent:.1f}% "
-            f"({node.metrics.memory_mb:.0f}MB / {node.metrics.memory_max_mb:.0f}MB)\n"
-            f"Disk:            {node.metrics.disk_percent:.1f}%\n"
+            f"CPU:             {_to_float(getattr(node.metrics, 'cpu_percent', 0.0)):.1f}%\n"
+            f"Memory:          {_to_float(getattr(node.metrics, 'memory_percent', 0.0)):.1f}% "
+            f"({_to_float(getattr(node.metrics, 'memory_mb', 0.0)):.0f}MB / {_to_float(getattr(node.metrics, 'memory_max_mb', 0.0)):.0f}MB)\n"
+            f"Disk:            {_to_float(getattr(node.metrics, 'disk_percent', 0.0)):.1f}%\n"
             f"Temperature:     {temperature}\n"
             f"Uptime:          {uptime_hours}h {uptime_minutes}m\n"
-            f"Response Time:   {node.response_time_ms:.1f}ms\n"
+            f"Response Time:   {_to_float(getattr(node, 'response_time_ms', 0.0)):.1f}ms\n"
         )
         
         try:
@@ -415,7 +419,45 @@ class ClusterNodeDashboard(Static):
     async def action_set_maintenance(self) -> None:
         """Set selected node to maintenance mode."""
         notif = self.query_one("#notifications", NotificationWidget)
-        notif.show("Maintenance mode not yet implemented", NotificationSeverity.WARNING, 2.0)
+        try:
+            grid = self.query_one("#nodes-grid", DataGridWidget)
+            row = grid.get_selected_row()
+            if row is None:
+                # Fallback to cursor position if row was not explicitly selected.
+                table = grid.query_one("#data-grid-table")
+                cursor_idx = getattr(table, "cursor_row", None)
+                if cursor_idx is not None and 0 <= cursor_idx < len(grid.data):
+                    row = grid.data[cursor_idx]
+
+            if not row:
+                notif.show("Select a node first", NotificationSeverity.WARNING, 2.0)
+                return
+
+            hostname = row.get("hostname")
+            node = next((n for n in self.nodes.values() if n.hostname == hostname), None)
+            if not node:
+                notif.show("Could not resolve selected node", NotificationSeverity.ERROR, 2.0)
+                return
+
+            currently_maintenance = str(node.status).lower().endswith("maintenance")
+            target = not currently_maintenance
+            result = await self.api_client.set_node_maintenance(node.node_id, target)
+            if result.success:
+                mode = "enabled" if target else "disabled"
+                notif.show(
+                    f"Maintenance {mode} for {node.hostname}",
+                    NotificationSeverity.SUCCESS,
+                    2.0,
+                )
+                await self._force_refresh()
+            else:
+                notif.show(
+                    f"Maintenance update failed: {result.error}",
+                    NotificationSeverity.ERROR,
+                    3.0,
+                )
+        except Exception as e:
+            notif.show(f"Maintenance error: {e}", NotificationSeverity.ERROR, 3.0)
     
     def action_quit(self) -> None:
         """Exit the dashboard."""

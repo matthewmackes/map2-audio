@@ -265,12 +265,12 @@ class BackoffStrategy:
     def fibonacci(attempt: int, base_delay: float = 1.0,
                  jitter: bool = False) -> float:
         """Fibonacci backoff."""
-        # Generate fibonacci sequence
-        a, b = 0, 1
+        # Sequence starts at 1, 2, 3, 5... for retry attempts 0, 1, 2, 3...
+        a, b = 1, 2
         for _ in range(attempt):
             a, b = b, a + b
         
-        delay = base_delay * b
+        delay = base_delay * a
         if jitter:
             delay += random.uniform(0, delay * 0.1)
         return delay

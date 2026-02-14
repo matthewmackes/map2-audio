@@ -21,7 +21,6 @@ import asyncio
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
-import tempfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -359,14 +358,32 @@ class MAP2GitUpdater:
         Run shell command.
         
         For local node: execute directly
-        For remote node: would use SSH (future enhancement)
+        For remote node: execute via SSH
         """
         try:
             if node_id and node_id != "local":
-                # Future: SSH execution for remote nodes
-                # For now, only local execution
-                logger.warning(f"Remote execution not yet implemented for {node_id}")
-                raise NotImplementedError("Remote git updates require SSH integration")
+                from app.services.cluster.integration_helpers import NodeSSHClient
+                from app.services.cluster.registry import get_cluster_registry
+
+                registry = get_cluster_registry()
+                node_data = registry.get_node(node_id)
+                if not node_data:
+                    raise RuntimeError(f"Unknown node_id: {node_id}")
+
+                host = node_data.get("ip_address") or node_data.get("hostname")
+                if not host:
+                    raise RuntimeError(f"Node {node_id} missing ip/hostname")
+
+                ssh = NodeSSHClient(node_id=node_id, ip_address=host)
+                rc, out, err = await asyncio.to_thread(
+                    ssh.execute_command, command, self.timeout
+                )
+                return subprocess.CompletedProcess(
+                    args=f"ssh:{node_id}:{command}",
+                    returncode=rc,
+                    stdout=out,
+                    stderr=err,
+                )
 
             # Local execution
             process = await asyncio.create_subprocess_shell(

@@ -240,16 +240,17 @@ InstanceId PluginHost::loadPlugin(const std::string& uri, double sampleRate, int
     static LV2_Feature fixed_block_feature = { LV2_BUF_SIZE__fixedBlockLength, nullptr };
     
     // URID map feature (simplified - many plugins need this)
+    static std::unordered_map<std::string, LV2_URID> uridCache;
+    static std::unordered_map<LV2_URID, std::string> uridReverseCache;
     static LV2_URID_Map uridMap = {
         nullptr,
         [](LV2_URID_Map_Handle, const char* uriStr) -> LV2_URID {
-            // Simple hash-based URID mapping
-            static std::unordered_map<std::string, LV2_URID> uridCache;
             static LV2_URID nextUrid = 1;
             auto it = uridCache.find(uriStr);
             if (it != uridCache.end()) return it->second;
             LV2_URID id = nextUrid++;
             uridCache[uriStr] = id;
+            uridReverseCache[id] = uriStr;
             return id;
         }
     };
@@ -258,9 +259,11 @@ InstanceId PluginHost::loadPlugin(const std::string& uri, double sampleRate, int
     static LV2_URID_Unmap uridUnmap = {
         nullptr,
         [](LV2_URID_Unmap_Handle, LV2_URID urid) -> const char* {
-            // Simple reverse lookup (not implemented for simplicity)
-            (void)urid;
-            return nullptr;
+            auto it = uridReverseCache.find(urid);
+            if (it == uridReverseCache.end()) {
+                return nullptr;
+            }
+            return it->second.c_str();
         }
     };
     static LV2_Feature urid_unmap_feature = { LV2_URID__unmap, &uridUnmap };

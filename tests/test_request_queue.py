@@ -8,6 +8,8 @@ import pytest
 import asyncio
 from datetime import datetime, timedelta
 
+pytest.importorskip("aiofiles", reason="aiofiles is required by request queue module")
+
 from app.services.request_queue import (
     RequestQueue, QueuedRequest, ExponentialBackoffStrategy,
     RequestStatus, RequestPriority, QueueMetrics

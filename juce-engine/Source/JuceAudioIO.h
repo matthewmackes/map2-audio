@@ -10,6 +10,10 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include "Common.h"
 
+#ifdef HAS_AVB
+#include "AvbAudioIODeviceType.h"
+#endif
+
 namespace map2 {
 
 /**

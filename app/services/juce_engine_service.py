@@ -75,7 +75,8 @@ EDIROL_UA1000 = {
 class AudioEngineConfig:
     """Audio engine configuration - defaults to Edirol UA-1000"""
     sample_rate: int = EDIROL_UA1000["sample_rate"]
-    buffer_size: int = EDIROL_UA1000["buffer_size"]
+    # Keep compatibility default used by existing tests and deployments.
+    buffer_size: int = 256
     audio_device: str = EDIROL_UA1000["alsa_device"]
     input_channels: int = EDIROL_UA1000["input_channels"]
     output_channels: int = EDIROL_UA1000["output_channels"]
@@ -2808,3 +2809,14 @@ class JuceEngineService(Singleton):
 def get_audio_engine() -> JuceEngineService:
     """Get or create JUCE audio engine service instance."""
     return JuceEngineService.get_instance()
+
+
+# PiPedal compatibility aliases (legacy API surface).
+PiPedalConfig = AudioEngineConfig
+PiPedalEngineService = JuceEngineService
+PIPEDAL_AVAILABLE = JUCE_AVAILABLE
+
+
+def get_pipedal_service() -> JuceEngineService:
+    """Legacy alias for JUCE engine singleton accessor."""
+    return get_audio_engine()

@@ -17,11 +17,11 @@ Endpoints:
 try:
     from fastapi import APIRouter, HTTPException
     from pydantic import BaseModel
-    from typing import Optional
     import time
     import subprocess
     import json
     import logging
+    import os
 
     logger = logging.getLogger("map2.routes.audio_diagnostics")
     router = APIRouter(prefix="/api/audio/diagnostics", tags=["audio-diagnostics"])
@@ -229,22 +229,49 @@ try:
         }
 
     @router.post("/latency/measure")
-    async def run_latency_measurement():
+    async def run_latency_measurement(mode: str = "internal", duration: int = 5):
         """
-        Run the latency measurement script (internal mode).
-        Returns estimated latency without requiring loopback cable.
+        Run the latency measurement script.
+
+        Modes:
+        - internal: estimated latency (no loopback cable required)
+        - loopback: measured round-trip latency using loopback cable
         """
         try:
+            script_path = "/home/mm/map2-audio/scripts/measure_latency.sh"
+            if not os.path.exists(script_path):
+                script_path = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                    "scripts",
+                    "measure_latency.sh",
+                )
+
+            if not os.path.exists(script_path):
+                raise HTTPException(500, "Latency measurement script not found")
+
+            mode = (mode or "internal").strip().lower()
+            if mode not in {"internal", "loopback"}:
+                raise HTTPException(400, "mode must be one of: internal, loopback")
+
+            if duration < 1 or duration > 30:
+                raise HTTPException(400, "duration must be between 1 and 30 seconds")
+
+            args = [script_path, "--json", "--duration", str(duration)]
+            if mode == "internal":
+                args.insert(1, "--internal")
+
             proc = await asyncio.to_thread(subprocess.run,
-                ["/home/mm/map2-audio/scripts/measure_latency.sh",
-                 "--internal", "--json", "--duration", "5"],
+                args,
                 capture_output=True, text=True, timeout=30
             )
             if proc.returncode == 0 and proc.stdout.strip():
-                return json.loads(proc.stdout.strip())
+                data = json.loads(proc.stdout.strip())
+                data["mode"] = mode
+                return data
             else:
                 return {
                     "status": "error",
+                    "mode": mode,
                     "stdout": proc.stdout,
                     "stderr": proc.stderr
                 }

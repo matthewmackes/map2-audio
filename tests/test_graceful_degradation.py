@@ -324,13 +324,16 @@ class TestFeatureIntegration:
     async def test_feature_dependency_check(self):
         """Test feature dependency checking."""
         manager = FeatureAvailabilityManager()
+
+        async def _ok_handler():
+            return {"result": "ok"}
         
         # Create dependent feature
         dependent = Feature(
             name="payment",
             level=FeatureLevel.ESSENTIAL,
             dependencies=["auth"],
-            full_handler=async lambda: {"result": "ok"}
+            full_handler=_ok_handler
         )
         
         # Create dependency

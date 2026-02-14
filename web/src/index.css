@@ -50,7 +50,7 @@
   --border-width: 1px;
   --surface-gradient: none;
   --glow-intensity: 0;
-  --transition-speed: 0.15s;
+  --transition-speed: 0.11s;
 }
 
 * {
@@ -65,7 +65,7 @@ body {
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background var(--transition-speed) ease, color var(--transition-speed) ease;
+  transition: background var(--transition-speed) ease-in-out, color var(--transition-speed) ease-in-out;
 }
 
 a {
@@ -96,7 +96,7 @@ img {
   backdrop-filter: blur(12px);
   border-bottom: var(--border-width) solid var(--primary);
   box-shadow: var(--shadow-soft);
-  transition: background var(--transition-speed) ease, border-color var(--transition-speed) ease;
+  transition: background var(--transition-speed) ease-in-out, border-color var(--transition-speed) ease-in-out;
 }
 
 /* ============================================
@@ -565,7 +565,7 @@ img {
   border-radius: var(--border-radius-lg);
   padding: 18px;
   box-shadow: var(--shadow-soft);
-  transition: all var(--transition-speed) ease;
+  transition: all var(--transition-speed) ease-in-out;
 }
 
 .card h3 {
@@ -590,7 +590,7 @@ img {
   border-radius: var(--border-radius-md);
   padding: 16px;
   box-shadow: var(--shadow-soft);
-  transition: all var(--transition-speed) ease;
+  transition: all var(--transition-speed) ease-in-out;
 }
 
 .stat-label {
@@ -615,7 +615,7 @@ img {
   border: var(--border-width) solid var(--primary);
   color: #ffffff;
   font-size: 13px;
-  transition: all var(--transition-speed) ease;
+  transition: all var(--transition-speed) ease-in-out;
 }
 
 .pill.success {

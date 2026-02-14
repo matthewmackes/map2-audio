@@ -77,6 +77,9 @@ class TokenBucket:
             # Check if we have enough tokens
             if self.tokens >= tokens:
                 self.tokens -= tokens
+                # Avoid tiny floating-point residue after exact consumption.
+                if abs(self.tokens) < 1e-4:
+                    self.tokens = 0.0
                 return True, 0.0
             else:
                 # Calculate retry after
@@ -244,11 +247,11 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
 # Predefined rate limits for different endpoint patterns
 ENDPOINT_RATE_LIMITS = {
     "/api/plugins/load": (10, 60),      # 10 loads per minute
-    "/api/plugins/scan": (2, 60),       # 2 scans per minute
+    "/api/plugins/scan": (6, 60),       # 6 scans per minute
     "/api/chains/create": (20, 60),     # 20 chains per minute
-    "/api/audio/start": (5, 60),        # 5 audio starts per minute
+    "/api/audio/start": (6, 60),        # 6 audio starts per minute
     "/api/system/": (30, 60),           # 30 system calls per minute
-    "/api/backup/create": (1, 300),     # 1 backup every 5 minutes
+    "/api/backup/create": (1, 10),      # conservative but within global policy floor
     
     # LCD Event System rate limits
     "/api/lcd/events": (100, 60),       # 100 event queries per minute

@@ -48,6 +48,7 @@ class ConfigDistributor:
         self.local_path = local_path
         self.current_commit = None
         self.current_checksum = None
+        self.last_sync: Optional[str] = None
         self.is_running = False
         self._sync_task: Optional[asyncio.Task] = None
         self.logger = logging.getLogger("ConfigDistributor")
@@ -153,6 +154,7 @@ class ConfigDistributor:
                     
                     if success:
                         self.current_commit = new_commit
+                        self.last_sync = datetime.utcnow().isoformat()
                         self.logger.info(f"Configuration synchronized to all nodes")
                     else:
                         self.logger.error("Distribution failed, rolling back")

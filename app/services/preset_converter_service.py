@@ -22,7 +22,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -75,7 +75,7 @@ class ConvertedPreset:
                 "tags": self.metadata.get("tags", []),
                 "category": self.metadata.get("category", "Imported"),
                 "license": self.metadata.get("license", "CC-BY-4.0"),
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "original_format": self.original_format.value,
             },
             "target": {

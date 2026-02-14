@@ -22,6 +22,7 @@ from tui.screens.flow_assignment_matrix import FlowAssignmentMatrix
 from tui.screens.node_recommendation_screen import NodeRecommendationScreen
 from tui.screens.failover_controller_screen import FailoverControllerScreen
 from tui.screens.cluster_diagnostics_screen import ClusterDiagnosticsScreen
+from tui.screens.settings_screen import SettingsScreen
 from tui.screens.help_screen import HelpScreen
 from tui.screens.batch_operations_screen import BatchOperationsScreen
 from tui.widgets.notification_widget import NotificationWidget, NotificationSeverity
@@ -116,6 +117,7 @@ class ClusterManagementApp(App):
         Binding("5", "switch_to_diagnostics", "Diagnostics", show=True),
         Binding("6", "switch_to_batch", "Batch", show=True),
         Binding("7", "switch_to_help", "Help", show=True),
+        Binding("8", "switch_to_settings", "Settings", show=True),
         Binding("ctrl+r", "reconnect", "Reconnect", show=False),
         Binding("ctrl+q", "quit", "Quit", show=True),
         Binding("ctrl+l", "toggle_logs", "Logs", show=False),
@@ -323,9 +325,25 @@ class ClusterManagementApp(App):
             notif.show(f"Error switching screens: {str(e)}", NotificationSeverity.ERROR)
     
     async def action_switch_to_settings(self) -> None:
-        """Switch to settings screen (placeholder)."""
-        notif = self.query_one("#notifications", NotificationWidget)
-        notif.show("Settings not yet implemented", NotificationSeverity.WARNING, 2.0)
+        """Switch to settings screen."""
+        try:
+            container = self.query_one("#screen-container", Container)
+
+            for child in list(container.children):
+                await child.remove()
+
+            screen = SettingsScreen(api_client=self.api_client)
+            container.mount(screen)
+
+            self.current_screen_name = "Settings"
+            if self.status_bar:
+                self.status_bar.update_screen_name("Settings")
+
+            notif = self.query_one("#notifications", NotificationWidget)
+            notif.show("Switched to Settings", NotificationSeverity.INFO, 1.0)
+        except Exception as e:
+            notif = self.query_one("#notifications", NotificationWidget)
+            notif.show(f"Error switching screens: {str(e)}", NotificationSeverity.ERROR)
 
     async def action_switch_to_recommendations(self) -> None:
         """Switch to node recommendation screen."""

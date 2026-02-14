@@ -1,6 +1,33 @@
 /**
- * Multi-System Dashboard Component - Monitor and compare multiple host systems
- * Side-by-side metrics, aggregated statistics, and performance comparisons
+ * Multi-System Dashboard - Comprehensive Cluster Monitoring for MAP2 Audio Platform
+ *
+ * **Purpose**: Centralized monitoring and comparison of distributed MAP2 nodes across
+ * hardware resources, audio processing, cluster services, and AVB/TSN network audio.
+ *
+ * **WHO uses this**:
+ * - Cluster Administrators: Monitor distributed MAP2 deployments
+ * - Audio Engineers: Track audio processing performance across nodes
+ * - Network Engineers: Validate AVB/TSN network health and synchronization
+ * - System Operators: Troubleshoot issues and optimize resource allocation
+ *
+ * **WHAT it monitors**:
+ * - **Hardware Resources**: CPU, memory, temperature, disk, network utilization
+ * - **JUCE Audio Engine**: Sample rate, buffer size, xrun events, CPU load, device type
+ * - **Cluster Services**: mDNS discovery, RAFT consensus, health monitoring, config distribution
+ * - **AVB/TSN Network**: IEEE 1722 streams, gPTP synchronization, AVDECC entities
+ * - **Software Versions**: Backend, frontend, JUCE engine, dependencies
+ *
+ * **WHERE deployed**:
+ * - On-premises audio production facilities
+ * - Edge computing nodes for distributed audio processing
+ * - Cloud-based MAP2 instances
+ * - Hybrid multi-site installations
+ *
+ * **WHEN to use**:
+ * - Real-time cluster health monitoring (24/7 operations)
+ * - Performance optimization and capacity planning
+ * - Incident response and troubleshooting
+ * - Pre-production testing and validation
  */
 
 import { useMemo } from 'react'
@@ -19,8 +46,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
+  Divider,
 } from '@mui/material'
 import { useMultiSystemMonitoring } from '@/app/hooks/useMultiSystemMonitoring'
+import type { SystemSnapshot } from '@/app/hooks/useMultiSystemMonitoring'
 
 export default function MultiSystemDashboard() {
   const { systems, getComparisons, getStats, getSystemsRankedBy } = useMultiSystemMonitoring()
@@ -55,74 +85,184 @@ export default function MultiSystemDashboard() {
     }
   }
 
+  const getRaftRoleColor = (role?: string) => {
+    switch (role) {
+      case 'leader':
+        return '#10b981'
+      case 'follower':
+        return '#60a5fa'
+      case 'candidate':
+        return '#f59e0b'
+      default:
+        return '#6b7280'
+    }
+  }
+
+  const renderServiceStatus = (enabled: boolean, status?: string) => {
+    if (!enabled) return <Chip label="DISABLED" size="small" sx={{ backgroundColor: '#6b7280', color: '#fff' }} />
+
+    const color = status === 'active' ? '#10b981' : status === 'error' ? '#ef4444' : '#f59e0b'
+    const icon = status === 'active' ? '✓' : status === 'error' ? '✗' : '⚠'
+
+    return <Chip icon={<span>{icon}</span>} label={status?.toUpperCase()} size="small" sx={{ backgroundColor: color, color: '#fff' }} />
+  }
+
   if (systems.length === 0) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center', color: '#9ca3af' }}>
-        <Typography sx={{ fontSize: 18, mb: 2 }}>
-          📊 No systems being monitored
-        </Typography>
-        <Typography sx={{ fontSize: 14 }}>
-          Add systems to the multi-system dashboard to compare metrics and track performance
-        </Typography>
-      </Paper>
+      <Box sx={{ maxWidth: '1400px', mx: 'auto', p: 3 }}>
+        <Paper sx={{ p: 6, textAlign: 'center', color: '#9ca3af', backgroundColor: '#f9fafb' }}>
+          <Typography sx={{ fontSize: 24, fontWeight: 600, mb: 3, color: '#374151' }}>
+            🖥️ Multi-System Dashboard
+          </Typography>
+          <Typography sx={{ fontSize: 16, mb: 2 }}>
+            No systems are currently being monitored
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: '#6b7280', maxWidth: '600px', mx: 'auto' }}>
+            This dashboard provides comprehensive monitoring for MAP2 Audio Platform clusters.
+            Add systems to track hardware resources, audio processing, cluster services, and AVB/TSN network audio across multiple nodes.
+          </Typography>
+        </Paper>
+      </Box>
     )
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Header */}
-      <Paper sx={{ p: 3, backgroundColor: '#f3f4f6' }}>
-        <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2 }}>
+    <Box sx={{ maxWidth: '1600px', mx: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {/* Educational Header */}
+      <Paper sx={{ p: 4, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff' }}>
+        <Typography sx={{ fontWeight: 700, fontSize: 28, mb: 2 }}>
           🖥️ Multi-System Dashboard
         </Typography>
+        <Typography sx={{ fontSize: 16, mb: 3, opacity: 0.95 }}>
+          Comprehensive monitoring and comparison of distributed MAP2 Audio Platform nodes.
+          Track hardware resources, JUCE audio engine performance, cluster services, and AVB/TSN network audio in real-time.
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Chip
+            label={`${stats.totalSystems} Total Nodes`}
+            sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600 }}
+          />
+          <Chip
+            label={`${stats.onlineSystems} Online`}
+            sx={{ backgroundColor: 'rgba(16,185,129,0.3)', color: '#fff', fontWeight: 600 }}
+          />
+          {stats.avbNodesActive > 0 && (
+            <Chip
+              label={`${stats.avbNodesActive} AVB Nodes`}
+              sx={{ backgroundColor: 'rgba(99,102,241,0.3)', color: '#fff', fontWeight: 600 }}
+            />
+          )}
+          {stats.raftLeaders > 0 && (
+            <Chip
+              label={`${stats.raftLeaders} RAFT Leader${stats.raftLeaders > 1 ? 's' : ''}`}
+              sx={{ backgroundColor: 'rgba(251,191,36,0.3)', color: '#fff', fontWeight: 600 }}
+            />
+          )}
+        </Box>
+      </Paper>
+
+      {/* Cluster-Wide Statistics */}
+      <Paper sx={{ p: 3, backgroundColor: '#f9fafb' }}>
+        <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 3, color: '#374151' }}>
+          📊 Cluster-Wide Statistics
+        </Typography>
         <Grid container spacing={2}>
-          <Grid item xs={6} sm={3}>
-            <Box>
-              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Total Systems</Typography>
-              <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#3b82f6' }}>
-                {stats.totalSystems}
-              </Typography>
-            </Box>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Total MAP2 nodes in the cluster">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #3b82f6' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>Total Systems</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#3b82f6' }}>
+                  {stats.totalSystems}
+                </Typography>
+              </Box>
+            </Tooltip>
           </Grid>
-          <Grid item xs={6} sm={3}>
-            <Box>
-              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Online</Typography>
-              <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#10b981' }}>
-                {stats.onlineSystems}
-              </Typography>
-            </Box>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Nodes currently connected and responding">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #10b981' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>Online</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#10b981' }}>
+                  {stats.onlineSystems}
+                </Typography>
+              </Box>
+            </Tooltip>
           </Grid>
-          <Grid item xs={6} sm={3}>
-            <Box>
-              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Offline</Typography>
-              <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#6b7280' }}>
-                {stats.offlineSystems}
-              </Typography>
-            </Box>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Average CPU usage across all nodes">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #60a5fa' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>Avg CPU</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#60a5fa' }}>
+                  {stats.avgCpuUsage}%
+                </Typography>
+              </Box>
+            </Tooltip>
           </Grid>
-          <Grid item xs={6} sm={3}>
-            <Box>
-              <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Avg CPU</Typography>
-              <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#60a5fa' }}>
-                {stats.avgCpuUsage}%
-              </Typography>
-            </Box>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Average JUCE audio engine CPU load">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #8b5cf6' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>Avg Audio CPU</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#8b5cf6' }}>
+                  {stats.avgAudioCpuLoad}%
+                </Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Total audio xruns (buffer underruns) across all nodes">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #ef4444' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>Total Xruns</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#ef4444' }}>
+                  {stats.totalXruns}
+                </Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Nodes with AVB/TSN network audio enabled">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #6366f1' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>AVB Nodes</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#6366f1' }}>
+                  {stats.avbNodesActive}
+                </Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Nodes synchronized via IEEE 802.1AS gPTP">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #10b981' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>PTP Synced</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#10b981' }}>
+                  {stats.ptpSyncedNodes}
+                </Typography>
+              </Box>
+            </Tooltip>
+          </Grid>
+          <Grid item xs={6} sm={4} md={3}>
+            <Tooltip title="Total IEEE 1722 AVB audio streams (talker + listener)">
+              <Box sx={{ p: 2, backgroundColor: '#fff', borderRadius: 2, borderLeft: '4px solid #f59e0b' }}>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 0.5 }}>AVB Streams</Typography>
+                <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#f59e0b' }}>
+                  {stats.totalAvbStreams}
+                </Typography>
+              </Box>
+            </Tooltip>
           </Grid>
         </Grid>
       </Paper>
 
-      {/* Systems Overview Cards */}
+      {/* Detailed System Cards */}
       <Box>
-        <Typography sx={{ fontWeight: 600, fontSize: 16, mb: 2 }}>
-          System Status Overview
+        <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: '#374151' }}>
+          🖥️ System Details
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           {systems.map((system) => (
-            <Grid item xs={12} sm={6} md={4} key={system.systemId}>
-              <Card sx={{ height: '100%' }}>
+            <Grid item xs={12} lg={6} key={system.systemId}>
+              <Card sx={{ height: '100%', borderTop: `4px solid ${getStatusColor(system.status)}` }}>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                  {/* System Header */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#374151' }}>
                       {system.systemName}
                     </Typography>
                     <Chip
@@ -132,97 +272,300 @@ export default function MultiSystemDashboard() {
                       sx={{
                         backgroundColor: getStatusColor(system.status),
                         color: '#fff',
+                        fontWeight: 600,
                       }}
                     />
                   </Box>
 
-                  {system.health && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                      <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>CPU</Typography>
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Audio Engine Section */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 1.5, color: '#6366f1' }}>
+                      🎵 JUCE Audio Engine
+                    </Typography>
+                    {system.audioEngine ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Status</Typography>
+                          <Chip
+                            label={system.audioEngine.isRunning ? 'RUNNING' : 'STOPPED'}
+                            size="small"
+                            sx={{
+                              backgroundColor: system.audioEngine.isRunning ? '#10b981' : '#6b7280',
+                              color: '#fff',
+                              fontSize: 11,
+                            }}
+                          />
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Device</Typography>
                           <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
-                            {system.health.cpu_usage_percent.toFixed(1)}%
+                            {system.audioEngine.deviceName} ({system.audioEngine.deviceType})
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Sample Rate / Buffer</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                            {system.audioEngine.sampleRate} Hz / {system.audioEngine.bufferSize} samples
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Channels (In/Out)</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                            {system.audioEngine.inputChannels} / {system.audioEngine.outputChannels}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Audio CPU Load</Typography>
+                            <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                              {system.audioEngine.cpuLoad.toFixed(1)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(100, system.audioEngine.cpuLoad)}
+                            sx={{
+                              backgroundColor: '#e5e7eb',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: system.audioEngine.cpuLoad > 80 ? '#ef4444' : '#8b5cf6',
+                              },
+                            }}
+                          />
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Xruns</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600, color: system.audioEngine.xrunCount > 0 ? '#ef4444' : '#10b981' }}>
+                            {system.audioEngine.xrunCount}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Typography sx={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
+                        Audio engine data unavailable
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Cluster Services Section */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 1.5, color: '#f59e0b' }}>
+                      🔗 Cluster Services
+                    </Typography>
+                    {system.clusterServices ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Tooltip title="Multicast DNS service discovery for automatic node detection">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>mDNS Discovery</Typography>
+                          </Tooltip>
+                          {renderServiceStatus(system.clusterServices.mdnsDiscovery.enabled, system.clusterServices.mdnsDiscovery.status)}
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Tooltip title="RAFT consensus protocol for distributed state management">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>RAFT Consensus</Typography>
+                          </Tooltip>
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {renderServiceStatus(system.clusterServices.raftConsensus.enabled,
+                              system.clusterServices.raftConsensus.role !== 'offline' ? 'active' : 'inactive')}
+                            {system.clusterServices.raftConsensus.enabled && (
+                              <Chip
+                                label={system.clusterServices.raftConsensus.role.toUpperCase()}
+                                size="small"
+                                sx={{
+                                  backgroundColor: getRaftRoleColor(system.clusterServices.raftConsensus.role),
+                                  color: '#fff',
+                                  fontSize: 10,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Tooltip title="Real-time health monitoring and alerting">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Health Monitor</Typography>
+                          </Tooltip>
+                          {renderServiceStatus(system.clusterServices.healthMonitor.enabled, system.clusterServices.healthMonitor.status)}
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Tooltip title="Configuration distribution across cluster nodes">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Config Distributor</Typography>
+                          </Tooltip>
+                          {renderServiceStatus(system.clusterServices.configDistributor.enabled, system.clusterServices.configDistributor.status)}
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Tooltip title="Event producer for telemetry and monitoring">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Event Producer</Typography>
+                          </Tooltip>
+                          {renderServiceStatus(system.clusterServices.eventProducer.enabled, system.clusterServices.eventProducer.status)}
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Typography sx={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
+                        Cluster services data unavailable
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* AVB/TSN Network Section */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 1.5, color: '#6366f1' }}>
+                      🌐 AVB/TSN Network Audio
+                    </Typography>
+                    {system.avbNetwork && system.avbNetwork.enabled ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Tooltip title="IEEE 802.1AS gPTP synchronization status">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>PTP Sync</Typography>
+                          </Tooltip>
+                          <Chip
+                            icon={<span>{system.avbNetwork.ptpSynced ? '✓' : '✗'}</span>}
+                            label={system.avbNetwork.ptpSynced ? 'SYNCED' : 'NOT SYNCED'}
+                            size="small"
+                            sx={{
+                              backgroundColor: system.avbNetwork.ptpSynced ? '#10b981' : '#ef4444',
+                              color: '#fff',
+                              fontSize: 11,
+                            }}
+                          />
+                        </Box>
+                        {system.avbNetwork.ptpSynced && (
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>PTP Offset</Typography>
+                            <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                              {system.avbNetwork.ptpOffsetNs} ns
+                            </Typography>
+                          </Box>
+                        )}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Tooltip title="AVDECC entities discovered via IEEE 1722.1">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Discovered Entities</Typography>
+                          </Tooltip>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                            {system.avbNetwork.discoveredEntities}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Tooltip title="IEEE 1722 AVTP audio streams (talker/listener)">
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Active Streams</Typography>
+                          </Tooltip>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                            {system.avbNetwork.activeStreams.talker} TX / {system.avbNetwork.activeStreams.listener} RX
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Interface</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                            {system.avbNetwork.interfaceName} ({system.avbNetwork.linkSpeed})
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <Typography sx={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>
+                        AVB/TSN not enabled on this node
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* System Resources */}
+                  <Box>
+                    <Typography sx={{ fontWeight: 600, fontSize: 14, mb: 1.5, color: '#3b82f6' }}>
+                      💻 System Resources
+                    </Typography>
+                    {system.health && (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>CPU</Typography>
+                            <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                              {system.health.cpu_usage_percent.toFixed(1)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={system.health.cpu_usage_percent}
+                            sx={{
+                              backgroundColor: '#e5e7eb',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#60a5fa',
+                              },
+                            }}
+                          />
+                        </Box>
+
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Memory</Typography>
+                            <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                              {system.health.memory_usage_percent.toFixed(1)}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={system.health.memory_usage_percent}
+                            sx={{
+                              backgroundColor: '#e5e7eb',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#60a5fa',
+                              },
+                            }}
+                          />
+                        </Box>
+
+                        <Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Temperature</Typography>
+                            <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                              {system.health.cpu_temp_celsius.toFixed(1)}°C
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min(
+                              100,
+                              (system.health.cpu_temp_celsius / 95) * 100
+                            )}
+                            sx={{
+                              backgroundColor: '#e5e7eb',
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: '#3b82f6',
+                              },
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    )}
+
+                    {system.disk && (
+                      <Box sx={{ mt: 1.5 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Disk</Typography>
+                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
+                            {system.disk.use_percent.toFixed(1)}%
                           </Typography>
                         </Box>
                         <LinearProgress
                           variant="determinate"
-                          value={system.health.cpu_usage_percent}
+                          value={system.disk.use_percent}
                           sx={{
                             backgroundColor: '#e5e7eb',
                             '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#60a5fa',
+                              backgroundColor: '#f59e0b',
                             },
                           }}
                         />
                       </Box>
+                    )}
+                  </Box>
 
-                      <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Memory</Typography>
-                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
-                            {system.health.memory_usage_percent.toFixed(1)}%
-                          </Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={system.health.memory_usage_percent}
-                          sx={{
-                            backgroundColor: '#e5e7eb',
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#60a5fa',
-                            },
-                          }}
-                        />
-                      </Box>
-
-                      <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Temperature</Typography>
-                          <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
-                            {system.health.cpu_temp_celsius.toFixed(1)}°C
-                          </Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={Math.min(
-                            100,
-                            (system.health.cpu_temp_celsius / 95) * 100
-                          )}
-                          sx={{
-                            backgroundColor: '#e5e7eb',
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: '#3b82f6',
-                            },
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-
-                  {system.disk && (
-                    <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px solid #e5e7eb' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                        <Typography sx={{ fontSize: 12, color: '#6b7280' }}>Disk</Typography>
-                        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>
-                          {system.disk.use_percent.toFixed(1)}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={system.disk.use_percent}
-                        sx={{
-                          backgroundColor: '#e5e7eb',
-                          '& .MuiLinearProgress-bar': {
-                            backgroundColor: '#f59e0b',
-                          },
-                        }}
-                      />
-                    </Box>
-                  )}
-
-                  <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 1.5 }}>
-                    Last update: {new Date(system.lastUpdate).toLocaleTimeString()}
+                  <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 2, pt: 2, borderTop: '1px solid #e5e7eb' }}>
+                    Last update: {new Date(system.lastUpdate).toLocaleString()}
                   </Typography>
                 </CardContent>
               </Card>
@@ -234,7 +577,7 @@ export default function MultiSystemDashboard() {
       {/* Comparison Tables */}
       {comparisons.length > 0 && (
         <Box>
-          <Typography sx={{ fontWeight: 600, fontSize: 16, mb: 2 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: '#374151' }}>
             📊 Metric Comparisons
           </Typography>
           <Grid container spacing={2}>
@@ -298,7 +641,7 @@ export default function MultiSystemDashboard() {
       {/* Top Performers */}
       {rankedByCpu.length > 0 && (
         <Paper sx={{ p: 3 }}>
-          <Typography sx={{ fontWeight: 600, fontSize: 16, mb: 2 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: '#374151' }}>
             🏆 Performance Rankings (by CPU Usage)
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

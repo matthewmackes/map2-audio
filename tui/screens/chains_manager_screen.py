@@ -43,6 +43,8 @@ class ChainsListWidget(Static):
     def __init__(self, api_client=None, **kwargs):
         super().__init__(**kwargs)
         self.api_client = api_client
+        self._cycle_index_a = -1
+        self._cycle_index_b = -1
         self.id = "chains-list"
         self._chains = []
         self._ab_status = {}
@@ -655,12 +657,12 @@ class ChainsManagerScreen(Static):
             self.app.notify(f"Error: {e}", severity="error", timeout=3)
 
     async def action_select_chain_a(self) -> None:
-        """Select chain for A slot - placeholder, needs chain selection UI."""
-        self.app.notify("Use chain list to select chain A (not yet implemented)", severity="information", timeout=3)
+        """Select chain for A slot by cycling through available chains."""
+        await self._assign_next_chain(slot="A")
 
     async def action_select_chain_b(self) -> None:
-        """Select chain for B slot - placeholder, needs chain selection UI."""
-        self.app.notify("Use chain list to select chain B (not yet implemented)", severity="information", timeout=3)
+        """Select chain for B slot by cycling through available chains."""
+        await self._assign_next_chain(slot="B")
 
     async def action_swap_ab(self) -> None:
         """Swap A and B chains."""
@@ -722,5 +724,68 @@ class ChainsManagerScreen(Static):
             else:
                 error = result.error or "Nothing to redo"
                 self.app.notify(f"Redo: {error}", severity="warning", timeout=2)
+        except Exception as e:
+            self.app.notify(f"Error: {e}", severity="error", timeout=3)
+
+    async def _assign_next_chain(self, slot: str) -> None:
+        """Assign next chain to A or B slot using existing A/B mode endpoint."""
+        if not self.api_client:
+            self.app.notify("API client not available", severity="error", timeout=2)
+            return
+        try:
+            chains_result = await self.api_client.list_chains()
+            if not chains_result.success or not chains_result.data:
+                self.app.notify("No chains available", severity="warning", timeout=2)
+                return
+
+            chains = (
+                chains_result.data
+                if isinstance(chains_result.data, list)
+                else chains_result.data.get("chains", [])
+            )
+            if not chains:
+                self.app.notify("No chains available", severity="warning", timeout=2)
+                return
+
+            ids = [c.get("id") or c.get("chain_id") for c in chains]
+            names = {
+                c.get("id") or c.get("chain_id"): c.get("name", "Unnamed")
+                for c in chains
+            }
+            ids = [i for i in ids if i is not None]
+            if not ids:
+                self.app.notify("Chain IDs unavailable", severity="error", timeout=2)
+                return
+
+            status = await self.api_client.get_ab_mode_status()
+            data = status.data if status.success and status.data else {}
+            current_a = data.get("chain_a_id")
+            current_b = data.get("chain_b_id")
+
+            if slot == "A":
+                self._cycle_index_a = (self._cycle_index_a + 1) % len(ids)
+                next_a = ids[self._cycle_index_a]
+                next_b = current_b if current_b is not None and current_b != next_a else ids[(self._cycle_index_a + 1) % len(ids)]
+            else:
+                self._cycle_index_b = (self._cycle_index_b + 1) % len(ids)
+                next_b = ids[self._cycle_index_b]
+                next_a = current_a if current_a is not None and current_a != next_b else ids[(self._cycle_index_b + 1) % len(ids)]
+
+            result = await self.api_client.enable_ab_mode(int(next_a), int(next_b))
+            if result.success:
+                if slot == "A":
+                    self.app.notify(
+                        f"Chain A set to {names.get(next_a, next_a)}",
+                        severity="information",
+                        timeout=2,
+                    )
+                else:
+                    self.app.notify(
+                        f"Chain B set to {names.get(next_b, next_b)}",
+                        severity="information",
+                        timeout=2,
+                    )
+            else:
+                self.app.notify(f"Failed: {result.error}", severity="error", timeout=3)
         except Exception as e:
             self.app.notify(f"Error: {e}", severity="error", timeout=3)

@@ -113,8 +113,8 @@ class MetricsDisplayWidget(Static):
     def _update_display(self) -> None:
         """Update all metrics displays."""
         metric_items = list(self.metrics.items())
-        bars = self.query(ProgressBar)
-        values = self.query(".metric-value", Label)
+        bars = list(self.query(ProgressBar))
+        values = list(self.query(".metric-value"))
         
         for i, (name, data) in enumerate(metric_items):
             if i < len(bars):

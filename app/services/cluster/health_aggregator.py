@@ -170,7 +170,7 @@ class HealthAggregator:
 
             self.logger.debug(f"Aggregating metrics from {len(online_nodes)} nodes")
 
-            # For each node, collect metrics (placeholder - would call node APIs)
+            # Collect live metrics for each online node.
             for node in online_nodes:
                 node_id = node["id"]
                 await self._collect_node_metrics(node_id, node)
@@ -265,6 +265,14 @@ class HealthAggregator:
                             # Store in registry
                             health_score = metrics.calculate_health_score()
                             self.registry.update_node_health(node_id, health_score)
+                            self.registry.add_metrics(
+                                node_id,
+                                cpu_percent=metrics.cpu_percent,
+                                memory_percent=metrics.memory_percent,
+                                dsp_load_percent=metrics.dsp_load_percent,
+                                xrun_count=metrics.xrun_count,
+                                latency_ms=metrics.network_latency_ms,
+                            )
                             
                             return
                             

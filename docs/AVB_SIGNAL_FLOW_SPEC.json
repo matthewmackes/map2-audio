@@ -1,0 +1,723 @@
+{
+  "spec_version": "1.0.0",
+  "spec_id": "map2.avb.signal_flow.two_node.comparison",
+  "title": "Two-Node Signal Flow Comparison: AVB/802.1AS vs Non-AVB",
+  "generated_on": "2026-02-14",
+  "source_documents": [
+    "docs/AVB_SIGNAL_FLOW_COMPARISON.md"
+  ],
+  "consumer_contract": {
+    "format": "strict-json",
+    "required_top_level_keys": [
+      "spec_version",
+      "spec_id",
+      "verification",
+      "layout_contract",
+      "diagrams",
+      "comparison_matrix",
+      "checkpoints"
+    ],
+    "node_id_uniqueness": "global",
+    "edge_id_uniqueness": "global",
+    "unknown_keys_policy": "ignore"
+  },
+  "verification": {
+    "question": "Are AVB/802.1AS and non-AVB the only possibilities?",
+    "answer_for_inter_node_audio_data_path": {
+      "value": true,
+      "modes": [
+        {
+          "id": "mode_avb_8021as_active",
+          "label": "AVB + IEEE 802.1AS active",
+          "description": "Deterministic inter-node AVTP transport with gPTP time sync"
+        },
+        {
+          "id": "mode_non_avb_data_path",
+          "label": "No AVB/802.1AS data path",
+          "description": "No deterministic inter-node audio transport; local audio processing per node"
+        }
+      ]
+    },
+    "answer_for_overall_system_readiness_state": {
+      "value": false,
+      "states": [
+        "avb_compiled_out",
+        "avb_runtime_disabled",
+        "avb_enabled_but_unavailable",
+        "avb_enabled_partial_readiness",
+        "avb_enabled_operational"
+      ]
+    },
+    "evidence": [
+      {
+        "claim_id": "avb_default_off",
+        "refs": [
+          "app/config.py:447",
+          "docs/avb-setup.md:45"
+        ]
+      },
+      {
+        "claim_id": "availability_gates",
+        "refs": [
+          "app/services/avb/__init__.py:33",
+          "app/services/avb/__init__.py:45",
+          "app/services/avb/__init__.py:51"
+        ]
+      },
+      {
+        "claim_id": "avb_routes_graceful",
+        "refs": [
+          "app/main.py:428",
+          "app/routes/avb.py:41",
+          "app/routes/avb.py:138"
+        ]
+      },
+      {
+        "claim_id": "non_avb_control_plane",
+        "refs": [
+          "app/services/flow_orchestrator.py:198",
+          "app/routes/chains.py:469"
+        ]
+      }
+    ]
+  },
+  "layout_contract": {
+    "lanes": [
+      {
+        "id": "lane_node_a",
+        "label": "Node A",
+        "index": 0
+      },
+      {
+        "id": "lane_network",
+        "label": "Network",
+        "index": 1
+      },
+      {
+        "id": "lane_node_b",
+        "label": "Node B",
+        "index": 2
+      }
+    ],
+    "planes": [
+      {
+        "id": "plane_clock_sync",
+        "label": "Clock/Sync",
+        "index": 0
+      },
+      {
+        "id": "plane_audio_data",
+        "label": "Audio Data",
+        "index": 1
+      },
+      {
+        "id": "plane_control",
+        "label": "Control/Management",
+        "index": 2
+      }
+    ],
+    "arrow_styles": [
+      {
+        "id": "audio_active",
+        "stroke": "solid",
+        "weight": "thick",
+        "semantic": "active_audio_data_path"
+      },
+      {
+        "id": "clock_active",
+        "stroke": "solid",
+        "weight": "medium",
+        "semantic": "active_clock_sync"
+      },
+      {
+        "id": "control_active",
+        "stroke": "dashed",
+        "weight": "thin",
+        "semantic": "active_control_plane"
+      },
+      {
+        "id": "planned_or_placeholder",
+        "stroke": "dotted",
+        "weight": "medium",
+        "semantic": "planned_or_partial_implementation"
+      }
+    ],
+    "required_hop_labels": [
+      "protocol_or_interface",
+      "timing_target_or_expectation",
+      "failure_signal"
+    ]
+  },
+  "diagrams": [
+    {
+      "id": "diagram_avb_8021as_active",
+      "label": "With AVB + IEEE 802.1AS",
+      "mode_ref": "mode_avb_8021as_active",
+      "nodes": [
+        {
+          "id": "n_a_ptp",
+          "label": "ptp4l + phc2sys",
+          "lane": "lane_node_a",
+          "plane": "plane_clock_sync",
+          "state": "active"
+        },
+        {
+          "id": "n_net_gptp",
+          "label": "gPTP Domain (802.1AS)",
+          "lane": "lane_network",
+          "plane": "plane_clock_sync",
+          "state": "active"
+        },
+        {
+          "id": "n_b_ptp",
+          "label": "ptp4l + phc2sys",
+          "lane": "lane_node_b",
+          "plane": "plane_clock_sync",
+          "state": "active"
+        },
+        {
+          "id": "n_a_input",
+          "label": "ALSA/PipeWire Input",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n_a_juce",
+          "label": "JUCE Engine",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n_a_talker_device",
+          "label": "AvbAudioIODevice (Talker)",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "partial"
+        },
+        {
+          "id": "n_a_avb_stream_send",
+          "label": "AvbStream sendFrame",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "partial"
+        },
+        {
+          "id": "n_net_tsn",
+          "label": "TSN qdisc + VLAN",
+          "lane": "lane_network",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n_net_avtp",
+          "label": "IEEE 1722 AVTP Frames",
+          "lane": "lane_network",
+          "plane": "plane_audio_data",
+          "state": "partial"
+        },
+        {
+          "id": "n_b_avb_stream_recv",
+          "label": "AvbStream receiveFrame",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "partial"
+        },
+        {
+          "id": "n_b_listener_device",
+          "label": "AvbAudioIODevice (Listener)",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "partial"
+        },
+        {
+          "id": "n_b_juce",
+          "label": "JUCE Engine",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n_b_output",
+          "label": "PipeWire/ALSA Output",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n_ctrl_avb_status",
+          "label": "/api/avb/status",
+          "lane": "lane_network",
+          "plane": "plane_control",
+          "state": "active"
+        },
+        {
+          "id": "n_ctrl_ptp_status",
+          "label": "/api/avb/ptp/status",
+          "lane": "lane_network",
+          "plane": "plane_control",
+          "state": "active"
+        },
+        {
+          "id": "n_ctrl_tsn_status",
+          "label": "/api/avb/tsn/status",
+          "lane": "lane_network",
+          "plane": "plane_control",
+          "state": "active"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e_clk_a_to_net",
+          "from": "n_a_ptp",
+          "to": "n_net_gptp",
+          "style": "clock_active",
+          "protocol_or_interface": "IEEE 802.1AS gPTP",
+          "timing_target_or_expectation": "sub-microsecond class sync target",
+          "failure_signal": "/api/avb/ptp/status.available=false"
+        },
+        {
+          "id": "e_clk_net_to_b",
+          "from": "n_net_gptp",
+          "to": "n_b_ptp",
+          "style": "clock_active",
+          "protocol_or_interface": "IEEE 802.1AS gPTP",
+          "timing_target_or_expectation": "stable grandmaster lock",
+          "failure_signal": "ptp state not SLAVE/MASTER"
+        },
+        {
+          "id": "e_audio_a_in_to_juce",
+          "from": "n_a_input",
+          "to": "n_a_juce",
+          "style": "audio_active",
+          "protocol_or_interface": "ALSA/PipeWire internal graph",
+          "timing_target_or_expectation": "buffer/quantum bounded",
+          "failure_signal": "xrun/latency alerts"
+        },
+        {
+          "id": "e_audio_a_juce_to_talker",
+          "from": "n_a_juce",
+          "to": "n_a_talker_device",
+          "style": "planned_or_placeholder",
+          "protocol_or_interface": "JUCE AudioDeviceManager AVB device type",
+          "timing_target_or_expectation": "RT callback path",
+          "failure_signal": "device creation unavailable"
+        },
+        {
+          "id": "e_audio_talker_to_stream_send",
+          "from": "n_a_talker_device",
+          "to": "n_a_avb_stream_send",
+          "style": "planned_or_placeholder",
+          "protocol_or_interface": "ring buffer to AVB stream",
+          "timing_target_or_expectation": "bounded callback-to-network transfer",
+          "failure_signal": "underrun counters"
+        },
+        {
+          "id": "e_audio_send_to_tsn",
+          "from": "n_a_avb_stream_send",
+          "to": "n_net_tsn",
+          "style": "audio_active",
+          "protocol_or_interface": "AF_PACKET + qdisc",
+          "timing_target_or_expectation": "priority traffic shaping active",
+          "failure_signal": "/api/avb/tsn/status.available=false"
+        },
+        {
+          "id": "e_audio_tsn_to_avtp",
+          "from": "n_net_tsn",
+          "to": "n_net_avtp",
+          "style": "audio_active",
+          "protocol_or_interface": "IEEE 1722 AVTP",
+          "timing_target_or_expectation": "deterministic frame transit",
+          "failure_signal": "stream errors or drops"
+        },
+        {
+          "id": "e_audio_avtp_to_recv",
+          "from": "n_net_avtp",
+          "to": "n_b_avb_stream_recv",
+          "style": "audio_active",
+          "protocol_or_interface": "AVTP listener ingress",
+          "timing_target_or_expectation": "expected sequence/timestamp continuity",
+          "failure_signal": "sequence/timestamp errors"
+        },
+        {
+          "id": "e_audio_recv_to_listener_device",
+          "from": "n_b_avb_stream_recv",
+          "to": "n_b_listener_device",
+          "style": "planned_or_placeholder",
+          "protocol_or_interface": "AVB ring buffer to JUCE callback",
+          "timing_target_or_expectation": "bounded network-to-callback transfer",
+          "failure_signal": "overrun counters"
+        },
+        {
+          "id": "e_audio_listener_to_b_juce",
+          "from": "n_b_listener_device",
+          "to": "n_b_juce",
+          "style": "planned_or_placeholder",
+          "protocol_or_interface": "JUCE AVB device",
+          "timing_target_or_expectation": "RT-safe pull/push",
+          "failure_signal": "stream state error"
+        },
+        {
+          "id": "e_audio_b_juce_to_out",
+          "from": "n_b_juce",
+          "to": "n_b_output",
+          "style": "audio_active",
+          "protocol_or_interface": "PipeWire/ALSA output path",
+          "timing_target_or_expectation": "low-latency local output",
+          "failure_signal": "xrun/latency alerts"
+        },
+        {
+          "id": "e_ctrl_status",
+          "from": "n_a_juce",
+          "to": "n_ctrl_avb_status",
+          "style": "control_active",
+          "protocol_or_interface": "REST API",
+          "timing_target_or_expectation": "fast health polling",
+          "failure_signal": "status reason populated"
+        },
+        {
+          "id": "e_ctrl_ptp",
+          "from": "n_a_ptp",
+          "to": "n_ctrl_ptp_status",
+          "style": "control_active",
+          "protocol_or_interface": "REST API + pmc/journal backend",
+          "timing_target_or_expectation": "sub-100ms endpoint target",
+          "failure_signal": "available=false or timeout"
+        },
+        {
+          "id": "e_ctrl_tsn",
+          "from": "n_net_tsn",
+          "to": "n_ctrl_tsn_status",
+          "style": "control_active",
+          "protocol_or_interface": "REST API + tc query backend",
+          "timing_target_or_expectation": "rapid qdisc visibility",
+          "failure_signal": "available=false or tc error"
+        }
+      ]
+    },
+    {
+      "id": "diagram_non_avb",
+      "label": "Without AVB + IEEE 802.1AS",
+      "mode_ref": "mode_non_avb_data_path",
+      "nodes": [
+        {
+          "id": "n2_a_input",
+          "label": "ALSA/PipeWire Input",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n2_a_juce",
+          "label": "JUCE Engine",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n2_a_output",
+          "label": "Local Output",
+          "lane": "lane_node_a",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n2_b_input",
+          "label": "ALSA/PipeWire Input",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n2_b_juce",
+          "label": "JUCE Engine",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n2_b_output",
+          "label": "Local Output",
+          "lane": "lane_node_b",
+          "plane": "plane_audio_data",
+          "state": "active"
+        },
+        {
+          "id": "n2_ctrl_cluster_assign",
+          "label": "/api/cluster/flows/assign",
+          "lane": "lane_network",
+          "plane": "plane_control",
+          "state": "active"
+        },
+        {
+          "id": "n2_ctrl_chain_deploy",
+          "label": "/api/chains/deploy",
+          "lane": "lane_network",
+          "plane": "plane_control",
+          "state": "partial"
+        },
+        {
+          "id": "n2_ctrl_audio_path",
+          "label": "/api/audio-path/*",
+          "lane": "lane_network",
+          "plane": "plane_control",
+          "state": "active"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e2_audio_a_local_1",
+          "from": "n2_a_input",
+          "to": "n2_a_juce",
+          "style": "audio_active",
+          "protocol_or_interface": "local ALSA/PipeWire graph",
+          "timing_target_or_expectation": "local low-latency path",
+          "failure_signal": "audio health alerts/xruns"
+        },
+        {
+          "id": "e2_audio_a_local_2",
+          "from": "n2_a_juce",
+          "to": "n2_a_output",
+          "style": "audio_active",
+          "protocol_or_interface": "local output route",
+          "timing_target_or_expectation": "local bounded latency",
+          "failure_signal": "audio health alerts/xruns"
+        },
+        {
+          "id": "e2_audio_b_local_1",
+          "from": "n2_b_input",
+          "to": "n2_b_juce",
+          "style": "audio_active",
+          "protocol_or_interface": "local ALSA/PipeWire graph",
+          "timing_target_or_expectation": "local low-latency path",
+          "failure_signal": "audio health alerts/xruns"
+        },
+        {
+          "id": "e2_audio_b_local_2",
+          "from": "n2_b_juce",
+          "to": "n2_b_output",
+          "style": "audio_active",
+          "protocol_or_interface": "local output route",
+          "timing_target_or_expectation": "local bounded latency",
+          "failure_signal": "audio health alerts/xruns"
+        },
+        {
+          "id": "e2_ctrl_assign",
+          "from": "n2_a_juce",
+          "to": "n2_ctrl_cluster_assign",
+          "style": "control_active",
+          "protocol_or_interface": "REST control-plane",
+          "timing_target_or_expectation": "operator-driven orchestration",
+          "failure_signal": "assignment failure response"
+        },
+        {
+          "id": "e2_ctrl_deploy",
+          "from": "n2_ctrl_cluster_assign",
+          "to": "n2_ctrl_chain_deploy",
+          "style": "planned_or_placeholder",
+          "protocol_or_interface": "HTTP chain deployment call",
+          "timing_target_or_expectation": "accepted deployment command",
+          "failure_signal": "non-200 or deploy error"
+        },
+        {
+          "id": "e2_ctrl_deploy_to_b",
+          "from": "n2_ctrl_chain_deploy",
+          "to": "n2_b_juce",
+          "style": "planned_or_placeholder",
+          "protocol_or_interface": "cluster deploy integration path",
+          "timing_target_or_expectation": "activation path completion",
+          "failure_signal": "placeholder behavior / no full activation"
+        },
+        {
+          "id": "e2_ctrl_health",
+          "from": "n2_b_juce",
+          "to": "n2_ctrl_audio_path",
+          "style": "control_active",
+          "protocol_or_interface": "health/metrics API polling",
+          "timing_target_or_expectation": "near-real-time status visibility",
+          "failure_signal": "unhealthy node count increase"
+        }
+      ]
+    }
+  ],
+  "comparison_matrix": [
+    {
+      "dimension": "inter_node_audio_transport",
+      "with_avb_8021as": "Layer-2 AVTP stream path",
+      "without_avb_8021as": "No deterministic inter-node audio path"
+    },
+    {
+      "dimension": "time_sync",
+      "with_avb_8021as": "gPTP/802.1AS",
+      "without_avb_8021as": "No shared PTP clock domain"
+    },
+    {
+      "dimension": "determinism",
+      "with_avb_8021as": "Bounded latency/jitter target",
+      "without_avb_8021as": "Best-effort only"
+    },
+    {
+      "dimension": "traffic_shaping",
+      "with_avb_8021as": "TSN qdisc (mqprio/CBS/ETF)",
+      "without_avb_8021as": "Standard networking"
+    },
+    {
+      "dimension": "node_relationship",
+      "with_avb_8021as": "Talker/listener endpoints",
+      "without_avb_8021as": "Independent local engines"
+    },
+    {
+      "dimension": "cluster_traffic",
+      "with_avb_8021as": "Control plus AVB status/discovery",
+      "without_avb_8021as": "Control only (deploy/health/API)"
+    },
+    {
+      "dimension": "failure_mode",
+      "with_avb_8021as": "Unavailable/degraded AVB status signaling",
+      "without_avb_8021as": "Local processing continues; no deterministic inter-node audio path"
+    },
+    {
+      "dimension": "observability",
+      "with_avb_8021as": "/api/avb/* plus stream stats",
+      "without_avb_8021as": "/api/audio-path/* plus cluster deploy status"
+    }
+  ],
+  "implementation_reality_overlays": [
+    {
+      "id": "overlay_router_factory_gap",
+      "severity": "high",
+      "status": "incomplete",
+      "description": "AVB router endpoints import get_avb_router, but factory wiring is currently incomplete in avb_router module.",
+      "affected_nodes": [
+        "n_ctrl_avb_status",
+        "n_ctrl_ptp_status",
+        "n_ctrl_tsn_status"
+      ],
+      "refs": [
+        "app/routes/avb.py:548",
+        "app/services/avb/avb_router.py:514"
+      ]
+    },
+    {
+      "id": "overlay_chain_deploy_placeholder",
+      "severity": "high",
+      "status": "partial",
+      "description": "Cluster deploy endpoint currently acknowledges request; full engine activation flow is not completed.",
+      "affected_nodes": [
+        "n2_ctrl_chain_deploy"
+      ],
+      "refs": [
+        "app/routes/chains.py:469",
+        "app/routes/chains.py:473"
+      ]
+    },
+    {
+      "id": "overlay_stream_placeholder_paths",
+      "severity": "medium",
+      "status": "partial",
+      "description": "Some AVB stream lifecycle internals are placeholder in Python and C++.",
+      "affected_nodes": [
+        "n_a_talker_device",
+        "n_a_avb_stream_send",
+        "n_b_avb_stream_recv",
+        "n_b_listener_device",
+        "n_net_avtp"
+      ],
+      "refs": [
+        "app/services/avb/avb_service.py:132",
+        "app/services/avb/avb_service.py:211",
+        "juce-engine/Source/AvbStream.cpp:156"
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "checkpoint_a",
+      "title": "Confirm mode matrix",
+      "objective": "Validate compile-time/runtime and readiness states before drawing.",
+      "steps": [
+        "Check AVB build flag state (USE_AVB/HAS_AVB)",
+        "Check runtime config state (avb.enabled/interface)",
+        "Check availability gates (interface exists, ptp4l present)",
+        "Check PTP and TSN endpoint health"
+      ],
+      "expected_output": "Verified mode/state table"
+    },
+    {
+      "id": "checkpoint_b",
+      "title": "Draw baseline frame",
+      "objective": "Establish deterministic layout for both diagrams.",
+      "steps": [
+        "Create 3 lanes (Node A, Network, Node B)",
+        "Create 3 planes (Clock/Sync, Audio Data, Control)"
+      ],
+      "expected_output": "Empty but structured canvas"
+    },
+    {
+      "id": "checkpoint_c",
+      "title": "Draw AVB path",
+      "objective": "Render active synchronized deterministic path.",
+      "steps": [
+        "Add gPTP clock chain",
+        "Add AVTP audio chain through TSN",
+        "Annotate labels for protocol/timing/failure"
+      ],
+      "expected_output": "Complete AVB diagram"
+    },
+    {
+      "id": "checkpoint_d",
+      "title": "Draw non-AVB path",
+      "objective": "Render local-only audio with control-plane inter-node links.",
+      "steps": [
+        "Keep audio arrows local to each node",
+        "Add cluster assign/deploy/health control arrows",
+        "Avoid cross-node audio data arrow"
+      ],
+      "expected_output": "Complete non-AVB diagram"
+    },
+    {
+      "id": "checkpoint_e",
+      "title": "Annotate observability and failures",
+      "objective": "Make operational debugging path explicit.",
+      "steps": [
+        "Add AVB endpoint status labels",
+        "Add audio-path and cluster health labels",
+        "Add unavailable/degraded conditions"
+      ],
+      "expected_output": "Ops-ready annotated diagram"
+    },
+    {
+      "id": "checkpoint_f",
+      "title": "Overlay implementation status",
+      "objective": "Separate current implementation from target architecture.",
+      "steps": [
+        "Mark partial sections with dotted style",
+        "Attach overlay notes from implementation_reality_overlays"
+      ],
+      "expected_output": "Final diagram with implementation-truth overlays"
+    }
+  ],
+  "validation_rules": [
+    {
+      "id": "rule_unique_ids",
+      "description": "All node and edge IDs must be unique across all diagrams."
+    },
+    {
+      "id": "rule_lane_plane_membership",
+      "description": "Every node must reference known lane and plane IDs."
+    },
+    {
+      "id": "rule_edge_node_resolution",
+      "description": "Every edge.from and edge.to must resolve to existing node IDs in the same diagram."
+    },
+    {
+      "id": "rule_required_hop_labels",
+      "description": "Each edge must include protocol_or_interface, timing_target_or_expectation, failure_signal."
+    },
+    {
+      "id": "rule_no_inter_node_audio_in_non_avb",
+      "description": "diagram_non_avb must not contain audio_active edge crossing from lane_node_a to lane_node_b."
+    }
+  ]
+}

@@ -10,7 +10,7 @@ from textual.app import ComposeResult, App
 from textual.widgets import Static
 from textual.containers import Container
 
-class TestApp(App):
+class PluginLoaderTestApp(App):
     """Test app for plugin loader screen"""
     
     def __init__(self):
@@ -21,5 +21,5 @@ class TestApp(App):
         yield PluginLoaderScreen(self.api_client, id="plugin-loader")
 
 if __name__ == "__main__":
-    app = TestApp()
+    app = PluginLoaderTestApp()
     app.run()

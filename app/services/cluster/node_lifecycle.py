@@ -13,10 +13,13 @@ Uses async state machine pattern for reliable transitions.
 
 import asyncio
 import logging
+import json
+import subprocess
 from typing import Dict, Optional, Callable, List
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.certificate_authority import get_cluster_ca
@@ -338,17 +341,19 @@ class NodeLifecycleManager:
                 f"Node {self.node_id} degraded - investigating..."
             )
 
-            # TODO: Implement diagnostics
-            # - Check disk space
-            # - Check memory
-            # - Check network connectivity
-            # - Check service health
+            diagnostics = await asyncio.to_thread(self._collect_diagnostics)
+            self.registry.update_node_status(self.node_id, "degraded")
+            details = {"diagnostics": diagnostics}
+            severity = EventSeverity.WARNING
+            if diagnostics.get("service_active") != "active":
+                severity = EventSeverity.ERROR
 
             event = ClusterEvent(
                 event_type=EventType.HEALTH_DEGRADED,
-                severity=EventSeverity.WARNING,
+                severity=severity,
                 source_node_id=self.node_id,
                 message=f"Node {self.node_id} health degraded",
+                details=details,
             )
             await self.event_bus.publish_event(event)
 
@@ -361,17 +366,44 @@ class NodeLifecycleManager:
         try:
             self.logger.warning(f"Attempting recovery of {self.node_id}...")
 
-            # TODO: Implement recovery procedures
-            # - Restart services
-            # - Clear caches
-            # - Restore from snapshot
-            # - Rebuild database
+            recovery_steps = []
+            restart_ok = await asyncio.to_thread(
+                self._run_shell, ["systemctl", "restart", "map2-audio"]
+            )
+            recovery_steps.append(
+                {
+                    "step": "restart_map2_audio",
+                    "success": restart_ok.returncode == 0,
+                    "stderr": restart_ok.stderr.strip(),
+                }
+            )
+
+            active = await asyncio.to_thread(
+                self._run_shell, ["systemctl", "is-active", "map2-audio"]
+            )
+            is_healthy = active.returncode == 0 and active.stdout.strip() == "active"
+
+            if is_healthy:
+                self.registry.update_node_status(self.node_id, "online")
+                event_type = EventType.NODE_RECOVERED
+                severity = EventSeverity.INFO
+                msg = f"Node {self.node_id} recovery successful"
+            else:
+                self.registry.update_node_status(self.node_id, "failed")
+                event_type = EventType.NODE_FAILED
+                severity = EventSeverity.CRITICAL
+                msg = f"Node {self.node_id} recovery failed"
 
             event = ClusterEvent(
-                event_type=EventType.NODE_RECOVERED,
-                severity=EventSeverity.INFO,
+                event_type=event_type,
+                severity=severity,
                 source_node_id=self.node_id,
-                message=f"Node {self.node_id} recovery in progress",
+                message=msg,
+                details={
+                    "steps": recovery_steps,
+                    "service_state": active.stdout.strip(),
+                    "service_check_error": active.stderr.strip(),
+                },
             )
             await self.event_bus.publish_event(event)
 
@@ -383,26 +415,120 @@ class NodeLifecycleManager:
         """Perform graceful node shutdown"""
         try:
             self.logger.info(f"Gracefully shutting down {self.node_id}...")
+            persist_dir = Path("/var/lib/map2/lifecycle")
+            persist_dir.mkdir(parents=True, exist_ok=True)
+            persist_file = persist_dir / f"{self.node_id}.json"
+            snapshot = {
+                "node_id": self.node_id,
+                "state": self.current_state.value,
+                "timestamp": datetime.utcnow().isoformat(),
+                "transition_count": len(self.transition_history),
+            }
+            with open(persist_file, "w", encoding="utf-8") as f:
+                json.dump(snapshot, f, indent=2)
 
-            # TODO: Implement graceful shutdown
-            # - Persist state
-            # - Migrate workload
-            # - Stop services
-            # - Update registry
+            stop_result = await asyncio.to_thread(
+                self._run_shell, ["systemctl", "stop", "map2-audio"]
+            )
+            self.registry.update_node_status(self.node_id, "offline")
+
+            await self.event_bus.publish_event(
+                ClusterEvent(
+                    event_type=EventType.NODE_LEFT,
+                    severity=EventSeverity.INFO,
+                    source_node_id=self.node_id,
+                    message=f"Node {self.node_id} gracefully shut down",
+                    details={
+                        "persist_file": str(persist_file),
+                        "service_stop_rc": stop_result.returncode,
+                        "service_stop_stderr": stop_result.stderr.strip(),
+                    },
+                )
+            )
 
         except Exception as e:
             self.logger.error(f"Graceful shutdown failed: {e}")
             raise
+
+    def _collect_diagnostics(self) -> Dict:
+        """Collect local diagnostics snapshot."""
+        disk = self._run_shell(["df", "-h", "/"])
+        memory = self._run_shell(["free", "-h"])
+        service = self._run_shell(["systemctl", "is-active", "map2-audio"])
+        latency = self._run_shell(["ping", "-c", "1", "-W", "1", "8.8.8.8"])
+
+        return {
+            "disk": disk.stdout.strip() or disk.stderr.strip(),
+            "memory": memory.stdout.strip() or memory.stderr.strip(),
+            "service_active": service.stdout.strip() or "unknown",
+            "service_error": service.stderr.strip(),
+            "network_ping_ok": latency.returncode == 0,
+            "network_ping_out": (latency.stdout.strip() or latency.stderr.strip())[:400],
+        }
+
+    def _run_shell(self, cmd: List[str]) -> subprocess.CompletedProcess:
+        """Run local command and return process result."""
+        try:
+            return subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+        except Exception as e:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=1,
+                stdout="",
+                stderr=str(e),
+            )
 
     async def _promote_node(self):
         """Promote node to management role"""
         try:
             self.logger.info(f"Promoting {self.node_id} to management role...")
 
-            # TODO: Implement promotion
-            # - Install management services
-            # - Initialize registry copy
-            # - Update role in registry
+            steps = []
+            for cmd, step in [
+                (["systemctl", "enable", "--now", "map2-management"], "enable_management_service"),
+                (["systemctl", "restart", "map2-management"], "restart_management_service"),
+            ]:
+                result = await asyncio.to_thread(self._run_shell, cmd)
+                steps.append(
+                    {
+                        "step": step,
+                        "returncode": result.returncode,
+                        "stderr": result.stderr.strip(),
+                    }
+                )
+
+            node = self.registry.get_node(self.node_id) or {}
+            self.registry.add_or_update_node(
+                node_id=self.node_id,
+                hostname=node.get("hostname") or self.node_id,
+                ip_address=node.get("ip_address"),
+                role="MANAGEMENT-NODE",
+                deployment_mode="MANAGEMENT-NODE",
+                cpu_cores=node.get("cpu_cores", 0),
+                total_memory_gb=node.get("total_memory_gb", 0),
+                audio_devices=[],
+                storage_gb=node.get("storage_gb", 0),
+                status=node.get("status", "online"),
+                health_score=node.get("health_score", 50.0),
+                version=node.get("version", "0.0.0"),
+                metadata={"lifecycle": "promoted"},
+            )
+
+            await self.event_bus.publish_event(
+                ClusterEvent(
+                    event_type=EventType.NODE_UPDATED,
+                    severity=EventSeverity.INFO,
+                    source_node_id=self.node_id,
+                    message=f"Node {self.node_id} promoted to management role",
+                    details={"steps": steps},
+                )
+            )
 
         except Exception as e:
             self.logger.error(f"Promotion failed: {e}")
@@ -413,10 +539,46 @@ class NodeLifecycleManager:
         try:
             self.logger.info(f"Demoting {self.node_id} to audio role...")
 
-            # TODO: Implement demotion
-            # - Stop management services
-            # - Clean up registry copy
-            # - Update role in registry
+            steps = []
+            for cmd, step in [
+                (["systemctl", "stop", "map2-management"], "stop_management_service"),
+                (["systemctl", "disable", "map2-management"], "disable_management_service"),
+            ]:
+                result = await asyncio.to_thread(self._run_shell, cmd)
+                steps.append(
+                    {
+                        "step": step,
+                        "returncode": result.returncode,
+                        "stderr": result.stderr.strip(),
+                    }
+                )
+
+            node = self.registry.get_node(self.node_id) or {}
+            self.registry.add_or_update_node(
+                node_id=self.node_id,
+                hostname=node.get("hostname") or self.node_id,
+                ip_address=node.get("ip_address"),
+                role="AUDIO-NODE",
+                deployment_mode="AUDIO-NODE",
+                cpu_cores=node.get("cpu_cores", 0),
+                total_memory_gb=node.get("total_memory_gb", 0),
+                audio_devices=[],
+                storage_gb=node.get("storage_gb", 0),
+                status=node.get("status", "online"),
+                health_score=node.get("health_score", 50.0),
+                version=node.get("version", "0.0.0"),
+                metadata={"lifecycle": "demoted"},
+            )
+
+            await self.event_bus.publish_event(
+                ClusterEvent(
+                    event_type=EventType.NODE_UPDATED,
+                    severity=EventSeverity.INFO,
+                    source_node_id=self.node_id,
+                    message=f"Node {self.node_id} demoted to audio role",
+                    details={"steps": steps},
+                )
+            )
 
         except Exception as e:
             self.logger.error(f"Demotion failed: {e}")

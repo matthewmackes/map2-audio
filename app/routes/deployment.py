@@ -12,7 +12,9 @@ Endpoints for:
 import asyncio
 import logging
 import subprocess
-from typing import Dict, List, Optional
+import socket
+from urllib.request import urlopen
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -169,20 +171,76 @@ async def _get_service_status(service: str) -> ServiceStatusResponse:
     """Get status of a specific service"""
     config = get_deployment_config()
     policy = config.get_service_policy(service)
-    
-    # TODO: Query actual service status from service_manager
-    # For now, return policy state as status
+
+    # Default status from deployment policy
     status_map = {
         ServicePolicy.ENABLED: "running",
         ServicePolicy.DISABLED: "stopped",
         ServicePolicy.DEGRADED: "degraded",
     }
-    
+    resolved_status = status_map.get(policy, "unknown")
+
+    # Map deployment service names to orchestrator service names where possible
+    service_aliases = {
+        "juce_engine": "juce_engine",
+        "plugin_loader": "plugin_loader",
+        "database": "database",
+        "lcd_manager": "lcd_display",
+    }
+
+    def _map_orchestrator_state(state: str) -> str:
+        state = (state or "").lower()
+        if state in {"running"}:
+            return "running"
+        if state in {"degraded", "failed", "restarting"}:
+            return "degraded"
+        return "stopped"
+
+    # 1) Prefer orchestrator state for managed services.
+    try:
+        from app.services.service_orchestrator import get_orchestrator
+        orchestrator = get_orchestrator()
+        alias = service_aliases.get(service)
+        if alias:
+            svc = orchestrator.get_service_status(alias)
+            if svc:
+                resolved_status = _map_orchestrator_state(svc.get("state", ""))
+    except Exception as e:
+        logger.debug(f"Orchestrator status lookup failed for {service}: {e}")
+
+    # 2) Service-specific checks for services not covered by orchestrator aliases.
+    try:
+        from app.services import service_manager
+        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+
+        if service in {"juce_engine", "audio_io"}:
+            audio_status = service_manager.get_audio_status()
+            resolved_status = "running" if audio_status.get("running") else "stopped"
+        elif service == "mdns_discovery":
+            discovery = get_enhanced_mdns_discovery()
+            _ = discovery.get_cluster_summary()
+            resolved_status = "running"
+        elif service == "api_server":
+            # If this endpoint is serving, API is operational.
+            resolved_status = "running"
+        elif service == "web_ui":
+            # Probe frontend production endpoint quickly.
+            def _probe_web_ui() -> bool:
+                try:
+                    with urlopen("http://127.0.0.1:3000/", timeout=1.5) as resp:
+                        return 200 <= resp.status < 500
+                except Exception:
+                    return False
+            web_ok = await asyncio.to_thread(_probe_web_ui)
+            resolved_status = "running" if web_ok else "stopped"
+    except Exception as e:
+        logger.debug(f"Service-specific status lookup failed for {service}: {e}")
+
     return ServiceStatusResponse(
         service=service,
         policy=policy.value,
         enabled=config.is_service_enabled(service),
-        status=status_map.get(policy, "unknown"),
+        status=resolved_status,
     )
 
 
@@ -303,7 +361,6 @@ async def verify_mode_consistency():
 async def _check_network_connectivity() -> HealthCheckResult:
     """Check network connectivity"""
     try:
-        import socket
         socket.create_connection(("8.8.8.8", 53), timeout=2)
         return HealthCheckResult(
             check="network_connectivity",
@@ -321,11 +378,15 @@ async def _check_network_connectivity() -> HealthCheckResult:
 async def _check_mdns_discovery() -> HealthCheckResult:
     """Check mDNS discovery service"""
     try:
-        # TODO: Query MDNSPeerDiscovery service status
+        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+
+        discovery = get_enhanced_mdns_discovery()
+        summary = discovery.get_cluster_summary()
+
         return HealthCheckResult(
             check="mdns_discovery",
             passed=True,
-            message="mDNS discovery running",
+            message=f"mDNS discovery running (online nodes: {summary.get('online_nodes', 0)})",
         )
     except Exception as e:
         return HealthCheckResult(
@@ -365,11 +426,30 @@ async def _check_ssh_connectivity() -> HealthCheckResult:
 async def _check_peers_discovered() -> HealthCheckResult:
     """Check if any peers have been discovered"""
     try:
-        # TODO: Query MDNSPeerDiscovery for discovered peers
+        config = get_deployment_config()
+        if config.mode == DeploymentMode.ALL_IN_ONE:
+            return HealthCheckResult(
+                check="peers_discovered",
+                passed=True,
+                message="Peer discovery not required in all-in-one mode",
+            )
+
+        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+
+        discovery = get_enhanced_mdns_discovery()
+        summary = discovery.get_cluster_summary()
+        online_nodes = int(summary.get("online_nodes", 0))
+        total_nodes = int(summary.get("total_discovered", 0))
+        passed = online_nodes > 0
+
         return HealthCheckResult(
             check="peers_discovered",
-            passed=True,
-            message="Peer discovery check OK",
+            passed=passed,
+            message=(
+                f"Discovered {online_nodes} online peer(s) ({total_nodes} total cached)"
+                if passed
+                else "No online peers discovered"
+            ),
         )
     except Exception as e:
         return HealthCheckResult(
@@ -382,11 +462,36 @@ async def _check_peers_discovered() -> HealthCheckResult:
 async def _check_audio_hardware() -> HealthCheckResult:
     """Check audio hardware availability"""
     try:
-        # TODO: Query audio service for hardware status
+        from app.services import service_manager
+
+        audio_status = service_manager.get_audio_status()
+        running = bool(audio_status.get("running"))
+
+        # Also verify ALSA card presence as hardware-level fallback
+        def _count_alsa_cards() -> int:
+            try:
+                with open("/proc/asound/cards", "r") as f:
+                    return sum(1 for line in f if line.lstrip()[:1].isdigit())
+            except Exception:
+                return 0
+
+        card_count = await asyncio.to_thread(_count_alsa_cards)
+        passed = running or card_count > 0
+
+        if running:
+            message = (
+                f"Audio engine running ({audio_status.get('sample_rate', 0)}Hz, "
+                f"buffer={audio_status.get('buffer_size', 0)})"
+            )
+        elif card_count > 0:
+            message = f"Audio hardware detected ({card_count} ALSA card(s))"
+        else:
+            message = "No active audio engine and no ALSA hardware detected"
+
         return HealthCheckResult(
             check="audio_hardware",
-            passed=True,
-            message="Audio hardware available",
+            passed=passed,
+            message=message,
         )
     except Exception as e:
         return HealthCheckResult(

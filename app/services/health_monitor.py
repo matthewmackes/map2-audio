@@ -309,6 +309,10 @@ class HealthMonitor(Singleton):
             self.service_history[metrics.service_name] = []
         
         self.service_history[metrics.service_name].append(metrics)
+        if len(self.service_history[metrics.service_name]) > self.max_history_points:
+            self.service_history[metrics.service_name] = (
+                self.service_history[metrics.service_name][-self.max_history_points:]
+            )
     
     def get_overall_status(self) -> HealthStatus:
         """Get overall system health status."""
@@ -317,7 +321,7 @@ class HealthMonitor(Singleton):
         
         # Determine overall status
         if any(m.status == HealthStatus.OFFLINE for m in self.services.values()):
-            return HealthStatus.CRITICAL
+            return HealthStatus.OFFLINE
         elif any(m.status == HealthStatus.CRITICAL for m in self.services.values()):
             return HealthStatus.CRITICAL
         elif any(m.status == HealthStatus.DEGRADED for m in self.services.values()):

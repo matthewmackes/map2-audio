@@ -299,7 +299,7 @@ class WorkflowTab(ScrollableContainer):
             elif btn_id == "btn-reverb-irs":
                 await self._show_reverb_irs()
             elif btn_id == "btn-nam-scan":
-                self.app.notify("NAM rescan coming soon", severity="information", timeout=2)
+                await self._scan_nam_models()
 
             # LCD
             elif btn_id == "btn-lcd-status":
@@ -327,9 +327,9 @@ class WorkflowTab(ScrollableContainer):
             elif btn_id == "btn-reload":
                 await self._reload_config()
             elif btn_id == "btn-clean":
-                self.app.notify("System cleanup coming soon", severity="information", timeout=2)
+                await self._system_cleanup()
             elif btn_id == "btn-stats":
-                self.app.notify("System statistics coming soon", severity="information", timeout=2)
+                await self._show_system_stats()
 
         except Exception as e:
             self.app.notify(f"Error: {str(e)}", severity="error", timeout=5)
@@ -591,3 +591,50 @@ class WorkflowTab(ScrollableContainer):
     async def _reload_config(self) -> None:
         self.app.notify("🔄 Configuration reloaded", severity="information", timeout=2)
         await self.refresh_data()
+
+    async def _scan_nam_models(self) -> None:
+        """Trigger NAM folder scan and refresh NAM counts."""
+        result = await self.api_client.scan_nam_folder()
+        if result.success:
+            scan_status = await self.api_client.get_folder_scan_status()
+            scanning = False
+            if scan_status.success and isinstance(scan_status.data, dict):
+                scanning = bool(scan_status.data.get("scanning", False))
+
+            msg = "🔄 NAM scan started"
+            if scanning:
+                msg += " (running in background)"
+            self.app.notify(msg, severity="information", timeout=3)
+            await self._show_nam_models()
+        else:
+            self.app.notify(f"❌ NAM scan failed: {result.error}", severity="error", timeout=4)
+
+    async def _system_cleanup(self) -> None:
+        """Run available cleanup routines."""
+        result = await self.api_client.cleanup_backups()
+        if result.success:
+            self.app.notify("🧹 Cleanup complete", severity="information", timeout=3)
+        else:
+            self.app.notify(f"❌ Cleanup failed: {result.error}", severity="error", timeout=4)
+
+    async def _show_system_stats(self) -> None:
+        """Show compact system statistics summary."""
+        metrics_result = await self.api_client.get_metrics()
+        health_result = await self.api_client.get_health_stats()
+
+        cpu = mem = dsp = "N/A"
+        if metrics_result.success and isinstance(metrics_result.data, dict):
+            cpu = f"{metrics_result.data.get('cpu_percent', 0):.1f}%"
+            mem = f"{metrics_result.data.get('memory_mb', 0):.0f}MB"
+            dsp = f"{metrics_result.data.get('dsp_load', 0):.1f}%"
+
+        services = alerts = "N/A"
+        if health_result.success and isinstance(health_result.data, dict):
+            services = str(health_result.data.get("total_services", "N/A"))
+            alerts = str(health_result.data.get("active_alerts", "N/A"))
+
+        self.app.notify(
+            f"📊 CPU {cpu} | Mem {mem} | DSP {dsp} | Services {services} | Alerts {alerts}",
+            severity="information",
+            timeout=5,
+        )

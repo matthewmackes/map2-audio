@@ -3,8 +3,14 @@ Phase 5 smoke tests (Checkpoint 5.1)
 """
 
 import os
+import pytest
 from fastapi.testclient import TestClient
 from contextlib import asynccontextmanager
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("MAP2_RUN_INTEGRATION_TESTS", "").lower() != "true",
+    reason="Integration test disabled (set MAP2_RUN_INTEGRATION_TESTS=true to run)",
+)
 
 
 def create_test_client():

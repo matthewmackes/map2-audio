@@ -374,7 +374,7 @@ class MetricsTab(ScrollableContainer):
             elif btn_id == "btn-audio-status":
                 await self._show_audio_status()
             elif btn_id == "btn-audio-config":
-                self.app.notify("Audio configuration coming soon", severity="information", timeout=2)
+                await self._show_audio_config()
 
             # MIDI
             elif btn_id == "btn-midi-enable":
@@ -386,7 +386,7 @@ class MetricsTab(ScrollableContainer):
             elif btn_id == "btn-midi-stop-learn":
                 await self._stop_midi_learn()
             elif btn_id == "btn-midi-mappings":
-                self.app.notify("MIDI mappings viewer coming soon", severity="information", timeout=2)
+                await self._show_midi_mappings()
 
             # USB
             elif btn_id == "btn-usb-detect":
@@ -417,9 +417,9 @@ class MetricsTab(ScrollableContainer):
                 snap_num = int(btn_id.split("-")[-1])
                 await self._load_snapshot(snap_num)
             elif btn_id == "btn-snapshot-save":
-                self.app.notify("Snapshot save coming soon", severity="information", timeout=2)
+                await self._save_current_snapshot()
             elif btn_id == "btn-snapshot-list":
-                self.app.notify("Snapshot list coming soon", severity="information", timeout=2)
+                await self._show_snapshot_list()
 
         except Exception as e:
             self.app.notify(f"Error: {str(e)}", severity="error", timeout=5)
@@ -557,6 +557,31 @@ class MetricsTab(ScrollableContainer):
         else:
             self.app.notify("❌ Failed to get audio status", severity="error", timeout=3)
 
+    async def _show_audio_config(self) -> None:
+        """Show current RT/audio configuration summary."""
+        rt_result = await self.api_client.get_realtime_status()
+        audio_result = await self.api_client.get_audio_status()
+
+        if not rt_result.success and not audio_result.success:
+            self.app.notify("❌ Failed to read audio configuration", severity="error", timeout=3)
+            return
+
+        rt_quality = "N/A"
+        if rt_result.success and isinstance(rt_result.data, dict):
+            rt_quality = str(rt_result.data.get("rt_quality", "N/A"))
+
+        backend = sr = buf = "N/A"
+        if audio_result.success and isinstance(audio_result.data, dict):
+            backend = str(audio_result.data.get("backend", "N/A"))
+            sr = str(audio_result.data.get("sample_rate", "N/A"))
+            buf = str(audio_result.data.get("buffer_size", "N/A"))
+
+        self.app.notify(
+            f"⚙️ {backend} | SR {sr}Hz | Buf {buf} | RT {rt_quality}",
+            severity="information",
+            timeout=5,
+        )
+
     # ═══════════════════════════════════════════════════════════════════════
     # MIDI Methods
     # ═══════════════════════════════════════════════════════════════════════
@@ -590,6 +615,24 @@ class MetricsTab(ScrollableContainer):
             self.app.notify("⏹ MIDI learn stopped", severity="warning", timeout=2)
         else:
             self.app.notify(f"❌ Failed: {result.error}", severity="error", timeout=3)
+
+    async def _show_midi_mappings(self) -> None:
+        """Show summary of configured MIDI mappings."""
+        result = await self.api_client.list_midi_mappings()
+        if not result.success:
+            self.app.notify(f"❌ Failed to fetch mappings: {result.error}", severity="error", timeout=4)
+            return
+
+        mappings = result.data or []
+        if isinstance(mappings, dict):
+            mappings = mappings.get("mappings", [])
+
+        count = len(mappings) if isinstance(mappings, list) else 0
+        if count == 0:
+            self.app.notify("🎛️ MIDI mappings: none", severity="information", timeout=3)
+            return
+
+        self.app.notify(f"🎛️ MIDI mappings configured: {count}", severity="information", timeout=4)
 
     # ═══════════════════════════════════════════════════════════════════════
     # USB Methods
@@ -670,6 +713,43 @@ class MetricsTab(ScrollableContainer):
             self.app.notify(f"💾 Loaded snapshot {snapshot_num}", severity="information", timeout=2)
         else:
             self.app.notify(f"❌ Failed to load snapshot: {result.error}", severity="error", timeout=3)
+
+    async def _save_current_snapshot(self) -> None:
+        """Save current state into active snapshot slot."""
+        current = await self.api_client.get_current_snapshot()
+        slot = 0
+        if current.success and isinstance(current.data, dict):
+            slot = int(current.data.get("snapshot_id", current.data.get("current_snapshot", 0)))
+
+        result = await self.api_client.save_snapshot_slot(slot)
+        if result.success:
+            self.app.notify(f"💾 Saved snapshot slot {slot}", severity="information", timeout=3)
+        else:
+            self.app.notify(f"❌ Failed to save snapshot: {result.error}", severity="error", timeout=4)
+
+    async def _show_snapshot_list(self) -> None:
+        """Show compact snapshot slot occupancy summary."""
+        result = await self.api_client.list_snapshots()
+        if not result.success:
+            self.app.notify(f"❌ Failed to list snapshots: {result.error}", severity="error", timeout=4)
+            return
+
+        data = result.data or {}
+        snapshots = data.get("snapshots", []) if isinstance(data, dict) else []
+        if not snapshots:
+            self.app.notify("📋 No snapshots reported", severity="warning", timeout=3)
+            return
+
+        occupied = 0
+        for snap in snapshots:
+            if isinstance(snap, dict) and (snap.get("has_data") or snap.get("plugin_count", 0) > 0):
+                occupied += 1
+
+        self.app.notify(
+            f"📋 Snapshots: {occupied}/{len(snapshots)} occupied",
+            severity="information",
+            timeout=4,
+        )
 
     # Backward compatibility methods
     def update_audio_status(self, *args, **kwargs) -> None:

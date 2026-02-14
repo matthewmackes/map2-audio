@@ -334,44 +334,92 @@ void JuceAudioGraph::rebuildConnections() {
         graph_->removeConnection(conn);
     }
 
-    if (chain_.empty()) {
-        // Direct passthrough
+    auto connectAudio = [this](juce::AudioProcessorGraph::NodeID src, juce::AudioProcessorGraph::NodeID dst) {
         for (int ch = 0; ch < numChannels_; ++ch) {
-            graph_->addConnection({{audioInputNode_, ch}, {audioOutputNode_, ch}});
+            graph_->addConnection({{src, ch}, {dst, ch}});
         }
-        graph_->addConnection({{midiInputNode_, juce::AudioProcessorGraph::midiChannelIndex},
-                               {midiOutputNode_, juce::AudioProcessorGraph::midiChannelIndex}});
-        return;
-    }
+    };
 
-    // Connect input to first plugin
-    auto firstNodeId = nodeMap_[chain_.front()];
-    for (int ch = 0; ch < numChannels_; ++ch) {
-        graph_->addConnection({{audioInputNode_, ch}, {firstNodeId, ch}});
-    }
-    graph_->addConnection({{midiInputNode_, juce::AudioProcessorGraph::midiChannelIndex},
-                           {firstNodeId, juce::AudioProcessorGraph::midiChannelIndex}});
+    auto connectMidi = [this](juce::AudioProcessorGraph::NodeID src, juce::AudioProcessorGraph::NodeID dst) {
+        graph_->addConnection({{src, juce::AudioProcessorGraph::midiChannelIndex},
+                               {dst, juce::AudioProcessorGraph::midiChannelIndex}});
+    };
 
-    // Connect plugins in chain
-    for (size_t i = 1; i < chain_.size(); ++i) {
-        auto prevNodeId = nodeMap_[chain_[i - 1]];
-        auto currNodeId = nodeMap_[chain_[i]];
+    juce::AudioProcessorGraph::NodeID currentNode = audioInputNode_;
+    juce::AudioProcessorGraph::NodeID currentMidiNode = midiInputNode_;
 
-        for (int ch = 0; ch < numChannels_; ++ch) {
-            graph_->addConnection({{prevNodeId, ch}, {currNodeId, ch}});
+    // Main linear chain
+    if (!chain_.empty()) {
+        auto itFirst = nodeMap_.find(chain_.front());
+        if (itFirst != nodeMap_.end()) {
+            connectAudio(currentNode, itFirst->second);
+            connectMidi(currentMidiNode, itFirst->second);
+            currentNode = itFirst->second;
+            currentMidiNode = itFirst->second;
         }
-        // Pass MIDI through the chain
-        graph_->addConnection({{prevNodeId, juce::AudioProcessorGraph::midiChannelIndex},
-                               {currNodeId, juce::AudioProcessorGraph::midiChannelIndex}});
+
+        for (size_t i = 1; i < chain_.size(); ++i) {
+            auto prevIt = nodeMap_.find(chain_[i - 1]);
+            auto currIt = nodeMap_.find(chain_[i]);
+            if (prevIt == nodeMap_.end() || currIt == nodeMap_.end()) {
+                continue;
+            }
+            connectAudio(prevIt->second, currIt->second);
+            connectMidi(prevIt->second, currIt->second);
+            currentNode = currIt->second;
+            currentMidiNode = currIt->second;
+        }
     }
 
-    // Connect last plugin to output
-    auto lastNodeId = nodeMap_[chain_.back()];
-    for (int ch = 0; ch < numChannels_; ++ch) {
-        graph_->addConnection({{lastNodeId, ch}, {audioOutputNode_, ch}});
+    // Parallel groups are chained after the linear section.
+    for (const auto& group : parallelGroups_) {
+        auto mixerIt = parallelMixerNodes_.find(group.id);
+        if (mixerIt == parallelMixerNodes_.end()) {
+            continue;
+        }
+        const auto mixerNodeId = mixerIt->second;
+
+        bool routedAnyBranch = false;
+        for (const auto& branch : group.branches) {
+            if (branch.empty()) {
+                continue;
+            }
+
+            auto firstBranchIt = nodeMap_.find(branch.front());
+            if (firstBranchIt == nodeMap_.end()) {
+                continue;
+            }
+
+            connectAudio(currentNode, firstBranchIt->second);
+            connectMidi(currentMidiNode, firstBranchIt->second);
+
+            juce::AudioProcessorGraph::NodeID branchTail = firstBranchIt->second;
+            for (size_t i = 1; i < branch.size(); ++i) {
+                auto prevIt = nodeMap_.find(branch[i - 1]);
+                auto currIt = nodeMap_.find(branch[i]);
+                if (prevIt == nodeMap_.end() || currIt == nodeMap_.end()) {
+                    continue;
+                }
+                connectAudio(prevIt->second, currIt->second);
+                connectMidi(prevIt->second, currIt->second);
+                branchTail = currIt->second;
+            }
+
+            connectAudio(branchTail, mixerNodeId);
+            routedAnyBranch = true;
+        }
+
+        // If all branches are empty/unroutable, pass-through into the mixer.
+        if (!routedAnyBranch) {
+            connectAudio(currentNode, mixerNodeId);
+        }
+
+        currentNode = mixerNodeId;
     }
-    graph_->addConnection({{lastNodeId, juce::AudioProcessorGraph::midiChannelIndex},
-                           {midiOutputNode_, juce::AudioProcessorGraph::midiChannelIndex}});
+
+    // Final output connection
+    connectAudio(currentNode, audioOutputNode_);
+    connectMidi(currentMidiNode, midiOutputNode_);
 
     // Apply sidechain connections
     for (const auto& sc : sidechainConnections_) {
@@ -569,8 +617,7 @@ int JuceAudioGraph::createParallelGroup(int position, int numBranches) {
     parallelMixerNodes_[group.id] = node->nodeID;
     parallelGroups_.push_back(group);
 
-    // TODO: Integrate with main chain routing
-    // For now, parallel groups are managed separately
+    // Position is currently advisory; parallel groups are routed in insertion order.
 
     return group.id;
 }

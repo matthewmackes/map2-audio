@@ -405,6 +405,12 @@ private:
     std::atomic<uint16_t> acmp_sequence_{0};
     std::atomic<uint32_t> available_index_{0};
 
+    // Entity Model Enumerator (Phase 10)
+    std::unique_ptr<Avdecc::AvdeccEnumerator> enumerator_;
+
+    // Enumeration completion callback
+    void onEnumerationComplete(uint64_t entity_id, Avdecc::EntityModel model, bool success);
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AvdeccEntity)
 };
 

@@ -758,6 +758,26 @@ class MAP2APIClient:
             "name": name
         })
 
+    async def save_snapshot_slot(self, snapshot_id: int, name: str = "") -> APIResult:
+        """Save current state to a snapshot slot (0-5)."""
+        return await self._request(
+            "POST",
+            f"/api/engine/snapshots/{snapshot_id}/save",
+            json={"name": name},
+        )
+
+    async def get_folder_stats(self) -> APIResult:
+        """Get folder scanner stats (NAM/IR/LV2 counts)."""
+        return await self._request("GET", "/api/folders/stats")
+
+    async def scan_nam_folder(self) -> APIResult:
+        """Trigger NAM folder scan."""
+        return await self._request("POST", "/api/folders/scan/nams")
+
+    async def get_folder_scan_status(self) -> APIResult:
+        """Get current folder scan status."""
+        return await self._request("GET", "/api/folders/scan/status")
+
     # ==================== MIDI (JUCE-Based) ====================
 
     async def get_midi_status(self) -> APIResult:
@@ -2543,6 +2563,47 @@ class MAP2APIClient:
             Result of remediation action.
         """
         return await self._request("POST", f"/api/deployment/remediation/{action}")
+
+    # ========================================================================
+    # AVB/TSN Network Audio API
+    # ========================================================================
+
+    async def is_avb_available(self) -> bool:
+        """
+        Check if AVB/TSN network audio is available on this node.
+
+        Returns:
+            True if AVB is enabled and available, False otherwise.
+
+        Used to conditionally show/hide AVB-related UI components.
+        """
+        try:
+            status = await self.get("/api/avb/status")
+            if status is None:
+                return False
+            return status.get("enabled", False) and status.get("available", False)
+        except Exception:
+            return False
+
+    async def get_avb_status(self) -> Optional[Dict]:
+        """Get overall AVB status including PTP and config."""
+        return await self.get("/api/avb/status")
+
+    async def get_avb_streams(self) -> Optional[Dict]:
+        """Get list of active AVB streams."""
+        return await self.get("/api/avb/streams")
+
+    async def get_avb_discovery(self) -> Optional[Dict]:
+        """Get discovered AVB nodes via mDNS."""
+        return await self.get("/api/avb/discovery")
+
+    async def get_ptp_status(self) -> Optional[Dict]:
+        """Get PTP (IEEE 802.1AS gPTP) synchronization status."""
+        return await self.get("/api/avb/ptp/status")
+
+    async def get_tsn_status(self) -> Optional[Dict]:
+        """Get TSN qdisc configuration status."""
+        return await self.get("/api/avb/tsn/status")
 
 
 # Global singleton instance (will be initialized in app.py)

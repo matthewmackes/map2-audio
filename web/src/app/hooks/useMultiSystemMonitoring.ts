@@ -1,10 +1,60 @@
 /**
  * useMultiSystemMonitoring Hook - Manage monitoring for multiple host systems
- * Enables side-by-side comparison and aggregated metrics
+ * Enables side-by-side comparison and aggregated metrics across all MAP2 services
+ *
+ * **WHO**: Cluster administrators, audio engineers, system operators
+ * **WHAT**: Comprehensive multi-node monitoring for MAP2 Audio Platform clusters
+ * **WHERE**: Deployed across distributed MAP2 nodes (on-premises, edge, cloud)
+ * **WHEN**: Real-time monitoring with historical comparison capabilities
+ *
+ * This dashboard provides visibility into:
+ * - JUCE Audio Engine performance (sample rate, buffer size, xruns, CPU load)
+ * - Cluster Services health (mDNS discovery, RAFT consensus, health monitoring)
+ * - AVB/TSN Network Audio (IEEE 1722 streams, gPTP sync, AVDECC entities)
+ * - System Resources (CPU, memory, temperature, disk, network)
+ * - Software Versions & Updates (backend, frontend, JUCE engine, dependencies)
  */
 
 import { useState, useCallback, useRef } from 'react'
 import type { HostMachineInfo, SystemHealthOverview, DiskHealthData } from '@/map2/types'
+
+export interface AudioEngineStatus {
+  isRunning: boolean
+  sampleRate: number
+  bufferSize: number
+  inputChannels: number
+  outputChannels: number
+  cpuLoad: number
+  xrunCount: number
+  deviceName: string
+  deviceType: 'JACK' | 'AVB' | 'ALSA' | 'Unknown'
+}
+
+export interface ClusterServiceStatus {
+  mdnsDiscovery: { enabled: boolean; status: 'active' | 'inactive' | 'error' }
+  raftConsensus: { enabled: boolean; role: 'leader' | 'follower' | 'candidate' | 'offline' }
+  healthMonitor: { enabled: boolean; status: 'active' | 'inactive' | 'error' }
+  configDistributor: { enabled: boolean; status: 'active' | 'inactive' | 'error' }
+  eventProducer: { enabled: boolean; status: 'active' | 'inactive' | 'error' }
+}
+
+export interface AvbNetworkStatus {
+  enabled: boolean
+  ptpSynced: boolean
+  ptpOffsetNs: number
+  discoveredEntities: number
+  activeStreams: { talker: number; listener: number }
+  interfaceName: string
+  linkSpeed: string
+}
+
+export interface VersionInfo {
+  backend: string
+  frontend: string
+  juceEngine: string
+  pythonVersion: string
+  lastUpdateCheck: number
+}
 
 export interface SystemSnapshot {
   systemId: string
@@ -12,6 +62,10 @@ export interface SystemSnapshot {
   hostInfo: HostMachineInfo | null
   health: SystemHealthOverview | null
   disk: DiskHealthData | null
+  audioEngine: AudioEngineStatus | null
+  clusterServices: ClusterServiceStatus | null
+  avbNetwork: AvbNetworkStatus | null
+  versionInfo: VersionInfo | null
   isConnected: boolean
   lastUpdate: number
   status: 'online' | 'offline' | 'error'
@@ -36,6 +90,12 @@ export interface MultiSystemStats {
   avgCpuUsage: number
   avgMemoryUsage: number
   avgDiskUsage: number
+  avgAudioCpuLoad: number
+  totalXruns: number
+  avbNodesActive: number
+  ptpSyncedNodes: number
+  raftLeaders: number
+  totalAvbStreams: number
 }
 
 /**
@@ -58,6 +118,10 @@ export function useMultiSystemMonitoring() {
           hostInfo: initialData?.hostInfo || null,
           health: initialData?.health || null,
           disk: initialData?.disk || null,
+          audioEngine: initialData?.audioEngine || null,
+          clusterServices: initialData?.clusterServices || null,
+          avbNetwork: initialData?.avbNetwork || null,
+          versionInfo: initialData?.versionInfo || null,
           isConnected: initialData?.isConnected ?? false,
           lastUpdate: Date.now(),
           status: initialData?.status || 'offline',
@@ -224,6 +288,30 @@ export function useMultiSystemMonitoring() {
         ? diskSystems.reduce((sum, s) => sum + (s.disk?.use_percent || 0), 0) / diskSystems.length
         : 0
 
+    // Audio Engine Statistics
+    const audioSystems = systemList.filter((s) => s.audioEngine?.isRunning)
+    const avgAudioCpuLoad =
+      audioSystems.length > 0
+        ? audioSystems.reduce((sum, s) => sum + (s.audioEngine?.cpuLoad || 0), 0) /
+          audioSystems.length
+        : 0
+    const totalXruns = systemList.reduce((sum, s) => sum + (s.audioEngine?.xrunCount || 0), 0)
+
+    // AVB Network Statistics
+    const avbSystems = systemList.filter((s) => s.avbNetwork?.enabled)
+    const avbNodesActive = avbSystems.length
+    const ptpSyncedNodes = systemList.filter((s) => s.avbNetwork?.ptpSynced).length
+    const totalAvbStreams = systemList.reduce(
+      (sum, s) =>
+        sum + (s.avbNetwork?.activeStreams.talker || 0) + (s.avbNetwork?.activeStreams.listener || 0),
+      0
+    )
+
+    // Cluster Statistics
+    const raftLeaders = systemList.filter(
+      (s) => s.clusterServices?.raftConsensus.role === 'leader'
+    ).length
+
     return {
       totalSystems: systemList.length,
       onlineSystems,
@@ -233,6 +321,12 @@ export function useMultiSystemMonitoring() {
       avgCpuUsage: Math.round(avgCpuUsage * 10) / 10,
       avgMemoryUsage: Math.round(avgMemoryUsage * 10) / 10,
       avgDiskUsage: Math.round(avgDiskUsage * 10) / 10,
+      avgAudioCpuLoad: Math.round(avgAudioCpuLoad * 10) / 10,
+      totalXruns,
+      avbNodesActive,
+      ptpSyncedNodes,
+      raftLeaders,
+      totalAvbStreams,
     }
   }, [systems])
 

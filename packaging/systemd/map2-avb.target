@@ -1,0 +1,8 @@
+[Unit]
+Description=MAP2 AVB/TSN Network Audio Services
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network-online.target
+Wants=network-online.target
+
+[Install]
+WantedBy=multi-user.target

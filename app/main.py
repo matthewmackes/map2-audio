@@ -425,6 +425,15 @@ def create_app():
         except Exception as e:
             logger.warning(f"Failed to load deployment health routes: {e}")
 
+        # AVB/TSN routes (always available, return available=false when disabled)
+        try:
+            from app.routes import avb
+            if avb.router:
+                app.include_router(avb.router)
+                logger.info("AVB/TSN routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load AVB routes: {e}")
+
         # Static files directory - check for web/dist first (Vite build), then static
         project_root = os.path.dirname(os.path.dirname(__file__))
         web_dist_dir = os.path.join(project_root, 'web', 'dist')

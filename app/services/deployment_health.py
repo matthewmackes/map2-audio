@@ -278,11 +278,25 @@ class DeploymentModeHealthChecker:
             )
         
         try:
-            # TODO: Query mDNS discovery service
+            from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+
+            discovery = get_enhanced_mdns_discovery()
+            summary = discovery.get_cluster_summary()
+            online_nodes = int(summary.get("online_nodes", 0))
+            total_discovered = int(summary.get("total_discovered", 0))
+
+            if online_nodes > 0:
+                return HealthCheckResult(
+                    check_name="peers_discovered",
+                    status=CheckStatus.PASS,
+                    message=f"Discovered {online_nodes} online peer(s) ({total_discovered} cached)",
+                )
+
             return HealthCheckResult(
                 check_name="peers_discovered",
-                status=CheckStatus.PASS,
-                message="Peer discovery check OK",
+                status=CheckStatus.WARN,
+                message="No online peers discovered",
+                remediation="Check mDNS broadcast, network multicast, and peer service status",
             )
         except Exception as e:
             return HealthCheckResult(

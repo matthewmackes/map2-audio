@@ -241,6 +241,7 @@ class ControlPanelScreen(Container):
         super().__init__(id=id)
         self.api_client = api_client
         self._refresh_timer: Optional[Timer] = None
+        self._showing_logs = False
 
     def compose(self) -> ComposeResult:
         # Header
@@ -352,7 +353,11 @@ class ControlPanelScreen(Container):
         elif button_id == "btn-refresh":
             await self.refresh_services()
         elif button_id == "btn-logs":
-            self.notify("Log viewer not yet implemented", severity="information")
+            if self._showing_logs:
+                self._showing_logs = False
+                await self._update_display()
+            else:
+                await self._show_log_viewer()
         elif button_id and button_id.startswith("start-"):
             service_name = button_id.replace("start-", "")
             await self._start_service(service_name)
@@ -432,3 +437,35 @@ class ControlPanelScreen(Container):
         except Exception as e:
             self.notify(f"Error: {e}", severity="error")
         await self.refresh_services()
+
+    async def _show_log_viewer(self) -> None:
+        """Render access-log viewer inside services panel."""
+        try:
+            result = await self.api_client._request("GET", "/api/www/logs", params={"limit": 100})
+            if not result.success:
+                self.notify(f"Failed to load logs: {result.error}", severity="error")
+                return
+
+            logs = result.data.get("logs", []) if isinstance(result.data, dict) else []
+            services_list = self.query_one("#services-list", Container)
+            for child in list(services_list.children):
+                child.remove()
+
+            table = DataTable(id="logs-table")
+            table.add_columns("Time", "Method", "Path", "Status", "IP")
+            for entry in logs[-50:]:
+                table.add_row(
+                    str(entry.get("timestamp", ""))[:19],
+                    str(entry.get("method", "-")),
+                    str(entry.get("path", "-"))[:50],
+                    str(entry.get("status_code", "-")),
+                    str(entry.get("remote_addr", "-")),
+                )
+
+            await services_list.mount(Label("━━━ LOG VIEWER (latest 50) ━━━", classes="priority-header"))
+            await services_list.mount(table)
+            await services_list.mount(Label("Press 'View Logs' again to return to services.", classes="dependency-info"))
+            self._showing_logs = True
+            self.notify("Log viewer opened", severity="information")
+        except Exception as e:
+            self.notify(f"Log viewer error: {e}", severity="error")

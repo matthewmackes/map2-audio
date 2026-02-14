@@ -96,6 +96,13 @@ class ClusterNodeMetadata:
     # Audio path information (populated on demand)
     audio_path: Optional[Dict] = None  # NodeAudioPath as dict
     last_audio_path_update: Optional[str] = None
+    # AVB/TSN network audio (optional, only populated if avb.enabled=true)
+    avb_enabled: bool = False
+    avb_interface: Optional[str] = None
+    avb_ptp_synced: bool = False
+    avb_ptp_offset_ns: Optional[float] = None
+    avb_tsn_configured: bool = False
+    avb_streams: List[Dict] = field(default_factory=list)  # List of stream info dicts
 
 
 @dataclass
@@ -341,6 +348,8 @@ try:
         EventSeverity,
         ClusterEvent,
     )
+    # Backward-compatible export expected by existing tests/importers.
+    EventType = DistributedEventType
 except ImportError as e:
     logger.warning(f"Failed to import Distributed Event Bus: {e}")
 
@@ -379,6 +388,7 @@ __all__.extend([
     "StateReplicator",
     "get_distributed_event_bus",
     "DistributedEventBus",
+    "EventType",
     "DistributedEventType",
     "EventSeverity",
     "ClusterEvent",

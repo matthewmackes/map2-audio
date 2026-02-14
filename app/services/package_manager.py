@@ -189,6 +189,17 @@ class PackageManager:
         # Ensure user directories exist
         StoragePaths.ensure_directories()
         return StoragePaths.get_all_nam_paths(include_nonexistent=True)
+
+    def _normalize_package_type(self, package_type: Any) -> PackageType:
+        """Normalize package type to PackageType enum or raise a clear error."""
+        if isinstance(package_type, PackageType):
+            return package_type
+        if isinstance(package_type, str):
+            try:
+                return PackageType(package_type)
+            except ValueError as e:
+                raise ValueError(f"Unsupported package type: {package_type}") from e
+        raise TypeError(f"Invalid package type value: {package_type!r}")
     
     def _load_cache(self):
         """Load package cache from disk"""
@@ -522,6 +533,7 @@ class PackageManager:
         Returns:
             True if successful
         """
+        package_type = self._normalize_package_type(package_type)
         pkg_key = f"{package_type.value}:{package_name}"
 
         # Get or create lock
@@ -544,8 +556,7 @@ class PackageManager:
             elif package_type == PackageType.LV2_PLUGIN:
                 return await self._install_lv2_plugin(package_name, source_url, source_path)
             else:
-                logger.warning(f"Install not implemented for type: {package_type.value}")
-                return False
+                raise ValueError(f"Install not supported for package type: {package_type.value}")
     
     async def _install_pip_package(self, package_name: str) -> bool:
         """Install pip package"""
@@ -822,6 +833,7 @@ class PackageManager:
         Returns:
             True if successful
         """
+        package_type = self._normalize_package_type(package_type)
         pkg_key = f"{package_type.value}:{package_name}"
         
         # Get or create lock
@@ -842,8 +854,7 @@ class PackageManager:
             elif package_type == PackageType.LV2_PLUGIN:
                 return await self._remove_lv2_plugin(package_name)
             else:
-                logger.warning(f"Remove not implemented for type: {package_type.value}")
-                return False
+                raise ValueError(f"Remove not supported for package type: {package_type.value}")
     
     async def _remove_pip_package(self, package_name: str) -> bool:
         """Remove pip package"""
