@@ -27,6 +27,12 @@
 #include "LexiLoveProcessor.h"
 #include "H3000Processor.h"
 
+#ifdef HAS_AVDECC
+#include "AvdeccEntity.h"
+#include "AvdeccEntityModel.h"
+#include "AvdeccDescriptors.h"
+#endif
+
 namespace py = pybind11;
 using namespace map2;
 
@@ -3882,4 +3888,170 @@ PYBIND11_MODULE(map2_audio_engine, m) {
     m.def("ms_to_samples", &msToSamples,
           py::arg("ms"), py::arg("sample_rate"),
           "Convert milliseconds to samples");
+
+#ifdef HAS_AVB
+    // ========================================
+    // AVB/TSN Network Audio Bindings
+    // ========================================
+
+    m.def("is_avb_available", []() {
+        // Check if AVB is available at runtime
+        // Checks: HAS_AVB compile flag, CAP_NET_RAW, interface exists
+        #ifdef HAS_AVB
+            try {
+                // In real implementation, would check:
+                // - CAP_NET_RAW capability
+                // - AVB interface exists
+                // - ptp4l running
+                // For now, return true if compiled with AVB support
+                return true;
+            } catch (...) {
+                return false;
+            }
+        #else
+            return false;
+        #endif
+    }, "Check if AVB/TSN network audio is available");
+
+    m.def("get_avb_device_count", []() {
+        #ifdef HAS_AVB
+            // In real implementation, would query AudioDeviceManager
+            // for number of AVB devices (talkers + listeners)
+            // For now, return placeholder
+            return 0;
+        #else
+            return 0;
+        #endif
+    }, "Get number of available AVB audio devices");
+
+    m.def("get_avb_device_names", []() {
+        py::list devices;
+        #ifdef HAS_AVB
+            // In real implementation, would query AudioDeviceManager
+            // for AVB device names
+            // For now, return empty list
+        #endif
+        return devices;
+    }, "Get list of available AVB device names");
+
+    m.def("get_avb_stream_stats", [](const std::string& stream_id) {
+        py::dict stats;
+        #ifdef HAS_AVB
+            // In real implementation, would:
+            // 1. Find AvbAudioIODevice by stream_id
+            // 2. Get AvbStream pointer
+            // 3. Call getStats() and convert to dict
+
+            // Placeholder structure
+            stats["stream_id"] = stream_id;
+            stats["available"] = false;
+            stats["error"] = "AVB stream not found or not implemented";
+        #else
+            stats["available"] = false;
+            stats["error"] = "AVB not compiled (USE_AVB=OFF)";
+        #endif
+        return stats;
+    }, py::arg("stream_id"),
+       "Get statistics for specific AVB stream");
+
+    m.def("get_all_avb_stream_stats", []() {
+        py::list streams;
+        #ifdef HAS_AVB
+            // In real implementation, would:
+            // 1. Enumerate all AvbAudioIODevice instances
+            // 2. Collect stats from each AvbStream
+            // 3. Convert to list of dicts
+
+            // For now, return empty list
+        #endif
+        return streams;
+    }, "Get statistics for all active AVB streams");
+
+    m.def("get_avb_interface_info", [](const std::string& interface_name) {
+        py::dict info;
+        #ifdef HAS_AVB
+            // In real implementation, would query:
+            // - Interface MAC address
+            // - Link speed
+            // - TSN capabilities (hw timestamping, CBS, ETF)
+            // - Current PTP sync status
+
+            info["interface"] = interface_name;
+            info["available"] = false;
+            info["error"] = "Not implemented";
+        #else
+            info["available"] = false;
+            info["error"] = "AVB not compiled (USE_AVB=OFF)";
+        #endif
+        return info;
+    }, py::arg("interface_name"),
+       "Get AVB interface information");
+
+    // ========================================
+    // AVDECC Entity Model Bindings (Phase 10)
+    // ========================================
+
+    #ifdef HAS_AVDECC
+    // Placeholder bindings for AVDECC
+    // Full integration requires:
+    // 1. Adding AvdeccEntity* member to Map2AudioEngine
+    // 2. Exposing getAvdeccEntity() method
+    // 3. Lifecycle management (init/shutdown)
+
+    m.def("is_avdecc_available", []() -> bool {
+        // Check if AVDECC is compiled in
+        return true;
+    }, "Check if AVDECC is available in this build (compile-time check)");
+
+    m.def("get_avdecc_entities", []() -> py::list {
+        py::list entities;
+
+        // TODO: Access global/singleton AvdeccEntity instance
+        // For now, return empty list as placeholder
+        // Full implementation:
+        //   auto* avdecc = Map2AudioEngine::getAvdeccEntity();
+        //   if (avdecc) {
+        //       auto discovered = avdecc->getDiscoveredEntities();
+        //       for (const auto& entity : discovered) { ... }
+        //   }
+
+        return entities;
+    }, "Get list of discovered AVDECC entities (placeholder - returns empty)");
+
+    m.def("get_avdecc_entity_model", [](uint64_t entity_id) -> py::object {
+        // TODO: Access entity model from global AvdeccEntity instance
+        // For now, return None as placeholder
+        // Full implementation:
+        //   auto* avdecc = Map2AudioEngine::getAvdeccEntity();
+        //   if (avdecc) {
+        //       auto discovered = avdecc->getDiscoveredEntities();
+        //       for (auto& entity : discovered) {
+        //           if (entity.entity_id == entity_id && entity.model_) {
+        //               return py::cast(entity.model_->toJSON());
+        //           }
+        //       }
+        //   }
+
+        return py::none();
+    }, py::arg("entity_id"),
+       "Get complete entity model as JSON dict (placeholder - returns None)");
+
+    #else
+    // AVDECC not compiled - provide stub functions
+    m.def("is_avdecc_available", []() -> bool {
+        return false;
+    }, "Check if AVDECC is available (always false when USE_AVDECC=OFF)");
+
+    m.def("get_avdecc_entities", []() -> py::list {
+        return py::list();
+    }, "Get AVDECC entities (always empty when USE_AVDECC=OFF)");
+
+    m.def("get_avdecc_entity_model", [](uint64_t entity_id) -> py::object {
+        return py::none();
+    }, py::arg("entity_id"),
+       "Get entity model (always None when USE_AVDECC=OFF)");
+
+    #endif // HAS_AVDECC
+
+#endif // HAS_AVB
 }

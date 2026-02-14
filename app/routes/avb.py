@@ -1032,11 +1032,9 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                 detail=f"Invalid entity ID format: {entity_id} (expected hex)"
             )
 
-        # Get AVDECC entity from engine
-        # Note: This requires Python bindings to expose AvdeccEntity methods
-        # For now, this is a placeholder that will be completed when
-        # AvdeccEntity is exposed to Python
+        # Get entity model via Python bindings
         from app.services.juce_engine_service import get_juce_engine
+        import map2_audio_engine
 
         engine = get_juce_engine()
         if not engine:
@@ -1045,16 +1043,38 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                 detail="Audio engine not available"
             )
 
-        # TODO: Add Python bindings for:
-        # - engine.avdeccFindEntity(entity_id_int)
-        # - entity.getModel()
-        # - model.toJSON(), model.isComplete(), model.getMissingDescriptors()
+        # Check if AVDECC is available (compile-time check)
+        if not map2_audio_engine.is_avdecc_available():
+            raise HTTPException(
+                status_code=503,
+                detail="AVDECC not compiled (USE_AVDECC=OFF)"
+            )
 
-        # Placeholder response for now
+        # Get entity model (currently placeholder - returns None)
+        model_json = await asyncio.to_thread(
+            map2_audio_engine.get_avdecc_entity_model,
+            entity_id_int
+        )
+
+        if model_json is None:
+            # Entity not found or not enumerated yet
+            # Check if entity exists in discovered list
+            entities = await asyncio.to_thread(map2_audio_engine.get_avdecc_entities)
+
+            # For now, return placeholder indicating entity not found
+            raise HTTPException(
+                status_code=404,
+                detail=f"Entity {entity_id} not found or not enumerated. "
+                       f"Note: Full AVDECC integration pending (Map2AudioEngine.getAvdeccEntity() required)"
+            )
+
+        # Return model with metadata
         return {
             "entity_id": entity_id,
-            "error": "AVDECC Python bindings not yet implemented (Phase 10 in progress)",
-            "note": "C++ enumeration infrastructure complete, Python integration pending"
+            "model": model_json,
+            "complete": True,  # TODO: Get from model.isComplete() when available
+            "missing": [],      # TODO: Get from model.getMissingDescriptors() when available
+            "cached": False     # TODO: Check AEM cache when integration complete
         }
 
     except HTTPException:
