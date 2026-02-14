@@ -1140,13 +1140,48 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                        f"Found {len(entities)} total entities."
             )
 
+        # Derive metadata from model payload and cache state.
+        complete = bool(model_json.get("complete", True))
+        missing = model_json.get("missing") or model_json.get("missing_descriptors") or []
+        if not isinstance(missing, list):
+            missing = []
+        if not complete and not missing:
+            missing = ["descriptor-tree-incomplete"]
+
+        cached = False
+        try:
+            entities = await asyncio.to_thread(engine.get_avdecc_entities)
+            entity_info = next(
+                (
+                    e for e in entities
+                    if int(str(e.get("entity_id", "0")), 16) == entity_id_int
+                ),
+                None,
+            )
+            if entity_info:
+                entity_model_id_hex = str(entity_info.get("entity_model_id", "0"))
+                firmware_version = str(entity_info.get("firmware_version", ""))
+                entity_model_id_int = int(entity_model_id_hex, 16)
+                if firmware_version:
+                    from app.services.avb.aem_cache import get_aem_cache
+
+                    cache = get_aem_cache()
+                    cached_model = await asyncio.to_thread(
+                        cache.get,
+                        entity_model_id_int,
+                        firmware_version,
+                    )
+                    cached = cached_model is not None
+        except Exception:
+            cached = False
+
         # Return model with metadata
         return {
             "entity_id": entity_id,
             "model": model_json,
-            "complete": True,  # TODO: Get from model.isComplete() when available
-            "missing": [],      # TODO: Get from model.getMissingDescriptors() when available
-            "cached": False     # TODO: Check AEM cache when integration complete
+            "complete": complete,
+            "missing": missing,
+            "cached": cached,
         }
 
     except HTTPException:
