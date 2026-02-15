@@ -93,7 +93,7 @@ export const VAN_HALEN_PRESETS: VanHalenPreset[] = [
   { index: 6, name: 'Panama', song: 'Panama', album: '1984', year: '1984', description: 'Classic H949 detune', settings: { pitch_l: 7, pitch_r: -9, delay_l: 8, delay_r: 20, mix: 40 } },
   { index: 7, name: 'Cathedral', song: 'Cathedral', album: 'Diver Down', year: '1982', description: 'Shimmer with feedback', settings: { pitch_l: 12, pitch_r: -12, delay_l: 80, delay_r: 100, feedback: 40, mix: 50 } },
   { index: 8, name: 'Hot For Teacher', song: 'Hot For Teacher', album: '1984', year: '1984', description: 'Punchy detune', settings: { pitch_l: 6, pitch_r: -6, delay_l: 5, delay_r: 12, mix: 35 } },
-  { index: 9, name: "Why Can't This Be Love", song: "Why Can't This Be Love", album: '5150', year: '1986', description: 'H3000 micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 25, mix: 45 } },
+  { index: 9, name: "Why Can't This Be Love", song: "Why Can't This Be Love", album: '5150', year: '1986', description: 'Micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 25, mix: 45 } },
   { index: 10, name: 'Dreams', song: 'Dreams', album: '5150', year: '1986', description: 'Wide stereo micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 20, delay_r: 50, mix: 50 } },
   { index: 11, name: 'Finish What Ya Started', song: 'Finish What Ya Started', album: 'OU812', year: '1988', description: 'Clean subtle micropitch', settings: { pitch_l: 6, pitch_r: -6, delay_l: 0, delay_r: 15, mix: 35 } },
   { index: 12, name: 'Right Now', song: 'Right Now', album: 'F.U.C.K.', year: '1991', description: 'Thick micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 25, mix: 50 } },

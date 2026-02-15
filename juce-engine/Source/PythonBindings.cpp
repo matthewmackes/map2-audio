@@ -881,7 +881,7 @@ py::dict lexiAlgorithmInfoToDict(const LexiLoveProcessor::AlgorithmInfo& info) {
 }
 
 // ========================================
-// H3000 Harmonizer Type Converters
+// Ultra-Harmonizer Type Converters
 // ========================================
 
 // Convert H3000Processor::Algorithm to string
@@ -3271,7 +3271,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_lexilove_low_cut", &Map2AudioEngine::getLexiLoveLowCut,
              "Get Lexi Love low cut frequency")
 
-        // Multi-band decay (Lexicon--IN-STYLE signature)
+        // Multi-band decay
         .def("set_lexilove_low_decay_mult", &Map2AudioEngine::setLexiLoveLowDecayMult,
              py::arg("mult"),
              "Set Lexi Love low frequency decay multiplier (0.25-2.0)")
@@ -3364,7 +3364,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "Get all available Lexi Love algorithms")
 
         // ========================================
-        // H3000 Ultra-Harmonizer Control
+        // Ultra-Harmonizer Control
         // ========================================
 
         .def("set_h3000_bypass", &Map2AudioEngine::setH3000Bypass,

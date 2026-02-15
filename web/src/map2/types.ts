@@ -1142,7 +1142,7 @@ export interface LexiLoveAlgorithm {
   description: string;
 }
 
-// ==================== H3000 Ultra-Harmonizer Types ====================
+// ==================== Ultra-Harmonizer Types ====================
 
 export interface H3000State {
   algorithm: string;

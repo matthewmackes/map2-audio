@@ -137,11 +137,11 @@ export const themes: Record<string, Theme> = {
     }
   },
 
-  // Eventide Eclipse - VFD Display Theme
+  // VFD Display Theme
   'eventide-eclipse': {
     id: 'eventide-eclipse',
-    name: 'Eventide Eclipse',
-    description: 'Inspired by the classic Eventide Eclipse VFD display',
+    name: 'Eclipse VFD',
+    description: 'Inspired by classic VFD display aesthetics',
     colors: {
       'bg': '#0a0a0a',
       'surface': '#0d1210',

@@ -233,7 +233,7 @@ set(SOURCES
     Source/LexiLoveProcessor.cpp
     Source/H3000Processor.cpp
     
-    # Eventide--IN-STYLE H9 Multi-Effect (NEW)
+    # Multi-Effect Processor
     Source/EventideH9Processor.cpp
 
     # Peavey 5150 Block Letter Amp Simulator (NEW)
@@ -313,7 +313,7 @@ set(HEADERS
     Source/BossXS1UI.h
     Source/ShoeGazeProcessor.h
     
-    # Eventide--IN-STYLE H9 Multi-Effect (NEW)
+    # Multi-Effect Processor
     Source/EventideH9Processor.h
     Source/EventideH9UI.h
 

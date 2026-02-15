@@ -1,5 +1,5 @@
 /**
- * MAP2 Audio Engine - Eventide--IN-STYLE H9 Effect Processor Implementation
+ * MAP2 Audio Engine - Multi-Effect Processor Implementation
  * 
  * This implementation provides:
  * - Phase vocoder STFT for professional pitch shifting (20ms FFT overlap-add)

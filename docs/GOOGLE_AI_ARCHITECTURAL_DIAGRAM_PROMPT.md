@@ -200,7 +200,7 @@ Audio Input → Pre-Gain → [Processing Chain] → Post-Gain → Audio Output
 3. **Effects Processors:**
    - Dynamics: Compressor, Limiter, Gate, Expander
    - Time-based: Chorus, Phaser, Reverb, Delay
-   - Modulation: Pitch Shifter, H3000 Harmonizer
+   - Modulation: Pitch Shifter, Ultra-Harmonizer
    - Filter Bank: EQ, HPF, LPF, Parametric
    - Vintage Emulations: Peavey 5150, Tweed Bassman
 

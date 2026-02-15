@@ -213,7 +213,7 @@ export const LIBRARY_SOURCES: IRLibrarySource[] = [
   {
     name: 'signaltonoize',
     displayName: 'Signal To Noize',
-    description: 'Classic hardware reverbs - Lexicon, Eventide, Quantec',
+    description: 'Classic hardware reverb impulse responses',
     license: 'Free (donations)',
     iconColor: '#14b8a6',
   },
@@ -226,8 +226,8 @@ export const LIBRARY_SOURCES: IRLibrarySource[] = [
   },
   {
     name: 'lexicon',
-    displayName: 'Lexicon 480L',
-    description: 'Classic Lexicon 480L presets - halls, plates, rooms',
+    displayName: 'Classic Reverb',
+    description: 'Classic algorithmic reverb presets - halls, plates, rooms',
     license: 'Free',
     iconColor: '#3b82f6',
   },

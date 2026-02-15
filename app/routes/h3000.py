@@ -1,6 +1,6 @@
 """
-H3000 Ultra-Harmonizer API Routes
-Eventide H3000 pitch shifting and effects emulation with 10 legendary algorithms
+Ultra-Harmonizer API Routes
+Pitch shifting and effects emulation with 10 legendary algorithms
 """
 
 from fastapi import APIRouter, HTTPException

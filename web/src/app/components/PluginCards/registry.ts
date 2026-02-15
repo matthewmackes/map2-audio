@@ -366,12 +366,12 @@ registerPluginCard('map2://juce/reverb/pcm70', {
   loader: () => import('./Custom/JUCE/LexiLoveCard'),
 })
 
-// JUCE Pitch - H3000 Ultra-Harmonizer
+// JUCE Pitch - Ultra-Harmonizer
 registerPluginCard('map2://juce/pitch/h3000', {
   loader: () => import('./Custom/JUCE/H3000Card'),
 })
 
-// JUCE Multi-Effect - Eventide H9
+// JUCE Multi-Effect
 registerPluginCard('map2://juce/effects/eventide-h9', {
   loader: () => import('./Custom/JUCE/EventideH9Card'),
 })

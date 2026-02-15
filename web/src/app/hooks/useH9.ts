@@ -1,6 +1,6 @@
 /**
- * H9 Multi-Effect Hook
- * Eventide H9 professional multi-effect with 10 legendary algorithms
+ * Multi-Effect Hook
+ * Professional multi-effect with 10 legendary algorithms
  * Features phase vocoder pitch shifting, granular synthesis, and freeverb reverb
  */
 

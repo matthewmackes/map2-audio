@@ -1,8 +1,8 @@
 /**
- * H3000Card - Eventide H3000 Ultra-Harmonizer Card
+ * H3000Card - Ultra-Harmonizer Card
  *
  * Features iconic blue VFD-style display, 10 algorithm preset buttons,
- * and Eventide-branded styling capturing the legendary harmonizer sound
+ * and retro rack unit styling capturing the legendary harmonizer sound
  */
 
 import { useH3000, H3000_ALGORITHMS } from '../../../../hooks/useH3000'
@@ -44,7 +44,7 @@ interface H3000CardProps extends PluginCardProps {
 
 function H3000CardBase({
   plugin,
-  accentColor = '#00aaff', // Eventide blue
+  accentColor = '#00aaff', // VFD blue
   compact = false,
   onOpenMidiMappings,
 }: H3000CardProps) {

@@ -1,6 +1,6 @@
 /**
  * ShoeGaze Multi-Effect Processor Hook
- * Wall of sound multi-effect inspired by Eventide, Strymon, and Meris pedals
+ * Wall of sound multi-effect inspired by boutique ambient and shimmer pedals
  * Captures the aesthetic of My Bloody Valentine, Slowdive, and Cocteau Twins
  */
 

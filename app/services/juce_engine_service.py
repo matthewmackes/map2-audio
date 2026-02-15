@@ -1873,7 +1873,7 @@ class JuceEngineService(Singleton):
         return []
 
     # ============================================================
-    # H3000 Ultra-Harmonizer
+    # Ultra-Harmonizer
     # ============================================================
 
     async def set_h3000_bypass(self, bypass: bool) -> None:

@@ -1,6 +1,6 @@
 """
 Lexi Love PCM 70 Reverb API Routes
-Lexicon PCM 70 algorithmic reverb emulation with 9 legendary presets
+Algorithmic reverb emulation with 9 legendary presets
 """
 
 from fastapi import APIRouter, HTTPException
@@ -30,7 +30,7 @@ class LexiLoveParams(BaseModel):
     high_cut: Optional[float] = Field(None, ge=1000.0, le=20000.0, description="High cut frequency in Hz")
     low_cut: Optional[float] = Field(None, ge=20.0, le=500.0, description="Low cut frequency in Hz")
 
-    # Multi-band decay (Lexicon signature)
+    # Multi-band decay
     low_decay_mult: Optional[float] = Field(None, ge=0.25, le=2.0, description="Low frequency decay multiplier")
     high_decay_mult: Optional[float] = Field(None, ge=0.25, le=2.0, description="High frequency decay multiplier")
     low_crossover: Optional[float] = Field(None, ge=100.0, le=2000.0, description="Low crossover frequency in Hz")

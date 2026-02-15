@@ -6,7 +6,7 @@
 2.  **Impulse Response (IR) Convolution Engine:** Load, manage, and use custom IR files for cabinet, speaker, and room simulation.
 3.  **Studio-Grade Effects Suite:** Comprehensive collection of built-in effects for complete signal chain construction.
 4.  **Vintage Amp Emulations:** Includes classic models such as the Peavey 5150 and Fender Tweed Bassman.
-5.  **Advanced Modulation & Pitch Effects:** Emulations of the H3000 Harmonizer, Boss Poly Shifter, and ambient "Shoe Gaze" processors.
+5.  **Advanced Modulation & Pitch Effects:** Ultra-Harmonizer, Poly Shifter, and ambient "Shoe Gaze" processors.
 6.  **Full Dynamics Suite:** Built-in Compressor, Limiter, Noise Gate, and Expander.
 7.  **Time-Based Effects:** High-quality Chorus, Phaser, Flanger, Delay, and Reverb processors.
 8.  **Comprehensive Filtering:** Parametric EQs, Graphic EQs, High-Pass Filters (HPF), and Low-Pass Filters (LPF).

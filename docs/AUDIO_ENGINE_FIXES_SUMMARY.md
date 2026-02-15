@@ -86,9 +86,9 @@ shoegaze_.process(buffer);                          // ShoeGaze reverb/fuzz
 passionFX_.process(buffer);                         // PassionFX multi-effect
 peavey5150_.process(buffer);                        // Peavey 5150 amp sim
 tweedBassman_.process(buffer);                      // Tweed Bassman amp sim
-h3000_.process(buffer);                             // Eventide--IN-STYLE H3000-style reverb
+h3000_.process(buffer);                             // Ultra-Harmonizer reverb
 bossXS1_.process(buffer);                           // Boss XS-1 multi-effect
-lexiLove_.process(buffer);                          // Lexicon--IN-STYLE-style reverb
+lexiLove_.process(buffer);                          // Algorithmic reverb
 
 cabinetProcessor_.process(buffer);                  // Cabinet IR
 eq_.process(buffer);                                // EQ

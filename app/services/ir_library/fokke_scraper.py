@@ -6,7 +6,7 @@ Source: https://fokkie.home.xs4all.nl/IR.htm
 License: Freeware - free for personal and educational use
 
 Features:
-- Classic hardware reverb IRs (Lexicon, EMT, Roland, etc.)
+- Classic hardware reverb IRs (various manufacturers)
 - Acoustic spaces (churches, factories, forests)
 - Creative IRs (speakers, telephones, small spaces)
 - Multiple variations and presets
@@ -30,7 +30,7 @@ class FokkeScraper(IRScraperBase):
     """Scraper for Fokke van Saane's impulse response collection.
 
     Fokke van Saane's collection includes:
-    - Hardware reverbs: Lexicon PCM60/200, EMT 244, Roland RE-201/DEP3
+    - Hardware reverbs: Classic digital reverbs, EMT 244, Roland RE-201/DEP3
     - Spring reverbs: Fostex 3180, Masterroom MR-II
     - Acoustic spaces: Churches, factories, forests, streets
     - Creative IRs: Vintage speakers, telephones, small spaces

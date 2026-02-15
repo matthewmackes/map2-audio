@@ -1,6 +1,6 @@
 """
 ShoeGaze Multi-Effect API Routes
-Wall of Sound effect inspired by Eventide, Strymon, and Meris pedals
+Wall of Sound effect inspired by boutique ambient and shimmer pedals
 """
 
 from fastapi import APIRouter, HTTPException

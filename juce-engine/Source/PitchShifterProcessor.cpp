@@ -1,7 +1,7 @@
 /**
  * MAP2 Audio Engine - Pitch Shifter Processor Implementation
  *
- * Implements an Eventide--IN-STYLE-style dual granular pitch shifter optimized
+ * Implements a dual granular pitch shifter optimized
  * for the classic Van Halen "brown sound" micropitch/detune effect.
  *
  * Technical approach:
@@ -250,8 +250,8 @@ float PitchShifterProcessor::centsToRatio(float cents) const {
 }
 
 void PitchShifterProcessor::applyPreset(Preset preset) {
-    // Van Halen preset settings based on documented Eventide--IN-STYLE settings
-    // Sources: Eventide--IN-STYLE forums, VHLinks, Metropoulos Forum discussions
+    // Van Halen preset settings based on documented vintage harmonizer settings
+    // Sources: Audio equipment forums, VHLinks, Metropoulos Forum discussions
 
     switch (preset) {
         case Preset::Manual:
@@ -342,10 +342,10 @@ void PitchShifterProcessor::applyPreset(Preset preset) {
             mix_.store(35.0f);
             break;
 
-        // === Sammy Hagar Era (H3000 Micropitch) ===
+        // === Sammy Hagar Era (Micropitch) ===
 
         case Preset::WhyCantThisBeLove:
-            // 5150 - classic H3000 micropitch
+            // 5150 - classic micropitch
             pitchL_.store(9.0f);
             pitchR_.store(-9.0f);
             delayL_.store(0.0f);
@@ -448,7 +448,7 @@ PitchShifterProcessor::PresetInfo PitchShifterProcessor::getPresetInfo(Preset pr
 
         case Preset::WhyCantThisBeLove:
             return {"Why Can't This Be Love", "Why Can't This Be Love", "5150", "1986",
-                    "H3000 micropitch - +/-9c, the Sammy era signature"};
+                    "Micropitch - +/-9c, the Sammy era signature"};
 
         case Preset::Dreams:
             return {"Dreams", "Dreams", "5150", "1986",

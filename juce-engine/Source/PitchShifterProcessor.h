@@ -2,13 +2,13 @@
 
 /**
  * MAP2 Audio Engine - Pitch Shifter Processor
- * Dual-voice stereo pitch shifter / harmonizer with Van Halen-inspired presets
- * Based on Eventide--IN-STYLE H910/H949/H3000 algorithms
+ * Dual-voice stereo pitch shifter / harmonizer with classic rock presets
+ * Based on vintage harmonizer algorithms
  *
  * Research sources:
- * - Eventide--IN-STYLE forums: Eddie used dual H910s set to +/-18 cents with 12ms stagger
- * - Roth era (VH I - 1984): H910/H949 at ~+/-4-9 cents, 3-20ms delay
- * - Hagar era (5150 - Balance): H3000 micropitch at +/-9 cents, longer delays
+ * - Classic dual harmonizer technique: +/-18 cents with 12ms stagger
+ * - Early era: +/-4-9 cents, 3-20ms delay
+ * - Later era: micropitch at +/-9 cents, longer delays
  */
 
 #include <juce_dsp/juce_dsp.h>
@@ -32,7 +32,7 @@ namespace map2 {
  * - Stereo spread control
  *
  * Algorithm: Granular pitch shifting with dual overlapping grains
- * and linear interpolation, similar to classic Eventide--IN-STYLE units.
+ * and linear interpolation, similar to classic vintage harmonizer units.
  */
 class PitchShifterProcessor {
 public:
@@ -53,7 +53,7 @@ public:
         Cathedral,            // Diver Down echo/shimmer, +/-12c with feedback
         HotForTeacher,        // 1984, punchy +/-6c
 
-        // === Sammy Hagar Era (H3000 Micropitch) ===
+        // === Sammy Hagar Era (Micropitch) ===
         WhyCantThisBeLove,    // 5150, classic micropitch +/-9c
         Dreams,               // 5150, wide stereo +/-9c, 250ms/500ms
         FinishWhatYaStarted,  // OU812, clean subtle +/-6c

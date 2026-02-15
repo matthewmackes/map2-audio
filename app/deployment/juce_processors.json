@@ -330,7 +330,7 @@
       "uri": "map2://juce/pitch/shifter",
       "name": "EVH Harmonizer",
       "category": "Pitch",
-      "description": "Eventide-style dual pitch shifter with Van Halen song-inspired presets",
+      "description": "Dual pitch shifter with classic rock song-inspired presets",
       "author": "MAP2 Audio",
       "audio_ports": {
         "inputs": 2,
@@ -368,9 +368,9 @@
         {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
       ],
       "preset_info": {
-        "description": "Van Halen-inspired presets based on documented Eventide H910/H949/H3000 settings",
+        "description": "Van Halen-inspired presets based on documented vintage harmonizer settings",
         "sources": [
-          "Eventide Audio Forums",
+          "Audio Equipment Forums",
           "VHLinks.com",
           "Metropoulos Forum",
           "Premier Guitar"
@@ -393,7 +393,7 @@
             "song": "Unchained",
             "album": "Fair Warning",
             "year": "1981",
-            "description": "Punchy H910 detune for the main riff",
+            "description": "Punchy detune for the main riff",
             "settings": {"pitch_l": 4, "pitch_r": -4, "delay_l": 3, "delay_r": 6, "mix": 35}
           },
           {
@@ -425,7 +425,7 @@
             "song": "Panama",
             "album": "1984",
             "year": "1984",
-            "description": "Classic H949 detune with staggered delay",
+            "description": "Classic detune with staggered delay",
             "settings": {"pitch_l": 7, "pitch_r": -9, "delay_l": 8, "delay_r": 20, "mix": 40}
           },
           {
@@ -449,7 +449,7 @@
             "song": "Why Can't This Be Love",
             "album": "5150",
             "year": "1986",
-            "description": "H3000 micropitch - the Sammy era signature sound",
+            "description": "Micropitch - the Sammy era signature sound",
             "settings": {"pitch_l": 9, "pitch_r": -9, "delay_l": 0, "delay_r": 25, "mix": 45}
           },
           {
@@ -678,7 +678,7 @@
       "uri": "map2://juce/reverb/pcm70",
       "name": "Lexi Love PCM 70",
       "category": "Reverb",
-      "description": "Lexicon PCM 70 algorithmic reverb emulation with 9 legendary presets including Tiled Room, Rich Plate, Concert Hall, and more. Captures the signature 'depth and sparkle' of the original 1985 unit.",
+      "description": "Algorithmic reverb emulation with 9 legendary presets including Tiled Room, Rich Plate, Concert Hall, and more. Captures the signature 'depth and sparkle' of classic 1980s digital reverb.",
       "author": "MAP2 Audio",
       "audio_ports": {
         "inputs": 2,
@@ -718,7 +718,7 @@
         {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
       ],
       "preset_info": {
-        "description": "Legendary Lexicon PCM 70 presets from 1985",
+        "description": "Legendary algorithmic reverb presets from the 1980s",
         "presets": [
           {"id": "tiled_room", "name": "Tiled Room V2.0", "description": "The legendary preset with 'spitty' early reflections - lively on drums"},
           {"id": "rich_plate", "name": "Rich Plate", "description": "Warm vocals - the studio standard for countless recordings"},
@@ -770,7 +770,7 @@
       "uri": "map2://juce/pitch/h3000",
       "name": "H3000 Ultra-Harmonizer",
       "category": "Pitch",
-      "description": "Eventide H3000 Ultra-Harmonizer emulation with 10 legendary algorithms. Features dual pitch shifters, modulated delays, and the signature sound that defined studio processing in the late 80s and 90s.",
+      "description": "Ultra-Harmonizer emulation with 10 legendary algorithms. Features dual pitch shifters, modulated delays, and the signature sound that defined studio processing in the late 80s and 90s.",
       "author": "MAP2 Audio",
       "audio_ports": {
         "inputs": 2,
@@ -810,7 +810,7 @@
         {"name": "Bypass", "symbol": "bypass", "type": "toggle", "default": false}
       ],
       "preset_info": {
-        "description": "Legendary Eventide H3000 algorithms from 1988",
+        "description": "Legendary harmonizer algorithms from 1988",
         "presets": [
           {"id": "micropitch", "name": "MicroPitch", "description": "Subtle pitch detune for stereo widening and ADT effects"},
           {"id": "dual_shift", "name": "Dual Shift", "description": "Independent left/right pitch shifters with modulation"},
@@ -830,8 +830,8 @@
       "name": "Eventide H9 Multi-Effect",
       "category": "Effects",
       "subcategory": "Multi-Effect",
-      "description": "Professional 10-algorithm multi-effect emulating Eventide H9 with RED-on-BLACK LED display. Includes MicroPitch, UltraShift, SmartShift, Transpose, PitchFactor, ReverseDelays, ShimmerVerbs, MotionReverbs, Granular, and Crystallize algorithms.",
-      "author": "MAP2 Audio / Eventide-inspired",
+      "description": "Professional 10-algorithm multi-effect with RED-on-BLACK LED display. Includes MicroPitch, UltraShift, SmartShift, Transpose, PitchFactor, ReverseDelays, ShimmerVerbs, MotionReverbs, Granular, and Crystallize algorithms.",
+      "author": "MAP2 Audio",
       "version": "1.0.0",
       "audio_ports": {
         "inputs": 2,
@@ -958,7 +958,7 @@
         }
       ],
       "ui_metadata": {
-        "style": "eventide-h9",
+        "style": "multi-effect",
         "display_type": "red_on_black_led",
         "theme": "black_on_white_accents",
         "min_width": 800,

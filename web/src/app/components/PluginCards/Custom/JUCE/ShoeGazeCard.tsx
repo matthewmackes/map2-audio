@@ -1,7 +1,7 @@
 /**
  * ShoeGazeCard - Wall of sound multi-effect processor
  *
- * Inspired by Eventide, Strymon, and Meris pedals.
+ * Inspired by boutique ambient and shimmer pedals.
  * Captures the aesthetic of My Bloody Valentine, Slowdive, and Cocteau Twins.
  */
 

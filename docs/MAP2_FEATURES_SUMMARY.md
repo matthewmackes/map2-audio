@@ -48,7 +48,7 @@
 23. Built-in dynamics processors: compressor, limiter, gate, expander
 24. Time-based effects: chorus, phaser, delay, reverb, pitch shifter
 25. Vintage amp emulations: Peavey 5150, Tweed Bassman, and more
-26. Advanced modulation: H3000 Harmonizer, Boss Poly Shifter, Shoe Gaze processor
+26. Advanced modulation: Ultra-Harmonizer, Poly Shifter, Shoe Gaze processor
 27. Parametric EQ, HPF, LPF, and comprehensive filter bank
 28. LV2 plugin discovery and automatic scanning on startup
 29. Plugin preset management and parameter automation

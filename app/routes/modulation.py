@@ -321,8 +321,8 @@ async def get_pitch_shifter_presets() -> List[PresetInfo]:
     """
     Get all Van Halen-inspired pitch shifter presets.
 
-    Based on documented Eventide H910/H949/H3000 settings from:
-    - Eventide Audio Forums
+    Based on documented vintage harmonizer settings from:
+    - Audio equipment forums
     - VHLinks.com
     - Metropoulos Forum
     - Premier Guitar
@@ -415,7 +415,7 @@ async def get_pitch_shifter_presets() -> List[PresetInfo]:
             song="Why Can't This Be Love",
             album="5150",
             year="1986",
-            description="H3000 micropitch - the Sammy era signature sound",
+            description="Micropitch - the Sammy era signature sound",
             settings={"pitch_l": 9, "pitch_r": -9, "delay_l": 0, "delay_r": 25, "mix": 45}
         ),
         PresetInfo(

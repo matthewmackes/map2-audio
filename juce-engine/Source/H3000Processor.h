@@ -1,8 +1,7 @@
 /**
- * MAP2 Audio Engine - H3000 Harmonizer Processor
+ * MAP2 Audio Engine - Ultra-Harmonizer Processor
  *
- * Emulates the legendary Eventide--IN-STYLE H3000 Ultra-Harmonizer (1988)
- * Known for its crystal-clear pitch shifting and studio-quality effects.
+ * Crystal-clear pitch shifting and studio-quality effects.
  *
  * Key characteristics:
  * - Dual independent pitch shifters with fine control
@@ -28,7 +27,7 @@ namespace map2 {
 class H3000Processor {
 public:
     // ========================================
-    // Algorithm Presets (H3000 Famous Programs)
+    // Algorithm Presets
     // ========================================
     enum class Algorithm {
         Micropitch = 0,      // Subtle detuning for thickening
@@ -36,7 +35,7 @@ public:
         CrystalEchoes,       // Shimmering delays with pitch
         StereoShift,         // Wide stereo pitch image
         LayeredShift,        // Stacked pitch voices
-        SweptCombs,          // Classic H3000 flanging
+        SweptCombs,          // Classic swept comb flanging
         StutterShift,        // Rhythmic pitch glitches
         ReversePitch,        // Reverse pitch effect
         BandDelays,          // Frequency-selective delays

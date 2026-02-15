@@ -1,6 +1,6 @@
 """
 Important Disclaimer
-This educational platform and its associated code, documentation, or examples may inadvertently reference or mention trademarks, product names, brand names, manufacturers, or commercial software/hardware. (Eventide, Boss, Lexicon, et)
+This educational platform and its associated code, documentation, or examples may inadvertently reference or mention trademarks, product names, brand names, manufacturers, or commercial software/hardware. (various manufacturers)
 Any such references are purely incidental — they are artifacts of the "Vibe Coding" explanatory process used to illustrate general concepts, techniques, or comparisons. This project has no affiliation with, is not endorsed by, and is not connected in any way to those companies, products, or brands.
 This is a free, non-commercial, educational resource only — not for sale, not for resale, and not intended as a product, replacement, substitute, alternative, or competitor to any commercial offering.
 The referenced commercial products are superior in quality, support, features, reliability, and every other respect. We strongly encourage users to purchase legitimate commercial products from their official sources and to support the developers and companies behind them — their work sustains jobs, innovation, and the broader community that benefits everyone, including educational efforts like this one.
@@ -63,23 +63,16 @@ async def lifespan(app):
         
         # Initialize database connection pool
         logger.info("Initializing database connection pool...")
-        
-        # Ensure data directory exists with proper permissions
         import os
-        from pathlib import Path
-        data_dir = Path("data")
-        try:
-            data_dir.mkdir(exist_ok=True, mode=0o755)
-            logger.info(f"Data directory ensured: {data_dir.absolute()}")
-        except Exception as e:
-            logger.error(f"Failed to create data directory: {e}")
-            raise RuntimeError(f"Cannot create data directory: {e}")
         
         pool_manager = get_pool_manager()
+        from app.database import get_default_database_url
+        database_url = get_default_database_url(async_mode=True)
         pool_manager.initialize(
-            "sqlite+aiosqlite:///data/map2.db",
+            database_url,
             ConnectionPoolConfig(pool_size=10, max_overflow=20)
         )
+        logger.info(f"Database URL configured: {database_url}")
         await safe_start_service(logger, "Database tables", pool_manager.ensure_tables_created)
         
         # Validate audio engine configuration BEFORE starting services
@@ -135,6 +128,13 @@ async def lifespan(app):
         initialize_deployment_config()
         deployment_config = get_deployment_config()
         logger.info(f"Deployment mode: {deployment_config.mode.value}")
+
+        # Initialize frontend-only graceful degradation integration.
+        try:
+            from app.services.frontend_degradation import initialize_frontend_degradation
+            initialize_frontend_degradation(os.getenv("MAP2_REMOTE_BACKEND_URL"))
+        except Exception as e:
+            logger.warning(f"Failed to initialize frontend degradation: {e}")
         
         # Initialize LCD Event System
         logger.info("Initializing LCD Event System...")
@@ -328,6 +328,7 @@ def create_app():
     try:
         from fastapi import FastAPI
         from fastapi.middleware.cors import CORSMiddleware
+        import os
 
         app = FastAPI(
             title="MAP2 Audio Platform",
@@ -347,7 +348,8 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation']
+        route_load_failures = []
 
         for route_name in route_modules:
             try:
@@ -355,10 +357,22 @@ def create_app():
                 if hasattr(route_module, 'router') and route_module.router:
                     app.include_router(route_module.router)
                     logger.info(f"Registered route: {route_name}")
-            except ImportError as e:
-                logger.debug(f"Route {route_name} not available: {e}")
+                else:
+                    route_load_failures.append((route_name, "router missing or None"))
             except Exception as e:
-                logger.warning(f"Failed to load route {route_name}: {e}")
+                route_load_failures.append((route_name, str(e)))
+
+        if route_load_failures:
+            formatted_failures = "; ".join(
+                f"{name} ({error})" for name, error in route_load_failures
+            )
+            strict_route_loading = os.getenv("MAP2_STRICT_ROUTE_LOADING", "true").lower() in ("1", "true", "yes")
+            logger.error(
+                "Route registration failures detected: %s",
+                formatted_failures,
+            )
+            if strict_route_loading:
+                raise RuntimeError(f"Route registration failures: {formatted_failures}")
 
         # LCD routes (optional)
         try:
@@ -383,7 +397,6 @@ def create_app():
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
         from fastapi.staticfiles import StaticFiles
-        import os
         
         # Register new monitoring routes
         try:

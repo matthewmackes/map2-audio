@@ -1,8 +1,7 @@
 /**
  * MAP2 Audio Engine - Lexi Love Reverb Processor Implementation
  *
- * Emulates the legendary Lexicon--IN-STYLE PCM 70 Digital Effects Processor (1985)
- * with its signature "depth and sparkle" sound quality.
+ * Algorithmic reverb processor with signature "depth and sparkle" sound quality.
  *
  * Key characteristics captured:
  * - Rich, lush, warm reverb character

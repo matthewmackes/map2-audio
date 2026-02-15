@@ -1,7 +1,7 @@
 /**
  * LCDDisplay - Reusable LCD/VFD/LED display component
  * 
- * Supports multiple display styles (Lexicon green, Eventide blue, H9 red LED, etc.)
+ * Supports multiple display styles (green phosphor, blue VFD, red LED, etc.)
  */
 
 import React from 'react'
@@ -111,7 +111,7 @@ export const VFDPitchDisplay: React.FC<VFDPitchDisplayProps> = ({
 }
 
 /**
- * 7-segment LED style display (for H9-style numeric readouts)
+ * 7-segment LED style display (for numeric readouts)
  */
 interface LEDDisplayProps {
   number: number

@@ -6,7 +6,7 @@ Source: https://signaltonoize.com/?page_id=4188
 License: Free (donations appreciated)
 
 Features:
-- Lexicon M200, M300, M5000
+- Classic digital reverb units (M200, M300, M5000)
 - PCM 70 Versions 2 & 3
 - Quantec QRS/XL
 - Classic hardware reverbs
@@ -28,7 +28,7 @@ class SignalToNoizeScraper(IRScraperBase):
     """Scraper for Signal To Noize classic reverb IRs.
 
     Signal To Noize offers free impulse responses from classic
-    hardware reverb units including Lexicon, Eventide, TC Electronic,
+    hardware reverb units including classic digital reverbs, TC Electronic,
     Yamaha, and Quantec.
     """
 

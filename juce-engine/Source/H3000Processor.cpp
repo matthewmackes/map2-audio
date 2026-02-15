@@ -1,8 +1,7 @@
 /**
- * MAP2 Audio Engine - H3000 Harmonizer Processor Implementation
+ * MAP2 Audio Engine - Ultra-Harmonizer Processor Implementation
  *
- * Emulates the legendary Eventide--IN-STYLE H3000 Ultra-Harmonizer (1988)
- * with grain-based pitch shifting and complex modulation.
+ * Grain-based pitch shifting and complex modulation.
  */
 
 #include "H3000Processor.h"
@@ -15,7 +14,7 @@ namespace map2 {
 // Algorithm Preset Values
 // ========================================
 const std::array<H3000Processor::PresetData, H3000Processor::NUM_ALGORITHMS> H3000Processor::ALGORITHM_PRESETS = {{
-    // Micropitch - subtle detuning (the signature H3000 sound)
+    // Micropitch - subtle detuning (signature harmonizer sound)
     {7.0f, -7.0f, 10.0f, 15.0f, 0.0f, 5.0f, 0.3f, 50.0f},
     // DualShift - independent pitch shifting
     {400.0f, -400.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 50.0f},
@@ -42,12 +41,12 @@ const std::array<H3000Processor::PresetData, H3000Processor::NUM_ALGORITHMS> H30
 // ========================================
 H3000Processor::AlgorithmInfo H3000Processor::getAlgorithmInfo(int index) {
     static const std::array<AlgorithmInfo, NUM_ALGORITHMS> infos = {{
-        {"Micropitch", "MICRO", "Subtle detuning for the signature H3000 thick sound"},
+        {"Micropitch", "MICRO", "Subtle detuning for a signature thick sound"},
         {"Dual Shift", "DUAL", "Independent L/R pitch shifting with full control"},
         {"Crystal Echoes", "CRYSTAL", "Shimmering pitch-shifted delays"},
         {"Stereo Shift", "STEREO", "Wide stereo image with micropitch"},
         {"Layered Shift", "LAYER", "Stacked pitch voices for harmonies"},
-        {"Swept Combs", "COMBS", "Classic H3000 flanging and phasing"},
+        {"Swept Combs", "COMBS", "Classic swept comb flanging and phasing"},
         {"Stutter Shift", "STUTTER", "Rhythmic pitch glitches and stutter"},
         {"Reverse Pitch", "REVERSE", "Reversed pitch-shifted texture"},
         {"Band Delays", "BAND", "Frequency-selective multi-tap delays"},
@@ -390,7 +389,7 @@ void H3000Processor::processAlgorithm(juce::AudioBuffer<float>& buffer) {
 }
 
 // ========================================
-// Micropitch - The signature H3000 sound
+// Micropitch - Signature detuning sound
 // ========================================
 void H3000Processor::processMicropitch(juce::AudioBuffer<float>& buffer) {
     const int numSamples = buffer.getNumSamples();
@@ -627,7 +626,7 @@ void H3000Processor::processLayeredShift(juce::AudioBuffer<float>& buffer) {
 }
 
 // ========================================
-// Swept Combs - Classic H3000 flanging
+// Swept Combs - Classic swept comb flanging
 // ========================================
 void H3000Processor::processSweptCombs(juce::AudioBuffer<float>& buffer) {
     const int numSamples = buffer.getNumSamples();

@@ -1,12 +1,12 @@
 """
-Lexicon 480L Impulse Response Scraper
-Download free Lexicon 480L reverb IRs from Housecall.
+Classic Reverb Impulse Response Scraper
+Download free classic reverb IRs from Housecall.
 
 Source: https://www.housecallfm.com/download-gns-personal-lexicon-480l
 License: Free
 
 Features:
-- 50+ presets from classic Lexicon 480L
+- 50+ presets from classic digital reverb hardware
 - Halls, plates, rooms, ambiences, effects
 - Captured from Grant Nelson's personal unit
 """
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class LexiconScraper(IRScraperBase):
-    """Scraper for Lexicon 480L impulse responses from Housecall.
+    """Scraper for classic reverb impulse responses from Housecall.
 
-    Contains 50+ presets from the classic Lexicon 480L digital reverb:
+    Contains 50+ presets from classic digital reverb hardware:
     - Ambiences
     - Effects
     - Halls

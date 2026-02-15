@@ -2,11 +2,11 @@
 
 /**
  * MAP2 Audio Engine - Lexi Love Reverb Processor
- * Emulates the legendary Lexicon--IN-STYLE PCM 70 Digital Effects Processor (1985)
+ * Algorithmic reverb processor inspired by classic 1980s digital effects
  *
  * Features:
- * - 9 factory algorithms based on PCM 70's most popular presets
- * - Multi-band decay (low/mid/high) for the signature Lexicon--IN-STYLE sound
+ * - 9 factory algorithms based on classic reverb presets
+ * - Multi-band decay (low/mid/high) for a signature lush sound
  * - Early reflection engine with algorithm-specific patterns
  * - FDN late reverb with modulation for "sparkle"
  * - All standard PCM 70 parameters plus user tweaks
@@ -33,7 +33,7 @@
 namespace map2 {
 
 /**
- * LexiLoveProcessor - Lexicon--IN-STYLE PCM 70 Algorithmic Reverb Emulation
+ * LexiLoveProcessor - Algorithmic Reverb Emulation
  *
  * All parameters are RT-safe via atomics.
  */
@@ -62,7 +62,7 @@ public:
     };
 
     /**
-     * Main parameters - Lexicon--IN-STYLE PCM 70 style
+     * Main parameters
      */
     struct Parameters {
         Algorithm algorithm = Algorithm::RichPlate;
@@ -72,7 +72,7 @@ public:
         float decayTime = 2.5f;        // 0.5-30s RT60
         float diffusion = 85.0f;       // 0-100%
 
-        // Multi-band decay (Lexicon--IN-STYLE signature feature)
+        // Multi-band decay
         float lowDecayMult = 1.0f;     // 0.25-2.0 (bass decay relative to mid)
         float highDecayMult = 0.8f;    // 0.25-2.0 (treble decay relative to mid)
         float lowCrossover = 500.0f;   // 100-2000Hz

@@ -690,7 +690,7 @@ public:
     void setLexiLoveLowCut(float hz);
     float getLexiLoveLowCut() const;
 
-    // Multi-band decay (Lexicon--IN-STYLE signature)
+    // Multi-band decay
     void setLexiLoveLowDecayMult(float mult);
     float getLexiLoveLowDecayMult() const;
     void setLexiLoveHighDecayMult(float mult);
@@ -733,7 +733,7 @@ public:
     LexiLoveProcessor& getLexiLove() { return lexiLove_; }
 
     // ========================================
-    // H3000 Harmonizer Control
+    // Ultra-Harmonizer Control
     // ========================================
 
     // Algorithm

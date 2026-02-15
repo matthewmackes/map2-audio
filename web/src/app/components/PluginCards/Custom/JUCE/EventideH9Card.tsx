@@ -1,13 +1,13 @@
 /**
- * EventideH9Card - Eventide H9 Multi-Effect Professional Card
+ * EventideH9Card - Multi-Effect Professional Card
  *
  * Features:
- * - RED-on-BLACK 7-segment LED display (iconic H9 aesthetic)
+ * - RED-on-BLACK 7-segment LED display
  * - 10 algorithm selector buttons with real-time switching
  * - Professional parameter controls for all effects
  * - Metal gradient knobs with white accent rings
  * - Input/Output metering with clipping indicator
- * - Authentic Eventide H9 hardware styling
+ * - Professional hardware styling
  */
 
 import { useState, useEffect } from 'react'
@@ -105,7 +105,7 @@ function EventideH9CardBase({
       compact={compact}
       customHeader={
         <div className="h9-card-header">
-          <span className="h9-card-title">EVENTIDE H9</span>
+          <span className="h9-card-title">MULTI-EFFECT</span>
           <span className="h9-card-subtitle">Multi-Effect Processor</span>
         </div>
       }

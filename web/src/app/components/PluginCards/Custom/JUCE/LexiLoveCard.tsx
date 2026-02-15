@@ -1,8 +1,8 @@
 /**
- * LexiLoveCard - Lexicon PCM 70 Algorithmic Reverb Card
+ * LexiLoveCard - Algorithmic Reverb Card
  *
  * Features iconic green LCD display, 9 algorithm preset buttons,
- * and Lexicon-branded styling capturing the legendary "depth and sparkle"
+ * and retro rack unit styling capturing the legendary "depth and sparkle"
  */
 
 import { useLexiLove, LEXI_ALGORITHMS } from '../../../../hooks/useLexiLove'
@@ -42,7 +42,7 @@ interface LexiLoveCardProps extends PluginCardProps {
 
 function LexiLoveCardBase({
   plugin,
-  accentColor = '#00cc00', // Lexicon green
+  accentColor = '#00cc00', // Phosphor green
   compact = false,
   onOpenMidiMappings,
 }: LexiLoveCardProps) {
@@ -206,7 +206,7 @@ function LexiLoveCardBase({
         </ParameterRow>
       </ParameterSection>
 
-      {/* Multi-Band Decay (Lexicon Signature) */}
+      {/* Multi-Band Decay */}
       <ParameterSection title="Tone" accentColor="#00ccaa">
         <ParameterRow>
           <ParameterKnob

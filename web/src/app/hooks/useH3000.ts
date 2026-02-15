@@ -1,7 +1,7 @@
 /**
- * H3000 Ultra-Harmonizer Hook
- * Eventide H3000 pitch shifting and effects emulation with 10 legendary algorithms
- * The H3000 defined the sound of studio pitch shifting in the late 80s and 90s
+ * Ultra-Harmonizer Hook
+ * Pitch shifting and effects emulation with 10 legendary algorithms
+ * Defined the sound of studio pitch shifting in the late 80s and 90s
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'

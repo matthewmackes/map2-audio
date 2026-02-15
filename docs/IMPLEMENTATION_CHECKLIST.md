@@ -20,7 +20,7 @@
 - [x] Updated: `audioCallback()` method
 - [x] Added: 7 processor process() calls in correct order
 - [x] Verified: All 7 processors in audio chain
-- [x] Result: ShoeGaze, PassionFX, Peavey5150, TweedBassman, H3000, BossXS1, LexiLove now functional
+- [x] Result: ShoeGaze, PassionFX, Peavey5150, TweedBassman, Harmonizer, BossXS1, LexiLove now functional
 
 ### ✅ FIX #3: NAM Thread Safety
 - [x] Modified: `juce-engine/Source/NAMProcessor.h`
@@ -321,7 +321,7 @@ curl -X POST http://localhost:8080/api/engine/plugins/load \
   -d '{"uri":"urn:map2:nam-player"}' -H "Content-Type: application/json"
 
 # 3. Test all 7 processors
-for processor in shoegaze passion peavey5150 tweedbassman h3000 bossxs1 lexilove; do
+for processor in shoegaze passion peavey5150 tweedbassman harmonizer bossxs1 lexilove; do
   echo "Testing $processor..."
   curl -X GET "http://localhost:8080/api/engine/processor/$processor/status"
 done
@@ -349,9 +349,9 @@ All fixes are considered successful when:
    - PassionFX affects audio
    - Peavey5150 changes tone
    - TweedBassman adds saturation
-   - H3000 adds reverb/ambience
+   - Harmonizer adds reverb/ambience
    - BossXS1 applies polyphonic shift
-   - LexiLove adds Lexicon--IN-STYLE-style reverb
+   - LexiLove adds algorithmic reverb
 
 3. ✅ **API Performance:**
    - Plugin loading doesn't freeze API

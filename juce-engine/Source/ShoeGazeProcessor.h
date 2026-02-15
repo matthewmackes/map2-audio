@@ -2,7 +2,7 @@
 
 /**
  * MAP2 Audio Engine - ShoeGaze Multi-Effect Processor
- * "Wall of Sound" effect inspired by Eventide--IN-STYLE, Strymon, and Meris pedals
+ * "Wall of Sound" effect inspired by boutique ambient and shimmer pedals
  * Captures the aesthetic of My Bloody Valentine, Slowdive, and Cocteau Twins
  *
  * Signal chain:

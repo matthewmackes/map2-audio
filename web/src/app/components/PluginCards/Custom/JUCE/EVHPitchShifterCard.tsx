@@ -1,8 +1,8 @@
 /**
  * EVHPitchShifterCard - Custom card for JUCE EVH-style Pitch Shifter
  *
- * Features Van Halen song-inspired presets based on documented Eventide settings.
- * Sources: Eventide forums, VHLinks.com, Metropoulos Forum, Premier Guitar
+ * Features Van Halen song-inspired presets based on documented harmonizer settings.
+ * Sources: Audio equipment forums, VHLinks.com, Metropoulos Forum, Premier Guitar
  */
 
 import { useState, useCallback } from 'react'
@@ -139,7 +139,7 @@ function EVHPitchShifterCardBase({
       customHeader={
         <div className="evh-card-header">
           <span className="evh-card-title">EVH HARMONIZER</span>
-          <span className="evh-subtitle">Eventide H910/H949/H3000 Style</span>
+          <span className="evh-subtitle">Vintage Harmonizer Style</span>
         </div>
       }
     >
@@ -203,7 +203,7 @@ function EVHPitchShifterCardBase({
             {/* Hagar Era */}
             <div className="evh-era-header">
               <span>Sammy Hagar Era (1986-1996)</span>
-              <span className="evh-era-gear">H3000 Micropitch</span>
+              <span className="evh-era-gear">Micropitch</span>
             </div>
             {HAGAR_ERA_PRESETS.map((idx) => {
               const preset = presets[idx]
@@ -350,7 +350,7 @@ function EVHPitchShifterCardBase({
           <span>OUT: {Math.max(metering.outputLevelL, metering.outputLevelR).toFixed(1)} dB</span>
         </div>
         <div className="evh-source-note">
-          Settings based on Eventide Audio Forums & VHLinks.com research
+          Settings based on audio equipment forums & VHLinks.com research
         </div>
       </div>
     </PluginCardShell>

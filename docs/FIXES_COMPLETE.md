@@ -88,9 +88,9 @@ Now fully operational and producing audio:
 2. **PassionFX** - Multi-effect processor
 3. **Peavey5150** - Tube amp simulator
 4. **TweedBassman** - Vintage amp tone
-5. **Eventide--IN-STYLE H3000** - Studio reverb/ambience
+5. **Ultra-Harmonizer** - Studio reverb/ambience
 6. **Boss XS-1** - Polyphonic pitch shifter
-7. **Lexicon--IN-STYLE Love** - Lexicon--IN-STYLE-style effects
+7. **LexiLove** - Algorithmic reverb effects
 
 ---
 

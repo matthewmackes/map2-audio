@@ -338,13 +338,13 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
         tweedBassman_.process(buffer);    // Tweed Bassman amp sim
     }
     if (!h3000_.isBypassed()) {
-        h3000_.process(buffer);           // Eventide--IN-STYLE H3000-style reverb
+        h3000_.process(buffer);           // Ultra-Harmonizer reverb
     }
     if (bossXS1_.isActive()) {
         bossXS1_.process(buffer);         // Boss XS-1 multi-effect
     }
     if (!lexiLove_.isBypassed()) {
-        lexiLove_.process(buffer);        // Lexicon--IN-STYLE-style reverb
+        lexiLove_.process(buffer);        // Algorithmic reverb
     }
 
     // Process cabinet IR (if loaded)
@@ -1978,7 +1978,7 @@ int Map2AudioEngine::getLexiLoveNumAlgorithms() {
 }
 
 // ========================================
-// H3000 Harmonizer Implementation
+// Ultra-Harmonizer Implementation
 // ========================================
 
 // Algorithm

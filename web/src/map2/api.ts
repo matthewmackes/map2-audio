@@ -2663,7 +2663,7 @@ export const lexiLoveApi = {
     }),
 };
 
-// ==================== H3000 Ultra-Harmonizer ====================
+// ==================== Ultra-Harmonizer ====================
 
 export const h3000Api = {
   /** Get state */

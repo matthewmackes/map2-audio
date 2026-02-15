@@ -1,7 +1,7 @@
 /**
- * Lexi Love PCM 70 Reverb Hook
- * Lexicon PCM 70 algorithmic reverb emulation with 9 legendary presets
- * Captures the legendary "depth and sparkle" of the Lexicon sound
+ * LexiLove Reverb Hook
+ * Algorithmic reverb emulation with 9 legendary presets
+ * Captures the legendary "depth and sparkle" sound
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
