@@ -91,7 +91,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**544** Python | **602** TypeScript | **114** C++/H | **78** Docs | **155** total commits | **0** stars | **0** forks | **0** open issues
+**544** Python | **602** TypeScript | **114** C++/H | **80** Docs | **157** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -101,12 +101,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform - Top 100 Features](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_TOP_100_FEATURES.md) | 2026-02-15 |
+| [reddit posts](https://github.com/matthewmackes/map2-audio/blob/master/docs/reddit_posts.md) | 2026-02-15 |
 | [LEGAL DISCLAIMER – IMPORTANT NOTICE](https://github.com/matthewmackes/map2-audio/blob/master/docs/# LEGAL DISCLAIMER – IMPORTANT NOTICE.md) | 2026-02-14 |
 | [MAP2 Audio Platform - Complete Audio Engine Fixes](https://github.com/matthewmackes/map2-audio/blob/master/docs/AUDIO_ENGINE_FIXES_SUMMARY.md) | 2026-02-14 |
 | [AVB / 802.1AS vs Non-AVB Signal Flow Comparison](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_SIGNAL_FLOW_COMPARISON.md) | 2026-02-14 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-02-14 |
-| [✅ COMPLETE: All Audio Engine Issues Fixed](https://github.com/matthewmackes/map2-audio/blob/master/docs/FIXES_COMPLETE.md) | 2026-02-14 |
-| [Gemini Image Generation Prompts for MAP2 Architecture Diagrams](https://github.com/matthewmackes/map2-audio/blob/master/docs/GEMINI_IMAGE_GENERATION_PROMPTS.md) | 2026-02-14 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -132,14 +132,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d77f06e`](https://github.com/matthewmackes/map2-audio/commit/d77f06ec092982220defb7525423d71911b62aaf) | docs: move 2 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-15 |
+| [`9f1020a`](https://github.com/matthewmackes/map2-audio/commit/9f1020a9cb81099805b182db11b116cd8148e834) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`fe57f69`](https://github.com/matthewmackes/map2-audio/commit/fe57f695c0cf15b4bd36f5b4bcaf797f93514a81) | fix: resolve Vite circular chunk init errors, add 3D Grid... | Map2 Audio | 2026-02-14 |
 | [`1ec7186`](https://github.com/matthewmackes/map2-audio/commit/1ec71860743808fcd6bd7649b47da1731697dfad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`7e23155`](https://github.com/matthewmackes/map2-audio/commit/7e23155170660e7f0e5fdf9e73b7433975502cc4) | chore: remove Eventide, H3000, Lexicon, H9 brand names fr... | Map2 Audio | 2026-02-14 |
 | [`751517f`](https://github.com/matthewmackes/map2-audio/commit/751517f079ee41d655b2ae2c4d151d77a76eabc2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`a0680c5`](https://github.com/matthewmackes/map2-audio/commit/a0680c551d4d633b5dd3c6a8c7bac3eb5d333e1e) | docs: add MAP2 top 100 features document | Map2 Audio | 2026-02-14 |
 | [`cb92a92`](https://github.com/matthewmackes/map2-audio/commit/cb92a922499c855c5b246a7d9ecbe67f91bab94a) | docs: add architecture diagrams, audio chain editor, and ... | Map2 Audio | 2026-02-14 |
-| [`4dedc37`](https://github.com/matthewmackes/map2-audio/commit/4dedc37249306fce10e74a9ec9e1a82149df93da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
-| [`4dc09e9`](https://github.com/matthewmackes/map2-audio/commit/4dc09e9d7d4a0a4a857b2b102d96129eca27746b) | docs: move blog images to docs/images for README gallery ... | Map2 Audio | 2026-02-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
