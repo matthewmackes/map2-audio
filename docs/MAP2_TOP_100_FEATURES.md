@@ -5,7 +5,7 @@
 1.  **Neural Amp Modeler (NAM) Integration:** Utilizes AI for hyper-realistic guitar and bass amplifier simulations.
 2.  **Impulse Response (IR) Convolution Engine:** Load, manage, and use custom IR files for cabinet, speaker, and room simulation.
 3.  **Studio-Grade Effects Suite:** Comprehensive collection of built-in effects for complete signal chain construction.
-4.  **Vintage Amp Emulations:** Includes classic models such as the Peavey 5150 and Fender Tweed Bassman.
+4.  **Vintage Amp Emulations:** Includes classic models such as the  S1S0 and Hood Tweed Bassman.
 5.  **Advanced Modulation & Pitch Effects:** Ultra-Harmonizer, Poly Shifter, and ambient "Shoe Gaze" processors.
 6.  **Full Dynamics Suite:** Built-in Compressor, Limiter, Noise Gate, and Expander.
 7.  **Time-Based Effects:** High-quality Chorus, Phaser, Flanger, Delay, and Reverb processors.
