@@ -91,7 +91,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**544** Python | **602** TypeScript | **114** C++/H | **78** Docs | **148** total commits | **0** stars | **0** forks | **0** open issues
+**544** Python | **602** TypeScript | **114** C++/H | **78** Docs | **151** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -118,9 +118,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- GALLERY:START -->
 |  |  |  |
 | :---: | :---: | :---: |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_w12pyrw12pyrw12p.png" width="280" alt="Gemini Generated Image w12pyrw12pyrw12p"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_uo244quo244quo24.png" width="280" alt="Gemini Generated Image uo244quo244quo24"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_rvha5srvha5srvha.png" width="280" alt="Gemini Generated Image rvha5srvha5srvha"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_ilsxcilsxcilsxci.png" width="280" alt="Gemini Generated Image ilsxcilsxcilsxci"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_i5h0v0i5h0v0i5h0.png" width="280" alt="Gemini Generated Image i5h0v0i5h0v0i5h0"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_dx6bifdx6bifdx6b.png" width="280" alt="Gemini Generated Image dx6bifdx6bifdx6b"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_dqcqs6dqcqs6dqcq.png" width="280" alt="Gemini Generated Image dqcqs6dqcqs6dqcq"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_9kmoom9kmoom9kmo.png" width="280" alt="Gemini Generated Image 9kmoom9kmoom9kmo"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_w12pyrw12pyrw12p.png" width="280" alt="Gemini Generated Image w12pyrw12pyrw12p"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_uo244quo244quo24.png" width="280" alt="Gemini Generated Image uo244quo244quo24"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_rvha5srvha5srvha.png" width="280" alt="Gemini Generated Image rvha5srvha5srvha"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_ilsxcilsxcilsxci.png" width="280" alt="Gemini Generated Image ilsxcilsxcilsxci"> |
 <!-- GALLERY:END -->
 
 <p align="right"><em>Add screenshots to <code>docs/images/</code> and they appear here automatically.</em></p>
@@ -132,14 +132,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a0680c5`](https://github.com/matthewmackes/map2-audio/commit/a0680c551d4d633b5dd3c6a8c7bac3eb5d333e1e) | docs: add MAP2 top 100 features document | Map2 Audio | 2026-02-14 |
+| [`cb92a92`](https://github.com/matthewmackes/map2-audio/commit/cb92a922499c855c5b246a7d9ecbe67f91bab94a) | docs: add architecture diagrams, audio chain editor, and ... | Map2 Audio | 2026-02-14 |
+| [`4dedc37`](https://github.com/matthewmackes/map2-audio/commit/4dedc37249306fce10e74a9ec9e1a82149df93da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`4dc09e9`](https://github.com/matthewmackes/map2-audio/commit/4dc09e9d7d4a0a4a857b2b102d96129eca27746b) | docs: move blog images to docs/images for README gallery ... | Map2 Audio | 2026-02-14 |
 | [`ad40058`](https://github.com/matthewmackes/map2-audio/commit/ad40058519b2371296d1c24b99d9d6ed94a71a7d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`242e137`](https://github.com/matthewmackes/map2-audio/commit/242e137e412317b61c027cc1bdf817b915e447f9) | docs: add platform logo to docs/images and reddit posts | Map2 Audio | 2026-02-14 |
 | [`c4c007a`](https://github.com/matthewmackes/map2-audio/commit/c4c007a565b924104fa79deb8503ea459f15e75b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`4afd855`](https://github.com/matthewmackes/map2-audio/commit/4afd8555410d592ee55eed9a9c7929a31c7d615c) | docs: add educational overviews, AVB docs, blog images, a... | Map2 Audio | 2026-02-14 |
-| [`5c3fdcb`](https://github.com/matthewmackes/map2-audio/commit/5c3fdcb51edcbb095f2bc457e18f84a4ba9f9d8e) | docs: replace license section with legal disclaimer refer... | Map2 Audio | 2026-02-14 |
-| [`0c49d3a`](https://github.com/matthewmackes/map2-audio/commit/0c49d3a14de4aad57625f835926dd8a64fdf0b3d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-14 |
-| [`d09a848`](https://github.com/matthewmackes/map2-audio/commit/d09a84818d8d35ebf3c762d43bdf83de5473af3b) | feat: add auto-updating README showcase with GitHub Actions | Map2 Audio | 2026-02-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
