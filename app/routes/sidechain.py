@@ -50,7 +50,7 @@ class ToggleSidechainRequest(BaseModel):
 # Sidechain cache persisted to disk for restart resilience.
 _sidechain_connections: dict[str, SidechainConnection] = {}
 _sidechain_lock = threading.RLock()
-_sidechain_store_path = Path("/home/mm/map2-audio/.map2/sidechain_connections.json")
+_sidechain_store_path = Path.home() / ".map2" / "sidechain_connections.json"
 
 
 def _persist_sidechain_connections_to_disk() -> None:

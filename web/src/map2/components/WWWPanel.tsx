@@ -560,7 +560,7 @@ export default function WWWPanel() {
                   <List dense>
                     <ListItem>
                       <ListItemIcon><StorageIcon /></ListItemIcon>
-                      <ListItemText primary="Web Root" secondary={wwwStatus?.web_root || '/home/mm/map2-audio/web/dist'} />
+                      <ListItemText primary="Web Root" secondary={wwwStatus?.web_root || '/web/dist'} />
                     </ListItem>
                     <ListItem>
                       <ListItemIcon><UploadIcon /></ListItemIcon>

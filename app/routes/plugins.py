@@ -7,6 +7,7 @@ import time
 import logging
 import inspect
 import json
+import threading
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -140,19 +141,22 @@ try:
     _loaded_plugins = {}
     _cache_timestamp = 0
     _cache_ttl = 300  # 5 minutes cache TTL
+    _plugin_cache_lock = threading.RLock()
 
     def _is_cache_valid() -> bool:
         """Check if plugin cache is still valid."""
-        if not _discovered_plugins:
-            return False
-        return (time.time() - _cache_timestamp) < _cache_ttl
+        with _plugin_cache_lock:
+            if not _discovered_plugins:
+                return False
+            return (time.time() - _cache_timestamp) < _cache_ttl
 
     def invalidate_plugin_cache():
         """Invalidate the plugin cache. Call this after installing/uninstalling plugins."""
         global _discovered_plugins, _cache_timestamp
-        count = len(_discovered_plugins)
-        _discovered_plugins = []
-        _cache_timestamp = 0
+        with _plugin_cache_lock:
+            count = len(_discovered_plugins)
+            _discovered_plugins = []
+            _cache_timestamp = 0
         logger.info(f"Plugin cache invalidated ({count} plugins cleared)")
 
         # Refresh the plugin loader's lilv world to pick up new/removed plugins
@@ -217,9 +221,11 @@ try:
 
         # Return cached plugins if valid and not forcing refresh
         if not refresh and _is_cache_valid():
-            logger.debug(f"Returning {len(_discovered_plugins)} cached plugins")
-            logger.debug(f"Cached plugins: {[p.get('uri') for p in _discovered_plugins]}")
-            return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": True}
+            with _plugin_cache_lock:
+                cached_plugins = list(_discovered_plugins)
+            logger.debug(f"Returning {len(cached_plugins)} cached plugins")
+            logger.debug(f"Cached plugins: {[p.get('uri') for p in cached_plugins]}")
+            return {"plugins": cached_plugins, "count": len(cached_plugins), "cached": True}
 
         # Always include JUCE native processors (best-in-class built-in effects)
         # Clear JUCE cache on refresh to pick up config changes
@@ -233,14 +239,27 @@ try:
         if not loader:
             # If loader not available, return JUCE processors only
             if juce_processors:
-                _discovered_plugins = juce_processors
-                _cache_timestamp = time.time()
+                with _plugin_cache_lock:
+                    _discovered_plugins = list(juce_processors)
+                    _cache_timestamp = time.time()
                 logger.warning("Plugin loader not available, returning JUCE processors only")
-                return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": False, "warning": "LV2 loader not available, showing JUCE processors only"}
+                return {
+                    "plugins": juce_processors,
+                    "count": len(juce_processors),
+                    "cached": False,
+                    "warning": "LV2 loader not available, showing JUCE processors only",
+                }
             # If we have cached data, return it anyway
-            if _discovered_plugins:
+            with _plugin_cache_lock:
+                stale_plugins = list(_discovered_plugins)
+            if stale_plugins:
                 logger.warning("Plugin loader not available, returning stale cache")
-                return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": True, "warning": "Plugin loader not available, showing cached data"}
+                return {
+                    "plugins": stale_plugins,
+                    "count": len(stale_plugins),
+                    "cached": True,
+                    "warning": "Plugin loader not available, showing cached data",
+                }
             return {"plugins": [], "count": 0, "error": "Plugin loader not available"}
 
         try:
@@ -261,17 +280,21 @@ try:
 
             # Combine JUCE processors (first, highest priority) with LV2 plugins
             # JUCE processors are preferred as they are optimized native implementations
-            _discovered_plugins = juce_processors + lv2_plugins
-            _cache_timestamp = time.time()
+            combined_plugins = juce_processors + lv2_plugins
+            with _plugin_cache_lock:
+                _discovered_plugins = combined_plugins
+                _cache_timestamp = time.time()
 
-            logger.info(f"Discovered {len(_discovered_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
-            logger.info(f"Plugin URIs: {[p.get('uri') for p in _discovered_plugins]}")
-            return {"plugins": _discovered_plugins, "count": len(_discovered_plugins), "cached": False}
+            logger.info(f"Discovered {len(combined_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
+            logger.info(f"Plugin URIs: {[p.get('uri') for p in combined_plugins]}")
+            return {"plugins": combined_plugins, "count": len(combined_plugins), "cached": False}
         except Exception as e:
             logger.error(f"Error discovering plugins: {e}")
             # Return JUCE processors + cached data on error if available
-            if juce_processors or _discovered_plugins:
-                fallback = juce_processors if juce_processors else _discovered_plugins
+            with _plugin_cache_lock:
+                cached_plugins = list(_discovered_plugins)
+            if juce_processors or cached_plugins:
+                fallback = juce_processors if juce_processors else cached_plugins
                 return {"plugins": fallback, "count": len(fallback), "cached": True, "error": str(e)}
             return {"plugins": [], "count": 0, "error": str(e)}
 
@@ -284,22 +307,25 @@ try:
     async def clear_plugin_cache():
         """Clear the plugin cache, forcing next discovery to rescan."""
         global _discovered_plugins, _cache_timestamp
-        count = len(_discovered_plugins)
-        _discovered_plugins = []
-        _cache_timestamp = 0
+        with _plugin_cache_lock:
+            count = len(_discovered_plugins)
+            _discovered_plugins = []
+            _cache_timestamp = 0
         logger.info("Plugin cache cleared")
         return {"status": "cleared", "plugins_cleared": count}
 
     @router.get("/list")
     async def list_plugins():
         """List currently loaded plugins."""
+        with _plugin_cache_lock:
+            loaded_entries = list(_loaded_plugins.items())
         loaded = [
             {
                 "uri": uri,
                 "name": info.get("name", uri),
                 "category": info.get("category", "Unknown")
             }
-            for uri, info in _loaded_plugins.items()
+            for uri, info in loaded_entries
         ]
         return {"loaded": loaded, "count": len(loaded)}
 
@@ -309,7 +335,9 @@ try:
         global _loaded_plugins
 
         # Find plugin in discovered list
-        plugin_info = next((p for p in _discovered_plugins if p["uri"] == uri), None)
+        with _plugin_cache_lock:
+            discovered_snapshot = list(_discovered_plugins)
+        plugin_info = next((p for p in discovered_snapshot if p["uri"] == uri), None)
         if not plugin_info:
             raise HTTPException(status_code=404, detail="Plugin not found in discovered list")
 
@@ -331,7 +359,8 @@ try:
         loaded_plugin["instance_id"] = instance_id
         loaded_plugin["engine_loaded"] = engine_loaded
 
-        _loaded_plugins[uri] = loaded_plugin
+        with _plugin_cache_lock:
+            _loaded_plugins[uri] = loaded_plugin
         return {"status": "loaded", "plugin": loaded_plugin, "engine_loaded": engine_loaded}
 
     @router.post("/unload")
@@ -339,7 +368,9 @@ try:
         """Unload a plugin."""
         global _loaded_plugins
 
-        if uri not in _loaded_plugins:
+        with _plugin_cache_lock:
+            loaded_entry = _loaded_plugins.get(uri)
+        if loaded_entry is None:
             raise HTTPException(status_code=404, detail="Plugin not loaded")
 
         # Remove from audio engine
@@ -348,7 +379,6 @@ try:
             from app.services.juce_engine_service import get_audio_engine
             engine = get_audio_engine()
             if engine.is_available and engine.is_running:
-                loaded_entry = _loaded_plugins.get(uri, {})
                 instance_id = loaded_entry.get("instance_id")
 
                 if not isinstance(instance_id, int) or instance_id <= 0:
@@ -366,7 +396,8 @@ try:
         except Exception as e:
             logger.error(f"Error unloading plugin from audio engine: {e}")
 
-        del _loaded_plugins[uri]
+        with _plugin_cache_lock:
+            _loaded_plugins.pop(uri, None)
         return {"status": "unloaded", "uri": uri, "engine_unloaded": engine_unloaded}
 
     @router.delete("/{uri:path}")
@@ -500,11 +531,14 @@ try:
     @router.get("/{uri:path}/parameters")
     async def get_parameters(uri: str):
         """Get plugin parameters."""
-        if uri not in _loaded_plugins:
+        with _plugin_cache_lock:
+            loaded_exists = uri in _loaded_plugins
+            discovered_snapshot = list(_discovered_plugins)
+        if not loaded_exists:
             raise HTTPException(status_code=404, detail="Plugin not loaded")
 
         # Find full plugin info from discovered list
-        plugin_info = next((p for p in _discovered_plugins if p["uri"] == uri), None)
+        plugin_info = next((p for p in discovered_snapshot if p["uri"] == uri), None)
         if not plugin_info:
             return {"uri": uri, "parameters": []}
 
@@ -537,12 +571,13 @@ try:
         """Set a plugin parameter value."""
         if param_index < 0:
             raise HTTPException(status_code=400, detail="Parameter index must be >= 0")
-        if uri not in _loaded_plugins:
+        with _plugin_cache_lock:
+            plugin_info = dict(_loaded_plugins.get(uri, {}))
+        if not plugin_info:
             raise HTTPException(status_code=404, detail="Plugin not loaded")
 
         # Set parameter in running plugin instance
         engine_set = False
-        plugin_info = _loaded_plugins.get(uri, {})
         parameters = plugin_info.get("parameters", [])
         symbol = None
 
@@ -595,7 +630,9 @@ try:
                     })
                     continue
 
-                if update.plugin_uri not in _loaded_plugins:
+                with _plugin_cache_lock:
+                    plugin_info = dict(_loaded_plugins.get(update.plugin_uri, {}))
+                if not plugin_info:
                     errors.append({
                         "plugin_uri": update.plugin_uri,
                         "param_index": update.param_index,
@@ -604,7 +641,6 @@ try:
                     continue
 
                 # Set parameter in running plugin instance
-                plugin_info = _loaded_plugins.get(update.plugin_uri, {})
                 parameters = plugin_info.get("parameters", [])
                 symbol = None
 

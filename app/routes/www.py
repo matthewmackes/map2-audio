@@ -28,7 +28,10 @@ _startup_time = datetime.now()
 _request_count = 0
 _api_key: Optional[str] = None
 _access_log_lock = threading.RLock()
-_access_log_path = Path("/home/mm/map2-audio/.map2/access_logs.jsonl")
+_state_dir = Path.home() / ".map2"
+_access_log_path = _state_dir / "access_logs.jsonl"
+_www_config_path = _state_dir / "www_config.json"
+_api_key_path = _state_dir / "api_key"
 
 
 # ==================== Models ====================
@@ -152,6 +155,8 @@ def get_process_by_port(port: int) -> Optional[psutil.Process]:
 async def get_www_status() -> Dict[str, Any]:
     """Get comprehensive web services status."""
     global _request_count
+    project_root = Path(__file__).resolve().parents[2]
+    web_root = project_root / "web" / "dist"
 
     status = {
         "backend_running": False,
@@ -179,7 +184,7 @@ async def get_www_status() -> Dict[str, Any]:
         "rate_limit_enabled": False,
         "rate_limit_rpm": None,
         "rate_limit_burst": None,
-        "web_root": "/home/mm/map2-audio/web/dist",
+        "web_root": str(web_root),
         "upload_dir": "/tmp/map2-uploads",
         "max_upload_size": 512,
     }
@@ -330,7 +335,7 @@ async def restart_service(service: str) -> Dict[str, str]:
 @router.post("/config")
 async def update_config(update: ConfigUpdate) -> Dict[str, str]:
     """Update web server configuration."""
-    config_path = Path("/home/mm/map2-audio/.map2/www_config.json")
+    config_path = _www_config_path
 
     try:
         import json
@@ -363,7 +368,7 @@ async def generate_api_key() -> Dict[str, str]:
     _api_key = secrets.token_urlsafe(32)
 
     # Save to config
-    config_path = Path("/home/mm/map2-audio/.map2/api_key")
+    config_path = _api_key_path
     try:
         config_path.parent.mkdir(parents=True, exist_ok=True)
         with open(config_path, 'w') as f:
@@ -414,7 +419,7 @@ def log_request(method: str, path: str, status_code: int, response_time: float, 
 # Load API key on startup
 def _load_api_key():
     global _api_key
-    config_path = Path("/home/mm/map2-audio/.map2/api_key")
+    config_path = _api_key_path
     if config_path.exists():
         try:
             with open(config_path) as f:

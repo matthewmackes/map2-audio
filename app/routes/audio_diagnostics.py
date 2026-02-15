@@ -238,13 +238,11 @@ try:
         - loopback: measured round-trip latency using loopback cable
         """
         try:
-            script_path = "/home/mm/map2-audio/scripts/measure_latency.sh"
-            if not os.path.exists(script_path):
-                script_path = os.path.join(
-                    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-                    "scripts",
-                    "measure_latency.sh",
-                )
+            script_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                "scripts",
+                "measure_latency.sh",
+            )
 
             if not os.path.exists(script_path):
                 raise HTTPException(500, "Latency measurement script not found")

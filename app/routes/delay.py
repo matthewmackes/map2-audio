@@ -101,7 +101,7 @@ class DelayMetering(BaseModel):
 _tap_times: List[float] = []
 _MAX_TAPS = 8
 _tap_lock = threading.RLock()
-_tap_state_path = Path("/home/mm/map2-audio/.map2/delay_tap_tempo.json")
+_tap_state_path = Path.home() / ".map2" / "delay_tap_tempo.json"
 
 
 def _persist_tap_tempo() -> None:

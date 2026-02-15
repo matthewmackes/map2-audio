@@ -13,6 +13,7 @@ from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, Foreig
 from sqlalchemy.orm import relationship, sessionmaker, Session, declarative_base
 from sqlalchemy.engine import Engine
 from datetime import datetime
+from pathlib import Path
 import json
 import logging
 
@@ -36,6 +37,30 @@ SQLITE_PRAGMAS = {
 }
 
 
+def _resolve_database_path() -> Path:
+    """Resolve configured database file path with sensible fallback."""
+    raw_path = "data/map2.db"
+    try:
+        from app.config import get_config
+        raw_path = str(get_config().get("database.path", raw_path))
+    except Exception:
+        pass
+
+    path = Path(raw_path).expanduser()
+    if not path.is_absolute():
+        project_root = Path(__file__).resolve().parent.parent
+        path = (project_root / path).resolve()
+    return path
+
+
+def get_default_database_url(async_mode: bool = False) -> str:
+    """Build sqlite URL from configured path and ensure parent directory exists."""
+    db_path = _resolve_database_path()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    prefix = "sqlite+aiosqlite:///" if async_mode else "sqlite:///"
+    return f"{prefix}{db_path}"
+
+
 @event.listens_for(Engine, "connect")
 def _set_sqlite_pragmas(dbapi_connection, connection_record):
     """Apply SQLite PRAGMAs on every new connection for power-failure resilience."""
@@ -48,9 +73,10 @@ def _set_sqlite_pragmas(dbapi_connection, connection_record):
     cursor.close()
 
 
-def init_db(database_url: str = "sqlite:///data/map2.db") -> None:
+def init_db(database_url: str = None) -> None:
     """Initialize database engine and session factory with power-failure resilience."""
     global _engine, _SessionLocal
+    database_url = database_url or get_default_database_url(async_mode=False)
     _engine = create_engine(
         database_url,
         connect_args={"check_same_thread": False},
@@ -107,9 +133,10 @@ _tables_created = False  # Track if tables have been created
 _pragmas_set = False  # Track if PRAGMAs have been applied
 
 
-def init_async_db(database_url: str = "sqlite+aiosqlite:///data/map2.db") -> None:
+def init_async_db(database_url: str = None) -> None:
     """Initialize async database engine and session factory with power-failure resilience."""
     global _async_engine, _async_session_maker
+    database_url = database_url or get_default_database_url(async_mode=True)
     _async_engine = create_async_engine(
         database_url,
         echo=False,

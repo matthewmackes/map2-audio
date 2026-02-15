@@ -79,9 +79,27 @@ function Tone3000Dialog(props: Tone3000DialogProps) {
                 </Toolbar>
             </DialogTitle>
             <DialogContent>
-                <Typography variant="body1">
-                    This is a placeholder for the Tone 3000 dialog.
-                </Typography>
+                {!openAuthDialog ? (
+                    <div style={{ display: "flex", flexFlow: "column nowrap", gap: 12, alignItems: "flex-start" }}>
+                        <Typography variant="body1">
+                            TONE3000 authorization is active for this device.
+                        </Typography>
+                        <Typography variant="body2">
+                            Browse and download models from TONE3000, then manage local files from the library screens.
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => window.open("https://www.tone3000.com/search", "_blank")}
+                        >
+                            Open TONE3000 Library
+                        </Button>
+                    </div>
+                ) : (
+                    <Typography variant="body1">
+                        Authorization is required before TONE3000 model browsing can be enabled.
+                    </Typography>
+                )}
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} color="primary">

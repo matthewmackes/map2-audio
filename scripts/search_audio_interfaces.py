@@ -14,6 +14,7 @@ import argparse
 import re
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
 from urllib.parse import quote_plus
 import requests
@@ -557,7 +558,7 @@ def print_recommendations(results: List[SearchResult]):
         print(f"  Source:  {best_value.source}")
         print(f"  URL:     {best_value.url}\n")
 
-def export_to_markdown(results: List[SearchResult], filename: str = "/home/mm/map2-audio/search_results.md"):
+def export_to_markdown(results: List[SearchResult], filename: str = str(Path.cwd() / "search_results.md")):
     """Export results to markdown file"""
     sorted_by_price = sorted(results, key=lambda x: x.price)
     

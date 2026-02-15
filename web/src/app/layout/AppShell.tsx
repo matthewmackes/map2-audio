@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { SquaresFour, Sparkle, Info, Package, Waveform, MusicNotes, GridFour, Pulse, Usb, BookOpen, Monitor, List, X, HardDrives, Fire, Stack, Cpu } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Info, Package, Waveform, MusicNotes, GridFour, Cube, Pulse, Usb, BookOpen, Monitor, List, X, HardDrives, Fire, Stack, Cpu } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
@@ -153,6 +153,13 @@ const navItemsLeft = [
     icon: GridFour,
     description: 'Cortex-style grid editor',
     color: '#2563eb'
+  },
+  {
+    to: '/grid-3d',
+    label: '3D Grid',
+    icon: Cube,
+    description: '3D signal flow visualization',
+    color: '#7c3aed'
   },
   ...(enableLegacy ? [{ to: '/legacy', label: 'Legacy', icon: Sparkle, description: 'Classic interface', color: '#60a5fa' }] : []),
 ]

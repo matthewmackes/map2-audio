@@ -41,6 +41,29 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/cluster", tags=["cluster"])
 
 
+def _format_timestamp(value: Any) -> Optional[str]:
+    """Normalize sqlite timestamps to ISO-8601 strings."""
+    if value in (None, ""):
+        return None
+
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return None
+        try:
+            # Handle common sqlite variants, including trailing "Z".
+            if raw.endswith("Z"):
+                raw = raw[:-1] + "+00:00"
+            return datetime.fromisoformat(raw).isoformat()
+        except ValueError:
+            return raw
+
+    return str(value)
+
+
 # ============================================================================
 # Cluster Setup & Onboarding
 # ============================================================================
@@ -67,12 +90,18 @@ async def setup_cluster(request: dict):
         # Register discovered nodes
         registry = get_cluster_registry()
         for node in request.get("discovered_nodes", []):
-            registry.register_node(
-                node_id=node.get("node_id", node.get("hostname")),
+            node_id = node.get("node_id") or node.get("hostname")
+            if not node_id:
+                continue
+
+            registry.add_or_update_node(
+                node_id=node_id,
+                hostname=node.get("hostname") or node_id,
+                ip_address=node.get("ip_address"),
+                role=node.get("role", "AUDIO-NODE"),
                 metadata={
-                    "hostname": node.get("hostname"),
-                    "ip_address": node.get("ip_address"),
-                    "role": node.get("role", "worker"),
+                    "source": "onboarding",
+                    "role": node.get("role", "AUDIO-NODE"),
                 },
             )
         
@@ -181,8 +210,8 @@ async def list_nodes(role: Optional[str] = None, status_filter: Optional[str] = 
             health_score = aggregator.get_node_health(node_id)
             if health_score is not None:
                 node["health_score"] = health_score
-            node["last_seen"] = node.get("last_seen", "").isoformat()
-            node["last_updated"] = node.get("last_updated", "").isoformat()
+            node["last_seen"] = _format_timestamp(node.get("last_seen"))
+            node["last_updated"] = _format_timestamp(node.get("last_updated"))
 
         return {
             "status": "ok",
@@ -226,8 +255,8 @@ async def get_node(node_id: str) -> Dict:
         if health_score is not None:
             node["health_score"] = health_score
 
-        node["last_seen"] = node.get("last_seen", "").isoformat()
-        node["last_updated"] = node.get("last_updated", "").isoformat()
+        node["last_seen"] = _format_timestamp(node.get("last_seen"))
+        node["last_updated"] = _format_timestamp(node.get("last_updated"))
 
         return {
             "status": "ok",

@@ -263,7 +263,7 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
     # Database settings
     "database.path": ConfigOption(
         key="database.path",
-        default="~/.map2/map2.db",
+        default="data/map2.db",
         description="Database file path",
         value_type=str,
         env_var="MAP2_DATABASE_PATH",

@@ -213,42 +213,14 @@ try:
         return {"status": "uploaded", "filename": safe_name, "type": "reverb"}
 
 except ImportError as e:
-    # Create stub router if dependencies not available
-    from fastapi import APIRouter
+    from fastapi import APIRouter, HTTPException
     router = APIRouter(prefix="/api/ir", tags=["ir"])
+    _error_detail = f"IR dependencies not installed: {e}"
 
     @router.get("/")
     async def get_ir_root():
-        return {"available": False, "error": "IR dependencies not installed"}
+        raise HTTPException(status_code=503, detail=_error_detail)
 
     @router.get("/status")
     async def get_ir_status(type: str = "cabinet"):
-        if type == "cabinet":
-            return {
-                "loaded": None,
-                "mix": 100,
-                "bypass": False,
-                "inputLevel": -60,
-                "outputLevel": -60,
-                "peakInput": -60,
-                "peakOutput": -60,
-                "latency": 0,
-                "frequencyResponse": [],
-                "availableIRs": [],
-                "currentIRSize": "0 KB"
-            }
-        else:
-            return {
-                "loaded": None,
-                "mix": 30,
-                "bypass": False,
-                "inputLevel": -60,
-                "outputLevel": -60,
-                "peakInput": -60,
-                "peakOutput": -60,
-                "latency": 0,
-                "decayTail": [],
-                "availableIRs": [],
-                "currentDecay": 0,
-                "preDelay": 0
-            }
+        raise HTTPException(status_code=503, detail=_error_detail)

@@ -26,59 +26,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     outDir: 'dist',
     sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // ── Vendor chunks (stable across deploys, cached by browser) ──
-          // Function form gives us substring matching so react-dom/client,
-          // scheduler, etc. all land in the correct chunk.
-          if (id.includes('node_modules')) {
-            // Phosphor Icons (large icon library, cache separately)
-            if (id.includes('/@phosphor-icons/')) {
-              return 'vendor-icons'
-            }
-            // React core runtime
-            if (
-              id.includes('/react/') ||
-              id.includes('/react-dom/') ||
-              id.includes('/react-router') ||
-              id.includes('/scheduler/') ||
-              id.includes('/@tanstack/react-query/') ||
-              id.includes('/use-sync-external-store/')
-            ) {
-              return 'vendor-react'
-            }
-            // MUI + Emotion
-            if (
-              id.includes('/@mui/') ||
-              id.includes('/@emotion/')
-            ) {
-              return 'vendor-mui'
-            }
-            // Charts (recharts + d3 ecosystem)
-            if (
-              id.includes('/recharts/') ||
-              id.includes('/d3-') ||
-              id.includes('/victory-vendor/')
-            ) {
-              return 'vendor-charts'
-            }
-            // ReactFlow graph editor
-            if (
-              id.includes('/reactflow/') ||
-              id.includes('/@reactflow/') ||
-              id.includes('/dagre/')
-            ) {
-              return 'vendor-flow'
-            }
-            // Framer Motion
-            if (id.includes('/framer-motion/')) {
-              return 'vendor-animation'
-            }
-          }
-        },
-      },
-    },
+    // NOTE: manualChunks was removed because splitting React-dependent
+    // libraries (recharts, @emotion, @mui, reactflow) into separate
+    // chunks from React itself causes circular initialization errors
+    // at runtime (e.g. "can't access forwardRef before initialization").
+    // Vite's automatic chunking handles dependency ordering correctly.
   },
   plugins: [react(), svgr()],
   server: {

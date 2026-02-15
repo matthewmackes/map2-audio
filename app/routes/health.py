@@ -31,6 +31,7 @@ try:
         plugins_loaded = 0
         services_running = 0
         services_total = 0
+        dependency_errors = []
         try:
             from app.services.service_orchestrator import get_orchestrator
             orchestrator = get_orchestrator()
@@ -51,8 +52,8 @@ try:
             plugin_status = orchestrator.get_service_status("plugin_loader")
             if plugin_status and plugin_status.get("health", {}).get("metrics"):
                 plugins_loaded = plugin_status["health"]["metrics"].get("plugin_count", 0)
-        except Exception:
-            pass
+        except Exception as e:
+            dependency_errors.append(f"service_orchestrator: {e}")
 
         # Get performance metrics info
         buffer_underruns = 0
@@ -64,8 +65,8 @@ try:
             buffer_underruns = collector.buffer_underrun_count
             history_samples = collector.max_history
             active_alerts = len(collector.get_alerts())
-        except Exception:
-            pass
+        except Exception as e:
+            dependency_errors.append(f"performance_metrics: {e}")
 
         # Get NAM status (via JUCE C++ engine, no GPU - uses CPU-based NeuralAmpModelerCore)
         nam_available = False
@@ -73,19 +74,47 @@ try:
         try:
             from app.services.nam_processor import NAM_AVAILABLE
             nam_available = NAM_AVAILABLE
-        except Exception:
-            pass
+        except Exception as e:
+            dependency_errors.append(f"nam_processor: {e}")
 
         # Get IR processor status
         ir_available = False
         try:
-            from app.services.ir_processor import IRProcessor, SCIPY_AVAILABLE
+            from app.services.ir_processor import SCIPY_AVAILABLE
             ir_available = SCIPY_AVAILABLE
-        except Exception:
-            pass
+        except Exception as e:
+            dependency_errors.append(f"ir_processor: {e}")
+
+        issues = []
+        status = "healthy"
+
+        if services_total == 0:
+            issues.append("No orchestrator service data available")
+        elif services_running < services_total:
+            issues.append(
+                f"Only {services_running}/{services_total} orchestrator services are running"
+            )
+
+        if not audio_running:
+            issues.append("Audio engine service not running")
+
+        if cpu_percent >= 95:
+            issues.append(f"CPU usage critical ({cpu_percent:.1f}%)")
+        elif cpu_percent >= 85:
+            issues.append(f"CPU usage high ({cpu_percent:.1f}%)")
+
+        if memory_percent >= 95:
+            issues.append(f"Memory usage critical ({memory_percent:.1f}%)")
+        elif memory_percent >= 85:
+            issues.append(f"Memory usage high ({memory_percent:.1f}%)")
+
+        if issues:
+            status = "degraded"
+        if services_total > 0 and services_running == 0:
+            status = "critical"
 
         return {
-            "status": "healthy",
+            "status": status,
             "uptime_seconds": uptime,
             "cpu_percent": cpu_percent,
             "memory_mb": memory_mb,
@@ -103,6 +132,8 @@ try:
             "gpu_device": gpu_device,
             "ir_rt_safe": ir_available,
             "chain_morphing": True,
+            "issues": issues,
+            "dependency_errors": dependency_errors,
         }
 
     @router.get("/version")

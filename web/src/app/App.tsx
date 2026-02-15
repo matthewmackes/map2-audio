@@ -23,6 +23,7 @@ const LV2PluginsPage        = lazy(() => import('./pages/LV2PluginsPage').then(m
 const LibraryPage           = lazy(() => import('./pages/LibraryPage').then(m => ({ default: m.LibraryPage })))
 const MIDIPage              = lazy(() => import('./pages/MIDIPage').then(m => ({ default: m.MIDIPage })))
 const GridFlowPage          = lazy(() => import('./pages/GridFlowPage').then(m => ({ default: m.GridFlowPage })))
+const GridFlowAdvancedPage  = lazy(() => import('./pages/GridFlowAdvancedPage'))
 const DSPPage               = lazy(() => import('./pages/DSPPage').then(m => ({ default: m.DSPPage })))
 const EdirolUA1000Page      = lazy(() => import('./pages/EdirolUA1000Page').then(m => ({ default: m.EdirolUA1000Page })))
 const HoToneJoGGPage        = lazy(() => import('./pages/HoToneJoGGPage').then(m => ({ default: m.HoToneJoGGPage })))
@@ -84,6 +85,7 @@ export function App() {
                   <Route path="/library" element={<LibraryPage />} />
                   <Route path="/midi" element={<MIDIPage />} />
                   <Route path="/grid" element={<GridFlowPage />} />
+                  <Route path="/grid-3d" element={<GridFlowAdvancedPage />} />
                   <Route path="/dsp" element={<DSPPage />} />
                   <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
                   <Route path="/motu-rme" element={<MOTURMEPage />} />

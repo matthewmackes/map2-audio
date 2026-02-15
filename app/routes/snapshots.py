@@ -44,7 +44,7 @@ def _default_snapshot_store() -> Dict[int, Dict[str, Any]]:
 
 
 _snapshot_lock = threading.RLock()
-_snapshot_store_path = Path("/home/mm/map2-audio/.map2/engine_snapshots.json")
+_snapshot_store_path = Path.home() / ".map2" / "engine_snapshots.json"
 _snapshots: Dict[int, Dict[str, Any]] = _default_snapshot_store()
 _current_snapshot: int = 0
 

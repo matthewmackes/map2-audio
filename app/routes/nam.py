@@ -707,25 +707,14 @@ try:
             raise HTTPException(status_code=500, detail=str(e))
 
 except ImportError as e:
-    # Create stub router if dependencies not available
-    from fastapi import APIRouter
+    from fastapi import APIRouter, HTTPException
     router = APIRouter(prefix="/api/nam", tags=["nam"])
+    _error_detail = f"NAM dependencies not installed: {e}"
 
     @router.get("/")
     async def get_nam_root():
-        return {
-            "available": False,
-            "error": "NAM dependencies not installed"
-        }
+        raise HTTPException(status_code=503, detail=_error_detail)
 
     @router.get("/status")
     async def get_nam_status():
-        return {
-            "available": False,
-            "activeModel": None,
-            "loading": False,
-            "bypass": False,
-            "inputLevel": -100,
-            "outputLevel": -100,
-            "availableModels": []
-        }
+        raise HTTPException(status_code=503, detail=_error_detail)
