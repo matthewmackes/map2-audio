@@ -3,7 +3,7 @@
  * Enables streaming updates instead of polling
  */
 
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import type { SystemHealthOverview, DiskHealthData } from '@/map2/types'
 import { getWsBaseUrl } from '../../map2/api'
 
@@ -15,7 +15,7 @@ export interface WebSocketConfig {
 }
 
 export const DEFAULT_WS_CONFIG: WebSocketConfig = {
-  url: `${typeof window !== 'undefined' ? getWsBaseUrl() : 'ws://localhost:8080'}/ws/system/metrics`,
+  url: typeof window !== 'undefined' ? `${getWsBaseUrl()}/ws/system/metrics` : '',
   reconnectInterval: 3000,
   maxReconnectAttempts: 5,
   heartbeatInterval: 30000,
@@ -31,15 +31,18 @@ export interface MetricsUpdate {
  * Hook for WebSocket connection to real-time metrics
  */
 export function useSystemMetricsWebSocket(config: Partial<WebSocketConfig> = {}) {
-  const finalConfig = { ...DEFAULT_WS_CONFIG, ...config }
+  const finalConfig = useMemo(() => ({ ...DEFAULT_WS_CONFIG, ...config }), [config])
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectCountRef = useRef(0)
   const heartbeatTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return
     }
+
+    if (!finalConfig.url) return
 
     try {
       wsRef.current = new WebSocket(finalConfig.url)
@@ -47,6 +50,7 @@ export function useSystemMetricsWebSocket(config: Partial<WebSocketConfig> = {})
       wsRef.current.onopen = () => {
         console.log('WebSocket connected to metrics stream')
         reconnectCountRef.current = 0
+        setIsConnected(true)
 
         // Start heartbeat
         heartbeatTimerRef.current = setInterval(() => {
@@ -58,6 +62,7 @@ export function useSystemMetricsWebSocket(config: Partial<WebSocketConfig> = {})
 
       wsRef.current.onclose = () => {
         console.log('WebSocket disconnected')
+        setIsConnected(false)
         if (heartbeatTimerRef.current) {
           clearInterval(heartbeatTimerRef.current)
         }
@@ -70,9 +75,11 @@ export function useSystemMetricsWebSocket(config: Partial<WebSocketConfig> = {})
       }
 
       wsRef.current.onerror = (error) => {
+        setIsConnected(false)
         console.error('WebSocket error:', error)
       }
     } catch (error) {
+      setIsConnected(false)
       console.error('Failed to create WebSocket:', error)
     }
   }, [finalConfig])
@@ -82,6 +89,7 @@ export function useSystemMetricsWebSocket(config: Partial<WebSocketConfig> = {})
       clearInterval(heartbeatTimerRef.current)
     }
     wsRef.current?.close()
+    setIsConnected(false)
   }, [])
 
   const subscribe = useCallback(
@@ -112,15 +120,13 @@ export function useSystemMetricsWebSocket(config: Partial<WebSocketConfig> = {})
     [connect]
   )
 
-  const send = useCallback((message: any) => {
+  const send = useCallback((message: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message))
     } else {
       console.warn('WebSocket is not connected')
     }
   }, [])
-
-  const isConnected = wsRef.current?.readyState === WebSocket.OPEN
 
   return {
     connect,

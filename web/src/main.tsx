@@ -1,7 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import ErrorBoundary from './ErrorBoundary'
-import { App } from './app/App'
 import { initializeTheme } from './app/theme'
 
 // Initialize theme before rendering to prevent flash of wrong theme
@@ -9,7 +8,10 @@ initializeTheme()
 
 const rootElement = document.getElementById('root')
 
-if (rootElement) {
+async function mountApp() {
+  if (!rootElement) return
+
+  const { App } = await import('./app/App')
   createRoot(rootElement).render(
     <ErrorBoundary>
       <App />
@@ -17,3 +19,11 @@ if (rootElement) {
   )
 }
 
+if (document.readyState === 'complete') {
+  void mountApp()
+} else {
+  const onLoad = () => {
+    void mountApp()
+  }
+  window.addEventListener('load', onLoad, { once: true })
+}

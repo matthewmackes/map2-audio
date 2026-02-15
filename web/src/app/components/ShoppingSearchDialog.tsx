@@ -29,12 +29,13 @@ import {
   Collapse,
   IconButton,
 } from '@mui/material'
-import { ShoppingCart, ArrowSquareOut, TrendUp, CurrencyDollar, MagnifyingGlass, Funnel, Info, Lightning, GitDiff, CaretDown, CaretUp, Warning } from '@phosphor-icons/react'
+import { ShoppingCart, ArrowSquareOut, MagnifyingGlass, Funnel, Info, GitDiff, CaretDown, CaretUp, Warning } from '@phosphor-icons/react'
 import { API_BASE } from '../../map2/api'
 import { ProductDetailDialog } from './ProductDetailDialog'
 
 interface DeviceMatch {
   model: string
+  manufacturer?: string
   io_count: string
   latency_ms: number
   tier: string
@@ -168,7 +169,8 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
 
     // Sort
     const sorted = [...filtered].sort((a, b) => {
-      let aVal: any, bVal: any
+      let aVal: string | number
+      let bVal: string | number
 
       switch (sortField) {
         case 'price':
@@ -496,7 +498,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
                                   setSelectedProduct({
                                     ...result.matched_device,
                                     manufacturer: result.matched_device.model.split(' ')[0],
-                                  } as any)
+                                  })
                                   setProductDialogOpen(true)
                                 }
                               }}

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useEffect } from 'react'
 import ReactFlow, {
   Node,
   Edge,
@@ -11,16 +11,18 @@ import ReactFlow, {
   Position,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { WifiHigh, Lightning, Database, WarningCircle, CheckCircle } from '@phosphor-icons/react'
+import { WifiHigh, Database, WarningCircle, CheckCircle } from '@phosphor-icons/react'
 
 interface ClusterNode {
-  node_id: string
-  hostname: string
-  role: string
-  status: string
+  node_id?: string
+  id?: string
+  hostname?: string
+  role?: string
+  status?: string
   health_score?: number
   latency_ms?: number
   cpu_percent?: number
+  memory_percent?: number
   memory_used_gb?: number
   memory_total_gb?: number
 }
@@ -31,8 +33,18 @@ interface TopologyGraphProps {
   simulationMode?: boolean
 }
 
+interface TopologyNodeVisualData {
+  hostname: string
+  role: string
+  status: string
+  health_score?: number
+  cpu_percent?: number
+  memory_used_gb?: number
+  memory_total_gb?: number
+}
+
 // Custom Node Component
-function AudioNodeVisual({ data }: any) {
+function AudioNodeVisual({ data }: { data: TopologyNodeVisualData }) {
   const statusColor = {
     ONLINE: '#00ff41',
     OFFLINE: '#ff3333',
@@ -130,7 +142,7 @@ function AudioNodeVisual({ data }: any) {
   )
 }
 
-function ManagementNodeVisual({ data }: any) {
+function ManagementNodeVisual({ data }: { data: TopologyNodeVisualData }) {
   const statusColor = data.status === 'ONLINE' ? '#2563eb' : '#ff3333'
 
   return (
@@ -204,28 +216,47 @@ function ManagementNodeVisual({ data }: any) {
   )
 }
 
-export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: TopologyGraphProps) {
+export function TopologyGraph({ nodes: clusterNodes, edges: inputEdges, simulationMode = false }: TopologyGraphProps) {
   // Convert cluster data to React Flow nodes and edges
   const { nodes: flowNodes, edges: flowEdges } = useMemo(() => {
     if (!clusterNodes || clusterNodes.length === 0) {
       return { nodes: [], edges: [] }
     }
 
-    const nodeTypes = new Map<string, ClusterNode[]>()
-    clusterNodes.forEach(node => {
-      const type = node.role || 'UNKNOWN'
-      if (!nodeTypes.has(type)) {
-        nodeTypes.set(type, [])
+    const normalizedNodes = clusterNodes.map((node, index) => {
+      const nodeId = node.node_id || node.id || node.hostname || `node-${index + 1}`
+      const role = (node.role || 'UNKNOWN').toUpperCase()
+      const status = (node.status || 'OFFLINE').toUpperCase()
+      const memoryPercent = node.memory_percent
+      const memoryTotalGb = typeof node.memory_total_gb === 'number' ? node.memory_total_gb : 0
+      const computedMemoryUsed =
+        typeof node.memory_used_gb === 'number'
+          ? node.memory_used_gb
+          : memoryPercent && memoryTotalGb > 0
+            ? (memoryPercent / 100) * memoryTotalGb
+            : 0
+
+      return {
+        ...node,
+        node_id: nodeId,
+        hostname: node.hostname || nodeId,
+        role,
+        status,
+        memory_total_gb: memoryTotalGb > 0 ? memoryTotalGb : typeof node.memory_total_gb === 'number' ? node.memory_total_gb : 0,
+        memory_used_gb: computedMemoryUsed,
       }
-      nodeTypes.get(type)!.push(node)
     })
 
     const flowNodesList: Node[] = []
     const edgesList: Edge[] = []
-    let yOffset = 0
 
     // Management nodes at top
-    const mgmtNodes = nodeTypes.get('MANAGEMENT-NODE') || []
+    const mgmtNodes = normalizedNodes.filter(
+      node =>
+        node.role === 'MANAGEMENT-NODE' ||
+        node.role === 'CONTROL-NODE' ||
+        node.role === 'STANDBY-MANAGEMENT'
+    )
     mgmtNodes.forEach((node, idx) => {
       flowNodesList.push({
         id: node.node_id,
@@ -241,7 +272,7 @@ export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: T
     })
 
     // Audio nodes below
-    const audioNodes = nodeTypes.get('AUDIO-NODE') || []
+    const audioNodes = normalizedNodes.filter(node => node.role.includes('AUDIO'))
     audioNodes.forEach((node, idx) => {
       const x = 50 + idx * 280
       const y = 200
@@ -267,7 +298,7 @@ export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: T
           source: mgmt.node_id,
           target: node.node_id,
           label: node.latency_ms ? `${node.latency_ms.toFixed(1)}ms` : undefined,
-          animated: node.status === 'ONLINE',
+          animated: node.status === 'ONLINE' || simulationMode,
           style: {
             stroke: node.latency_ms && node.latency_ms > 50 ? '#ffaa00' : '#2563eb',
             strokeWidth: 2,
@@ -276,11 +307,33 @@ export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: T
       })
     })
 
-    return { nodes: flowNodesList, edges: edgesList }
-  }, [clusterNodes])
+    inputEdges.forEach((edge, index) => {
+      edgesList.push({
+        id: `edge-${index}-${edge.source}-${edge.target}`,
+        source: edge.source,
+        target: edge.target,
+        label: `${edge.latency.toFixed(1)}ms`,
+        animated: simulationMode,
+        style: {
+          stroke: edge.latency > 50 ? '#ffaa00' : '#2563eb',
+          strokeWidth: 2,
+        },
+      })
+    })
 
-  const [nodes, , onNodesChange] = useNodesState(flowNodes)
-  const [edges, , onEdgesChange] = useEdgesState(flowEdges)
+    return { nodes: flowNodesList, edges: edgesList }
+  }, [clusterNodes, inputEdges, simulationMode])
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(flowEdges)
+
+  useEffect(() => {
+    setNodes(flowNodes)
+  }, [flowNodes, setNodes])
+
+  useEffect(() => {
+    setEdges(flowEdges)
+  }, [flowEdges, setEdges])
 
   const nodeTypes = useMemo(
     () => ({
@@ -299,6 +352,7 @@ export function TopologyGraph({ nodes: clusterNodes, simulationMode = false }: T
         border: '1px solid #333',
         borderRadius: 8,
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <ReactFlow

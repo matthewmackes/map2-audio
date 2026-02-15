@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Broadcast, SpeakerHigh, SpeakerX, Warning, CheckCircle, XCircle, Pulse, Cpu, Link, Microphone, GearSix } from '@phosphor-icons/react'
+import { Broadcast, SpeakerHigh, SpeakerX, Warning, CheckCircle, XCircle, Pulse, Cpu, Link, Microphone, GearSix, type Icon } from '@phosphor-icons/react'
 import { usePipeWire } from '../hooks/usePipeWire'
 
 // ============================================================================
@@ -22,7 +22,7 @@ function StatusBadge({ status }: { status: 'ok' | 'warning' | 'error' | 'offline
 }
 
 function MetricCard({ label, value, unit, icon: Icon, color = '#94a3b8' }: {
-  label: string; value: string | number; unit?: string; icon: any; color?: string
+  label: string; value: string | number; unit?: string; icon: Icon; color?: string
 }) {
   return (
     <div style={{ background: '#1e293b', borderRadius: 12, padding: '20px 24px', minWidth: 160 }}>
@@ -269,7 +269,7 @@ export function PipeWirePage() {
   const pw = usePipeWire()
   const [tab, setTab] = useState<Tab>('overview')
 
-  const tabs: { id: Tab; label: string; icon: any }[] = [
+  const tabs: { id: Tab; label: string; icon: Icon }[] = [
     { id: 'overview', label: 'Overview',  icon: Pulse },
     { id: 'devices',  label: 'Devices',   icon: SpeakerHigh },
     { id: 'nodes',    label: 'Nodes',     icon: SpeakerHigh },
@@ -388,7 +388,7 @@ export function PipeWirePage() {
                 <SettingItem label="clock.allowed-rates" value={pw.settings.clock_allowed_rates.join(', ')} />
               </div>
             </Section>
-            <Section title="Latency Breakdown" icon={Activity}>
+            <Section title="Latency Breakdown" icon={Pulse}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                 <MetricCard icon={Pulse} label="Graph" value={pw.graphLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
                 <MetricCard icon={Pulse} label="Driver" value={pw.driverLatencyMs.toFixed(1)} unit="ms" color="#60a5fa" />
@@ -412,7 +412,7 @@ export function PipeWirePage() {
 // Utility components
 // ============================================================================
 
-function Section({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
+function Section({ title, icon: Icon, children }: { title: string; icon: Icon; children: React.ReactNode }) {
   return (
     <div style={{ background: '#0f172a', borderRadius: 12, padding: 24, border: '1px solid #1e293b' }}>
       <h3 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 16, fontWeight: 600, color: '#f8fafc' }}>

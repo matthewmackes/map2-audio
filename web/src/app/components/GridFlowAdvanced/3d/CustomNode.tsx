@@ -25,6 +25,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   default: '#007acc'
 }
 
+const NODE_FONT = '/fonts/comforta/Comfortaa-Regular.ttf'
+
 export function CustomNode({ node, isSelected, isHovered }: CustomNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const glowRef = useRef<THREE.Mesh>(null)
@@ -35,9 +37,9 @@ export function CustomNode({ node, isSelected, isHovered }: CustomNodeProps) {
   }, [node.category, node.color])
   
   const size = useMemo(() => {
-    if (node.type === 'input' || node.type === 'output') return 0.4
-    if (node.type === 'layer-portal') return 0.6
-    return 0.5
+    if (node.type === 'input' || node.type === 'output') return 1.0
+    if (node.type === 'layer-portal') return 1.4
+    return 1.25
   }, [node.type])
   
   // Breathing animation
@@ -110,12 +112,12 @@ export function CustomNode({ node, isSelected, isHovered }: CustomNodeProps) {
       
       {/* Label */}
       <Text
-        position={[0, size * 0.8, 0]}
-        fontSize={0.15}
+        position={[0, size * 0.95, 0]}
+        fontSize={0.34}
         color="#d4d4d4"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/RobotoMono-Regular.ttf"
+        font={NODE_FONT}
         outlineWidth={0.01}
         outlineColor="#000000"
       >
@@ -125,11 +127,12 @@ export function CustomNode({ node, isSelected, isHovered }: CustomNodeProps) {
       {/* Layer indicator */}
       {node.layer !== 0 && (
         <Text
-          position={[0, -size * 0.8, 0]}
-          fontSize={0.1}
+          position={[0, -size * 0.95, 0]}
+          fontSize={0.24}
           color="#666666"
           anchorX="center"
           anchorY="middle"
+          font={NODE_FONT}
         >
           L{node.layer}
         </Text>

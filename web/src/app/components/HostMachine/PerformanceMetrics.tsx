@@ -4,8 +4,9 @@
 
 import { Box, Paper, Button, Grid, Switch, FormControlLabel, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { ArrowsClockwise } from '@phosphor-icons/react'
+import { useDiskHealth, useHealthOverview } from '@/app/hooks/useHostMachine'
 
 interface PerformanceMetricsProps {
   autoRefresh: boolean
@@ -24,37 +25,43 @@ export default function PerformanceMetrics({
   autoRefresh,
   onAutoRefreshChange,
 }: PerformanceMetricsProps) {
-  const [metrics, setMetrics] = useState<MetricPoint[]>([
-    { time: '00:00', cpu: 15, memory: 45, temp: 42, disk: 65 },
-    { time: '01:00', cpu: 22, memory: 48, temp: 45, disk: 65 },
-    { time: '02:00', cpu: 28, memory: 52, temp: 48, disk: 66 },
-    { time: '03:00', cpu: 25, memory: 50, temp: 46, disk: 66 },
-    { time: '04:00', cpu: 35, memory: 58, temp: 52, disk: 67 },
-    { time: '05:00', cpu: 32, memory: 55, temp: 50, disk: 67 },
-    { time: '06:00', cpu: 28, memory: 52, temp: 48, disk: 68 },
-    { time: '07:00', cpu: 18, memory: 46, temp: 44, disk: 68 },
-  ])
+  const [metrics, setMetrics] = useState<MetricPoint[]>([])
 
-  // Simulate real-time data updates
+  const healthOverviewQuery = useHealthOverview(autoRefresh ? 2000 : undefined)
+  const diskHealthQuery = useDiskHealth(autoRefresh ? 5000 : undefined)
+
   useEffect(() => {
-    if (!autoRefresh) return
+    if (!healthOverviewQuery.data) return
 
-    const interval = setInterval(() => {
-      setMetrics((prev) => {
-        const newPoint: MetricPoint = {
-          time: new Date().toLocaleTimeString().substring(0, 5),
-          cpu: Math.max(10, Math.min(95, prev[prev.length - 1].cpu + (Math.random() - 0.5) * 20)),
-          memory: Math.max(30, Math.min(90, prev[prev.length - 1].memory + (Math.random() - 0.5) * 10)),
-          temp: Math.max(35, Math.min(85, prev[prev.length - 1].temp + (Math.random() - 0.5) * 8)),
-          disk: prev[prev.length - 1].disk + Math.random() * 0.1,
-        }
+    const diskPercent =
+      diskHealthQuery.data?.use_percent ??
+      diskHealthQuery.data?.disks?.[0]?.use_percent ??
+      0
 
-        return [...prev.slice(1), newPoint]
-      })
-    }, 5000)
+    const nextPoint: MetricPoint = {
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      cpu: healthOverviewQuery.data.cpu_usage_percent,
+      memory: healthOverviewQuery.data.memory_usage_percent,
+      temp: healthOverviewQuery.data.cpu_temp_celsius,
+      disk: diskPercent,
+    }
 
-    return () => clearInterval(interval)
-  }, [autoRefresh])
+    setMetrics(prev => {
+      const last = prev[prev.length - 1]
+      const unchanged =
+        last &&
+        Math.abs(last.cpu - nextPoint.cpu) < 0.01 &&
+        Math.abs(last.memory - nextPoint.memory) < 0.01 &&
+        Math.abs(last.temp - nextPoint.temp) < 0.01 &&
+        Math.abs(last.disk - nextPoint.disk) < 0.01
+
+      if (unchanged) {
+        return prev
+      }
+
+      return [...prev.slice(-23), nextPoint]
+    })
+  }, [healthOverviewQuery.data, diskHealthQuery.data])
 
   const getColor = (value: number, thresholds: { good: number; warning: number }) => {
     if (value >= thresholds.warning) return '#ef4444'
@@ -65,6 +72,7 @@ export default function PerformanceMetrics({
   const cpuColor = getColor(metrics[metrics.length - 1]?.cpu || 0, { good: 70, warning: 85 })
   const memColor = getColor(metrics[metrics.length - 1]?.memory || 0, { good: 70, warning: 85 })
   const tempColor = getColor(metrics[metrics.length - 1]?.temp || 0, { good: 60, warning: 75 })
+  const latest = metrics[metrics.length - 1] ?? { cpu: 0, memory: 0, temp: 0, disk: 0 }
 
   return (
     <Box>
@@ -78,8 +86,16 @@ export default function PerformanceMetrics({
             }
             label="Auto-refresh"
           />
-          <Button size="small" startIcon={<ArrowsClockwise size={16} weight="duotone" />}>
-            Refresh
+          <Button
+            size="small"
+            onClick={() => {
+              healthOverviewQuery.refetch()
+              diskHealthQuery.refetch()
+            }}
+            disabled={healthOverviewQuery.isFetching || diskHealthQuery.isFetching}
+            startIcon={<ArrowsClockwise size={16} weight="duotone" />}
+          >
+            {healthOverviewQuery.isFetching || diskHealthQuery.isFetching ? 'Refreshing...' : 'Force Refresh'}
           </Button>
         </Box>
       </Box>
@@ -92,7 +108,7 @@ export default function PerformanceMetrics({
               CPU Usage
             </Typography>
             <Typography sx={{ fontSize: 24, fontWeight: 700, color: cpuColor }}>
-              {metrics[metrics.length - 1]?.cpu.toFixed(0)}%
+              {latest.cpu.toFixed(0)}%
             </Typography>
             <Typography sx={{ fontSize: 10, color: '#999', mt: 0.5 }}>
               {cpuColor === '#ef4444' ? 'High - Monitor' : cpuColor === '#f59e0b' ? 'Moderate' : 'Normal'}
@@ -106,7 +122,7 @@ export default function PerformanceMetrics({
               Memory Usage
             </Typography>
             <Typography sx={{ fontSize: 24, fontWeight: 700, color: memColor }}>
-              {metrics[metrics.length - 1]?.memory.toFixed(0)}%
+              {latest.memory.toFixed(0)}%
             </Typography>
             <Typography sx={{ fontSize: 10, color: '#999', mt: 0.5 }}>
               {memColor === '#ef4444' ? 'High' : memColor === '#f59e0b' ? 'Good' : 'Excellent'}
@@ -120,7 +136,7 @@ export default function PerformanceMetrics({
               Temperature
             </Typography>
             <Typography sx={{ fontSize: 24, fontWeight: 700, color: tempColor }}>
-              {metrics[metrics.length - 1]?.temp.toFixed(0)}°C
+              {latest.temp.toFixed(0)}°C
             </Typography>
             <Typography sx={{ fontSize: 10, color: '#999', mt: 0.5 }}>
               {tempColor === '#ef4444' ? 'Hot' : tempColor === '#f59e0b' ? 'Warm' : 'Cool'}
@@ -134,7 +150,7 @@ export default function PerformanceMetrics({
               Disk Usage
             </Typography>
             <Typography sx={{ fontSize: 24, fontWeight: 700, color: '#3b82f6' }}>
-              {metrics[metrics.length - 1]?.disk.toFixed(0)}%
+              {latest.disk.toFixed(0)}%
             </Typography>
             <Typography sx={{ fontSize: 10, color: '#999', mt: 0.5 }}>Good Headroom</Typography>
           </Paper>

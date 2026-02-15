@@ -47,6 +47,7 @@ export function LibraryPage() {
       path: pathsQuery.data.nam_models,
       displayPath: pathsQuery.data.nam_models_display,
       icon: MusicNote,
+      description: 'Neural amp model captures for NAM processing',
     },
     {
       label: 'Cabinet IRs',

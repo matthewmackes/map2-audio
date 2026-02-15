@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Pulse, WarningCircle, CheckCircle, Database, Broadcast, DesktopTower, Lightning, FlowArrow, Cpu, HardDrive, Gauge, Waveform } from '@phosphor-icons/react'
+import { Pulse, WarningCircle, CheckCircle, Database, Broadcast, DesktopTower, Lightning, FlowArrow, Cpu, HardDrive, Gauge, Waveform, type Icon } from '@phosphor-icons/react'
 
 interface ComponentDetails {
   description: string
@@ -268,8 +268,8 @@ export function SystemArchitectureFlow() {
           },
           pipeWire: {
             status: pwData?.daemon?.running
-              ? (pwData.alerts?.some((a: any) => a.severity === 'error') ? 'critical'
-                : pwData.alerts?.some((a: any) => a.severity === 'warning') ? 'warning' : 'healthy')
+              ? (pwData.alerts?.some((a: { severity?: string }) => a.severity === 'error') ? 'critical'
+                : pwData.alerts?.some((a: { severity?: string }) => a.severity === 'warning') ? 'warning' : 'healthy')
               : 'critical',
             message: pwData?.daemon?.running
               ? `v${pwData.daemon.version} • ${pwData.devices?.length || 0} dev • ${pwData.total_latency_ms?.toFixed(1) || '?'}ms • ${pwData.xruns || 0} xruns`
@@ -313,7 +313,7 @@ export function SystemArchitectureFlow() {
   }
 
   const renderHealthBlock = (
-    icon: React.ComponentType<{ size: number; style?: React.CSSProperties; weight?: string }>,
+    icon: Icon,
     label: string,
     healthInfo: { 
       status: 'healthy' | 'warning' | 'critical'

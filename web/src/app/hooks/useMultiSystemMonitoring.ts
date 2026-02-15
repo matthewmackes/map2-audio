@@ -15,7 +15,8 @@
  * - Software Versions & Updates (backend, frontend, JUCE engine, dependencies)
  */
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { HostMachineInfo, SystemHealthOverview, DiskHealthData } from '@/map2/types'
 
 export interface AudioEngineStatus {
@@ -98,12 +99,276 @@ export interface MultiSystemStats {
   totalAvbStreams: number
 }
 
+interface ClusterNodePayload {
+  id?: string
+  node_id?: string
+  hostname?: string
+  status?: string
+  role?: string
+  version?: string
+  metadata?: unknown
+}
+
+interface ClusterMetricPayload {
+  node_id?: string
+  timestamp?: string | number
+  cpu_percent?: number
+  memory_percent?: number
+  dsp_load_percent?: number
+  xrun_count?: number
+  latency_ms?: number
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+  return value as Record<string, unknown>
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const n = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function toStringValue(value: unknown, fallback = ''): string {
+  if (typeof value === 'string' && value.trim()) return value
+  return fallback
+}
+
+function parseMetadata(metadata: unknown): Record<string, unknown> {
+  if (typeof metadata === 'string') {
+    try {
+      return asRecord(JSON.parse(metadata))
+    } catch {
+      return {}
+    }
+  }
+  return asRecord(metadata)
+}
+
+function parseTimestamp(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value > 1_000_000_000_000 ? value : value * 1000
+  }
+  if (typeof value === 'string') {
+    const ts = Date.parse(value)
+    if (Number.isFinite(ts)) return ts
+  }
+  return 0
+}
+
+function mapStatus(value: unknown): 'online' | 'offline' | 'error' {
+  const status = toStringValue(value, 'offline').toLowerCase()
+  if (status === 'online' || status === 'healthy') return 'online'
+  if (status === 'offline' || status === 'failed') return 'offline'
+  return 'error'
+}
+
 /**
  * Hook for managing multiple system monitoring
  */
 export function useMultiSystemMonitoring() {
   const [systems, setSystems] = useState<Record<string, SystemSnapshot>>({})
-  const updateTimeoutRef = useRef<NodeJS.Timeout>(undefined)
+
+  const { data: clusterNodesPayload } = useQuery({
+    queryKey: ['cluster', 'nodes', 'multi-system-monitoring'],
+    queryFn: async () => {
+      const res = await fetch('/api/cluster/nodes')
+      if (!res.ok) throw new Error('Failed to fetch cluster nodes')
+      return res.json()
+    },
+    refetchInterval: 5000,
+    staleTime: 3000,
+  })
+
+  const { data: clusterMetricsPayload } = useQuery({
+    queryKey: ['cluster', 'metrics', 'multi-system-monitoring'],
+    queryFn: async () => {
+      const res = await fetch('/api/cluster/metrics')
+      if (!res.ok) throw new Error('Failed to fetch cluster metrics')
+      return res.json()
+    },
+    refetchInterval: 5000,
+    staleTime: 3000,
+  })
+
+  useEffect(() => {
+    const nodeRecords = Array.isArray(clusterNodesPayload?.nodes)
+      ? (clusterNodesPayload.nodes as ClusterNodePayload[])
+      : []
+
+    if (nodeRecords.length === 0) return
+
+    const metricRecords = Array.isArray(clusterMetricsPayload?.metrics)
+      ? (clusterMetricsPayload.metrics as ClusterMetricPayload[])
+      : []
+
+    const latestMetricByNode = new Map<string, ClusterMetricPayload>()
+    metricRecords.forEach(metric => {
+      const nodeId = toStringValue(metric.node_id)
+      if (!nodeId) return
+      const prev = latestMetricByNode.get(nodeId)
+      if (!prev || parseTimestamp(metric.timestamp) >= parseTimestamp(prev.timestamp)) {
+        latestMetricByNode.set(nodeId, metric)
+      }
+    })
+
+    const discoveredSystems: Record<string, SystemSnapshot> = {}
+    nodeRecords.forEach((node, index) => {
+      const systemId = toStringValue(node.id, toStringValue(node.node_id, `node-${index + 1}`))
+      if (!systemId) return
+
+      const metadata = parseMetadata(node.metadata)
+      const metric = latestMetricByNode.get(systemId)
+      const status = mapStatus(node.status)
+      const role = toStringValue(node.role, 'AUDIO-NODE').toUpperCase()
+      const cpuUsage = toNumber(metric?.cpu_percent, 0)
+      const memoryUsage = toNumber(metric?.memory_percent, 0)
+      const dspUsage = toNumber(metric?.dsp_load_percent, 0)
+      const xrunCount = Math.max(0, Math.round(toNumber(metric?.xrun_count, 0)))
+      const latencyMs = toNumber(metric?.latency_ms, 0)
+
+      const health: SystemHealthOverview = {
+        cpu_temp_celsius: toNumber(
+          metadata.cpu_temp_celsius,
+          toNumber((metadata as { temperature?: { cpu_c?: number } }).temperature?.cpu_c, 0)
+        ),
+        max_temp_celsius: toNumber(
+          metadata.max_temp_celsius,
+          toNumber((metadata as { temperature?: { max_c?: number } }).temperature?.max_c, 0)
+        ),
+        cpu_usage_percent: cpuUsage,
+        memory_usage_percent: memoryUsage,
+        fans: [],
+        power: { power_status: 'unknown' },
+        overall_health: status === 'online' ? 'good' : status === 'error' ? 'warning' : 'critical',
+        health_details: {
+          temperature_status: 'unknown',
+          fan_status: 'unknown',
+          power_status: 'unknown',
+        },
+      }
+
+      const diskUsePercent = toNumber(
+        metadata.disk_use_percent,
+        toNumber(metadata.storage_use_percent, toNumber(metadata.disk_usage_percent, 0))
+      )
+      const disk: DiskHealthData | null =
+        diskUsePercent > 0
+          ? {
+              disks: [],
+              use_percent: diskUsePercent,
+              overall_health:
+                diskUsePercent > 90 ? 'critical' : diskUsePercent > 80 ? 'warning' : 'good',
+            }
+          : null
+
+      const deviceTypeRaw = toStringValue(metadata.device_type, 'Unknown').toUpperCase()
+      const deviceType: AudioEngineStatus['deviceType'] =
+        deviceTypeRaw === 'JACK' || deviceTypeRaw === 'AVB' || deviceTypeRaw === 'ALSA'
+          ? deviceTypeRaw
+          : 'Unknown'
+
+      const audioEngine: AudioEngineStatus | null =
+        role.includes('AUDIO') || role === 'ALL-IN-ONE'
+          ? {
+              isRunning: status === 'online',
+              sampleRate: Math.round(toNumber(metadata.sample_rate, 48000)),
+              bufferSize: Math.round(toNumber(metadata.buffer_size, 256)),
+              inputChannels: Math.round(toNumber(metadata.input_channels, 2)),
+              outputChannels: Math.round(toNumber(metadata.output_channels, 2)),
+              cpuLoad: dspUsage,
+              xrunCount,
+              deviceName: toStringValue(metadata.audio_device, 'Audio Device'),
+              deviceType,
+            }
+          : null
+
+      const serviceStatus: ClusterServiceStatus['mdnsDiscovery']['status'] =
+        status === 'online' ? 'active' : status === 'error' ? 'error' : 'inactive'
+      const raftRoleRaw = toStringValue(metadata.raft_role).toLowerCase()
+      const raftRole: ClusterServiceStatus['raftConsensus']['role'] =
+        raftRoleRaw === 'leader' || raftRoleRaw === 'follower' || raftRoleRaw === 'candidate'
+          ? raftRoleRaw
+          : status === 'offline'
+            ? 'offline'
+            : role.includes('MANAGEMENT')
+              ? 'follower'
+              : 'offline'
+
+      const clusterServices: ClusterServiceStatus = {
+        mdnsDiscovery: { enabled: true, status: serviceStatus },
+        raftConsensus: { enabled: role.includes('MANAGEMENT'), role: raftRole },
+        healthMonitor: { enabled: true, status: serviceStatus },
+        configDistributor: { enabled: role.includes('MANAGEMENT'), status: serviceStatus },
+        eventProducer: { enabled: true, status: serviceStatus },
+      }
+
+      const avbEnabled =
+        Boolean(metadata.avb_enabled) ||
+        Boolean(metadata.tsn_configured) ||
+        deviceType === 'AVB'
+
+      const avbNetwork: AvbNetworkStatus | null = avbEnabled
+        ? {
+            enabled: true,
+            ptpSynced: Boolean(metadata.ptp_synced),
+            ptpOffsetNs: Math.round(toNumber(metadata.ptp_offset_ns, 0)),
+            discoveredEntities: Math.round(toNumber(metadata.avdecc_entities, 0)),
+            activeStreams: {
+              talker: Math.round(toNumber(metadata.talker_streams, 0)),
+              listener: Math.round(toNumber(metadata.listener_streams, 0)),
+            },
+            interfaceName: toStringValue(metadata.avb_interface, toStringValue(metadata.interface, 'eth0')),
+            linkSpeed: toStringValue(metadata.link_speed, 'unknown'),
+          }
+        : null
+
+      const versionInfo: VersionInfo = {
+        backend: toStringValue(node.version, toStringValue(metadata.backend_version, 'unknown')),
+        frontend: toStringValue(metadata.frontend_version, 'unknown'),
+        juceEngine: toStringValue(metadata.juce_version, 'unknown'),
+        pythonVersion: toStringValue(metadata.python_version, 'unknown'),
+        lastUpdateCheck: Date.now(),
+      }
+
+      discoveredSystems[systemId] = {
+        systemId,
+        systemName: toStringValue(node.hostname, systemId),
+        hostInfo: null,
+        health,
+        disk,
+        audioEngine,
+        clusterServices,
+        avbNetwork,
+        versionInfo,
+        isConnected: status === 'online',
+        lastUpdate: Date.now(),
+        status,
+        errorMessage: status === 'error' ? `Node ${systemId} is degraded` : undefined,
+      }
+
+      // Keep latency visible via metadata for future views.
+      if (latencyMs > 0 && discoveredSystems[systemId].health) {
+        discoveredSystems[systemId].health = {
+          ...discoveredSystems[systemId].health!,
+          health_details: {
+            ...discoveredSystems[systemId].health!.health_details,
+            power_status: `${latencyMs.toFixed(1)}ms latency`,
+          },
+        }
+      }
+    })
+
+    setSystems(prev => {
+      const next = { ...prev }
+      Object.entries(discoveredSystems).forEach(([id, snapshot]) => {
+        next[id] = snapshot
+      })
+      return next
+    })
+  }, [clusterNodesPayload, clusterMetricsPayload])
 
   /**
    * Add or update a system in the monitoring list
@@ -140,7 +405,20 @@ export function useMultiSystemMonitoring() {
       setSystems((prev) => ({
         ...prev,
         [systemId]: {
-          ...prev[systemId],
+          ...(prev[systemId] || {
+            systemId,
+            systemName: systemId,
+            hostInfo: null,
+            health: null,
+            disk: null,
+            audioEngine: null,
+            clusterServices: null,
+            avbNetwork: null,
+            versionInfo: null,
+            isConnected: false,
+            lastUpdate: Date.now(),
+            status: 'offline' as const,
+          }),
           ...updates,
           lastUpdate: Date.now(),
         },

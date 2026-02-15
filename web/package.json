@@ -28,6 +28,9 @@
     "@mui/material": "^6.5.0",
     "@mui/styles": "^6.4.4",
     "@phosphor-icons/react": "^2.1.10",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@react-hook/window-size": "^3.1.1",
     "@reactflow/controls": "^11.2.14",
     "@reactflow/minimap": "^11.7.14",
@@ -47,6 +50,7 @@
     "react-virtualized-auto-sizer": "^1.0.25",
     "react-window": "^1.8.11",
     "reactflow": "^11.11.4",
+    "three": "^0.182.0",
     "recharts": "^3.7.0",
     "rehype-external-links": "^3.0.0",
     "tss-react": "^4.9.15"

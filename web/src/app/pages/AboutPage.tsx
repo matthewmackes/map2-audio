@@ -530,10 +530,21 @@ export function AboutPage() {
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
+  const [isPageLoaded, setIsPageLoaded] = useState(
+    () => typeof document !== 'undefined' && document.readyState === 'complete'
+  )
 
   const refreshCustomThemes = useCallback(() => {
     setCustomThemes(getCustomThemes())
   }, [])
+
+  useEffect(() => {
+    if (isPageLoaded) return
+
+    const onLoad = () => setIsPageLoaded(true)
+    window.addEventListener('load', onLoad, { once: true })
+    return () => window.removeEventListener('load', onLoad)
+  }, [isPageLoaded])
 
   useEffect(() => {
     fetch('/api/version')
@@ -1603,6 +1614,7 @@ export function AboutPage() {
         display: 'flex',
         justifyContent: 'center'
       }}>
+        {isPageLoaded ? (
         <MenuProvider>
           <MenuButton
             style={{
@@ -1764,6 +1776,30 @@ export function AboutPage() {
             )}
           </Menu>
         </MenuProvider>
+        ) : (
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 20px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 500,
+              border: '1px solid rgba(220, 38, 38, 0.3)',
+              background: 'rgba(220, 38, 38, 0.05)',
+              color: '#dc2626',
+              opacity: 0.7,
+              cursor: 'wait'
+            }}
+            disabled
+            aria-label="Loading advanced settings menu"
+          >
+            <DragonIcon size={16} />
+            <span>hic sunt dracones</span>
+            <CaretDown weight="bold" size={14} />
+          </button>
+        )}
       </div>
 
       {/* Password Dialog */}

@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Pulse, WarningCircle, CheckCircle, Lightning } from '@phosphor-icons/react'
+import { useMemo } from 'react'
+import { normalizeClusterNodes, getServiceStatusForNode } from './clusterData'
 
 export function ServicesHealthTab() {
   const { data: nodes } = useQuery({
@@ -31,6 +33,8 @@ export function ServicesHealthTab() {
     { name: 'lcd_manager', label: '📱 LCD Manager', runOn: ['AUDIO-NODE', 'ALL-IN-ONE'] },
   ]
 
+  const normalizedNodes = useMemo(() => normalizeClusterNodes(nodes), [nodes])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div
@@ -49,7 +53,7 @@ export function ServicesHealthTab() {
         </div>
       </div>
 
-      {nodes && nodes.nodes && nodes.nodes.length > 0 ? (
+      {normalizedNodes.length > 0 ? (
         <div
           style={{
             overflowX: 'auto',
@@ -62,9 +66,9 @@ export function ServicesHealthTab() {
             <thead>
               <tr style={{ background: '#2d2d2d', borderBottom: '2px solid #444' }}>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#d0d0d0' }}>Service</th>
-                {nodes.nodes.map((node: any) => (
+                {normalizedNodes.map(node => (
                   <th
-                    key={node.node_id}
+                    key={node.nodeId}
                     style={{
                       padding: '12px 16px',
                       textAlign: 'center',
@@ -99,13 +103,12 @@ export function ServicesHealthTab() {
                   >
                     {service.label}
                   </td>
-                  {nodes.nodes.map((node: any) => {
-                    const shouldRun = service.runOn.includes('ALL') || service.runOn.includes(node.role)
-                    const status: string = shouldRun ? (Math.random() > 0.1 ? 'running' : 'degraded') : 'n/a'
+                  {normalizedNodes.map(node => {
+                    const status = getServiceStatusForNode(node, service.runOn)
 
                     return (
                       <td
-                        key={`${service.name}-${node.node_id}`}
+                        key={`${service.name}-${node.nodeId}`}
                         style={{
                           padding: '12px 16px',
                           textAlign: 'center',

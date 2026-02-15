@@ -86,8 +86,14 @@ export function useResponsiveVizSize(
     // Get the element and compute CSS variables
     const element = ref.current
     if (!element) return
+    let removeLoadListener: (() => void) | undefined
 
     const updateDimensions = () => {
+      // Avoid forcing layout before full page load and stylesheet readiness.
+      if (typeof document !== 'undefined' && document.readyState !== 'complete') {
+        return
+      }
+
       try {
         const computedStyle = getComputedStyle(element)
 
@@ -138,8 +144,14 @@ export function useResponsiveVizSize(
       }
     }
 
-    // Compute dimensions on mount
-    updateDimensions()
+    // Compute dimensions after load to avoid early forced-layout warnings.
+    if (typeof document === 'undefined' || document.readyState === 'complete') {
+      window.requestAnimationFrame(updateDimensions)
+    } else {
+      const onLoad = () => window.requestAnimationFrame(updateDimensions)
+      window.addEventListener('load', onLoad, { once: true })
+      removeLoadListener = () => window.removeEventListener('load', onLoad)
+    }
 
     // Re-compute when container resizes (detect responsive changes)
     const resizeObserver = new ResizeObserver(updateDimensions)
@@ -147,6 +159,7 @@ export function useResponsiveVizSize(
     resizeObserver.observe(parent)
 
     return () => {
+      removeLoadListener?.()
       resizeObserver.disconnect()
     }
   }, [ref, width, height, aspectRatio, baseOn, defaultWidth, defaultHeight])

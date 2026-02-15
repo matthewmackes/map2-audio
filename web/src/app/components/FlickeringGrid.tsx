@@ -23,9 +23,34 @@ export function FlickeringGrid({
 }: FlickeringGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isInView, setIsInView] = useState(false)
+  const [resolvedGridColor, setResolvedGridColor] = useState(color ?? '#3b82f6')
 
-  // Use theme color if not specified
-  const gridColor = color || getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
+  // Resolve theme color only after full page load to avoid forced layout
+  // warnings while stylesheets are still loading.
+  useEffect(() => {
+    if (color) {
+      setResolvedGridColor(color)
+      return
+    }
+    if (typeof window === 'undefined') return
+
+    const resolveThemeColor = () => {
+      const cssColor = window
+        .getComputedStyle(document.documentElement)
+        .getPropertyValue('--primary')
+        .trim()
+      if (cssColor) setResolvedGridColor(cssColor)
+    }
+
+    if (document.readyState === 'complete') {
+      window.requestAnimationFrame(resolveThemeColor)
+      return
+    }
+
+    const onLoad = () => window.requestAnimationFrame(resolveThemeColor)
+    window.addEventListener('load', onLoad, { once: true })
+    return () => window.removeEventListener('load', onLoad)
+  }, [color])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -92,7 +117,7 @@ export function FlickeringGrid({
         square.opacity += (square.targetOpacity - square.opacity) * 0.1
 
         if (square.opacity > 0.01) {
-          ctx.fillStyle = `${gridColor}`
+          ctx.fillStyle = resolvedGridColor
           ctx.globalAlpha = square.opacity
           ctx.fillRect(square.x, square.y, squareSize, squareSize)
         }
@@ -111,7 +136,7 @@ export function FlickeringGrid({
       observer.disconnect()
       cancelAnimationFrame(animationFrame)
     }
-  }, [squareSize, gridGap, flickerChance, gridColor, width, height, maxOpacity, isInView])
+  }, [squareSize, gridGap, flickerChance, resolvedGridColor, width, height, maxOpacity, isInView])
 
   return (
     <canvas

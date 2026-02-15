@@ -27,7 +27,7 @@ import type {
 
 // Icons
 import { 
-  Activity, 
+  Pulse, 
   Radio, 
   ChartBar, 
   Eye,
@@ -175,13 +175,12 @@ const EmptyVisualization: React.FC<{ message: string }> = ({ message }) => (
       gap: 8,
     }}
   >
-    <Activity size={24} weight="duotone" />
+    <Pulse size={24} weight="duotone" />
     <span style={{ fontSize: 11 }}>{message}</span>
   </div>
 );
 
 export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
-  pluginUri,
   pluginName,
   uiInfo,
   data,
@@ -291,7 +290,7 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
         onClick={handleToggleExpand}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Activity size={14} weight="duotone" style={{ color: '#22c55e' }} />
+          <Pulse size={14} weight="duotone" style={{ color: '#22c55e' }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255, 255, 255, 0.8)' }}>
             {pluginName || 'Output'}
           </span>

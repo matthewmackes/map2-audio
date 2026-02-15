@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { WarningCircle, CheckCircle, Lightning, Cpu, HardDrive, WifiHigh, Play, Pause, ArrowCounterClockwise } from '@phosphor-icons/react'
+import { WarningCircle, CheckCircle, Lightning, WifiHigh, ArrowCounterClockwise } from '@phosphor-icons/react'
 import { useMemo, useState } from 'react'
 import { TopologyGraph } from './TopologyGraph'
 import { useClusterSimulation } from '../../hooks/useClusterSimulation'
+import { normalizeClusterNodes, normalizeClusterMetrics, summarizeClusterMetrics } from './clusterData'
 
 interface ClusterOverviewTabProps {
   simulationMode: boolean
@@ -20,16 +21,6 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
       return res.json()
     },
     refetchInterval: 5000,
-    enabled: !simulationMode,
-  })
-
-  const { data: deploymentMode } = useQuery({
-    queryKey: ['deployment', 'mode'],
-    queryFn: async () => {
-      const res = await fetch('/api/deployment/mode')
-      if (!res.ok) throw new Error('Failed to fetch deployment mode')
-      return res.json()
-    },
     enabled: !simulationMode,
   })
 
@@ -59,43 +50,91 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
   // Simulation mode - realistic 5-node cluster
   const simulation = useClusterSimulation(simulationMode)
 
-  // Choose data source based on mode
-  const clusterData = simulationMode ? simulation.nodes : clusterStatus?.all_nodes
-  const nodesList = simulationMode ? simulation.nodes : nodesData?.nodes
-  const metrics = simulationMode
-    ? {
-        avg_cpu_percent: simulation.nodes.reduce((sum, n) => sum + n.cpu_percent, 0) / simulation.nodes.length,
-        avg_memory_percent:
-          simulation.nodes.reduce((sum, n) => sum + (n.memory_used_gb / n.memory_total_gb) * 100, 0) / simulation.nodes.length,
-        avg_dsp_load_percent:
-          simulation.nodes.filter(n => n.role === 'AUDIO-NODE').reduce((sum, n) => sum + n.dsp_load_percent, 0) /
-            Math.max(1, simulation.nodes.filter(n => n.role === 'AUDIO-NODE').length) || 0,
-        max_latency_ms: Math.max(...simulation.nodes.map(n => n.latency_ms)),
+  const normalizedNodes = useMemo(() => normalizeClusterNodes(nodesData), [nodesData])
+  const metricSamples = useMemo(() => normalizeClusterMetrics(clusterMetrics), [clusterMetrics])
+  const metricSummary = useMemo(
+    () => summarizeClusterMetrics(clusterMetrics, metricSamples),
+    [clusterMetrics, metricSamples]
+  )
+
+  const topologyNodes = useMemo(() => {
+    if (simulationMode) {
+      return simulation.nodes
+    }
+    return normalizedNodes.map(node => {
+      const raw = node.raw as Record<string, unknown>
+      return {
+        node_id: node.nodeId,
+        hostname: node.hostname,
+        role: node.role,
+        status: node.status,
+        health_score: node.healthScore,
+        cpu_percent: Number(raw['cpu_percent'] ?? 0),
+        memory_used_gb: Number(raw['memory_used_gb'] ?? 0),
+        memory_total_gb: Number(raw['memory_total_gb'] ?? 0),
+        latency_ms: Number(raw['latency_ms'] ?? 0),
       }
-    : clusterMetrics
+    })
+  }, [simulationMode, simulation.nodes, normalizedNodes])
 
   const stats = useMemo(() => {
-    if (!clusterData && !simulationMode) return null
+    if (!simulationMode && normalizedNodes.length === 0 && !clusterStatus) return null
 
-    const nodeValues = Array.isArray(clusterData) ? clusterData : Object.values(clusterData || {})
-
-    const totalCpu = nodeValues.reduce((sum, n: any) => sum + (n.metadata?.cpu_cores || 1), 0)
-    const totalMemory = nodeValues.reduce((sum, n: any) => sum + (n.metadata?.total_memory_gb || 8), 0)
+    const simulationNodeCount = simulation.nodes.length
+    const simulationAudioNodes = simulation.nodes.filter(n => n.role === 'AUDIO-NODE')
+    const simulationCpu =
+      simulationNodeCount > 0
+        ? simulation.nodes.reduce((sum, n) => sum + n.cpu_percent, 0) / simulationNodeCount
+        : 0
+    const simulationMemory =
+      simulationNodeCount > 0
+        ? simulation.nodes.reduce((sum, n) => sum + (n.memory_used_gb / n.memory_total_gb) * 100, 0) / simulationNodeCount
+        : 0
+    const simulationDsp =
+      simulationAudioNodes.length > 0
+        ? simulationAudioNodes.reduce((sum, n) => sum + n.dsp_load_percent, 0) / simulationAudioNodes.length
+        : 0
+    const simulationLatency =
+      simulationNodeCount > 0
+        ? Math.max(...simulation.nodes.map(n => n.latency_ms))
+        : 0
+    const simulationHealth =
+      simulationNodeCount > 0
+        ? simulation.nodes.reduce((sum, n) => sum + n.health_score, 0) / simulationNodeCount
+        : 0
 
     return {
-      totalCpu,
-      totalMemory,
-      avgCpuUsage: metrics?.avg_cpu_percent || 0,
-      avgMemoryUsage: metrics?.avg_memory_percent || 0,
-      avgDspLoad: metrics?.avg_dsp_load_percent || 0,
-      totalLatency: metrics?.max_latency_ms || 0,
-      nodeCount: simulationMode ? simulation.nodes.length : clusterStatus?.total_count || 0,
-      onlineCount: simulationMode ? simulation.nodes.filter(n => n.status === 'ONLINE').length : clusterStatus?.online_count || 0,
+      totalCpu: simulationMode
+        ? simulation.nodes.reduce((sum, n) => sum + (n.role.includes('MANAGEMENT') ? 4 : 8), 0)
+        : normalizedNodes.reduce((sum, node) => sum + node.cpuCores, 0),
+      totalMemory: simulationMode
+        ? simulation.nodes.reduce((sum, n) => sum + n.memory_total_gb, 0)
+        : normalizedNodes.reduce((sum, node) => sum + node.totalMemoryGb, 0),
+      avgCpuUsage: simulationMode ? simulationCpu : metricSummary.avgCpuPercent,
+      avgMemoryUsage: simulationMode ? simulationMemory : metricSummary.avgMemoryPercent,
+      avgDspLoad: simulationMode ? simulationDsp : metricSummary.avgDspLoadPercent,
+      totalLatency: simulationMode ? simulationLatency : metricSummary.maxLatencyMs,
+      nodeCount: simulationMode
+        ? simulationNodeCount
+        : Number(clusterStatus?.total_count ?? clusterStatus?.total_nodes ?? normalizedNodes.length),
+      onlineCount: simulationMode
+        ? simulation.nodes.filter(n => n.status === 'ONLINE').length
+        : Number(
+            clusterStatus?.online_count ??
+              clusterStatus?.online_nodes ??
+              normalizedNodes.filter(node => node.status === 'ONLINE').length
+          ),
       healthScore: simulationMode
-        ? (simulation.nodes.reduce((sum, n) => sum + n.health_score, 0) / simulation.nodes.length || 0)
-        : clusterStatus?.aggregate_health_score || 0,
+        ? simulationHealth
+        : Number(
+            clusterStatus?.aggregate_health_score ??
+              clusterStatus?.avg_health ??
+              (normalizedNodes.length > 0
+                ? normalizedNodes.reduce((sum, node) => sum + node.healthScore, 0) / normalizedNodes.length
+                : 0)
+          ),
     }
-  }, [clusterData, metrics, simulationMode, simulation, clusterStatus])
+  }, [simulationMode, simulation.nodes, normalizedNodes, metricSummary, clusterStatus])
 
   if (statusLoading && !simulationMode) {
     return (
@@ -164,7 +203,7 @@ export function ClusterOverviewTabEnhanced({ simulationMode }: ClusterOverviewTa
         <div style={{ fontSize: 14, fontWeight: 600, color: '#d0d0d0', marginBottom: 16 }}>
           🌐 Cluster Topology
         </div>
-        <TopologyGraph nodes={nodesList || []} edges={[]} />
+        <TopologyGraph nodes={topologyNodes || []} edges={[]} simulationMode={simulationMode} />
       </div>
 
       {/* Simulation Controls */}

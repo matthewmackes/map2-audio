@@ -373,7 +373,7 @@ registerPluginCard('map2://juce/pitch/h3000', {
 
 // JUCE Multi-Effect
 registerPluginCard('map2://juce/effects/eventide-h9', {
-  loader: () => import('./Custom/JUCE/EventideH9Card'),
+  loader: () => import('./Custom/JUCE/EventideH9Card').then(m => ({ default: m.EventideH9Card })),
 })
 
 // JUCE Amplifier - Peavey 5150 Block Letter

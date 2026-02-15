@@ -6,6 +6,7 @@
  */
 
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { API_BASE as MAP2_API_BASE } from '@/map2/api'
 
 // ============================================================================
 // TypeScript Interfaces
@@ -96,7 +97,7 @@ export interface TsnStatus {
 // API Client Functions
 // ============================================================================
 
-const API_BASE = 'http://localhost:8080/api/avb';
+const API_BASE = `${MAP2_API_BASE}/avb`
 
 async function fetchAVBStatus(): Promise<AVBStatus> {
   const response = await fetch(`${API_BASE}/status`);

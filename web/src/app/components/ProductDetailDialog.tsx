@@ -14,16 +14,15 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Link as MuiLink,
 } from '@mui/material'
-import { X, ArrowSquareOut, Star, CheckCircle, WarningCircle, Info } from '@phosphor-icons/react'
+import { X, ArrowSquareOut, CheckCircle, WarningCircle, Info } from '@phosphor-icons/react'
 
 interface ProductDetailDialogProps {
   open: boolean
   onClose: () => void
   product: {
     model: string
-    manufacturer: string
+    manufacturer?: string
     io_count: string
     latency_ms: number
     tier: string
@@ -77,7 +76,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
       <DialogTitle style={{ borderBottom: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 600, color: '#f3f4f6' }}>{product.model}</div>
-          <div style={{ fontSize: 13, color: '#d1d5db', marginTop: 4 }}>{product.manufacturer}</div>
+          <div style={{ fontSize: 13, color: '#d1d5db', marginTop: 4 }}>{product.manufacturer || 'Unknown manufacturer'}</div>
         </div>
         <Button onClick={onClose} style={{ minWidth: 40, padding: 8 }}>
           <X size={20} weight="bold" />
@@ -179,7 +178,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
                   </TableRow>
                   <TableRow>
                     <TableCell style={{ fontWeight: 600, color: '#94a3b8' }}>Manufacturer</TableCell>
-                    <TableCell style={{ color: '#e2e8f0' }}>{product.manufacturer}</TableCell>
+                      <TableCell style={{ color: '#e2e8f0' }}>{product.manufacturer || 'Unknown manufacturer'}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell style={{ fontWeight: 600, color: '#94a3b8' }}>I/O Count</TableCell>

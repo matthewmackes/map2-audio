@@ -9,7 +9,7 @@
  * - Fully responsive design
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './AudioInterfaceControl.css';
 
 interface AudioStatus {
@@ -24,11 +24,23 @@ interface AudioStatus {
   channels_out?: number;
 }
 
+interface USBPrimaryDevice extends Record<string, unknown> {
+  name?: string;
+  model?: string;
+  vendor_id?: string;
+  product_id?: string;
+  bus?: string | number;
+  device?: string | number;
+  alsa_device?: string;
+  channels_in?: number;
+  channels_out?: number;
+}
+
 interface USBDevice {
   hotone_detected: boolean;
   device_count: number;
-  primary_device?: Record<string, any>;
-  all_devices: any[];
+  primary_device?: USBPrimaryDevice;
+  all_devices: Record<string, unknown>[];
   recommendations?: string[];
 }
 
@@ -53,32 +65,35 @@ export const AudioInterfaceControl: React.FC = () => {
   const [sampleRate, setSampleRate] = useState(48000);
   const [bufferSize, setBufferSize] = useState(256);
   const [loading, setLoading] = useState(true);
-  const [deviceImage, setDeviceImage] = useState<string>('');
-  const [previousDevice, setPreviousDevice] = useState<string>('');
+  const [deviceImage, setDeviceImage] = useState<string>('/img/audio-input.png');
+  const [isApplyingConfig, setIsApplyingConfig] = useState(false);
+  const [configDirty, setConfigDirty] = useState(false);
 
   // Use relative URLs - Vite proxy will route to backend
   const API_BASE = '';
 
-  // Hotone device artwork URLs
+  // Use bundled assets so the image always loads offline and in production.
   const getDeviceArtwork = (model: string): string => {
     const artworkMap: Record<string, string> = {
-      jogg: 'https://i0.wp.com/audiopromusic.com/wp-content/uploads/2022/10/HOTONE-JOGG.png',
-      ampero: 'https://cdn.shopify.com/s/files/1/0555/0531/1259/products/ampero.png?v=1641901270',
-      ampero_one: 'https://cdn.shopify.com/s/files/1/0555/0531/1259/products/ampero-one.png?v=1641901270',
-      ampero_ii: 'https://cdn.shopify.com/s/files/1/0555/0531/1259/products/ampero-ii.png?v=1641901270',
-      ampero_mini: 'https://cdn.shopify.com/s/files/1/0555/0531/1259/products/ampero-mini.png?v=1641901270',
+      jogg: '/img/audio-input.png',
+      ampero: '/img/audio-output.png',
+      ampero_one: '/img/audio-output.png',
+      ampero_ii: '/img/audio-output.png',
+      ampero_mini: '/img/audio-output.png',
     };
     return artworkMap[model] || artworkMap.jogg; // Default to Jogg
   };
 
   // Fetch audio status
-  const updateAudioStatus = async () => {
+  const updateAudioStatus = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/api/audio/status`);
       const data = await response.json();
       setAudioStatus(data);
-      setSampleRate(data.sample_rate);
-      setBufferSize(data.buffer_size);
+      if (!configDirty) {
+        setSampleRate(data.sample_rate);
+        setBufferSize(data.buffer_size);
+      }
     } catch (error) {
       console.error('Failed to fetch audio status:', error);
       setAudioStatus({
@@ -90,10 +105,10 @@ export const AudioInterfaceControl: React.FC = () => {
         error: 'Failed to connect to audio engine'
       });
     }
-  };
+  }, [configDirty]);
 
   // Fetch USB devices
-  const updateUSBDevices = async () => {
+  const updateUSBDevices = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/api/usb/devices`);
       const data = await response.json();
@@ -101,10 +116,10 @@ export const AudioInterfaceControl: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch USB devices:', error);
     }
-  };
+  }, []);
 
   // Fetch audio health
-  const updateAudioHealth = async () => {
+  const updateAudioHealth = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/api/audio/health`);
       if (response.ok) {
@@ -114,7 +129,7 @@ export const AudioInterfaceControl: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch audio health:', error);
     }
-  };
+  }, []);
 
   // Initial load and auto-refresh
   useEffect(() => {
@@ -132,60 +147,38 @@ export const AudioInterfaceControl: React.FC = () => {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [updateAudioStatus, updateUSBDevices, updateAudioHealth]);
 
   // Monitor device changes and update artwork
   useEffect(() => {
-    if (usbDevices?.primary_device) {
-      const currentDevice = usbDevices.primary_device.model || 'jogg';
-
-      if (currentDevice !== previousDevice) {
-        setDeviceImage(getDeviceArtwork(currentDevice));
-        setPreviousDevice(currentDevice);
-      }
-    } else {
-      // Default to Jogg image
-      setDeviceImage(getDeviceArtwork('jogg'));
-    }
+    const currentDevice = usbDevices?.primary_device?.model || 'jogg';
+    setDeviceImage(getDeviceArtwork(currentDevice));
   }, [usbDevices?.primary_device?.model]);
 
-  // Handle sample rate change
-  const handleSampleRateChange = async () => {
+  // Apply audio config to backend (query params are required by backend route).
+  const handleApplyConfig = async () => {
+    setIsApplyingConfig(true);
     try {
-      const response = await fetch(`${API_BASE}/api/audio/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sample_rate: sampleRate })
+      const params = new URLSearchParams({
+        sample_rate: String(sampleRate),
+        buffer_size: String(bufferSize),
       });
-      const data = await response.json();
-      if (data.success) {
-        alert(`Sample rate changed to ${sampleRate} Hz. Audio engine may restart.`);
-        updateAudioStatus();
-      } else {
-        alert('Failed to change sample rate');
+      const response = await fetch(`${API_BASE}/api/audio/config?${params.toString()}`, {
+        method: 'POST',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        alert(data.detail || data.message || 'Failed to apply audio configuration');
+        return;
       }
-    } catch (error) {
-      alert('Error changing sample rate: ' + error);
-    }
-  };
 
-  // Handle buffer size change
-  const handleBufferSizeChange = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/audio/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buffer_size: bufferSize })
-      });
-      const data = await response.json();
-      if (data.success) {
-        alert(`Buffer size changed to ${bufferSize} samples. Audio engine may restart.`);
-        updateAudioStatus();
-      } else {
-        alert('Failed to change buffer size');
-      }
+      setConfigDirty(false);
+      alert(`Audio configuration updated: ${sampleRate} Hz / ${bufferSize} samples.`);
+      await updateAudioStatus();
     } catch (error) {
-      alert('Error changing buffer size: ' + error);
+      alert('Error applying audio configuration: ' + error);
+    } finally {
+      setIsApplyingConfig(false);
     }
   };
 
@@ -365,8 +358,12 @@ CURRENT STATUS
               <img
                 src={deviceImage}
                 alt={deviceName}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                onError={() => {
+                  if (deviceImage !== '/img/audio-output.png') {
+                    setDeviceImage('/img/audio-output.png');
+                    return;
+                  }
+                  setDeviceImage('');
                 }}
               />
             ) : (
@@ -448,7 +445,10 @@ CURRENT STATUS
             <select
               className="audio-select"
               value={sampleRate}
-              onChange={(e) => setSampleRate(parseInt(e.target.value))}
+              onChange={(e) => {
+                setSampleRate(parseInt(e.target.value, 10));
+                setConfigDirty(true);
+              }}
             >
               <option value={44100}>44.1 kHz</option>
               <option value={48000}>48 kHz</option>
@@ -462,7 +462,10 @@ CURRENT STATUS
             <select
               className="audio-select"
               value={bufferSize}
-              onChange={(e) => setBufferSize(parseInt(e.target.value))}
+              onChange={(e) => {
+                setBufferSize(parseInt(e.target.value, 10));
+                setConfigDirty(true);
+              }}
             >
               <option value={64}>64 samples (1.3ms)</option>
               <option value={128}>128 samples (2.7ms)</option>
@@ -470,6 +473,16 @@ CURRENT STATUS
               <option value={512}>512 samples (10.7ms)</option>
               <option value={1024}>1024 samples (21.3ms)</option>
             </select>
+          </div>
+
+          <div className="audio-button-row">
+            <button
+              className="audio-control-btn"
+              onClick={handleApplyConfig}
+              disabled={!configDirty || isApplyingConfig}
+            >
+              {isApplyingConfig ? '⏳ Applying...' : '💾 Apply Settings'}
+            </button>
           </div>
 
           <div className="audio-button-row">

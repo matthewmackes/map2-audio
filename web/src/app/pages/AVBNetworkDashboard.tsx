@@ -29,6 +29,8 @@ interface AvbNode {
   y?: number;
   vx?: number;
   vy?: number;
+  fx?: number | null;
+  fy?: number | null;
 }
 
 interface AvbLink {
@@ -195,124 +197,141 @@ export const AVBNetworkDashboard: React.FC = () => {
   // D3 Force Simulation
   useEffect(() => {
     if (!svgRef.current || nodes.length === 0) return;
+    let removeLoadListener: (() => void) | undefined;
+    let stopSimulation: (() => void) | undefined;
 
-    const svg = d3.select(svgRef.current);
-    const width = svgRef.current.clientWidth;
-    const height = svgRef.current.clientHeight;
+    const buildGraph = () => {
+      if (typeof document !== 'undefined' && document.readyState !== 'complete') return;
+      if (!svgRef.current) return;
 
-    // Clear previous content
-    svg.selectAll('*').remove();
+      const svg = d3.select(svgRef.current);
+      const width = svgRef.current.clientWidth;
+      const height = svgRef.current.clientHeight;
 
-    // Create simulation
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links)
-        .id((d: any) => d.id)
-        .distance(100))
-      .force('charge', d3.forceManyBody().strength(-300))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(30));
+      // Clear previous content
+      svg.selectAll('*').remove();
 
-    simulationRef.current = simulation;
+      // Create simulation
+      const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links)
+          .id((d: any) => d.id)
+          .distance(100))
+        .force('charge', d3.forceManyBody().strength(-300))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(30));
 
-    // Create container group with zoom
-    const g = svg.append('g');
+      simulationRef.current = simulation;
+      stopSimulation = () => simulation.stop();
 
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
+      // Create container group with zoom
+      const g = svg.append('g');
+
+      const zoom = d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.5, 3])
+        .on('zoom', (event) => {
+          g.attr('transform', event.transform);
+        });
+
+      svg.call(zoom as any);
+
+      // Draw links
+      const link = g.append('g')
+        .selectAll('line')
+        .data(links)
+        .join('line')
+        .attr('stroke', (d) => {
+          const score = d.qualityScore;
+          return score > 80 ? '#10b981' : score > 60 ? '#f59e0b' : '#ef4444';
+        })
+        .attr('stroke-width', (d) => 1 + d.qualityScore / 50)
+        .attr('stroke-opacity', 0.6);
+
+      // Draw nodes
+      const node = g.append('g')
+        .selectAll('circle')
+        .data(nodes)
+        .join('circle')
+        .attr('r', (d) => 8 + d.activeStreams * 2)
+        .attr('fill', (d) => {
+          if (d.type === 'ptp-master') return '#6366f1';
+          switch (d.status) {
+            case 'healthy': return '#10b981';
+            case 'warning': return '#f59e0b';
+            case 'critical': return '#ef4444';
+            case 'offline': return '#6b7280';
+            default: return '#6b7280';
+          }
+        })
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2)
+        .style('cursor', 'pointer')
+        .call(d3.drag<SVGCircleElement, AvbNode>()
+          .on('start', dragStarted)
+          .on('drag', dragged)
+          .on('end', dragEnded) as any);
+
+      // Add node labels
+      const label = g.append('g')
+        .selectAll('text')
+        .data(nodes)
+        .join('text')
+        .text((d) => d.name)
+        .attr('font-size', 10)
+        .attr('fill', '#e5e7eb')
+        .attr('text-anchor', 'middle')
+        .attr('dy', -15);
+
+      // Add tooltips
+      node.append('title')
+        .text((d) => `${d.name}\nStatus: ${d.status}\nLatency: ${d.latencyMs.toFixed(2)}ms\nCPU: ${d.cpuPercent.toFixed(1)}%\nMemory: ${d.memoryMB.toFixed(0)}MB\nStreams: ${d.activeStreams}\nPTP: ${d.ptpSynced ? 'Synced' : 'Unsynced'}`);
+
+      // Update positions on tick
+      simulation.on('tick', () => {
+        link
+          .attr('x1', (d: any) => d.source.x)
+          .attr('y1', (d: any) => d.source.y)
+          .attr('x2', (d: any) => d.target.x)
+          .attr('y2', (d: any) => d.target.y);
+
+        node
+          .attr('cx', (d) => d.x!)
+          .attr('cy', (d) => d.y!);
+
+        label
+          .attr('x', (d) => d.x!)
+          .attr('y', (d) => d.y!);
       });
 
-    svg.call(zoom as any);
+      // Drag functions
+      function dragStarted(event: any, d: AvbNode) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
 
-    // Draw links
-    const link = g.append('g')
-      .selectAll('line')
-      .data(links)
-      .join('line')
-      .attr('stroke', (d) => {
-        const score = d.qualityScore;
-        return score > 80 ? '#10b981' : score > 60 ? '#f59e0b' : '#ef4444';
-      })
-      .attr('stroke-width', (d) => 1 + d.qualityScore / 50)
-      .attr('stroke-opacity', 0.6);
+      function dragged(event: any, d: AvbNode) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
 
-    // Draw nodes
-    const node = g.append('g')
-      .selectAll('circle')
-      .data(nodes)
-      .join('circle')
-      .attr('r', (d) => 8 + d.activeStreams * 2)
-      .attr('fill', (d) => {
-        if (d.type === 'ptp-master') return '#6366f1';
-        switch (d.status) {
-          case 'healthy': return '#10b981';
-          case 'warning': return '#f59e0b';
-          case 'critical': return '#ef4444';
-          case 'offline': return '#6b7280';
-          default: return '#6b7280';
-        }
-      })
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 2)
-      .style('cursor', 'pointer')
-      .call(d3.drag<SVGCircleElement, AvbNode>()
-        .on('start', dragStarted)
-        .on('drag', dragged)
-        .on('end', dragEnded) as any);
+      function dragEnded(event: any, d: AvbNode) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+    };
 
-    // Add node labels
-    const label = g.append('g')
-      .selectAll('text')
-      .data(nodes)
-      .join('text')
-      .text((d) => d.name)
-      .attr('font-size', 10)
-      .attr('fill', '#e5e7eb')
-      .attr('text-anchor', 'middle')
-      .attr('dy', -15);
-
-    // Add tooltips
-    node.append('title')
-      .text((d) => `${d.name}\nStatus: ${d.status}\nLatency: ${d.latencyMs.toFixed(2)}ms\nCPU: ${d.cpuPercent.toFixed(1)}%\nMemory: ${d.memoryMB.toFixed(0)}MB\nStreams: ${d.activeStreams}\nPTP: ${d.ptpSynced ? 'Synced' : 'Unsynced'}`);
-
-    // Update positions on tick
-    simulation.on('tick', () => {
-      link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
-
-      node
-        .attr('cx', (d) => d.x!)
-        .attr('cy', (d) => d.y!);
-
-      label
-        .attr('x', (d) => d.x!)
-        .attr('y', (d) => d.y!);
-    });
-
-    // Drag functions
-    function dragStarted(event: any, d: AvbNode) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    function dragged(event: any, d: AvbNode) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragEnded(event: any, d: AvbNode) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
+    if (typeof document === 'undefined' || document.readyState === 'complete') {
+      window.requestAnimationFrame(buildGraph);
+    } else {
+      const onLoad = () => window.requestAnimationFrame(buildGraph);
+      window.addEventListener('load', onLoad, { once: true });
+      removeLoadListener = () => window.removeEventListener('load', onLoad);
     }
 
     return () => {
-      simulation.stop();
+      removeLoadListener?.();
+      stopSimulation?.();
     };
   }, [nodes, links]);
 

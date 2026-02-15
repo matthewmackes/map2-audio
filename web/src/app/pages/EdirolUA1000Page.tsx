@@ -1120,6 +1120,7 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
 
 function AnalogIOTab({ meterData }: { meterData: MeterData }) {
   const [phantomPower, setPhantomPower] = useState([false, false, false, false])
+  const [headphoneVolume, setHeadphoneVolume] = useState(60)
 
   return (
     <div className="stack">
@@ -1234,13 +1235,13 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
             <div style={{ marginTop: 12 }}>
               <NumberInput
                 label="Headphone Volume"
-                value={60}
+                value={headphoneVolume}
                 min={0}
                 max={100}
                 step={1}
                 unit="%"
                 size="small"
-                onChange={() => {}}
+                onChange={setHeadphoneVolume}
               />
             </div>
           </div>

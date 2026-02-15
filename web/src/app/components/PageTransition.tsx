@@ -49,8 +49,6 @@ export function PageTransition({ children }: PageTransitionProps) {
             gridGap={6}
             flickerChance={0.3}
             maxOpacity={0.4}
-            width={window.innerWidth}
-            height={window.innerHeight}
           />
         </div>
       )}

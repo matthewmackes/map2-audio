@@ -1,8 +1,17 @@
+import { useMemo, useState } from 'react'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
+import {
+  normalizeClusterMetrics,
+  filterMetricsByRange,
+  summarizeClusterMetrics,
+  buildClusterMetricsSeries,
+} from './clusterData'
 
 export function MetricsDashboardTab() {
-  const { data: metrics } = useQuery({
+  const [selectedDateRange, setSelectedDateRange] = useState('1h')
+
+  const { data: metricsPayload, isLoading, error } = useQuery({
     queryKey: ['cluster', 'metrics'],
     queryFn: async () => {
       const res = await fetch('/api/cluster/metrics')
@@ -12,13 +21,25 @@ export function MetricsDashboardTab() {
     refetchInterval: 15000,
   })
 
-  // Generate sample time-series data
-  const timeSeriesData = Array.from({ length: 20 }, (_, i) => ({
-    time: `${i}min`,
-    cpu: 30 + Math.random() * 40,
-    memory: 40 + Math.random() * 30,
-    dsp: 20 + Math.random() * 50,
-  }))
+  const metricSamples = useMemo(() => normalizeClusterMetrics(metricsPayload), [metricsPayload])
+  const filteredSamples = useMemo(
+    () => filterMetricsByRange(metricSamples, selectedDateRange),
+    [metricSamples, selectedDateRange]
+  )
+  const summary = useMemo(
+    () => summarizeClusterMetrics(metricsPayload, filteredSamples),
+    [metricsPayload, filteredSamples]
+  )
+  const timeSeriesData = useMemo(
+    () => buildClusterMetricsSeries(filteredSamples, 24).map(point => ({
+      time: point.timeLabel,
+      cpu: point.cpu,
+      memory: point.memory,
+      dsp: point.dsp,
+      latency: point.latency,
+    })),
+    [filteredSamples]
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -34,11 +55,61 @@ export function MetricsDashboardTab() {
           Prometheus Metrics Dashboard
         </div>
         <div style={{ fontSize: 13, color: '#d0d0d0', lineHeight: 1.5 }}>
-          Real-time cluster metrics visualization. Connect to Grafana for advanced dashboards.
+          Real cluster metrics aggregated from node telemetry. No synthetic data.
         </div>
       </div>
 
-      {/* CPU Usage Over Time */}
+      <div
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #333',
+          borderRadius: 8,
+          padding: '14px 16px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 8,
+        }}
+      >
+        {[
+          { label: 'Last 5m', value: '5m' },
+          { label: 'Last 1h', value: '1h' },
+          { label: 'Last 24h', value: '24h' },
+          { label: 'Last 7d', value: '7d' },
+        ].map(range => (
+          <button
+            key={range.value}
+            onClick={() => setSelectedDateRange(range.value)}
+            style={{
+              padding: '8px 12px',
+              background: selectedDateRange === range.value ? '#2563eb' : 'rgba(255,255,255,0.05)',
+              color: selectedDateRange === range.value ? '#000' : '#d0d0d0',
+              border: `1px solid ${selectedDateRange === range.value ? '#2563eb' : '#333'}`,
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {range.label}
+          </button>
+        ))}
+      </div>
+
+      {error && (
+        <div
+          style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid #ef4444',
+            borderRadius: 8,
+            padding: '12px 14px',
+            color: '#fca5a5',
+            fontSize: 12,
+          }}
+        >
+          Failed to load cluster metrics. Verify `/api/cluster/metrics` is available.
+        </div>
+      )}
+
       <div
         style={{
           background: '#1a1a1a',
@@ -47,28 +118,35 @@ export function MetricsDashboardTab() {
           padding: '20px',
         }}
       >
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: '#d0d0d0' }}>CPU Usage (Last Hour)</div>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={timeSeriesData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#888' }} />
-            <YAxis tick={{ fontSize: 11, fill: '#888' }} />
-            <Tooltip
-              contentStyle={{ background: '#1a1a1a', border: '1px solid #444', borderRadius: 6 }}
-              formatter={(value: any) => value.toFixed(1)}
-            />
-            <Line
-              dataKey="cpu"
-              stroke="#ffa726"
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: '#d0d0d0' }}>
+          CPU Usage ({selectedDateRange})
+        </div>
+        {timeSeriesData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={timeSeriesData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis dataKey="time" tick={{ fontSize: 11, fill: '#888' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#888' }} />
+              <Tooltip
+                contentStyle={{ background: '#1a1a1a', border: '1px solid #444', borderRadius: 6 }}
+                formatter={(value: number | string) => `${Number(value).toFixed(1)}%`}
+              />
+              <Line
+                dataKey="cpu"
+                stroke="#ffa726"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ color: '#888', fontSize: 12 }}>
+            {isLoading ? 'Loading metrics...' : 'No metrics in selected time range.'}
+          </div>
+        )}
       </div>
 
-      {/* Memory and DSP */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
         <div
           style={{
@@ -79,18 +157,24 @@ export function MetricsDashboardTab() {
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: '#d0d0d0' }}>Memory Usage</div>
-          <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={timeSeriesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#888' }} />
-              <YAxis tick={{ fontSize: 10, fill: '#888' }} />
-              <Tooltip
-                contentStyle={{ background: '#1a1a1a', border: '1px solid #444', borderRadius: 6 }}
-                formatter={(value: any) => value.toFixed(1)}
-              />
-              <Bar dataKey="memory" fill="#3b82f6" isAnimationActive={false} />
-            </BarChart>
-          </ResponsiveContainer>
+          {timeSeriesData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={150}>
+              <BarChart data={timeSeriesData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#888' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#888' }} />
+                <Tooltip
+                  contentStyle={{ background: '#1a1a1a', border: '1px solid #444', borderRadius: 6 }}
+                  formatter={(value: number | string) => `${Number(value).toFixed(1)}%`}
+                />
+                <Bar dataKey="memory" fill="#3b82f6" isAnimationActive={false} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ color: '#888', fontSize: 12 }}>
+              {isLoading ? 'Loading metrics...' : 'No memory data in selected range.'}
+            </div>
+          )}
         </div>
 
         <div
@@ -102,66 +186,69 @@ export function MetricsDashboardTab() {
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16, color: '#d0d0d0' }}>Audio DSP Load</div>
-          <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={timeSeriesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#888' }} />
-              <YAxis tick={{ fontSize: 10, fill: '#888' }} />
-              <Tooltip
-                contentStyle={{ background: '#1a1a1a', border: '1px solid #444', borderRadius: 6 }}
-                formatter={(value: any) => value.toFixed(1)}
-              />
-              <Line
-                dataKey="dsp"
-                stroke="#22c55e"
-                strokeWidth={2}
-                dot={false}
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {timeSeriesData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={150}>
+              <LineChart data={timeSeriesData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#888' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#888' }} />
+                <Tooltip
+                  contentStyle={{ background: '#1a1a1a', border: '1px solid #444', borderRadius: 6 }}
+                  formatter={(value: number | string) => `${Number(value).toFixed(1)}%`}
+                />
+                <Line
+                  dataKey="dsp"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ color: '#888', fontSize: 12 }}>
+              {isLoading ? 'Loading metrics...' : 'No DSP data in selected range.'}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Current Metrics Summary */}
-      {metrics && (
-        <div
-          style={{
-            background: '#1a1a1a',
-            border: '1px solid #333',
-            borderRadius: 8,
-            padding: '20px',
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#d0d0d0' }}>Current Metrics</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-            <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
-              <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Avg CPU</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#ffa726' }}>
-                {metrics.avg_cpu_percent?.toFixed(1) || '-'}%
-              </div>
+      <div
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #333',
+          borderRadius: 8,
+          padding: '20px',
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: '#d0d0d0' }}>Current Metrics</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+          <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Avg CPU</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#ffa726' }}>
+              {summary.avgCpuPercent.toFixed(1)}%
             </div>
-            <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
-              <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Avg Memory</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#3b82f6' }}>
-                {metrics.avg_memory_percent?.toFixed(1) || '-'}%
-              </div>
+          </div>
+          <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Avg Memory</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#3b82f6' }}>
+              {summary.avgMemoryPercent.toFixed(1)}%
             </div>
-            <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
-              <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Audio DSP</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>
-                {metrics.avg_dsp_load_percent?.toFixed(1) || '-'}%
-              </div>
+          </div>
+          <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Audio DSP</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>
+              {summary.avgDspLoadPercent.toFixed(1)}%
             </div>
-            <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
-              <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Max Latency</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#fbbf24' }}>
-                {metrics.max_latency_ms?.toFixed(1) || '-'}ms
-              </div>
+          </div>
+          <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>Max Latency</div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#fbbf24' }}>
+              {summary.maxLatencyMs.toFixed(1)}ms
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -25,98 +25,74 @@
         }
     </style>
     <script>
+        function applyColorSchemeAfterLoad() {
+            const androidHosted = !!(window.AndroidHost);
+            let colorScheme = localStorage.getItem("colorScheme");
 
-        const androidHosted = !!(window.AndroidHost);
-
-
-        var colorScheme = localStorage.getItem("colorScheme");
-        if (androidHosted) {
-            var hostColorScheme = window.AndroidHost.getThemePreference();
-            switch (hostColorScheme) {
-                case 0:
-                    colorScheme = "Light";
-                    break;
-                case 1:
-                    colorScheme = "Dark";
-                    break;
-                case 2:
-                    {
-                        // use the host's interpretation of the current system night mode.
+            if (androidHosted) {
+                const hostColorScheme = window.AndroidHost.getThemePreference();
+                switch (hostColorScheme) {
+                    case 0:
+                        colorScheme = "Light";
+                        break;
+                    case 1:
+                        colorScheme = "Dark";
+                        break;
+                    case 2:
                         colorScheme = window.AndroidHost.isDarkTheme() ? "Dark" : "Light";
-                    }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (!colorScheme) {
+                colorScheme = "Dark";
+            }
+
+            let darkMode = false;
+            let useSystem = false;
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            switch (colorScheme) {
+                case "Light":
+                    darkMode = false;
+                    break;
+                case "Dark":
+                    darkMode = true;
+                    break;
+                case "System":
+                    useSystem = true;
+                    break;
+                case null:
+                default:
+                    darkMode = true;
                     break;
             }
 
-        }
+            if (useSystem) {
+                darkMode = prefersDark;
+            }
 
-        if (!colorScheme) {
-            colorScheme = "Dark";
-        }
-        var darkMode = false;
-        var useSystem = false;
-
-        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        switch (colorScheme) {
-            case null:
-            default:
-                darkMode = true;
-                break;
-
-            case "Light":
-                darkMode = false;
-                break;
-            case "Dark":
-                darkMode = true;
-                break;
-            case "System":
-                useSystem = true;
-                break;
-        }
-        if (useSystem) {
-            darkMode = prefersDark;
-        }
-
-        if (!darkMode) {
-            let bgStyle = document.getElementById("bgStyle");
-            if (bgStyle) {
-                // disable the style block.
-                bgStyle.setAttribute('media', "max-width: 1px");
+            if (!darkMode) {
+                const bgStyle = document.getElementById("bgStyle");
+                if (bgStyle) {
+                    // Disable the style block for light mode.
+                    bgStyle.setAttribute('media', "max-width: 1px");
+                }
             }
         }
+
         function removeHashOnLoad() {
-            if (window.location.hash) {
-                // Store the hash value (without the '#' symbol)
-                var hash = window.location.hash.substring(1);
-
-                // Replace the current URL without the hash
-                var newUrl = window.location.href.replace(window.location.hash, '');
-
-                // Use HTML5 history API to change the URL without reloading the page
-                history.replaceState(null, document.title, newUrl);
-
-            }
+            if (!window.location.hash) return;
+            const newUrl = window.location.href.replace(window.location.hash, '');
+            history.replaceState(null, document.title, newUrl);
         }
 
-        // Run the function when the window loads
-        window.addEventListener('load', removeHashOnLoad);
-        
-        // used by Android client to perform focus scrolling on keyboard open.
-        // function getFocusedElementBounds() {
-        //     let  focusedElement = document.activeElement;
-        //     if (focusedElement && focusedElement !== document.body) {
-        //         let  rect = focusedElement.getBoundingClientRect();
-        //         return {
-        //             top: rect.top,
-        //             left: rect.left,
-        //             right: rect.right,
-        //             bottom: rect.bottom,
-        //             windowWidth: window.innerWidth,
-        //             windowHeight: window.innerHeight,
-        //         };
-        //     }
-        //     return null;
-        // }
+        window.addEventListener('load', () => {
+            applyColorSchemeAfterLoad();
+            removeHashOnLoad();
+        }, { once: true });
     </script>
 
 
@@ -129,5 +105,4 @@
 </body>
 
 </html>
-
 

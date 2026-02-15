@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   CardContent,
@@ -12,31 +13,70 @@ import {
   Alert,
   IconButton,
 } from '@mui/material'
-import { Pulse, Lightning, Warning, Info, TrendUp, Stack } from '@phosphor-icons/react'
+import { Pulse, Info, TrendUp } from '@phosphor-icons/react'
+import { audioApi } from '../../map2/api'
+import { useVuMeters } from '../hooks/useVuMeters'
 
 type LatencyMode = 'motu-only' | 'adat-expanded' | 'outboard-inserts'
 
+interface MeterChannel {
+  db: number
+  percent: number
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function dbToPercent(db: number) {
+  const finiteDb = Number.isFinite(db) ? db : -60
+  const normalized = (clamp(finiteDb, -60, 0) + 60) / 60
+  return Math.round(normalized * 100)
+}
+
+function buildMeterChannels(leftDb: number, rightDb: number, count: number): MeterChannel[] {
+  return Array.from({ length: count }, (_, index) => {
+    const db = index % 2 === 0 ? leftDb : rightDb
+    return { db, percent: dbToPercent(db) }
+  })
+}
+
 export default function MOTURMEPage() {
   const [latencyMode, setLatencyMode] = useState<LatencyMode>('adat-expanded')
-  const [sampleRate, setSampleRate] = useState(48000)
-  const [bufferSize, setBufferSize] = useState(64)
-  const [activeChannels, setActiveChannels] = useState(16)
+  const { levels, isConnected: metersConnected, isRunning: metersRunning } = useVuMeters({
+    useWebSocket: true,
+    pollingInterval: 250,
+  })
 
-  // Simulated real-time meter values (0-100)
-  const [meterValues, setMeterValues] = useState<number[]>(Array(16).fill(0))
+  const { data: audioStatus } = useQuery({
+    queryKey: ['audio', 'status', 'motu-rme'],
+    queryFn: audioApi.getStatus,
+    refetchInterval: 2000,
+  })
 
-  // Simulated animated meters
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMeterValues(prev => prev.map(() => Math.random() * 100))
-    }, 100)
-    return () => clearInterval(interval)
-  }, [])
+  const { data: audioHealth } = useQuery({
+    queryKey: ['audio', 'health', 'motu-rme'],
+    queryFn: audioApi.getHealth,
+    refetchInterval: 2000,
+  })
+
+  const { data: juceMetrics } = useQuery({
+    queryKey: ['audio', 'juce', 'motu-rme'],
+    queryFn: audioApi.getJuceMetrics,
+    refetchInterval: 5000,
+  })
+
+  const sampleRate = audioStatus?.sample_rate ?? juceMetrics?.sample_rate ?? 48000
+  const safeSampleRate = sampleRate > 0 ? sampleRate : 48000
+  const bufferSize = audioStatus?.buffer_size ?? juceMetrics?.buffer_size ?? 64
+  const inputChannels = Math.max(0, juceMetrics?.input_channels ?? 8)
+  const outputChannels = Math.max(0, juceMetrics?.output_channels ?? 8)
+  const activeChannels = Math.max(2, inputChannels + outputChannels)
 
   // USB Load calculation
   const calculateUSBLoad = () => {
-    const baseLoad = (activeChannels * sampleRate * 24 * 2) / (480 * 1000000) // USB 2.0 theoretical max
-    const utilizationFactor = sampleRate === 192000 ? 0.9 : sampleRate === 96000 ? 0.7 : 0.5
+    const baseLoad = (activeChannels * safeSampleRate * 24 * 2) / (480 * 1000000) // USB 2.0 theoretical max
+    const utilizationFactor = safeSampleRate === 192000 ? 0.9 : safeSampleRate === 96000 ? 0.7 : 0.5
     return Math.min(95, Math.round(baseLoad * utilizationFactor * 100))
   }
 
@@ -44,16 +84,16 @@ export default function MOTURMEPage() {
   const calculateHostLoad = () => {
     const bufferFactor = bufferSize < 128 ? 1.5 : bufferSize < 256 ? 1.0 : 0.7
     const channelFactor = activeChannels / 18
-    const sampleRateFactor = sampleRate / 48000
+    const sampleRateFactor = safeSampleRate / 48000
     return Math.min(95, Math.round(35 * channelFactor * sampleRateFactor * bufferFactor))
   }
 
   // Latency calculations (in samples and ms)
   const getLatencyBreakdown = () => {
-    const samplesPerMs = sampleRate / 1000
+    const samplesPerMs = safeSampleRate / 1000
 
     const dawBuffer = bufferSize * 2
-    const driverUSB = sampleRate === 192000 ? 60 : sampleRate === 96000 ? 40 : 30
+    const driverUSB = safeSampleRate === 192000 ? 60 : safeSampleRate === 96000 ? 40 : 30
     const motuConverters = 22
     const adatTransmission = 8
     const rmeConverters = 22
@@ -83,8 +123,17 @@ export default function MOTURMEPage() {
   }
 
   const usbLoad = calculateUSBLoad()
-  const hostLoad = calculateHostLoad()
+  const hostLoad = clamp(Math.round(audioStatus?.cpu_load ?? audioHealth?.cpu_load ?? calculateHostLoad()), 0, 95)
   const latency = getLatencyBreakdown()
+
+  const motuMeters = useMemo(
+    () => buildMeterChannels(levels.inputLeft, levels.inputRight, 8),
+    [levels.inputLeft, levels.inputRight]
+  )
+  const rmeMeters = useMemo(
+    () => buildMeterChannels(levels.outputLeft, levels.outputRight, 8),
+    [levels.outputLeft, levels.outputRight]
+  )
 
   const getMeterColor = (value: number) => {
     if (value > 85) return '#FF4444'
@@ -112,6 +161,24 @@ export default function MOTURMEPage() {
         <Typography variant="subtitle1" style={{ color: '#94a3b8', fontSize: 14 }}>
           ADAT-Expanded Monitoring Dashboard
         </Typography>
+        <Box sx={{ mt: 1.5 }}>
+          <Chip
+            size="small"
+            label={
+              !metersRunning
+                ? 'Engine stopped'
+                : metersConnected
+                  ? 'Live metering (WebSocket)'
+                  : 'Live metering (polling fallback)'
+            }
+            style={{
+              background: metersRunning ? 'rgba(0, 255, 157, 0.16)' : 'rgba(239, 68, 68, 0.18)',
+              color: metersRunning ? '#00FF9D' : '#ef4444',
+              border: `1px solid ${metersRunning ? 'rgba(0, 255, 157, 0.45)' : 'rgba(239, 68, 68, 0.45)'}`,
+              fontWeight: 600,
+            }}
+          />
+        </Box>
       </Box>
 
       {/* Hero Section - Product Photos */}
@@ -128,22 +195,18 @@ export default function MOTURMEPage() {
                 width: '100%',
                 height: 180,
                 background: 'linear-gradient(135deg, rgba(255, 170, 0, 0.1), rgba(37, 99, 235, 0.1))',
-                border: '2px dashed rgba(37, 99, 235, 0.3)',
+                border: '1px solid rgba(37, 99, 235, 0.35)',
                 borderRadius: 12,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 12,
               }}>
-                <div style={{ textAlign: 'center' }}>
-                  <Stack size={48} weight="duotone" style={{ color: '#2563eb', marginBottom: 8 }} />
-                  <Typography variant="body2" style={{ color: '#94a3b8' }}>
-                    RME ADI-8 QS
-                  </Typography>
-                  <Typography variant="caption" style={{ color: '#6b7280' }}>
-                    8ch Premium AD/DA
-                  </Typography>
-                </div>
+                <img
+                  src="/img/audio-output.png"
+                  alt="RME ADI-8 QS"
+                  style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
+                />
               </div>
               <Chip label="ADAT Slave" size="small" style={{ background: '#2563eb', color: '#111', fontWeight: 600 }} />
             </Box>
@@ -174,22 +237,18 @@ export default function MOTURMEPage() {
                 width: '100%',
                 height: 180,
                 background: 'linear-gradient(135deg, rgba(0, 255, 157, 0.1), rgba(37, 99, 235, 0.1))',
-                border: '2px dashed rgba(0, 255, 157, 0.3)',
+                border: '1px solid rgba(0, 255, 157, 0.35)',
                 borderRadius: 12,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 12,
               }}>
-                <div style={{ textAlign: 'center' }}>
-                  <Lightning size={48} weight="duotone" style={{ color: '#00FF9D', marginBottom: 8 }} />
-                  <Typography variant="body2" style={{ color: '#94a3b8' }}>
-                    MOTU UltraLite-mk5
-                  </Typography>
-                  <Typography variant="caption" style={{ color: '#6b7280' }}>
-                    USB Audio Interface
-                  </Typography>
-                </div>
+                <img
+                  src="/img/audio-input.png"
+                  alt="MOTU UltraLite-mk5"
+                  style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
+                />
               </div>
               <Chip label="Clock Master" size="small" style={{ background: '#00FF9D', color: '#111', fontWeight: 600 }} />
             </Box>
@@ -228,7 +287,7 @@ export default function MOTURMEPage() {
               }}
             />
             <Typography variant="caption" style={{ color: '#6b7280', marginTop: 8, display: 'block' }}>
-              {activeChannels} ch × {sampleRate / 1000}kHz @ 24-bit
+              {inputChannels} in / {outputChannels} out @ {(safeSampleRate / 1000).toFixed(1)}kHz
             </Typography>
           </CardContent>
         </Card>
@@ -238,7 +297,7 @@ export default function MOTURMEPage() {
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 13 }}>
-                Host Backplane Load (Estimated)
+                Host Backplane Load (CPU)
               </Typography>
               <Tooltip title="Computer-side CPU/driver pressure. Based on buffer size, channel count, and sample rate. Lower buffer = higher load.">
                 <IconButton size="small">
@@ -272,14 +331,14 @@ export default function MOTURMEPage() {
       <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)', marginBottom: 24 }}>
         <CardContent>
           <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
-            16-Channel Metering (8 MOTU + 8 RME via ADAT)
+            Live Metering (Input + Output)
           </Typography>
           
           {/* MOTU Channels 1-8 */}
           <Box sx={{ mb: 3 }}>
             <Chip label="MOTU Local (1-8)" size="small" style={{ background: '#00FF9D', color: '#111', marginBottom: 12, fontWeight: 600 }} />
             <Box sx={{ display: 'grid', gap: 1 }}>
-              {meterValues.slice(0, 8).map((value, i) => (
+              {motuMeters.map((meter, i) => (
                 <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="caption" style={{ color: '#94a3b8', minWidth: 30 }}>
                     Ch {i + 1}
@@ -290,13 +349,13 @@ export default function MOTURMEPage() {
                       left: 0,
                       top: 0,
                       bottom: 0,
-                      width: `${value}%`,
-                      background: `linear-gradient(90deg, ${getMeterColor(value)}, ${getMeterColor(value)}80)`,
+                      width: `${meter.percent}%`,
+                      background: `linear-gradient(90deg, ${getMeterColor(meter.percent)}, ${getMeterColor(meter.percent)}80)`,
                       transition: 'width 0.1s ease-out',
                     }} />
                   </Box>
-                  <Typography variant="caption" style={{ color: getMeterColor(value), minWidth: 45, textAlign: 'right', fontWeight: 600 }}>
-                    {value.toFixed(0)} dB
+                  <Typography variant="caption" style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600 }}>
+                    {meter.db.toFixed(1)} dB
                   </Typography>
                 </Box>
               ))}
@@ -307,7 +366,7 @@ export default function MOTURMEPage() {
           <Box>
             <Chip label="RME ADAT (9-16)" size="small" style={{ background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600 }} />
             <Box sx={{ display: 'grid', gap: 1 }}>
-              {meterValues.slice(8, 16).map((value, i) => (
+              {rmeMeters.map((meter, i) => (
                 <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="caption" style={{ color: '#94a3b8', minWidth: 30 }}>
                     Ch {i + 9}
@@ -318,13 +377,13 @@ export default function MOTURMEPage() {
                       left: 0,
                       top: 0,
                       bottom: 0,
-                      width: `${value}%`,
-                      background: `linear-gradient(90deg, ${getMeterColor(value)}, ${getMeterColor(value)}80)`,
+                      width: `${meter.percent}%`,
+                      background: `linear-gradient(90deg, ${getMeterColor(meter.percent)}, ${getMeterColor(meter.percent)}80)`,
                       transition: 'width 0.1s ease-out',
                     }} />
                   </Box>
-                  <Typography variant="caption" style={{ color: getMeterColor(value), minWidth: 45, textAlign: 'right', fontWeight: 600 }}>
-                    {value.toFixed(0)} dB
+                  <Typography variant="caption" style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600 }}>
+                    {meter.db.toFixed(1)} dB
                   </Typography>
                 </Box>
               ))}
@@ -368,7 +427,7 @@ export default function MOTURMEPage() {
               {latency.total.ms.toFixed(2)} ms
             </Typography>
             <Typography variant="caption" style={{ color: '#94a3b8' }}>
-              ({latency.total.samples} samples @ {sampleRate / 1000}kHz)
+              ({latency.total.samples} samples @ {(safeSampleRate / 1000).toFixed(1)}kHz)
             </Typography>
           </Box>
 

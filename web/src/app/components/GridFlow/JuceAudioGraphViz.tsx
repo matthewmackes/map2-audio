@@ -757,6 +757,7 @@ export function JuceAudioGraphViz({
   const buildViz = useCallback(() => {
     const container = containerRef.current
     if (!container) return
+    if (typeof document !== 'undefined' && document.readyState !== 'complete') return
 
     // Clear previous
     d3.select(container).select('svg').remove()
@@ -1422,10 +1423,23 @@ export function JuceAudioGraphViz({
   }, [graphData])
 
   useEffect(() => {
-    buildViz()
+    let removeLoadListener: (() => void) | undefined
+    const scheduleBuild = () => window.requestAnimationFrame(buildViz)
+
+    if (typeof document === 'undefined' || document.readyState === 'complete') {
+      scheduleBuild()
+    } else {
+      const onLoad = () => scheduleBuild()
+      window.addEventListener('load', onLoad, { once: true })
+      removeLoadListener = () => window.removeEventListener('load', onLoad)
+    }
+
     const handleResize = () => buildViz()
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    return () => {
+      removeLoadListener?.()
+      window.removeEventListener('resize', handleResize)
+    }
   }, [buildViz, graphData])
 
   return (

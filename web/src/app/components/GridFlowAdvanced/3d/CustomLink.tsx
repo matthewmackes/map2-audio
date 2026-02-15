@@ -64,7 +64,7 @@ export function CustomLink({ link, sourcePos, targetPos }: CustomLinkProps) {
   
   // Use TubeGeometry for shader application
   const tubeGeometry = useMemo(() => {
-    return new THREE.TubeGeometry(curve, 50, link.type === 'midi' ? 0.03 : 0.02, 8, false)
+    return new THREE.TubeGeometry(curve, 50, link.type === 'midi' ? 0.08 : 0.06, 10, false)
   }, [curve, link.type])
   
   return (
