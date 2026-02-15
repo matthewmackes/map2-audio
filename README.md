@@ -91,7 +91,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**544** Python | **602** TypeScript | **114** C++/H | **74** Docs | **141** total commits | **0** stars | **0** forks | **0** open issues
+**544** Python | **602** TypeScript | **114** C++/H | **78** Docs | **144** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -104,9 +104,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [AVB / 802.1AS vs Non-AVB Signal Flow Comparison](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_SIGNAL_FLOW_COMPARISON.md) | 2026-02-14 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-02-14 |
 | [Gemini Image Generation Prompts for MAP2 Architecture Diagrams](https://github.com/matthewmackes/map2-audio/blob/master/docs/GEMINI_IMAGE_GENERATION_PROMPTS.md) | 2026-02-14 |
-| [MAP2 Audio Platform - Node Types & Deployment Architectures](https://github.com/matthewmackes/map2-audio/blob/master/docs/NODE_TYPES_AND_DEPLOYMENT_ARCHITECTURES.md) | 2026-02-14 |
-| [Suggested Improvements](https://github.com/matthewmackes/map2-audio/blob/master/docs/SUGGESTED_IMPROVEMENTS.md) | 2026-02-14 |
-| [Web Server Port Configuration](https://github.com/matthewmackes/map2-audio/blob/master/docs/WEB_SERVER_PORTS.md) | 2026-02-14 |
+| [MAP2 System: A Study of AVB / 802.1AS Capabilities and Use Cases - 2026-02-14](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_AVB_Capabilities_and_Usecases_2026-02-14.md) | 2026-02-14 |
+| [MAP2 System: A Study of Chains, Flows, and All-In-One Mode - 2026-02-14](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_Chains_Flows_and_All-In-One_Mode_2026-02-14.md) | 2026-02-14 |
+| [MAP2 Audio Platform: An Educational Overview - 2026-02-14](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_Educational_Overview_2026-02-14.md) | 2026-02-14 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -130,14 +130,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4afd855`](https://github.com/matthewmackes/map2-audio/commit/4afd8555410d592ee55eed9a9c7929a31c7d615c) | docs: add educational overviews, AVB docs, blog images, a... | Map2 Audio | 2026-02-14 |
+| [`5c3fdcb`](https://github.com/matthewmackes/map2-audio/commit/5c3fdcb51edcbb095f2bc457e18f84a4ba9f9d8e) | docs: replace license section with legal disclaimer refer... | Map2 Audio | 2026-02-14 |
+| [`0c49d3a`](https://github.com/matthewmackes/map2-audio/commit/0c49d3a14de4aad57625f835926dd8a64fdf0b3d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-14 |
 | [`d09a848`](https://github.com/matthewmackes/map2-audio/commit/d09a84818d8d35ebf3c762d43bdf83de5473af3b) | feat: add auto-updating README showcase with GitHub Actions | Map2 Audio | 2026-02-14 |
 | [`7e8d404`](https://github.com/matthewmackes/map2-audio/commit/7e8d404f4881aec108fb22773ad361fb500e92e2) | fix(avb): fail fast when engine stream lifecycle hooks ar... | Map2 Audio | 2026-02-14 |
 | [`1399772`](https://github.com/matthewmackes/map2-audio/commit/139977278ac2278095673bcfb24d46a37d458332) | feat(flow): replenish minimum standby assignment after fa... | Map2 Audio | 2026-02-14 |
 | [`2c4a0cd`](https://github.com/matthewmackes/map2-audio/commit/2c4a0cd7833381552101630d6efd09913255d526) | fix(flow): commit failover promotion only after activatio... | Map2 Audio | 2026-02-14 |
 | [`60e7be3`](https://github.com/matthewmackes/map2-audio/commit/60e7be33f107f79001166aab77965c106c79a025) | feat(flow): enforce deploy semantics and report standby d... | Map2 Audio | 2026-02-14 |
-| [`1896fdc`](https://github.com/matthewmackes/map2-audio/commit/1896fdcfc22637e40a90d390c9370935766a105c) | feat(avb): add engine-backed stream stats hooks and reset... | Map2 Audio | 2026-02-14 |
-| [`8ff95c3`](https://github.com/matthewmackes/map2-audio/commit/8ff95c3a5333ccc0d2d7c4f1aec241b471e657a1) | fix(avb): validate stream config and return 400 on bad input | Map2 Audio | 2026-02-14 |
-| [`a20857e`](https://github.com/matthewmackes/map2-audio/commit/a20857e4f3deed30791b7b7aa289fbc0186ab355) | test(avb): cover router factory wiring and refresh flow o... | Map2 Audio | 2026-02-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
