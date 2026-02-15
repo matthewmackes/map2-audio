@@ -568,6 +568,8 @@ class FlowOrchestrator:
             return False
 
         old_primary_node_id = deployment.primary_assignment.assigned_node_id
+        # Preserve pre-failover redundancy level when replenishing standbys.
+        target_standby_count = max(1, len(deployment.standby_assignments))
         deployment.primary_assignment = FlowAssignmentInfo(
             flow_id=flow_id,
             chain_id=deployment.chain_id,
@@ -583,7 +585,7 @@ class FlowOrchestrator:
 
         replenish_warning = await self._ensure_minimum_standby_redundancy(
             deployment,
-            minimum_standby_count=1,
+            minimum_standby_count=target_standby_count,
             excluded_node_ids={old_primary_node_id},
         )
         deployment.error_message = replenish_warning

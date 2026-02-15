@@ -121,7 +121,7 @@ flowchart LR
 
 ## Implementation Reality Notes (Use Dotted Blocks In Diagram)
 - AVB router API references `get_avb_router`, and factory wiring is implemented with graceful fallback and late binding.
-- Cluster flow deployment enforces active/standby response semantics, reports degraded standby failures, uses activation-before-commit standby promotion, and performs minimum standby replenishment; broader standby rebalancing is still partial.
+- Cluster flow deployment enforces active/standby response semantics, reports degraded standby failures, uses activation-before-commit standby promotion, and replenishes standby assignments toward pre-failover redundancy level; broader standby rebalancing is still partial.
 - AVB stream lifecycle/stat hooks are implemented in Python service/routes, with fail-fast signaling when engine stream hooks are missing; C++ AVB dataplane internals remain partial.
 
 Mark these as "planned/in-progress" to avoid presenting partial code as fully operational.

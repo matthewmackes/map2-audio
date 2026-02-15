@@ -603,7 +603,7 @@
       "id": "overlay_chain_deploy_placeholder",
       "severity": "high",
       "status": "partial",
-      "description": "Cluster flow deploy now enforces active/standby response semantics, records degraded standby failures, uses activation-before-commit standby promotion, and performs minimum standby replenishment after failover; broader standby rebalancing remains partial.",
+      "description": "Cluster flow deploy now enforces active/standby response semantics, records degraded standby failures, uses activation-before-commit standby promotion, and replenishes standby assignments toward the pre-failover redundancy level; broader standby rebalancing remains partial.",
       "affected_nodes": [
         "n2_ctrl_chain_deploy"
       ],

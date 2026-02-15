@@ -119,8 +119,12 @@ def test_promote_standby_to_primary_falls_back_to_activate_endpoint(monkeypatch)
     async def fake_save(info):
         save_calls.append(info)
 
+    async def fake_replenish(*_args, **_kwargs):
+        return None
+
     monkeypatch.setattr(orchestrator, "_promote_standby_node", fake_promote_node)
     monkeypatch.setattr(orchestrator, "activate_flow_on_node", fake_activate)
+    monkeypatch.setattr(orchestrator, "_ensure_minimum_standby_redundancy", fake_replenish)
     monkeypatch.setattr(orchestrator, "_persist_assignments", fake_persist)
     monkeypatch.setattr(orchestrator, "save_deployment", fake_save)
 
@@ -134,6 +138,59 @@ def test_promote_standby_to_primary_falls_back_to_activate_endpoint(monkeypatch)
     assert deployment.error_message is None
     assert len(persist_calls) == 1
     assert len(save_calls) == 1
+
+
+def test_promote_standby_replenishes_to_previous_redundancy_level(monkeypatch):
+    orchestrator = FlowOrchestrator()
+    deployment = _deployment()
+    orchestrator.active_deployments["flow-1"] = deployment
+
+    class DummyRegistry:
+        def get_all_nodes(self):
+            return [
+                {"id": "node-a", "status": "online", "cpu_load": 1.0},
+                {"id": "node-b", "status": "online", "cpu_load": 2.0},
+                {"id": "node-c", "status": "online", "cpu_load": 4.0},
+                {"id": "node-d", "status": "online", "cpu_load": 6.0},
+            ]
+
+        def get_node(self, node_id):
+            return {"id": node_id}
+
+    orchestrator.registry = DummyRegistry()
+
+    async def fake_promote_node(_node_id, _flow_id):
+        return True
+
+    async def fake_load_chain(_chain_id):
+        return {"id": 7, "name": "Test", "plugins": []}
+
+    standby_deploys = []
+
+    async def fake_deploy_to_node(node_id, _chain, mode):
+        if mode == "standby":
+            standby_deploys.append(node_id)
+        return True
+
+    async def fake_persist(*_args, **_kwargs):
+        return None
+
+    async def fake_save(_info):
+        return None
+
+    monkeypatch.setattr(orchestrator, "_promote_standby_node", fake_promote_node)
+    monkeypatch.setattr(orchestrator, "_load_chain_for_deployment", fake_load_chain)
+    monkeypatch.setattr(orchestrator, "_deploy_to_node", fake_deploy_to_node)
+    monkeypatch.setattr(orchestrator, "_persist_assignments", fake_persist)
+    monkeypatch.setattr(orchestrator, "save_deployment", fake_save)
+
+    ok = asyncio.run(orchestrator.promote_standby_to_primary("flow-1", "node-b"))
+
+    assert ok is True
+    assert deployment.primary_assignment.assigned_node_id == "node-b"
+    assert [s.assigned_node_id for s in deployment.standby_assignments] == ["node-c", "node-d"]
+    assert standby_deploys == ["node-d"]
+    assert deployment.error_message is None
 
 
 def test_failover_flow_delegates_to_promote_first_standby(monkeypatch):
