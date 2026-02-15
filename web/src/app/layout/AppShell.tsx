@@ -1,142 +1,11 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { SquaresFour, Sparkle, Info, Package, Waveform, MusicNotes, GridFour, Cube, Pulse, Usb, BookOpen, Monitor, List, X, HardDrives, Fire, Stack, Cpu } from '@phosphor-icons/react'
+import { Sparkle, Info, GridFour, Cube, BookOpen, List, X, Fire } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { advancedMenuItems } from '../data/advancedMenuItems'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
-
-// Items under the "hic sunt dracones" dropdown
-// Grouped with dividerBefore to visually separate categories
-const underTheHoodItems = [
-  // ── System ──
-  {
-    to: '/',
-    label: 'Overview',
-    icon: Sparkle,
-    description: 'System status & quick actions',
-    color: '#f59e0b',  // Amber
-    group: 'System',
-  },
-  {
-    to: '/presets',
-    label: 'Presets',
-    icon: SquaresFour,
-    description: 'Save & recall your sounds',
-    color: '#22c55e',  // Green
-    group: 'System',
-  },
-
-  // ── Content & Plugins ──
-  {
-    to: '/plugins',
-    label: 'LV2 Plugins',
-    icon: Package,
-    description: 'LV2 plugin manager',
-    color: '#06b6d4',  // Teal
-    dividerBefore: true,
-    group: 'Content & Plugins',
-  },
-  {
-    to: '/library',
-    label: 'IR & NAM Library',
-    icon: Waveform,
-    description: 'Impulse responses & NAM models',
-    color: '#06b6d4',  // Teal
-    group: 'Content & Plugins',
-  },
-
-  // ── Audio Processing ──
-  {
-    to: '/engine',
-    label: 'Audio Engine',
-    icon: Pulse,
-    description: 'Engine cluster, metering, signal path & diagnostics',
-    color: '#3b82f6',  // Blue
-    dividerBefore: true,
-    group: 'Audio Processing',
-  },
-
-  // ── Control ──
-  {
-    to: '/midi',
-    label: 'MIDI',
-    icon: MusicNotes,
-    description: 'MIDI mapping & control',
-    color: '#ec4899',  // Pink
-    dividerBefore: true,
-    group: 'Control',
-  },
-
-  // ── Hardware & Interfaces ──
-  {
-    to: '/lcd',
-    label: 'LCD Console',
-    icon: Monitor,
-    description: 'Displays, events, nodes, alerts, hardware & settings',
-    color: '#22c55e',  // Green
-    dividerBefore: true,
-    group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/edirol-ua1000',
-    label: 'Edirol UA-1000',
-    icon: Usb,
-    description: 'USB audio interface control',
-    color: '#0066cc',  // Roland blue
-    group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/motu-rme',
-    label: 'MOTU + RME ADAT',
-    icon: Stack,
-    description: 'MOTU UltraLite-mk5 + RME ADI-8 QS monitoring',
-    color: '#00D4FF',  // Cyan
-    group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/hotone-jogg',
-    label: 'HoTone JoGG',
-    icon: Waveform,
-    description: 'HoTone audio interface',
-    color: '#e53935',  // HoTone red
-    group: 'Hardware & Interfaces',
-  },
-  // ── Infrastructure ──
-  {
-    to: '/host-machine',
-    label: 'Host Machine',
-    icon: HardDrives,
-    description: 'Hardware info & real-time health',
-    color: '#2563eb',  // Blue
-    dividerBefore: true,
-    group: 'Infrastructure',
-  },
-  {
-    to: '/cpu-performance',
-    label: 'CPU Performance',
-    icon: Cpu,
-    description: 'Intel generation comparison & capacity analysis',
-    color: '#0066FF',  // Intel blue
-    group: 'Infrastructure',
-  },
-  {
-    to: '/cluster-dashboard',
-    label: 'Cluster Dashboard',
-    icon: HardDrives,
-    description: 'Multi-node cluster monitoring & simulation',
-    color: '#2563eb',  // Blue
-    group: 'Infrastructure',
-  },
-  {
-    to: '/multi-system',
-    label: 'Multi-System',
-    icon: Monitor,
-    description: 'Side-by-side multi-host metrics & comparison',
-    color: '#38bdf8',  // Sky blue
-    group: 'Infrastructure',
-  },
-]
 
 // Main navigation items (left side, top-level)
 const navItemsLeft = [
@@ -180,7 +49,7 @@ function useActiveNavItem() {
   const location = useLocation()
 
   // Check hic sunt dracones items
-  const underTheHoodMatch = underTheHoodItems.find(item =>
+  const underTheHoodMatch = advancedMenuItems.find(item =>
     location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'))
   )
 
@@ -197,7 +66,7 @@ function useActiveNavItem() {
   }
 
   // Default to first hic sunt dracones item (Overview)
-  return { type: 'under-the-hood' as const, item: underTheHoodItems[0] }
+  return { type: 'under-the-hood' as const, item: advancedMenuItems[0] }
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -213,7 +82,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Determine if Advanced Menu should be shown based on special settings
   const showAdvancedMenu = specialSettings?.enabled && specialSettings?.menuLocation !== 'hidden'
   const showInTopNav = specialSettings?.menuLocation === 'top-nav'
-  const showInMobileOnly = specialSettings?.menuLocation === 'mobile-only'
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -317,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       overflow: 'hidden',
                     }}
                   >
-                    {underTheHoodItems.map((item, index) => (
+                    {advancedMenuItems.map((item) => (
                       <div key={item.to}>
                         {item.dividerBefore && (
                           <>
@@ -393,7 +261,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="nav-mobile-menu" ref={navMenuRef}>
             <div className="nav-mobile-menu-content">
               {/* Advanced menu items - shown if Special is enabled and (top-nav or mobile-only) */}
-              {showAdvancedMenu && underTheHoodItems.map((item) => {
+              {showAdvancedMenu && advancedMenuItems.map((item) => {
                 const Icon = item.icon
                 return (
                   <NavLink

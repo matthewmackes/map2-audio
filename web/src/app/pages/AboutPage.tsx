@@ -1,4 +1,4 @@
-import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, SquaresFour, Sparkle, Package, Waveform, Pulse, Sliders, Usb, Palette, CaretDown, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, Monitor, TrendUp } from '@phosphor-icons/react'
+import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, Package, Pulse, Sliders, Palette, CaretDown, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, TrendUp } from '@phosphor-icons/react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
@@ -9,6 +9,7 @@ import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
+import { advancedMenuItems } from '../data/advancedMenuItems'
 
 // Dragon icon for "hic sunt dracones" menu
 const DragonIcon = ({ size = 16 }: { size?: number }) => (
@@ -25,131 +26,6 @@ const DragonIcon = ({ size = 16 }: { size?: number }) => (
     <circle cx="10" cy="5" r="1" fill="#dc2626" />
   </svg>
 )
-
-// Items under the "hic sunt dracones" dropdown
-// Grouped with dividerBefore to visually separate categories
-const underTheHoodItems = [
-  // ── System ──
-  {
-    to: '/',
-    label: 'Overview',
-    icon: Sparkle,
-    description: 'System status & quick actions',
-    color: '#f59e0b',  // Amber
-    group: 'System',
-  },
-  {
-    to: '/presets',
-    label: 'Presets',
-    icon: SquaresFour,
-    description: 'Save & recall your sounds',
-    color: '#22c55e',  // Green
-    group: 'System',
-  },
-
-  // ── Content & Plugins ──
-  {
-    to: '/plugins',
-    label: 'LV2 Plugins',
-    icon: Package,
-    description: 'LV2 plugin manager',
-    color: '#60a5fa',  // Teal
-    dividerBefore: true,
-    group: 'Content & Plugins',
-  },
-  {
-    to: '/library',
-    label: 'IR & NAM Library',
-    icon: Waveform,
-    description: 'Impulse responses & NAM models',
-    color: '#60a5fa',  // Teal
-    group: 'Content & Plugins',
-  },
-
-  // ── Audio Processing ──
-  {
-    to: '/pipewire',
-    label: 'PipeWire',
-    icon: Broadcast,
-    description: 'Audio server graph, latency & controls',
-    color: '#60a5fa',  // Purple
-    dividerBefore: true,
-    group: 'Audio Processing',
-  },
-
-
-  // ── Control ──
-  {
-    to: '/midi',
-    label: 'MIDI',
-    icon: MusicNote,
-    description: 'MIDI mapping & control',
-    color: '#60a5fa',  // Pink
-    dividerBefore: true,
-    group: 'Control',
-  },
-
-  // ── Hardware & Interfaces ──
-  {
-    to: '/lcd',
-    label: 'LCD Console',
-    icon: Monitor,
-    description: 'Displays, events, nodes, alerts, hardware & settings',
-    color: '#22c55e',  // Green
-    dividerBefore: true,
-    group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/edirol-ua1000',
-    label: 'Edirol UA-1000',
-    icon: Usb,
-    description: 'USB audio interface control',
-    color: '#0066cc',  // Roland blue
-    group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/hotone-jogg',
-    label: 'HoTone JoGG',
-    icon: Waveform,
-    description: 'HoTone audio interface',
-    color: '#e53935',  // HoTone red
-    group: 'Hardware & Interfaces',
-  },
-  // ── Infrastructure ──
-  {
-    to: '/host-machine',
-    label: 'Host Machine',
-    icon: DesktopTower,
-    description: 'Hardware info & real-time health',
-    color: '#3b82f6',  // Blue
-    dividerBefore: true,
-    group: 'Infrastructure',
-  },
-  {
-    to: '/cluster-dashboard',
-    label: 'Cluster Dashboard',
-    icon: DesktopTower,
-    description: 'Multi-node cluster monitoring & simulation',
-    color: '#2563eb',  // Cyan
-    group: 'Infrastructure',
-  },
-  {
-    to: '/multi-system',
-    label: 'Multi-System',
-    icon: Monitor,
-    description: 'Side-by-side multi-host metrics & comparison',
-    color: '#38bdf8',  // Sky blue
-    group: 'Infrastructure',
-  },
-  {
-    to: '/avb-network',
-    label: 'AVB Network',
-    icon: Broadcast,
-    description: 'Real-time AVB/TSN network topology & stream monitoring',
-    color: '#6366f1',  // Indigo
-    group: 'Infrastructure',
-  },
-]
 
 interface VersionInfo {
   version?: string
@@ -644,7 +520,12 @@ export function AboutPage() {
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
   
   // Special settings state
-  const { settings: specialSettings, updateSettings: updateSpecialSettings } = useSpecialSettings()
+  const {
+    settings: specialSettings,
+    isLoading: specialSettingsLoading,
+    updateSettings: updateSpecialSettings,
+  } = useSpecialSettings()
+  const [specialActionLoading, setSpecialActionLoading] = useState(false)
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
@@ -758,10 +639,19 @@ export function AboutPage() {
   }
 
   // Special mode handlers
-  const handleSpecialClick = () => {
+  const handleSpecialClick = async () => {
+    if (!specialSettings || specialSettingsLoading || specialActionLoading) return
+
     if (specialSettings?.enabled) {
       // Unchecking - disable immediately
-      updateSpecialSettings({ enabled: false })
+      setSpecialActionLoading(true)
+      try {
+        await updateSpecialSettings({ enabled: false })
+      } catch (error) {
+        console.error('Failed to disable special mode:', error)
+      } finally {
+        setSpecialActionLoading(false)
+      }
     } else {
       // Checking - require password first
       setShowPasswordDialog(true)
@@ -776,6 +666,12 @@ export function AboutPage() {
   const handleSettingsSave = async (settings: { enabled: boolean; hiddenPlugins: string[]; menuLocation: 'top-nav' | 'mobile-only' | 'hidden' }) => {
     await updateSpecialSettings(settings)
     setShowSpecialSettings(false)
+  }
+
+  const openSpecialSettings = () => {
+    if (specialSettings?.enabled) {
+      setShowSpecialSettings(true)
+    }
   }
 
 
@@ -1738,7 +1634,7 @@ export function AboutPage() {
             <CaretDown weight="bold" size={14} />
           </MenuButton>
           <Menu className="menu" gutter={8} style={{ minWidth: 260 }}>
-            {underTheHoodItems.map((item, index) => (
+            {advancedMenuItems.map((item) => (
               <div key={item.to}>
                 {item.dividerBefore && (
                   <>
@@ -1790,22 +1686,23 @@ export function AboutPage() {
                     cursor: rateLimitingLoading ? 'wait' : 'pointer',
                     opacity: rateLimitingLoading ? 0.7 : 1
                   }}
-                  onClick={toggleRateLimiting}
+                  onClick={() => { void toggleRateLimiting() }}
                   disabled={rateLimitingLoading}
                 >
                   <span style={{ fontSize: 12, fontWeight: 500 }}>🛡️ Rate Limiting</span>
                   <input
                     type="checkbox"
                     checked={rateLimiting.enabled}
-                    onChange={() => {}}
+                    readOnly
                     style={{
                       cursor: rateLimitingLoading ? 'wait' : 'pointer',
                       width: 16,
                       height: 16
                     }}
                     onClick={(e) => {
+                      e.preventDefault()
                       e.stopPropagation()
-                      toggleRateLimiting()
+                      void toggleRateLimiting()
                     }}
                   />
                 </MenuItem>
@@ -1825,26 +1722,44 @@ export function AboutPage() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '12px 16px',
-                    cursor: 'pointer',
+                    cursor: specialSettingsLoading || specialActionLoading ? 'wait' : 'pointer',
+                    opacity: specialSettingsLoading || specialActionLoading ? 0.7 : 1,
                   }}
-                  onClick={handleSpecialClick}
+                  onClick={() => { void handleSpecialClick() }}
+                  disabled={specialSettingsLoading || specialActionLoading}
                 >
                   <span style={{ fontSize: 12, fontWeight: 500 }}>✨ Special</span>
                   <input
                     type="checkbox"
                     checked={specialSettings.enabled}
-                    onChange={() => {}}
+                    readOnly
                     style={{
-                      cursor: 'pointer',
+                      cursor: specialSettingsLoading || specialActionLoading ? 'wait' : 'pointer',
                       width: 16,
                       height: 16
                     }}
                     onClick={(e) => {
+                      e.preventDefault()
                       e.stopPropagation()
-                      handleSpecialClick()
+                      void handleSpecialClick()
                     }}
                   />
                 </MenuItem>
+                {specialSettings.enabled && (
+                  <MenuItem
+                    className="menu-item"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '12px 16px',
+                    }}
+                    onClick={openSpecialSettings}
+                  >
+                    <Sliders size={14} style={{ color: '#60a5fa', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 500 }}>Configure Special Mode</span>
+                  </MenuItem>
+                )}
               </>
             )}
           </Menu>
