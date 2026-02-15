@@ -91,7 +91,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**544** Python | **602** TypeScript | **114** C++/H | **78** Docs | **144** total commits | **0** stars | **0** forks | **0** open issues
+**544** Python | **602** TypeScript | **114** C++/H | **78** Docs | **146** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -118,7 +118,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- GALLERY:START -->
 |  |  |  |
 | :---: | :---: | :---: |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> |  |  |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MACKESAUDIOPLATFORM.png" width="280" alt="MACKESAUDIOPLATFORM"> |  |
 <!-- GALLERY:END -->
 
 <p align="right"><em>Add screenshots to <code>docs/images/</code> and they appear here automatically.</em></p>
@@ -130,14 +130,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`242e137`](https://github.com/matthewmackes/map2-audio/commit/242e137e412317b61c027cc1bdf817b915e447f9) | docs: add platform logo to docs/images and reddit posts | Map2 Audio | 2026-02-14 |
+| [`c4c007a`](https://github.com/matthewmackes/map2-audio/commit/c4c007a565b924104fa79deb8503ea459f15e75b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`4afd855`](https://github.com/matthewmackes/map2-audio/commit/4afd8555410d592ee55eed9a9c7929a31c7d615c) | docs: add educational overviews, AVB docs, blog images, a... | Map2 Audio | 2026-02-14 |
 | [`5c3fdcb`](https://github.com/matthewmackes/map2-audio/commit/5c3fdcb51edcbb095f2bc457e18f84a4ba9f9d8e) | docs: replace license section with legal disclaimer refer... | Map2 Audio | 2026-02-14 |
 | [`0c49d3a`](https://github.com/matthewmackes/map2-audio/commit/0c49d3a14de4aad57625f835926dd8a64fdf0b3d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-14 |
 | [`d09a848`](https://github.com/matthewmackes/map2-audio/commit/d09a84818d8d35ebf3c762d43bdf83de5473af3b) | feat: add auto-updating README showcase with GitHub Actions | Map2 Audio | 2026-02-14 |
 | [`7e8d404`](https://github.com/matthewmackes/map2-audio/commit/7e8d404f4881aec108fb22773ad361fb500e92e2) | fix(avb): fail fast when engine stream lifecycle hooks ar... | Map2 Audio | 2026-02-14 |
 | [`1399772`](https://github.com/matthewmackes/map2-audio/commit/139977278ac2278095673bcfb24d46a37d458332) | feat(flow): replenish minimum standby assignment after fa... | Map2 Audio | 2026-02-14 |
-| [`2c4a0cd`](https://github.com/matthewmackes/map2-audio/commit/2c4a0cd7833381552101630d6efd09913255d526) | fix(flow): commit failover promotion only after activatio... | Map2 Audio | 2026-02-14 |
-| [`60e7be3`](https://github.com/matthewmackes/map2-audio/commit/60e7be33f107f79001166aab77965c106c79a025) | feat(flow): enforce deploy semantics and report standby d... | Map2 Audio | 2026-02-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
