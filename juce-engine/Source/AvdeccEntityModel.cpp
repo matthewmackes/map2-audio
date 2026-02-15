@@ -413,21 +413,36 @@ bool EntityModel::isComplete() const {
         uint16_t config_idx = entity_.current_configuration;
 
         switch (static_cast<DescriptorType>(count.descriptor_type)) {
-            case DescriptorType::STREAM_INPUT:
-                if (stream_inputs_[config_idx].size() != count.count) return false;
+            case DescriptorType::STREAM_INPUT: {
+                auto it = stream_inputs_.find(config_idx);
+                size_t actual = (it != stream_inputs_.end()) ? it->second.size() : 0;
+                if (actual != count.count) return false;
                 break;
-            case DescriptorType::STREAM_OUTPUT:
-                if (stream_outputs_[config_idx].size() != count.count) return false;
+            }
+            case DescriptorType::STREAM_OUTPUT: {
+                auto it = stream_outputs_.find(config_idx);
+                size_t actual = (it != stream_outputs_.end()) ? it->second.size() : 0;
+                if (actual != count.count) return false;
                 break;
-            case DescriptorType::AVB_INTERFACE:
-                if (avb_interfaces_[config_idx].size() != count.count) return false;
+            }
+            case DescriptorType::AVB_INTERFACE: {
+                auto it = avb_interfaces_.find(config_idx);
+                size_t actual = (it != avb_interfaces_.end()) ? it->second.size() : 0;
+                if (actual != count.count) return false;
                 break;
-            case DescriptorType::CLOCK_SOURCE:
-                if (clock_sources_[config_idx].size() != count.count) return false;
+            }
+            case DescriptorType::CLOCK_SOURCE: {
+                auto it = clock_sources_.find(config_idx);
+                size_t actual = (it != clock_sources_.end()) ? it->second.size() : 0;
+                if (actual != count.count) return false;
                 break;
-            case DescriptorType::AUDIO_UNIT:
-                if (audio_units_[config_idx].size() != count.count) return false;
+            }
+            case DescriptorType::AUDIO_UNIT: {
+                auto it = audio_units_.find(config_idx);
+                size_t actual = (it != audio_units_.end()) ? it->second.size() : 0;
+                if (actual != count.count) return false;
                 break;
+            }
             default:
                 // Ignore other descriptor types for now
                 break;
@@ -460,36 +475,46 @@ std::vector<std::string> EntityModel::getMissingDescriptors() const {
         size_t actual_count = 0;
 
         switch (static_cast<DescriptorType>(count.descriptor_type)) {
-            case DescriptorType::STREAM_INPUT:
-                actual_count = stream_inputs_[config_idx].size();
+            case DescriptorType::STREAM_INPUT: {
+                auto it = stream_inputs_.find(config_idx);
+                actual_count = (it != stream_inputs_.end()) ? it->second.size() : 0;
                 if (actual_count < count.count) {
                     missing.push_back("STREAM_INPUT (expected " + std::to_string(count.count) + ", got " + std::to_string(actual_count) + ")");
                 }
                 break;
-            case DescriptorType::STREAM_OUTPUT:
-                actual_count = stream_outputs_[config_idx].size();
+            }
+            case DescriptorType::STREAM_OUTPUT: {
+                auto it = stream_outputs_.find(config_idx);
+                actual_count = (it != stream_outputs_.end()) ? it->second.size() : 0;
                 if (actual_count < count.count) {
                     missing.push_back("STREAM_OUTPUT (expected " + std::to_string(count.count) + ", got " + std::to_string(actual_count) + ")");
                 }
                 break;
-            case DescriptorType::AVB_INTERFACE:
-                actual_count = avb_interfaces_[config_idx].size();
+            }
+            case DescriptorType::AVB_INTERFACE: {
+                auto it = avb_interfaces_.find(config_idx);
+                actual_count = (it != avb_interfaces_.end()) ? it->second.size() : 0;
                 if (actual_count < count.count) {
                     missing.push_back("AVB_INTERFACE (expected " + std::to_string(count.count) + ", got " + std::to_string(actual_count) + ")");
                 }
                 break;
-            case DescriptorType::CLOCK_SOURCE:
-                actual_count = clock_sources_[config_idx].size();
+            }
+            case DescriptorType::CLOCK_SOURCE: {
+                auto it = clock_sources_.find(config_idx);
+                actual_count = (it != clock_sources_.end()) ? it->second.size() : 0;
                 if (actual_count < count.count) {
                     missing.push_back("CLOCK_SOURCE (expected " + std::to_string(count.count) + ", got " + std::to_string(actual_count) + ")");
                 }
                 break;
-            case DescriptorType::AUDIO_UNIT:
-                actual_count = audio_units_[config_idx].size();
+            }
+            case DescriptorType::AUDIO_UNIT: {
+                auto it = audio_units_.find(config_idx);
+                actual_count = (it != audio_units_.end()) ? it->second.size() : 0;
                 if (actual_count < count.count) {
                     missing.push_back("AUDIO_UNIT (expected " + std::to_string(count.count) + ", got " + std::to_string(actual_count) + ")");
                 }
                 break;
+            }
             default:
                 break;
         }
@@ -537,8 +562,8 @@ juce::var EntityModel::toJSON() const {
     // Entity info
     obj->setProperty("entity_id", juce::String::toHexString(static_cast<int64_t>(entity_.entity_id)));
     obj->setProperty("entity_model_id", juce::String::toHexString(static_cast<int64_t>(entity_.entity_model_id)));
-    obj->setProperty("entity_name", entity_.entity_name.value);
-    obj->setProperty("firmware_version", entity_.firmware_version.value);
+    obj->setProperty("entity_name", juce::String(entity_.entity_name.value));
+    obj->setProperty("firmware_version", juce::String(entity_.firmware_version.value));
 
     // Stats
     auto stats = getStats();
@@ -652,8 +677,8 @@ juce::var EntityModelCache::toJSON() const {
     return json;
 }
 
-EntityModelCache EntityModelCache::fromJSON(const juce::var& json) {
-    EntityModelCache cache;
+std::unique_ptr<EntityModelCache> EntityModelCache::fromJSON(const juce::var& json) {
+    auto cache = std::make_unique<EntityModelCache>();
     // TODO: Implement deserialization in Phase 10
     return cache;
 }

@@ -11,7 +11,7 @@
 
 #ifdef HAS_AVDECC
 
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
 #include <array>
 #include <cstdint>
 #include <string>

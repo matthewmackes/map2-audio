@@ -316,7 +316,7 @@ void AvbAudioIODevice::audioDeviceIOCallbackWithContext(
                     float value = outputChannelData[ch][sample];
                     if (!outputRingBuffer_->push(value)) {
                         // Ring buffer full - underrun
-                        avbStream_->getStats().underruns.fetch_add(1, std::memory_order_relaxed);
+                        avbStream_->getMutableStats().underruns.fetch_add(1, std::memory_order_relaxed);
                     }
                 }
             }
@@ -332,7 +332,7 @@ void AvbAudioIODevice::audioDeviceIOCallbackWithContext(
                     float value = 0.0f;
                     if (!inputRingBuffer_->pop(value)) {
                         // Ring buffer empty - overrun
-                        avbStream_->getStats().overruns.fetch_add(1, std::memory_order_relaxed);
+                        avbStream_->getMutableStats().overruns.fetch_add(1, std::memory_order_relaxed);
                     }
                     const_cast<float*>(inputChannelData[ch])[sample] = value;
                 }
@@ -396,7 +396,7 @@ void AvbAudioIODevice::networkThreadMain() {
 
                 if (samplesWritten < samplesReceived) {
                     // Ring buffer full - overrun
-                    avbStream_->getStats().overruns.fetch_add(1, std::memory_order_relaxed);
+                    avbStream_->getMutableStats().overruns.fetch_add(1, std::memory_order_relaxed);
                 }
             }
 

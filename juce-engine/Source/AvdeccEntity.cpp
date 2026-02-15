@@ -6,6 +6,9 @@
 
 #include "AvdeccEntity.h"
 #include "AvdeccEnumerator.h"
+#ifdef HAS_AVB
+#include "AvbStream.h"
+#endif
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -38,7 +41,7 @@ uint64_t macToEui64(const std::array<uint8_t, 6>& mac) {
 }
 
 // Get MAC address from interface name
-bool getMacAddress(const std::string& interface, std::array<uint8_t, 6>& mac) {
+bool fetchMacAddress(const std::string& interface, std::array<uint8_t, 6>& mac) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
         return false;
@@ -125,6 +128,16 @@ uint64_t readU64(const uint8_t* src) {
 
 } // anonymous namespace
 
+// Helper: juce::Thread subclass that runs a std::function
+class LambdaThread : public juce::Thread {
+public:
+    LambdaThread(const juce::String& name, std::function<void()> fn)
+        : juce::Thread(name), func_(std::move(fn)) {}
+    void run() override { func_(); }
+private:
+    std::function<void()> func_;
+};
+
 // ============================================================================
 // AvdeccEntity Implementation
 // ============================================================================
@@ -148,7 +161,7 @@ AvdeccEntity::AvdeccEntity(const juce::String& interfaceName,
       running_(false)
 {
     // Get MAC address from interface
-    if (!getMacAddress(interfaceName.toStdString(), mac_address_)) {
+    if (!fetchMacAddress(interfaceName.toStdString(), mac_address_)) {
         jassertfalse;
         DBG("Failed to get MAC address for interface: " << interfaceName);
         return;
@@ -203,14 +216,14 @@ bool AvdeccEntity::start() {
     running_.store(true, std::memory_order_release);
 
     // Start threads
-    adp_thread_ = std::make_unique<juce::Thread>("AVDECC ADP");
-    adp_thread_->startThread([this]() { adpThread(); });
+    adp_thread_ = std::make_unique<LambdaThread>("AVDECC ADP", [this]() { adpThread(); });
+    adp_thread_->startThread();
 
-    acmp_thread_ = std::make_unique<juce::Thread>("AVDECC ACMP");
-    acmp_thread_->startThread([this]() { acmpThread(); });
+    acmp_thread_ = std::make_unique<LambdaThread>("AVDECC ACMP", [this]() { acmpThread(); });
+    acmp_thread_->startThread();
 
-    receive_thread_ = std::make_unique<juce::Thread>("AVDECC RX");
-    receive_thread_->startThread([this]() { receiveThread(); });
+    receive_thread_ = std::make_unique<LambdaThread>("AVDECC RX", [this]() { receiveThread(); });
+    receive_thread_->startThread();
 
     // Send initial entity available
     sendEntityAvailable();
@@ -354,7 +367,7 @@ void AvdeccEntity::sendEntityDeparting() {
     adp_tx_count_.fetch_add(1, std::memory_order_relaxed);
 }
 
-AdpPdu AvdeccEntity::buildAdpEntityAvailable() const {
+AdpPdu AvdeccEntity::buildAdpEntityAvailable() {
     AdpPdu pdu;
     std::memset(&pdu, 0, sizeof(pdu));
 
@@ -391,7 +404,7 @@ AdpPdu AvdeccEntity::buildAdpEntityAvailable() const {
     return pdu;
 }
 
-AdpPdu AvdeccEntity::buildAdpEntityDeparting() const {
+AdpPdu AvdeccEntity::buildAdpEntityDeparting() {
     AdpPdu pdu = buildAdpEntityAvailable();
 
     // Change message type to DEPARTING
@@ -416,13 +429,16 @@ void AvdeccEntity::acmpThread() {
             enumerator_->update();
         }
 
+        // Phase 11: Expire stale pending ACMP commands
+        expirePendingCommands();
+
         juce::Thread::sleep(100);  // 100ms interval for responsive timeout handling
     }
 }
 
 bool AvdeccEntity::connectStream(uint64_t talker_entity_id, uint16_t talker_unique_id,
                                  uint64_t listener_entity_id, uint16_t listener_unique_id) {
-    // Build CONNECT_TX_COMMAND
+    // Build CONNECT_TX_COMMAND (IEEE 1722.1 Clause 8.2.2.5.2.2)
     AcmpPdu pdu;
     std::memset(&pdu, 0, sizeof(pdu));
 
@@ -431,6 +447,10 @@ bool AvdeccEntity::connectStream(uint64_t talker_entity_id, uint16_t talker_uniq
     writeU16(reinterpret_cast<uint8_t*>(&pdu.header.message_type),
              static_cast<uint16_t>(Avdecc::AcmpMessageType::CONNECT_TX_COMMAND));
 
+    // control_data_length for ACMP = 44 bytes (after common header)
+    pdu.header.valid_time_control_data_length[0] = 0;
+    pdu.header.valid_time_control_data_length[1] = 44;
+
     writeU64(pdu.header.entity_id, entity_id_);  // Controller ID
     writeU64(pdu.controller_entity_id, entity_id_);
     writeU64(pdu.talker_entity_id, talker_entity_id);
@@ -438,33 +458,100 @@ bool AvdeccEntity::connectStream(uint64_t talker_entity_id, uint16_t talker_uniq
 
     pdu.talker_unique_id = htons(talker_unique_id);
     pdu.listener_unique_id = htons(listener_unique_id);
-    pdu.sequence_id = htons(acmp_sequence_.fetch_add(1, std::memory_order_relaxed));
+
+    uint16_t seq = acmp_sequence_.fetch_add(1, std::memory_order_relaxed);
+    pdu.sequence_id = htons(seq);
+
+    // Register pending command before sending
+    {
+        juce::ScopedLock lock(state_mutex_);
+        PendingAcmpCommand pending;
+        pending.sequence_id = seq;
+        pending.command_type = Avdecc::AcmpMessageType::CONNECT_TX_COMMAND;
+        pending.talker_entity_id = talker_entity_id;
+        pending.talker_unique_id = talker_unique_id;
+        pending.listener_entity_id = listener_entity_id;
+        pending.listener_unique_id = listener_unique_id;
+        pending.sent_time = std::chrono::steady_clock::now();
+        pending.completed = false;
+        pending.result_status = Avdecc::AcmpStatus::NOT_SUPPORTED;
+        pending.result_dest_mac = {};
+        pending.result_vlan_id = 0;
+        pending.result_stream_id = 0;
+        pending_acmp_commands_.push_back(pending);
+    }
 
     // Send to ACMP multicast
-    if (sendMessage(&pdu, sizeof(pdu), Avdecc::ACMP_MULTICAST_MAC)) {
-        acmp_tx_count_.fetch_add(1, std::memory_order_relaxed);
+    if (!sendMessage(&pdu, sizeof(pdu), Avdecc::ACMP_MULTICAST_MAC)) {
+        // Remove pending on send failure
+        juce::ScopedLock lock(state_mutex_);
+        pending_acmp_commands_.erase(
+            std::remove_if(pending_acmp_commands_.begin(), pending_acmp_commands_.end(),
+                          [seq](const PendingAcmpCommand& p) { return p.sequence_id == seq; }),
+            pending_acmp_commands_.end());
+        return false;
+    }
 
-        // TODO: Wait for response and verify success
-        // For now, optimistically add to connections
+    acmp_tx_count_.fetch_add(1, std::memory_order_relaxed);
+
+    // Wait for response (blocking, up to 2s)
+    PendingAcmpCommand result;
+    if (!waitForAcmpResponse(seq, result, 2000)) {
+        DBG("ACMP CONNECT_TX_COMMAND timed out (seq=" << seq << ")");
+        return false;
+    }
+
+    if (result.result_status != Avdecc::AcmpStatus::SUCCESS) {
+        DBG("ACMP CONNECT_TX failed: status=" << static_cast<int>(result.result_status));
+        return false;
+    }
+
+    // Add verified connection with response data
+    {
         juce::ScopedLock lock(state_mutex_);
         AvdeccConnection conn;
         conn.talker_entity_id = talker_entity_id;
         conn.talker_unique_id = talker_unique_id;
         conn.listener_entity_id = listener_entity_id;
         conn.listener_unique_id = listener_unique_id;
+        conn.stream_dest_mac = result.result_dest_mac;
+        conn.stream_vlan_id = result.result_vlan_id;
+        conn.stream_id = result.result_stream_id;
+        conn.connection_count = 1;
         conn.connected = true;
         conn.established_time = std::chrono::steady_clock::now();
         active_connections_.push_back(conn);
-
-        return true;
     }
 
-    return false;
+    DBG("ACMP stream connected: talker=" << juce::String::toHexString((int64_t)talker_entity_id)
+        << " listener=" << juce::String::toHexString((int64_t)listener_entity_id));
+
+    // Phase 11: Log AvbStream creation readiness for Phase 13 integration
+    #ifdef HAS_AVB
+    {
+        // Determine our role: if listener_entity_id matches us, we are the listener
+        const char* role = (listener_entity_id == entity_id_) ? "listener" : "talker";
+        DBG("AvbStream ready for creation: streamId="
+            << juce::String::toHexString((int64_t)result.result_stream_id)
+            << " role=" << role
+            << " destMac=" << juce::String::toHexString(result.result_dest_mac[0])
+            << ":" << juce::String::toHexString(result.result_dest_mac[1])
+            << ":" << juce::String::toHexString(result.result_dest_mac[2])
+            << ":" << juce::String::toHexString(result.result_dest_mac[3])
+            << ":" << juce::String::toHexString(result.result_dest_mac[4])
+            << ":" << juce::String::toHexString(result.result_dest_mac[5]));
+        // Note: Full AvbStream creation + AvbAudioIODevice routing is Phase 13 work.
+        // The connection data (dest_mac, vlan_id, stream_id) is stored in active_connections_
+        // and available via getActiveConnections() for the audio device to use.
+    }
+    #endif
+
+    return true;
 }
 
 bool AvdeccEntity::disconnectStream(uint64_t talker_entity_id, uint16_t talker_unique_id,
                                     uint64_t listener_entity_id, uint16_t listener_unique_id) {
-    // Build DISCONNECT_TX_COMMAND
+    // Build DISCONNECT_TX_COMMAND (IEEE 1722.1 Clause 8.2.2.5.2.4)
     AcmpPdu pdu;
     std::memset(&pdu, 0, sizeof(pdu));
 
@@ -473,6 +560,9 @@ bool AvdeccEntity::disconnectStream(uint64_t talker_entity_id, uint16_t talker_u
     writeU16(reinterpret_cast<uint8_t*>(&pdu.header.message_type),
              static_cast<uint16_t>(Avdecc::AcmpMessageType::DISCONNECT_TX_COMMAND));
 
+    pdu.header.valid_time_control_data_length[0] = 0;
+    pdu.header.valid_time_control_data_length[1] = 44;
+
     writeU64(pdu.header.entity_id, entity_id_);
     writeU64(pdu.controller_entity_id, entity_id_);
     writeU64(pdu.talker_entity_id, talker_entity_id);
@@ -480,12 +570,60 @@ bool AvdeccEntity::disconnectStream(uint64_t talker_entity_id, uint16_t talker_u
 
     pdu.talker_unique_id = htons(talker_unique_id);
     pdu.listener_unique_id = htons(listener_unique_id);
-    pdu.sequence_id = htons(acmp_sequence_.fetch_add(1, std::memory_order_relaxed));
 
-    if (sendMessage(&pdu, sizeof(pdu), Avdecc::ACMP_MULTICAST_MAC)) {
-        acmp_tx_count_.fetch_add(1, std::memory_order_relaxed);
+    uint16_t seq = acmp_sequence_.fetch_add(1, std::memory_order_relaxed);
+    pdu.sequence_id = htons(seq);
 
-        // Remove from active connections
+    // Copy stream_dest_mac from existing connection if available
+    {
+        juce::ScopedLock lock(state_mutex_);
+        for (const auto& c : active_connections_) {
+            if (c.talker_entity_id == talker_entity_id &&
+                c.talker_unique_id == talker_unique_id &&
+                c.listener_entity_id == listener_entity_id &&
+                c.listener_unique_id == listener_unique_id) {
+                std::memcpy(pdu.stream_dest_mac, c.stream_dest_mac.data(), 6);
+                break;
+            }
+        }
+
+        // Register pending command
+        PendingAcmpCommand pending;
+        pending.sequence_id = seq;
+        pending.command_type = Avdecc::AcmpMessageType::DISCONNECT_TX_COMMAND;
+        pending.talker_entity_id = talker_entity_id;
+        pending.talker_unique_id = talker_unique_id;
+        pending.listener_entity_id = listener_entity_id;
+        pending.listener_unique_id = listener_unique_id;
+        pending.sent_time = std::chrono::steady_clock::now();
+        pending.completed = false;
+        pending.result_status = Avdecc::AcmpStatus::NOT_SUPPORTED;
+        pending.result_dest_mac = {};
+        pending.result_vlan_id = 0;
+        pending.result_stream_id = 0;
+        pending_acmp_commands_.push_back(pending);
+    }
+
+    if (!sendMessage(&pdu, sizeof(pdu), Avdecc::ACMP_MULTICAST_MAC)) {
+        juce::ScopedLock lock(state_mutex_);
+        pending_acmp_commands_.erase(
+            std::remove_if(pending_acmp_commands_.begin(), pending_acmp_commands_.end(),
+                          [seq](const PendingAcmpCommand& p) { return p.sequence_id == seq; }),
+            pending_acmp_commands_.end());
+        return false;
+    }
+
+    acmp_tx_count_.fetch_add(1, std::memory_order_relaxed);
+
+    // Wait for response
+    PendingAcmpCommand result;
+    if (!waitForAcmpResponse(seq, result, 2000)) {
+        DBG("ACMP DISCONNECT_TX_COMMAND timed out (seq=" << seq << ")");
+        // Still remove connection on timeout (best effort)
+    }
+
+    // Remove from active connections regardless of response
+    {
         juce::ScopedLock lock(state_mutex_);
         active_connections_.erase(
             std::remove_if(active_connections_.begin(), active_connections_.end(),
@@ -496,11 +634,12 @@ bool AvdeccEntity::disconnectStream(uint64_t talker_entity_id, uint16_t talker_u
                                      c.listener_unique_id == listener_unique_id;
                           }),
             active_connections_.end());
-
-        return true;
     }
 
-    return false;
+    DBG("ACMP stream disconnected: talker=" << juce::String::toHexString((int64_t)talker_entity_id)
+        << " listener=" << juce::String::toHexString((int64_t)listener_entity_id));
+
+    return true;
 }
 
 std::vector<AvdeccConnection> AvdeccEntity::getActiveConnections() const {
@@ -639,14 +778,106 @@ void AvdeccEntity::handleAdpMessage(const AdpPdu& pdu, const std::array<uint8_t,
 
 void AvdeccEntity::handleAcmpMessage(const AcmpPdu& pdu) {
     uint16_t msg_type = readU16(reinterpret_cast<const uint8_t*>(&pdu.header.message_type));
+    uint16_t seq_id = ntohs(pdu.sequence_id);
 
-    // We primarily handle commands if we're a talker/listener
-    // For now, just log responses
+    // Extract status from the status field in header
+    // IEEE 1722.1: status is in bits 15:11 of status_control_data_length
+    uint16_t status_cdl = readU16(pdu.header.valid_time_control_data_length);
+    Avdecc::AcmpStatus status = static_cast<Avdecc::AcmpStatus>((status_cdl >> 11) & 0x1F);
+
+    // Handle response types by matching with pending commands
     if (msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::CONNECT_TX_RESPONSE) ||
-        msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::DISCONNECT_TX_RESPONSE)) {
-        // TODO: Match with pending command by sequence_id
-        DBG("Received ACMP response: " << msg_type);
+        msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::DISCONNECT_TX_RESPONSE) ||
+        msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::CONNECT_RX_RESPONSE) ||
+        msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::DISCONNECT_RX_RESPONSE) ||
+        msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::GET_TX_STATE_RESPONSE) ||
+        msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::GET_RX_STATE_RESPONSE)) {
+
+        juce::ScopedLock lock(state_mutex_);
+
+        // Find pending command by sequence_id
+        for (auto& pending : pending_acmp_commands_) {
+            if (pending.sequence_id == seq_id && !pending.completed) {
+                pending.completed = true;
+                pending.result_status = status;
+
+                // Extract stream info from response
+                std::memcpy(pending.result_dest_mac.data(), pdu.stream_dest_mac, 6);
+                pending.result_vlan_id = ntohs(pdu.stream_vlan_id);
+
+                // Stream ID is from header entity_id field in responses
+                pending.result_stream_id = readU64(pdu.header.entity_id);
+
+                DBG("ACMP response matched: seq=" << seq_id
+                    << " type=" << msg_type
+                    << " status=" << static_cast<int>(status));
+                return;
+            }
+        }
+
+        DBG("ACMP response unmatched: seq=" << seq_id << " type=" << msg_type);
     }
+
+    // Handle incoming ACMP commands (when we are a talker or listener)
+    if (msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::CONNECT_TX_COMMAND)) {
+        // We are being asked to be a talker - build response
+        AcmpPdu response = buildAcmpConnectResponse(pdu, Avdecc::AcmpStatus::SUCCESS);
+        sendMessage(&response, sizeof(response), Avdecc::ACMP_MULTICAST_MAC);
+        acmp_tx_count_.fetch_add(1, std::memory_order_relaxed);
+
+        DBG("Responded to CONNECT_TX_COMMAND as talker");
+    } else if (msg_type == static_cast<uint16_t>(Avdecc::AcmpMessageType::DISCONNECT_TX_COMMAND)) {
+        AcmpPdu response = buildAcmpConnectResponse(pdu, Avdecc::AcmpStatus::SUCCESS);
+        writeU16(reinterpret_cast<uint8_t*>(&response.header.message_type),
+                 static_cast<uint16_t>(Avdecc::AcmpMessageType::DISCONNECT_TX_RESPONSE));
+        sendMessage(&response, sizeof(response), Avdecc::ACMP_MULTICAST_MAC);
+        acmp_tx_count_.fetch_add(1, std::memory_order_relaxed);
+
+        DBG("Responded to DISCONNECT_TX_COMMAND as talker");
+    }
+}
+
+bool AvdeccEntity::waitForAcmpResponse(uint16_t sequence_id, PendingAcmpCommand& result,
+                                        int timeout_ms) {
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
+
+    while (std::chrono::steady_clock::now() < deadline) {
+        {
+            juce::ScopedLock lock(state_mutex_);
+            for (auto it = pending_acmp_commands_.begin(); it != pending_acmp_commands_.end(); ++it) {
+                if (it->sequence_id == sequence_id && it->completed) {
+                    result = *it;
+                    pending_acmp_commands_.erase(it);
+                    return true;
+                }
+            }
+        }
+        juce::Thread::sleep(10);  // Poll every 10ms
+    }
+
+    // Timed out - remove pending command
+    {
+        juce::ScopedLock lock(state_mutex_);
+        pending_acmp_commands_.erase(
+            std::remove_if(pending_acmp_commands_.begin(), pending_acmp_commands_.end(),
+                          [sequence_id](const PendingAcmpCommand& p) { return p.sequence_id == sequence_id; }),
+            pending_acmp_commands_.end());
+    }
+
+    return false;
+}
+
+void AvdeccEntity::expirePendingCommands() {
+    auto now = std::chrono::steady_clock::now();
+    juce::ScopedLock lock(state_mutex_);
+
+    pending_acmp_commands_.erase(
+        std::remove_if(pending_acmp_commands_.begin(), pending_acmp_commands_.end(),
+                      [now](const PendingAcmpCommand& p) {
+                          auto age = std::chrono::duration_cast<std::chrono::seconds>(now - p.sent_time);
+                          return age.count() > 5;  // Expire after 5 seconds
+                      }),
+        pending_acmp_commands_.end());
 }
 
 void AvdeccEntity::handleAecpMessage(const AecpPdu& pdu) {

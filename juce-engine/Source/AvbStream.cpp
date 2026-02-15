@@ -382,21 +382,8 @@ size_t AvbStream::convertFromAvtp(const uint8_t* pdu, size_t pduSize,
 // Statistics Methods
 // ============================================================================
 
-AvbStreamStats AvbStream::getStats() const {
-    // Copy atomic values (load with relaxed ordering - stats don't need strict consistency)
-    AvbStreamStats stats;
-    stats.framesSent.store(stats_.framesSent.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.framesReceived.store(stats_.framesReceived.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.sendErrors.store(stats_.sendErrors.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.receiveErrors.store(stats_.receiveErrors.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.underruns.store(stats_.underruns.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.overruns.store(stats_.overruns.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.timestampErrors.store(stats_.timestampErrors.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.sequenceErrors.store(stats_.sequenceErrors.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.bytesTransferred.store(stats_.bytesTransferred.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.maxLatencyNs.store(stats_.maxLatencyNs.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    stats.minLatencyNs.store(stats_.minLatencyNs.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    return stats;
+AvbStreamStatsSnapshot AvbStream::getStats() const {
+    return stats_.snapshot();
 }
 
 void AvbStream::resetStats() {

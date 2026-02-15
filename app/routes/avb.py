@@ -11,8 +11,10 @@ All endpoints return available=false gracefully when AVB is disabled or hardware
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, Optional
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
 
 from app.config import config_get
 from app.services.avb import is_avb_available
@@ -1265,3 +1267,177 @@ async def get_aem_cache_stats() -> Dict[str, Any]:
         return {
             "error": f"Internal error: {str(e)}"
         }
+
+
+# ============================================================================
+# AVDECC Stream Connection Management (Phase 11 - ACMP)
+# ============================================================================
+
+class StreamConnectionRequest(BaseModel):
+    """Request to connect an AVTP stream between talker and listener."""
+    talker_entity_id: str  # Hex string (e.g., "001b21fffe123456")
+    talker_stream_index: int  # 0-based stream index
+    listener_entity_id: str  # Hex string
+    listener_stream_index: int  # 0-based stream index
+
+
+def _get_engine():
+    """Resolve the low-level C++ engine instance."""
+    from app.services.juce_engine_service import get_audio_engine
+
+    engine_service = get_audio_engine()
+    if not engine_service:
+        raise HTTPException(status_code=503, detail="Audio engine not available")
+
+    engine = getattr(engine_service, "_engine", None)
+    if engine is None:
+        raise HTTPException(status_code=503, detail="Audio engine not initialized")
+
+    return engine
+
+
+def _check_acmp_available(engine):
+    """Verify AVDECC and ACMP methods are available on the engine."""
+    if not _is_avdecc_enabled():
+        raise HTTPException(status_code=503, detail="AVDECC not enabled in configuration")
+
+    for method in ("connect_stream", "disconnect_stream", "get_active_connections"):
+        if not hasattr(engine, method):
+            raise HTTPException(
+                status_code=503,
+                detail=f"ACMP not available in engine build (missing {method})"
+            )
+
+
+@router.post("/avdecc/connections")
+async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
+    """
+    Connect an AVTP stream from talker to listener via ACMP.
+
+    Sends ACMP CONNECT_TX_COMMAND and waits for response (up to 2s).
+    On success, adds the connection to the active connections list.
+
+    Args:
+        req: StreamConnectionRequest with talker/listener entity IDs and stream indices
+
+    Returns:
+        Connection details including stream destination MAC and VLAN ID
+    """
+    engine = _get_engine()
+    _check_acmp_available(engine)
+
+    try:
+        talker_id = int(req.talker_entity_id, 16)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid talker entity ID: {req.talker_entity_id}")
+
+    try:
+        listener_id = int(req.listener_entity_id, 16)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid listener entity ID: {req.listener_entity_id}")
+
+    try:
+        success = await asyncio.to_thread(
+            engine.connect_stream,
+            talker_id,
+            req.talker_stream_index,
+            listener_id,
+            req.listener_stream_index
+        )
+    except Exception as e:
+        logger.error(f"ACMP connect_stream failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"ACMP connection failed: {e}")
+
+    if not success:
+        raise HTTPException(
+            status_code=500,
+            detail="ACMP connection failed (timeout or rejected by remote entity)"
+        )
+
+    connection_id = (
+        f"{req.talker_entity_id}:{req.talker_stream_index}"
+        f":{req.listener_entity_id}:{req.listener_stream_index}"
+    )
+
+    return {
+        "status": "connected",
+        "connection_id": connection_id,
+        "talker_entity_id": req.talker_entity_id,
+        "talker_stream_index": req.talker_stream_index,
+        "listener_entity_id": req.listener_entity_id,
+        "listener_stream_index": req.listener_stream_index,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.delete("/avdecc/connections/{connection_id}")
+async def disconnect_stream(connection_id: str) -> Dict[str, Any]:
+    """
+    Disconnect an AVTP stream via ACMP DISCONNECT_TX.
+
+    Connection ID format: "{talker_id}:{talker_idx}:{listener_id}:{listener_idx}"
+
+    Args:
+        connection_id: Composite connection identifier
+
+    Returns:
+        Disconnect confirmation
+    """
+    engine = _get_engine()
+    _check_acmp_available(engine)
+
+    parts = connection_id.split(":")
+    if len(parts) != 4:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid connection_id format. Expected: talker_id:talker_idx:listener_id:listener_idx"
+        )
+
+    try:
+        talker_id = int(parts[0], 16)
+        talker_idx = int(parts[1])
+        listener_id = int(parts[2], 16)
+        listener_idx = int(parts[3])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid hex/integer in connection_id")
+
+    try:
+        success = await asyncio.to_thread(
+            engine.disconnect_stream,
+            talker_id,
+            talker_idx,
+            listener_id,
+            listener_idx
+        )
+    except Exception as e:
+        logger.error(f"ACMP disconnect_stream failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"ACMP disconnect failed: {e}")
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Connection not found or disconnect failed")
+
+    return {
+        "status": "disconnected",
+        "connection_id": connection_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/avdecc/connections")
+async def get_active_connections() -> List[Dict[str, Any]]:
+    """
+    List all active ACMP stream connections.
+
+    Returns:
+        List of active connections with talker/listener info and stream details
+    """
+    engine = _get_engine()
+    _check_acmp_available(engine)
+
+    try:
+        connections = await asyncio.to_thread(engine.get_active_connections)
+    except Exception as e:
+        logger.error(f"get_active_connections failed: {e}", exc_info=True)
+        return []
+
+    return connections

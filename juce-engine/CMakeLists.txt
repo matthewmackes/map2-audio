@@ -158,7 +158,7 @@ endif()
 # ========================================
 option(USE_AVB "Enable AVB/TSN network audio transport" OFF)
 if(USE_AVB)
-    pkg_check_modules(AVTP libavtp QUIET)
+    pkg_check_modules(AVTP avtp QUIET)
     pkg_check_modules(LIBCAP libcap QUIET)
 
     if(AVTP_FOUND AND LIBCAP_FOUND)

@@ -1053,6 +1053,7 @@ public:
 #ifdef HAS_AVDECC
     // AVDECC Entity accessor (Phase 10)
     Map2Audio::AvdeccEntity* getAvdeccEntity() { return avdeccEntity_.get(); }
+    const Map2Audio::AvdeccEntity* getAvdeccEntity() const { return avdeccEntity_.get(); }
 #endif
 
 private:

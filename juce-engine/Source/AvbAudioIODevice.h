@@ -216,7 +216,7 @@ private:
         float* const* outputChannelData,
         int numOutputChannels,
         int numSamples,
-        const juce::AudioIODeviceCallbackContext& context) override;
+        const juce::AudioIODeviceCallbackContext& context);
 
     /**
      * Get PTP timestamp (nanoseconds since epoch).

@@ -52,6 +52,23 @@ struct AvbStreamConfig {
 };
 
 /**
+ * Plain snapshot of AVB stream statistics (copyable, for return values)
+ */
+struct AvbStreamStatsSnapshot {
+    uint64_t framesSent{0};
+    uint64_t framesReceived{0};
+    uint64_t sendErrors{0};
+    uint64_t receiveErrors{0};
+    uint64_t underruns{0};
+    uint64_t overruns{0};
+    uint64_t timestampErrors{0};
+    uint64_t sequenceErrors{0};
+    uint64_t bytesTransferred{0};
+    int64_t maxLatencyNs{0};
+    int64_t minLatencyNs{INT64_MAX};
+};
+
+/**
  * AVB Stream Statistics (all atomic for lock-free access)
  */
 struct AvbStreamStats {
@@ -66,6 +83,22 @@ struct AvbStreamStats {
     std::atomic<uint64_t> bytesTransferred{0};
     std::atomic<int64_t> maxLatencyNs{0};      // Maximum observed latency
     std::atomic<int64_t> minLatencyNs{INT64_MAX};
+
+    AvbStreamStatsSnapshot snapshot() const {
+        return {
+            framesSent.load(std::memory_order_relaxed),
+            framesReceived.load(std::memory_order_relaxed),
+            sendErrors.load(std::memory_order_relaxed),
+            receiveErrors.load(std::memory_order_relaxed),
+            underruns.load(std::memory_order_relaxed),
+            overruns.load(std::memory_order_relaxed),
+            timestampErrors.load(std::memory_order_relaxed),
+            sequenceErrors.load(std::memory_order_relaxed),
+            bytesTransferred.load(std::memory_order_relaxed),
+            maxLatencyNs.load(std::memory_order_relaxed),
+            minLatencyNs.load(std::memory_order_relaxed)
+        };
+    }
 };
 
 /**
@@ -132,7 +165,8 @@ public:
     /**
      * Get stream statistics (lock-free, safe from any thread).
      */
-    AvbStreamStats getStats() const;
+    AvbStreamStatsSnapshot getStats() const;
+    AvbStreamStats& getMutableStats() { return stats_; }
 
     /**
      * Reset statistics counters.

@@ -3875,8 +3875,8 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 d["firmware_version"] = entity.firmware_version;
                 d["group_name"] = entity.group_name;
                 d["serial_number"] = entity.serial_number;
-                d["vendor_id"] = entity.vendor_id;
-                d["model_id"] = entity.model_id;
+                d["vendor_id"] = (uint32_t)(entity.entity_model_id >> 40);
+                d["model_id"] = (uint64_t)(entity.entity_model_id & 0xFFFFFFFFFF);
                 d["available"] = entity.available;
                 d["has_model"] = (entity.model_ != nullptr);
                 entities.append(d);
@@ -3906,6 +3906,80 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return py::none();
         }, py::arg("entity_id"),
            "Get complete entity model as JSON dict")
+
+        // ========================================
+        // AVDECC ACMP Methods (Phase 11)
+        // ========================================
+
+        .def("connect_stream", [](Map2AudioEngine& self,
+                                  uint64_t talker_entity_id,
+                                  uint16_t talker_stream_index,
+                                  uint64_t listener_entity_id,
+                                  uint16_t listener_stream_index) -> bool {
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) return false;
+
+            return avdecc->connectStream(
+                talker_entity_id,
+                talker_stream_index,
+                listener_entity_id,
+                listener_stream_index
+            );
+        }, py::arg("talker_entity_id"), py::arg("talker_stream_index"),
+           py::arg("listener_entity_id"), py::arg("listener_stream_index"),
+           "Connect AVTP stream via ACMP CONNECT_TX_COMMAND")
+
+        .def("disconnect_stream", [](Map2AudioEngine& self,
+                                     uint64_t talker_entity_id,
+                                     uint16_t talker_stream_index,
+                                     uint64_t listener_entity_id,
+                                     uint16_t listener_stream_index) -> bool {
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) return false;
+
+            return avdecc->disconnectStream(
+                talker_entity_id,
+                talker_stream_index,
+                listener_entity_id,
+                listener_stream_index
+            );
+        }, py::arg("talker_entity_id"), py::arg("talker_stream_index"),
+           py::arg("listener_entity_id"), py::arg("listener_stream_index"),
+           "Disconnect AVTP stream via ACMP DISCONNECT_TX_COMMAND")
+
+        .def("get_active_connections", [](const Map2AudioEngine& self) -> py::list {
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) return py::list();
+
+            py::list connections;
+            auto active = avdecc->getActiveConnections();
+
+            for (const auto& conn : active) {
+                py::dict d;
+                d["talker_entity_id"] = py::str(
+                    juce::String::toHexString((int64_t)conn.talker_entity_id).toStdString());
+                d["talker_unique_id"] = conn.talker_unique_id;
+                d["listener_entity_id"] = py::str(
+                    juce::String::toHexString((int64_t)conn.listener_entity_id).toStdString());
+                d["listener_unique_id"] = conn.listener_unique_id;
+                d["connected"] = conn.connected;
+                d["stream_vlan_id"] = conn.stream_vlan_id;
+                d["stream_id"] = py::str(
+                    juce::String::toHexString((int64_t)conn.stream_id).toStdString());
+
+                // Format dest MAC as string
+                char mac_str[18];
+                std::snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+                    conn.stream_dest_mac[0], conn.stream_dest_mac[1],
+                    conn.stream_dest_mac[2], conn.stream_dest_mac[3],
+                    conn.stream_dest_mac[4], conn.stream_dest_mac[5]);
+                d["stream_dest_mac"] = std::string(mac_str);
+
+                connections.append(d);
+            }
+
+            return connections;
+        }, "Get list of active ACMP stream connections")
         #endif
         ;
 

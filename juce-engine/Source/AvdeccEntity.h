@@ -16,7 +16,7 @@
 
 #ifdef HAS_AVDECC
 
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
 #include <atomic>
 #include <array>
 #include <cstdint>
@@ -30,6 +30,7 @@ namespace Map2Audio {
 // Forward declarations
 namespace Avdecc {
     class EntityModel;
+    class AvdeccEnumerator;
 }
 
 // ============================================================================
@@ -277,8 +278,25 @@ struct AvdeccConnection {
     std::array<uint8_t, 6> stream_dest_mac;
     uint16_t stream_vlan_id;
     uint16_t connection_count;
+    uint64_t stream_id;
     bool connected;
     std::chrono::steady_clock::time_point established_time;
+};
+
+// Pending ACMP command (for async response matching)
+struct PendingAcmpCommand {
+    uint16_t sequence_id;
+    Avdecc::AcmpMessageType command_type;
+    uint64_t talker_entity_id;
+    uint16_t talker_unique_id;
+    uint64_t listener_entity_id;
+    uint16_t listener_unique_id;
+    std::chrono::steady_clock::time_point sent_time;
+    bool completed;
+    Avdecc::AcmpStatus result_status;
+    std::array<uint8_t, 6> result_dest_mac;
+    uint16_t result_vlan_id;
+    uint64_t result_stream_id;
 };
 
 // ============================================================================
@@ -354,8 +372,8 @@ private:
     void handleAecpAemResponse(const AecpPdu& pdu);
 
     // Message builders
-    AdpPdu buildAdpEntityAvailable() const;
-    AdpPdu buildAdpEntityDeparting() const;
+    AdpPdu buildAdpEntityAvailable();
+    AdpPdu buildAdpEntityDeparting();
     AcmpPdu buildAcmpConnectResponse(const AcmpPdu& command, Avdecc::AcmpStatus status);
 
     // Utilities
@@ -388,10 +406,16 @@ private:
     std::unique_ptr<juce::Thread> acmp_thread_;
     std::unique_ptr<juce::Thread> receive_thread_;
 
+    // ACMP response matching
+    bool waitForAcmpResponse(uint16_t sequence_id, PendingAcmpCommand& result,
+                             int timeout_ms = 2000);
+    void expirePendingCommands();
+
     // State (protected by mutex)
     mutable juce::CriticalSection state_mutex_;
     std::vector<DiscoveredEntity> discovered_entities_;
     std::vector<AvdeccConnection> active_connections_;
+    std::vector<PendingAcmpCommand> pending_acmp_commands_;
 
     // Statistics (atomic)
     std::atomic<uint64_t> adp_tx_count_{0};

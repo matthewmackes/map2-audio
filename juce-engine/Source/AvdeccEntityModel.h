@@ -12,7 +12,7 @@
 #ifdef HAS_AVDECC
 
 #include "AvdeccDescriptors.h"
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
 #include <memory>
 #include <map>
 #include <optional>
@@ -138,7 +138,7 @@ public:
 
     // Persistence (for Phase 10)
     juce::var toJSON() const;
-    static EntityModelCache fromJSON(const juce::var& json);
+    static std::unique_ptr<EntityModelCache> fromJSON(const juce::var& json);
 
 private:
     std::map<uint64_t, EntityModel> models_;

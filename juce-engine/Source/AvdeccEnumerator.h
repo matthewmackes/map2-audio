@@ -21,9 +21,10 @@
 
 #ifdef HAS_AVDECC
 
+#include "AvdeccEntity.h"
 #include "AvdeccEntityModel.h"
 #include "AvdeccDescriptors.h"
-#include <JuceHeader.h>
+#include <juce_core/juce_core.h>
 #include <functional>
 #include <map>
 #include <queue>
@@ -33,8 +34,8 @@
 namespace Map2Audio {
 namespace Avdecc {
 
-// Forward declaration
-struct AecpPdu;
+// AecpPdu is defined in Map2Audio:: namespace (AvdeccEntity.h)
+using AecpPdu = ::Map2Audio::AecpPdu;
 
 // ============================================================================
 // AECP AEM Command Types (IEEE 1722.1-2013 Section 7.4)
