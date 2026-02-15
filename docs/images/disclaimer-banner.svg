@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="120" viewBox="0 0 900 120">
+  <rect width="900" height="120" fill="#0a0a0a"/>
+  <rect x="1" y="1" width="898" height="118" fill="none" stroke="#333333" stroke-width="1" rx="4"/>
+  <text x="450" y="42" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700" fill="#999999" letter-spacing="3">
+    EDUCATIONAL USE ONLY
+  </text>
+  <text x="450" y="68" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc">
+    This project is intended solely for educational and research purposes.
+  </text>
+  <text x="450" y="92" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc">
+    It is not production-ready software and is not a substitute for any commercial product.
+  </text>
+</svg>
