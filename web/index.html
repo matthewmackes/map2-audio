@@ -6,97 +6,20 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual" />
     <meta name="theme-color" content="#000000" />
-    <meta name="color-scheme" content="dark light" /> <!-- uses media queries in web views. -->
-    <meta name="description" content="Mackes Audio Platform 2 FEB2025 - Professional Guitar Effects Processor" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Mackes Audio Platform 2 FEB2026 - Professional Guitar Effects Processor" />
     <link rel="stylesheet" href="/css/roboto.css" />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="stylesheet" href="/css/modGui.css" />
     <style>
-        BODY {
-            background: #D0D0D0;
-        }
-    </style>
-
-    <style id="bgStyle">
-        BODY {
-            background: #333; 
+        body {
+            background: #0a0a0a;
             overscroll-behavior: none;
+            margin: 0;
         }
     </style>
-    <script>
-        function applyColorSchemeAfterLoad() {
-            const androidHosted = !!(window.AndroidHost);
-            let colorScheme = localStorage.getItem("colorScheme");
-
-            if (androidHosted) {
-                const hostColorScheme = window.AndroidHost.getThemePreference();
-                switch (hostColorScheme) {
-                    case 0:
-                        colorScheme = "Light";
-                        break;
-                    case 1:
-                        colorScheme = "Dark";
-                        break;
-                    case 2:
-                        colorScheme = window.AndroidHost.isDarkTheme() ? "Dark" : "Light";
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            if (!colorScheme) {
-                colorScheme = "Dark";
-            }
-
-            let darkMode = false;
-            let useSystem = false;
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-            switch (colorScheme) {
-                case "Light":
-                    darkMode = false;
-                    break;
-                case "Dark":
-                    darkMode = true;
-                    break;
-                case "System":
-                    useSystem = true;
-                    break;
-                case null:
-                default:
-                    darkMode = true;
-                    break;
-            }
-
-            if (useSystem) {
-                darkMode = prefersDark;
-            }
-
-            if (!darkMode) {
-                const bgStyle = document.getElementById("bgStyle");
-                if (bgStyle) {
-                    // Disable the style block for light mode.
-                    bgStyle.setAttribute('media', "max-width: 1px");
-                }
-            }
-        }
-
-        function removeHashOnLoad() {
-            if (!window.location.hash) return;
-            const newUrl = window.location.href.replace(window.location.hash, '');
-            history.replaceState(null, document.title, newUrl);
-        }
-
-        window.addEventListener('load', () => {
-            applyColorSchemeAfterLoad();
-            removeHashOnLoad();
-        }, { once: true });
-    </script>
-
-
-    <title>Mackes Audio Platform 2 FEB2025</title>
+    <title>Mackes Audio Platform 2</title>
 </head>
 
 <body>
@@ -105,4 +28,3 @@
 </body>
 
 </html>
-

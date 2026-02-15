@@ -669,10 +669,6 @@ export
 
     }
     updateResponsive() {
-        // functional, but disabled.
-        // let tinyToolBar_ = this.windowSize.height < 600;
-        // this.setState({ tinyToolBar: tinyToolBar_ });
-
         let height = this.windowSize.height;
 
         const ENTRY_HEIGHT = 48;

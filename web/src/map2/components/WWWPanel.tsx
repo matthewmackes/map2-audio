@@ -669,13 +669,9 @@ export default function WWWPanel() {
                   </List>
                 </CardContent>
                 <CardActions>
-                  <Tooltip title="SSL configuration requires certificate files. Use certbot or your hosting provider to manage certificates.">
-                    <span>
-                      <Button size="small" startIcon={<SettingsIcon />} disabled>
-                        Configure SSL
-                      </Button>
-                    </span>
-                  </Tooltip>
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+                    Use certbot or your hosting provider to manage SSL certificates.
+                  </Typography>
                 </CardActions>
               </Card>
             </Grid>
@@ -756,13 +752,9 @@ export default function WWWPanel() {
                   </List>
                 </CardContent>
                 <CardActions>
-                  <Tooltip title="Rate limiting requires a reverse proxy (nginx) or middleware configuration. Configure at the infrastructure level.">
-                    <span>
-                      <Button size="small" startIcon={<SettingsIcon />} disabled>
-                        Configure
-                      </Button>
-                    </span>
-                  </Tooltip>
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+                    Requires reverse proxy (nginx) or middleware configuration.
+                  </Typography>
                 </CardActions>
               </Card>
             </Grid>

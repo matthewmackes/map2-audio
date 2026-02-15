@@ -168,37 +168,3 @@ export function useMetricsStream(preferWebSocket: boolean = true) {
     isWebSocketConnected: wsConnection.isConnected,
   }
 }
-
-/**
- * Backend endpoint handler stub for WebSocket
- * This would be implemented in the Flask backend
- */
-export const setupMetricsWebSocketHandler = () => {
-  // Backend implementation would look like:
-  /*
-  @app.websocket('/ws/system/metrics')
-  async def metrics_stream(ws):
-      try:
-          while True:
-              # Send health overview every 2 seconds
-              health = await get_health_overview()
-              await ws.send(json.dumps({
-                  'type': 'health-overview',
-                  'data': health,
-                  'timestamp': time.time()
-              }))
-              
-              # Send disk health every 5 seconds (less frequently)
-              if int(time.time()) % 5 == 0:
-                  disk = await get_disk_health()
-                  await ws.send(json.dumps({
-                      'type': 'disk-health',
-                      'data': disk,
-                      'timestamp': time.time()
-                  }))
-              
-              await asyncio.sleep(2)
-      except Exception as e:
-          print(f"WebSocket error: {e}")
-  */
-}

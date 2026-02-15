@@ -1,3 +1,24 @@
+> [!IMPORTANT]
+> Most modern bands are already operating in a digital signal chain. Guitar modelers, digital mixers, drum triggers, MIDI controllers, in-ear systems-everything converts to digital almost immediately.
+>
+> Now extend that idea to its logical conclusion:
+>
+> Imagine a centralized digital audio backbone with sufficient I/O to handle the entire band simultaneously-microphones, line inputs, MIDI keyboards, drum triggers, amp modelers-everything. Every performer plugs into the same system. All routing, monitoring, processing, and recording happen inside a shared digital environment.
+>
+> No redundant interfaces. No repeated A/D and D/A conversions. No audio leaving and re-entering the digital domain.
+>
+> The signal path remains coherent, clocked, and lossless from input to archive. That's technically optimal.
+>
+> However, placing a full desktop DAW in every rehearsal room, studio, or performance space is expensive, fragile, and operationally heavy. A general-purpose PC introduces unnecessary overhead: OS maintenance, UI complexity, background processes, and failure points that have nothing to do with audio.
+>
+> This is where this system fits.
+>
+> It provides the core advantages of a unified digital environment-centralized I/O, shared routing, synchronized processing, direct capture-without the bulk and instability of a full computer-based DAW at every node.
+>
+> Think of it as a purpose-built digital audio infrastructure rather than a workstation. It's not "a DAW in every room." It's a shared, deterministic audio platform that the band plays into.
+>
+> Thank you - Matt
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/disclaimer-banner.svg" alt="Educational Use Only — This project is intended solely for educational and research purposes. It is not production-ready software and is not a substitute for any commercial product." width="700">
 </p>

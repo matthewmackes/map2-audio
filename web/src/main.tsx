@@ -3,13 +3,13 @@ import './index.css'
 import ErrorBoundary from './ErrorBoundary'
 import { initializeTheme } from './app/theme'
 
-// Initialize theme before rendering to prevent flash of wrong theme
-initializeTheme()
-
 const rootElement = document.getElementById('root')
 
 async function mountApp() {
   if (!rootElement) return
+
+  // Initialize theme after DOM is ready to avoid forced layout before stylesheets load
+  initializeTheme()
 
   const { App } = await import('./app/App')
   createRoot(rootElement).render(
@@ -22,8 +22,5 @@ async function mountApp() {
 if (document.readyState === 'complete') {
   void mountApp()
 } else {
-  const onLoad = () => {
-    void mountApp()
-  }
-  window.addEventListener('load', onLoad, { once: true })
+  window.addEventListener('load', () => void mountApp(), { once: true })
 }

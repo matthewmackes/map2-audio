@@ -1798,8 +1798,8 @@ export default function ChainBuilder() {
           <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
             <MidiMappingsPanel
               mappings={[]}
-              onEditMapping={(mapping) => console.log('Edit mapping:', mapping)}
-              onDeleteMapping={(id) => console.log('Delete mapping:', id)}
+              onEditMapping={() => {}}
+              onDeleteMapping={() => {}}
               onLearnMapping={() => {
                 setMidiLearnMode(true);
                 setMidiMappingsPanelOpen(false);

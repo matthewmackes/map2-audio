@@ -93,8 +93,8 @@ export function App() {
                   <Route path="/host-machine" element={<HostMachinePage />} />
                   <Route path="/cpu-performance" element={<CPUPerformancePage />} />
                   <Route path="/engine" element={<AudioEnginePage />} />
-                  <Route path="/metering" element={<Navigate to="/engine" replace />} />
-                  <Route path="/pipewire" element={<Navigate to="/engine" replace />} />
+                  <Route path="/metering" element={<MeteringPage />} />
+                  <Route path="/pipewire" element={<PipeWirePage />} />
                   <Route path="/welcome" element={<WelcomePage />} />
                   <Route path="/lcd" element={<LCDPage />} />
                   <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />

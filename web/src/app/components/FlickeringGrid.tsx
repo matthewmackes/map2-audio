@@ -25,31 +25,10 @@ export function FlickeringGrid({
   const [isInView, setIsInView] = useState(false)
   const [resolvedGridColor, setResolvedGridColor] = useState(color ?? '#3b82f6')
 
-  // Resolve theme color only after full page load to avoid forced layout
-  // warnings while stylesheets are still loading.
+  // Sync color prop; otherwise use the CSS --primary default (#3b82f6).
+  // Avoids getComputedStyle which forces layout before stylesheets load.
   useEffect(() => {
-    if (color) {
-      setResolvedGridColor(color)
-      return
-    }
-    if (typeof window === 'undefined') return
-
-    const resolveThemeColor = () => {
-      const cssColor = window
-        .getComputedStyle(document.documentElement)
-        .getPropertyValue('--primary')
-        .trim()
-      if (cssColor) setResolvedGridColor(cssColor)
-    }
-
-    if (document.readyState === 'complete') {
-      window.requestAnimationFrame(resolveThemeColor)
-      return
-    }
-
-    const onLoad = () => window.requestAnimationFrame(resolveThemeColor)
-    window.addEventListener('load', onLoad, { once: true })
-    return () => window.removeEventListener('load', onLoad)
+    if (color) setResolvedGridColor(color)
   }, [color])
 
   useEffect(() => {
