@@ -116,7 +116,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**544** Python | **603** TypeScript | **114** C++/H | **80** Docs | **160** total commits | **4** stars | **0** forks | **0** open issues
+**544** Python | **604** TypeScript | **114** C++/H | **80** Docs | **165** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -143,9 +143,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- GALLERY:START -->
 |  |  |  |
 | :---: | :---: | :---: |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_w12pyrw12pyrw12p.png" width="280" alt="Gemini Generated Image w12pyrw12pyrw12p"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_uo244quo244quo24.png" width="280" alt="Gemini Generated Image uo244quo244quo24"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_rvha5srvha5srvha.png" width="280" alt="Gemini Generated Image rvha5srvha5srvha"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Gemini_Generated_Image_ilsxcilsxcilsxci.png" width="280" alt="Gemini Generated Image ilsxcilsxcilsxci"> |
 <!-- GALLERY:END -->
 
 <p align="right"><em>Add screenshots to <code>docs/images/</code> and they appear here automatically.</em></p>
@@ -157,14 +157,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0a49230`](https://github.com/matthewmackes/map2-audio/commit/0a4923075bb985bb84bc21ae4c28f154b1b40f84) | Update MAP2_TOP_100_FEATURES.md | Matthew Mackes | 2026-02-15 |
+| [`3d8a2c0`](https://github.com/matthewmackes/map2-audio/commit/3d8a2c00269e825747dd211bfe554628f951adb0) | Clean up web frontend: simplify theme to dark-only, resto... | Map2 Audio | 2026-02-15 |
+| [`e4255e3`](https://github.com/matthewmackes/map2-audio/commit/e4255e333136bfb60bdb7b9b87a895c2e6758695) | Update web frontend: enhance cluster dashboard, 3D graph,... | Map2 Audio | 2026-02-15 |
+| [`237f1c8`](https://github.com/matthewmackes/map2-audio/commit/237f1c82fdc535fe9142513c2bd5148811daf770) | Add pending project files | Map2 Audio | 2026-02-15 |
+| [`d47411c`](https://github.com/matthewmackes/map2-audio/commit/d47411ce1e04ffea73ec02775912e1447fc5e72a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`6a62711`](https://github.com/matthewmackes/map2-audio/commit/6a627114ebeb8d311bbf91d2885e1f48c551f686) | docs: add educational disclaimer banner to README | Map2 Audio | 2026-02-15 |
 | [`d306540`](https://github.com/matthewmackes/map2-audio/commit/d306540ee0aa40bfb57cbaec326bfe3bc4f5ccb6) | Fix and complete About advanced menu implementation | Map2 Audio | 2026-02-15 |
 | [`81c6a8a`](https://github.com/matthewmackes/map2-audio/commit/81c6a8a7bdf4633ac96e1909cc0c37ef5df8ea2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
-| [`d77f06e`](https://github.com/matthewmackes/map2-audio/commit/d77f06ec092982220defb7525423d71911b62aaf) | docs: move 2 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-15 |
-| [`9f1020a`](https://github.com/matthewmackes/map2-audio/commit/9f1020a9cb81099805b182db11b116cd8148e834) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
-| [`fe57f69`](https://github.com/matthewmackes/map2-audio/commit/fe57f695c0cf15b4bd36f5b4bcaf797f93514a81) | fix: resolve Vite circular chunk init errors, add 3D Grid... | Map2 Audio | 2026-02-14 |
-| [`1ec7186`](https://github.com/matthewmackes/map2-audio/commit/1ec71860743808fcd6bd7649b47da1731697dfad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
-| [`7e23155`](https://github.com/matthewmackes/map2-audio/commit/7e23155170660e7f0e5fdf9e73b7433975502cc4) | chore: remove Eventide, H3000, Lexicon, H9 brand names fr... | Map2 Audio | 2026-02-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
