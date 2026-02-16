@@ -28,7 +28,7 @@ function AvbRoutingAppInner() {
     return (
       <Box
         sx={{
-          height: '100vh',
+          height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -71,7 +71,7 @@ function AvbRoutingAppInner() {
   return (
     <Box
       sx={{
-        height: '100vh',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         bgcolor: 'background.default',
@@ -133,7 +133,7 @@ function AvbRoutingAppInner() {
 }
 
 /**
- * Main export - wraps inner component with provider
+ * Main export - wraps inner component with providers
  */
 export function AvbRoutingApp() {
   return (

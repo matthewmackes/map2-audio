@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { Sparkle, Info, GridFour, Cube, BookOpen, List, X, Fire } from '@phosphor-icons/react'
+import { Sparkle, Info, GridFour, Cube, BookOpen, List, X, Fire, ShareNetwork } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { advancedMenuItems } from '../data/advancedMenuItems'
 
@@ -22,6 +22,13 @@ const navItemsLeft = [
     icon: GridFour,
     description: 'Cortex-style grid editor',
     color: '#2563eb'
+  },
+  {
+    to: '/avb-routing',
+    label: 'AVB',
+    icon: ShareNetwork,
+    description: 'AVB routing matrix',
+    color: '#06b6d4'
   },
   {
     to: '/grid-3d',
@@ -71,6 +78,7 @@ function useActiveNavItem() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const activeNav = useActiveNavItem()
+  const location = useLocation()
   const [navOpen, setNavOpen] = useState(false)
   const navMenuRef = useRef<HTMLDivElement>(null)
   const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
@@ -124,6 +132,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       </NavLink>
     )
   }
+
+  const isFullBleedRoute = location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
 
   return (
     <div className="app-shell">
@@ -294,7 +304,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
       </header>
-      <main className="app-content">{children}</main>
+      <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>{children}</main>
     </div>
   )
 }

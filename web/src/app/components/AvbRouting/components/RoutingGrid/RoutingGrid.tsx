@@ -16,10 +16,12 @@ import React, { useCallback, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeGrid as Grid, type GridChildComponentProps } from 'react-window';
-import { useRouting, useFilteredEndpoints, useRoute } from '../../context/RoutingContext';
+import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
 import { usePatchMutation, useUnpatchMutation } from '../../hooks/useAvbApi';
+import { useKeyboardNavigation, useFocusedCell } from '../../hooks/useKeyboardNavigation';
 import { MatrixCell } from './MatrixCell';
 import { StickyHeaders } from './StickyHeaders';
+import { ConnectionHighlight } from './ConnectionHighlight';
 
 const CELL_WIDTH = 60;
 const CELL_HEIGHT = 50;
@@ -36,6 +38,21 @@ export function RoutingGrid() {
 
   const patchMutation = usePatchMutation();
   const unpatchMutation = useUnpatchMutation();
+
+  // Keyboard navigation
+  useKeyboardNavigation({ enabled: true });
+  const focusedCell = useFocusedCell();
+
+  // Get focused cell indices for highlighting
+  const focusedIndices = useMemo(() => {
+    if (!focusedCell) return { talkerIndex: null, listenerIndex: null };
+    const talkerIndex = talkers.findIndex(t => t.endpoint_id === focusedCell.talker_id);
+    const listenerIndex = listeners.findIndex(l => l.endpoint_id === focusedCell.listener_id);
+    return {
+      talkerIndex: talkerIndex >= 0 ? talkerIndex : null,
+      listenerIndex: listenerIndex >= 0 ? listenerIndex : null,
+    };
+  }, [focusedCell, talkers, listeners]);
 
   // Handle cell click (patch/unpatch)
   const handleCellClick = useCallback(
@@ -177,18 +194,31 @@ export function RoutingGrid() {
       >
         <AutoSizer>
           {({ height, width }) => (
-            <Grid
-              columnCount={talkers.length}
-              columnWidth={CELL_WIDTH}
-              height={height}
-              rowCount={listeners.length}
-              rowHeight={CELL_HEIGHT}
-              width={width}
-              overscanRowCount={5}
-              overscanColumnCount={5}
-            >
-              {Cell}
-            </Grid>
+            <>
+              {/* Connection highlight overlay */}
+              <ConnectionHighlight
+                talkerIndex={focusedIndices.talkerIndex}
+                listenerIndex={focusedIndices.listenerIndex}
+                cellWidth={CELL_WIDTH}
+                cellHeight={CELL_HEIGHT}
+                headerWidth={HEADER_WIDTH}
+                headerHeight={HEADER_HEIGHT}
+                gridWidth={width + HEADER_WIDTH}
+                gridHeight={height + HEADER_HEIGHT}
+              />
+              <Grid
+                columnCount={talkers.length}
+                columnWidth={CELL_WIDTH}
+                height={height}
+                rowCount={listeners.length}
+                rowHeight={CELL_HEIGHT}
+                width={width}
+                overscanRowCount={5}
+                overscanColumnCount={5}
+              >
+                {Cell}
+              </Grid>
+            </>
           )}
         </AutoSizer>
       </Box>

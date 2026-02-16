@@ -513,6 +513,16 @@ img {
   gap: 22px;
 }
 
+.app-content.app-content--full {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;

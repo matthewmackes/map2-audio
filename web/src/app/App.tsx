@@ -38,6 +38,7 @@ const DrumsPage             = lazy(() => import('./pages/DrumsPage').then(m => (
 const MultiSystemDashboard  = lazy(() => import('./pages/MultiSystemDashboardPage'))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
+const AvbRoutingPage        = lazy(() => import('./pages/AvbRoutingPage').then(m => ({ default: m.AvbRoutingPage })))
 
 /** Lightweight loading fallback — pure CSS, no MUI dependency */
 function PageLoader() {
@@ -100,6 +101,7 @@ export function App() {
                   <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
                   <Route path="/drums" element={<DrumsPage />} />
                   <Route path="/multi-system" element={<MultiSystemDashboard />} />
+                  <Route path="/avb-routing" element={<AvbRoutingPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
@@ -113,4 +115,3 @@ export function App() {
     </QueryClientProvider>
   )
 }
-

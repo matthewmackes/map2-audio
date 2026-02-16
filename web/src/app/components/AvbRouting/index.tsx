@@ -33,6 +33,13 @@ export {
   usePrefetchEndpoints,
 } from './hooks/useAvbApi';
 
+// Feature hooks
+export {
+  useKeyboardNavigation,
+  useFocusedCell,
+} from './hooks/useKeyboardNavigation';
+export { useNotifications } from './hooks/useNotifications';
+
 // Types
 export type * from './types';
 
@@ -40,5 +47,6 @@ export type * from './types';
 export { RoutingGrid } from './components/RoutingGrid/RoutingGrid';
 export { MatrixCell } from './components/RoutingGrid/MatrixCell';
 export { StickyHeaders } from './components/RoutingGrid/StickyHeaders';
+export { ConnectionHighlight } from './components/RoutingGrid/ConnectionHighlight';
 export { TopBar } from './components/TopBar/TopBar';
 export { InspectorPanel } from './components/Inspector/InspectorPanel';

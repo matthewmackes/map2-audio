@@ -15,7 +15,6 @@
  *                              WebSocket Update → State Sync
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import type {
   RoutingState,
   RoutingAction,
@@ -23,6 +22,16 @@ import type {
   Endpoint,
   AuditLogEntry,
 } from '../types';
+
+function generateId(): string {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  const timestamp = Date.now().toString(36);
+  const randomA = Math.random().toString(36).slice(2, 10);
+  const randomB = Math.random().toString(36).slice(2, 10);
+  return `${timestamp}-${randomA}-${randomB}`;
+}
 
 /**
  * Create a new audit log entry
@@ -34,7 +43,7 @@ function createAuditEntry(
   outcome: AuditLogEntry['validation_outcome'] = 'success'
 ): AuditLogEntry {
   return {
-    id: uuidv4(),
+    id: generateId(),
     timestamp: new Date().toISOString(),
     event_type: type,
     actor: 'user', // TODO: Get from auth context
@@ -404,7 +413,7 @@ export function routingReducer(
 
     case 'SAVE_SCENE': {
       const { name, description, tags } = action.payload;
-      const scene_id = uuidv4();
+      const scene_id = generateId();
 
       const scene = {
         id: scene_id,
