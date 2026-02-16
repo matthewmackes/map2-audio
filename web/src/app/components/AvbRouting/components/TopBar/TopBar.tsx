@@ -25,6 +25,8 @@ import SecurityIcon from '@mui/icons-material/Security';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
+import { useBatchPatchMutation } from '../../hooks/useAvbApi';
+import { useNotifications } from '../../hooks/useNotifications';
 
 /**
  * Top bar component
@@ -33,6 +35,8 @@ export function TopBar() {
   const { state, dispatch } = useRouting();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
+  const batchPatchMutation = useBatchPatchMutation();
+  const notify = useNotifications();
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'SET_SEARCH', payload: event.target.value });
@@ -45,15 +49,51 @@ export function TopBar() {
       return;
     }
     dispatch({ type: 'ENTER_SAFE_MODE' });
+    notify.info('Safe patch mode enabled. Changes will be staged until applied.');
   };
 
   const handleApplySafeChanges = () => {
-    dispatch({ type: 'APPLY_SAFE_CHANGES' });
-    // TODO: Trigger batch API call with pending routes
+    const operations = Object.entries(state.pendingRoutes)
+      .map(([routeId, route]) => {
+        const [fallbackTalkerId, fallbackListenerId] = routeId.split('→');
+        const talker_id = route.talker_id || fallbackTalkerId || '';
+        const listener_id = route.listener_id || fallbackListenerId || '';
+
+        if (!talker_id || !listener_id) {
+          return null;
+        }
+
+        return {
+          talker_id,
+          listener_id,
+          action: route.state === 'disconnecting' ? ('disconnect' as const) : ('connect' as const),
+        };
+      })
+      .filter((op): op is { talker_id: string; listener_id: string; action: 'connect' | 'disconnect' } => op !== null);
+
+    if (operations.length === 0) {
+      notify.warning('No valid staged operations to apply.');
+      return;
+    }
+
+    const operationCount = operations.length;
+    batchPatchMutation.mutate(operations, {
+      onSuccess: () => {
+        dispatch({ type: 'APPLY_SAFE_CHANGES' });
+        notify.success(`Applied ${operationCount} staged change${operationCount === 1 ? '' : 's'}.`);
+      },
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : 'Safe patch apply failed';
+        dispatch({ type: 'SET_ERROR', payload: message });
+        notify.error(`Safe patch apply failed: ${message}`);
+      },
+    });
   };
 
   const handleDiscardSafeChanges = () => {
+    const count = Object.keys(state.pendingRoutes).length;
     dispatch({ type: 'DISCARD_SAFE_CHANGES' });
+    notify.info(`Discarded ${count} staged change${count === 1 ? '' : 's'}.`);
   };
 
   const handleUndo = () => {
@@ -124,9 +164,9 @@ export function TopBar() {
               color="success"
               startIcon={<CheckIcon />}
               onClick={handleApplySafeChanges}
-              disabled={pendingCount === 0}
+              disabled={pendingCount === 0 || batchPatchMutation.isPending}
             >
-              Apply
+              {batchPatchMutation.isPending ? 'Applying...' : 'Apply'}
             </Button>
             <Button
               size="small"

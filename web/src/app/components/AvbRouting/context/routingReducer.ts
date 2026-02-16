@@ -154,6 +154,12 @@ export function routingReducer(
 
       // Check if route is locked
       const route = state.liveRoutes[route_id];
+      if (!route) {
+        return {
+          ...state,
+          error: `Route not found: ${route_id}`,
+        };
+      }
       if (route?.locked) {
         return {
           ...state,
@@ -369,13 +375,33 @@ export function routingReducer(
     }
 
     case 'APPLY_SAFE_CHANGES': {
-      // Merge pending routes into live routes
+      // Apply pending routes to live routes, translating staged disconnects
+      // into deletions and staged connects into connected state.
+      const nextLiveRoutes: Record<string, Route> = { ...state.liveRoutes };
+      const nowIso = new Date().toISOString();
+
+      for (const [routeId, pendingRoute] of Object.entries(state.pendingRoutes)) {
+        if (pendingRoute.state === 'disconnecting') {
+          delete nextLiveRoutes[routeId];
+          continue;
+        }
+
+        if (pendingRoute.state === 'connecting') {
+          nextLiveRoutes[routeId] = {
+            ...pendingRoute,
+            state: 'connected',
+            established_time: pendingRoute.established_time ?? nowIso,
+            error_message: null,
+          };
+          continue;
+        }
+
+        nextLiveRoutes[routeId] = pendingRoute;
+      }
+
       const newState = {
         ...state,
-        liveRoutes: {
-          ...state.liveRoutes,
-          ...state.pendingRoutes,
-        },
+        liveRoutes: nextLiveRoutes,
         pendingRoutes: {},
         safePatchMode: false,
         auditLog: [

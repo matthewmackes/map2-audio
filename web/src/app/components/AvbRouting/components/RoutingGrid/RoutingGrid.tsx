@@ -19,6 +19,7 @@ import { FixedSizeGrid as Grid, type GridChildComponentProps } from 'react-windo
 import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
 import { usePatchMutation, useUnpatchMutation } from '../../hooks/useAvbApi';
 import { useKeyboardNavigation, useFocusedCell } from '../../hooks/useKeyboardNavigation';
+import { useNotifications } from '../../hooks/useNotifications';
 import { MatrixCell } from './MatrixCell';
 import { StickyHeaders } from './StickyHeaders';
 import { ConnectionHighlight } from './ConnectionHighlight';
@@ -38,6 +39,7 @@ export function RoutingGrid() {
 
   const patchMutation = usePatchMutation();
   const unpatchMutation = useUnpatchMutation();
+  const notify = useNotifications();
 
   // Keyboard navigation
   useKeyboardNavigation({ enabled: true });
@@ -54,9 +56,18 @@ export function RoutingGrid() {
     };
   }, [focusedCell, talkers, listeners]);
 
+  const getEndpointLabel = useCallback(
+    (endpointId: string): string => {
+      return state.endpoints[endpointId]?.device_name || endpointId;
+    },
+    [state.endpoints]
+  );
+
   // Handle cell click (patch/unpatch)
   const handleCellClick = useCallback(
     (talker_id: string, listener_id: string) => {
+      const talkerLabel = getEndpointLabel(talker_id);
+      const listenerLabel = getEndpointLabel(listener_id);
       const route = state.liveRoutes[`${talker_id}→${listener_id}`] ||
                     state.pendingRoutes[`${talker_id}→${listener_id}`];
 
@@ -67,13 +78,27 @@ export function RoutingGrid() {
             type: 'SET_ERROR',
             payload: `Cannot disconnect locked route: ${route.id}`,
           });
+          notify.warning(`Route is locked: ${talkerLabel} -> ${listenerLabel}`);
           return;
         }
 
         if (state.safePatchMode) {
           dispatch({ type: 'UNPATCH', payload: { route_id: route.id } });
+          notify.info(`Staged disconnect: ${talkerLabel} -> ${listenerLabel}`);
         } else {
-          unpatchMutation.mutate({ talker_id, listener_id });
+          unpatchMutation.mutate(
+            { talker_id, listener_id },
+            {
+              onSuccess: () => {
+                notify.success(`Disconnected: ${talkerLabel} -> ${listenerLabel}`);
+              },
+              onError: (error) => {
+                const message = error instanceof Error ? error.message : 'Disconnection failed';
+                dispatch({ type: 'SET_ERROR', payload: message });
+                notify.error(`Disconnect failed: ${message}`);
+              },
+            }
+          );
         }
         return;
       }
@@ -81,11 +106,24 @@ export function RoutingGrid() {
       // Otherwise, connect
       if (state.safePatchMode) {
         dispatch({ type: 'PATCH', payload: { talker_id, listener_id } });
+        notify.info(`Staged connect: ${talkerLabel} -> ${listenerLabel}`);
       } else {
-        patchMutation.mutate({ talker_id, listener_id });
+        patchMutation.mutate(
+          { talker_id, listener_id },
+          {
+            onSuccess: () => {
+              notify.success(`Connected: ${talkerLabel} -> ${listenerLabel}`);
+            },
+            onError: (error) => {
+              const message = error instanceof Error ? error.message : 'Connection failed';
+              dispatch({ type: 'SET_ERROR', payload: message });
+              notify.error(`Connect failed: ${message}`);
+            },
+          }
+        );
       }
     },
-    [state.liveRoutes, state.pendingRoutes, state.safePatchMode, dispatch, patchMutation, unpatchMutation]
+    [state.liveRoutes, state.pendingRoutes, state.safePatchMode, dispatch, patchMutation, unpatchMutation, notify, getEndpointLabel]
   );
 
   // Handle cell hover

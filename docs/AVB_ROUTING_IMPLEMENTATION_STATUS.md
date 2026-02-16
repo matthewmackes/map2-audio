@@ -1,7 +1,7 @@
 # AVB Routing Matrix - Implementation Status
 
 **Last Updated:** February 16, 2026  
-**Status:** Phases 1-2 complete, Phase 3 started
+**Status:** Phases 1-2 complete, Phase 3 in active integration
 
 ---
 
@@ -35,6 +35,12 @@
   - `web/src/app/components/AvbRouting/components/RoutingGrid/ConnectionHighlight.tsx`
 - Notification adapter hook added:
   - `web/src/app/components/AvbRouting/hooks/useNotifications.ts`
+- Notifications wired to user actions:
+  - connect/disconnect success and failure notifications in `RoutingGrid.tsx`
+  - safe patch enable/apply/discard notifications in `TopBar.tsx`
+- Safe patch apply flow hardened:
+  - batch API execution from `TopBar.tsx` before reducer commit
+  - `APPLY_SAFE_CHANGES` in `routingReducer.ts` now correctly removes staged disconnect routes
 
 ---
 
@@ -48,9 +54,9 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Wire notifications to user-facing patch/unpatch success/error flows.
 - Add safer focus behavior for keyboard vs mouse hover priority.
 - Add selection/interaction tests for keyboard navigation.
+- Add keyboard navigation focus ring visuals for non-hover focus state.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -63,6 +69,6 @@
 
 ## Next Recommended Slice
 
-1. Connect `useNotifications` to patch lifecycle in `RoutingGrid` and `TopBar`.
-2. Add keyboard-navigation tests and reducer assertions for focus state.
-3. Add a lightweight route smoke test for `/avb-routing`.
+1. Add keyboard-navigation tests and reducer assertions for focus state.
+2. Add a lightweight route smoke test for `/avb-routing`.
+3. Add focus-ring styling for keyboard focus that is distinct from hover-only highlight.

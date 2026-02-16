@@ -26,6 +26,51 @@ import type {
 
 const API_BASE = '/api/avb';
 
+function extractErrorMessage(errorData: unknown, fallback: string): string {
+  if (typeof errorData === 'string' && errorData.trim()) {
+    return errorData;
+  }
+
+  if (errorData && typeof errorData === 'object') {
+    const payload = errorData as Record<string, unknown>;
+
+    const directError = payload.error;
+    if (typeof directError === 'string' && directError.trim()) {
+      return directError;
+    }
+
+    const detail = payload.detail;
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail;
+    }
+
+    if (detail && typeof detail === 'object') {
+      const detailObj = detail as Record<string, unknown>;
+      const code = typeof detailObj.code === 'string' ? detailObj.code : null;
+      const message = typeof detailObj.message === 'string' ? detailObj.message : null;
+      const reason = typeof detailObj.reason === 'string' ? detailObj.reason : null;
+
+      if (message && code) {
+        return `${message} (${code})`;
+      }
+      if (message) {
+        return message;
+      }
+      if (reason && code) {
+        return `${reason} (${code})`;
+      }
+      if (reason) {
+        return reason;
+      }
+      if (code) {
+        return code;
+      }
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Fetch endpoints (talkers and/or listeners)
  */
@@ -124,7 +169,7 @@ export function usePatchMutation() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || errorData.detail || 'Connection failed');
+        throw new Error(extractErrorMessage(errorData, 'Connection failed'));
       }
 
       return response.json();
@@ -155,7 +200,7 @@ export function useUnpatchMutation() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || errorData.detail || 'Disconnection failed');
+        throw new Error(extractErrorMessage(errorData, 'Disconnection failed'));
       }
 
       return response.json();
@@ -193,7 +238,7 @@ export function useBatchPatchMutation() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: response.statusText }));
-          throw new Error(`Batch operation failed: ${errorData.error || errorData.detail}`);
+          throw new Error(`Batch operation failed: ${extractErrorMessage(errorData, response.statusText)}`);
         }
 
         results.push(await response.json());
