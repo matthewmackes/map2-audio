@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **604** TypeScript | **114** C++/H | **82** Docs | **174** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **621** TypeScript | **114** C++/H | **88** Docs | **177** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -132,10 +132,10 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |:---------|:------------|
 | [LEGAL DISCLAIMER – IMPORTANT NOTICE](https://github.com/matthewmackes/map2-audio/blob/master/docs/# LEGAL DISCLAIMER – IMPORTANT NOTICE.md) | 2026-02-16 |
 | [MAP2 Audio Engine — Audit Fixes Applied](https://github.com/matthewmackes/map2-audio/blob/master/docs/AUDIT_FIXES_APPLIED.md) | 2026-02-16 |
-| [Addendum](https://github.com/matthewmackes/map2-audio/blob/master/docs/Addendum and overview 2-16-26.md) | 2026-02-16 |
-| [MAP2: The Open-Source Playground for Real-Time Audio](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_MANUAL_2026-02-15.md) | 2026-02-16 |
-| [AVB/TSN Network Audio Setup Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/avb-setup.md) | 2026-02-16 |
-| [MAP2 Audio Platform - Top 100 Features](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_TOP_100_FEATURES.md) | 2026-02-15 |
+| [AVB Routing Matrix - Implementation Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_IMPLEMENTATION_PLAN.md) | 2026-02-16 |
+| [AVB Routing Matrix - Implementation Status](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_IMPLEMENTATION_STATUS.md) | 2026-02-16 |
+| [AVB Routing Matrix - Phase 1 Complete! 🎉](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_PHASE1_COMPLETE.md) | 2026-02-16 |
+| [AVB Routing Matrix - Phase 2 Complete! 🎉](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_PHASE2_COMPLETE.md) | 2026-02-16 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`37dadc4`](https://github.com/matthewmackes/map2-audio/commit/37dadc4864744d74d14a7b9b4d9c51eec2fb2bae) | docs: add AVB routing recommendations | Map2 Audio | 2026-02-16 |
+| [`f2c59a9`](https://github.com/matthewmackes/map2-audio/commit/f2c59a9c8f2ff124e5d9fbd162178567419758e9) | avb-routing: add implementation docs and phase UI components | Map2 Audio | 2026-02-16 |
+| [`53991dd`](https://github.com/matthewmackes/map2-audio/commit/53991dd4d982e259317b70898762514b08a130b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`cda14bd`](https://github.com/matthewmackes/map2-audio/commit/cda14bd9033842a4c0915d9f32df9c05bd299de6) | avb: harden SRP release observability and rollback handling | Map2 Audio | 2026-02-16 |
 | [`663a251`](https://github.com/matthewmackes/map2-audio/commit/663a251c6717369c95d81ce8ecf158caa478fa0b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`00e29e1`](https://github.com/matthewmackes/map2-audio/commit/00e29e1aa22b572a6a862439aa9e8e589dd6680a) | Add AVB SRP admission control, fix health-overview API, u... | Map2 Audio | 2026-02-16 |
 | [`73d1e7f`](https://github.com/matthewmackes/map2-audio/commit/73d1e7f8c0a8519496d159a4cc4777e13c10d5a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`dc92e19`](https://github.com/matthewmackes/map2-audio/commit/dc92e1922136eaeebc839d85ee459a55081c0fe0) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-16 |
-| [`8b21891`](https://github.com/matthewmackes/map2-audio/commit/8b218911101e872fbf0ddf19d2b7021f503a2186) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
-| [`241ad1e`](https://github.com/matthewmackes/map2-audio/commit/241ad1ed872f6c5ed45fa9e784d303b1d4e8fb12) | Add platform manual and 10000-foot architecture diagram | Map2 Audio | 2026-02-15 |
-| [`23183fc`](https://github.com/matthewmackes/map2-audio/commit/23183fc4927fb0044dc91a86c1de310b8d1fbe58) | Implement Phase 11 ACMP stream connection management and ... | Map2 Audio | 2026-02-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
