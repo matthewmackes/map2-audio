@@ -40,6 +40,10 @@ cp pyproject.toml %{buildroot}/usr/lib/map2/
 mkdir -p %{buildroot}/usr/lib/systemd/system
 install -m 644 packaging/systemd/map2-backend.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-tui.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-avb.target %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-ptp4l.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-phc2sys.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-srpd.service %{buildroot}/usr/lib/systemd/system/
 
 mkdir -p %{buildroot}/usr/bin
 ln -s /usr/lib/map2/scripts/cli.py %{buildroot}/usr/bin/map2-cli
@@ -52,6 +56,10 @@ useradd -r -s /bin/false map2 2>/dev/null || true
 /usr/lib/map2/
 /usr/lib/systemd/system/map2-backend.service
 /usr/lib/systemd/system/map2-tui.service
+/usr/lib/systemd/system/map2-ptp4l.service
+/usr/lib/systemd/system/map2-phc2sys.service
+/usr/lib/systemd/system/map2-srpd.service
+/usr/lib/systemd/system/map2-avb.target
 /usr/bin/map2-cli
 /usr/bin/map2-self-test
 

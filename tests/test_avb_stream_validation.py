@@ -127,3 +127,88 @@ def test_route_create_stream_requires_stream_id(monkeypatch):
     assert exc.value.status_code == 400
     assert exc.value.detail == "stream_id is required"
     assert dummy_service.called is False
+
+
+def test_route_create_stream_rejects_invalid_srp_payload(monkeypatch):
+    dummy_service = _DummyAvbService()
+    monkeypatch.setattr(avb_service, "get_avb_service", lambda: dummy_service)
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            avb_routes.create_stream(
+                {
+                    "stream_id": "stream-03",
+                    "direction": "talker",
+                    "channels": 2,
+                    "sample_rate": 48000,
+                    "buffer_size": 256,
+                    "interface": "eth0",
+                    "srp": "invalid",
+                }
+            )
+        )
+
+    assert exc.value.status_code == 400
+    assert exc.value.detail == "srp must be an object when provided"
+    assert dummy_service.called is False
+
+
+def test_route_create_stream_strict_mode_requires_srp_reservation_id(monkeypatch):
+    dummy_service = _DummyAvbService()
+    monkeypatch.setattr(avb_service, "get_avb_service", lambda: dummy_service)
+
+    values = {
+        "avb.srp.enabled": True,
+        "avb.srp.required": True,
+    }
+    monkeypatch.setattr(avb_routes, "config_get", lambda key, default=None: values.get(key, default))
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            avb_routes.create_stream(
+                {
+                    "stream_id": "stream-04",
+                    "direction": "talker",
+                    "channels": 2,
+                    "sample_rate": 48000,
+                    "buffer_size": 256,
+                    "interface": "eth0",
+                    "srp": {"daemon_type": "mrpd"},
+                }
+            )
+        )
+
+    assert exc.value.status_code == 400
+    assert "Strict SRP mode requires srp.reservation_id" in exc.value.detail
+    assert dummy_service.called is False
+
+
+def test_avb_service_stores_srp_binding_when_provided():
+    service = AvbService()
+    service.is_available = lambda: True
+
+    class _Engine:
+        def create_avb_stream(self, _config):
+            return True
+
+    service.set_engine(_Engine())
+
+    config = AvbStreamConfig(
+        stream_id="stream-05",
+        direction=StreamDirection.TALKER,
+        channels=2,
+        sample_rate=48000,
+        buffer_size=256,
+        interface="eth0",
+        srp_reservation_id="res-1",
+        srp_admission_id="adm-1",
+        srp_metadata={"endpoint": "streams.create"},
+    )
+
+    result = asyncio.run(service.create_stream(config))
+
+    assert result["status"] == "created"
+    binding = service.get_srp_binding("stream-05")
+    assert binding is not None
+    assert binding["reservation_id"] == "res-1"
+    assert binding["admission_id"] == "adm-1"

@@ -1582,7 +1582,8 @@ export interface SystemHealthOverview {
   fans: Fan[];
   power: PowerInfo;
   overall_health: 'excellent' | 'good' | 'warning' | 'critical';
-  health_details: {
+  last_updated?: string;
+  health_details?: {
     temperature_status: string;
     fan_status: string;
     power_status: string;

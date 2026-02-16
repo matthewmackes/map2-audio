@@ -1023,6 +1023,55 @@ class FlowDeploymentHistory(Base):
 
 
 # =============================================================================
+# AVB SRP/MSRP ADMISSION AUDIT LOG
+# =============================================================================
+
+class SrpAdmissionLog(Base):
+    """Persistent SRP/MSRP admission attempt log."""
+    __tablename__ = "srp_admission_logs"
+
+    id = Column(Integer, primary_key=True)
+    admission_id = Column(String(64), nullable=False, unique=True)
+
+    # Admission decision
+    decision = Column(String(16), nullable=False)  # allowed | denied | bypass | error
+    reason_code = Column(String(64), nullable=False)
+    reason = Column(Text, nullable=False)
+    remediation = Column(JSON, default=list)
+
+    # Daemon/transport context
+    daemon_type = Column(String(16), nullable=True)  # mrpd | msrpd | none
+    daemon_socket = Column(String(255), nullable=True)
+    raw_response = Column(Text, nullable=True)
+
+    # Request context
+    endpoint = Column(String(128), nullable=False)
+    stream_id = Column(String(255), nullable=True)
+    talker_id = Column(String(128), nullable=True)
+    listener_id = Column(String(128), nullable=True)
+    reservation_id = Column(String(128), nullable=True)
+    request_metadata = Column(JSON, default=dict)
+
+    # Timing
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Release tracking for reservation lifecycle
+    released = Column(Boolean, default=False, nullable=False)
+    release_status = Column(String(16), nullable=True)  # released | failed
+    release_reason = Column(Text, nullable=True)
+    release_response = Column(Text, nullable=True)
+    release_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("idx_srp_admission_logs_created_at", "created_at"),
+        Index("idx_srp_admission_logs_decision_created", "decision", "created_at"),
+        Index("idx_srp_admission_logs_endpoint_created", "endpoint", "created_at"),
+        Index("idx_srp_admission_logs_reservation", "reservation_id"),
+    )
+
+
+# =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
 

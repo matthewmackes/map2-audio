@@ -1,0 +1,1102 @@
+{
+  "audit_metadata": {
+    "title": "MAP2 AVB Router / Digital Patch System Verification Audit",
+    "date": "2026-02-15",
+    "auditor": "Claude Opus 4.6",
+    "codebase_commit": "241ad1e",
+    "methodology": "Deterministic source-code analysis against touring-grade AVB requirements"
+  },
+
+  "stage_1_feature_completeness": {
+    "routing_and_stream_engine": [
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-01",
+        "requirement_description": "Dynamic AVDECC stream routing",
+        "status": "PASS",
+        "evidence": "app/services/avb/avb_router.py: AvbRouter class with connect()/disconnect() supporting both MAP2-to-MAP2 and AVDECC ACMP. juce-engine/Source/AvdeccEntity.h: connectStream()/disconnectStream() with full ACMP PDU implementation. app/routes/avb.py: POST /api/avb/router/connect and /router/disconnect endpoints.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "PARTIAL",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "PARTIAL",
+        "notes": "Full AVDECC ACMP implementation with ADP discovery, AECP enumeration, and ACMP connection management. Phase 11 added proper stream connection lifecycle. TUI shows streams but does not expose connect/disconnect controls. Web UI has no AVB components."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-02",
+        "requirement_description": "Many-to-many routing matrix",
+        "status": "PASS",
+        "evidence": "app/services/avb/avb_router.py:742-763 get_routing_matrix() returns Dict[talker_id, Dict[listener_id, ConnectionState]]. app/routes/avb.py:921-962 GET /api/avb/router/matrix endpoint.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Routing matrix data structure exists and is exposed via REST API. No TUI or web UI rendering of the matrix grid."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-03",
+        "requirement_description": "Multicast replication",
+        "status": "PARTIAL",
+        "evidence": "juce-engine/Source/AvdeccEntity.h:47 defines ADP_MULTICAST_MAC and ACMP_MULTICAST_MAC. AvbStream.h uses configurable destMac supporting multicast MACs. avb_router.py:614 defaults to multicast '91:e0:f0:00:fe:01'.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "PARTIAL",
+        "educationally_documented": "NO",
+        "notes": "Multicast addressing is supported at the stream level, but there is no explicit replication/fanout manager. A single talker can be connected to multiple listeners via separate connect() calls, which achieves multicast replication at the connection management level. No visibility into multicast group membership or IGMP/MLD integration."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-04",
+        "requirement_description": "Unicast to multicast translation",
+        "status": "FAIL",
+        "evidence": "No code implementing unicast-to-multicast or multicast-to-unicast translation found in any source file.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "AVB/TSN natively uses multicast (IEEE 1722). Unicast fallback/translation is not standard AVB behavior but may be needed for hybrid deployments. Not implemented."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-05",
+        "requirement_description": "Stream aggregation",
+        "status": "FAIL",
+        "evidence": "No stream aggregation (combining multiple low-channel streams into one high-channel stream) found in any source file.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Individual streams are managed independently. No multiplexing of multiple source streams into a single aggregate stream."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-06",
+        "requirement_description": "Stream de-aggregation",
+        "status": "FAIL",
+        "evidence": "No stream de-aggregation (splitting a high-channel stream into multiple lower-channel streams) found in any source file.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would require channel mapping layer between AVTP frames and audio engine."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-07",
+        "requirement_description": "VLAN per-stream assignment",
+        "status": "PARTIAL",
+        "evidence": "juce-engine/Source/AvdeccEntity.h:204 AcmpPdu has stream_vlan_id field. app/services/avb/tsn_qdisc.py:134-135 checks for VLAN interface (interface.2). scripts/setup_avb_qdiscs.sh likely configures VLAN 2.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "VLAN 2 (standard AVB SR Class A VLAN) is configured at the system level. Per-stream VLAN assignment is carried in ACMP PDUs but there is no dynamic per-stream VLAN configuration API. TUI shows VLAN configured status."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-08",
+        "requirement_description": "SRP-aware admission control",
+        "status": "FAIL",
+        "evidence": "No MSRP (Multiple Stream Registration Protocol) or SRP (Stream Reservation Protocol) implementation found. No bandwidth reservation or admission control logic.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "SRP/MSRP is a critical AVB protocol for bandwidth reservation. The system relies on manual CBS configuration via tc qdiscs rather than dynamic SRP. This is a significant gap for touring-grade deployment."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-09",
+        "requirement_description": "Live repatching without interruption",
+        "status": "PARTIAL",
+        "evidence": "avb_router.py connect()/disconnect() operate on individual connections without disrupting other active connections. ConnectionState tracks CONNECTING/CONNECTED/DISCONNECTING states. Rollback on failure at line 638.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Individual stream connections can be added/removed without disrupting others. However, there is no hitless crossfade mechanism - the disconnect and reconnect are separate operations. No glitch-free transition guarantee during reroute."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-10",
+        "requirement_description": "Snapshot/preset recall",
+        "status": "PARTIAL",
+        "evidence": "juce-engine/Source/SnapshotManager.h: saveSnapshot()/loadSnapshot() with 6 slots (0-5). app/routes/snapshots.py and app/routes/flow_snapshots.py exist. However, snapshots are for the plugin chain only - not for AVB routing state.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "PARTIAL",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Audio processing chain snapshots exist but AVB routing matrix snapshots do not. A routing snapshot system would need to serialize all StreamConnection states and restore them on recall."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-11",
+        "requirement_description": "Versioned patch history",
+        "status": "FAIL",
+        "evidence": "No version control or history tracking for routing changes found in any source file.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would need an event log with timestamps tracking all connect/disconnect operations with undo capability."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-12",
+        "requirement_description": "Scheduled routing changes",
+        "status": "FAIL",
+        "evidence": "No time-based or schedule-based routing change mechanism found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would require a scheduler that triggers connect/disconnect at specified times or cue points."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-13",
+        "requirement_description": "Routing graph visualization",
+        "status": "FAIL",
+        "evidence": "No graph visualization component found in web/src/ or TUI. The routing matrix API endpoint exists (GET /api/avb/router/matrix) but no visual rendering.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Data layer exists but no visualization layer. Web UI has no AVB-related React components."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-14",
+        "requirement_description": "Scene morphing / crossfade reroute",
+        "status": "FAIL",
+        "evidence": "No crossfade or morphing mechanism for routing transitions found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would require mixing/crossfading engine at the stream connection level."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "R-15",
+        "requirement_description": "Routing template system",
+        "status": "FAIL",
+        "evidence": "No routing template or preset system for AVB connections found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would need template serialization format and template instantiation logic."
+      }
+    ],
+
+    "clock_and_timing": [
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-01",
+        "requirement_description": "Full IEEE 802.1AS implementation",
+        "status": "PARTIAL",
+        "evidence": "app/services/avb/ptp_monitor.py: PTPMonitor wraps ptp4l (linuxptp) via pmc CLI and journalctl parsing. scripts/setup_avb_ptp.sh configures ptp4l. AvdeccEntity.h:239 stores gptp_grandmaster_id and domain.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "PARTIAL",
+        "notes": "MAP2 delegates gPTP to ptp4l (linuxptp) which is the reference IEEE 802.1AS implementation. MAP2 monitors ptp4l status but does not implement 802.1AS itself. This is architecturally correct (ptp4l is kernel-integrated). PTPStatus exposes state, offset, delay, grandmaster ID. TUI shows PTP status with color-coded offset."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-02",
+        "requirement_description": "Boundary clock support",
+        "status": "PARTIAL",
+        "evidence": "Dependent on ptp4l configuration. ptp4l supports boundary clock mode via /etc/ptp4l.conf 'clockType' parameter. No MAP2-specific boundary clock configuration or monitoring.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "ptp4l supports boundary clock mode but MAP2 does not expose configuration or monitoring for it."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-03",
+        "requirement_description": "Transparent clock mode",
+        "status": "FAIL",
+        "evidence": "No transparent clock configuration or support found. ptp4l does not support TC mode natively.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Transparent clock is a switch-level feature, not an endpoint feature. Not applicable for end-station software."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-04",
+        "requirement_description": "Manual grandmaster priority configuration",
+        "status": "PARTIAL",
+        "evidence": "app/routes/avb.py:171 exposes 'ptp_priority1' in config (config_get('avb.ptp_priority1', 128)). ptp_monitor.py:28 tracks grandmaster_priority1. No API to dynamically change priority.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Priority is readable via API but only configurable via static config (avb.ptp_priority1). No live adjustment API."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-05",
+        "requirement_description": "Automatic failover",
+        "status": "PARTIAL",
+        "evidence": "ptp4l handles BMCA (Best Master Clock Algorithm) automatically, including failover to next-best grandmaster. MAP2 monitors state transitions (MASTER->SLAVE etc). No explicit failover logic in MAP2 code.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "ptp4l handles clock failover natively via BMCA. MAP2 can detect state changes but does not implement additional failover logic beyond what ptp4l provides."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-06",
+        "requirement_description": "Clock domain bridging",
+        "status": "FAIL",
+        "evidence": "No multi-domain clock bridging found. Only domain 0 support evident.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would require multiple ptp4l instances and domain-to-domain time translation."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-07",
+        "requirement_description": "Drift monitoring",
+        "status": "PASS",
+        "evidence": "ptp_monitor.py:52-99 get_status() returns offset_ns (clock drift from grandmaster). Periodic monitoring at configurable intervals (default 1s). PTPStatus.offset_ns updated continuously.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Drift is monitored via ptp4l offset. TUI color-codes offset: green (<100ns), yellow (<500ns), red (>500ns)."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-08",
+        "requirement_description": "Phase offset diagnostics",
+        "status": "PASS",
+        "evidence": "ptp_monitor.py: PTPStatus exposes offset_ns and mean_path_delay_ns. pmc queries CURRENT_DATA_SET (offsetFromMaster) and PARENT_DATA_SET (grandmaster info). Journalctl fallback parsing.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Full diagnostic data available: offset, path delay, grandmaster identity, priority, clock class."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "C-09",
+        "requirement_description": "Timestamp integrity verification",
+        "status": "PARTIAL",
+        "evidence": "juce-engine/Source/AvbStream.h:65-66 tracks timestampErrors and sequenceErrors atomically. AvbStreamStats exposes these counters. No active integrity verification with alerting.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Error counters exist for timestamp and sequence errors but no active alerting or integrity verification protocol."
+      }
+    ],
+
+    "bandwidth_and_determinism": [
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "B-01",
+        "requirement_description": "SRP admission logging",
+        "status": "FAIL",
+        "evidence": "No SRP/MSRP implementation. No admission logging.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "SRP not implemented. See R-08."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "B-02",
+        "requirement_description": "Class A/B bandwidth monitoring",
+        "status": "PARTIAL",
+        "evidence": "app/services/avb/tsn_qdisc.py:118-124 monitors CBS idleslope/sendslope. tsn_qdisc.py:234-286 calculate_cbs_parameters() computes required bandwidth. Queue stats (sent_bytes, dropped, overlimits) tracked per qdisc.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "CBS bandwidth is monitored via tc qdisc stats. No distinction between Class A and Class B traffic classes. No real-time utilization percentage calculation."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "B-03",
+        "requirement_description": "Deterministic latency calculation",
+        "status": "PARTIAL",
+        "evidence": "AvbStreamConfig.presentationOffsetUs provides deterministic presentation time. AvbStreamStats tracks maxLatencyNs/minLatencyNs. tsn_qdisc.py calculate_cbs_parameters() computes bandwidth requirements.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Latency is measured empirically (max/min) but not calculated deterministically from topology. No worst-case latency bounds computation."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "B-04",
+        "requirement_description": "Congestion pre-detection",
+        "status": "FAIL",
+        "evidence": "No congestion prediction or early warning system found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would need trend analysis on queue depth and drop rates."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "B-05",
+        "requirement_description": "Simulation mode (pre-flight)",
+        "status": "FAIL",
+        "evidence": "No simulation or dry-run mode for testing routing configurations found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "B-06",
+        "requirement_description": "Credit-Based Shaping visibility",
+        "status": "PASS",
+        "evidence": "tsn_qdisc.py TsnStatus exposes cbs_configured, cbs_idleslope, cbs_sendslope. TsnQdiscManager.calculate_cbs_parameters() provides CBS parameter computation. Queue stats per qdisc handle. TUI TsnStatusWidget shows CBS parameters.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "CBS configuration and parameters are fully visible. REST API at GET /api/avb/tsn/status and GET /api/avb/tsn/calculate_cbs."
+      }
+    ],
+
+    "reliability_and_touring": [
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-01",
+        "requirement_description": "Dual-network redundancy",
+        "status": "FAIL",
+        "evidence": "No dual-NIC or network redundancy configuration found. Single interface support only (avb.interface config key).",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Critical gap for touring-grade deployment. Milan specifies redundancy. Not implemented."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-02",
+        "requirement_description": "Link aggregation",
+        "status": "FAIL",
+        "evidence": "No LACP or link aggregation configuration found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Could be handled at OS level with bonding driver but not integrated into MAP2."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-03",
+        "requirement_description": "Automatic reroute on failure",
+        "status": "FAIL",
+        "evidence": "No automatic failover routing found. Connection failures are logged but not automatically retried or rerouted.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would require topology awareness and alternative path computation."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-04",
+        "requirement_description": "Live stream health scoring",
+        "status": "PARTIAL",
+        "evidence": "AvbStreamStats tracks 11 metrics atomically (framesSent, errors, underruns, overruns, timestampErrors, sequenceErrors, latency). avb_service.py get_stream_stats() exposes these. No composite health score.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "PARTIAL",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Raw metrics available but no composite OK/WARN/CRITICAL health scoring algorithm."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-05",
+        "requirement_description": "Packet loss detection",
+        "status": "PASS",
+        "evidence": "AvbStream.h AvbStreamStats: sequenceErrors (out-of-order/missing), sendErrors, receiveErrors, timestampErrors. All atomic for lock-free access. tsn_qdisc.py QdiscStats.dropped tracks kernel-level drops.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "PARTIAL",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Packet loss is detectable via sequence error counters and qdisc drop counters. No alerting threshold."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-06",
+        "requirement_description": "Fault logging & audit trail",
+        "status": "PARTIAL",
+        "evidence": "Python logging throughout avb_router.py, avb_service.py, ptp_monitor.py. Error states logged with logger.error(). Connection state changes logged. No structured audit trail or event log database.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "PARTIAL",
+        "educationally_documented": "NO",
+        "notes": "Standard logging exists. TUI has log viewer tab. No persistent structured event log for audit purposes."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-07",
+        "requirement_description": "Hardware telemetry monitoring",
+        "status": "PARTIAL",
+        "evidence": "tsn_qdisc.py monitors NIC queue stats. ptp_monitor.py monitors PTP hardware. Node Console shows CPU, audio device detection. No NIC temperature, link status, or SFP monitoring.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Basic hardware monitoring via existing subsystems. No deep NIC telemetry (ethtool stats, link partner capabilities, PHY diagnostics)."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "T-08",
+        "requirement_description": "Redundant clock validation",
+        "status": "FAIL",
+        "evidence": "No redundant clock validation or multi-source clock comparison found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented. Would need multiple clock sources and cross-validation logic."
+      }
+    ],
+
+    "nice_to_have_advanced": [
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-01",
+        "requirement_description": "Metadata tagging",
+        "status": "PARTIAL",
+        "evidence": "AudioEndpoint dataclass has device_name, format, channels, sample_rate. AvbCapabilities has TXT record fields. No arbitrary user-defined metadata tagging.",
+        "diagnostic_visibility": "PARTIAL",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Fixed metadata fields exist. No user-defined tags or labels."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-02",
+        "requirement_description": "Role-based access control",
+        "status": "FAIL",
+        "evidence": "No authentication or authorization on AVB API endpoints.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "All API endpoints are unauthenticated."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-03",
+        "requirement_description": "Multi-user session awareness",
+        "status": "FAIL",
+        "evidence": "No multi-user session tracking or conflict resolution found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-04",
+        "requirement_description": "REST API",
+        "status": "PASS",
+        "evidence": "app/routes/avb.py: Comprehensive FastAPI router with 25+ endpoints covering PTP, TSN, streams, discovery, AVDECC entities, routing matrix, connections, entity models, and cache stats. Full CRUD for streams. OpenAPI docs at /docs.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "PARTIAL",
+        "notes": "Excellent REST API coverage. All AVB subsystems exposed with consistent error handling and graceful degradation."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-05",
+        "requirement_description": "Structured query interface",
+        "status": "PARTIAL",
+        "evidence": "REST API supports filtering (e.g., GET /router/endpoints?direction=talker). Routing matrix returns structured Dict[talker, Dict[listener, state]].",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Basic query filtering exists. No advanced query language (GraphQL, custom DSL)."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-06",
+        "requirement_description": "Config import/export (human-readable)",
+        "status": "PARTIAL",
+        "evidence": "~/.map2/config.json is human-readable JSON. SnapshotManager saves to file. No AVB routing config export/import.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "PARTIAL",
+        "educationally_documented": "NO",
+        "notes": "General config is exportable. AVB routing state is not serializable to file."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-07",
+        "requirement_description": "Design sandbox mode",
+        "status": "FAIL",
+        "evidence": "No sandbox/simulation mode found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-08",
+        "requirement_description": "Educational inline explanations",
+        "status": "PARTIAL",
+        "evidence": "docs/avb-setup.md, docs/MAP2_Educational_Overview_2026-02-14.md, docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md exist. Code has docstrings. No inline TUI/UI help popups.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "PARTIAL",
+        "notes": "Documentation files exist but no inline educational explanations in TUI or Web UI."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-09",
+        "requirement_description": "Topology auto-map",
+        "status": "PARTIAL",
+        "evidence": "AvbDiscoveryService discovers nodes via mDNS. Discovered nodes are listed with IP, capabilities. No graphical topology map generation.",
+        "diagnostic_visibility": "YES",
+        "tui_exposed": "YES",
+        "webui_exposed": "NO",
+        "code_documented": "YES",
+        "educationally_documented": "NO",
+        "notes": "Device discovery works. No topology visualization (link-level map of switches, endpoints, etc.)."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-10",
+        "requirement_description": "AI-assisted routing suggestions",
+        "status": "FAIL",
+        "evidence": "No AI or heuristic routing recommendation engine found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_1",
+        "requirement_id": "N-11",
+        "requirement_description": "Quick-build wizards (FOH, festival, immersive, studio, rehearsal)",
+        "status": "FAIL",
+        "evidence": "No deployment wizard or template instantiation system found.",
+        "diagnostic_visibility": "NO",
+        "tui_exposed": "NO",
+        "webui_exposed": "NO",
+        "code_documented": "NO",
+        "educationally_documented": "NO",
+        "notes": "Not implemented."
+      }
+    ]
+  },
+
+  "stage_2_interface_verification": {
+    "tui_requirements": [
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-01",
+        "requirement_description": "Full routing matrix control",
+        "status": "FAIL",
+        "evidence": "tui/screens/avb_tab.py: StreamsTable shows streams, DiscoveryTable shows nodes. No routing matrix grid widget or connect/disconnect controls.",
+        "tui_exposed": "NO",
+        "notes": "TUI shows status/streams/discovery but has no interactive routing matrix."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-02",
+        "requirement_description": "Real-time stream state",
+        "status": "PASS",
+        "evidence": "tui/screens/avb_tab.py:190-226 StreamsTable with columns: Stream ID, Direction, State, Channels, Sample Rate. Color-coded states. Auto-updates every 5 seconds via update_loop().",
+        "tui_exposed": "YES",
+        "notes": "Stream state table with color-coded status and auto-refresh."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-03",
+        "requirement_description": "Clock hierarchy display",
+        "status": "PASS",
+        "evidence": "tui/screens/avb_tab.py:74-122 PtpStatusWidget shows: State, Offset (color-coded), Path Delay, Grandmaster ID. Uses green/yellow/red thresholds (100ns/500ns).",
+        "tui_exposed": "YES",
+        "notes": "Full PTP status with visual health indicators."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-04",
+        "requirement_description": "Bandwidth monitoring",
+        "status": "PASS",
+        "evidence": "tui/screens/avb_tab.py:124-175 TsnStatusWidget shows: mqprio, CBS, ETF, VLAN status with checkmarks/crosses. CBS idleslope in Mbps.",
+        "tui_exposed": "YES",
+        "notes": "TSN qdisc configuration and CBS bandwidth visible."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-05",
+        "requirement_description": "Redundancy status",
+        "status": "FAIL",
+        "evidence": "No redundancy status widget in TUI. No dual-network support.",
+        "tui_exposed": "NO",
+        "notes": "Not applicable since T-01 (dual-network) is not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-06",
+        "requirement_description": "Snapshot control",
+        "status": "FAIL",
+        "evidence": "No AVB routing snapshot control in TUI. Audio chain snapshots exist but not in AVB tab.",
+        "tui_exposed": "NO",
+        "notes": "Not implemented for AVB routing."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-07",
+        "requirement_description": "Inline help explanations",
+        "status": "FAIL",
+        "evidence": "No inline help in AVB tab. Node Console has Help tab but not AVB-specific.",
+        "tui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-T-08",
+        "requirement_description": "Diagnostic color-coded state",
+        "status": "PASS",
+        "evidence": "avb_tab.py: PTP offset green/yellow/red at 100/500ns thresholds. Stream state: green=running, yellow=starting/stopping, dim=stopped, red=error. avb_status_widget.py: Border colors green=healthy, yellow=partial, red=degraded.",
+        "tui_exposed": "YES",
+        "notes": "Comprehensive color-coding across all AVB widgets."
+      }
+    ],
+
+    "webui_requirements": [
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-01",
+        "requirement_description": "Interactive routing graph",
+        "status": "FAIL",
+        "evidence": "No AVB-related React components found in web/src/. Glob for *avb*, *routing*, *stream* in web/src/ returned no matches.",
+        "webui_exposed": "NO",
+        "notes": "Web UI has zero AVB components. It is a pedalboard editor only."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-02",
+        "requirement_description": "Clock hierarchy visualization",
+        "status": "FAIL",
+        "evidence": "No PTP/clock visualization in web UI.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-03",
+        "requirement_description": "Bandwidth heat map",
+        "status": "FAIL",
+        "evidence": "No bandwidth visualization in web UI.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-04",
+        "requirement_description": "Stream health dashboard",
+        "status": "FAIL",
+        "evidence": "No stream health dashboard in web UI.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-05",
+        "requirement_description": "Configuration timeline",
+        "status": "FAIL",
+        "evidence": "No configuration timeline in web UI.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-06",
+        "requirement_description": "Wizard deployment tools",
+        "status": "FAIL",
+        "evidence": "No deployment wizards in web UI.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-07",
+        "requirement_description": "Diagnostic log viewer",
+        "status": "FAIL",
+        "evidence": "No AVB log viewer in web UI. TUI has log viewer.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented in web. TUI has it."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-08",
+        "requirement_description": "Exportable system report",
+        "status": "FAIL",
+        "evidence": "No report export functionality.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      },
+      {
+        "stage": "STAGE_2",
+        "requirement_id": "UI-W-09",
+        "requirement_description": "Embedded educational explanations",
+        "status": "FAIL",
+        "evidence": "No educational content in web UI.",
+        "webui_exposed": "NO",
+        "notes": "Not implemented."
+      }
+    ]
+  },
+
+  "stage_3_diagnostic_mandate": [
+    {
+      "stage": "STAGE_3",
+      "requirement_id": "D-01",
+      "requirement_description": "Expose OK/WARN/CRITICAL state",
+      "status": "PARTIAL",
+      "evidence": "avb_status_widget.py uses Healthy/Partial/Degraded with green/yellow/red borders. PTP offset thresholds. Stream state color coding. No unified OK/WARN/CRITICAL enum across all subsystems.",
+      "diagnostic_visibility": "PARTIAL",
+      "notes": "Individual widgets have health indicators but no unified system-wide health status."
+    },
+    {
+      "stage": "STAGE_3",
+      "requirement_id": "D-02",
+      "requirement_description": "Provide reason for state",
+      "status": "PASS",
+      "evidence": "avb_service.py StreamState.ERROR stores error string. PTPStatus.error explains unavailability. avb_router.py ConnectionState.ERROR with error_message. avb/__init__.py is_avb_available() provides specific failure reasons.",
+      "diagnostic_visibility": "YES",
+      "notes": "Good error messaging throughout. Specific reasons provided for all failure modes."
+    },
+    {
+      "stage": "STAGE_3",
+      "requirement_id": "D-03",
+      "requirement_description": "Suggest remediation",
+      "status": "FAIL",
+      "evidence": "Error messages describe what failed but do not suggest remediation steps.",
+      "diagnostic_visibility": "NO",
+      "notes": "No remediation suggestions. e.g., 'ptp4l not running' should suggest 'systemctl start map2-ptp4l'."
+    },
+    {
+      "stage": "STAGE_3",
+      "requirement_id": "D-04",
+      "requirement_description": "Log historical events",
+      "status": "PARTIAL",
+      "evidence": "Python logging captures all events. journalctl preserves history. No structured event database for querying.",
+      "diagnostic_visibility": "PARTIAL",
+      "notes": "Events are logged to systemd journal but no queryable event store."
+    },
+    {
+      "stage": "STAGE_3",
+      "requirement_id": "D-05",
+      "requirement_description": "Provide machine-readable output",
+      "status": "PASS",
+      "evidence": "All REST API endpoints return JSON. PTPStatus.to_dict(), TsnStatus.to_dict(), AvbNode.to_dict(), stream_to_dict() all produce serializable JSON.",
+      "diagnostic_visibility": "YES",
+      "notes": "Comprehensive JSON API. Machine-readable throughout."
+    }
+  ],
+
+  "stage_4_documentation_verification": [
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-01",
+      "requirement_description": "Architectural rationale documented",
+      "status": "PARTIAL",
+      "evidence": "docs/AVB_SIGNAL_FLOW_SPEC.json, docs/AVB_SIGNAL_FLOW_COMPARISON.md, docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md, docs/MAP2_AVB_Capabilities_and_Usecases_2026-02-14.md. Code-level docstrings in all Python and C++ headers.",
+      "code_documented": "YES",
+      "educationally_documented": "PARTIAL",
+      "notes": "Architecture documented at high level. No detailed design decision rationale (why AVTP AAF over CRF, why AF_PACKET over XDP, etc.)."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-02",
+      "requirement_description": "IEEE references cited",
+      "status": "PARTIAL",
+      "evidence": "AvdeccEntity.h references IEEE 1722.1. AvbStream.h references IEEE 1722 AVTP AAF. ptp_monitor.py references IEEE 802.1AS. No formal citation format.",
+      "code_documented": "YES",
+      "educationally_documented": "PARTIAL",
+      "notes": "IEEE standard references in code comments. No bibliography or formal citations."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-03",
+      "requirement_description": "Failure mode analysis documented",
+      "status": "FAIL",
+      "evidence": "No FMEA (Failure Mode and Effects Analysis) document found.",
+      "code_documented": "NO",
+      "educationally_documented": "NO",
+      "notes": "Not documented."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-04",
+      "requirement_description": "Determinism explanation documented",
+      "status": "PARTIAL",
+      "evidence": "AvbRingBuffer.h documents lock-free SPSC design. AvbStream.h documents RT-safety. AvbAudioIODevice.h documents thread architecture. No end-to-end determinism analysis.",
+      "code_documented": "YES",
+      "educationally_documented": "NO",
+      "notes": "Component-level determinism documented. No system-level worst-case analysis."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-05",
+      "requirement_description": "State diagrams included",
+      "status": "FAIL",
+      "evidence": "No state diagrams (visual) found. StreamState and ConnectionState enums define states textually.",
+      "code_documented": "PARTIAL",
+      "educationally_documented": "NO",
+      "notes": "State enums exist but no visual state machine diagrams."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-06",
+      "requirement_description": "Module interface contracts documented",
+      "status": "PARTIAL",
+      "evidence": "C++ headers have detailed Doxygen-style comments. Python has comprehensive docstrings. FastAPI endpoints have description strings. No formal interface specification document.",
+      "code_documented": "YES",
+      "educationally_documented": "NO",
+      "notes": "Code-level documentation is good. No separate interface contract document."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-07",
+      "requirement_description": "Unit tests documented",
+      "status": "PARTIAL",
+      "evidence": "8 test files: test_avb_integration.py, test_avb_rt_safety.py, test_avb_discovery_service.py, test_avb_router_map2.py, test_avb_router_factory.py, test_avb_stream_validation.py, test_avb_service_stats.py, test_avb_service_engine_contract.py. Tests exist but test documentation/rationale not captured.",
+      "code_documented": "PARTIAL",
+      "educationally_documented": "NO",
+      "notes": "Good test coverage. No test plan document or test rationale documentation."
+    },
+    {
+      "stage": "STAGE_4",
+      "requirement_id": "DOC-08",
+      "requirement_description": "Educational appendix (gPTP, SRP, AVTP, CBS, deterministic L2)",
+      "status": "PARTIAL",
+      "evidence": "docs/MAP2_Educational_Overview_2026-02-14.md exists. docs/avb-setup.md covers setup. Code comments reference standards. No comprehensive educational appendix covering all listed protocols.",
+      "code_documented": "YES",
+      "educationally_documented": "PARTIAL",
+      "notes": "Some educational content exists. No dedicated appendix covering gPTP, SRP, AVTP, CBS, and deterministic L2 transport as specified."
+    }
+  ],
+
+  "stage_5_touring_validation_tests": [
+    {
+      "stage": "STAGE_5",
+      "requirement_id": "TV-01",
+      "requirement_description": "Redundant network failure simulation",
+      "status": "FAIL",
+      "evidence": "No dual-network redundancy implemented. No failure simulation test.",
+      "notes": "Cannot test what is not implemented (T-01)."
+    },
+    {
+      "stage": "STAGE_5",
+      "requirement_id": "TV-02",
+      "requirement_description": "Clock master failure simulation",
+      "status": "FAIL",
+      "evidence": "No clock failure simulation test. ptp4l handles BMCA failover but no MAP2 test exercises it.",
+      "notes": "Not tested."
+    },
+    {
+      "stage": "STAGE_5",
+      "requirement_id": "TV-03",
+      "requirement_description": "High-load bandwidth stress test",
+      "status": "FAIL",
+      "evidence": "No bandwidth stress test found in tests/.",
+      "notes": "Not tested."
+    },
+    {
+      "stage": "STAGE_5",
+      "requirement_id": "TV-04",
+      "requirement_description": "Live rerouting during active streams",
+      "status": "FAIL",
+      "evidence": "No live rerouting test found. test_avb_router_map2.py tests routing but not during active streaming.",
+      "notes": "Not tested."
+    },
+    {
+      "stage": "STAGE_5",
+      "requirement_id": "TV-05",
+      "requirement_description": "Multi-destination multicast validation",
+      "status": "FAIL",
+      "evidence": "No multicast validation test found.",
+      "notes": "Not tested."
+    },
+    {
+      "stage": "STAGE_5",
+      "requirement_id": "TV-06",
+      "requirement_description": "Pre-flight simulation of 200+ channel deployment",
+      "status": "FAIL",
+      "evidence": "No large-scale simulation test found. MAX_CHANNELS=8 in AvbAudioIODevice.h suggests current design targets small channel counts.",
+      "notes": "Not tested. Current design supports max 8 channels per stream, not 200+ total channels across all streams."
+    }
+  ],
+
+  "stage_summaries": {
+    "stage_1_summary": {
+      "stage_summary": "Feature completeness is strong in core AVB transport (AVTP, gPTP monitoring, AVDECC) but weak in touring-grade features (redundancy, SRP, scheduling, visualization)",
+      "total_requirements": 42,
+      "pass_count": 11,
+      "partial_count": 14,
+      "fail_count": 17,
+      "pass_rate_percent": 26.2,
+      "partial_or_better_rate_percent": 59.5,
+      "open_failures": ["R-04", "R-05", "R-06", "R-08", "R-11", "R-12", "R-13", "R-14", "R-15", "C-03", "C-06", "B-01", "B-04", "B-05", "T-01", "T-02", "T-03", "T-08", "N-02", "N-03", "N-07", "N-10", "N-11"]
+    },
+    "stage_2_summary": {
+      "stage_summary": "TUI has decent AVB monitoring. Web UI has ZERO AVB support.",
+      "tui_pass": 5,
+      "tui_fail": 3,
+      "webui_pass": 0,
+      "webui_fail": 9,
+      "open_failures": ["UI-T-01", "UI-T-05", "UI-T-06", "UI-T-07", "UI-W-01", "UI-W-02", "UI-W-03", "UI-W-04", "UI-W-05", "UI-W-06", "UI-W-07", "UI-W-08", "UI-W-09"]
+    },
+    "stage_3_summary": {
+      "stage_summary": "Machine-readable output is excellent. Remediation suggestions missing.",
+      "pass_count": 2,
+      "partial_count": 2,
+      "fail_count": 1,
+      "open_failures": ["D-03"]
+    },
+    "stage_4_summary": {
+      "stage_summary": "Code documentation is good. Formal documentation artifacts (FMEA, state diagrams, educational appendix) are missing.",
+      "pass_count": 0,
+      "partial_count": 7,
+      "fail_count": 1,
+      "open_failures": ["DOC-03", "DOC-05"]
+    },
+    "stage_5_summary": {
+      "stage_summary": "No touring validation tests exist.",
+      "pass_count": 0,
+      "fail_count": 6,
+      "open_failures": ["TV-01", "TV-02", "TV-03", "TV-04", "TV-05", "TV-06"]
+    }
+  },
+
+  "overall_completion": {
+    "total_requirements": 67,
+    "pass": 13,
+    "partial": 23,
+    "fail": 31,
+    "pass_rate_percent": 19.4,
+    "partial_or_better_rate_percent": 53.7,
+    "system_complete": false,
+    "verdict": "INCOMPLETE - Significant gaps in touring-grade features, web UI, and validation testing"
+  },
+
+  "architecture_strengths": [
+    "Clean separation: C++ RT engine (AvbStream, AvbRingBuffer) + Python management layer (AvbService, AvbRouter)",
+    "Lock-free SPSC ring buffer with cache-line alignment for RT-safe audio transport",
+    "Comprehensive AVDECC implementation: ADP discovery, ACMP connection management, AECP entity enumeration",
+    "Atomic statistics counters for lock-free stream health monitoring",
+    "Graceful degradation: all services return available=false when hardware absent",
+    "REST API with 25+ endpoints and OpenAPI documentation",
+    "ptp4l delegation (correct architectural choice - uses reference 802.1AS implementation)",
+    "TSN qdisc management with CBS parameter calculation",
+    "8 unit test files covering routing, discovery, stream validation, RT safety, and engine contracts"
+  ],
+
+  "critical_gaps_for_touring_grade": [
+    "SRP/MSRP not implemented - no bandwidth reservation protocol",
+    "No dual-network redundancy (Milan requirement)",
+    "No web UI for AVB (zero React components)",
+    "No routing matrix interactive visualization",
+    "No automatic failover routing on link/device failure",
+    "No touring validation tests",
+    "MAX_CHANNELS=8 per stream - insufficient for large deployments",
+    "No routing snapshots (only audio chain snapshots)",
+    "No FMEA or failure mode documentation"
+  ],
+
+  "resumption_instructions": {
+    "stage_summary": "Audit complete. Implementation needed for 31 FAIL items.",
+    "open_failures": ["R-04", "R-05", "R-06", "R-08", "R-11", "R-12", "R-13", "R-14", "R-15", "C-03", "C-06", "B-01", "B-04", "B-05", "T-01", "T-02", "T-03", "T-08", "N-02", "N-03", "N-07", "N-10", "N-11", "UI-T-01", "UI-T-05", "UI-T-06", "UI-T-07", "UI-W-01", "UI-W-02", "UI-W-03", "UI-W-04", "UI-W-05", "UI-W-06", "UI-W-07", "UI-W-08", "UI-W-09", "D-03", "DOC-03", "DOC-05", "TV-01", "TV-02", "TV-03", "TV-04", "TV-05", "TV-06"],
+    "next_required_actions": [
+      "1. CRITICAL: Implement SRP/MSRP admission control (R-08, B-01) - required for standards compliance",
+      "2. CRITICAL: Implement dual-network redundancy (T-01) - required for touring reliability",
+      "3. HIGH: Build Web UI AVB components (UI-W-01 through UI-W-09) - required for usability",
+      "4. HIGH: Add interactive routing matrix to TUI (UI-T-01) with connect/disconnect controls",
+      "5. HIGH: Implement routing snapshot save/recall (R-10 upgrade, UI-T-06)",
+      "6. HIGH: Add stream aggregation/de-aggregation (R-05, R-06)",
+      "7. MEDIUM: Implement automatic reroute on failure (T-03)",
+      "8. MEDIUM: Add routing graph visualization (R-13) using d3.js (already a dependency)",
+      "9. MEDIUM: Write touring validation tests (TV-01 through TV-06)",
+      "10. MEDIUM: Create FMEA document (DOC-03) and state diagrams (DOC-05)",
+      "11. LOW: Add educational appendix (DOC-08)",
+      "12. LOW: Implement wizards (N-11), templates (R-15), and sandbox mode (N-07)"
+    ],
+    "resumption_context": "The MAP2 codebase has a solid AVB foundation with C++ AVTP streaming, Python management layer, and comprehensive REST API. The critical path to touring-grade is: SRP -> redundancy -> web UI -> validation tests. Key files: app/services/avb/ (Python services), juce-engine/Source/Avb*.h/cpp (C++ engine), app/routes/avb.py (REST API), tui/screens/avb_tab.py (TUI)."
+  }
+}

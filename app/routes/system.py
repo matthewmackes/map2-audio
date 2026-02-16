@@ -2013,6 +2013,12 @@ async def get_health_overview():
         if power_voltage is None:
             power_voltage = 12.0  # Typical PSU voltage
         
+        # Get CPU and memory usage
+        import psutil
+        cpu_usage = psutil.cpu_percent(interval=0.1)
+        mem = psutil.virtual_memory()
+        memory_usage = mem.percent
+
         # Calculate overall health
         if throttling or max_temp > 80:
             overall_health = "critical"
@@ -2020,9 +2026,13 @@ async def get_health_overview():
             overall_health = "warning"
         else:
             overall_health = "excellent" if max_temp < 60 else "good"
-        
+
         return {
             "overall_health": overall_health,
+            "cpu_temp_celsius": round(cpu_temp, 1),
+            "max_temp_celsius": round(max_temp, 1),
+            "cpu_usage_percent": round(cpu_usage, 1),
+            "memory_usage_percent": round(memory_usage, 1),
             "last_updated": datetime.now().isoformat(),
             "temperature": {
                 "cpu_c": round(cpu_temp, 1),

@@ -1,8 +1,8 @@
 [Unit]
 Description=MAP2 AVB/TSN Network Audio Services
 Documentation=https://github.com/matthewmackes/map2-audio
-After=network-online.target
-Wants=network-online.target
+After=network-online.target map2-ptp4l.service map2-srpd.service
+Wants=network-online.target map2-ptp4l.service map2-phc2sys.service map2-srpd.service
 
 [Install]
 WantedBy=multi-user.target

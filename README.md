@@ -212,7 +212,9 @@ cd juce-engine && cmake -B build      # C++ engine
 
 ## Legal Disclaimer
 
-This project is a **strictly non-commercial, educational, open-source resource** created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes. It is not affiliated with, endorsed by, or connected to any commercial manufacturer or brand owner in the professional audio industry. All trademarks and product names are the property of their respective owners and are referenced solely for educational and descriptive purposes.
+This project is a **strictly non-commercial, educational, source-available resource** created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes. It is not affiliated with, endorsed by, or connected to any commercial manufacturer or brand owner in the professional audio industry. All trademarks and product names are the property of their respective owners and are referenced solely for educational and descriptive purposes.
+
+License terms for original MAP2 code: see `LICENSE`. Third-party components remain under their original licenses: see `THIRD_PARTY_NOTICES.md`.
 
 See the full [Legal Disclaimer](docs/%23%20LEGAL%20DISCLAIMER%20%E2%80%93%20IMPORTANT%20NOTICE.md) for complete details.
 

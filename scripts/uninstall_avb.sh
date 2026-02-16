@@ -27,6 +27,7 @@ NC='\033[0m'
 # Flags
 AUTO_YES=false
 PRESERVE_CONFIG=false
+SRP_MANIFEST="/var/lib/map2/srp-install-manifest.json"
 
 # ============================================================================
 # Helper Functions
@@ -85,11 +86,19 @@ create_backup() {
     mkdir -p "$backup_dir"
 
     # Backup systemd services
-    for service in map2-ptp4l.service map2-phc2sys.service map2-avb.target; do
+    for service in map2-ptp4l.service map2-phc2sys.service map2-srpd.service map2-avb.target; do
         if [[ -f "/etc/systemd/system/$service" ]]; then
             cp "/etc/systemd/system/$service" "$backup_dir/${service}.${timestamp}"
         fi
     done
+
+    if [[ -f "/etc/default/map2-srpd" ]]; then
+        cp "/etc/default/map2-srpd" "$backup_dir/map2-srpd.default.${timestamp}"
+    fi
+
+    if [[ -f "$SRP_MANIFEST" ]]; then
+        cp "$SRP_MANIFEST" "$backup_dir/srp-install-manifest.${timestamp}.json"
+    fi
 
     # Backup PTP config
     if [[ -f "/etc/ptp4l.conf" ]]; then
@@ -118,7 +127,7 @@ stop_services() {
     fi
 
     # Stop individual services
-    for service in map2-ptp4l.service map2-phc2sys.service; do
+    for service in map2-ptp4l.service map2-phc2sys.service map2-srpd.service; do
         if systemctl is-active --quiet "$service" 2>/dev/null; then
             systemctl stop "$service"
             log_success "Stopped $service"
@@ -129,7 +138,7 @@ stop_services() {
 disable_services() {
     log_info "Disabling AVB services..."
 
-    for service in map2-ptp4l.service map2-phc2sys.service map2-avb.target; do
+    for service in map2-ptp4l.service map2-phc2sys.service map2-srpd.service map2-avb.target; do
         if systemctl is-enabled --quiet "$service" 2>/dev/null; then
             systemctl disable "$service"
             log_success "Disabled $service"
@@ -140,14 +149,76 @@ disable_services() {
 remove_services() {
     log_info "Removing systemd service files..."
 
-    for service in map2-ptp4l.service map2-phc2sys.service map2-avb.target; do
+    for service in map2-ptp4l.service map2-phc2sys.service map2-srpd.service map2-avb.target; do
         if [[ -f "/etc/systemd/system/$service" ]]; then
             rm "/etc/systemd/system/$service"
             log_success "Removed $service"
         fi
     done
 
+    if [[ -f "/etc/default/map2-srpd" ]]; then
+        rm "/etc/default/map2-srpd"
+        log_success "Removed /etc/default/map2-srpd"
+    fi
+
     systemctl daemon-reload
+}
+
+remove_srp_artifacts_from_manifest() {
+    if [[ ! -f "$SRP_MANIFEST" ]]; then
+        return 0
+    fi
+
+    log_info "Cleaning SRP artifacts from install manifest..."
+
+    python3 <<EOF
+import json
+import os
+import shutil
+
+manifest_path = "${SRP_MANIFEST}"
+allow_prefixes_raw = os.environ.get("MAP2_SRPD_UNINSTALL_ALLOW_PREFIXES", "/usr/local/,/etc/")
+allow_prefixes = [prefix.strip() for prefix in allow_prefixes_raw.split(",") if prefix.strip()]
+
+def _is_allowed(path: str) -> bool:
+    return any(path.startswith(prefix) for prefix in allow_prefixes)
+
+try:
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+except Exception as e:
+    print(f"Failed to parse manifest: {e}")
+    raise SystemExit(0)
+
+install_mode = manifest.get("install_mode", "")
+binary_path = manifest.get("binary_path") or ""
+source_root = manifest.get("source_root") or ""
+managed_files = manifest.get("managed_files") or []
+
+if install_mode == "source" and binary_path and _is_allowed(binary_path):
+    if os.path.exists(binary_path):
+        os.remove(binary_path)
+        print(f"Removed source-installed daemon binary: {binary_path}")
+
+if install_mode == "source" and source_root and _is_allowed(source_root):
+    if os.path.isdir(source_root):
+        shutil.rmtree(source_root, ignore_errors=True)
+        print(f"Removed source tree: {source_root}")
+
+for path in managed_files:
+    if path == manifest_path:
+        continue
+    if isinstance(path, str) and _is_allowed(path) and os.path.exists(path):
+        try:
+            os.remove(path)
+            print(f"Removed managed file: {path}")
+        except IsADirectoryError:
+            shutil.rmtree(path, ignore_errors=True)
+
+if os.path.exists(manifest_path):
+    os.remove(manifest_path)
+    print(f"Removed manifest: {manifest_path}")
+EOF
 }
 
 # ============================================================================
@@ -277,6 +348,9 @@ with open(config_file, 'r') as f:
 
 if 'avb' in config:
     config['avb']['enabled'] = False
+    if 'srp' in config['avb'] and isinstance(config['avb']['srp'], dict):
+        config['avb']['srp']['enabled'] = False
+        config['avb']['srp']['required'] = False
 
     with open(config_file, 'w') as f:
         json.dump(config, f, indent=2)
@@ -299,18 +373,26 @@ verify_removal() {
     local issues=()
 
     # Check services
-    for service in map2-ptp4l.service map2-phc2sys.service; do
+    for service in map2-ptp4l.service map2-phc2sys.service map2-srpd.service; do
         if systemctl is-active --quiet "$service" 2>/dev/null; then
             issues+=("Service $service still running")
         fi
     done
 
     # Check service files
-    for service in map2-ptp4l.service map2-phc2sys.service map2-avb.target; do
+    for service in map2-ptp4l.service map2-phc2sys.service map2-srpd.service map2-avb.target; do
         if [[ -f "/etc/systemd/system/$service" ]]; then
             issues+=("Service file $service still exists")
         fi
     done
+
+    if [[ -f "/etc/default/map2-srpd" ]]; then
+        issues+=("SRP environment file /etc/default/map2-srpd still exists")
+    fi
+
+    if [[ -f "$SRP_MANIFEST" ]]; then
+        issues+=("SRP install manifest $SRP_MANIFEST still exists")
+    fi
 
     # Check marker file
     if [[ -f "/etc/map2/avb-enabled" ]]; then
@@ -391,6 +473,7 @@ EOF
     # Confirmation
     log_warning "This will remove all AVB/TSN configuration:"
     echo "  - Stop and disable systemd services"
+    echo "  - Remove SRP daemon service wiring"
     echo "  - Remove qdisc configuration"
     echo "  - Delete VLAN interfaces"
     echo "  - Remove configuration files"
@@ -412,6 +495,7 @@ EOF
     remove_qdiscs
     remove_vlan_interfaces
     remove_services
+    remove_srp_artifacts_from_manifest
     remove_config_files
     update_map2_config
 
@@ -426,10 +510,11 @@ ${GREEN}AVB/TSN Uninstall Complete!${NC}
 ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}
 
 ${BLUE}What was removed:${NC}
-  ✓ Systemd services (ptp4l, phc2sys, avb.target)
+  ✓ Systemd services (ptp4l, phc2sys, srpd, avb.target)
   ✓ TSN traffic shaping (qdiscs)
   ✓ VLAN interfaces
   ✓ Configuration files
+  ✓ SRP install manifest/source artifacts (when tracked)
 
 ${BLUE}Backups preserved:${NC}
   /var/lib/map2/avb-backup/
@@ -448,4 +533,6 @@ ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

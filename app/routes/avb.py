@@ -24,6 +24,71 @@ from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/avb", tags=["AVB/TSN"])
+_acmp_srp_reservations: Dict[str, Dict[str, Optional[str]]] = {}
+
+
+def _srp_enabled() -> bool:
+    return bool(config_get("avb.srp.enabled", True))
+
+
+def _srp_required() -> bool:
+    return _srp_enabled() and bool(config_get("avb.srp.required", True))
+
+
+def _parse_since_timestamp(since: Optional[str]) -> Optional[datetime]:
+    if since is None:
+        return None
+    value = since.strip()
+    if not value:
+        return None
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is not None:
+            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid since timestamp format: {since}. Use ISO 8601.",
+        ) from exc
+
+
+def _normalize_admission_decision(decision: Optional[str]) -> Optional[str]:
+    if decision is None:
+        return None
+    value = decision.strip().lower()
+    if not value:
+        return None
+    allowed = {"allowed", "denied", "bypass", "error"}
+    if value not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid decision filter: {decision}. Allowed: {', '.join(sorted(allowed))}.",
+        )
+    return value
+
+
+def _raise_srp_denied(
+    result: Any,
+    *,
+    code: str = "SRP_ADMISSION_DENIED",
+    reason_code: Optional[str] = None,
+    reason: Optional[str] = None,
+) -> None:
+    raise HTTPException(
+        status_code=409,
+        detail={
+            "code": code,
+            "admission_id": getattr(result, "admission_id", None),
+            "reason_code": reason_code or getattr(result, "reason_code", "SRP_DENIED"),
+            "reason": reason or getattr(result, "reason", "SRP admission denied"),
+            "remediation": list(getattr(result, "remediation", []) or []),
+            "daemon_type": getattr(result, "daemon_type", "none"),
+            "endpoint": getattr(result, "endpoint", None),
+        },
+    )
 
 
 def _is_avdecc_enabled() -> bool:
@@ -176,6 +241,74 @@ async def get_avb_status() -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting AVB status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/srp/status")
+async def get_srp_status() -> Dict[str, Any]:
+    """Get SRP/MSRP daemon admission-control status."""
+    try:
+        from app.services.avb.srp_admission import get_srp_admission_service
+
+        service = get_srp_admission_service()
+        return await service.get_status()
+    except Exception as e:
+        logger.error(f"Error getting SRP status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/srp/admissions")
+async def get_srp_admissions(
+    decision: Optional[str] = None,
+    since: Optional[str] = None,
+    limit: int = 100,
+    endpoint: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Query persistent SRP admission audit log entries."""
+    try:
+        from app.services.avb.srp_log_store import SrpAdmissionLogStore
+
+        normalized_decision = _normalize_admission_decision(decision)
+        since_dt = _parse_since_timestamp(since)
+        store = SrpAdmissionLogStore()
+        rows = await store.list_admissions(
+            decision=normalized_decision,
+            since=since_dt,
+            limit=limit,
+            endpoint=endpoint,
+        )
+        return {
+            "count": len(rows),
+            "filters": {
+                "decision": normalized_decision,
+                "since": since_dt.isoformat() if since_dt else None,
+                "limit": max(1, min(int(limit), 500)),
+                "endpoint": endpoint,
+            },
+            "admissions": rows,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing SRP admissions: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/srp/admissions/{admission_id}")
+async def get_srp_admission(admission_id: str) -> Dict[str, Any]:
+    """Get one SRP admission audit entry by admission_id."""
+    try:
+        from app.services.avb.srp_log_store import SrpAdmissionLogStore
+
+        store = SrpAdmissionLogStore()
+        row = await store.get_admission(admission_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Admission record not found")
+        return row
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting SRP admission record: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -366,6 +499,45 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="direction must be 'talker' or 'listener'") from exc
 
+        srp_payload = config.get("srp")
+        srp_reservation_id = None
+        srp_admission_id = None
+        srp_metadata: Dict[str, Any] = {}
+
+        if srp_payload is not None:
+            if not isinstance(srp_payload, dict):
+                raise HTTPException(status_code=400, detail="srp must be an object when provided")
+
+            srp_reservation_raw = srp_payload.get("reservation_id")
+            if srp_reservation_raw is not None:
+                if not isinstance(srp_reservation_raw, str) or not srp_reservation_raw.strip():
+                    raise HTTPException(status_code=400, detail="srp.reservation_id must be a non-empty string")
+                srp_reservation_id = srp_reservation_raw.strip()
+
+            srp_admission_raw = srp_payload.get("admission_id")
+            if srp_admission_raw is not None:
+                if not isinstance(srp_admission_raw, str) or not srp_admission_raw.strip():
+                    raise HTTPException(status_code=400, detail="srp.admission_id must be a non-empty string")
+                srp_admission_id = srp_admission_raw.strip()
+
+            for key in (
+                "talker_id",
+                "listener_id",
+                "endpoint",
+                "class",
+                "vlan_id",
+                "daemon_type",
+                "daemon_socket",
+            ):
+                if key in srp_payload:
+                    srp_metadata[key] = srp_payload.get(key)
+
+            if _srp_required() and srp_reservation_id is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Strict SRP mode requires srp.reservation_id when SRP metadata is provided",
+                )
+
         # Parse config
         stream_config = AvbStreamConfig(
             stream_id=stream_id,
@@ -376,7 +548,10 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
             interface=config.get("interface", ""),
             dest_mac=config.get("dest_mac"),
             presentation_offset_us=config.get("presentation_offset_us", 2000),
-            priority=config.get("priority", 3)
+            priority=config.get("priority", 3),
+            srp_reservation_id=srp_reservation_id,
+            srp_admission_id=srp_admission_id,
+            srp_metadata=srp_metadata,
         )
 
         result = await avb_service.create_stream(stream_config)
@@ -406,12 +581,27 @@ async def delete_stream(stream_id: str) -> Dict[str, Any]:
         if not avb_service.is_available():
             raise HTTPException(status_code=503, detail="AVB not available")
 
+        binding = avb_service.get_srp_binding(stream_id)
         result = await avb_service.delete_stream(stream_id)
 
         if "error" in result:
             if result["code"] == "NOT_FOUND":
                 raise HTTPException(status_code=404, detail=result["error"])
             raise HTTPException(status_code=400, detail=result["error"])
+
+        if binding and binding.get("reservation_id"):
+            try:
+                from app.services.avb.srp_admission import get_srp_admission_service
+
+                release_result = await get_srp_admission_service().release(
+                    reservation_id=str(binding["reservation_id"]),
+                    endpoint="streams.delete",
+                    stream_id=stream_id,
+                )
+                avb_service.clear_srp_reservation(stream_id)
+                result["srp_release"] = release_result.to_dict()
+            except Exception as exc:
+                logger.warning("SRP release failed during stream delete %s: %s", stream_id, exc)
 
         return result
 
@@ -425,26 +615,146 @@ async def delete_stream(stream_id: str) -> Dict[str, Any]:
 @router.post("/streams/{stream_id}/start")
 async def start_stream(stream_id: str) -> Dict[str, Any]:
     """Start AVB stream"""
+    created_binding = False
+    srp_binding: Optional[Dict[str, Any]] = None
+    avb_service = None
+    admission: Any = None
+
     try:
         from app.services.avb.avb_service import get_avb_service
+        from app.services.avb.srp_admission import SrpAdmissionRequest, get_srp_admission_service
 
         avb_service = get_avb_service()
 
         if not avb_service.is_available():
             raise HTTPException(status_code=503, detail="AVB not available")
 
+        stream = avb_service.get_stream(stream_id)
+        if stream is None:
+            raise HTTPException(status_code=404, detail="Stream not found")
+
+        srp_binding = avb_service.get_srp_binding(stream_id)
+        admission_payload: Optional[Dict[str, Any]] = None
+
+        if _srp_enabled() and not srp_binding:
+            admission = await get_srp_admission_service().admit(
+                SrpAdmissionRequest(
+                    endpoint="streams.start",
+                    stream_id=stream_id,
+                    talker_id=stream_id if stream.get("direction") == "talker" else None,
+                    listener_id=stream_id if stream.get("direction") == "listener" else None,
+                    request_metadata={
+                        "direction": stream.get("direction"),
+                        "channels": stream.get("config", {}).get("channels"),
+                        "sample_rate": stream.get("config", {}).get("sample_rate"),
+                    },
+                )
+            )
+            admission_payload = admission.to_dict()
+            if admission.decision == "denied":
+                _raise_srp_denied(admission)
+            if admission.decision == "allowed":
+                if not admission.reservation_id:
+                    _raise_srp_denied(
+                        admission,
+                        code="SRP_ADMISSION_INVALID",
+                        reason_code="SRP_INVALID_ADMISSION",
+                        reason="SRP admission acknowledged without reservation_id",
+                    )
+
+                bound = avb_service.bind_srp_reservation(
+                    stream_id,
+                    admission.reservation_id,
+                    admission_id=admission.admission_id,
+                    metadata={
+                        "endpoint": admission.endpoint,
+                        "daemon_type": admission.daemon_type,
+                        "daemon_socket": admission.daemon_socket,
+                        "reason_code": admission.reason_code,
+                    },
+                )
+                if not bound:
+                    raise HTTPException(status_code=500, detail="Failed to bind SRP reservation to stream")
+                created_binding = True
+                srp_binding = avb_service.get_srp_binding(stream_id)
+
         result = await avb_service.start_stream(stream_id)
 
         if "error" in result:
+            if created_binding and srp_binding and srp_binding.get("reservation_id"):
+                release_result = await get_srp_admission_service().release(
+                    reservation_id=str(srp_binding["reservation_id"]),
+                    endpoint="streams.start.rollback",
+                    stream_id=stream_id,
+                )
+                avb_service.clear_srp_reservation(stream_id)
+                result["srp_release"] = release_result.to_dict()
             if result["code"] == "NOT_FOUND":
                 raise HTTPException(status_code=404, detail=result["error"])
             raise HTTPException(status_code=400, detail=result["error"])
 
+        if srp_binding:
+            result["srp"] = srp_binding
+        if admission_payload:
+            result["srp_admission"] = admission_payload
+
         return result
 
     except HTTPException:
+        if avb_service is not None:
+            rollback_reservation: Optional[str] = None
+            if created_binding and srp_binding and srp_binding.get("reservation_id"):
+                rollback_reservation = str(srp_binding["reservation_id"])
+            elif admission is not None and getattr(admission, "decision", None) == "allowed":
+                reservation_id = getattr(admission, "reservation_id", None)
+                if reservation_id:
+                    rollback_reservation = str(reservation_id)
+
+            if rollback_reservation:
+                try:
+                    from app.services.avb.srp_admission import get_srp_admission_service
+
+                    await get_srp_admission_service().release(
+                        reservation_id=rollback_reservation,
+                        endpoint="streams.start.exception",
+                        stream_id=stream_id,
+                    )
+                    if created_binding:
+                        avb_service.clear_srp_reservation(stream_id)
+                except Exception as release_exc:
+                    logger.warning(
+                        "SRP release failed during stream start HTTPException %s: %s",
+                        stream_id,
+                        release_exc,
+                    )
         raise
     except Exception as e:
+        if avb_service is not None:
+            rollback_reservation: Optional[str] = None
+            if created_binding and srp_binding and srp_binding.get("reservation_id"):
+                rollback_reservation = str(srp_binding["reservation_id"])
+            elif admission is not None and getattr(admission, "decision", None) == "allowed":
+                reservation_id = getattr(admission, "reservation_id", None)
+                if reservation_id:
+                    rollback_reservation = str(reservation_id)
+
+            if rollback_reservation:
+                try:
+                    from app.services.avb.srp_admission import get_srp_admission_service
+
+                    await get_srp_admission_service().release(
+                        reservation_id=rollback_reservation,
+                        endpoint="streams.start.exception",
+                        stream_id=stream_id,
+                    )
+                    if created_binding:
+                        avb_service.clear_srp_reservation(stream_id)
+                except Exception as release_exc:
+                    logger.warning(
+                        "SRP release failed during stream start exception %s: %s",
+                        stream_id,
+                        release_exc,
+                    )
         logger.error(f"Error starting AVB stream: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -454,18 +764,29 @@ async def stop_stream(stream_id: str) -> Dict[str, Any]:
     """Stop AVB stream"""
     try:
         from app.services.avb.avb_service import get_avb_service
+        from app.services.avb.srp_admission import get_srp_admission_service
 
         avb_service = get_avb_service()
 
         if not avb_service.is_available():
             raise HTTPException(status_code=503, detail="AVB not available")
 
+        srp_binding = avb_service.get_srp_binding(stream_id)
         result = await avb_service.stop_stream(stream_id)
 
         if "error" in result:
             if result["code"] == "NOT_FOUND":
                 raise HTTPException(status_code=404, detail=result["error"])
             raise HTTPException(status_code=400, detail=result["error"])
+
+        if srp_binding and srp_binding.get("reservation_id"):
+            release_result = await get_srp_admission_service().release(
+                reservation_id=str(srp_binding["reservation_id"]),
+                endpoint="streams.stop",
+                stream_id=stream_id,
+            )
+            avb_service.clear_srp_reservation(stream_id)
+            result["srp_release"] = release_result.to_dict()
 
         return result
 
@@ -900,7 +1221,9 @@ async def get_router_connections() -> Dict[str, Any]:
                 },
                 "state": conn.state.value,
                 "established_time": conn.established_time.isoformat() if conn.established_time else None,
-                "error_message": conn.error_message
+                "error_message": conn.error_message,
+                "srp_reservation_id": conn.srp_reservation_id,
+                "srp_admission_id": conn.srp_admission_id,
             }
             for conn in connections
         ]
@@ -976,8 +1299,14 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Connection result
     """
+    talker_id: Optional[str] = None
+    listener_id: Optional[str] = None
+    admission: Any = None
+    route_reservation_id: Optional[str] = None
+
     try:
         from app.services.avb.avb_router import get_avb_router
+        from app.services.avb.srp_admission import SrpAdmissionRequest, get_srp_admission_service
 
         router = get_avb_router()
 
@@ -990,20 +1319,99 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
         if not talker_id or not listener_id:
             raise HTTPException(status_code=400, detail="Missing talker_id or listener_id")
 
-        success = await router.connect(talker_id, listener_id)
+        talker = router.endpoints.get(talker_id) if hasattr(router, "endpoints") else None
+        listener = router.endpoints.get(listener_id) if hasattr(router, "endpoints") else None
+        if talker is None or listener is None:
+            missing: List[str] = []
+            if talker is None:
+                missing.append(f"talker_id={talker_id}")
+            if listener is None:
+                missing.append(f"listener_id={listener_id}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Endpoint not found: {', '.join(missing)}",
+            )
+
+        if _srp_enabled():
+            admission = await get_srp_admission_service().admit(
+                SrpAdmissionRequest(
+                    endpoint="router.connect",
+                    stream_id=f"{talker_id}->{listener_id}",
+                    talker_id=talker_id,
+                    listener_id=listener_id,
+                    talker_mac=getattr(talker, "mac_address", None),
+                    listener_mac=getattr(listener, "mac_address", None),
+                    request_metadata={
+                        "talker_device_type": getattr(talker, "device_type", None),
+                        "listener_device_type": getattr(listener, "device_type", None),
+                    },
+                )
+            )
+            if admission.decision == "denied":
+                _raise_srp_denied(admission)
+            if admission.decision == "allowed" and not admission.reservation_id:
+                _raise_srp_denied(
+                    admission,
+                    code="SRP_ADMISSION_INVALID",
+                    reason_code="SRP_INVALID_ADMISSION",
+                    reason="SRP admission acknowledged without reservation_id",
+                )
+
+        if admission is not None:
+            if admission.decision == "allowed":
+                route_reservation_id = admission.reservation_id
+            else:
+                # Preserve bypass decision from route-level admission and avoid duplicate
+                # internal SRP admission attempts.
+                route_reservation_id = ""
+
+        success = await router.connect(
+            talker_id,
+            listener_id,
+            reservation_id=route_reservation_id,
+            admission_id=admission.admission_id if admission and admission.decision == "allowed" else None,
+        )
 
         if not success:
             raise HTTPException(status_code=500, detail="Connection failed")
 
-        return {
+        response = {
             "success": True,
             "connection_id": f"{talker_id}→{listener_id}",
-            "message": "Stream connected successfully"
+            "message": "Stream connected successfully",
         }
+        if admission:
+            response["srp_admission"] = admission.to_dict()
+
+        return response
 
     except HTTPException:
         raise
     except Exception as e:
+        if (
+            admission is not None
+            and getattr(admission, "decision", None) == "allowed"
+            and route_reservation_id
+            and talker_id
+            and listener_id
+        ):
+            try:
+                from app.services.avb.srp_admission import get_srp_admission_service
+
+                await get_srp_admission_service().release(
+                    reservation_id=route_reservation_id,
+                    endpoint="router.connect.exception",
+                    stream_id=f"{talker_id}->{listener_id}",
+                    talker_id=talker_id,
+                    listener_id=listener_id,
+                )
+            except Exception as release_exc:
+                logger.warning(
+                    "SRP rollback release failed after router.connect exception %s->%s: %s",
+                    talker_id,
+                    listener_id,
+                    release_exc,
+                )
         logger.error(f"Error connecting streams: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1325,6 +1733,7 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
     """
     engine = _get_engine()
     _check_acmp_available(engine)
+    from app.services.avb.srp_admission import SrpAdmissionRequest, get_srp_admission_service
 
     try:
         talker_id = int(req.talker_entity_id, 16)
@@ -1337,6 +1746,33 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=f"Invalid listener entity ID: {req.listener_entity_id}")
 
     try:
+        admission = None
+        if _srp_enabled():
+            admission = await get_srp_admission_service().admit(
+                SrpAdmissionRequest(
+                    endpoint="avdecc.connections",
+                    stream_id=(
+                        f"{req.talker_entity_id}:{req.talker_stream_index}"
+                        f"->{req.listener_entity_id}:{req.listener_stream_index}"
+                    ),
+                    talker_id=req.talker_entity_id,
+                    listener_id=req.listener_entity_id,
+                    request_metadata={
+                        "talker_stream_index": req.talker_stream_index,
+                        "listener_stream_index": req.listener_stream_index,
+                    },
+                )
+            )
+            if admission.decision == "denied":
+                _raise_srp_denied(admission)
+            if admission.decision == "allowed" and not admission.reservation_id:
+                _raise_srp_denied(
+                    admission,
+                    code="SRP_ADMISSION_INVALID",
+                    reason_code="SRP_INVALID_ADMISSION",
+                    reason="SRP admission acknowledged without reservation_id",
+                )
+
         success = await asyncio.to_thread(
             engine.connect_stream,
             talker_id,
@@ -1344,11 +1780,38 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
             listener_id,
             req.listener_stream_index
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        try:
+            if admission and admission.decision == "allowed" and admission.reservation_id:
+                await get_srp_admission_service().release(
+                    reservation_id=admission.reservation_id,
+                    endpoint="avdecc.connections.rollback",
+                    stream_id=(
+                        f"{req.talker_entity_id}:{req.talker_stream_index}"
+                        f"->{req.listener_entity_id}:{req.listener_stream_index}"
+                    ),
+                    talker_id=req.talker_entity_id,
+                    listener_id=req.listener_entity_id,
+                )
+        except Exception:
+            pass
         logger.error(f"ACMP connect_stream failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"ACMP connection failed: {e}")
 
     if not success:
+        if admission and admission.decision == "allowed" and admission.reservation_id:
+            await get_srp_admission_service().release(
+                reservation_id=admission.reservation_id,
+                endpoint="avdecc.connections.rollback",
+                stream_id=(
+                    f"{req.talker_entity_id}:{req.talker_stream_index}"
+                    f"->{req.listener_entity_id}:{req.listener_stream_index}"
+                ),
+                talker_id=req.talker_entity_id,
+                listener_id=req.listener_entity_id,
+            )
         raise HTTPException(
             status_code=500,
             detail="ACMP connection failed (timeout or rejected by remote entity)"
@@ -1359,7 +1822,7 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
         f":{req.listener_entity_id}:{req.listener_stream_index}"
     )
 
-    return {
+    response: Dict[str, Any] = {
         "status": "connected",
         "connection_id": connection_id,
         "talker_entity_id": req.talker_entity_id,
@@ -1368,6 +1831,15 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
         "listener_stream_index": req.listener_stream_index,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+    if admission and admission.decision == "allowed" and admission.reservation_id:
+        _acmp_srp_reservations[connection_id] = {
+            "reservation_id": admission.reservation_id,
+            "admission_id": admission.admission_id,
+        }
+        response["srp_admission"] = admission.to_dict()
+
+    return response
 
 
 @router.delete("/avdecc/connections/{connection_id}")
@@ -1385,6 +1857,7 @@ async def disconnect_stream(connection_id: str) -> Dict[str, Any]:
     """
     engine = _get_engine()
     _check_acmp_available(engine)
+    from app.services.avb.srp_admission import get_srp_admission_service
 
     parts = connection_id.split(":")
     if len(parts) != 4:
@@ -1416,11 +1889,24 @@ async def disconnect_stream(connection_id: str) -> Dict[str, Any]:
     if not success:
         raise HTTPException(status_code=404, detail="Connection not found or disconnect failed")
 
-    return {
+    response: Dict[str, Any] = {
         "status": "disconnected",
         "connection_id": connection_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+    binding = _acmp_srp_reservations.pop(connection_id, None)
+    if binding and binding.get("reservation_id"):
+        release_result = await get_srp_admission_service().release(
+            reservation_id=str(binding["reservation_id"]),
+            endpoint="avdecc.disconnect",
+            stream_id=connection_id,
+            talker_id=parts[0],
+            listener_id=parts[2],
+        )
+        response["srp_release"] = release_result.to_dict()
+
+    return response
 
 
 @router.get("/avdecc/connections")

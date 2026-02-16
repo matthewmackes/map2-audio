@@ -10,7 +10,7 @@ Manages AVB/TSN audio streams:
 
 import logging
 from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,9 @@ class AvbStreamConfig:
     dest_mac: Optional[str] = None  # For talkers
     presentation_offset_us: int = 2000
     priority: int = 3  # 802.1Q SR Class A
+    srp_reservation_id: Optional[str] = None
+    srp_admission_id: Optional[str] = None
+    srp_metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -82,6 +85,7 @@ class AvbService:
 
     def __init__(self):
         self.streams: Dict[str, AvbStreamInfo] = {}
+        self._srp_bindings: Dict[str, Dict[str, Any]] = {}
         self._engine = None  # Will be set by juce_engine_service
 
     def set_engine(self, engine):
@@ -296,6 +300,9 @@ class AvbService:
         try:
             engine_config = asdict(config)
             engine_config["direction"] = config.direction.value
+            engine_config.pop("srp_reservation_id", None)
+            engine_config.pop("srp_admission_id", None)
+            engine_config.pop("srp_metadata", None)
             found, success, error = self._call_engine_stream_api(
                 [
                     "create_avb_stream",
@@ -319,6 +326,13 @@ class AvbService:
             )
 
             self.streams[stream_id] = stream_info
+
+            if config.srp_reservation_id:
+                self._srp_bindings[stream_id] = {
+                    "reservation_id": config.srp_reservation_id,
+                    "admission_id": config.srp_admission_id,
+                    "metadata": dict(config.srp_metadata or {}),
+                }
 
             logger.info(f"Created AVB {config.direction.value} stream: {stream_id}")
 
@@ -366,6 +380,7 @@ class AvbService:
                 return {"error": error or "Engine delete_stream failed", "code": "DELETE_FAILED"}
 
             del self.streams[stream_id]
+            self._srp_bindings.pop(stream_id, None)
 
             logger.info(f"Deleted AVB stream: {stream_id}")
 
@@ -480,6 +495,47 @@ class AvbService:
             return self._stream_to_dict(stream)
         return None
 
+    def get_srp_binding(self, stream_id: str) -> Optional[Dict[str, Any]]:
+        """Get SRP binding metadata for a stream."""
+        binding = self._srp_bindings.get(stream_id)
+        if binding is None:
+            return None
+        return {
+            "reservation_id": binding.get("reservation_id"),
+            "admission_id": binding.get("admission_id"),
+            "metadata": dict(binding.get("metadata") or {}),
+        }
+
+    def bind_srp_reservation(
+        self,
+        stream_id: str,
+        reservation_id: str,
+        admission_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Bind SRP reservation metadata to an existing stream."""
+        if stream_id not in self.streams:
+            return False
+        if not reservation_id:
+            return False
+        self._srp_bindings[stream_id] = {
+            "reservation_id": reservation_id,
+            "admission_id": admission_id,
+            "metadata": dict(metadata or {}),
+        }
+        return True
+
+    def clear_srp_reservation(self, stream_id: str) -> Optional[Dict[str, Any]]:
+        """Clear and return SRP reservation metadata for a stream."""
+        binding = self._srp_bindings.pop(stream_id, None)
+        if binding is None:
+            return None
+        return {
+            "reservation_id": binding.get("reservation_id"),
+            "admission_id": binding.get("admission_id"),
+            "metadata": dict(binding.get("metadata") or {}),
+        }
+
     def get_all_streams(self) -> List[Dict[str, Any]]:
         """Get all streams"""
         return [self._stream_to_dict(s) for s in self.streams.values()]
@@ -536,7 +592,8 @@ class AvbService:
             "state": stream.state.value,
             "config": asdict(stream.config),
             "stats": asdict(stream.stats),
-            "error": stream.error
+            "error": stream.error,
+            "srp_binding": self.get_srp_binding(stream.stream_id),
         }
 
 

@@ -74,6 +74,8 @@ class StreamConnection:
     established_time: Optional[datetime] = None
     error_message: Optional[str] = None
     connection_count: int = 0  # ACMP connection count
+    srp_reservation_id: Optional[str] = None
+    srp_admission_id: Optional[str] = None
 
     def connection_id(self) -> str:
         """Unique identifier for this connection"""
@@ -499,7 +501,13 @@ class AvbRouter:
 
         return True, ""
 
-    async def connect(self, talker_id: str, listener_id: str) -> bool:
+    async def connect(
+        self,
+        talker_id: str,
+        listener_id: str,
+        reservation_id: Optional[str] = None,
+        admission_id: Optional[str] = None,
+    ) -> bool:
         """
         Connect talker to listener.
 
@@ -514,22 +522,78 @@ class AvbRouter:
         listener = self.endpoints.get(listener_id)
 
         if not talker or not listener:
+            if reservation_id:
+                await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
             logger.error(f"Endpoint not found: talker={talker_id}, listener={listener_id}")
             return False
 
         if talker.direction != StreamDirection.TALKER:
+            if reservation_id:
+                await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
             logger.error(f"Not a talker: {talker_id}")
             return False
 
         if listener.direction != StreamDirection.LISTENER:
+            if reservation_id:
+                await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
             logger.error(f"Not a listener: {listener_id}")
             return False
+
+        if reservation_id is None and bool(config_get("avb.srp.enabled", True)):
+            try:
+                from app.services.avb.srp_admission import (
+                    SrpAdmissionRequest,
+                    get_srp_admission_service,
+                )
+
+                admission = await get_srp_admission_service().admit(
+                    SrpAdmissionRequest(
+                        endpoint="router.connect.internal",
+                        stream_id=f"{talker_id}->{listener_id}",
+                        talker_id=talker_id,
+                        listener_id=listener_id,
+                        talker_mac=talker.mac_address,
+                        listener_mac=listener.mac_address,
+                        request_metadata={
+                            "talker_device_type": talker.device_type,
+                            "listener_device_type": listener.device_type,
+                        },
+                    )
+                )
+                if admission.decision == "denied":
+                    logger.error(
+                        "SRP admission denied for %s: %s %s",
+                        f"{talker_id}->{listener_id}",
+                        admission.reason_code,
+                        admission.reason,
+                    )
+                    return False
+                if admission.decision == "allowed":
+                    if not admission.reservation_id:
+                        logger.error(
+                            "SRP admission for %s returned allowed without reservation_id",
+                            f"{talker_id}->{listener_id}",
+                        )
+                        if bool(config_get("avb.srp.required", True)):
+                            return False
+                    else:
+                        reservation_id = admission.reservation_id
+                        admission_id = admission.admission_id
+                elif admission.decision == "bypass":
+                    # Preserve optional bypass and prevent redundant re-admission.
+                    reservation_id = ""
+            except Exception as exc:
+                logger.error("SRP admission error for %s: %s", f"{talker_id}->{listener_id}", exc)
+                if bool(config_get("avb.srp.required", True)):
+                    return False
 
         # Create connection
         connection = StreamConnection(
             talker=talker,
             listener=listener,
-            state=ConnectionState.CONNECTING
+            state=ConnectionState.CONNECTING,
+            srp_reservation_id=reservation_id,
+            srp_admission_id=admission_id,
         )
 
         conn_id = connection.connection_id()
@@ -549,11 +613,52 @@ class AvbRouter:
             connection.established_time = datetime.now()
             logger.info(f"Connected: {conn_id}")
         else:
+            if connection.srp_reservation_id:
+                try:
+                    from app.services.avb.srp_admission import get_srp_admission_service
+
+                    await get_srp_admission_service().release(
+                        reservation_id=connection.srp_reservation_id,
+                        endpoint="router.connect.rollback",
+                        stream_id=conn_id,
+                        talker_id=talker_id,
+                        listener_id=listener_id,
+                    )
+                except Exception as exc:
+                    logger.warning("SRP rollback release failed for %s: %s", conn_id, exc)
             connection.state = ConnectionState.ERROR
             connection.error_message = "Connection failed"
             logger.error(f"Connection failed: {conn_id}")
 
         return success
+
+    async def _release_rejected_reservation(
+        self,
+        reservation_id: str,
+        talker_id: str,
+        listener_id: str,
+    ) -> None:
+        """Release route-level SRP reservation rejected before connection provisioning."""
+        if not reservation_id:
+            return
+
+        try:
+            from app.services.avb.srp_admission import get_srp_admission_service
+
+            await get_srp_admission_service().release(
+                reservation_id=reservation_id,
+                endpoint="router.connect.reject",
+                stream_id=f"{talker_id}->{listener_id}",
+                talker_id=talker_id,
+                listener_id=listener_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "SRP reject release failed for %s->%s: %s",
+                talker_id,
+                listener_id,
+                exc,
+            )
 
     async def disconnect(self, talker_id: str, listener_id: str) -> bool:
         """
@@ -584,6 +689,26 @@ class AvbRouter:
             success = False
 
         if success:
+            if connection.srp_reservation_id:
+                try:
+                    from app.services.avb.srp_admission import get_srp_admission_service
+
+                    release_result = await get_srp_admission_service().release(
+                        reservation_id=connection.srp_reservation_id,
+                        endpoint="router.disconnect",
+                        stream_id=conn_id,
+                        talker_id=talker_id,
+                        listener_id=listener_id,
+                    )
+                    if not release_result.success:
+                        logger.warning(
+                            "SRP release failed for %s (%s): %s",
+                            conn_id,
+                            release_result.reason_code,
+                            release_result.reason,
+                        )
+                except Exception as exc:
+                    logger.warning("SRP release raised for %s: %s", conn_id, exc)
             del self.connections[conn_id]
             logger.info(f"Disconnected: {conn_id}")
         else:

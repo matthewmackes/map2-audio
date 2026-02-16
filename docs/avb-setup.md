@@ -113,6 +113,7 @@ AVB is **completely optional** and **disabled by default**:
 | Package | Purpose | Install Command (Fedora) | Install Command (Ubuntu) |
 |---------|---------|---------------------------|--------------------------|
 | **linuxptp** | gPTP daemon (ptp4l, phc2sys) | `dnf install linuxptp` | `apt install linuxptp` |
+| **mrpd/msrpd** | MSRP/SRP admission daemon | `dnf install mrpd` (or auto-build fallback) | `apt install msrpd` (or auto-build fallback) |
 | **libavtp** | IEEE 1722 AVTP library | `dnf install libavtp-devel` | `apt install libavtp-dev` |
 | **iproute2-tc** | Traffic control (tc) | `dnf install iproute-tc` | (included in iproute2) |
 | **ethtool** | NIC feature detection | `dnf install ethtool` | `apt install ethtool` |
@@ -246,6 +247,14 @@ curl http://localhost:8080/api/avb/status
   }
 }
 ```
+
+Check SRP daemon and admission pipeline:
+```bash
+curl http://localhost:8080/api/avb/srp/status
+curl "http://localhost:8080/api/avb/srp/admissions?limit=20"
+```
+
+If strict SRP mode is enabled (`avb.srp.enabled=true` and `avb.srp.required=true`), AVB connect paths return HTTP `409` when admission fails, with remediation hints in the response payload.
 
 ---
 
@@ -888,11 +897,19 @@ This script:
 3. Deletes systemd service files
 4. Removes `/etc/map2/avb-enabled`
 5. **Preserves** backups in `/var/lib/map2/avb-backup/`
+6. Removes SRP source-installed artifacts only when paths match the uninstall allowlist (defaults: `/usr/local/`, `/etc/`)
 
 **Preserve MAP2 config:**
 ```bash
 sudo /path/to/scripts/uninstall_avb.sh --preserve-config
 ```
+
+**Advanced override (restricted test/sandbox environments):**
+```bash
+MAP2_SRPD_UNINSTALL_ALLOW_PREFIXES="/tmp/my-lab/" \
+  sudo /path/to/scripts/uninstall_avb.sh --yes
+```
+Use this only when you intentionally install SRP artifacts outside standard system prefixes.
 
 ### Manual Uninstallation
 

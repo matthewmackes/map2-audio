@@ -63,4 +63,12 @@ def is_avb_available() -> bool:
 
 __all__ = [
     "is_avb_available",
+    "get_srp_admission_service",
 ]
+
+
+def get_srp_admission_service():
+    """Lazily resolve SRP admission service singleton."""
+    from app.services.avb.srp_admission import get_srp_admission_service as _get
+
+    return _get()

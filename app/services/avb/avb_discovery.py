@@ -17,7 +17,7 @@ import asyncio
 import socket
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.config import config_get
 from app.services.cluster.mdns_discovery_enhanced import EnhancedMDNSDiscovery, MDNSNode
@@ -61,6 +61,10 @@ class AvbCapabilities:
         }
 
 
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 @dataclass
 class AvbNode:
     """Discovered AVB node information"""
@@ -70,7 +74,7 @@ class AvbNode:
     addresses: List[str] = field(default_factory=list)  # IPv4/IPv6 addresses
     port: int = 8000
     avb_capabilities: Optional[AvbCapabilities] = None
-    last_seen: datetime = field(default_factory=datetime.utcnow)
+    last_seen: datetime = field(default_factory=_utcnow)
 
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization"""
@@ -387,7 +391,7 @@ class AvbDiscoveryService:
                 addresses=addresses,
                 port=port,
                 avb_capabilities=capabilities,
-                last_seen=datetime.utcnow()
+                last_seen=_utcnow()
             )
 
             self.discovered_avb_nodes[node_id] = node
@@ -441,7 +445,7 @@ class AvbDiscoveryService:
             return []
 
         # Filter online nodes (last seen within 120 seconds)
-        now = datetime.utcnow()
+        now = _utcnow()
         online_nodes = []
 
         for node in self.discovered_avb_nodes.values():
@@ -455,7 +459,7 @@ class AvbDiscoveryService:
         """Get a specific discovered AVB node by ID"""
         node = self.discovered_avb_nodes.get(node_id)
         if node:
-            age = (datetime.utcnow() - node.last_seen).total_seconds()
+            age = (_utcnow() - node.last_seen).total_seconds()
             if age < 120:  # Still online
                 return node
         return None
@@ -484,7 +488,7 @@ class AvbDiscoveryService:
         before_count = len(self.discovered_avb_nodes)
 
         # Keep only online nodes
-        now = datetime.utcnow()
+        now = _utcnow()
         self.discovered_avb_nodes = {
             node_id: node
             for node_id, node in self.discovered_avb_nodes.items()

@@ -40,9 +40,9 @@ export default function PerformanceMetrics({
 
     const nextPoint: MetricPoint = {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      cpu: healthOverviewQuery.data.cpu_usage_percent,
-      memory: healthOverviewQuery.data.memory_usage_percent,
-      temp: healthOverviewQuery.data.cpu_temp_celsius,
+      cpu: healthOverviewQuery.data.cpu_usage_percent ?? 0,
+      memory: healthOverviewQuery.data.memory_usage_percent ?? 0,
+      temp: healthOverviewQuery.data.cpu_temp_celsius ?? 0,
       disk: diskPercent,
     }
 

@@ -69,6 +69,10 @@ cp -r scripts %{buildroot}/opt/map2/
 install -m 644 packaging/systemd/map2-backend.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-frontend.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-cluster.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-avb.target %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-ptp4l.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-phc2sys.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-srpd.service %{buildroot}/usr/lib/systemd/system/
 
 # Install wrapper scripts
 cat > %{buildroot}/usr/local/bin/map2 << 'EOF'
@@ -84,6 +88,7 @@ chmod +x %{buildroot}/usr/local/bin/map2
 /var/lib/map2
 /var/log/map2
 /usr/lib/systemd/system/map2-*.service
+/usr/lib/systemd/system/map2-avb.target
 /usr/local/bin/map2
 
 %post

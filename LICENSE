@@ -1,0 +1,53 @@
+MAP2 Educational Non-Commercial License (MENC) v1.0
+
+Copyright (c) 2026 Matthew Mackes
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and distribute the Software, subject to the following terms:
+
+1) Educational / Non-Commercial Use Only
+   You may use, copy, modify, compile, run, and distribute the Software solely
+   for non-commercial educational purposes, including learning, teaching,
+   training, academic study, experimentation, demonstration, and personal
+   research.
+
+2) Commercial Use Prohibited
+   Commercial use of the Software is strictly prohibited. "Commercial use"
+   includes (but is not limited to) use of the Software:
+   - for monetary compensation or commercial advantage;
+   - in any product or service that is sold, licensed, leased, monetized,
+     or otherwise provided in exchange for fees or other consideration;
+   - as part of a hosted or managed service offered for commercial advantage;
+   - for resale, resale-enabled distribution, or inclusion in any for-profit
+     offering.
+
+3) Redistribution Conditions
+   If you distribute the Software (modified or unmodified), you must:
+   - include this LICENSE file with the distributed Software; and
+   - retain all existing copyright, attribution, and license notices.
+
+4) Third-Party Software
+   The Software may include or depend on third-party components that are
+   licensed under their own terms (for example, MIT, Apache-2.0, GPL, or
+   proprietary/commercial licenses). Those components are NOT relicensed by
+   this license. You are responsible for complying with all applicable
+   third-party license terms. See THIRD_PARTY_NOTICES.md.
+
+5) No Trademark Rights
+   This license does not grant any rights in any trademarks, service marks,
+   logos, or brand names, whether belonging to the Licensor or to third
+   parties.
+
+6) Disclaimer of Warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+7) Termination
+   Any violation of this license automatically terminates your rights under
+   this license.

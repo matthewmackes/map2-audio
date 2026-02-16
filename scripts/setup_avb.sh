@@ -31,6 +31,16 @@ PTP_DOMAIN=0
 PTP_PRIORITY1=128
 LINK_SPEED_MBPS=1000
 VLAN_ID=2
+SRP_CLASS="A"
+SRP_DAEMON=""
+SRP_DAEMON_BIN=""
+SRP_DAEMON_ARGS=""
+SRP_CONTROL_SOCKET=""
+SRP_INSTALL_MODE="existing"
+SRP_SOURCE_REPO="https://github.com/Avnu/OpenAvnu.git"
+SRP_SOURCE_REF="${MAP2_OPENAVNU_REF:-8c4b4b4}"
+SRP_SOURCE_ROOT="/usr/local/src/map2-srpd"
+SRP_MANIFEST="/var/lib/map2/srp-install-manifest.json"
 
 # Flags
 DRY_RUN=false
@@ -289,6 +299,172 @@ install_dependencies() {
     log_success "Dependencies installed"
 }
 
+
+_try_install_packages() {
+    local packages=("$@")
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    if check_command "dnf"; then
+        dnf install -y "${packages[@]}" >/dev/null 2>&1
+        return $?
+    fi
+    if check_command "apt"; then
+        apt update >/dev/null 2>&1 || true
+        apt install -y "${packages[@]}" >/dev/null 2>&1
+        return $?
+    fi
+    if check_command "pacman"; then
+        pacman -S --noconfirm "${packages[@]}" >/dev/null 2>&1
+        return $?
+    fi
+    return 1
+}
+
+
+_detect_srp_daemon_binary() {
+    if check_command "mrpd"; then
+        SRP_DAEMON="mrpd"
+        SRP_DAEMON_BIN="$(command -v mrpd)"
+        SRP_CONTROL_SOCKET="/var/run/mrp_socket"
+        SRP_DAEMON_ARGS="${SRP_DAEMON_ARGS:-}"
+        return 0
+    fi
+    if check_command "msrpd"; then
+        SRP_DAEMON="msrpd"
+        SRP_DAEMON_BIN="$(command -v msrpd)"
+        SRP_CONTROL_SOCKET="/run/msrpd/msrpd.sock"
+        SRP_DAEMON_ARGS="${SRP_DAEMON_ARGS:-}"
+        return 0
+    fi
+    return 1
+}
+
+
+_build_srp_daemon_from_source() {
+    log_warning "SRP daemon package unavailable; attempting source build fallback"
+
+    local source_dir="${SRP_SOURCE_ROOT}/openavnu"
+    local build_ok=false
+
+    if ! check_command "git" || ! check_command "make"; then
+        _try_install_packages git make gcc gcc-c++
+    fi
+
+    mkdir -p "$SRP_SOURCE_ROOT"
+
+    if [[ ! -d "${source_dir}/.git" ]]; then
+        git clone "$SRP_SOURCE_REPO" "$source_dir"
+    fi
+
+    pushd "$source_dir" >/dev/null
+    git fetch --all --tags >/dev/null 2>&1 || true
+    if ! git checkout "$SRP_SOURCE_REF" >/dev/null 2>&1; then
+        log_warning "Pinned ref ${SRP_SOURCE_REF} unavailable; using current checkout"
+    fi
+
+    if [[ -f "daemons/mrpd/Makefile" ]]; then
+        make -C daemons/mrpd
+        install -m 0755 daemons/mrpd/mrpd /usr/local/sbin/mrpd
+        build_ok=true
+    elif [[ -f "mrpd/Makefile" ]]; then
+        make -C mrpd
+        install -m 0755 mrpd/mrpd /usr/local/sbin/mrpd
+        build_ok=true
+    elif [[ -f "daemons/msrpd/Makefile" ]]; then
+        make -C daemons/msrpd
+        install -m 0755 daemons/msrpd/msrpd /usr/local/sbin/msrpd
+        build_ok=true
+    fi
+    popd >/dev/null
+
+    if [[ "$build_ok" != true ]]; then
+        log_error "Unable to build SRP daemon from source"
+        return 1
+    fi
+
+    SRP_INSTALL_MODE="source"
+    return 0
+}
+
+
+_write_srp_manifest() {
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would write SRP install manifest: $SRP_MANIFEST"
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$SRP_MANIFEST")"
+    python3 <<EOF
+import json
+from datetime import datetime, timezone
+
+manifest = {
+    "installed_at": datetime.now(timezone.utc).isoformat(),
+    "install_mode": "${SRP_INSTALL_MODE}",
+    "daemon_type": "${SRP_DAEMON}",
+    "binary_path": "${SRP_DAEMON_BIN}",
+    "control_socket": "${SRP_CONTROL_SOCKET}",
+    "source_repo": "${SRP_SOURCE_REPO}",
+    "source_ref": "${SRP_SOURCE_REF}",
+    "source_root": "${SRP_SOURCE_ROOT}",
+    "managed_files": [
+        "/etc/systemd/system/map2-srpd.service",
+        "/etc/default/map2-srpd",
+        "${SRP_MANIFEST}",
+    ],
+}
+
+with open("${SRP_MANIFEST}", "w", encoding="utf-8") as f:
+    json.dump(manifest, f, indent=2)
+EOF
+}
+
+
+provision_srp_daemon() {
+    log_info "Provisioning SRP/MSRP daemon (mrpd/msrpd)..."
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would auto-detect/install mrpd/msrpd and write $SRP_MANIFEST"
+        return 0
+    fi
+
+    if _detect_srp_daemon_binary; then
+        SRP_INSTALL_MODE="existing"
+        log_success "Using existing SRP daemon: $SRP_DAEMON ($SRP_DAEMON_BIN)"
+        _write_srp_manifest
+        return 0
+    fi
+
+    if _try_install_packages mrpd; then
+        :
+    elif _try_install_packages msrpd; then
+        :
+    elif _try_install_packages openavnu; then
+        :
+    elif _try_install_packages open-avb; then
+        :
+    fi
+
+    if _detect_srp_daemon_binary; then
+        SRP_INSTALL_MODE="package"
+        log_success "Installed SRP daemon from package: $SRP_DAEMON ($SRP_DAEMON_BIN)"
+        _write_srp_manifest
+        return 0
+    fi
+
+    # Source fallback
+    _build_srp_daemon_from_source
+    if ! _detect_srp_daemon_binary; then
+        log_error "SRP daemon provisioning failed (mrpd/msrpd unavailable)"
+        return 1
+    fi
+
+    log_success "Built SRP daemon from source: $SRP_DAEMON ($SRP_DAEMON_BIN)"
+    _write_srp_manifest
+}
+
 # ============================================================================
 # PTP Configuration
 # ============================================================================
@@ -414,12 +590,16 @@ create_systemd_services() {
 
     local ptp4l_service="/etc/systemd/system/map2-ptp4l.service"
     local phc2sys_service="/etc/systemd/system/map2-phc2sys.service"
+    local srpd_service="/etc/systemd/system/map2-srpd.service"
+    local srpd_env="/etc/default/map2-srpd"
     local avb_target="/etc/systemd/system/map2-avb.target"
 
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would create systemd services:"
         log_info "  - $ptp4l_service"
         log_info "  - $phc2sys_service"
+        log_info "  - $srpd_service"
+        log_info "  - $srpd_env"
         log_info "  - $avb_target"
         return 0
     fi
@@ -429,6 +609,8 @@ create_systemd_services() {
 [Unit]
 Description=MAP2 AVB/TSN Services
 Documentation=https://github.com/matthewmackes/map2-audio
+Wants=network-online.target map2-ptp4l.service map2-phc2sys.service map2-srpd.service
+After=network-online.target map2-ptp4l.service map2-srpd.service
 StopWhenUnneeded=yes
 
 [Install]
@@ -484,6 +666,41 @@ User=root
 Group=root
 
 # Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=map2-avb.target
+EOF
+
+    # SRP daemon environment
+    cat > "$srpd_env" <<EOF
+# MAP2 SRP daemon runtime configuration
+MAP2_SRPD_DAEMON=${SRP_DAEMON}
+MAP2_SRPD_BIN=${SRP_DAEMON_BIN}
+MAP2_SRPD_SOCKET=${SRP_CONTROL_SOCKET}
+MAP2_SRPD_ARGS=${SRP_DAEMON_ARGS}
+EOF
+
+    # Create SRP daemon service
+    cat > "$srpd_service" <<'EOF'
+[Unit]
+Description=MAP2 SRP/MSRP Admission Daemon
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network-online.target
+Wants=network-online.target
+Before=map2-backend.service
+ConditionPathExists=/etc/map2/avb-enabled
+PartOf=map2-avb.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/map2-srpd
+ExecStart=/bin/bash -lc '${MAP2_SRPD_BIN:-/usr/sbin/mrpd} ${MAP2_SRPD_ARGS}'
+Restart=on-failure
+RestartSec=5
+User=root
+Group=root
 NoNewPrivileges=true
 PrivateTmp=true
 
@@ -646,6 +863,7 @@ enable_avb() {
     # Enable and start services
     systemctl enable map2-ptp4l.service
     systemctl enable map2-phc2sys.service
+    systemctl enable map2-srpd.service
     systemctl enable map2-avb.target
 
     systemctl start map2-avb.target
@@ -662,6 +880,9 @@ update_map2_config() {
         log_info "[DRY RUN] Would update $config_file:"
         log_info "  avb.enabled = true"
         log_info "  avb.interface = $AVB_INTERFACE"
+        log_info "  avb.srp.enabled = true"
+        log_info "  avb.srp.required = true"
+        log_info "  avb.srp.daemon = auto"
         return 0
     fi
 
@@ -684,6 +905,14 @@ config['avb']['enabled'] = True
 config['avb']['interface'] = "$AVB_INTERFACE"
 config['avb']['ptp_domain'] = $PTP_DOMAIN
 config['avb']['ptp_priority1'] = $PTP_PRIORITY1
+config['avb']['srp'] = config['avb'].get('srp', {})
+config['avb']['srp']['enabled'] = True
+config['avb']['srp']['required'] = True
+config['avb']['srp']['daemon'] = "auto"
+config['avb']['srp']['timeout_ms'] = 2000
+config['avb']['srp']['vlan_id'] = $VLAN_ID
+config['avb']['srp']['class'] = "$SRP_CLASS"
+config['avb']['srp']['control_socket'] = "$SRP_CONTROL_SOCKET"
 
 with open(config_file, 'w') as f:
     json.dump(config, f, indent=2)
@@ -701,6 +930,7 @@ verify_setup() {
         log_info "[DRY RUN] Verification would check:"
         log_info "  - ptp4l service status"
         log_info "  - phc2sys service status"
+        log_info "  - srpd service status"
         log_info "  - qdisc configuration"
         log_info "  - VLAN interface"
         return 0
@@ -721,6 +951,14 @@ verify_setup() {
         log_success "phc2sys service running"
     else
         log_error "phc2sys service not running"
+        all_ok=false
+    fi
+
+    # Check SRP daemon
+    if systemctl is-active --quiet map2-srpd.service; then
+        log_success "map2-srpd service running"
+    else
+        log_error "map2-srpd service not running"
         all_ok=false
     fi
 
@@ -759,6 +997,7 @@ ${BLUE}Configuration Summary:${NC}
   PTP Domain:       ${PTP_DOMAIN}
   Link Speed:       ${LINK_SPEED_MBPS}Mb/s
   VLAN ID:          ${VLAN_ID}
+  SRP Daemon:       ${SRP_DAEMON} (${SRP_DAEMON_BIN})
 
 ${BLUE}Next Steps:${NC}
 
@@ -768,13 +1007,16 @@ ${BLUE}Next Steps:${NC}
 2. ${YELLOW}Verify PTP offset (should be <1μs):${NC}
    sudo pmc -u -b 0 'GET CURRENT_DATA_SET'
 
-3. ${YELLOW}Check qdisc stats:${NC}
+3. ${YELLOW}Check SRP daemon health:${NC}
+   curl http://localhost:8080/api/avb/srp/status
+
+4. ${YELLOW}Check qdisc stats:${NC}
    tc -s qdisc show dev ${AVB_INTERFACE}
 
-4. ${YELLOW}Restart MAP2 backend to enable AVB:${NC}
+5. ${YELLOW}Restart MAP2 backend to enable AVB:${NC}
    sudo systemctl restart map2-backend
 
-5. ${YELLOW}Access AVB dashboard:${NC}
+6. ${YELLOW}Access AVB dashboard:${NC}
    Web:  http://localhost:3000/avb
    TUI:  python -m tui.node_console (AVB tab)
 
@@ -876,7 +1118,7 @@ EOF
     if [[ "$DRY_RUN" == false ]]; then
         echo
         log_warning "This will configure AVB/TSN on interface: $AVB_INTERFACE"
-        log_warning "Changes: PTP services, TSN qdiscs, VLAN interface"
+        log_warning "Changes: PTP services, TSN qdiscs, VLAN interface, SRP daemon provisioning"
         echo
         if ! prompt_yes_no "Proceed with setup?"; then
             log_info "Setup cancelled"
@@ -886,6 +1128,7 @@ EOF
 
     # Execute setup
     configure_ptp
+    provision_srp_daemon
     create_systemd_services
     configure_tsn_qdiscs "$AVB_INTERFACE"
     enable_avb
@@ -903,4 +1146,6 @@ EOF
     fi
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

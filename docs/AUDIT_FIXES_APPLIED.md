@@ -482,6 +482,56 @@ journalctl --user -u map2-backend.service -f
 
 ---
 
+## ✅ AVB Audit Workstream (R-08, B-01) — February 16, 2026
+
+Implemented SRP/MSRP admission control and admission logging for AVB connection paths.
+
+### Scope delivered
+- Added SRP config schema (`avb.srp.*`) with strict fail-closed support.
+- Added daemon-backed SRP admission service with `mrpd/msrpd` auto-detection and UNIX-socket message exchange.
+- Hardened daemon selection/reliability:
+  - `auto` mode prefers live daemon sockets over binary-only detection.
+  - Retry/fallback to alternate daemon (`mrpd`/`msrpd`) on retryable transport failures.
+  - Status endpoint now clears stale errors after daemon recovery and can fall back to healthy alternate daemon in `auto` mode.
+- Added persistent SQLite admission logs (`srp_admission_logs`) with API query support.
+- Enforced admission on:
+  - `POST /api/avb/router/connect`
+  - `POST /api/avb/avdecc/connections`
+  - `POST /api/avb/streams/{stream_id}/start` (when not already bound)
+- Added SRP observability APIs:
+  - `GET /api/avb/srp/status`
+  - `GET /api/avb/srp/admissions`
+  - `GET /api/avb/srp/admissions/{admission_id}`
+- Added reservation release tracking on disconnect/stop/delete rollback paths.
+- Added rejection-path release for pre-acquired route reservations (avoids SRP reservation leaks when endpoint validation fails before connect).
+- Added exception-path release safeguards for route-level connect/start failures.
+- Normalized invalid admission contract to structured HTTP `409` (`SRP_ADMISSION_INVALID`) across connect/start paths.
+- Added endpoint pre-validation on `POST /api/avb/router/connect` to fail fast with `404` before admission when talker/listener IDs are unknown.
+- Added rollback for `streams/start` SRP bind-failure and HTTP-exception paths to prevent reservation leaks after successful admission.
+- Added SRP daemon ops automation:
+  - `packaging/systemd/map2-srpd.service`
+  - `scripts/setup_avb.sh` provisioning + manifest
+  - `scripts/uninstall_avb.sh` deterministic cleanup
+  - Source-safe script guards for deterministic script-level testing (`source` without auto-running `main`)
+  - Setup-generated `map2-srpd.service` ordering aligned with packaged unit (`Before=map2-backend.service`)
+  - Path allowlist control for uninstall cleanup (`MAP2_SRPD_UNINSTALL_ALLOW_PREFIXES`, default `/usr/local/,/etc/`)
+
+### Verification
+- Test suite executed:
+  - `tests/test_avb_ops_scripts.py`
+  - `tests/test_avb_srp_admission.py`
+  - `tests/test_avb_routes_srp.py`
+  - `tests/test_avb_router_map2.py`
+  - `tests/test_avb_stream_validation.py`
+  - `tests/test_avb_srp_log_store.py`
+  - `tests/test_avb_service_stats.py`
+  - `tests/test_avb_router_factory.py`
+  - `tests/test_avb_service_engine_contract.py`
+- Result (targeted AVB/SRP + ops): `62 passed`
+- Full repository regression: `399 passed, 259 skipped`
+
+---
+
 ## 🔗 Related Documentation
 
 - [PipeWire Low-Latency Guide](https://wiki.archlinux.org/title/PipeWire)

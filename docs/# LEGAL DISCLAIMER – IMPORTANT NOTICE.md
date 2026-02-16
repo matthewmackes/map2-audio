@@ -1,6 +1,6 @@
 # LEGAL DISCLAIMER – IMPORTANT NOTICE
 
-**This project is a strictly non-commercial, educational, open-source resource created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes.**
+**This project is a strictly non-commercial, educational, source-available resource created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes.**
 
 ### No Affiliation, Endorsement, Sponsorship or Connection of Any Kind
 

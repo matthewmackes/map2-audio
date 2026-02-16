@@ -1,4 +1,5 @@
 import asyncio
+from types import SimpleNamespace
 
 from app.services.avb.avb_router import (
     AudioEndpoint,
@@ -7,6 +8,7 @@ from app.services.avb.avb_router import (
     StreamConnection,
     StreamDirection,
 )
+import app.services.avb.avb_router as avb_router_module
 
 
 def _make_connection() -> StreamConnection:
@@ -89,3 +91,101 @@ def test_disconnect_map2_to_map2_surfaces_errors(monkeypatch):
     ok = asyncio.run(router._disconnect_map2_to_map2(connection))
     assert ok is False
     assert "talker stop failed" in (connection.error_message or "")
+
+
+def test_disconnect_releases_srp_reservation(monkeypatch):
+    router = AvbRouter()
+    connection = _make_connection()
+    connection.srp_reservation_id = "srp-res-1"
+    router.connections[connection.connection_id()] = connection
+
+    captured = {}
+
+    async def fake_disconnect(_connection):
+        return True
+
+    class _FakeSrpService:
+        async def release(self, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(success=True, reason_code="SRP_RELEASED", reason="released")
+
+    monkeypatch.setattr(router, "_disconnect_map2_to_map2", fake_disconnect)
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _FakeSrpService())
+
+    ok = asyncio.run(
+        router.disconnect(
+            connection.talker.endpoint_id(),
+            connection.listener.endpoint_id(),
+        )
+    )
+
+    assert ok is True
+    assert captured["reservation_id"] == "srp-res-1"
+    assert captured["endpoint"] == "router.disconnect"
+
+
+def test_connect_fail_closed_when_allowed_missing_reservation(monkeypatch):
+    router = AvbRouter()
+    connection = _make_connection()
+    talker_id = connection.talker.endpoint_id()
+    listener_id = connection.listener.endpoint_id()
+    router.endpoints[talker_id] = connection.talker
+    router.endpoints[listener_id] = connection.listener
+
+    values = {
+        "avb.srp.enabled": True,
+        "avb.srp.required": True,
+    }
+    monkeypatch.setattr(avb_router_module, "config_get", lambda key, default=None: values.get(key, default))
+
+    async def _unexpected_connect(_connection):
+        raise AssertionError("connect handler should not run when SRP reservation_id is missing")
+
+    monkeypatch.setattr(router, "_connect_map2_to_map2", _unexpected_connect)
+
+    class _Admission:
+        decision = "allowed"
+        reservation_id = None
+        admission_id = "adm-missing"
+        reason_code = "SRP_ADMITTED"
+        reason = "ok"
+
+    class _SrpService:
+        async def admit(self, _request):
+            return _Admission()
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _SrpService())
+
+    ok = asyncio.run(router.connect(talker_id, listener_id))
+
+    assert ok is False
+
+
+def test_connect_releases_pre_acquired_reservation_on_endpoint_validation_failure(monkeypatch):
+    router = AvbRouter()
+    talker_id = "0011223344556677:1"
+    listener_id = "8899aabbccddeeff:2"
+    captured = {}
+
+    class _SrpService:
+        async def release(self, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(success=True, reason_code="SRP_RELEASED", reason="released")
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _SrpService())
+
+    ok = asyncio.run(router.connect(talker_id, listener_id, reservation_id="srp-res-precheck"))
+
+    assert ok is False
+    assert captured["reservation_id"] == "srp-res-precheck"
+    assert captured["endpoint"] == "router.connect.reject"
+    assert captured["stream_id"] == f"{talker_id}->{listener_id}"
+    assert captured["talker_id"] == talker_id
+    assert captured["listener_id"] == listener_id
