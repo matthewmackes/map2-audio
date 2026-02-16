@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**544** Python | **604** TypeScript | **114** C++/H | **80** Docs | **168** total commits | **8** stars | **0** forks | **0** open issues
+**544** Python | **604** TypeScript | **114** C++/H | **81** Docs | **170** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -130,12 +130,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform Manual](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_MANUAL_2026-02-15.md) | 2026-02-16 |
 | [MAP2 Audio Platform - Top 100 Features](https://github.com/matthewmackes/map2-audio/blob/master/docs/MAP2_TOP_100_FEATURES.md) | 2026-02-15 |
 | [reddit posts](https://github.com/matthewmackes/map2-audio/blob/master/docs/reddit_posts.md) | 2026-02-15 |
 | [LEGAL DISCLAIMER – IMPORTANT NOTICE](https://github.com/matthewmackes/map2-audio/blob/master/docs/# LEGAL DISCLAIMER – IMPORTANT NOTICE.md) | 2026-02-14 |
 | [MAP2 Audio Platform - Complete Audio Engine Fixes](https://github.com/matthewmackes/map2-audio/blob/master/docs/AUDIO_ENGINE_FIXES_SUMMARY.md) | 2026-02-14 |
 | [AVB / 802.1AS vs Non-AVB Signal Flow Comparison](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_SIGNAL_FLOW_COMPARISON.md) | 2026-02-14 |
-| [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-02-14 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dc92e19`](https://github.com/matthewmackes/map2-audio/commit/dc92e1922136eaeebc839d85ee459a55081c0fe0) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-16 |
+| [`8b21891`](https://github.com/matthewmackes/map2-audio/commit/8b218911101e872fbf0ddf19d2b7021f503a2186) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`241ad1e`](https://github.com/matthewmackes/map2-audio/commit/241ad1ed872f6c5ed45fa9e784d303b1d4e8fb12) | Add platform manual and 10000-foot architecture diagram | Map2 Audio | 2026-02-15 |
 | [`23183fc`](https://github.com/matthewmackes/map2-audio/commit/23183fc4927fb0044dc91a86c1de310b8d1fbe58) | Implement Phase 11 ACMP stream connection management and ... | Map2 Audio | 2026-02-15 |
 | [`04af66c`](https://github.com/matthewmackes/map2-audio/commit/04af66c5f86cdcec4b4955a5f9b572018e8aeea4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 | [`0a49230`](https://github.com/matthewmackes/map2-audio/commit/0a4923075bb985bb84bc21ae4c28f154b1b40f84) | Update MAP2_TOP_100_FEATURES.md | Matthew Mackes | 2026-02-15 |
 | [`3d8a2c0`](https://github.com/matthewmackes/map2-audio/commit/3d8a2c00269e825747dd211bfe554628f951adb0) | Clean up web frontend: simplify theme to dark-only, resto... | Map2 Audio | 2026-02-15 |
 | [`e4255e3`](https://github.com/matthewmackes/map2-audio/commit/e4255e333136bfb60bdb7b9b87a895c2e6758695) | Update web frontend: enhance cluster dashboard, 3D graph,... | Map2 Audio | 2026-02-15 |
-| [`237f1c8`](https://github.com/matthewmackes/map2-audio/commit/237f1c82fdc535fe9142513c2bd5148811daf770) | Add pending project files | Map2 Audio | 2026-02-15 |
-| [`d47411c`](https://github.com/matthewmackes/map2-audio/commit/d47411ce1e04ffea73ec02775912e1447fc5e72a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
