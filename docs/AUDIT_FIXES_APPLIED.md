@@ -505,6 +505,32 @@ Implemented SRP/MSRP admission control and admission logging for AVB connection 
 - Added reservation release tracking on disconnect/stop/delete rollback paths.
 - Added rejection-path release for pre-acquired route reservations (avoids SRP reservation leaks when endpoint validation fails before connect).
 - Added exception-path release safeguards for route-level connect/start failures.
+- Added success-state rollback guards so post-success handler exceptions do not incorrectly release valid reservations.
+- Added equivalent ACMP connect rollback guards and centralized rollback release handling for `POST /api/avb/avdecc/connections`.
+- Hardened `DELETE /api/avb/avdecc/connections/{connection_id}` to be fail-safe when SRP release fails (disconnect still succeeds with structured warning payload).
+- Hardened stream lifecycle release paths:
+  - `DELETE /api/avb/streams/{stream_id}` now emits structured `srp_release_warning` on release failure.
+  - `POST /api/avb/streams/{stream_id}/stop` now emits structured `srp_release_warning` on release failure.
+  - `POST /api/avb/streams/{stream_id}/start` rollback release failures no longer mask the original start error status.
+  - `POST /api/avb/streams/{stream_id}/start` now avoids duplicate rollback release attempts on the same failure path.
+- Hardened `POST /api/avb/router/disconnect` SRP release observability:
+  - `AvbRouter.disconnect(..., return_details=True)` now returns structured `srp_release` and `srp_release_warning` payloads.
+  - Route handler preserves compatibility with legacy router signatures while surfacing release outcomes when available.
+- Hardened connect-failure SRP observability:
+  - `AvbRouter.connect(..., return_details=True)` now returns structured `srp_release` / `srp_release_warning` for rollback and reject-release failures.
+  - `POST /api/avb/router/connect` now surfaces rollback release warning details via structured HTTP `500` payload (`ROUTER_CONNECT_FAILED`) when available.
+  - `POST /api/avb/router/connect` now standardizes structured HTTP `500` failure payloads for detail-aware routers (`code`, `message`, optional `srp_release`, optional `srp_release_warning`) while preserving legacy bool-router behavior.
+- Hardened `POST /api/avb/avdecc/connections` failure contract:
+  - ACMP connect failures now return structured HTTP `500` payloads (`ACMP_CONNECTION_FAILED`) with optional `srp_release` / `srp_release_warning` from rollback attempts.
+  - Post-success response-build exceptions now return the same structured code/message contract without triggering rollback release.
+- Added shared failure payload normalization helper in AVB routes:
+  - Router-connect and ACMP-connect paths now use a common detail-builder for consistent error shape (`code`, `message`, optional `srp_release`, optional `srp_release_warning`).
+- Added shared SRP release warning builder in AVB routes:
+  - Stream and ACMP release-failure paths now use centralized warning construction and remediation text to keep API warning payloads consistent.
+- Added shared SRP release warning builder in AVB router service:
+  - `AvbRouter.connect`/`disconnect` and reject-release helper now use centralized warning construction to match route-level warning schema and remediation text.
+- Added shared SRP release payload builders:
+  - Route-level and router-service SRP release payload construction is now centralized to keep release fields (`success`, `reason_code`, `reason`, optional daemon/raw fields, `reservation_id`) consistent.
 - Normalized invalid admission contract to structured HTTP `409` (`SRP_ADMISSION_INVALID`) across connect/start paths.
 - Added endpoint pre-validation on `POST /api/avb/router/connect` to fail fast with `404` before admission when talker/listener IDs are unknown.
 - Added rollback for `streams/start` SRP bind-failure and HTTP-exception paths to prevent reservation leaks after successful admission.
@@ -527,8 +553,8 @@ Implemented SRP/MSRP admission control and admission logging for AVB connection 
   - `tests/test_avb_service_stats.py`
   - `tests/test_avb_router_factory.py`
   - `tests/test_avb_service_engine_contract.py`
-- Result (targeted AVB/SRP + ops): `62 passed`
-- Full repository regression: `399 passed, 259 skipped`
+- Result (targeted AVB/SRP + ops): `84 passed`
+- Full repository regression: `421 passed, 259 skipped`
 
 ---
 

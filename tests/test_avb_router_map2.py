@@ -127,6 +127,76 @@ def test_disconnect_releases_srp_reservation(monkeypatch):
     assert captured["endpoint"] == "router.disconnect"
 
 
+def test_disconnect_return_details_reports_release_warning_on_unsuccessful_release(monkeypatch):
+    router = AvbRouter()
+    connection = _make_connection()
+    connection.srp_reservation_id = "srp-res-2"
+    router.connections[connection.connection_id()] = connection
+
+    async def fake_disconnect(_connection):
+        return True
+
+    class _FakeSrpService:
+        async def release(self, **_kwargs):
+            return SimpleNamespace(success=False, reason_code="SRP_RELEASE_TIMEOUT", reason="timeout")
+
+    monkeypatch.setattr(router, "_disconnect_map2_to_map2", fake_disconnect)
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _FakeSrpService())
+
+    result = asyncio.run(
+        router.disconnect(
+            connection.talker.endpoint_id(),
+            connection.listener.endpoint_id(),
+            return_details=True,
+        )
+    )
+
+    assert result["success"] is True
+    assert result["srp_release"]["success"] is False
+    assert result["srp_release"]["reservation_id"] == "srp-res-2"
+    assert result["srp_release_warning"]["code"] == "SRP_RELEASE_FAILED"
+    assert result["srp_release_warning"]["reservation_id"] == "srp-res-2"
+    assert connection.connection_id() not in router.connections
+
+
+def test_disconnect_return_details_reports_release_warning_on_release_exception(monkeypatch):
+    router = AvbRouter()
+    connection = _make_connection()
+    connection.srp_reservation_id = "srp-res-3"
+    router.connections[connection.connection_id()] = connection
+
+    async def fake_disconnect(_connection):
+        return True
+
+    class _FakeSrpService:
+        async def release(self, **_kwargs):
+            raise RuntimeError("release crashed")
+
+    monkeypatch.setattr(router, "_disconnect_map2_to_map2", fake_disconnect)
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _FakeSrpService())
+
+    result = asyncio.run(
+        router.disconnect(
+            connection.talker.endpoint_id(),
+            connection.listener.endpoint_id(),
+            return_details=True,
+        )
+    )
+
+    assert result["success"] is True
+    assert "srp_release" not in result
+    assert result["srp_release_warning"]["code"] == "SRP_RELEASE_FAILED"
+    assert result["srp_release_warning"]["reservation_id"] == "srp-res-3"
+    assert "release crashed" in result["srp_release_warning"]["detail"]
+    assert connection.connection_id() not in router.connections
+
+
 def test_connect_fail_closed_when_allowed_missing_reservation(monkeypatch):
     router = AvbRouter()
     connection = _make_connection()
@@ -189,3 +259,68 @@ def test_connect_releases_pre_acquired_reservation_on_endpoint_validation_failur
     assert captured["stream_id"] == f"{talker_id}->{listener_id}"
     assert captured["talker_id"] == talker_id
     assert captured["listener_id"] == listener_id
+
+
+def test_connect_return_details_includes_release_warning_on_rollback_exception(monkeypatch):
+    router = AvbRouter()
+    connection = _make_connection()
+    talker_id = connection.talker.endpoint_id()
+    listener_id = connection.listener.endpoint_id()
+    router.endpoints[talker_id] = connection.talker
+    router.endpoints[listener_id] = connection.listener
+
+    async def _failed_connect(_connection):
+        return False
+
+    class _SrpService:
+        async def release(self, **_kwargs):
+            raise RuntimeError("rollback socket error")
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(router, "_connect_map2_to_map2", _failed_connect)
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _SrpService())
+
+    result = asyncio.run(
+        router.connect(
+            talker_id,
+            listener_id,
+            reservation_id="srp-res-rollback",
+            return_details=True,
+        )
+    )
+
+    assert result["success"] is False
+    assert result["reason"] == "Connection failed"
+    assert result["srp_release_warning"]["code"] == "SRP_RELEASE_FAILED"
+    assert result["srp_release_warning"]["reservation_id"] == "srp-res-rollback"
+    assert "rollback socket error" in result["srp_release_warning"]["detail"]
+
+
+def test_connect_return_details_includes_release_warning_on_reject_release_exception(monkeypatch):
+    router = AvbRouter()
+    talker_id = "0011223344556677:1"
+    listener_id = "8899aabbccddeeff:2"
+
+    class _SrpService:
+        async def release(self, **_kwargs):
+            raise RuntimeError("reject release crashed")
+
+    import app.services.avb.srp_admission as srp_admission_module
+
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _SrpService())
+
+    result = asyncio.run(
+        router.connect(
+            talker_id,
+            listener_id,
+            reservation_id="srp-res-reject",
+            return_details=True,
+        )
+    )
+
+    assert result["success"] is False
+    assert result["reason"] == "Endpoint not found"
+    assert result["srp_release_warning"]["code"] == "SRP_RELEASE_FAILED"
+    assert result["srp_release_warning"]["reservation_id"] == "srp-res-reject"
+    assert "reject release crashed" in result["srp_release_warning"]["detail"]

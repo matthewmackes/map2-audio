@@ -28,6 +28,51 @@ from app.config import config_get
 
 logger = logging.getLogger(__name__)
 
+_SRP_RELEASE_REMEDIATION = (
+    "Verify SRP daemon health via GET /api/avb/srp/status.",
+    "Check admission logs via GET /api/avb/srp/admissions.",
+)
+
+
+def _build_srp_release_warning(
+    *,
+    reason: str,
+    reservation_id: str,
+    detail: Any,
+) -> Dict[str, Any]:
+    return {
+        "code": "SRP_RELEASE_FAILED",
+        "reason": reason,
+        "reservation_id": reservation_id,
+        "detail": str(detail),
+        "remediation": list(_SRP_RELEASE_REMEDIATION),
+    }
+
+
+def _build_srp_release_payload(
+    release_result: Any,
+    *,
+    reservation_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    payload = {
+        "success": bool(getattr(release_result, "success", False)),
+        "reason_code": getattr(release_result, "reason_code", None),
+        "reason": getattr(release_result, "reason", None),
+    }
+
+    daemon_type = getattr(release_result, "daemon_type", None)
+    if daemon_type is not None:
+        payload["daemon_type"] = daemon_type
+
+    raw_response = getattr(release_result, "raw_response", None)
+    if raw_response is not None:
+        payload["raw_response"] = raw_response
+
+    if reservation_id is not None:
+        payload["reservation_id"] = reservation_id
+
+    return payload
+
 
 class StreamDirection(str, Enum):
     """Stream direction enum"""
@@ -507,37 +552,50 @@ class AvbRouter:
         listener_id: str,
         reservation_id: Optional[str] = None,
         admission_id: Optional[str] = None,
-    ) -> bool:
+        return_details: bool = False,
+    ) -> Any:
         """
         Connect talker to listener.
 
         Args:
             talker_id: Talker endpoint ID (entity_id:unique_id)
             listener_id: Listener endpoint ID (entity_id:unique_id)
+            return_details: Return structured result payload instead of bool
 
         Returns:
-            True if connection initiated successfully
+            True if connection initiated successfully, or structured result payload
+            when return_details=True.
         """
+        result: Dict[str, Any] = {"success": False}
         talker = self.endpoints.get(talker_id)
         listener = self.endpoints.get(listener_id)
 
         if not talker or not listener:
             if reservation_id:
-                await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
+                warning = await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
+                if warning is not None:
+                    result["srp_release_warning"] = warning
             logger.error(f"Endpoint not found: talker={talker_id}, listener={listener_id}")
-            return False
+            result["reason"] = "Endpoint not found"
+            return result if return_details else False
 
         if talker.direction != StreamDirection.TALKER:
             if reservation_id:
-                await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
+                warning = await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
+                if warning is not None:
+                    result["srp_release_warning"] = warning
             logger.error(f"Not a talker: {talker_id}")
-            return False
+            result["reason"] = "Not a talker"
+            return result if return_details else False
 
         if listener.direction != StreamDirection.LISTENER:
             if reservation_id:
-                await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
+                warning = await self._release_rejected_reservation(reservation_id, talker_id, listener_id)
+                if warning is not None:
+                    result["srp_release_warning"] = warning
             logger.error(f"Not a listener: {listener_id}")
-            return False
+            result["reason"] = "Not a listener"
+            return result if return_details else False
 
         if reservation_id is None and bool(config_get("avb.srp.enabled", True)):
             try:
@@ -567,7 +625,8 @@ class AvbRouter:
                         admission.reason_code,
                         admission.reason,
                     )
-                    return False
+                    result["reason"] = f"SRP admission denied: {admission.reason_code}"
+                    return result if return_details else False
                 if admission.decision == "allowed":
                     if not admission.reservation_id:
                         logger.error(
@@ -575,7 +634,8 @@ class AvbRouter:
                             f"{talker_id}->{listener_id}",
                         )
                         if bool(config_get("avb.srp.required", True)):
-                            return False
+                            result["reason"] = "SRP admission returned allowed without reservation_id"
+                            return result if return_details else False
                     else:
                         reservation_id = admission.reservation_id
                         admission_id = admission.admission_id
@@ -585,7 +645,8 @@ class AvbRouter:
             except Exception as exc:
                 logger.error("SRP admission error for %s: %s", f"{talker_id}->{listener_id}", exc)
                 if bool(config_get("avb.srp.required", True)):
-                    return False
+                    result["reason"] = f"SRP admission error: {exc}"
+                    return result if return_details else False
 
         # Create connection
         connection = StreamConnection(
@@ -612,46 +673,78 @@ class AvbRouter:
             connection.state = ConnectionState.CONNECTED
             connection.established_time = datetime.now()
             logger.info(f"Connected: {conn_id}")
+            result["success"] = True
+            result["connection_id"] = conn_id
         else:
             if connection.srp_reservation_id:
+                reservation_to_release = connection.srp_reservation_id
                 try:
                     from app.services.avb.srp_admission import get_srp_admission_service
 
-                    await get_srp_admission_service().release(
-                        reservation_id=connection.srp_reservation_id,
+                    release_result = await get_srp_admission_service().release(
+                        reservation_id=reservation_to_release,
                         endpoint="router.connect.rollback",
                         stream_id=conn_id,
                         talker_id=talker_id,
                         listener_id=listener_id,
                     )
+                    result["srp_release"] = _build_srp_release_payload(
+                        release_result,
+                        reservation_id=reservation_to_release,
+                    )
+                    if not bool(getattr(release_result, "success", False)):
+                        result["srp_release_warning"] = _build_srp_release_warning(
+                            reason="Router connect failed and SRP rollback release failed",
+                            reservation_id=reservation_to_release,
+                            detail=(
+                                f"{getattr(release_result, 'reason_code', None)}:"
+                                f" {getattr(release_result, 'reason', None)}"
+                            ),
+                        )
                 except Exception as exc:
                     logger.warning("SRP rollback release failed for %s: %s", conn_id, exc)
+                    result["srp_release_warning"] = _build_srp_release_warning(
+                        reason="Router connect failed and SRP rollback release failed",
+                        reservation_id=reservation_to_release,
+                        detail=exc,
+                    )
             connection.state = ConnectionState.ERROR
             connection.error_message = "Connection failed"
             logger.error(f"Connection failed: {conn_id}")
+            result["reason"] = "Connection failed"
 
-        return success
+        return result if return_details else success
 
     async def _release_rejected_reservation(
         self,
         reservation_id: str,
         talker_id: str,
         listener_id: str,
-    ) -> None:
+    ) -> Optional[Dict[str, Any]]:
         """Release route-level SRP reservation rejected before connection provisioning."""
         if not reservation_id:
-            return
+            return None
 
         try:
             from app.services.avb.srp_admission import get_srp_admission_service
 
-            await get_srp_admission_service().release(
+            release_result = await get_srp_admission_service().release(
                 reservation_id=reservation_id,
                 endpoint="router.connect.reject",
                 stream_id=f"{talker_id}->{listener_id}",
                 talker_id=talker_id,
                 listener_id=listener_id,
             )
+            if not bool(getattr(release_result, "success", False)):
+                return _build_srp_release_warning(
+                    reason="Router connect rejected request and SRP reservation release failed",
+                    reservation_id=reservation_id,
+                    detail=(
+                        f"{getattr(release_result, 'reason_code', None)}:"
+                        f" {getattr(release_result, 'reason', None)}"
+                    ),
+                )
+            return None
         except Exception as exc:
             logger.warning(
                 "SRP reject release failed for %s->%s: %s",
@@ -659,24 +752,32 @@ class AvbRouter:
                 listener_id,
                 exc,
             )
+            return _build_srp_release_warning(
+                reason="Router connect rejected request and SRP reservation release failed",
+                reservation_id=reservation_id,
+                detail=exc,
+            )
 
-    async def disconnect(self, talker_id: str, listener_id: str) -> bool:
+    async def disconnect(self, talker_id: str, listener_id: str, return_details: bool = False) -> Any:
         """
         Disconnect talker from listener.
 
         Args:
             talker_id: Talker endpoint ID
             listener_id: Listener endpoint ID
+            return_details: Return structured result payload instead of bool
 
         Returns:
-            True if disconnection successful
+            True if disconnection successful, or structured result payload when
+            return_details=True.
         """
         conn_id = f"{talker_id}→{listener_id}"
         connection = self.connections.get(conn_id)
+        result: Dict[str, Any] = {"success": False}
 
         if not connection:
             logger.warning(f"Connection not found: {conn_id}")
-            return False
+            return result if return_details else False
 
         connection.state = ConnectionState.DISCONNECTING
 
@@ -690,33 +791,52 @@ class AvbRouter:
 
         if success:
             if connection.srp_reservation_id:
+                reservation_id = connection.srp_reservation_id
                 try:
                     from app.services.avb.srp_admission import get_srp_admission_service
 
                     release_result = await get_srp_admission_service().release(
-                        reservation_id=connection.srp_reservation_id,
+                        reservation_id=reservation_id,
                         endpoint="router.disconnect",
                         stream_id=conn_id,
                         talker_id=talker_id,
                         listener_id=listener_id,
                     )
-                    if not release_result.success:
+                    result["srp_release"] = _build_srp_release_payload(
+                        release_result,
+                        reservation_id=reservation_id,
+                    )
+                    if not bool(getattr(release_result, "success", False)):
                         logger.warning(
                             "SRP release failed for %s (%s): %s",
                             conn_id,
-                            release_result.reason_code,
-                            release_result.reason,
+                            getattr(release_result, "reason_code", None),
+                            getattr(release_result, "reason", None),
+                        )
+                        result["srp_release_warning"] = _build_srp_release_warning(
+                            reason="Router disconnect succeeded but SRP reservation release failed",
+                            reservation_id=reservation_id,
+                            detail=(
+                                f"{getattr(release_result, 'reason_code', None)}:"
+                                f" {getattr(release_result, 'reason', None)}"
+                            ),
                         )
                 except Exception as exc:
                     logger.warning("SRP release raised for %s: %s", conn_id, exc)
+                    result["srp_release_warning"] = _build_srp_release_warning(
+                        reason="Router disconnect succeeded but SRP reservation release failed",
+                        reservation_id=reservation_id,
+                        detail=exc,
+                    )
             del self.connections[conn_id]
             logger.info(f"Disconnected: {conn_id}")
+            result["success"] = True
         else:
             connection.state = ConnectionState.ERROR
             connection.error_message = "Disconnection failed"
             logger.error(f"Disconnection failed: {conn_id}")
 
-        return success
+        return result if return_details else success
 
     # ========================================================================
     # MAP2-to-MAP2 Connections

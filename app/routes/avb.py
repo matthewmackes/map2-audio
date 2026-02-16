@@ -70,6 +70,88 @@ def _normalize_admission_decision(decision: Optional[str]) -> Optional[str]:
     return value
 
 
+def _build_connection_failure_detail(
+    *,
+    code: str,
+    message: str,
+    payload: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    detail: Dict[str, Any] = {
+        "code": code,
+        "message": message,
+    }
+    if payload is None:
+        return detail
+
+    srp_release = payload.get("srp_release")
+    if srp_release is not None:
+        detail["srp_release"] = srp_release
+
+    srp_release_warning = payload.get("srp_release_warning")
+    if srp_release_warning is not None:
+        detail["srp_release_warning"] = srp_release_warning
+
+    return detail
+
+
+_SRP_RELEASE_REMEDIATION = (
+    "Verify SRP daemon health via GET /api/avb/srp/status.",
+    "Check admission logs via GET /api/avb/srp/admissions.",
+)
+
+
+def _build_srp_release_payload(
+    release_result: Any,
+    *,
+    reservation_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    payload: Dict[str, Any]
+
+    to_dict = getattr(release_result, "to_dict", None)
+    if callable(to_dict):
+        try:
+            payload = dict(to_dict() or {})
+        except Exception:
+            payload = {}
+    else:
+        payload = {}
+
+    if "success" not in payload:
+        payload["success"] = bool(getattr(release_result, "success", False))
+    if "reason_code" not in payload:
+        payload["reason_code"] = getattr(release_result, "reason_code", None)
+    if "reason" not in payload:
+        payload["reason"] = getattr(release_result, "reason", None)
+
+    daemon_type = getattr(release_result, "daemon_type", None)
+    if daemon_type is not None and "daemon_type" not in payload:
+        payload["daemon_type"] = daemon_type
+
+    raw_response = getattr(release_result, "raw_response", None)
+    if raw_response is not None and "raw_response" not in payload:
+        payload["raw_response"] = raw_response
+
+    if reservation_id is not None and "reservation_id" not in payload:
+        payload["reservation_id"] = reservation_id
+
+    return payload
+
+
+def _build_srp_release_warning(
+    *,
+    reason: str,
+    reservation_id: str,
+    detail: Any,
+) -> Dict[str, Any]:
+    return {
+        "code": "SRP_RELEASE_FAILED",
+        "reason": reason,
+        "reservation_id": reservation_id,
+        "detail": str(detail),
+        "remediation": list(_SRP_RELEASE_REMEDIATION),
+    }
+
+
 def _raise_srp_denied(
     result: Any,
     *,
@@ -590,18 +672,27 @@ async def delete_stream(stream_id: str) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail=result["error"])
 
         if binding and binding.get("reservation_id"):
+            reservation_id = str(binding["reservation_id"])
             try:
                 from app.services.avb.srp_admission import get_srp_admission_service
 
                 release_result = await get_srp_admission_service().release(
-                    reservation_id=str(binding["reservation_id"]),
+                    reservation_id=reservation_id,
                     endpoint="streams.delete",
                     stream_id=stream_id,
                 )
                 avb_service.clear_srp_reservation(stream_id)
-                result["srp_release"] = release_result.to_dict()
+                result["srp_release"] = _build_srp_release_payload(
+                    release_result,
+                    reservation_id=reservation_id,
+                )
             except Exception as exc:
                 logger.warning("SRP release failed during stream delete %s: %s", stream_id, exc)
+                result["srp_release_warning"] = _build_srp_release_warning(
+                    reason="Stream delete succeeded but SRP reservation release failed",
+                    reservation_id=reservation_id,
+                    detail=exc,
+                )
 
         return result
 
@@ -616,6 +707,8 @@ async def delete_stream(stream_id: str) -> Dict[str, Any]:
 async def start_stream(stream_id: str) -> Dict[str, Any]:
     """Start AVB stream"""
     created_binding = False
+    start_succeeded = False
+    rollback_handled = False
     srp_binding: Optional[Dict[str, Any]] = None
     avb_service = None
     admission: Any = None
@@ -682,16 +775,36 @@ async def start_stream(stream_id: str) -> Dict[str, Any]:
 
         if "error" in result:
             if created_binding and srp_binding and srp_binding.get("reservation_id"):
-                release_result = await get_srp_admission_service().release(
-                    reservation_id=str(srp_binding["reservation_id"]),
-                    endpoint="streams.start.rollback",
-                    stream_id=stream_id,
-                )
-                avb_service.clear_srp_reservation(stream_id)
-                result["srp_release"] = release_result.to_dict()
+                reservation_id = str(srp_binding["reservation_id"])
+                try:
+                    release_result = await get_srp_admission_service().release(
+                        reservation_id=reservation_id,
+                        endpoint="streams.start.rollback",
+                        stream_id=stream_id,
+                    )
+                    avb_service.clear_srp_reservation(stream_id)
+                    result["srp_release"] = _build_srp_release_payload(
+                        release_result,
+                        reservation_id=reservation_id,
+                    )
+                    rollback_handled = True
+                except Exception as release_exc:
+                    logger.warning(
+                        "SRP release failed during stream start rollback %s: %s",
+                        stream_id,
+                        release_exc,
+                    )
+                    result["srp_release_warning"] = _build_srp_release_warning(
+                        reason="Stream start failed and SRP rollback release also failed",
+                        reservation_id=reservation_id,
+                        detail=release_exc,
+                    )
+                    rollback_handled = True
             if result["code"] == "NOT_FOUND":
                 raise HTTPException(status_code=404, detail=result["error"])
             raise HTTPException(status_code=400, detail=result["error"])
+
+        start_succeeded = True
 
         if srp_binding:
             result["srp"] = srp_binding
@@ -710,7 +823,7 @@ async def start_stream(stream_id: str) -> Dict[str, Any]:
                 if reservation_id:
                     rollback_reservation = str(reservation_id)
 
-            if rollback_reservation:
+            if rollback_reservation and not start_succeeded and not rollback_handled:
                 try:
                     from app.services.avb.srp_admission import get_srp_admission_service
 
@@ -738,7 +851,7 @@ async def start_stream(stream_id: str) -> Dict[str, Any]:
                 if reservation_id:
                     rollback_reservation = str(reservation_id)
 
-            if rollback_reservation:
+            if rollback_reservation and not start_succeeded and not rollback_handled:
                 try:
                     from app.services.avb.srp_admission import get_srp_admission_service
 
@@ -780,13 +893,25 @@ async def stop_stream(stream_id: str) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail=result["error"])
 
         if srp_binding and srp_binding.get("reservation_id"):
-            release_result = await get_srp_admission_service().release(
-                reservation_id=str(srp_binding["reservation_id"]),
-                endpoint="streams.stop",
-                stream_id=stream_id,
-            )
-            avb_service.clear_srp_reservation(stream_id)
-            result["srp_release"] = release_result.to_dict()
+            reservation_id = str(srp_binding["reservation_id"])
+            try:
+                release_result = await get_srp_admission_service().release(
+                    reservation_id=reservation_id,
+                    endpoint="streams.stop",
+                    stream_id=stream_id,
+                )
+                avb_service.clear_srp_reservation(stream_id)
+                result["srp_release"] = _build_srp_release_payload(
+                    release_result,
+                    reservation_id=reservation_id,
+                )
+            except Exception as release_exc:
+                logger.warning("SRP release failed during stream stop %s: %s", stream_id, release_exc)
+                result["srp_release_warning"] = _build_srp_release_warning(
+                    reason="Stream stop succeeded but SRP reservation release failed",
+                    reservation_id=reservation_id,
+                    detail=release_exc,
+                )
 
         return result
 
@@ -1303,6 +1428,7 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
     listener_id: Optional[str] = None
     admission: Any = None
     route_reservation_id: Optional[str] = None
+    connection_succeeded = False
 
     try:
         from app.services.avb.avb_router import get_avb_router
@@ -1365,15 +1491,53 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
                 # internal SRP admission attempts.
                 route_reservation_id = ""
 
-        success = await router.connect(
-            talker_id,
-            listener_id,
-            reservation_id=route_reservation_id,
-            admission_id=admission.admission_id if admission and admission.decision == "allowed" else None,
-        )
+        connect_fn = getattr(router, "connect")
+        connect_result: Any
+
+        supports_connect_details = False
+        try:
+            import inspect
+
+            supports_connect_details = "return_details" in inspect.signature(connect_fn).parameters
+        except (TypeError, ValueError):
+            supports_connect_details = False
+
+        if supports_connect_details:
+            connect_result = await connect_fn(
+                talker_id,
+                listener_id,
+                reservation_id=route_reservation_id,
+                admission_id=admission.admission_id if admission and admission.decision == "allowed" else None,
+                return_details=True,
+            )
+        else:
+            connect_result = await connect_fn(
+                talker_id,
+                listener_id,
+                reservation_id=route_reservation_id,
+                admission_id=admission.admission_id if admission and admission.decision == "allowed" else None,
+            )
+
+        if isinstance(connect_result, dict):
+            success = bool(connect_result.get("success", False))
+            connect_payload = connect_result
+        else:
+            success = bool(connect_result)
+            connect_payload = {}
 
         if not success:
+            if connect_payload:
+                raise HTTPException(
+                    status_code=500,
+                    detail=_build_connection_failure_detail(
+                        code="ROUTER_CONNECT_FAILED",
+                        message=str(connect_payload.get("reason") or "Connection failed"),
+                        payload=connect_payload,
+                    ),
+                )
             raise HTTPException(status_code=500, detail="Connection failed")
+
+        connection_succeeded = True
 
         response = {
             "success": True,
@@ -1394,6 +1558,7 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
             and route_reservation_id
             and talker_id
             and listener_id
+            and not connection_succeeded
         ):
             try:
                 from app.services.avb.srp_admission import get_srp_admission_service
@@ -1444,15 +1609,42 @@ async def disconnect_streams(disconnection_request: Dict[str, Any]) -> Dict[str,
         if not talker_id or not listener_id:
             raise HTTPException(status_code=400, detail="Missing talker_id or listener_id")
 
-        success = await router.disconnect(talker_id, listener_id)
+        disconnect_fn = getattr(router, "disconnect")
+        disconnect_result: Any
+
+        supports_disconnect_details = False
+        try:
+            import inspect
+
+            supports_disconnect_details = "return_details" in inspect.signature(disconnect_fn).parameters
+        except (TypeError, ValueError):
+            supports_disconnect_details = False
+
+        if supports_disconnect_details:
+            disconnect_result = await disconnect_fn(talker_id, listener_id, return_details=True)
+        else:
+            disconnect_result = await disconnect_fn(talker_id, listener_id)
+
+        if isinstance(disconnect_result, dict):
+            success = bool(disconnect_result.get("success", False))
+            disconnect_payload = disconnect_result
+        else:
+            success = bool(disconnect_result)
+            disconnect_payload = {}
 
         if not success:
             raise HTTPException(status_code=404, detail="Connection not found or disconnect failed")
 
-        return {
+        response: Dict[str, Any] = {
             "success": True,
             "message": "Stream disconnected successfully"
         }
+        if disconnect_payload.get("srp_release") is not None:
+            response["srp_release"] = disconnect_payload["srp_release"]
+        if disconnect_payload.get("srp_release_warning") is not None:
+            response["srp_release_warning"] = disconnect_payload["srp_release_warning"]
+
+        return response
 
     except HTTPException:
         raise
@@ -1745,8 +1937,59 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid listener entity ID: {req.listener_entity_id}")
 
+    admission: Any = None
+    connection_succeeded = False
+
+    async def _release_acmp_reservation(endpoint: str) -> Optional[Dict[str, Any]]:
+        if not (admission and admission.decision == "allowed" and admission.reservation_id):
+            return None
+        reservation_id = str(admission.reservation_id)
+        try:
+            release_result = await get_srp_admission_service().release(
+                reservation_id=reservation_id,
+                endpoint=endpoint,
+                stream_id=(
+                    f"{req.talker_entity_id}:{req.talker_stream_index}"
+                    f"->{req.listener_entity_id}:{req.listener_stream_index}"
+                ),
+                talker_id=req.talker_entity_id,
+                listener_id=req.listener_entity_id,
+            )
+            release_payload = _build_srp_release_payload(
+                release_result,
+                reservation_id=reservation_id,
+            )
+            if not bool(getattr(release_result, "success", False)):
+                return {
+                    "srp_release": release_payload,
+                    "srp_release_warning": _build_srp_release_warning(
+                        reason="ACMP connect failed and SRP rollback release failed",
+                        reservation_id=reservation_id,
+                        detail=(
+                            f"{getattr(release_result, 'reason_code', None)}:"
+                            f" {getattr(release_result, 'reason', None)}"
+                        ),
+                    ),
+                }
+            return {"srp_release": release_payload}
+        except Exception as release_exc:
+            logger.warning(
+                "SRP release failed during ACMP connect rollback %s:%s->%s:%s: %s",
+                req.talker_entity_id,
+                req.talker_stream_index,
+                req.listener_entity_id,
+                req.listener_stream_index,
+                release_exc,
+            )
+            return {
+                "srp_release_warning": _build_srp_release_warning(
+                    reason="ACMP connect failed and SRP rollback release failed",
+                    reservation_id=reservation_id,
+                    detail=release_exc,
+                )
+            }
+
     try:
-        admission = None
         if _srp_enabled():
             admission = await get_srp_admission_service().admit(
                 SrpAdmissionRequest(
@@ -1780,66 +2023,58 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
             listener_id,
             req.listener_stream_index
         )
+
+        if not success:
+            rollback_payload = await _release_acmp_reservation(endpoint="avdecc.connections.rollback")
+            raise HTTPException(
+                status_code=500,
+                detail=_build_connection_failure_detail(
+                    code="ACMP_CONNECTION_FAILED",
+                    message="ACMP connection failed (timeout or rejected by remote entity)",
+                    payload=rollback_payload,
+                ),
+            )
+
+        connection_succeeded = True
+
+        connection_id = (
+            f"{req.talker_entity_id}:{req.talker_stream_index}"
+            f":{req.listener_entity_id}:{req.listener_stream_index}"
+        )
+
+        response: Dict[str, Any] = {
+            "status": "connected",
+            "connection_id": connection_id,
+            "talker_entity_id": req.talker_entity_id,
+            "talker_stream_index": req.talker_stream_index,
+            "listener_entity_id": req.listener_entity_id,
+            "listener_stream_index": req.listener_stream_index,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if admission and admission.decision == "allowed" and admission.reservation_id:
+            _acmp_srp_reservations[connection_id] = {
+                "reservation_id": admission.reservation_id,
+                "admission_id": admission.admission_id,
+            }
+            response["srp_admission"] = admission.to_dict()
+
+        return response
     except HTTPException:
         raise
     except Exception as e:
-        try:
-            if admission and admission.decision == "allowed" and admission.reservation_id:
-                await get_srp_admission_service().release(
-                    reservation_id=admission.reservation_id,
-                    endpoint="avdecc.connections.rollback",
-                    stream_id=(
-                        f"{req.talker_entity_id}:{req.talker_stream_index}"
-                        f"->{req.listener_entity_id}:{req.listener_stream_index}"
-                    ),
-                    talker_id=req.talker_entity_id,
-                    listener_id=req.listener_entity_id,
-                )
-        except Exception:
-            pass
+        rollback_payload: Optional[Dict[str, Any]] = None
+        if not connection_succeeded:
+            rollback_payload = await _release_acmp_reservation(endpoint="avdecc.connections.rollback")
         logger.error(f"ACMP connect_stream failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"ACMP connection failed: {e}")
-
-    if not success:
-        if admission and admission.decision == "allowed" and admission.reservation_id:
-            await get_srp_admission_service().release(
-                reservation_id=admission.reservation_id,
-                endpoint="avdecc.connections.rollback",
-                stream_id=(
-                    f"{req.talker_entity_id}:{req.talker_stream_index}"
-                    f"->{req.listener_entity_id}:{req.listener_stream_index}"
-                ),
-                talker_id=req.talker_entity_id,
-                listener_id=req.listener_entity_id,
-            )
         raise HTTPException(
             status_code=500,
-            detail="ACMP connection failed (timeout or rejected by remote entity)"
+            detail=_build_connection_failure_detail(
+                code="ACMP_CONNECTION_FAILED",
+                message=f"ACMP connection failed: {e}",
+                payload=rollback_payload,
+            ),
         )
-
-    connection_id = (
-        f"{req.talker_entity_id}:{req.talker_stream_index}"
-        f":{req.listener_entity_id}:{req.listener_stream_index}"
-    )
-
-    response: Dict[str, Any] = {
-        "status": "connected",
-        "connection_id": connection_id,
-        "talker_entity_id": req.talker_entity_id,
-        "talker_stream_index": req.talker_stream_index,
-        "listener_entity_id": req.listener_entity_id,
-        "listener_stream_index": req.listener_stream_index,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
-    if admission and admission.decision == "allowed" and admission.reservation_id:
-        _acmp_srp_reservations[connection_id] = {
-            "reservation_id": admission.reservation_id,
-            "admission_id": admission.admission_id,
-        }
-        response["srp_admission"] = admission.to_dict()
-
-    return response
 
 
 @router.delete("/avdecc/connections/{connection_id}")
@@ -1897,14 +2132,30 @@ async def disconnect_stream(connection_id: str) -> Dict[str, Any]:
 
     binding = _acmp_srp_reservations.pop(connection_id, None)
     if binding and binding.get("reservation_id"):
-        release_result = await get_srp_admission_service().release(
-            reservation_id=str(binding["reservation_id"]),
-            endpoint="avdecc.disconnect",
-            stream_id=connection_id,
-            talker_id=parts[0],
-            listener_id=parts[2],
-        )
-        response["srp_release"] = release_result.to_dict()
+        reservation_id = str(binding["reservation_id"])
+        try:
+            release_result = await get_srp_admission_service().release(
+                reservation_id=reservation_id,
+                endpoint="avdecc.disconnect",
+                stream_id=connection_id,
+                talker_id=parts[0],
+                listener_id=parts[2],
+            )
+            response["srp_release"] = _build_srp_release_payload(
+                release_result,
+                reservation_id=reservation_id,
+            )
+        except Exception as release_exc:
+            logger.warning(
+                "SRP release failed during ACMP disconnect %s: %s",
+                connection_id,
+                release_exc,
+            )
+            response["srp_release_warning"] = _build_srp_release_warning(
+                reason="ACMP disconnect succeeded but SRP reservation release failed",
+                reservation_id=reservation_id,
+                detail=release_exc,
+            )
 
     return response
 
