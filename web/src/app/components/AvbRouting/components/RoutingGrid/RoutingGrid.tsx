@@ -193,9 +193,14 @@ export function RoutingGrid() {
         return;
       }
 
+      const operations = connections.map((connection) => ({
+        ...connection,
+        action: 'connect' as const,
+      }));
+
       // Execute batch operation
       await batchPatchMutation.mutateAsync(
-        { connections },
+        operations,
         {
           onSuccess: () => {
             notify.success(`Successfully connected ${connections.length} route${connections.length === 1 ? '' : 's'}`);

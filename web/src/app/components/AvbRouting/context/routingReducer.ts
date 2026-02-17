@@ -83,6 +83,9 @@ export function routingReducer(
     case 'PATCH': {
       const { talker_id, listener_id } = action.payload;
       const route_id = `${talker_id}→${listener_id}`;
+      const talkerNodeId = state.endpoints[talker_id]?.node_id;
+      const listenerNodeId = state.endpoints[listener_id]?.node_id;
+      const crossNode = !!talkerNodeId && !!listenerNodeId && talkerNodeId !== listenerNodeId;
 
       // Check if route already exists
       const existingRoute = state.liveRoutes[route_id];
@@ -109,6 +112,9 @@ export function routingReducer(
               locked: false,
               valid: true,
               messages: [],
+              talker_node_id: talkerNodeId,
+              listener_node_id: listenerNodeId,
+              cross_node: crossNode,
             },
           },
           auditLog: [
@@ -138,6 +144,9 @@ export function routingReducer(
             locked: false,
             valid: true,
             messages: [],
+            talker_node_id: talkerNodeId,
+            listener_node_id: listenerNodeId,
+            cross_node: crossNode,
           },
         },
         auditLog: [

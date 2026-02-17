@@ -55,6 +55,12 @@
   - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
 - Keyboard navigation behavior tests added:
   - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx`
+- Keyboard integration coverage added (real provider + reducer transitions):
+  - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx`
+- Multi-node route/topology type alignment completed for build stability:
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/RoutingContext.tsx`
+  - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
 
 ---
 
@@ -69,8 +75,8 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add focused integration coverage for keyboard navigation with real reducer state transitions.
 - Add API-facing interaction coverage for connect/unpatch notification contracts.
+- Add CI summary output for AVB routing test timing and failures.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -83,6 +89,6 @@
 
 ## Next Recommended Slice
 
-1. Add focused integration coverage for keyboard navigation with real reducer state transitions.
-2. Add API-facing interaction coverage for connect/unpatch notification contracts.
-3. Add CI summary output for AVB routing test timing and failures.
+1. Add API-facing interaction coverage for connect/unpatch notification contracts.
+2. Add CI summary output for AVB routing test timing and failures.
+3. Add reducer/history tests for combined safe-mode apply/discard keyboard workflows.

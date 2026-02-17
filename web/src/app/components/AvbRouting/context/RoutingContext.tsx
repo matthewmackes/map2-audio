@@ -143,20 +143,28 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
   useEffect(() => {
     if (!connectionsData) return;
 
-    const routes: Route[] = connectionsData.connections.map((conn) => ({
-      id: conn.connection_id,
-      talker_id: conn.talker.endpoint_id || '',
-      listener_id: conn.listener.endpoint_id || '',
-      state: conn.state,
-      established_time: conn.established_time,
-      error_message: conn.error_message,
-      connection_count: 0,
-      srp_reservation_id: conn.srp_reservation_id,
-      srp_admission_id: conn.srp_admission_id,
-      locked: false,
-      valid: true,
-      messages: [],
-    }));
+    const routes: Route[] = connectionsData.connections.map((conn) => {
+      const talkerNodeId = conn.talker.node_id || undefined;
+      const listenerNodeId = conn.listener.node_id || undefined;
+
+      return {
+        id: conn.connection_id,
+        talker_id: conn.talker.endpoint_id || '',
+        listener_id: conn.listener.endpoint_id || '',
+        state: conn.state,
+        established_time: conn.established_time,
+        error_message: conn.error_message,
+        connection_count: 0,
+        srp_reservation_id: conn.srp_reservation_id,
+        srp_admission_id: conn.srp_admission_id,
+        locked: false,
+        valid: true,
+        messages: [],
+        talker_node_id: talkerNodeId,
+        listener_node_id: listenerNodeId,
+        cross_node: !!talkerNodeId && !!listenerNodeId && talkerNodeId !== listenerNodeId,
+      };
+    });
 
     dispatch({
       type: 'CONNECTIONS_UPDATED',

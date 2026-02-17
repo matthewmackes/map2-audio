@@ -57,7 +57,7 @@ interface NetworkTopologyModalProps {
  */
 function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
   const statusColor = data.status === 'online' ? '#4caf50' : data.status === 'degraded' ? '#ff9800' : '#f44336';
-  const isPtpMaster = data.ptp?.role === 'master';
+  const isPtpMaster = data.ptp?.is_master === true;
 
   return (
     <Paper
@@ -146,7 +146,7 @@ function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
       )}
 
       {/* PTP Sync Info */}
-      {data.ptp && data.ptp.status === 'synced' && (
+      {data.ptp && (data.ptp.state === 'master' || data.ptp.state === 'slave') && (
         <Typography variant="caption" color="success.main" display="block" sx={{ mt: 0.5 }}>
           ⏱ {data.ptp.offset_ns}ns offset
         </Typography>
@@ -209,15 +209,15 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
 
     const flowEdges: Edge[] = [];
 
-    // Add PTP hierarchy edges (master -> slave)
+    // Add PTP hierarchy edges (master -> other synchronized nodes)
     nodesData.forEach((node) => {
-      if (node.ptp?.master_node_id && node.ptp.master_node_id !== node.node_id) {
+      if (ptpStatus?.master_node_id && ptpStatus.master_node_id !== node.node_id && node.ptp) {
         flowEdges.push({
-          id: `ptp-${node.ptp.master_node_id}-${node.node_id}`,
-          source: node.ptp.master_node_id,
+          id: `ptp-${ptpStatus.master_node_id}-${node.node_id}`,
+          source: ptpStatus.master_node_id,
           target: node.node_id,
           type: 'smoothstep',
-          animated: node.ptp.status === 'synced',
+          animated: node.ptp.state === 'master' || node.ptp.state === 'slave',
           label: 'PTP',
           style: { stroke: '#ffd700', strokeWidth: 2 },
           markerEnd: {
@@ -231,24 +231,24 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
 
     // Add route edges (cross-node routes)
     Object.values(state.network.crossNodeRoutes).forEach((route) => {
-      const edgeId = `route-${route.talker_node_id}-${route.listener_node_id}`;
+      const edgeId = `route-${route.route_id}`;
 
       // Check if edge already exists
       if (!flowEdges.find((e) => e.id === edgeId)) {
         flowEdges.push({
           id: edgeId,
-          source: route.talker_node_id,
-          target: route.listener_node_id,
+          source: route.source_node_id,
+          target: route.dest_node_id,
           type: 'smoothstep',
-          animated: route.state === 'connected',
-          label: `${route.active_connections} route${route.active_connections !== 1 ? 's' : ''}`,
+          animated: route.status === 'active',
+          label: `${route.status} · ${route.bandwidth_mbps.toFixed(1)} Mbps`,
           style: {
-            stroke: route.state === 'connected' ? '#2196f3' : '#9e9e9e',
-            strokeWidth: Math.min(2 + route.active_connections, 6),
+            stroke: route.status === 'active' ? '#2196f3' : route.status === 'failed' ? '#f44336' : '#9e9e9e',
+            strokeWidth: Math.min(2 + Math.max(0, Math.round(route.bandwidth_mbps / 10)), 6),
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: route.state === 'connected' ? '#2196f3' : '#9e9e9e',
+            color: route.status === 'active' ? '#2196f3' : route.status === 'failed' ? '#f44336' : '#9e9e9e',
           },
           labelStyle: { fontSize: 10, fill: '#2196f3' },
         });
@@ -267,10 +267,7 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
   }, [fitView]);
 
   const onlineCount = nodesData.filter((n) => n.status === 'online').length;
-  const totalRoutes = Object.values(state.network.crossNodeRoutes).reduce(
-    (sum, r) => sum + r.active_connections,
-    0
-  );
+  const totalRoutes = Object.keys(state.network.crossNodeRoutes).length;
 
   return (
     <>
@@ -287,9 +284,13 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
                 color={onlineCount === nodesData.length ? 'success' : 'warning'}
               />
               {totalRoutes > 0 && (
-                <Chip label={`${totalRoutes} cross-node routes`} size="small" color="primary" />
+                <Chip
+                  label={`${totalRoutes} cross-node route${totalRoutes !== 1 ? 's' : ''}`}
+                  size="small"
+                  color="primary"
+                />
               )}
-              {ptpStatus?.ptp_enabled && (
+              {ptpStatus?.synchronized && (
                 <Chip label="PTP Sync Active" size="small" color="info" />
               )}
             </Stack>
