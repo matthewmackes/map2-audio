@@ -85,6 +85,9 @@
   - validates cross-node metadata derivation on `PATCH`
   - validates `CONNECTIONS_UPDATED` metadata merge behavior
   - validates `NODES_UPDATED` + `CROSS_NODE_ROUTE_UPDATED` state wiring
+- API/reducer integration coverage added for cross-node route lifecycle:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates provider sync of API payloads into reducer state for `connecting -> connected` cross-node transitions
 
 ---
 
@@ -99,7 +102,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Expand integration coverage for cross-node route lifecycle transitions.
+- Add focused UI assertions for cross-node state/health badges in matrix and topology views.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -112,6 +115,6 @@
 
 ## Next Recommended Slice
 
-1. Add API/reducer integration tests for cross-node route lifecycle transitions.
-2. Add focused UI assertions for cross-node state/health badges in matrix and topology views.
-3. Add topology/route reconciliation tests when nodes go offline and recover.
+1. Add focused UI assertions for cross-node state/health badges in matrix and topology views.
+2. Add topology/route reconciliation tests when nodes go offline and recover.
+3. Add matrix/topology UX assertions for degraded node health surfacing.

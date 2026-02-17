@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "jest",
-    "test:avb-routing": "jest web/src/app/App.avbRoutingRoute.test.tsx web/src/app/pages/AvbRoutingPage.test.tsx web/src/app/components/AvbRouting/context/routingReducer.test.ts web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx --runInBand"
+    "test:avb-routing": "jest web/src/app/App.avbRoutingRoute.test.tsx web/src/app/pages/AvbRoutingPage.test.tsx web/src/app/components/AvbRouting/context/routingReducer.test.ts web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx --runInBand"
   },
   "jest": {
     "testEnvironment": "jsdom",
