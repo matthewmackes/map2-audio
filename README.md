@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **641** TypeScript | **114** C++/H | **91** Docs | **203** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **642** TypeScript | **114** C++/H | **91** Docs | **205** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`24052a8`](https://github.com/matthewmackes/map2-audio/commit/24052a88bd2000fb1d00863f1f0bf5dc4e8505a1) | avb-routing: add cross-node context integration coverage | Map2 Audio | 2026-02-16 |
+| [`0ac0eab`](https://github.com/matthewmackes/map2-audio/commit/0ac0eab8cbc3d6bb7e537ceeea510b705f77cc40) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`e62e7a0`](https://github.com/matthewmackes/map2-audio/commit/e62e7a049964cf4d3fa8051ef38ab630ea1140b9) | avb-routing: add multi-node reducer coverage | Map2 Audio | 2026-02-16 |
 | [`f527c41`](https://github.com/matthewmackes/map2-audio/commit/f527c4146451874a08dc0d8653f2892041007322) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`c6974de`](https://github.com/matthewmackes/map2-audio/commit/c6974de4856574f41cc8f96d5e8177575e55b2b9) | avb-routing: add 409 admission error contract coverage | Map2 Audio | 2026-02-16 |
 | [`61f4048`](https://github.com/matthewmackes/map2-audio/commit/61f40482c2a61f4c532558c39e1e95cff3a54f48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`29b8db0`](https://github.com/matthewmackes/map2-audio/commit/29b8db057b852a08c5d9ee59fd44262975882d49) | ci: upload AVB routing jest report artifact | Map2 Audio | 2026-02-16 |
 | [`0e1b4c6`](https://github.com/matthewmackes/map2-audio/commit/0e1b4c619c53b449337f95c61d0ed5f0d6984eeb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`f0cdef6`](https://github.com/matthewmackes/map2-audio/commit/f0cdef6e43c532eda50b3b3d0e79348825f5fe3f) | avb-routing: cover batch notification contracts | Map2 Audio | 2026-02-16 |
-| [`b9f7534`](https://github.com/matthewmackes/map2-audio/commit/b9f753463173f3b1dab639f5092576a7c6e5fa73) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
