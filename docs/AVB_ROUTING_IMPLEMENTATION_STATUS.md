@@ -194,6 +194,9 @@
 - Operator troubleshooting notes added for multi-select/filter node churn behavior:
   - `docs/OPERATIONS_GUIDE.md`
   - documents retained selection behavior for offline/removed nodes, inspector context checks, and reducer normalization expectations
+- Safe-patch + multi-select integration coverage added (provider/reducer-level):
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates multi-select node context is retained while safe mode is entered, staged connect/disconnect operations are applied/discarded, and route state transitions complete
 
 ---
 
@@ -219,5 +222,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Expand integration coverage for multi-select + safe-patch operator workflows.
-3. Add keyboard-first multi-select operator flows to navigation tests.
+2. Add keyboard-first multi-select operator flows to navigation tests.
+3. Add integration coverage for multi-select workflows under rapid API connection refresh churn.

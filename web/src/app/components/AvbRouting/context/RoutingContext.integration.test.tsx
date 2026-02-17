@@ -1,6 +1,6 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { RoutingProvider, useFilteredEndpoints, useRoutingState } from './RoutingContext'
+import { RoutingProvider, useFilteredEndpoints, useRouting, useRoutingState } from './RoutingContext'
 import { initialRoutingState } from '../types'
 import type {
   AvbNode,
@@ -142,6 +142,59 @@ function MultiSelectProbe() {
       <span data-testid="multi-selected-node-ids">{selectedNodeIds}</span>
       <span data-testid="multi-endpoint-ids">{filteredEndpointIds}</span>
       <span data-testid="multi-node-ids">{nodeIds}</span>
+    </div>
+  )
+}
+
+function SafePatchMultiSelectProbe() {
+  const { state, dispatch } = useRouting()
+  const selectedNodeIds = [...state.network.nodeSelection.selected_node_ids].sort().join('|') || 'none'
+  const pendingRouteIds = Object.keys(state.pendingRoutes).sort().join('|') || 'none'
+  const liveRouteIds = Object.keys(state.liveRoutes).sort().join('|') || 'none'
+
+  return (
+    <div>
+      <span data-testid="safe-view-mode">{state.network.nodeSelection.view_mode}</span>
+      <span data-testid="safe-selected-node-ids">{selectedNodeIds}</span>
+      <span data-testid="safe-mode">{state.safePatchMode ? 'on' : 'off'}</span>
+      <span data-testid="safe-pending-route-ids">{pendingRouteIds}</span>
+      <span data-testid="safe-live-route-ids">{liveRouteIds}</span>
+
+      <button
+        data-testid="safe-enter"
+        type="button"
+        onClick={() => dispatch({ type: 'ENTER_SAFE_MODE' })}
+      >
+        enter-safe
+      </button>
+      <button
+        data-testid="safe-stage-connect"
+        type="button"
+        onClick={() => dispatch({ type: 'PATCH', payload: { talker_id: 'talker-1', listener_id: 'listener-1' } })}
+      >
+        stage-connect
+      </button>
+      <button
+        data-testid="safe-stage-disconnect"
+        type="button"
+        onClick={() => dispatch({ type: 'UNPATCH', payload: { route_id: 'talker-1→listener-1' } })}
+      >
+        stage-disconnect
+      </button>
+      <button
+        data-testid="safe-apply"
+        type="button"
+        onClick={() => dispatch({ type: 'APPLY_SAFE_CHANGES' })}
+      >
+        apply-safe
+      </button>
+      <button
+        data-testid="safe-discard"
+        type="button"
+        onClick={() => dispatch({ type: 'DISCARD_SAFE_CHANGES' })}
+      >
+        discard-safe
+      </button>
     </div>
   )
 }
@@ -632,6 +685,100 @@ describe('RoutingContext API/reducer integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('multi-view-mode').textContent).toBe('all_nodes')
       expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b|endpoint-c')
+    })
+  })
+
+  it('preserves multi-select node context through safe-patch apply and discard cycles', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockConnectionsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+    ]
+
+    const talker = makeEndpoint({
+      endpoint_id: 'talker-1',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const listener = makeEndpoint({
+      endpoint_id: 'listener-1',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [talker.endpoint_id]: talker,
+        [listener.endpoint_id]: listener,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <SafePatchMultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-view-mode').textContent).toBe('multi_select')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('none')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('none')
+    })
+
+    fireEvent.click(screen.getByTestId('safe-enter'))
+    fireEvent.click(screen.getByTestId('safe-stage-connect'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-view-mode').textContent).toBe('multi_select')
+    })
+
+    fireEvent.click(screen.getByTestId('safe-apply'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('none')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-view-mode').textContent).toBe('multi_select')
+    })
+
+    fireEvent.click(screen.getByTestId('safe-enter'))
+    fireEvent.click(screen.getByTestId('safe-stage-disconnect'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+    })
+
+    fireEvent.click(screen.getByTestId('safe-discard'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('none')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-view-mode').textContent).toBe('multi_select')
     })
   })
 })
