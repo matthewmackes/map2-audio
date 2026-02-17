@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { NodeSelector } from './NodeSelector'
 import type { AvbNode } from '../../types'
 
@@ -60,6 +60,12 @@ function makeNode(overrides: Partial<AvbNode>): AvbNode {
     notes: '',
     ...overrides,
   }
+}
+
+function getRenderedTabOrder(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll('[data-testid^="node-selector-tab-"]'))
+    .map((element) => element.getAttribute('data-testid') || '')
+    .map((testId) => testId.replace('node-selector-tab-', ''))
 }
 
 describe('NodeSelector degraded/offline badge visibility', () => {
@@ -140,5 +146,93 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     expect(screen.queryByText('Remote Offline')).toBeNull()
     expect(screen.queryByTestId('WarningIcon')).toBeNull()
     expect(screen.queryByTestId('ErrorIcon')).toBeNull()
+  })
+
+  it('keeps deterministic node tab ordering across status transitions', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-bravo',
+        name: 'Bravo',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-alpha',
+        name: 'Alpha',
+        type: 'map2_remote',
+        status: 'degraded',
+      }),
+      makeNode({
+        node_id: 'node-charlie',
+        name: 'Charlie',
+        type: 'map2_remote',
+        status: 'offline',
+      }),
+    ]
+
+    const { container, rerender } = render(<NodeSelector />)
+
+    await waitFor(() => {
+      expect(getRenderedTabOrder(container)).toEqual([
+        'node-local',
+        'node-bravo',
+        'node-alpha',
+        'node-charlie',
+      ])
+    })
+
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-bravo',
+        name: 'Bravo',
+        type: 'map2_remote',
+        status: 'offline',
+      }),
+      makeNode({
+        node_id: 'node-alpha',
+        name: 'Alpha',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-charlie',
+        name: 'Charlie',
+        type: 'map2_remote',
+        status: 'degraded',
+      }),
+    ]
+
+    rerender(<NodeSelector />)
+
+    await waitFor(() => {
+      expect(getRenderedTabOrder(container)).toEqual([
+        'node-local',
+        'node-alpha',
+        'node-bravo',
+        'node-charlie',
+      ])
+    })
   })
 })

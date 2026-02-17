@@ -63,6 +63,12 @@ function makeNode(overrides: Partial<AvbNode>): AvbNode {
   }
 }
 
+function getRenderedNodeOrder(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll('[data-testid^="node-tree-item-"]'))
+    .map((element) => element.getAttribute('data-testid') || '')
+    .map((testId) => testId.replace('node-tree-item-', ''))
+}
+
 describe('NodeTree status badge behavior', () => {
   beforeEach(() => {
     mockDispatch.mockReset()
@@ -136,5 +142,77 @@ describe('NodeTree status badge behavior', () => {
       type: 'SET_VIEW_MODE',
       payload: 'single_node',
     })
+  })
+
+  it('keeps deterministic node ordering across status transitions', () => {
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-bravo',
+        name: 'Bravo',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-alpha',
+        name: 'Alpha',
+        type: 'map2_remote',
+        status: 'degraded',
+      }),
+      makeNode({
+        node_id: 'node-charlie',
+        name: 'Charlie',
+        type: 'map2_remote',
+        status: 'offline',
+      }),
+    ]
+
+    const { container, rerender } = render(<NodeTree />)
+
+    expect(getRenderedNodeOrder(container)).toEqual([
+      'node-local',
+      'node-bravo',
+      'node-alpha',
+      'node-charlie',
+    ])
+
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-bravo',
+        name: 'Bravo',
+        type: 'map2_remote',
+        status: 'offline',
+      }),
+      makeNode({
+        node_id: 'node-alpha',
+        name: 'Alpha',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-charlie',
+        name: 'Charlie',
+        type: 'map2_remote',
+        status: 'degraded',
+      }),
+    ]
+
+    rerender(<NodeTree />)
+
+    expect(getRenderedNodeOrder(container)).toEqual([
+      'node-local',
+      'node-alpha',
+      'node-bravo',
+      'node-charlie',
+    ])
   })
 })

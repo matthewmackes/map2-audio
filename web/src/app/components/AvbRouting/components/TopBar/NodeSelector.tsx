@@ -35,6 +35,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { useNodes, useLocalNodeId } from '../../hooks/useNodeApi';
 import { useRouting } from '../../context/RoutingContext';
 import type { AvbNode, NodeStatus } from '../../types';
+import { sortNodesForNavigation } from '../../utils/nodeSorting';
 
 /**
  * Get status icon for node
@@ -202,6 +203,7 @@ function NodeTab({ node, isLocal, selected, onClick }: NodeTabProps) {
           }
           value={node.node_id}
           onClick={onClick}
+          data-testid={`node-selector-tab-${node.node_id}`}
           sx={{
             minHeight: 48,
             textTransform: 'none',
@@ -245,6 +247,7 @@ export function NodeSelector() {
   const visibleNodes = state.network.nodeSelection.show_offline
     ? nodes
     : nodes.filter((n) => n.status === 'online');
+  const sortedVisibleNodes = sortNodesForNavigation(visibleNodes, localNodeId);
 
   const handleNodeSelect = (nodeId: string | null) => {
     dispatch({
@@ -337,7 +340,7 @@ export function NodeSelector() {
         />
 
         {/* Individual node tabs */}
-        {visibleNodes.map((node) => (
+        {sortedVisibleNodes.map((node) => (
           <NodeTab
             key={node.node_id}
             node={node}

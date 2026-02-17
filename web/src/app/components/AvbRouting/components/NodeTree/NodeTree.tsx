@@ -41,6 +41,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useNodes, useLocalNodeId } from '../../hooks/useNodeApi';
 import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
 import type { AvbNode, Endpoint } from '../../types';
+import { sortNodesForNavigation } from '../../utils/nodeSorting';
 
 const DRAWER_WIDTH = 280;
 
@@ -148,6 +149,7 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
       <ListItemButton
         selected={isSelected}
         onClick={onSelect}
+        data-testid={`node-tree-item-${node.node_id}`}
         sx={{
           py: 1,
           borderLeft: `4px solid ${isSelected ? node.color : 'transparent'}`,
@@ -282,16 +284,7 @@ export function NodeTree() {
 
   const currentNodeId = state.network.nodeSelection.current_node_id;
 
-  // Sort nodes: local first, then pinned, then online, then by name
-  const sortedNodes = [...nodes].sort((a, b) => {
-    if (a.node_id === localNodeId) return -1;
-    if (b.node_id === localNodeId) return 1;
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    if (a.status === 'online' && b.status !== 'online') return -1;
-    if (a.status !== 'online' && b.status === 'online') return 1;
-    return a.name.localeCompare(b.name);
-  });
+  const sortedNodes = sortNodesForNavigation(nodes, localNodeId);
 
   const handleNodeSelect = (nodeId: string) => {
     dispatch({

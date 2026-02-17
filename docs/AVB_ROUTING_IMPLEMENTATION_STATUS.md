@@ -111,6 +111,13 @@
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
   - validates degraded/critical/healthy health statuses map to warning/error/success color semantics
+- Node-list sorting stability coverage added for status transitions:
+  - `web/src/app/components/AvbRouting/utils/nodeSorting.ts`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates deterministic local/pinned/online/name ordering when remote nodes transition online/degraded/offline
 
 ---
 
@@ -125,7 +132,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add targeted tests for node-list sorting stability across status transitions.
+- Add multi-node filter/view-mode interaction tests for NodeSelector + NodeTree.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -138,6 +145,6 @@
 
 ## Next Recommended Slice
 
-1. Add targeted tests for node-list sorting stability across status transitions.
-2. Add multi-node filter/view-mode interaction tests for NodeSelector + NodeTree.
-3. Add focused integration assertions for TopBar + NodeTree after node status churn and API resync.
+1. Add multi-node filter/view-mode interaction tests for NodeSelector + NodeTree.
+2. Add focused integration assertions for TopBar + NodeTree after node status churn and API resync.
+3. Add explicit selection-retention assertions when filtered node sets shrink/expand.
