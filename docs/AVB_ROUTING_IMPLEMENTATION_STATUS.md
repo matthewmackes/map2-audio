@@ -279,6 +279,15 @@
   - `web/src/app/components/AvbRouting/context/routingReducer.ts`
   - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
   - adds `sceneDiff` selection/preview state, reducer actions for baseline/compare selection + preview generation/clear, and deterministic diff preview tests including delete-scene cleanup behavior
+- Provider-level scene-diff action-flow integration coverage added:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates baseline/compare selection + preview generation behavior through scene save/recall/delete churn windows
+- Initial read-only scene-diff preview surface added with focused component coverage:
+  - `web/src/app/components/AvbRouting/components/TopBar/SceneDiffPreview.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/SceneDiffPreview.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `package.json`
+  - renders scene-diff summary counts + add/remove route lists when preview state is present, without introducing full dialog workflows
 
 ---
 
@@ -304,5 +313,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add provider-level integration coverage for scene-diff action flow (baseline/compare selection + preview generation) through scene save/delete/recall churn.
-3. Introduce initial read-only scene-diff preview surface (no full dialog) and focused component tests for summary rendering.
+2. Add minimal scene-diff operator controls (baseline/compare selection + generate/clear actions) in TopBar without introducing full scene dialogs.
+3. Add integration coverage for scene-diff error/reset paths when selections are missing/invalid and when scene deletions occur after preview generation.

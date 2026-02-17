@@ -226,6 +226,135 @@ function SafePatchMultiSelectProbe() {
   )
 }
 
+function SceneDiffProbe() {
+  const { state, dispatch } = useRouting()
+  const sceneEntries = Object.values(state.scenes)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const sceneSummary = sceneEntries.map((scene) => `${scene.name}:${scene.id}`).join('|') || 'none'
+  const baselineSceneId = state.sceneDiff.baseline_scene_id
+  const compareSceneId = state.sceneDiff.compare_scene_id
+  const baselineSceneName = baselineSceneId ? (state.scenes[baselineSceneId]?.name || 'missing') : 'none'
+  const compareSceneName = compareSceneId ? (state.scenes[compareSceneId]?.name || 'missing') : 'none'
+  const preview = state.sceneDiff.preview
+  const previewSummary = preview
+    ? `${preview.total_changes}:${preview.to_add.length}:${preview.to_remove.length}:${preview.unchanged.length}`
+    : 'none'
+  const previewAddRoutes = preview
+    ? preview.to_add.map((route) => `${route.talker_id}→${route.listener_id}`).sort().join('|') || 'none'
+    : 'none'
+  const liveRouteIds = Object.keys(state.liveRoutes).sort().join('|') || 'none'
+
+  const baselineByName = sceneEntries.find((scene) => scene.name === 'Baseline Scene')?.id || null
+  const compareByName = sceneEntries.find((scene) => scene.name === 'Compare Scene')?.id || null
+
+  return (
+    <div>
+      <span data-testid="scene-diff-scenes">{sceneSummary}</span>
+      <span data-testid="scene-diff-baseline">{baselineSceneName}</span>
+      <span data-testid="scene-diff-compare">{compareSceneName}</span>
+      <span data-testid="scene-diff-preview-summary">{previewSummary}</span>
+      <span data-testid="scene-diff-preview-add-routes">{previewAddRoutes}</span>
+      <span data-testid="scene-diff-live-route-ids">{liveRouteIds}</span>
+
+      <button
+        data-testid="scene-diff-save-baseline"
+        type="button"
+        onClick={() => dispatch({
+          type: 'SAVE_SCENE',
+          payload: {
+            name: 'Baseline Scene',
+            description: 'baseline',
+            tags: ['baseline'],
+          },
+        })}
+      >
+        save-baseline
+      </button>
+      <button
+        data-testid="scene-diff-save-compare"
+        type="button"
+        onClick={() => dispatch({
+          type: 'SAVE_SCENE',
+          payload: {
+            name: 'Compare Scene',
+            description: 'compare',
+            tags: ['compare'],
+          },
+        })}
+      >
+        save-compare
+      </button>
+      <button
+        data-testid="scene-diff-add-route"
+        type="button"
+        onClick={() => {
+          dispatch({ type: 'PATCH', payload: { talker_id: 'talker-2', listener_id: 'listener-2' } })
+          dispatch({
+            type: 'CONNECTION_STATE_CHANGE',
+            payload: {
+              route_id: 'talker-2→listener-2',
+              state: 'connected',
+            },
+          })
+        }}
+      >
+        add-route
+      </button>
+      <button
+        data-testid="scene-diff-set-baseline"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_BASELINE', payload: baselineByName })}
+      >
+        set-baseline
+      </button>
+      <button
+        data-testid="scene-diff-set-compare"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_COMPARE', payload: compareByName })}
+      >
+        set-compare
+      </button>
+      <button
+        data-testid="scene-diff-generate"
+        type="button"
+        onClick={() => dispatch({ type: 'GENERATE_SCENE_DIFF' })}
+      >
+        generate
+      </button>
+      <button
+        data-testid="scene-diff-recall-baseline"
+        type="button"
+        onClick={() => {
+          if (baselineByName) {
+            dispatch({ type: 'RECALL_SCENE', payload: { scene_id: baselineByName } })
+          }
+        }}
+      >
+        recall-baseline
+      </button>
+      <button
+        data-testid="scene-diff-delete-compare"
+        type="button"
+        onClick={() => {
+          if (compareByName) {
+            dispatch({ type: 'DELETE_SCENE', payload: { scene_id: compareByName } })
+          }
+        }}
+      >
+        delete-compare
+      </button>
+      <button
+        data-testid="scene-diff-clear"
+        type="button"
+        onClick={() => dispatch({ type: 'CLEAR_SCENE_DIFF' })}
+      >
+        clear-diff
+      </button>
+    </div>
+  )
+}
+
 describe('RoutingContext API/reducer integration', () => {
   beforeEach(() => {
     mockEndpointsData = undefined
@@ -2239,6 +2368,124 @@ describe('RoutingContext API/reducer integration', () => {
       expect(screen.getByTestId('safe-endpoint-ids').textContent).toBe('listener-1|talker-1')
       expect(screen.getByTestId('safe-node-b-status').textContent).toBe('degraded')
       expect(screen.getByTestId('safe-node-c-status').textContent).toBe('offline')
+    })
+  })
+
+  it('supports scene-diff baseline/compare flow through save, recall, and delete churn', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+    ]
+    mockConnectionsData = undefined
+
+    const talker1 = makeEndpoint({
+      endpoint_id: 'talker-1',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const listener1 = makeEndpoint({
+      endpoint_id: 'listener-1',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const talker2 = makeEndpoint({
+      endpoint_id: 'talker-2',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 3,
+    })
+    const listener2 = makeEndpoint({
+      endpoint_id: 'listener-2',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 4,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [talker1.endpoint_id]: talker1,
+        [listener1.endpoint_id]: listener1,
+        [talker2.endpoint_id]: talker2,
+        [listener2.endpoint_id]: listener2,
+      },
+      liveRoutes: {
+        'talker-1→listener-1': {
+          id: 'talker-1→listener-1',
+          talker_id: 'talker-1',
+          listener_id: 'listener-1',
+          state: 'connected' as const,
+          established_time: '2026-02-17T04:10:00Z',
+          error_message: null,
+          connection_count: 1,
+          srp_reservation_id: null,
+          srp_admission_id: null,
+          locked: false,
+          valid: true,
+          messages: [],
+          talker_node_id: 'node-a',
+          listener_node_id: 'node-b',
+          cross_node: true,
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <SceneDiffProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-scenes').textContent).toBe('none')
+      expect(screen.getByTestId('scene-diff-live-route-ids').textContent).toBe('talker-1→listener-1')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-save-baseline'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-scenes').textContent).toContain('Baseline Scene:')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-add-route'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-live-route-ids').textContent).toBe('talker-1→listener-1|talker-2→listener-2')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-save-compare'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-scenes').textContent).toContain('Compare Scene:')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-set-baseline'))
+    fireEvent.click(screen.getByTestId('scene-diff-set-compare'))
+    fireEvent.click(screen.getByTestId('scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-baseline').textContent).toBe('Baseline Scene')
+      expect(screen.getByTestId('scene-diff-compare').textContent).toBe('Compare Scene')
+      expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('1:1:0:1')
+      expect(screen.getByTestId('scene-diff-preview-add-routes').textContent).toBe('talker-2→listener-2')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-recall-baseline'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-live-route-ids').textContent).toBe('talker-1→listener-1')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-delete-compare'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-scenes').textContent).not.toContain('Compare Scene:')
+      expect(screen.getByTestId('scene-diff-compare').textContent).toBe('none')
+      expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('none')
     })
   })
 })

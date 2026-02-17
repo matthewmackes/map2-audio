@@ -36,6 +36,7 @@ import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
 import { initialRoutingState } from '../../types';
 import { NodeSelector } from './NodeSelector';
+import { SceneDiffPreview } from './SceneDiffPreview';
 import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
 
 const DEVICE_TYPE_OPTIONS = ['map2', 'avdecc', 'unknown'] as const;
@@ -572,6 +573,8 @@ export function TopBar() {
           </Box>
         </Box>
       </Popover>
+
+      <SceneDiffPreview />
 
       {/* Network Topology Modal */}
       <NetworkTopologyModal

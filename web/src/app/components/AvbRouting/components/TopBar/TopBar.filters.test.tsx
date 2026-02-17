@@ -41,6 +41,10 @@ jest.mock('../NetworkTopology/NetworkTopologyModal', () => ({
   NetworkTopologyModal: () => null,
 }))
 
+jest.mock('./SceneDiffPreview', () => ({
+  SceneDiffPreview: () => null,
+}))
+
 describe('TopBar filter and search wiring', () => {
   beforeEach(() => {
     mockDispatch.mockReset()
