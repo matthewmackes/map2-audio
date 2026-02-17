@@ -160,6 +160,9 @@
   - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
   - validates `selected_node_ids` are reflected consistently across NodeTree and NodeSelector in `multi_select` mode
+- Node removal/rejoin integration assertions added for active multi-select mode:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates `selected_node_ids` + filtered endpoint outputs remain stable while node inventories shrink and later rejoin
 
 ---
 
@@ -174,7 +177,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add node-removal/rejoin integration assertions while multi-select state is active.
+- Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -187,6 +190,6 @@
 
 ## Next Recommended Slice
 
-1. Add node-removal/rejoin integration assertions while multi-select state is active.
-2. Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
-3. Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
+1. Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
+2. Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
+3. Add node-context inspector assertions for multi-select endpoint details (not just routes).

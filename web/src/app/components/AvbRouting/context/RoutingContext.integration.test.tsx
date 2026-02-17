@@ -132,11 +132,13 @@ function MultiSelectProbe() {
     .sort()
     .join('|') || 'none'
   const selectedNodeIds = [...state.network.nodeSelection.selected_node_ids].sort().join('|') || 'none'
+  const nodeIds = Object.keys(state.network.nodes).sort().join('|') || 'none'
 
   return (
     <div>
       <span data-testid="multi-selected-node-ids">{selectedNodeIds}</span>
       <span data-testid="multi-endpoint-ids">{filteredEndpointIds}</span>
+      <span data-testid="multi-node-ids">{nodeIds}</span>
     </div>
   )
 }
@@ -420,6 +422,7 @@ describe('RoutingContext API/reducer integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
       expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-b|node-c')
     })
 
     mockNodesData = [
@@ -437,6 +440,102 @@ describe('RoutingContext API/reducer integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
       expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-b|node-c')
+    })
+  })
+
+  it('retains multi-select state while nodes are removed and re-joined', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockConnectionsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-c',
+      direction: 'talker',
+      unique_id: 3,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+        [endpointC.endpoint_id]: endpointC,
+      },
+    }
+
+    const { rerender } = render(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-b|node-c')
+    })
+
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-c')
+    })
+
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-b|node-c')
     })
   })
 })
