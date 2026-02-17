@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **648** TypeScript | **114** C++/H | **92** Docs | **255** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **648** TypeScript | **114** C++/H | **92** Docs | **257** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f870e41`](https://github.com/matthewmackes/map2-audio/commit/f870e41af13ce755abaed3e65214b1043e904c7b) | avb-routing: add rapid-toggle and mixed safe-patch churn ... | Map2 Audio | 2026-02-17 |
+| [`60fd06a`](https://github.com/matthewmackes/map2-audio/commit/60fd06aeb5d69f750b50cbcb5d86887e3b6b1dbd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`cfe99a3`](https://github.com/matthewmackes/map2-audio/commit/cfe99a3cf3bc0f4ac0a11f3f969f8d034e64ce43) | avb-routing: extend safe-patch inventory churn and NodeTr... | Map2 Audio | 2026-02-17 |
 | [`78c1b96`](https://github.com/matthewmackes/map2-audio/commit/78c1b96d3364c56520e9ceb354e5c9efe0e4bbfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`0c0e0e4`](https://github.com/matthewmackes/map2-audio/commit/0c0e0e482b973305acdb0abebed90d7ddad4552a) | avb-routing: harden menu a11y and concurrent safe-churn t... | Map2 Audio | 2026-02-17 |
 | [`7b51f7f`](https://github.com/matthewmackes/map2-audio/commit/7b51f7f60feed276d6d931874badd96f0dbc85f9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`2bcf256`](https://github.com/matthewmackes/map2-audio/commit/2bcf2568a7dd2a719a1ff7ce88efa761b938bccb) | avb-routing: cover menu keyboard flow and safe refresh ov... | Map2 Audio | 2026-02-17 |
 | [`f681dc9`](https://github.com/matthewmackes/map2-audio/commit/f681dc9693948da72e931944be35429d62a6732a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`9548d1b`](https://github.com/matthewmackes/map2-audio/commit/9548d1bc571441e1c34e4af7b2dea787e7df060b) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-17 |
-| [`8fe6b52`](https://github.com/matthewmackes/map2-audio/commit/8fe6b5224584ceae069840c05a6e0eadc901517a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
