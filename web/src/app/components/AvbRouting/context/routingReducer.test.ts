@@ -466,3 +466,38 @@ describe('routingReducer node filter selection retention', () => {
     expect(restored.network.nodeSelection.show_offline).toBe(true)
   })
 })
+
+describe('routingReducer multi-select node toggles', () => {
+  it('adds and removes selected node ids deterministically when toggled', () => {
+    const state = {
+      ...cloneState(),
+      network: {
+        ...cloneState().network,
+        nodeSelection: {
+          ...cloneState().network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: [],
+        },
+      },
+    }
+
+    const withNodeA = routingReducer(state, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-a',
+    })
+    expect(withNodeA.network.nodeSelection.selected_node_ids).toEqual(['node-a'])
+
+    const withNodeB = routingReducer(withNodeA, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-b',
+    })
+    expect(withNodeB.network.nodeSelection.selected_node_ids).toEqual(['node-a', 'node-b'])
+
+    const withoutNodeA = routingReducer(withNodeB, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-a',
+    })
+    expect(withoutNodeA.network.nodeSelection.selected_node_ids).toEqual(['node-b'])
+    expect(withoutNodeA.network.nodeSelection.view_mode).toBe('multi_select')
+  })
+})

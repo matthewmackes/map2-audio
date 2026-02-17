@@ -144,6 +144,30 @@ describe('NodeTree status badge behavior', () => {
     })
   })
 
+  it('dispatches multi-select toggle when view mode is multi_select', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeTree />)
+
+    fireEvent.click(screen.getByText('Remote Offline'))
+
+    expect(mockDispatch).toHaveBeenCalledTimes(1)
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-offline',
+    })
+  })
+
   it('hides degraded/offline nodes when show_offline is disabled', () => {
     mockState = {
       network: {

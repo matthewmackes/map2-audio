@@ -295,6 +295,14 @@ export function NodeTree() {
   const sortedNodes = sortNodesForNavigation(visibleNodes, localNodeId);
 
   const handleNodeSelect = (nodeId: string) => {
+    if (viewMode === 'multi_select') {
+      dispatch({
+        type: 'TOGGLE_NODE_SELECTION',
+        payload: nodeId,
+      });
+      return;
+    }
+
     dispatch({
       type: 'SELECT_NODE',
       payload: nodeId,

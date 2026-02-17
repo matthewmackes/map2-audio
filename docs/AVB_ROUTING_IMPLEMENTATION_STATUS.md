@@ -163,6 +163,11 @@
 - Node removal/rejoin integration assertions added for active multi-select mode:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates `selected_node_ids` + filtered endpoint outputs remain stable while node inventories shrink and later rejoin
+- Explicit `TOGGLE_NODE_SELECTION` UI flow assertions added:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates multi-select node clicks dispatch `TOGGLE_NODE_SELECTION`, and reducer toggles add/remove behavior deterministically
 
 ---
 
@@ -177,7 +182,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
+- Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -190,6 +195,6 @@
 
 ## Next Recommended Slice
 
-1. Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
-2. Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
-3. Add node-context inspector assertions for multi-select endpoint details (not just routes).
+1. Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
+2. Add node-context inspector assertions for multi-select endpoint details (not just routes).
+3. Add top-bar level operator controls for entering/exiting multi-select mode.
