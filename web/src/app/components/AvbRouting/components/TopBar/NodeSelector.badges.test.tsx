@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NodeSelector } from './NodeSelector'
 import { NodeTree } from '../NodeTree/NodeTree'
 import type { AvbNode } from '../../types'
@@ -405,6 +405,84 @@ describe('NodeSelector degraded/offline badge visibility', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('node-selector-tab-node-offline').getAttribute('data-selected')).toBe('true')
+    })
+  })
+
+  it('dispatches single-node selection for clicked tab under filtered and sorted ordering', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: false,
+        },
+      },
+    }
+
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-zulu',
+        name: 'Zulu',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-alpha',
+        name: 'Alpha',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-hidden-offline',
+        name: 'Offline Hidden',
+        type: 'map2_remote',
+        status: 'offline',
+      }),
+    ]
+
+    render(<NodeSelector />)
+
+    expect(screen.queryByTestId('node-selector-tab-node-hidden-offline')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('node-selector-tab-node-zulu'))
+
+    expect(mockDispatch).toHaveBeenNthCalledWith(1, {
+      type: 'SET_VIEW_MODE',
+      payload: 'single_node',
+    })
+    expect(mockDispatch).toHaveBeenNthCalledWith(2, {
+      type: 'SELECT_NODE',
+      payload: 'node-zulu',
+    })
+  })
+
+  it('dispatches all-nodes mode when all-nodes tab is selected', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-degraded',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-degraded'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.click(screen.getByRole('tab', { name: /All Nodes/i }))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_VIEW_MODE',
+      payload: 'all_nodes',
     })
   })
 })

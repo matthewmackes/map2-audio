@@ -71,9 +71,10 @@ interface NodeTabProps {
   isLocal: boolean;
   selected: boolean;
   tabValue: number;
+  onClick: () => void;
 }
 
-function NodeTab({ node, isLocal, selected, tabValue }: NodeTabProps) {
+function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -202,6 +203,7 @@ function NodeTab({ node, isLocal, selected, tabValue }: NodeTabProps) {
             </Box>
           }
           value={tabValue}
+          onClick={onClick}
           data-testid={`node-selector-tab-${node.node_id}`}
           data-selected={selected ? 'true' : 'false'}
           sx={{
@@ -311,16 +313,6 @@ export function NodeSelector() {
         onChange={(_, value) => {
           if (value === 'all') {
             handleViewModeChange('all_nodes');
-          } else if (typeof value === 'number') {
-            const selectedNode = sortedVisibleNodes[value - 1];
-            if (!selectedNode) {
-              return;
-            }
-            handleViewModeChange('single_node');
-            handleNodeSelect(selectedNode.node_id);
-          } else {
-            handleViewModeChange('single_node');
-            handleNodeSelect(value as string);
           }
         }}
         variant="scrollable"
@@ -364,6 +356,10 @@ export function NodeSelector() {
             isLocal={node.node_id === localNodeId}
             selected={currentNodeId === node.node_id && viewMode === 'single_node'}
             tabValue={index + 1}
+            onClick={() => {
+              handleViewModeChange('single_node');
+              handleNodeSelect(node.node_id);
+            }}
           />
         ))}
       </Tabs>

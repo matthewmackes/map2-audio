@@ -30,25 +30,72 @@ const PANEL_WIDTH = 300;
  */
 export function InspectorPanel() {
   const state = useRoutingState();
+  const { view_mode, current_node_id, selected_node_ids } = state.network.nodeSelection;
 
   const selectedEndpointIds = state.selection.selectedEndpoints;
   const selectedRouteIds = state.selection.selectedRoutes;
   const hoveredCell = state.selection.hoveredCell;
 
+  const isNodeInActiveContext = (nodeId: string | undefined): boolean => {
+    if (!nodeId) return false;
+
+    if (view_mode === 'single_node' && current_node_id) {
+      return nodeId === current_node_id;
+    }
+
+    if (view_mode === 'multi_select' && selected_node_ids.length > 0) {
+      return selected_node_ids.includes(nodeId);
+    }
+
+    return true;
+  };
+
+  const isEndpointInActiveContext = (endpoint: any): boolean => {
+    if (!endpoint) return false;
+    return isNodeInActiveContext(endpoint.node_id);
+  };
+
+  const isRouteInActiveContext = (route: any): boolean => {
+    if (!route) return false;
+
+    const talkerNodeId = state.endpoints[route.talker_id]?.node_id || route.talker_node_id;
+    const listenerNodeId = state.endpoints[route.listener_id]?.node_id || route.listener_node_id;
+
+    if (view_mode === 'single_node' && current_node_id) {
+      return talkerNodeId === current_node_id || listenerNodeId === current_node_id;
+    }
+
+    if (view_mode === 'multi_select' && selected_node_ids.length > 0) {
+      return (talkerNodeId ? selected_node_ids.includes(talkerNodeId) : false) ||
+        (listenerNodeId ? selected_node_ids.includes(listenerNodeId) : false);
+    }
+
+    return true;
+  };
+
   // Get selected endpoint
-  const selectedEndpoint = selectedEndpointIds.length === 1
+  const selectedEndpointCandidate = selectedEndpointIds.length === 1
     ? state.endpoints[selectedEndpointIds[0]]
+    : null;
+  const selectedEndpoint = isEndpointInActiveContext(selectedEndpointCandidate)
+    ? selectedEndpointCandidate
     : null;
 
   // Get selected route
-  const selectedRoute = selectedRouteIds.length === 1
+  const selectedRouteCandidate = selectedRouteIds.length === 1
     ? (state.liveRoutes[selectedRouteIds[0]] || state.pendingRoutes[selectedRouteIds[0]])
+    : null;
+  const selectedRoute = isRouteInActiveContext(selectedRouteCandidate)
+    ? selectedRouteCandidate
     : null;
 
   // Get hovered route
-  const hoveredRoute = hoveredCell
+  const hoveredRouteCandidate = hoveredCell
     ? (state.liveRoutes[`${hoveredCell.talker_id}→${hoveredCell.listener_id}`] ||
        state.pendingRoutes[`${hoveredCell.talker_id}→${hoveredCell.listener_id}`])
+    : null;
+  const hoveredRoute = isRouteInActiveContext(hoveredRouteCandidate)
+    ? hoveredRouteCandidate
     : null;
 
   const displayRoute = selectedRoute || hoveredRoute;
@@ -164,6 +211,9 @@ function EndpointInfo({ endpoint }: { endpoint: any }) {
               color={endpoint.available ? 'success' : 'error'}
             />
           }
+          secondaryTypographyProps={{
+            component: 'div',
+          }}
         />
       </ListItem>
       {endpoint.mac_address && (
@@ -224,6 +274,9 @@ function RouteInfo({ route, endpoints }: { route: any; endpoints: Record<string,
               color={getStateColor(route.state)}
             />
           }
+          secondaryTypographyProps={{
+            component: 'div',
+          }}
         />
       </ListItem>
       {route.established_time && (

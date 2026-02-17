@@ -136,6 +136,18 @@
 - Reducer-level node-filter retention coverage added:
   - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
   - validates `SET_SHOW_OFFLINE_NODES` keeps `current_node_id`, `view_mode`, and `selected_node_ids` stable across filter toggles
+- Inspector node-context filtering assertions added:
+  - `web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.tsx`
+  - `web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx`
+  - validates selected endpoint/route details hide outside active single-node context and restore when context matches
+  - fixes list-item secondary content semantics for chip rendering (`secondaryTypographyProps.component = 'div'`)
+- AVB routing test command extended with inspector suite:
+  - `package.json` `test:avb-routing`
+  - includes `web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx`
+- NodeSelector tab-dispatch assertions added under filtered/sorted ordering:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates node-tab click dispatch contract (`SET_VIEW_MODE` + `SELECT_NODE`) and all-nodes dispatch behavior
 
 ---
 
@@ -150,7 +162,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add route-inspector assertions for filtered node contexts in single-node mode.
+- Add multi-select retention integration assertions across node status churn.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -163,6 +175,6 @@
 
 ## Next Recommended Slice
 
-1. Add route-inspector assertions for filtered node contexts in single-node mode.
-2. Add NodeSelector tab-change dispatch assertions under filtered/sorted node ordering.
-3. Add multi-select retention integration assertions across node status churn.
+1. Add multi-select retention integration assertions across node status churn.
+2. Add inspector-context assertions for `multi_select` node mode.
+3. Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
