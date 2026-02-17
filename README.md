@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **648** TypeScript | **114** C++/H | **91** Docs | **225** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **648** TypeScript | **114** C++/H | **91** Docs | **227** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -148,7 +148,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e3cefa8`](https://github.com/matthewmackes/map2-audio/commit/e3cefa8fb25d1019e7e29dd43f3b553fa19a638e) | avb-routing: assert multi-select retention through node c... | Map2 Audio | 2026-02-16 |
+| [`d0bb605`](https://github.com/matthewmackes/map2-audio/commit/d0bb60503efffeeabb279ead12d491a19cb74d6a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`3575a04`](https://github.com/matthewmackes/map2-audio/commit/3575a04492f6b8cee3ca3c921863661a7587ee44) | avb-routing: cover inspector context and tab dispatch beh... | Map2 Audio | 2026-02-16 |
 | [`15da8ab`](https://github.com/matthewmackes/map2-audio/commit/15da8ab3ad5c6e486a03e5e97b9b60b95506a443) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`47c55f9`](https://github.com/matthewmackes/map2-audio/commit/47c55f948c57b1236c2a46288535ee8790afdd75) | avb-routing: retain node selection across filter shrink-e... | Map2 Audio | 2026-02-16 |
 | [`b70ec95`](https://github.com/matthewmackes/map2-audio/commit/b70ec95a0ea65cc648e0020b4e850ffdcf1a541a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`1d9417e`](https://github.com/matthewmackes/map2-audio/commit/1d9417e2b0890820d492c6a9e09b36d1618bcce9) | avb-routing: add node churn resync integration assertions | Map2 Audio | 2026-02-16 |
 | [`2c94d93`](https://github.com/matthewmackes/map2-audio/commit/2c94d936e5d37002e7f96d6c976b9b1294f98560) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`37fe34a`](https://github.com/matthewmackes/map2-audio/commit/37fe34a27fcc5d314582b4d9a78e28307c22e963) | avb-routing: align node filters with view mode state | Map2 Audio | 2026-02-16 |
-| [`a62e8d1`](https://github.com/matthewmackes/map2-audio/commit/a62e8d14526ec36966633bed7a8239391deeec91) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
