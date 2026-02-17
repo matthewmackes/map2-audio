@@ -80,6 +80,11 @@
 - Router-level 409 admission-denied error contracts covered:
   - `web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts`
   - `useAvbApi.ts` now appends remediation hints from SRP denial payloads for operator-facing notifications
+- Targeted reducer coverage added for multi-node route updates:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates cross-node metadata derivation on `PATCH`
+  - validates `CONNECTIONS_UPDATED` metadata merge behavior
+  - validates `NODES_UPDATED` + `CROSS_NODE_ROUTE_UPDATED` state wiring
 
 ---
 
@@ -107,6 +112,6 @@
 
 ## Next Recommended Slice
 
-1. Add targeted reducer/component coverage for multi-node route updates.
-2. Add API/reducer integration tests for cross-node route lifecycle transitions.
-3. Add focused UI assertions for cross-node state/health badges in matrix and topology views.
+1. Add API/reducer integration tests for cross-node route lifecycle transitions.
+2. Add focused UI assertions for cross-node state/health badges in matrix and topology views.
+3. Add topology/route reconciliation tests when nodes go offline and recover.

@@ -1,4 +1,10 @@
-import { initialRoutingState, type Endpoint, type Route } from '../types'
+import {
+  initialRoutingState,
+  type AvbNode,
+  type CrossNodeRoute,
+  type Endpoint,
+  type Route,
+} from '../types'
 import { routingReducer } from './routingReducer'
 
 function cloneState() {
@@ -52,6 +58,58 @@ function makeConnectedRoute(routeId: string): Route {
     valid: true,
     messages: [],
     cross_node: false,
+  }
+}
+
+function makeNode(overrides: Partial<AvbNode>): AvbNode {
+  return {
+    node_id: 'node-local',
+    name: 'Local Node',
+    type: 'map2_local',
+    status: 'online',
+    capabilities: {
+      talker: true,
+      listener: true,
+      avdecc_controller: true,
+      audio_processing: true,
+      remote_control: true,
+      max_talkers: 8,
+      max_listeners: 8,
+      sample_rates: [48000],
+      formats: ['24-bit PCM'],
+    },
+    ptp: null,
+    health: null,
+    address: '192.168.1.10',
+    api_url: 'http://192.168.1.10:8080',
+    entity_id: null,
+    talker_count: 0,
+    listener_count: 0,
+    active_routes: 0,
+    version: '3.0.0',
+    manufacturer: 'MAP2',
+    model: 'Node',
+    discovered_at: '2026-02-17T00:00:00Z',
+    last_seen: '2026-02-17T00:00:00Z',
+    color: '#00aaff',
+    pinned: false,
+    notes: '',
+    ...overrides,
+  }
+}
+
+function makeCrossNodeRoute(overrides: Partial<CrossNodeRoute>): CrossNodeRoute {
+  return {
+    route_id: 'talker-1→listener-1',
+    source_node_id: 'node-a',
+    dest_node_id: 'node-b',
+    talker_id: 'talker-1',
+    listener_id: 'listener-1',
+    status: 'active',
+    network_path: ['node-a', 'node-b'],
+    latency_ms: 1.2,
+    bandwidth_mbps: 12.5,
+    ...overrides,
   }
 }
 
@@ -229,5 +287,113 @@ describe('routingReducer safe mode workflow history', () => {
     expect(undone.safePatchMode).toBe(true)
     expect(undone.pendingRoutes[routeId]?.state).toBe('disconnecting')
     expect(undone.liveRoutes[routeId]?.state).toBe('connected')
+  })
+})
+
+describe('routingReducer multi-node route updates', () => {
+  it('derives cross-node metadata when patching endpoints on different nodes', () => {
+    const talker = makeEndpoint({
+      endpoint_id: 'talker-1',
+      direction: 'talker',
+      unique_id: 1,
+      node_id: 'node-a',
+    })
+    const listener = makeEndpoint({
+      endpoint_id: 'listener-1',
+      direction: 'listener',
+      unique_id: 2,
+      node_id: 'node-b',
+    })
+
+    const state = {
+      ...cloneState(),
+      endpoints: {
+        [talker.endpoint_id]: talker,
+        [listener.endpoint_id]: listener,
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'PATCH',
+      payload: { talker_id: 'talker-1', listener_id: 'listener-1' },
+    })
+
+    const route = next.liveRoutes['talker-1→listener-1']
+    expect(route?.cross_node).toBe(true)
+    expect(route?.talker_node_id).toBe('node-a')
+    expect(route?.listener_node_id).toBe('node-b')
+  })
+
+  it('preserves lock metadata while accepting refreshed cross-node route fields', () => {
+    const routeId = 'talker-1→listener-1'
+    const state = {
+      ...cloneState(),
+      liveRoutes: {
+        [routeId]: {
+          ...makeConnectedRoute(routeId),
+          locked: true,
+          lock_reason: 'operator-lock',
+          locked_by: 'ops-user',
+          locked_at: '2026-02-17T01:00:00Z',
+          valid: false,
+          messages: ['stale validation'],
+        },
+      },
+    }
+
+    const refreshed: Route = {
+      ...makeConnectedRoute(routeId),
+      talker_node_id: 'node-a',
+      listener_node_id: 'node-b',
+      cross_node: true,
+      latency_ms: 2.4,
+      bandwidth_mbps: 9.8,
+    }
+
+    const next = routingReducer(state, {
+      type: 'CONNECTIONS_UPDATED',
+      payload: [refreshed],
+    })
+
+    expect(next.liveRoutes[routeId].cross_node).toBe(true)
+    expect(next.liveRoutes[routeId].talker_node_id).toBe('node-a')
+    expect(next.liveRoutes[routeId].listener_node_id).toBe('node-b')
+    expect(next.liveRoutes[routeId].locked).toBe(true)
+    expect(next.liveRoutes[routeId].lock_reason).toBe('operator-lock')
+    expect(next.liveRoutes[routeId].locked_by).toBe('ops-user')
+    expect(next.liveRoutes[routeId].valid).toBe(false)
+    expect(next.liveRoutes[routeId].messages).toEqual(['stale validation'])
+  })
+
+  it('stores node map and cross-node route payload updates', () => {
+    const nodeA = makeNode({
+      node_id: 'node-a',
+      name: 'Node A',
+      type: 'map2_local',
+    })
+    const nodeB = makeNode({
+      node_id: 'node-b',
+      name: 'Node B',
+      type: 'map2_remote',
+    })
+
+    const withNodes = routingReducer(cloneState(), {
+      type: 'NODES_UPDATED',
+      payload: [nodeA, nodeB],
+    })
+    expect(withNodes.network.nodes['node-a']).toEqual(nodeA)
+    expect(withNodes.network.nodes['node-b']).toEqual(nodeB)
+
+    const crossNodeRoute = makeCrossNodeRoute({
+      route_id: 'talker-1→listener-1',
+      source_node_id: 'node-a',
+      dest_node_id: 'node-b',
+    })
+
+    const withCrossRoute = routingReducer(withNodes, {
+      type: 'CROSS_NODE_ROUTE_UPDATED',
+      payload: crossNodeRoute,
+    })
+    expect(withCrossRoute.network.crossNodeRoutes[crossNodeRoute.route_id]).toEqual(crossNodeRoute)
   })
 })
