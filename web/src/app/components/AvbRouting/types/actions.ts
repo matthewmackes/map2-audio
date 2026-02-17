@@ -7,7 +7,6 @@
 
 import type { Endpoint } from './endpoint';
 import type { Route } from './route';
-import type { Scene } from './scene';
 import type { FilterState } from './state';
 import type { PatchOperation } from './route';
 import type {
@@ -114,6 +113,24 @@ export type DeleteSceneAction = {
   payload: {
     scene_id: string;
   };
+};
+
+export type SetSceneDiffBaselineAction = {
+  type: 'SET_SCENE_DIFF_BASELINE';
+  payload: string | null;
+};
+
+export type SetSceneDiffCompareAction = {
+  type: 'SET_SCENE_DIFF_COMPARE';
+  payload: string | null;
+};
+
+export type GenerateSceneDiffAction = {
+  type: 'GENERATE_SCENE_DIFF';
+};
+
+export type ClearSceneDiffAction = {
+  type: 'CLEAR_SCENE_DIFF';
 };
 
 /**
@@ -322,6 +339,10 @@ export type RoutingAction =
   | SaveSceneAction
   | RecallSceneAction
   | DeleteSceneAction
+  | SetSceneDiffBaselineAction
+  | SetSceneDiffCompareAction
+  | GenerateSceneDiffAction
+  | ClearSceneDiffAction
   | SetFiltersAction
   | SetSearchAction
   | SetBankAction

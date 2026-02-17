@@ -270,6 +270,15 @@
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.filters.test.tsx`
   - `package.json`
   - adds reducer-backed sample-rate/channel/group toggles, explicit `Clear All` action, and focused dispatch-contract coverage for expanded filter paths
+- Combined search-text + expanded filter integration coverage added for multi-select ordering stability:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates deterministic filtered endpoint ordering while search text and expanded filter controls are applied/cleared under active `multi_select` node scope
+- Scene-diff UX foundation state/actions added with focused reducer coverage:
+  - `web/src/app/components/AvbRouting/types/state.ts`
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - adds `sceneDiff` selection/preview state, reducer actions for baseline/compare selection + preview generation/clear, and deterministic diff preview tests including delete-scene cleanup behavior
 
 ---
 
@@ -295,5 +304,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add integration coverage for combined search-text + expanded filter controls under multi-select to validate stable endpoint ordering and deterministic filtering.
-3. Begin Phase 4 scene-diff UX foundations (state shape + reducer actions + focused tests) without introducing full dialog workflows yet.
+2. Add provider-level integration coverage for scene-diff action flow (baseline/compare selection + preview generation) through scene save/delete/recall churn.
+3. Introduce initial read-only scene-diff preview surface (no full dialog) and focused component tests for summary rendering.

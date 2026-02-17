@@ -707,3 +707,163 @@ describe('routingReducer multi-select node toggles', () => {
     expect(withoutNodeB.network.nodeSelection.selected_node_ids).toEqual(['node-a', 'node-c'])
   })
 })
+
+describe('routingReducer scene diff foundations', () => {
+  function makeScene(
+    id: string,
+    name: string,
+    routes: Route[],
+  ) {
+    return {
+      id,
+      name,
+      description: `${name} description`,
+      routes,
+      timestamp: '2026-02-17T02:00:00Z',
+      tags: [],
+    }
+  }
+
+  it('generates scene diff preview for selected baseline and compare scenes', () => {
+    const baselineRoute = makeConnectedRoute('talker-1→listener-1')
+    const compareOnlyRoute = makeConnectedRoute('talker-2→listener-2')
+    const state = {
+      ...cloneState(),
+      endpoints: {
+        'talker-1': makeEndpoint({
+          endpoint_id: 'talker-1',
+          direction: 'talker',
+          unique_id: 1,
+          device_name: 'Talker One',
+        }),
+        'listener-1': makeEndpoint({
+          endpoint_id: 'listener-1',
+          direction: 'listener',
+          unique_id: 2,
+          device_name: 'Listener One',
+        }),
+        'talker-2': makeEndpoint({
+          endpoint_id: 'talker-2',
+          direction: 'talker',
+          unique_id: 3,
+          device_name: 'Talker Two',
+        }),
+        'listener-2': makeEndpoint({
+          endpoint_id: 'listener-2',
+          direction: 'listener',
+          unique_id: 4,
+          device_name: 'Listener Two',
+        }),
+      },
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Baseline Scene', [baselineRoute]),
+        'scene-b': makeScene('scene-b', 'Compare Scene', [baselineRoute, compareOnlyRoute]),
+      },
+    }
+
+    const withBaseline = routingReducer(state, {
+      type: 'SET_SCENE_DIFF_BASELINE',
+      payload: 'scene-a',
+    })
+    const withCompare = routingReducer(withBaseline, {
+      type: 'SET_SCENE_DIFF_COMPARE',
+      payload: 'scene-b',
+    })
+    const diffed = routingReducer(withCompare, {
+      type: 'GENERATE_SCENE_DIFF',
+    })
+
+    expect(diffed.sceneDiff.baseline_scene_id).toBe('scene-a')
+    expect(diffed.sceneDiff.compare_scene_id).toBe('scene-b')
+    expect(diffed.sceneDiff.preview?.scene_id).toBe('scene-b')
+    expect(diffed.sceneDiff.preview?.scene_name).toBe('Compare Scene')
+    expect(diffed.sceneDiff.preview?.to_add).toEqual([
+      {
+        talker_id: 'talker-2',
+        listener_id: 'listener-2',
+        talker_name: 'Talker Two',
+        listener_name: 'Listener Two',
+      },
+    ])
+    expect(diffed.sceneDiff.preview?.to_remove).toEqual([])
+    expect(diffed.sceneDiff.preview?.unchanged).toEqual(['talker-1→listener-1'])
+    expect(diffed.sceneDiff.preview?.total_changes).toBe(1)
+    expect(diffed.error).toBeNull()
+  })
+
+  it('clears scene diff preview when selection changes and supports full clear action', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+      },
+    }
+
+    const diffed = routingReducer(
+      routingReducer(
+        routingReducer(
+          routingReducer(state, {
+            type: 'SET_SCENE_DIFF_BASELINE',
+            payload: 'scene-a',
+          }),
+          {
+            type: 'SET_SCENE_DIFF_COMPARE',
+            payload: 'scene-b',
+          }
+        ),
+        { type: 'GENERATE_SCENE_DIFF' }
+      ),
+      {
+        type: 'SET_SCENE_DIFF_COMPARE',
+        payload: null,
+      }
+    )
+
+    expect(diffed.sceneDiff.baseline_scene_id).toBe('scene-a')
+    expect(diffed.sceneDiff.compare_scene_id).toBeNull()
+    expect(diffed.sceneDiff.preview).toBeNull()
+
+    const cleared = routingReducer(diffed, { type: 'CLEAR_SCENE_DIFF' })
+    expect(cleared.sceneDiff).toEqual({
+      baseline_scene_id: null,
+      compare_scene_id: null,
+      preview: null,
+    })
+  })
+
+  it('clears scene diff references when deleting a selected scene', () => {
+    const routeA = makeConnectedRoute('talker-1→listener-1')
+    const routeB = makeConnectedRoute('talker-2→listener-2')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [routeA]),
+        'scene-b': makeScene('scene-b', 'Scene B', [routeA, routeB]),
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: {
+          scene_id: 'scene-b',
+          scene_name: 'Scene B',
+          to_add: [{ talker_id: 'talker-2', listener_id: 'listener-2' }],
+          to_remove: [],
+          unchanged: ['talker-1→listener-1'],
+          total_changes: 1,
+        },
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'DELETE_SCENE',
+      payload: { scene_id: 'scene-b' },
+    })
+
+    expect(next.scenes['scene-b']).toBeUndefined()
+    expect(next.sceneDiff.baseline_scene_id).toBe('scene-a')
+    expect(next.sceneDiff.compare_scene_id).toBeNull()
+    expect(next.sceneDiff.preview).toBeNull()
+  })
+})

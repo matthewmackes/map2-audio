@@ -37,6 +37,50 @@ function normalizeSelectedNodeIds(nodeIds: string[]): string[] {
   return Array.from(new Set(nodeIds)).sort((a, b) => a.localeCompare(b));
 }
 
+function buildSceneDiffPreview(
+  baselineScene: { id: string; name: string; routes: Route[] },
+  compareScene: { id: string; name: string; routes: Route[] },
+  endpoints: Record<string, Endpoint>
+): RoutingState['sceneDiff']['preview'] {
+  const baselineById = new Map(baselineScene.routes.map((route) => [route.id, route]));
+  const compareById = new Map(compareScene.routes.map((route) => [route.id, route]));
+
+  const toAdd = compareScene.routes
+    .filter((route) => !baselineById.has(route.id))
+    .map((route) => ({
+      talker_id: route.talker_id,
+      listener_id: route.listener_id,
+      talker_name: endpoints[route.talker_id]?.device_name,
+      listener_name: endpoints[route.listener_id]?.device_name,
+    }))
+    .sort((a, b) => `${a.talker_id}→${a.listener_id}`.localeCompare(`${b.talker_id}→${b.listener_id}`));
+
+  const toRemove = baselineScene.routes
+    .filter((route) => !compareById.has(route.id))
+    .map((route) => ({
+      route_id: route.id,
+      talker_id: route.talker_id,
+      listener_id: route.listener_id,
+      talker_name: endpoints[route.talker_id]?.device_name,
+      listener_name: endpoints[route.listener_id]?.device_name,
+    }))
+    .sort((a, b) => a.route_id.localeCompare(b.route_id));
+
+  const unchanged = compareScene.routes
+    .filter((route) => baselineById.has(route.id))
+    .map((route) => route.id)
+    .sort((a, b) => a.localeCompare(b));
+
+  return {
+    scene_id: compareScene.id,
+    scene_name: compareScene.name,
+    to_add: toAdd,
+    to_remove: toRemove,
+    unchanged,
+    total_changes: toAdd.length + toRemove.length,
+  };
+}
+
 /**
  * Create a new audit log entry
  */
@@ -525,14 +569,88 @@ export function routingReducer(
 
       const newScenes = { ...state.scenes };
       delete newScenes[scene_id];
+      const baselineSceneId =
+        state.sceneDiff.baseline_scene_id === scene_id ? null : state.sceneDiff.baseline_scene_id;
+      const compareSceneId =
+        state.sceneDiff.compare_scene_id === scene_id ? null : state.sceneDiff.compare_scene_id;
+      const previewReferencesDeletedScene =
+        state.sceneDiff.preview?.scene_id === scene_id ||
+        state.sceneDiff.baseline_scene_id === scene_id ||
+        state.sceneDiff.compare_scene_id === scene_id;
 
       return {
         ...state,
         scenes: newScenes,
+        sceneDiff: {
+          baseline_scene_id: baselineSceneId,
+          compare_scene_id: compareSceneId,
+          preview: previewReferencesDeletedScene ? null : state.sceneDiff.preview,
+        },
         auditLog: [
           ...state.auditLog,
           createAuditEntry('DELETE_SCENE', action.payload, `Deleted scene: ${scene.name}`),
         ],
+      };
+    }
+
+    case 'SET_SCENE_DIFF_BASELINE': {
+      return {
+        ...state,
+        sceneDiff: {
+          ...state.sceneDiff,
+          baseline_scene_id: action.payload,
+          preview: null,
+        },
+      };
+    }
+
+    case 'SET_SCENE_DIFF_COMPARE': {
+      return {
+        ...state,
+        sceneDiff: {
+          ...state.sceneDiff,
+          compare_scene_id: action.payload,
+          preview: null,
+        },
+      };
+    }
+
+    case 'GENERATE_SCENE_DIFF': {
+      const { baseline_scene_id, compare_scene_id } = state.sceneDiff;
+      if (!baseline_scene_id || !compare_scene_id) {
+        return {
+          ...state,
+          error: 'Scene diff requires both baseline and compare scene selections',
+        };
+      }
+
+      const baselineScene = state.scenes[baseline_scene_id];
+      const compareScene = state.scenes[compare_scene_id];
+      if (!baselineScene || !compareScene) {
+        return {
+          ...state,
+          error: 'Scene diff scene selection is invalid',
+        };
+      }
+
+      return {
+        ...state,
+        error: null,
+        sceneDiff: {
+          ...state.sceneDiff,
+          preview: buildSceneDiffPreview(baselineScene, compareScene, state.endpoints),
+        },
+      };
+    }
+
+    case 'CLEAR_SCENE_DIFF': {
+      return {
+        ...state,
+        sceneDiff: {
+          baseline_scene_id: null,
+          compare_scene_id: null,
+          preview: null,
+        },
       };
     }
 

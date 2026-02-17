@@ -124,8 +124,12 @@ function makeNode(overrides: Partial<AvbNode>): AvbNode {
 
 function TopBarFilterProbe() {
   const state = useRoutingState()
-  const endpointIds = useFilteredEndpoints()
+  const orderedEndpointIds = useFilteredEndpoints()
     .map((endpoint) => endpoint.endpoint_id)
+    .join('|') || 'none'
+  const endpointIds = orderedEndpointIds
+    .split('|')
+    .filter((id) => id.length > 0 && id !== 'none')
     .sort()
     .join('|') || 'none'
   const selectedNodeIds = [...state.network.nodeSelection.selected_node_ids].sort().join('|') || 'none'
@@ -135,6 +139,7 @@ function TopBarFilterProbe() {
       <span data-testid="probe-view-mode">{state.network.nodeSelection.view_mode}</span>
       <span data-testid="probe-selected-node-ids">{selectedNodeIds}</span>
       <span data-testid="probe-endpoint-ids">{endpointIds}</span>
+      <span data-testid="probe-endpoint-order">{orderedEndpointIds}</span>
     </div>
   )
 }
@@ -255,6 +260,123 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-filters-clear-all'))
     await waitFor(() => {
       expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+    })
+  })
+
+  it('keeps deterministic endpoint ordering when combining search text with expanded filters in multi-select mode', async () => {
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      device_name: 'Zulu Vox',
+      device_type: 'map2',
+      sample_rate: 48000,
+      channels: 2,
+      group: 'Stage',
+      pinned: false,
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      device_name: 'Alpha Vox',
+      device_type: 'avdecc',
+      sample_rate: 96000,
+      channels: 8,
+      group: 'FOH',
+      pinned: false,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-b',
+      device_name: 'Bravo Vox',
+      device_type: 'map2',
+      sample_rate: 96000,
+      channels: 8,
+      group: 'FOH',
+      pinned: true,
+    })
+    const endpointD = makeEndpoint({
+      endpoint_id: 'endpoint-d',
+      node_id: 'node-c',
+      device_name: 'Alpha Vox Remote',
+      device_type: 'map2',
+      sample_rate: 96000,
+      channels: 8,
+      group: 'FOH',
+      pinned: true,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+        [endpointC.endpoint_id]: endpointC,
+        [endpointD.endpoint_id]: endpointD,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarFilterProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b|endpoint-a')
+    })
+
+    fireEvent.change(screen.getByTestId('topbar-search-input'), {
+      target: { value: 'vox' },
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b|endpoint-a')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filters-button'))
+
+    fireEvent.click(screen.getByTestId('topbar-filter-sample-96000'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-channels-8'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-group-foh'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b')
+    })
+
+    fireEvent.change(screen.getByTestId('topbar-search-input'), {
+      target: { value: 'alpha' },
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filters-clear-all'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-b')
+    })
+
+    fireEvent.change(screen.getByTestId('topbar-search-input'), {
+      target: { value: '' },
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b|endpoint-a')
+      expect(screen.getByTestId('probe-selected-node-ids').textContent).toBe('node-a|node-b')
     })
   })
 })

@@ -8,6 +8,7 @@
 import type { Endpoint } from './endpoint';
 import type { Route } from './route';
 import type { Scene } from './scene';
+import type { SceneDiff } from './scene';
 import type { AuditLogEntry } from './audit';
 import type {
   AvbNode,
@@ -93,6 +94,11 @@ export interface RoutingState {
   liveRoutes: Record<string, Route>;
   pendingRoutes: Record<string, Route>;  // Safe patch staging area
   scenes: Record<string, Scene>;
+  sceneDiff: {
+    baseline_scene_id: string | null;
+    compare_scene_id: string | null;
+    preview: SceneDiff | null;
+  };
 
   // UI State
   selection: SelectionState;
@@ -138,6 +144,11 @@ export const initialRoutingState: RoutingState = {
   liveRoutes: {},
   pendingRoutes: {},
   scenes: {},
+  sceneDiff: {
+    baseline_scene_id: null,
+    compare_scene_id: null,
+    preview: null,
+  },
 
   selection: {
     selectedEndpoints: [],
