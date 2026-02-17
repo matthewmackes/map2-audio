@@ -38,6 +38,22 @@ import { useRouting } from '../../context/RoutingContext';
 import type { AvbNode, NodeStatus } from '../../types';
 import { sortNodesForNavigation } from '../../utils/nodeSorting';
 
+function isActivationKey(key: string): boolean {
+  return key === 'Enter' || key === ' ' || key === 'Spacebar';
+}
+
+function handleKeyboardActivation(
+  event: React.KeyboardEvent<HTMLElement>,
+  action: () => void
+) {
+  if (!isActivationKey(event.key)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 /**
  * Get status icon for node
  */
@@ -215,6 +231,7 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
           }
           value={tabValue}
           onClick={onClick}
+          onKeyDown={(event) => handleKeyboardActivation(event, onClick)}
           data-testid={`node-selector-tab-${node.node_id}`}
           data-selected={highlighted ? 'true' : 'false'}
           data-node-selected={highlighted ? 'true' : 'false'}
@@ -326,6 +343,7 @@ export function NodeSelector() {
         <IconButton
           size="small"
           onClick={() => handleViewModeChange('all_nodes')}
+          onKeyDown={(event) => handleKeyboardActivation(event, () => handleViewModeChange('all_nodes'))}
           data-testid="node-selector-all-nodes-toggle"
           sx={{
             ml: 1,
@@ -344,6 +362,7 @@ export function NodeSelector() {
         <IconButton
           size="small"
           onClick={handleMultiSelectToggle}
+          onKeyDown={(event) => handleKeyboardActivation(event, handleMultiSelectToggle)}
           data-testid="node-selector-multi-select-toggle"
           sx={{
             bgcolor: viewMode === 'multi_select' ? 'secondary.main' : 'transparent',

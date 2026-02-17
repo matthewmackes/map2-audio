@@ -197,6 +197,10 @@
 - Safe-patch + multi-select integration coverage added (provider/reducer-level):
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates multi-select node context is retained while safe mode is entered, staged connect/disconnect operations are applied/discarded, and route state transitions complete
+- Keyboard-first node navigation coverage added for multi-select operator flows:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates Enter/Space activation for all-nodes toggle, multi-select toggle, and node tabs (including multi-select toggle dispatch path)
 
 ---
 
@@ -222,5 +226,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add keyboard-first multi-select operator flows to navigation tests.
-3. Add integration coverage for multi-select workflows under rapid API connection refresh churn.
+2. Add integration coverage for multi-select workflows under rapid API connection refresh churn.
+3. Add keyboard-first multi-select flows for NodeTree row activation.

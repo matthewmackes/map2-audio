@@ -486,6 +486,30 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     })
   })
 
+  it('dispatches all-nodes mode from keyboard activation on all-nodes control', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-degraded',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-degraded'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.keyDown(screen.getByTestId('node-selector-all-nodes-toggle'), { key: 'Enter' })
+
+    expect(mockDispatch).toHaveBeenCalledTimes(1)
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_VIEW_MODE',
+      payload: 'all_nodes',
+    })
+  })
+
   it('enters multi-select mode from top-bar control and seeds current node selection', () => {
     mockState = {
       network: {
@@ -502,6 +526,33 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     render(<NodeSelector />)
 
     fireEvent.click(screen.getByTestId('node-selector-multi-select-toggle'))
+
+    expect(mockDispatch).toHaveBeenNthCalledWith(1, {
+      type: 'SET_VIEW_MODE',
+      payload: 'multi_select',
+    })
+    expect(mockDispatch).toHaveBeenNthCalledWith(2, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-degraded',
+    })
+  })
+
+  it('enters multi-select mode from keyboard activation on top-bar control', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-degraded',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.keyDown(screen.getByTestId('node-selector-multi-select-toggle'), { key: 'Enter' })
 
     expect(mockDispatch).toHaveBeenNthCalledWith(1, {
       type: 'SET_VIEW_MODE',
@@ -553,6 +604,30 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     render(<NodeSelector />)
 
     fireEvent.click(screen.getByTestId('node-selector-tab-node-offline'))
+
+    expect(mockDispatch).toHaveBeenCalledTimes(1)
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-offline',
+    })
+  })
+
+  it('dispatches multi-select toggle when node tab is keyboard-activated in multi-select mode', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.keyDown(screen.getByTestId('node-selector-tab-node-offline'), { key: 'Enter' })
 
     expect(mockDispatch).toHaveBeenCalledTimes(1)
     expect(mockDispatch).toHaveBeenCalledWith({
