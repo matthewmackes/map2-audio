@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **654** TypeScript | **114** C++/H | **94** Docs | **279** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **655** TypeScript | **114** C++/H | **94** Docs | **281** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`084f104`](https://github.com/matthewmackes/map2-audio/commit/084f10494ad819f572e9abaf09a9a117853515c0) | avb-routing: add scene validation policy and recall impac... | Map2 Audio | 2026-02-17 |
+| [`d36663d`](https://github.com/matthewmackes/map2-audio/commit/d36663d54b547bc7a92c3a8cd3056119d2cb0554) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`c4fdb7a`](https://github.com/matthewmackes/map2-audio/commit/c4fdb7a26df4051522685101881849ffe8d8a9ca) | avb-routing: add scene metadata editing and confirm guard... | Map2 Audio | 2026-02-17 |
 | [`e34c110`](https://github.com/matthewmackes/map2-audio/commit/e34c110ce5dac7d346689dca3024d7b48477d300) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`4501466`](https://github.com/matthewmackes/map2-audio/commit/450146625c46ba811df14329fbd27639b4041c22) | avb-routing: add topbar scene management controls and sta... | Map2 Audio | 2026-02-17 |
 | [`df08420`](https://github.com/matthewmackes/map2-audio/commit/df084202d2e43772cebe9570ba5fd999e70b5447) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`6fdc5e6`](https://github.com/matthewmackes/map2-audio/commit/6fdc5e609cc8747181cf384bf131dea517825db8) | avb-routing: harden scene-diff generation and provider in... | Map2 Audio | 2026-02-17 |
 | [`574deca`](https://github.com/matthewmackes/map2-audio/commit/574deca8d3d4ced353d28046a591548a009c75c9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`04cef27`](https://github.com/matthewmackes/map2-audio/commit/04cef27eebfc16c53d5bf0951430407462a8de8d) | avb-routing: add topbar scene-diff controls and error-pat... | Map2 Audio | 2026-02-17 |
-| [`7dd045f`](https://github.com/matthewmackes/map2-audio/commit/7dd045f9dacfaeebefdbb9c807ace58ded34a47e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
