@@ -57,10 +57,14 @@
   - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx`
 - Keyboard integration coverage added (real provider + reducer transitions):
   - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx`
+- API-facing notification contract coverage added:
+  - `web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx`
 - Multi-node route/topology type alignment completed for build stability:
   - `web/src/app/components/AvbRouting/context/routingReducer.ts`
   - `web/src/app/components/AvbRouting/context/RoutingContext.tsx`
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
+- CI summary output added for AVB routing frontend tests:
+  - `.github/workflows/ci-cd.yml` now records result, exit code, and timing in `$GITHUB_STEP_SUMMARY`
 
 ---
 
@@ -68,15 +72,14 @@
 
 - `npm run typecheck` (in `web/`) passes.
 - `npm run build` (in `web/`) passes.
-- `npm run test:avb-routing` (repo root) passes for AVB routing smoke + reducer + keyboard suites.
+- `npm run test:avb-routing` (repo root) passes for AVB routing smoke + reducer + keyboard + notification suites.
 
 ---
 
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add API-facing interaction coverage for connect/unpatch notification contracts.
-- Add CI summary output for AVB routing test timing and failures.
+- Add reducer/history tests for combined safe-mode apply/discard keyboard workflows.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -89,6 +92,6 @@
 
 ## Next Recommended Slice
 
-1. Add API-facing interaction coverage for connect/unpatch notification contracts.
-2. Add CI summary output for AVB routing test timing and failures.
-3. Add reducer/history tests for combined safe-mode apply/discard keyboard workflows.
+1. Add reducer/history tests for combined safe-mode apply/discard keyboard workflows.
+2. Add focused tests for batch connect/disconnect notification contracts.
+3. Add CI artifact upload for AVB routing jest reports (machine-readable).

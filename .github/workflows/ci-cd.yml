@@ -115,7 +115,32 @@ jobs:
       run: npm run lint || true
 
     - name: AVB routing frontend tests
-      run: npm run test:avb-routing
+      id: avb_tests
+      run: |
+        START_TS=$(date +%s)
+        set +e
+        npm run test:avb-routing
+        TEST_EXIT=$?
+        END_TS=$(date +%s)
+        DURATION=$((END_TS - START_TS))
+
+        echo "duration=${DURATION}" >> "$GITHUB_OUTPUT"
+        echo "exit_code=${TEST_EXIT}" >> "$GITHUB_OUTPUT"
+
+        if [ $TEST_EXIT -ne 0 ]; then
+          exit $TEST_EXIT
+        fi
+
+    - name: AVB routing test summary
+      if: always()
+      run: |
+        {
+          echo "## AVB Routing Frontend Tests"
+          echo ""
+          echo "- Result: ${{ steps.avb_tests.outcome }}"
+          echo "- Exit code: ${{ steps.avb_tests.outputs.exit_code }}"
+          echo "- Duration: ${{ steps.avb_tests.outputs.duration }}s"
+        } >> "$GITHUB_STEP_SUMMARY"
     
     - name: Build
       working-directory: ./web
