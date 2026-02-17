@@ -236,4 +236,54 @@ describe('NodeTree status badge behavior', () => {
       'node-charlie',
     ])
   })
+
+  it('retains single-node selection when filtered nodes shrink and expand', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-offline',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-offline'],
+          show_offline: true,
+        },
+      },
+    }
+
+    const { rerender } = render(<NodeTree />)
+
+    expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-selected')).toBe('true')
+
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-offline',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-offline'],
+          show_offline: false,
+        },
+      },
+    }
+
+    rerender(<NodeTree />)
+
+    expect(screen.queryByTestId('node-tree-item-node-offline')).toBeNull()
+
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-offline',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-offline'],
+          show_offline: true,
+        },
+      },
+    }
+
+    rerender(<NodeTree />)
+
+    expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-selected')).toBe('true')
+  })
 })

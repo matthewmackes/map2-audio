@@ -349,4 +349,62 @@ describe('NodeSelector degraded/offline badge visibility', () => {
       expect(screen.getByTestId('node-tree-item-node-charlie')).toBeTruthy()
     })
   })
+
+  it('re-selects retained node when filtered tabs expand again', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-offline',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-offline'],
+          show_offline: true,
+        },
+      },
+    }
+
+    const { rerender } = render(<NodeSelector />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('node-selector-tab-node-offline').getAttribute('data-selected')).toBe('true')
+    })
+
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-offline',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-offline'],
+          show_offline: false,
+        },
+      },
+    }
+
+    rerender(<NodeSelector />)
+
+    await waitFor(() => {
+      const allNodesTab = screen.getByRole('tab', { name: /All Nodes/i })
+      expect(allNodesTab.getAttribute('aria-selected')).toBe('true')
+      expect(screen.queryByTestId('node-selector-tab-node-offline')).toBeNull()
+    })
+
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-offline',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: ['node-offline'],
+          show_offline: true,
+        },
+      },
+    }
+
+    rerender(<NodeSelector />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('node-selector-tab-node-offline').getAttribute('data-selected')).toBe('true')
+    })
+  })
 })

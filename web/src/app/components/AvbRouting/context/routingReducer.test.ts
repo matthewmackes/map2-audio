@@ -428,3 +428,41 @@ describe('routingReducer multi-node route updates', () => {
     expect(next.network.crossNodeRoutes[freshRoute.route_id]).toEqual(freshRoute)
   })
 })
+
+describe('routingReducer node filter selection retention', () => {
+  it('retains current node, view mode, and multi-select set when toggling offline visibility', () => {
+    const state = {
+      ...cloneState(),
+      network: {
+        ...cloneState().network,
+        nodeSelection: {
+          ...cloneState().network.nodeSelection,
+          current_node_id: 'node-offline',
+          view_mode: 'single_node' as const,
+          selected_node_ids: ['node-offline', 'node-online'],
+          show_offline: true,
+        },
+      },
+    }
+
+    const hidden = routingReducer(state, {
+      type: 'SET_SHOW_OFFLINE_NODES',
+      payload: false,
+    })
+
+    expect(hidden.network.nodeSelection.current_node_id).toBe('node-offline')
+    expect(hidden.network.nodeSelection.view_mode).toBe('single_node')
+    expect(hidden.network.nodeSelection.selected_node_ids).toEqual(['node-offline', 'node-online'])
+    expect(hidden.network.nodeSelection.show_offline).toBe(false)
+
+    const restored = routingReducer(hidden, {
+      type: 'SET_SHOW_OFFLINE_NODES',
+      payload: true,
+    })
+
+    expect(restored.network.nodeSelection.current_node_id).toBe('node-offline')
+    expect(restored.network.nodeSelection.view_mode).toBe('single_node')
+    expect(restored.network.nodeSelection.selected_node_ids).toEqual(['node-offline', 'node-online'])
+    expect(restored.network.nodeSelection.show_offline).toBe(true)
+  })
+})

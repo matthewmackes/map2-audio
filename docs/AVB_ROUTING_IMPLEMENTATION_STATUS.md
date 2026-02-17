@@ -127,6 +127,15 @@
 - TopBar + NodeTree churn/resync integration assertions added:
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
   - validates both navigation surfaces stay aligned after node status churn plus API sync changes to visible node sets
+- Selection-retention coverage added for filtered node-set shrink/expand:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates retained single-node selection is restored when offline nodes are re-shown
+- Reducer-level node-filter retention coverage added:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates `SET_SHOW_OFFLINE_NODES` keeps `current_node_id`, `view_mode`, and `selected_node_ids` stable across filter toggles
 
 ---
 
@@ -141,7 +150,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add explicit selection-retention assertions when filtered node sets shrink/expand.
+- Add route-inspector assertions for filtered node contexts in single-node mode.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -154,6 +163,6 @@
 
 ## Next Recommended Slice
 
-1. Add explicit selection-retention assertions when filtered node sets shrink/expand.
-2. Add reducer-level coverage for selection + view-mode state transitions under node-filter changes.
-3. Add route-inspector assertions for filtered node contexts in single-node mode.
+1. Add route-inspector assertions for filtered node contexts in single-node mode.
+2. Add NodeSelector tab-change dispatch assertions under filtered/sorted node ordering.
+3. Add multi-select retention integration assertions across node status churn.

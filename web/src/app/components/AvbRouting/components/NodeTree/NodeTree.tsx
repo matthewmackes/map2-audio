@@ -150,6 +150,7 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
         selected={isSelected}
         onClick={onSelect}
         data-testid={`node-tree-item-${node.node_id}`}
+        data-selected={isSelected ? 'true' : 'false'}
         sx={{
           py: 1,
           borderLeft: `4px solid ${isSelected ? node.color : 'transparent'}`,

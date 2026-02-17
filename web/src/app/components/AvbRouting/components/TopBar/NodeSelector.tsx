@@ -70,10 +70,10 @@ interface NodeTabProps {
   node: AvbNode;
   isLocal: boolean;
   selected: boolean;
-  onClick: () => void;
+  tabValue: number;
 }
 
-function NodeTab({ node, isLocal, selected, onClick }: NodeTabProps) {
+function NodeTab({ node, isLocal, selected, tabValue }: NodeTabProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -201,9 +201,9 @@ function NodeTab({ node, isLocal, selected, onClick }: NodeTabProps) {
               </Box>
             </Box>
           }
-          value={node.node_id}
-          onClick={onClick}
+          value={tabValue}
           data-testid={`node-selector-tab-${node.node_id}`}
+          data-selected={selected ? 'true' : 'false'}
           sx={{
             minHeight: 48,
             textTransform: 'none',
@@ -251,6 +251,9 @@ export function NodeSelector() {
   const selectedNodeIsVisible = currentNodeId
     ? sortedVisibleNodes.some((node) => node.node_id === currentNodeId)
     : false;
+  const selectedNodeIndex = currentNodeId
+    ? sortedVisibleNodes.findIndex((node) => node.node_id === currentNodeId)
+    : -1;
 
   const handleNodeSelect = (nodeId: string | null) => {
     dispatch({
@@ -267,7 +270,11 @@ export function NodeSelector() {
   };
 
   // Selected value for tabs
-  const selectedValue = viewMode === 'all_nodes' || !selectedNodeIsVisible ? 'all' : currentNodeId;
+  const selectedValue = viewMode === 'all_nodes' || !selectedNodeIsVisible
+    ? 'all'
+    : selectedNodeIndex >= 0
+      ? selectedNodeIndex + 1
+      : 'all';
 
   return (
     <Box
@@ -304,9 +311,16 @@ export function NodeSelector() {
         onChange={(_, value) => {
           if (value === 'all') {
             handleViewModeChange('all_nodes');
+          } else if (typeof value === 'number') {
+            const selectedNode = sortedVisibleNodes[value - 1];
+            if (!selectedNode) {
+              return;
+            }
+            handleViewModeChange('single_node');
+            handleNodeSelect(selectedNode.node_id);
           } else {
             handleViewModeChange('single_node');
-            handleNodeSelect(value);
+            handleNodeSelect(value as string);
           }
         }}
         variant="scrollable"
@@ -343,16 +357,13 @@ export function NodeSelector() {
         />
 
         {/* Individual node tabs */}
-        {sortedVisibleNodes.map((node) => (
+        {sortedVisibleNodes.map((node, index) => (
           <NodeTab
             key={node.node_id}
             node={node}
             isLocal={node.node_id === localNodeId}
             selected={currentNodeId === node.node_id && viewMode === 'single_node'}
-            onClick={() => {
-              handleViewModeChange('single_node');
-              handleNodeSelect(node.node_id);
-            }}
+            tabValue={index + 1}
           />
         ))}
       </Tabs>
