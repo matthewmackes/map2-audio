@@ -144,6 +144,21 @@ describe('NodeTree status badge behavior', () => {
     })
   })
 
+  it('dispatches node selection actions when a node row is keyboard-activated', () => {
+    render(<NodeTree />)
+
+    fireEvent.keyDown(screen.getByTestId('node-tree-item-node-offline'), { key: 'Enter' })
+
+    expect(mockDispatch).toHaveBeenNthCalledWith(1, {
+      type: 'SELECT_NODE',
+      payload: 'node-offline',
+    })
+    expect(mockDispatch).toHaveBeenNthCalledWith(2, {
+      type: 'SET_VIEW_MODE',
+      payload: 'single_node',
+    })
+  })
+
   it('dispatches multi-select toggle when view mode is multi_select', () => {
     mockState = {
       network: {
@@ -160,6 +175,30 @@ describe('NodeTree status badge behavior', () => {
     render(<NodeTree />)
 
     fireEvent.click(screen.getByText('Remote Offline'))
+
+    expect(mockDispatch).toHaveBeenCalledTimes(1)
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-offline',
+    })
+  })
+
+  it('dispatches multi-select toggle when a node row is keyboard-activated in multi_select mode', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeTree />)
+
+    fireEvent.keyDown(screen.getByTestId('node-tree-item-node-offline'), { key: ' ' })
 
     expect(mockDispatch).toHaveBeenCalledTimes(1)
     expect(mockDispatch).toHaveBeenCalledWith({

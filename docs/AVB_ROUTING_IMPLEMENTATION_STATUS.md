@@ -201,6 +201,13 @@
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
   - validates Enter/Space activation for all-nodes toggle, multi-select toggle, and node tabs (including multi-select toggle dispatch path)
+- Keyboard-first NodeTree row activation coverage added:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - validates Enter/Space activation dispatch behavior for single-node and multi-select flows in NodeTree
+- Multi-select rapid API connection refresh churn coverage added:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates multi-select node/endpoint context remains stable while connection payloads rapidly alternate between active and empty route sets
 
 ---
 
@@ -226,5 +233,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add integration coverage for multi-select workflows under rapid API connection refresh churn.
-3. Add keyboard-first multi-select flows for NodeTree row activation.
+2. Add keyboard-first multi-select flows for NodeTree expand/collapse controls.
+3. Expand integration coverage for multi-select workflows during concurrent node-status and connection refresh churn.

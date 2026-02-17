@@ -45,6 +45,22 @@ import { sortNodesForNavigation } from '../../utils/nodeSorting';
 
 const DRAWER_WIDTH = 280;
 
+function isActivationKey(key: string): boolean {
+  return key === 'Enter' || key === ' ' || key === 'Spacebar';
+}
+
+function handleKeyboardActivation(
+  event: React.KeyboardEvent<HTMLElement>,
+  action: () => void
+) {
+  if (!isActivationKey(event.key)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 /**
  * Node status indicator
  */
@@ -149,6 +165,7 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
       <ListItemButton
         selected={isSelected}
         onClick={onSelect}
+        onKeyDown={(event) => handleKeyboardActivation(event, onSelect)}
         data-testid={`node-tree-item-${node.node_id}`}
         data-selected={isSelected ? 'true' : 'false'}
         data-node-selected={isSelected ? 'true' : 'false'}

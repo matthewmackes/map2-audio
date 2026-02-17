@@ -135,6 +135,8 @@ function MultiSelectProbe() {
     .join('|') || 'none'
   const selectedNodeIds = [...state.network.nodeSelection.selected_node_ids].sort().join('|') || 'none'
   const nodeIds = Object.keys(state.network.nodes).sort().join('|') || 'none'
+  const liveRouteIds = Object.keys(state.liveRoutes).sort().join('|') || 'none'
+  const crossNodeRouteIds = Object.keys(state.network.crossNodeRoutes).sort().join('|') || 'none'
 
   return (
     <div>
@@ -142,6 +144,8 @@ function MultiSelectProbe() {
       <span data-testid="multi-selected-node-ids">{selectedNodeIds}</span>
       <span data-testid="multi-endpoint-ids">{filteredEndpointIds}</span>
       <span data-testid="multi-node-ids">{nodeIds}</span>
+      <span data-testid="multi-live-route-ids">{liveRouteIds}</span>
+      <span data-testid="multi-cross-route-ids">{crossNodeRouteIds}</span>
     </div>
   )
 }
@@ -592,6 +596,128 @@ describe('RoutingContext API/reducer integration', () => {
       expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
       expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
       expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-b|node-c')
+    })
+  })
+
+  it('retains multi-select endpoint context during rapid API connection refresh churn', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+    mockConnectionsData = {
+      count: 1,
+      connections: [
+        {
+          connection_id: 'endpoint-a→endpoint-b',
+          talker: { endpoint_id: 'endpoint-a', node_id: 'node-a' },
+          listener: { endpoint_id: 'endpoint-b', node_id: 'node-b' },
+          state: 'connecting',
+          established_time: null,
+          error_message: null,
+          srp_reservation_id: null,
+          srp_admission_id: null,
+        },
+      ],
+    }
+
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-c',
+      direction: 'talker',
+      unique_id: 3,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+        [endpointC.endpoint_id]: endpointC,
+      },
+    }
+
+    const { rerender } = render(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-live-route-ids').textContent).toBe('endpoint-a→endpoint-b')
+      expect(screen.getByTestId('multi-cross-route-ids').textContent).toBe('endpoint-a→endpoint-b')
+    })
+
+    mockConnectionsData = {
+      count: 0,
+      connections: [],
+    }
+
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-live-route-ids').textContent).toBe('none')
+      expect(screen.getByTestId('multi-cross-route-ids').textContent).toBe('none')
+    })
+
+    mockConnectionsData = {
+      count: 1,
+      connections: [
+        {
+          connection_id: 'endpoint-a→endpoint-b',
+          talker: { endpoint_id: 'endpoint-a', node_id: 'node-a' },
+          listener: { endpoint_id: 'endpoint-b', node_id: 'node-b' },
+          state: 'connected',
+          established_time: '2026-02-17T02:10:00Z',
+          error_message: null,
+          srp_reservation_id: null,
+          srp_admission_id: null,
+        },
+      ],
+    }
+
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('multi-live-route-ids').textContent).toBe('endpoint-a→endpoint-b')
+      expect(screen.getByTestId('multi-cross-route-ids').textContent).toBe('endpoint-a→endpoint-b')
     })
   })
 
