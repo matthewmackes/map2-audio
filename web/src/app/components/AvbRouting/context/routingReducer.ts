@@ -56,11 +56,11 @@ function createAuditEntry(
 /**
  * Save state to history (for undo/redo)
  */
-function saveToHistory(state: RoutingState): RoutingState {
+function saveToHistory(previousState: RoutingState, nextState: RoutingState): RoutingState {
   return {
-    ...state,
+    ...nextState,
     history: {
-      past: [...state.history.past, state],
+      past: [...previousState.history.past, previousState],
       future: [], // Clear redo stack on new action
     },
   };
@@ -123,7 +123,7 @@ export function routingReducer(
           ],
         };
 
-        return saveToHistory(newState);
+        return saveToHistory(state, newState);
       }
 
       // Direct patch (API call handled by side effect)
@@ -155,7 +155,7 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'UNPATCH': {
@@ -193,7 +193,7 @@ export function routingReducer(
           ],
         };
 
-        return saveToHistory(newState);
+        return saveToHistory(state, newState);
       }
 
       // Direct unpatch
@@ -209,7 +209,7 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'BATCH_PATCH': {
@@ -279,7 +279,7 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'UNLOCK_ROUTE': {
@@ -308,7 +308,7 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'LOCK_ENDPOINT': {
@@ -423,11 +423,11 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'DISCARD_SAFE_CHANGES': {
-      return {
+      const newState = {
         ...state,
         pendingRoutes: {},
         safePatchMode: false,
@@ -440,6 +440,8 @@ export function routingReducer(
           ),
         ],
       };
+
+      return saveToHistory(state, newState);
     }
 
     // ========================================================================
@@ -476,7 +478,7 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'RECALL_SCENE': {
@@ -506,7 +508,7 @@ export function routingReducer(
         ],
       };
 
-      return saveToHistory(newState);
+      return saveToHistory(state, newState);
     }
 
     case 'DELETE_SCENE': {

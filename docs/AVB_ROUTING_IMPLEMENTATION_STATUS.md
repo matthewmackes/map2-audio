@@ -57,6 +57,10 @@
   - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx`
 - Keyboard integration coverage added (real provider + reducer transitions):
   - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx`
+- Safe-mode workflow history coverage added:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx`
+  - apply/discard + undo/redo assertions for staged connect/disconnect flows
 - API-facing notification contract coverage added:
   - `web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx`
 - Multi-node route/topology type alignment completed for build stability:
@@ -72,14 +76,15 @@
 
 - `npm run typecheck` (in `web/`) passes.
 - `npm run build` (in `web/`) passes.
-- `npm run test:avb-routing` (repo root) passes for AVB routing smoke + reducer + keyboard + notification suites.
+- `npm run test:avb-routing` (repo root) passes for AVB routing smoke + reducer + keyboard + history + notification suites.
 
 ---
 
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add reducer/history tests for combined safe-mode apply/discard keyboard workflows.
+- Add focused tests for batch connect/disconnect notification contracts.
+- Add CI artifact upload for AVB routing jest reports (machine-readable).
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -92,6 +97,6 @@
 
 ## Next Recommended Slice
 
-1. Add reducer/history tests for combined safe-mode apply/discard keyboard workflows.
-2. Add focused tests for batch connect/disconnect notification contracts.
-3. Add CI artifact upload for AVB routing jest reports (machine-readable).
+1. Add focused tests for batch connect/disconnect notification contracts.
+2. Add CI artifact upload for AVB routing jest reports (machine-readable).
+3. Add router-level error contract tests for 409 admission-denied payload display.

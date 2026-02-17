@@ -1,6 +1,6 @@
 import React from 'react'
-import { act, render, screen } from '@testing-library/react'
-import { RoutingProvider, useRoutingState } from '../context/RoutingContext'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { RoutingProvider, useRoutingDispatch, useRoutingState } from '../context/RoutingContext'
 import { initialRoutingState, type Endpoint, type Route, type RoutingState } from '../types'
 import { useKeyboardNavigation } from './useKeyboardNavigation'
 
@@ -124,6 +124,7 @@ function pressKey(key: string, options?: Pick<KeyboardEventInit, 'ctrlKey' | 'me
 function KeyboardHarness() {
   useKeyboardNavigation({ enabled: true })
   const state = useRoutingState()
+  const dispatch = useRoutingDispatch()
 
   const focused = state.selection.focusedCell
     ? `${state.selection.focusedCell.talker_id}→${state.selection.focusedCell.listener_id}`
@@ -134,6 +135,9 @@ function KeyboardHarness() {
   const pending = Object.values(state.pendingRoutes)
     .map((route) => `${route.id}:${route.state}`)
     .join('|') || 'none'
+  const live = Object.values(state.liveRoutes)
+    .map((route) => `${route.id}:${route.state}`)
+    .join('|') || 'none'
 
   return (
     <div>
@@ -141,6 +145,19 @@ function KeyboardHarness() {
       <span data-testid="hovered">{hovered}</span>
       <span data-testid="safe-mode">{state.safePatchMode ? 'on' : 'off'}</span>
       <span data-testid="pending-routes">{pending}</span>
+      <span data-testid="live-routes">{live}</span>
+      <button data-testid="apply-safe" onClick={() => dispatch({ type: 'APPLY_SAFE_CHANGES' })} type="button">
+        apply
+      </button>
+      <button data-testid="discard-safe" onClick={() => dispatch({ type: 'DISCARD_SAFE_CHANGES' })} type="button">
+        discard
+      </button>
+      <button data-testid="undo-action" onClick={() => dispatch({ type: 'UNDO' })} type="button">
+        undo
+      </button>
+      <button data-testid="redo-action" onClick={() => dispatch({ type: 'REDO' })} type="button">
+        redo
+      </button>
     </div>
   )
 }
@@ -223,5 +240,68 @@ describe('useKeyboardNavigation integration (provider + reducer)', () => {
 
     expect(screen.getByTestId('pending-routes').textContent).toContain('talker-1→listener-1:disconnecting')
     expect(mockUnpatchMutate).not.toHaveBeenCalled()
+  })
+
+  it('applies keyboard-staged connect and restores via undo/redo', () => {
+    const initialState = buildInitialState()
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <KeyboardHarness />
+      </RoutingProvider>
+    )
+
+    pressKey('s', { ctrlKey: true })
+    pressKey('ArrowRight')
+    pressKey('Enter')
+
+    expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+    expect(screen.getByTestId('pending-routes').textContent).toContain('talker-1→listener-1:connecting')
+    expect(screen.getByTestId('live-routes').textContent).toBe('none')
+
+    fireEvent.click(screen.getByTestId('apply-safe'))
+    expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+    expect(screen.getByTestId('pending-routes').textContent).toBe('none')
+    expect(screen.getByTestId('live-routes').textContent).toContain('talker-1→listener-1:connected')
+
+    fireEvent.click(screen.getByTestId('undo-action'))
+    expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+    expect(screen.getByTestId('pending-routes').textContent).toContain('talker-1→listener-1:connecting')
+    expect(screen.getByTestId('live-routes').textContent).toBe('none')
+
+    fireEvent.click(screen.getByTestId('redo-action'))
+    expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+    expect(screen.getByTestId('pending-routes').textContent).toBe('none')
+    expect(screen.getByTestId('live-routes').textContent).toContain('talker-1→listener-1:connected')
+  })
+
+  it('discards keyboard-staged connect and restores via undo/redo', () => {
+    const initialState = buildInitialState()
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <KeyboardHarness />
+      </RoutingProvider>
+    )
+
+    pressKey('s', { ctrlKey: true })
+    pressKey('ArrowDown')
+    pressKey('Enter')
+
+    expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+    expect(screen.getByTestId('pending-routes').textContent).toContain('talker-1→listener-1:connecting')
+
+    fireEvent.click(screen.getByTestId('discard-safe'))
+    expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+    expect(screen.getByTestId('pending-routes').textContent).toBe('none')
+    expect(screen.getByTestId('live-routes').textContent).toBe('none')
+
+    fireEvent.click(screen.getByTestId('undo-action'))
+    expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+    expect(screen.getByTestId('pending-routes').textContent).toContain('talker-1→listener-1:connecting')
+
+    fireEvent.click(screen.getByTestId('redo-action'))
+    expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+    expect(screen.getByTestId('pending-routes').textContent).toBe('none')
   })
 })
