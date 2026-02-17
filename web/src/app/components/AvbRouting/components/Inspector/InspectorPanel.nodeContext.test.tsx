@@ -189,4 +189,63 @@ describe('InspectorPanel node-context filtering', () => {
     expect(screen.getByText('Selected Endpoint')).toBeTruthy()
     expect(screen.getByText('Listener B')).toBeTruthy()
   })
+
+  it('hides and restores selected route details as multi-select node context changes', () => {
+    const talkerB = makeEndpoint({
+      endpoint_id: 'talker-b',
+      device_name: 'Talker B',
+      direction: 'talker',
+      node_id: 'node-b',
+    })
+    const listenerC = makeEndpoint({
+      endpoint_id: 'listener-c',
+      device_name: 'Listener C',
+      direction: 'listener',
+      node_id: 'node-c',
+    })
+    const route = makeRoute({})
+
+    mockState = {
+      ...makeBaseState(),
+      network: {
+        ...makeBaseState().network,
+        nodeSelection: {
+          ...makeBaseState().network.nodeSelection,
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-a'],
+        },
+      },
+      endpoints: {
+        [talkerB.endpoint_id]: talkerB,
+        [listenerC.endpoint_id]: listenerC,
+      },
+      liveRoutes: {
+        [route.id]: route,
+      },
+      selection: {
+        ...makeBaseState().selection,
+        selectedRoutes: [route.id],
+      },
+    }
+
+    const { rerender } = render(<InspectorPanel />)
+
+    expect(screen.queryByText('Selected Route')).toBeNull()
+
+    mockState = {
+      ...mockState,
+      network: {
+        ...mockState.network,
+        nodeSelection: {
+          ...mockState.network.nodeSelection,
+          selected_node_ids: ['node-a', 'node-b'],
+        },
+      },
+    }
+
+    rerender(<InspectorPanel />)
+
+    expect(screen.getByText('Selected Route')).toBeTruthy()
+    expect(screen.getByText('Talker B')).toBeTruthy()
+  })
 })

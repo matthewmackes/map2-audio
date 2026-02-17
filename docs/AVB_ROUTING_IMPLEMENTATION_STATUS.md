@@ -151,6 +151,9 @@
 - Multi-select retention integration assertions added for node-status churn:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates `selected_node_ids` and `useFilteredEndpoints()` output remain stable through node online/degraded/offline transitions
+- Inspector multi-select context assertions added:
+  - `web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx`
+  - validates selected route details hide outside `selected_node_ids` and restore when relevant node IDs are re-included
 
 ---
 
@@ -165,7 +168,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add inspector-context assertions for `multi_select` node mode.
+- Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -178,6 +181,6 @@
 
 ## Next Recommended Slice
 
-1. Add inspector-context assertions for `multi_select` node mode.
-2. Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
-3. Add node-removal/rejoin integration assertions while multi-select state is active.
+1. Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
+2. Add node-removal/rejoin integration assertions while multi-select state is active.
+3. Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
