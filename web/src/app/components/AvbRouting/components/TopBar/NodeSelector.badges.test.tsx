@@ -1,6 +1,7 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { NodeSelector } from './NodeSelector'
+import { NodeTree } from '../NodeTree/NodeTree'
 import type { AvbNode } from '../../types'
 
 let mockNodes: AvbNode[] = []
@@ -15,6 +16,7 @@ jest.mock('../../hooks/useNodeApi', () => ({
 
 jest.mock('../../context/RoutingContext', () => ({
   useRouting: () => ({ state: mockState, dispatch: mockDispatch }),
+  useFilteredEndpoints: () => [],
 }))
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {
@@ -253,6 +255,98 @@ describe('NodeSelector degraded/offline badge visibility', () => {
         'node-bravo',
         'node-charlie',
       ])
+    })
+  })
+
+  it('keeps NodeSelector and NodeTree aligned after node churn and API resync', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-bravo',
+        name: 'Bravo',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-charlie',
+        name: 'Charlie',
+        type: 'map2_remote',
+        status: 'degraded',
+      }),
+    ]
+
+    const { rerender } = render(
+      <>
+        <NodeSelector />
+        <NodeTree />
+      </>,
+    )
+
+    expect(screen.getByTestId('node-selector-tab-node-bravo')).toBeTruthy()
+    expect(screen.getByTestId('node-tree-item-node-bravo')).toBeTruthy()
+
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: false,
+        },
+      },
+    }
+
+    mockNodes = [
+      makeNode({
+        node_id: 'node-local',
+        name: 'Local Node',
+        status: 'online',
+      }),
+      makeNode({
+        node_id: 'node-bravo',
+        name: 'Bravo',
+        type: 'map2_remote',
+        status: 'offline',
+      }),
+      makeNode({
+        node_id: 'node-charlie',
+        name: 'Charlie',
+        type: 'map2_remote',
+        status: 'online',
+      }),
+    ]
+
+    rerender(
+      <>
+        <NodeSelector />
+        <NodeTree />
+      </>,
+    )
+
+    await waitFor(() => {
+      const allNodesTab = screen.getByRole('tab', { name: /All Nodes/i })
+      expect(allNodesTab.getAttribute('aria-selected')).toBe('true')
+      expect(screen.queryByTestId('node-selector-tab-node-bravo')).toBeNull()
+      expect(screen.queryByTestId('node-tree-item-node-bravo')).toBeNull()
+      expect(screen.getByTestId('node-selector-tab-node-charlie')).toBeTruthy()
+      expect(screen.getByTestId('node-tree-item-node-charlie')).toBeTruthy()
     })
   })
 })

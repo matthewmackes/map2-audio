@@ -124,6 +124,9 @@
   - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
   - validates `show_offline` filtering in both surfaces and safe all-nodes fallback when single-node selection is filtered out
+- TopBar + NodeTree churn/resync integration assertions added:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates both navigation surfaces stay aligned after node status churn plus API sync changes to visible node sets
 
 ---
 
@@ -138,7 +141,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add focused integration assertions for TopBar + NodeTree after node status churn and API resync.
+- Add explicit selection-retention assertions when filtered node sets shrink/expand.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -151,6 +154,6 @@
 
 ## Next Recommended Slice
 
-1. Add focused integration assertions for TopBar + NodeTree after node status churn and API resync.
-2. Add explicit selection-retention assertions when filtered node sets shrink/expand.
-3. Add reducer-level coverage for selection + view-mode state transitions under node-filter changes.
+1. Add explicit selection-retention assertions when filtered node sets shrink/expand.
+2. Add reducer-level coverage for selection + view-mode state transitions under node-filter changes.
+3. Add route-inspector assertions for filtered node contexts in single-node mode.
