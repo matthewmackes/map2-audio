@@ -283,8 +283,10 @@ export function NodeTree() {
   const localNodeId = useLocalNodeId();
 
   const currentNodeId = state.network.nodeSelection.current_node_id;
+  const showOfflineNodes = state.network.nodeSelection.show_offline;
+  const visibleNodes = showOfflineNodes ? nodes : nodes.filter((node) => node.status === 'online');
 
-  const sortedNodes = sortNodesForNavigation(nodes, localNodeId);
+  const sortedNodes = sortNodesForNavigation(visibleNodes, localNodeId);
 
   const handleNodeSelect = (nodeId: string) => {
     dispatch({

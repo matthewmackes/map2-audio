@@ -248,6 +248,9 @@ export function NodeSelector() {
     ? nodes
     : nodes.filter((n) => n.status === 'online');
   const sortedVisibleNodes = sortNodesForNavigation(visibleNodes, localNodeId);
+  const selectedNodeIsVisible = currentNodeId
+    ? sortedVisibleNodes.some((node) => node.node_id === currentNodeId)
+    : false;
 
   const handleNodeSelect = (nodeId: string | null) => {
     dispatch({
@@ -264,7 +267,7 @@ export function NodeSelector() {
   };
 
   // Selected value for tabs
-  const selectedValue = viewMode === 'all_nodes' ? 'all' : currentNodeId || 'all';
+  const selectedValue = viewMode === 'all_nodes' || !selectedNodeIsVisible ? 'all' : currentNodeId;
 
   return (
     <Box

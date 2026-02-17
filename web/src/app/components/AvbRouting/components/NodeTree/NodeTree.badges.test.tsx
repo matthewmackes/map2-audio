@@ -144,6 +144,27 @@ describe('NodeTree status badge behavior', () => {
     })
   })
 
+  it('hides degraded/offline nodes when show_offline is disabled', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: false,
+        },
+      },
+    }
+
+    render(<NodeTree />)
+
+    expect(screen.getByText('1 of 3 online')).toBeTruthy()
+    expect(screen.getByText('Local Online')).toBeTruthy()
+    expect(screen.queryByText('Remote Degraded')).toBeNull()
+    expect(screen.queryByText('Remote Offline')).toBeNull()
+  })
+
   it('keeps deterministic node ordering across status transitions', () => {
     mockNodes = [
       makeNode({
