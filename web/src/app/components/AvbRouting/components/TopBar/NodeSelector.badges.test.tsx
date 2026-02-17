@@ -636,6 +636,52 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     })
   })
 
+  it('opens node context menu from keyboard activation without dispatching selection', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.keyDown(screen.getByTestId('node-selector-menu-trigger-node-offline'), { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(screen.getByText('View Details')).toBeTruthy()
+    })
+    expect(mockDispatch).toHaveBeenCalledTimes(0)
+  })
+
+  it('opens node context menu from Space key in multi-select mode without toggling node membership', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.keyDown(screen.getByTestId('node-selector-menu-trigger-node-offline'), { key: ' ' })
+
+    await waitFor(() => {
+      expect(screen.getByText('View Details')).toBeTruthy()
+    })
+    expect(mockDispatch).toHaveBeenCalledTimes(0)
+  })
+
   it('aligns multi-select selected node ids across NodeSelector and NodeTree', () => {
     mockState = {
       network: {

@@ -99,6 +99,13 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
     setAnchorEl(event.currentTarget);
   };
 
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    handleKeyboardActivation(event, () => {
+      event.stopPropagation();
+      setAnchorEl(event.currentTarget);
+    });
+  };
+
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
@@ -208,11 +215,8 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
                 role="button"
                 tabIndex={0}
                 onClick={handleMenuClick}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    handleMenuClick(event as unknown as React.MouseEvent<HTMLElement>)
-                  }
-                }}
+                onKeyDown={handleMenuKeyDown}
+                data-testid={`node-selector-menu-trigger-${node.node_id}`}
                 sx={{
                   ml: 0.5,
                   width: 20,

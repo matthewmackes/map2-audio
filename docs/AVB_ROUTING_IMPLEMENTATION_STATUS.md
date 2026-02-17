@@ -215,6 +215,13 @@
 - Concurrent node-status + connection refresh churn coverage added for multi-select:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates selected-node endpoint context remains stable while both node statuses and connection sets churn together
+- Keyboard-first NodeSelector context-menu trigger coverage added:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - removes keyboard-cast workaround for menu trigger, adds explicit keyboard activation path, and validates menu trigger does not dispatch selection/toggle actions
+- Safe-patch + API refresh overlap coverage added for multi-select:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates pending staged disconnect context and selected-node filtering remain stable while API connections churn empty/restored during active safe mode
 
 ---
 
@@ -240,5 +247,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add keyboard-first multi-select operator flows for NodeSelector context menu trigger.
-3. Expand integration coverage for multi-select workflows during safe-patch + API refresh overlap windows.
+2. Expand integration coverage for multi-select workflows during safe-patch + concurrent node-status churn overlap windows.
+3. Add keyboard-first accessibility assertions for NodeSelector menu-trigger focus semantics.
