@@ -983,6 +983,24 @@ export function routingReducer(
       };
     }
 
+    case 'CROSS_NODE_ROUTES_SYNCED': {
+      const crossNodeRoutes = action.payload.reduce(
+        (acc, route) => {
+          acc[route.route_id] = route;
+          return acc;
+        },
+        {} as Record<string, typeof action.payload[number]>
+      );
+
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          crossNodeRoutes,
+        },
+      };
+    }
+
     case 'SET_LOCAL_NODE_ID': {
       return {
         ...state,

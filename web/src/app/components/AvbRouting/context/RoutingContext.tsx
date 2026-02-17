@@ -20,7 +20,7 @@ import React, { createContext, useContext, useReducer, useEffect, type ReactNode
 import { routingReducer } from './routingReducer';
 import { useEndpoints, useConnections } from '../hooks/useAvbApi';
 import { useNodes, usePtpStatus, useLocalNodeId } from '../hooks/useNodeApi';
-import type { RoutingState, RoutingAction, Endpoint, Route } from '../types';
+import type { RoutingState, RoutingAction, Endpoint, Route, CrossNodeRoute } from '../types';
 import { initialRoutingState } from '../types';
 
 /**
@@ -166,9 +166,42 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
       };
     });
 
+    const crossNodeRoutes: CrossNodeRoute[] = routes
+      .filter((route) => route.cross_node && route.talker_node_id && route.listener_node_id)
+      .map((route) => {
+        let status: CrossNodeRoute['status'] = 'pending';
+        if (route.state === 'connected') {
+          status = 'active';
+        } else if (route.state === 'connecting') {
+          status = 'establishing';
+        } else if (route.state === 'error') {
+          status = 'failed';
+        }
+
+        return {
+          route_id: route.id,
+          source_node_id: route.talker_node_id as string,
+          dest_node_id: route.listener_node_id as string,
+          talker_id: route.talker_id,
+          listener_id: route.listener_id,
+          status,
+          network_path:
+            route.network_path && route.network_path.length > 0
+              ? route.network_path
+              : [route.talker_node_id as string, route.listener_node_id as string],
+          latency_ms: route.latency_ms ?? null,
+          bandwidth_mbps: route.bandwidth_mbps ?? 0,
+        };
+      });
+
     dispatch({
       type: 'CONNECTIONS_UPDATED',
       payload: routes,
+    });
+
+    dispatch({
+      type: 'CROSS_NODE_ROUTES_SYNCED',
+      payload: crossNodeRoutes,
     });
   }, [connectionsData]);
 

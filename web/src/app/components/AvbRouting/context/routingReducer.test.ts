@@ -396,4 +396,35 @@ describe('routingReducer multi-node route updates', () => {
     })
     expect(withCrossRoute.network.crossNodeRoutes[crossNodeRoute.route_id]).toEqual(crossNodeRoute)
   })
+
+  it('replaces stale cross-node routes on CROSS_NODE_ROUTES_SYNCED', () => {
+    const staleRoute = makeCrossNodeRoute({
+      route_id: 'stale-route',
+      source_node_id: 'node-old-a',
+      dest_node_id: 'node-old-b',
+    })
+    const freshRoute = makeCrossNodeRoute({
+      route_id: 'fresh-route',
+      source_node_id: 'node-a',
+      dest_node_id: 'node-b',
+    })
+
+    const stateWithStale = {
+      ...cloneState(),
+      network: {
+        ...cloneState().network,
+        crossNodeRoutes: {
+          [staleRoute.route_id]: staleRoute,
+        },
+      },
+    }
+
+    const next = routingReducer(stateWithStale, {
+      type: 'CROSS_NODE_ROUTES_SYNCED',
+      payload: [freshRoute],
+    })
+
+    expect(next.network.crossNodeRoutes[staleRoute.route_id]).toBeUndefined()
+    expect(next.network.crossNodeRoutes[freshRoute.route_id]).toEqual(freshRoute)
+  })
 })

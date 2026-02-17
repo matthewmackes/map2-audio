@@ -91,6 +91,10 @@
 - Topology/route reconciliation coverage added for node offline transitions:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates stale cross-node route cleanup when remote node status changes to offline and API connections clear
+- Rapid API resync reconciliation now replaces stale cross-node route sets:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.tsx` dispatches `CROSS_NODE_ROUTES_SYNCED`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts` replaces `network.crossNodeRoutes` on sync
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts` and `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx` cover stale-route replacement
 - Focused UI assertions added for cross-node indicators and topology badges:
   - `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx`
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
@@ -117,7 +121,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add scenario tests for stale cross-node route replacement during rapid API resync.
+- Add assertions for degraded/critical health color semantics in topology node cards.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -130,6 +134,6 @@
 
 ## Next Recommended Slice
 
-1. Add scenario tests for stale cross-node route replacement during rapid API resync.
-2. Add assertions for degraded/critical health color semantics in topology node cards.
-3. Add targeted tests for node-list sorting stability across status transitions.
+1. Add assertions for degraded/critical health color semantics in topology node cards.
+2. Add targeted tests for node-list sorting stability across status transitions.
+3. Add multi-node filter/view-mode interaction tests for NodeSelector + NodeTree.

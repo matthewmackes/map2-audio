@@ -295,6 +295,11 @@ export type CrossNodeRouteUpdatedAction = {
   payload: CrossNodeRoute;
 };
 
+export type CrossNodeRoutesSyncedAction = {
+  type: 'CROSS_NODE_ROUTES_SYNCED';
+  payload: CrossNodeRoute[];
+};
+
 export type SetLocalNodeIdAction = {
   type: 'SET_LOCAL_NODE_ID';
   payload: string;
@@ -345,4 +350,5 @@ export type RoutingAction =
   | TopologyUpdatedAction
   | SyncStatusUpdatedAction
   | CrossNodeRouteUpdatedAction
+  | CrossNodeRoutesSyncedAction
   | SetLocalNodeIdAction;
