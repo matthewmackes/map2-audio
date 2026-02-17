@@ -30,6 +30,7 @@ interface MatrixCellProps {
   route: Route | null;
   isPending: boolean;
   isHovered: boolean;
+  isFocused: boolean;
   onClick: () => void;
   onHover: (hover: boolean) => void;
 }
@@ -43,6 +44,7 @@ export function MatrixCell({
   route,
   isPending,
   isHovered,
+  isFocused,
   onClick,
   onHover,
 }: MatrixCellProps) {
@@ -133,6 +135,9 @@ export function MatrixCell({
           cursor: isLocked ? 'not-allowed' : 'pointer',
           bgcolor: getBgColor(),
           border: getBorder(),
+          outline: isFocused ? '2px solid #90caf9' : 'none',
+          outlineOffset: isFocused ? -2 : 0,
+          boxShadow: isFocused ? '0 0 0 2px rgba(25, 118, 210, 0.3)' : 'none',
           borderRadius: 0.5,
           transition: 'all 0.2s ease',
           position: 'relative',

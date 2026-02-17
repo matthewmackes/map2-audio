@@ -32,6 +32,10 @@ export interface SelectionState {
     talker_id: string;
     listener_id: string;
   } | null;
+  focusedCell: {
+    talker_id: string;
+    listener_id: string;
+  } | null;
 }
 
 /**
@@ -108,6 +112,7 @@ export const initialRoutingState: RoutingState = {
     selectedEndpoints: [],
     selectedRoutes: [],
     hoveredCell: null,
+    focusedCell: null,
   },
 
   filters: {

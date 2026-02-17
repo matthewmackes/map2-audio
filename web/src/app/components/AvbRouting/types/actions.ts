@@ -153,6 +153,14 @@ export type HoverCellAction = {
   } | null;
 };
 
+export type FocusCellAction = {
+  type: 'FOCUS_CELL';
+  payload: {
+    talker_id: string;
+    listener_id: string;
+  } | null;
+};
+
 /**
  * Endpoint metadata actions
  */
@@ -262,6 +270,7 @@ export type RoutingAction =
   | SelectRouteAction
   | ClearSelectionAction
   | HoverCellAction
+  | FocusCellAction
   | UpdateEndpointLabelAction
   | UpdateEndpointTagsAction
   | UpdateEndpointColorAction

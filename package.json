@@ -8,13 +8,20 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:avb-routing": "jest web/src/app/App.avbRoutingRoute.test.tsx web/src/app/pages/AvbRoutingPage.test.tsx web/src/app/components/AvbRouting/context/routingReducer.test.ts web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx --runInBand"
   },
   "jest": {
     "testEnvironment": "jsdom",
     "moduleNameMapper": {
-      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
-    }
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "^react$": "<rootDir>/node_modules/react",
+      "^react-dom$": "<rootDir>/node_modules/react-dom"
+    },
+    "modulePathIgnorePatterns": [
+      "<rootDir>/build/",
+      "<rootDir>/juce-engine/build/"
+    ]
   },
   "keywords": [],
   "author": "",

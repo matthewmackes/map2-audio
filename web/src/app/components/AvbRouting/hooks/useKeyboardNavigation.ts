@@ -65,7 +65,7 @@ export function useKeyboardNavigation(options: UseKeyboardNavigationOptions = {}
 
       // Update UI focus state
       dispatch({
-        type: 'HOVER_CELL',
+        type: 'FOCUS_CELL',
         payload: { talker_id: talker.endpoint_id, listener_id: listener.endpoint_id },
       });
 
@@ -79,9 +79,34 @@ export function useKeyboardNavigation(options: UseKeyboardNavigationOptions = {}
    */
   const blurCell = useCallback(() => {
     focusedCellRef.current = null;
-    dispatch({ type: 'HOVER_CELL', payload: null });
+    dispatch({ type: 'FOCUS_CELL', payload: null });
     onCellBlur?.();
   }, [dispatch, onCellBlur]);
+
+  // Keep internal focus cursor aligned with reducer state and filtered endpoint banks.
+  useEffect(() => {
+    const focused = state.selection.focusedCell;
+    if (!focused) {
+      focusedCellRef.current = null;
+      return;
+    }
+
+    const talkerIndex = talkers.findIndex((talker) => talker.endpoint_id === focused.talker_id);
+    const listenerIndex = listeners.findIndex((listener) => listener.endpoint_id === focused.listener_id);
+
+    if (talkerIndex < 0 || listenerIndex < 0) {
+      focusedCellRef.current = null;
+      dispatch({ type: 'FOCUS_CELL', payload: null });
+      return;
+    }
+
+    focusedCellRef.current = {
+      talker_id: focused.talker_id,
+      listener_id: focused.listener_id,
+      talkerIndex,
+      listenerIndex,
+    };
+  }, [state.selection.focusedCell, talkers, listeners, dispatch]);
 
   /**
    * Toggle connection at focused cell
@@ -276,7 +301,7 @@ export function useKeyboardNavigation(options: UseKeyboardNavigationOptions = {}
  */
 export function useFocusedCell() {
   const { state } = useRouting();
-  return state.selection.hoveredCell;
+  return state.selection.focusedCell;
 }
 
 export default useKeyboardNavigation;

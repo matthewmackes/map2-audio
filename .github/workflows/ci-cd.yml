@@ -99,15 +99,23 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: web/package-lock.json
-    
-    - name: Install dependencies
+        cache-dependency-path: |
+          package-lock.json
+          web/package-lock.json
+
+    - name: Install root test dependencies
+      run: npm ci
+
+    - name: Install web dependencies
       working-directory: ./web
       run: npm ci
     
     - name: Lint
       working-directory: ./web
       run: npm run lint || true
+
+    - name: AVB routing frontend tests
+      run: npm run test:avb-routing
     
     - name: Build
       working-directory: ./web

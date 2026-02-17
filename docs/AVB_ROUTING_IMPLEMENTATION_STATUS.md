@@ -1,7 +1,7 @@
 # AVB Routing Matrix - Implementation Status
 
-**Last Updated:** February 16, 2026  
-**Status:** Phases 1-2 complete, Phase 3 in active integration
+**Last Updated:** February 17, 2026  
+**Status:** Phases 1-2 complete, Phase 3 integration in stabilization
 
 ---
 
@@ -41,6 +41,20 @@
 - Safe patch apply flow hardened:
   - batch API execution from `TopBar.tsx` before reducer commit
   - `APPLY_SAFE_CHANGES` in `routingReducer.ts` now correctly removes staged disconnect routes
+- Keyboard focus and mouse hover state are now separated:
+  - `selection.focusedCell` added for keyboard navigation state
+  - `selection.hoveredCell` preserved for pointer inspection behavior
+- Distinct keyboard focus visuals added:
+  - focused matrix cells now render an explicit focus ring in `MatrixCell.tsx`
+  - keyboard crosshair highlight reads from `focusedCell`
+- Lightweight route-level smoke test added:
+  - `web/src/app/pages/AvbRoutingPage.test.tsx`
+- App-router route smoke coverage added:
+  - `web/src/app/App.avbRoutingRoute.test.tsx`
+- Reducer coverage added for focus/hover precedence:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+- Keyboard navigation behavior tests added:
+  - `web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx`
 
 ---
 
@@ -48,15 +62,15 @@
 
 - `npm run typecheck` (in `web/`) passes.
 - `npm run build` (in `web/`) passes.
+- `npm run test:avb-routing` (repo root) passes for AVB routing smoke + reducer + keyboard suites.
 
 ---
 
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add safer focus behavior for keyboard vs mouse hover priority.
-- Add selection/interaction tests for keyboard navigation.
-- Add keyboard navigation focus ring visuals for non-hover focus state.
+- Add focused integration coverage for keyboard navigation with real reducer state transitions.
+- Add API-facing interaction coverage for connect/unpatch notification contracts.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -69,6 +83,6 @@
 
 ## Next Recommended Slice
 
-1. Add keyboard-navigation tests and reducer assertions for focus state.
-2. Add a lightweight route smoke test for `/avb-routing`.
-3. Add focus-ring styling for keyboard focus that is distinct from hover-only highlight.
+1. Add focused integration coverage for keyboard navigation with real reducer state transitions.
+2. Add API-facing interaction coverage for connect/unpatch notification contracts.
+3. Add CI summary output for AVB routing test timing and failures.

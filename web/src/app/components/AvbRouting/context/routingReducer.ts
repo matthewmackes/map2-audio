@@ -589,6 +589,7 @@ export function routingReducer(
           selectedEndpoints: [],
           selectedRoutes: [],
           hoveredCell: null,
+          focusedCell: null,
         },
       };
     }
@@ -599,6 +600,16 @@ export function routingReducer(
         selection: {
           ...state.selection,
           hoveredCell: action.payload,
+        },
+      };
+    }
+
+    case 'FOCUS_CELL': {
+      return {
+        ...state,
+        selection: {
+          ...state.selection,
+          focusedCell: action.payload,
         },
       };
     }

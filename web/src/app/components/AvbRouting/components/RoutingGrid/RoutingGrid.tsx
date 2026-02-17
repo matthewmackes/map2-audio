@@ -156,6 +156,9 @@ export function RoutingGrid() {
       const isHovered =
         state.selection.hoveredCell?.talker_id === talker.endpoint_id &&
         state.selection.hoveredCell?.listener_id === listener.endpoint_id;
+      const isFocused =
+        state.selection.focusedCell?.talker_id === talker.endpoint_id &&
+        state.selection.focusedCell?.listener_id === listener.endpoint_id;
 
       return (
         <div style={style}>
@@ -165,6 +168,7 @@ export function RoutingGrid() {
             route={route}
             isPending={isPending}
             isHovered={isHovered}
+            isFocused={isFocused}
             onClick={() => handleCellClick(talker.endpoint_id, listener.endpoint_id)}
             onHover={(hover) =>
               handleCellHover(
@@ -176,7 +180,7 @@ export function RoutingGrid() {
         </div>
       );
     },
-    [talkers, listeners, state.liveRoutes, state.pendingRoutes, state.selection.hoveredCell, handleCellClick, handleCellHover]
+    [talkers, listeners, state.liveRoutes, state.pendingRoutes, state.selection.hoveredCell, state.selection.focusedCell, handleCellClick, handleCellHover]
   );
 
   // Empty state
