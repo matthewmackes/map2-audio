@@ -20,10 +20,12 @@ import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
 import { usePatchMutation, useUnpatchMutation } from '../../hooks/useAvbApi';
 import { useKeyboardNavigation, useFocusedCell } from '../../hooks/useKeyboardNavigation';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useDragSelection } from '../../hooks/useDragSelection';
 import { MatrixCell } from './MatrixCell';
 import { StickyHeaders } from './StickyHeaders';
 import { ConnectionHighlight } from './ConnectionHighlight';
 import { CrosshairOverlay } from './CrosshairOverlay';
+import { SelectionOverlay } from './SelectionOverlay';
 
 const CELL_WIDTH = 60;
 const CELL_HEIGHT = 50;
@@ -45,6 +47,9 @@ export function RoutingGrid() {
   // Keyboard navigation
   useKeyboardNavigation({ enabled: true });
   const focusedCell = useFocusedCell();
+
+  // Drag selection
+  const dragSelection = useDragSelection();
 
   // Get focused cell indices for highlighting
   const focusedIndices = useMemo(() => {
@@ -172,6 +177,7 @@ export function RoutingGrid() {
       const isFocused =
         state.selection.focusedCell?.talker_id === talker.endpoint_id &&
         state.selection.focusedCell?.listener_id === listener.endpoint_id;
+      const isSelected = dragSelection.isCellSelected(rowIndex, columnIndex);
 
       return (
         <div style={style}>
@@ -182,6 +188,7 @@ export function RoutingGrid() {
             isPending={isPending}
             isHovered={isHovered}
             isFocused={isFocused}
+            isSelected={isSelected}
             onClick={() => handleCellClick(talker.endpoint_id, listener.endpoint_id)}
             onHover={(hover) =>
               handleCellHover(
@@ -189,11 +196,13 @@ export function RoutingGrid() {
                 hover ? listener.endpoint_id : null
               )
             }
+            onMouseDown={(e) => dragSelection.handleMouseDown(rowIndex, columnIndex, e)}
+            onMouseMove={() => dragSelection.handleMouseMove(rowIndex, columnIndex)}
           />
         </div>
       );
     },
-    [talkers, listeners, state.liveRoutes, state.pendingRoutes, state.selection.hoveredCell, state.selection.focusedCell, handleCellClick, handleCellHover]
+    [talkers, listeners, state.liveRoutes, state.pendingRoutes, state.selection.hoveredCell, state.selection.focusedCell, handleCellClick, handleCellHover, dragSelection]
   );
 
   // Empty state
@@ -237,6 +246,16 @@ export function RoutingGrid() {
         headerHeight={HEADER_HEIGHT}
         totalColumns={talkers.length}
         totalRows={listeners.length}
+      />
+
+      {/* Selection overlay for drag-selected cells */}
+      <SelectionOverlay
+        selectionRect={dragSelection.selectionRect}
+        cellWidth={CELL_WIDTH}
+        cellHeight={CELL_HEIGHT}
+        headerWidth={HEADER_WIDTH}
+        headerHeight={HEADER_HEIGHT}
+        selectedCount={dragSelection.selectedCells.length}
       />
 
       {/* Sticky headers */}

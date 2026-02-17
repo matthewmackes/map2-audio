@@ -39,6 +39,14 @@ export {
   useFocusedCell,
 } from './hooks/useKeyboardNavigation';
 export { useNotifications } from './hooks/useNotifications';
+export {
+  useDragSelection,
+  type DragSelectionState,
+  type DragSelectionHandlers,
+  type DragSelectionReturn,
+  type CellPosition,
+  type SelectionRect,
+} from './hooks/useDragSelection';
 
 // Multi-Node hooks
 export {
@@ -62,6 +70,7 @@ export { MatrixCell } from './components/RoutingGrid/MatrixCell';
 export { StickyHeaders } from './components/RoutingGrid/StickyHeaders';
 export { ConnectionHighlight } from './components/RoutingGrid/ConnectionHighlight';
 export { CrosshairOverlay } from './components/RoutingGrid/CrosshairOverlay';
+export { SelectionOverlay } from './components/RoutingGrid/SelectionOverlay';
 export { TopBar } from './components/TopBar/TopBar';
 export { NodeSelector } from './components/TopBar/NodeSelector';
 export { NodeTree } from './components/NodeTree/NodeTree';

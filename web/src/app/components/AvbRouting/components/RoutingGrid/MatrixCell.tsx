@@ -33,8 +33,11 @@ interface MatrixCellProps {
   isPending: boolean;
   isHovered: boolean;
   isFocused: boolean;
+  isSelected?: boolean;
   onClick: () => void;
   onHover: (hover: boolean) => void;
+  onMouseDown?: (e: React.MouseEvent) => void;
+  onMouseMove?: () => void;
 }
 
 /**
@@ -47,8 +50,11 @@ export function MatrixCell({
   isPending,
   isHovered,
   isFocused,
+  isSelected = false,
   onClick,
   onHover,
+  onMouseDown,
+  onMouseMove,
 }: MatrixCellProps) {
   const { state } = useRouting();
 
@@ -138,6 +144,7 @@ export function MatrixCell({
 
   // Cell border
   const getBorder = () => {
+    if (isSelected) return '2px solid #2196f3';
     if (isPending) return '2px solid #ff9800';
     if (isCrossNode && (isConnected || isConnecting)) return '2px dashed rgba(255, 255, 255, 0.5)';
     if (hasWarning && !isConnected) return '1px dashed #ffd43b';
@@ -150,6 +157,8 @@ export function MatrixCell({
         onClick={onClick}
         onMouseEnter={() => onHover(true)}
         onMouseLeave={() => onHover(false)}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
         sx={{
           width: '100%',
           height: '100%',
@@ -161,7 +170,11 @@ export function MatrixCell({
           border: getBorder(),
           outline: isFocused ? '2px solid #90caf9' : 'none',
           outlineOffset: isFocused ? -2 : 0,
-          boxShadow: isFocused ? '0 0 0 2px rgba(25, 118, 210, 0.3)' : 'none',
+          boxShadow: isSelected
+            ? '0 0 0 2px rgba(33, 150, 243, 0.4), inset 0 0 8px rgba(33, 150, 243, 0.2)'
+            : isFocused
+            ? '0 0 0 2px rgba(25, 118, 210, 0.3)'
+            : 'none',
           borderRadius: 0.5,
           transition: 'all 0.2s ease',
           position: 'relative',
