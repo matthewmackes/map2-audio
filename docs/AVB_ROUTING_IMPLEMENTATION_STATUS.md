@@ -63,6 +63,11 @@
   - apply/discard + undo/redo assertions for staged connect/disconnect flows
 - API-facing notification contract coverage added:
   - `web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx`
+- Batch action notification contract coverage added:
+  - connect success/failure notifications
+  - disconnect mixed success/failure notifications
+  - locked-route skip warning behavior
+  - `web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx`
 - Multi-node route/topology type alignment completed for build stability:
   - `web/src/app/components/AvbRouting/context/routingReducer.ts`
   - `web/src/app/components/AvbRouting/context/RoutingContext.tsx`
@@ -83,7 +88,6 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add focused tests for batch connect/disconnect notification contracts.
 - Add CI artifact upload for AVB routing jest reports (machine-readable).
 
 ### Phase 4+
@@ -97,6 +101,6 @@
 
 ## Next Recommended Slice
 
-1. Add focused tests for batch connect/disconnect notification contracts.
-2. Add CI artifact upload for AVB routing jest reports (machine-readable).
-3. Add router-level error contract tests for 409 admission-denied payload display.
+1. Add CI artifact upload for AVB routing jest reports (machine-readable).
+2. Add router-level error contract tests for 409 admission-denied payload display.
+3. Add targeted reducer/component coverage for multi-node route updates.

@@ -1,12 +1,14 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { RoutingGrid } from './RoutingGrid'
 import type { Endpoint, Route } from '../../types'
 
 const mockDispatch = jest.fn()
 const mockPatchMutate = jest.fn()
 const mockUnpatchMutate = jest.fn()
+const mockUnpatchMutateAsync = jest.fn()
 const mockBatchMutateAsync = jest.fn()
+const mockClearSelection = jest.fn()
 
 const mockNotify = {
   success: jest.fn(),
@@ -21,6 +23,7 @@ const mockNotify = {
 let mockState: any
 let mockTalkers: Endpoint[] = []
 let mockListeners: Endpoint[] = []
+let mockSelectedCells: Array<{ row: number; col: number }> = []
 
 function makeEndpoint(overrides: Partial<Endpoint>): Endpoint {
   return {
@@ -49,10 +52,14 @@ function makeEndpoint(overrides: Partial<Endpoint>): Endpoint {
 }
 
 function makeConnectedRoute(locked = false): Route {
+  return makeRoute('talker-1', 'listener-1', locked)
+}
+
+function makeRoute(talker_id: string, listener_id: string, locked = false): Route {
   return {
-    id: 'talker-1→listener-1',
-    talker_id: 'talker-1',
-    listener_id: 'listener-1',
+    id: `${talker_id}→${listener_id}`,
+    talker_id,
+    listener_id,
     state: 'connected',
     established_time: '2026-02-17T00:00:00Z',
     error_message: null,
@@ -96,7 +103,7 @@ jest.mock('../../context/RoutingContext', () => ({
 
 jest.mock('../../hooks/useAvbApi', () => ({
   usePatchMutation: () => ({ mutate: mockPatchMutate }),
-  useUnpatchMutation: () => ({ mutate: mockUnpatchMutate, mutateAsync: jest.fn() }),
+  useUnpatchMutation: () => ({ mutate: mockUnpatchMutate, mutateAsync: mockUnpatchMutateAsync }),
   useBatchPatchMutation: () => ({ mutateAsync: mockBatchMutateAsync }),
 }))
 
@@ -113,14 +120,15 @@ jest.mock('../../hooks/useDragSelection', () => ({
   useDragSelection: () => ({
     isDragging: false,
     selectionRect: null,
-    selectedCells: [],
+    selectedCells: mockSelectedCells,
     isMultiSelect: false,
     handleMouseDown: jest.fn(),
     handleMouseMove: jest.fn(),
     handleMouseUp: jest.fn(),
-    clearSelection: jest.fn(),
-    isCellSelected: () => false,
-    getSelectedCells: () => [],
+    clearSelection: mockClearSelection,
+    isCellSelected: (row: number, col: number) =>
+      mockSelectedCells.some((cell) => cell.row === row && cell.col === col),
+    getSelectedCells: () => mockSelectedCells,
   }),
 }))
 
@@ -140,15 +148,29 @@ jest.mock('./StickyHeaders', () => ({ StickyHeaders: () => null }))
 jest.mock('./ConnectionHighlight', () => ({ ConnectionHighlight: () => null }))
 jest.mock('./CrosshairOverlay', () => ({ CrosshairOverlay: () => null }))
 jest.mock('./SelectionOverlay', () => ({ SelectionOverlay: () => null }))
-jest.mock('./BatchActionsBar', () => ({ BatchActionsBar: () => null }))
+jest.mock('./BatchActionsBar', () => ({
+  BatchActionsBar: ({ onConnectAll, onDisconnectAll }: any) => (
+    <div>
+      <button data-testid="batch-connect" onClick={() => void onConnectAll()} type="button">
+        batch-connect
+      </button>
+      <button data-testid="batch-disconnect" onClick={() => void onDisconnectAll()} type="button">
+        batch-disconnect
+      </button>
+    </div>
+  ),
+}))
 
 describe('RoutingGrid notification contracts', () => {
   beforeEach(() => {
     mockDispatch.mockReset()
     mockPatchMutate.mockReset()
     mockUnpatchMutate.mockReset()
+    mockUnpatchMutateAsync.mockReset()
     mockBatchMutateAsync.mockReset()
+    mockClearSelection.mockReset()
     Object.values(mockNotify).forEach((fn) => typeof fn === 'function' && fn.mockReset())
+    mockSelectedCells = []
 
     mockTalkers = [
       makeEndpoint({
@@ -260,5 +282,182 @@ describe('RoutingGrid notification contracts', () => {
       payload: 'Cannot disconnect locked route: talker-1→listener-1',
     })
     expect(mockNotify.warning).toHaveBeenCalledWith('Route is locked: Talker A -> Listener A')
+  })
+
+  it('shows batch connect success notification and clears selection', async () => {
+    mockTalkers = [
+      makeEndpoint({
+        endpoint_id: 'talker-1',
+        direction: 'talker',
+        unique_id: 1,
+        device_name: 'Talker A',
+      }),
+      makeEndpoint({
+        endpoint_id: 'talker-2',
+        direction: 'talker',
+        unique_id: 3,
+        device_name: 'Talker B',
+      }),
+    ]
+    mockListeners = [
+      makeEndpoint({
+        endpoint_id: 'listener-1',
+        direction: 'listener',
+        unique_id: 2,
+        device_name: 'Listener A',
+      }),
+    ]
+    mockState.endpoints = {
+      'talker-1': mockTalkers[0],
+      'talker-2': mockTalkers[1],
+      'listener-1': mockListeners[0],
+    }
+    mockSelectedCells = [
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+    ]
+    mockBatchMutateAsync.mockImplementation(async (_operations: any, options: any) => {
+      options?.onSuccess?.()
+    })
+
+    render(<RoutingGrid />)
+    fireEvent.click(screen.getByTestId('batch-connect'))
+
+    await waitFor(() => {
+      expect(mockBatchMutateAsync).toHaveBeenCalledWith(
+        [
+          { talker_id: 'talker-1', listener_id: 'listener-1', action: 'connect' },
+          { talker_id: 'talker-2', listener_id: 'listener-1', action: 'connect' },
+        ],
+        expect.any(Object)
+      )
+    })
+    expect(mockNotify.success).toHaveBeenCalledWith('Successfully connected 2 routes')
+    expect(mockClearSelection).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows batch connect failure notification and dispatches SET_ERROR', async () => {
+    mockSelectedCells = [{ row: 0, col: 0 }]
+    mockBatchMutateAsync.mockImplementation(async (_operations: any, options: any) => {
+      options?.onError?.(new Error('Admission denied'))
+    })
+
+    render(<RoutingGrid />)
+    fireEvent.click(screen.getByTestId('batch-connect'))
+
+    await waitFor(() => {
+      expect(mockNotify.error).toHaveBeenCalledWith('Batch connect failed: Admission denied')
+    })
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_ERROR',
+      payload: 'Admission denied',
+    })
+    expect(mockClearSelection).not.toHaveBeenCalled()
+  })
+
+  it('shows mixed success/failure notifications for batch disconnect', async () => {
+    mockTalkers = [
+      makeEndpoint({
+        endpoint_id: 'talker-1',
+        direction: 'talker',
+        unique_id: 1,
+        device_name: 'Talker A',
+      }),
+      makeEndpoint({
+        endpoint_id: 'talker-2',
+        direction: 'talker',
+        unique_id: 3,
+        device_name: 'Talker B',
+      }),
+    ]
+    mockListeners = [
+      makeEndpoint({
+        endpoint_id: 'listener-1',
+        direction: 'listener',
+        unique_id: 2,
+        device_name: 'Listener A',
+      }),
+    ]
+    mockState.endpoints = {
+      'talker-1': mockTalkers[0],
+      'talker-2': mockTalkers[1],
+      'listener-1': mockListeners[0],
+    }
+    mockState.liveRoutes = {
+      'talker-1→listener-1': makeRoute('talker-1', 'listener-1', false),
+      'talker-2→listener-1': makeRoute('talker-2', 'listener-1', false),
+    }
+    mockSelectedCells = [
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+    ]
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    mockUnpatchMutateAsync.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('timeout'))
+
+    render(<RoutingGrid />)
+    fireEvent.click(screen.getByTestId('batch-disconnect'))
+
+    await waitFor(() => {
+      expect(mockNotify.success).toHaveBeenCalledWith('Successfully disconnected 1 route')
+      expect(mockNotify.error).toHaveBeenCalledWith('Failed to disconnect 1 route')
+    })
+    expect(mockUnpatchMutateAsync).toHaveBeenCalledTimes(2)
+    expect(mockClearSelection).toHaveBeenCalledTimes(1)
+    errorSpy.mockRestore()
+  })
+
+  it('warns on locked routes and disconnects only unlocked routes in batch', async () => {
+    mockTalkers = [
+      makeEndpoint({
+        endpoint_id: 'talker-1',
+        direction: 'talker',
+        unique_id: 1,
+        device_name: 'Talker A',
+      }),
+      makeEndpoint({
+        endpoint_id: 'talker-2',
+        direction: 'talker',
+        unique_id: 3,
+        device_name: 'Talker B',
+      }),
+    ]
+    mockListeners = [
+      makeEndpoint({
+        endpoint_id: 'listener-1',
+        direction: 'listener',
+        unique_id: 2,
+        device_name: 'Listener A',
+      }),
+    ]
+    mockState.endpoints = {
+      'talker-1': mockTalkers[0],
+      'talker-2': mockTalkers[1],
+      'listener-1': mockListeners[0],
+    }
+    mockState.liveRoutes = {
+      'talker-1→listener-1': makeRoute('talker-1', 'listener-1', true),
+      'talker-2→listener-1': makeRoute('talker-2', 'listener-1', false),
+    }
+    mockSelectedCells = [
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+    ]
+    mockUnpatchMutateAsync.mockResolvedValue(undefined)
+
+    render(<RoutingGrid />)
+    fireEvent.click(screen.getByTestId('batch-disconnect'))
+
+    await waitFor(() => {
+      expect(mockNotify.warning).toHaveBeenCalledWith(
+        'Skipping locked route: Talker A -> Listener A'
+      )
+      expect(mockNotify.success).toHaveBeenCalledWith('Successfully disconnected 1 route')
+    })
+    expect(mockUnpatchMutateAsync).toHaveBeenCalledTimes(1)
+    expect(mockUnpatchMutateAsync).toHaveBeenCalledWith({
+      talker_id: 'talker-2',
+      listener_id: 'listener-1',
+    })
+    expect(mockClearSelection).toHaveBeenCalledTimes(1)
   })
 })
