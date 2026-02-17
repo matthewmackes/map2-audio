@@ -26,6 +26,40 @@ import type {
 
 const API_BASE = '/api/avb';
 
+function extractRemediationHint(detailObj: Record<string, unknown>): string | null {
+  const remediation = detailObj.remediation;
+
+  if (typeof remediation === 'string' && remediation.trim()) {
+    return remediation.trim();
+  }
+
+  if (Array.isArray(remediation)) {
+    const firstHint = remediation.find(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0
+    );
+    if (firstHint) {
+      return firstHint.trim();
+    }
+  }
+
+  return null;
+}
+
+function appendRemediation(message: string, remediationHint: string | null): string {
+  if (!remediationHint) {
+    return message;
+  }
+
+  const normalizedMessage = message.toLowerCase();
+  const normalizedHint = remediationHint.toLowerCase();
+  if (normalizedMessage.includes(normalizedHint)) {
+    return message;
+  }
+
+  const separator = message.endsWith('.') ? '' : '.';
+  return `${message}${separator} Remediation: ${remediationHint}`;
+}
+
 function extractErrorMessage(errorData: unknown, fallback: string): string {
   if (typeof errorData === 'string' && errorData.trim()) {
     return errorData;
@@ -49,21 +83,22 @@ function extractErrorMessage(errorData: unknown, fallback: string): string {
       const code = typeof detailObj.code === 'string' ? detailObj.code : null;
       const message = typeof detailObj.message === 'string' ? detailObj.message : null;
       const reason = typeof detailObj.reason === 'string' ? detailObj.reason : null;
+      const remediationHint = extractRemediationHint(detailObj);
 
       if (message && code) {
-        return `${message} (${code})`;
+        return appendRemediation(`${message} (${code})`, remediationHint);
       }
       if (message) {
-        return message;
+        return appendRemediation(message, remediationHint);
       }
       if (reason && code) {
-        return `${reason} (${code})`;
+        return appendRemediation(`${reason} (${code})`, remediationHint);
       }
       if (reason) {
-        return reason;
+        return appendRemediation(reason, remediationHint);
       }
       if (code) {
-        return code;
+        return appendRemediation(code, remediationHint);
       }
     }
   }

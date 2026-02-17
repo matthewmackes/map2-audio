@@ -77,6 +77,9 @@
 - CI artifact upload added for AVB routing Jest reports:
   - `.github/workflows/ci-cd.yml` now emits `reports/avb-routing-jest.json`
   - report uploaded as `avb-routing-jest-report` artifact with `if: always()`
+- Router-level 409 admission-denied error contracts covered:
+  - `web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts`
+  - `useAvbApi.ts` now appends remediation hints from SRP denial payloads for operator-facing notifications
 
 ---
 
@@ -91,7 +94,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add router-level error contract tests for 409 admission-denied payload display.
+- Expand integration coverage for cross-node route lifecycle transitions.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -104,6 +107,6 @@
 
 ## Next Recommended Slice
 
-1. Add router-level error contract tests for 409 admission-denied payload display.
-2. Add targeted reducer/component coverage for multi-node route updates.
-3. Add API/reducer integration tests for cross-node route lifecycle transitions.
+1. Add targeted reducer/component coverage for multi-node route updates.
+2. Add API/reducer integration tests for cross-node route lifecycle transitions.
+3. Add focused UI assertions for cross-node state/health badges in matrix and topology views.
