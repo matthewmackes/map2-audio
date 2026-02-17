@@ -148,6 +148,9 @@
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
   - validates node-tab click dispatch contract (`SET_VIEW_MODE` + `SELECT_NODE`) and all-nodes dispatch behavior
+- Multi-select retention integration assertions added for node-status churn:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates `selected_node_ids` and `useFilteredEndpoints()` output remain stable through node online/degraded/offline transitions
 
 ---
 
@@ -162,7 +165,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add multi-select retention integration assertions across node status churn.
+- Add inspector-context assertions for `multi_select` node mode.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -175,6 +178,6 @@
 
 ## Next Recommended Slice
 
-1. Add multi-select retention integration assertions across node status churn.
-2. Add inspector-context assertions for `multi_select` node mode.
-3. Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
+1. Add inspector-context assertions for `multi_select` node mode.
+2. Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
+3. Add node-removal/rejoin integration assertions while multi-select state is active.

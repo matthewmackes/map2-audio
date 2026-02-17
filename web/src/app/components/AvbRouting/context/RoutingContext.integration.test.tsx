@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { RoutingProvider, useRoutingState } from './RoutingContext'
+import { RoutingProvider, useFilteredEndpoints, useRoutingState } from './RoutingContext'
 import { initialRoutingState } from '../types'
 import type {
   AvbNode,
@@ -121,6 +121,22 @@ function RoutingStateProbe() {
       <span data-testid="local-node-id">{state.network.nodeSelection.local_node_id}</span>
       <span data-testid="node-b-status">{nodeBStatus}</span>
       <span data-testid="cross-route-ids">{crossNodeRouteIds}</span>
+    </div>
+  )
+}
+
+function MultiSelectProbe() {
+  const state = useRoutingState()
+  const filteredEndpointIds = useFilteredEndpoints()
+    .map((endpoint) => endpoint.endpoint_id)
+    .sort()
+    .join('|') || 'none'
+  const selectedNodeIds = [...state.network.nodeSelection.selected_node_ids].sort().join('|') || 'none'
+
+  return (
+    <div>
+      <span data-testid="multi-selected-node-ids">{selectedNodeIds}</span>
+      <span data-testid="multi-endpoint-ids">{filteredEndpointIds}</span>
     </div>
   )
 }
@@ -345,6 +361,82 @@ describe('RoutingContext API/reducer integration', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('cross-route-ids').textContent).toBe('talker-2→listener-2')
+    })
+  })
+
+  it('retains multi-select node set and filtered endpoint results across node status churn', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockConnectionsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-c',
+      direction: 'talker',
+      unique_id: 3,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+        [endpointC.endpoint_id]: endpointC,
+      },
+    }
+
+    const { rerender } = render(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+    })
+
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'offline' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'degraded' }),
+    ]
+
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
     })
   })
 })
