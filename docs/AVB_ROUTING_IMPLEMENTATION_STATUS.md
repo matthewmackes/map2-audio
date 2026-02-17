@@ -74,6 +74,9 @@
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
 - CI summary output added for AVB routing frontend tests:
   - `.github/workflows/ci-cd.yml` now records result, exit code, and timing in `$GITHUB_STEP_SUMMARY`
+- CI artifact upload added for AVB routing Jest reports:
+  - `.github/workflows/ci-cd.yml` now emits `reports/avb-routing-jest.json`
+  - report uploaded as `avb-routing-jest-report` artifact with `if: always()`
 
 ---
 
@@ -88,7 +91,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add CI artifact upload for AVB routing jest reports (machine-readable).
+- Add router-level error contract tests for 409 admission-denied payload display.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -101,6 +104,6 @@
 
 ## Next Recommended Slice
 
-1. Add CI artifact upload for AVB routing jest reports (machine-readable).
-2. Add router-level error contract tests for 409 admission-denied payload display.
-3. Add targeted reducer/component coverage for multi-node route updates.
+1. Add router-level error contract tests for 409 admission-denied payload display.
+2. Add targeted reducer/component coverage for multi-node route updates.
+3. Add API/reducer integration tests for cross-node route lifecycle transitions.

@@ -118,8 +118,9 @@ jobs:
       id: avb_tests
       run: |
         START_TS=$(date +%s)
+        mkdir -p reports
         set +e
-        npm run test:avb-routing
+        npm run test:avb-routing -- --json --outputFile=reports/avb-routing-jest.json
         TEST_EXIT=$?
         END_TS=$(date +%s)
         DURATION=$((END_TS - START_TS))
@@ -140,7 +141,16 @@ jobs:
           echo "- Result: ${{ steps.avb_tests.outcome }}"
           echo "- Exit code: ${{ steps.avb_tests.outputs.exit_code }}"
           echo "- Duration: ${{ steps.avb_tests.outputs.duration }}s"
+          echo "- Report artifact: avb-routing-jest-report (`reports/avb-routing-jest.json`)"
         } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload AVB routing Jest report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: avb-routing-jest-report
+        path: reports/avb-routing-jest.json
+        if-no-files-found: warn
     
     - name: Build
       working-directory: ./web
