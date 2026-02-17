@@ -488,4 +488,114 @@ describe('TopBar filter controls provider integration', () => {
       expect(screen.queryByTestId('scene-diff-preview')).toBeNull()
     })
   })
+
+  it('replaces active diff selections with newly saved scenes after lifecycle churn', async () => {
+    const talker = makeEndpoint({
+      endpoint_id: 'talker-1',
+      direction: 'talker',
+      unique_id: 21,
+      device_name: 'Talker One',
+    })
+    const listener = makeEndpoint({
+      endpoint_id: 'listener-1',
+      direction: 'listener',
+      unique_id: 22,
+      device_name: 'Listener One',
+    })
+    const liveRoute = makeSceneRoute('talker-1', 'listener-1')
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [talker.endpoint_id]: talker,
+        [listener.endpoint_id]: listener,
+      },
+      liveRoutes: {
+        [liveRoute.id]: liveRoute,
+      },
+      scenes: {
+        'scene-legacy-a': {
+          id: 'scene-legacy-a',
+          name: 'Legacy Baseline v1',
+          description: '',
+          routes: [liveRoute],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-legacy-b': {
+          id: 'scene-legacy-b',
+          name: 'Legacy Compare v1',
+          description: '',
+          routes: [liveRoute],
+          timestamp: '2026-02-17T00:01:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-legacy-a',
+        compare_scene_id: 'scene-legacy-b',
+        preview: null,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-baseline').textContent).toContain('Legacy Baseline v1')
+      expect(screen.getByTestId('topbar-scene-status-compare').textContent).toContain('Legacy Compare v1')
+      expect(screen.getByTestId('topbar-scene-status-readiness').textContent).toContain('Diff selection ready')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'Baseline Scene v2' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'Compare Scene v2' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-count').textContent).toContain('4 scenes')
+    })
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Legacy Baseline v1' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Legacy Compare v1' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-count').textContent).toContain('2 scenes')
+      expect(screen.getByTestId('topbar-scene-status-baseline').textContent).toContain('Baseline: None')
+      expect(screen.getByTestId('topbar-scene-status-compare').textContent).toContain('Compare: None')
+      expect(screen.getByTestId('topbar-scene-status-readiness').textContent).toContain('Diff selection incomplete')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene v2' }))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene v2' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-baseline').textContent).toContain('Baseline Scene v2')
+      expect(screen.getByTestId('topbar-scene-status-compare').textContent).toContain('Compare Scene v2')
+      expect(screen.getByTestId('topbar-scene-status-readiness').textContent).toContain('Diff selection ready')
+      expect(screen.getByTestId('scene-diff-preview')).toBeTruthy()
+      expect(screen.getByTestId('scene-diff-preview-total-changes').textContent).toContain('Total changes: 0')
+    })
+  })
 })

@@ -307,6 +307,20 @@
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
   - renders reducer scene-diff error context directly in the scene-diff controls popover for lightweight operator remediation
+- Lightweight TopBar scene management controls added for save/recall/delete workflows:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds reducer-backed scene save, recall, and delete actions in TopBar without introducing full modal dialog flows
+- Read-only scene inventory/status strip added to TopBar for diff readiness visibility:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - surfaces scene count plus baseline/compare selection availability and stale/ready/incomplete state before opening scene-diff controls
+- Provider-level scene lifecycle churn coverage added for replacement selection flow:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates active diff selections can be replaced with newly saved scenes after delete churn and that preview generation resumes correctly
+- AVB routing test command extended with TopBar scene-management suite:
+  - `package.json`
+  - includes `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
 
 ---
 
@@ -331,6 +345,6 @@
 
 ## Next Recommended Slice
 
-1. Continue Phase 4 scene management UX by adding lightweight scene save/recall/delete controls in TopBar (without full modal workflows yet).
-2. Add a read-only scene inventory/status strip that makes baseline/compare availability explicit before opening scene-diff controls.
-3. Add provider-level integration coverage for scene lifecycle churn where active diff selections are replaced by newly saved/renamed scenes.
+1. Add scene metadata editing/rename support (name/description/tags) with deterministic reducer and TopBar tests.
+2. Add explicit destructive-action guardrails for scene delete/recall paths (confirmation affordance + operator-facing impact text).
+3. Add provider-level integration coverage for duplicate-name scenes and deterministic selection behavior in TopBar dropdowns.

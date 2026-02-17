@@ -37,6 +37,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -62,7 +63,10 @@ export function TopBar() {
   const notify = useNotifications();
   const [topologyModalOpen, setTopologyModalOpen] = useState(false);
   const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
+  const [scenesAnchor, setScenesAnchor] = useState<HTMLElement | null>(null);
   const [sceneDiffAnchor, setSceneDiffAnchor] = useState<HTMLElement | null>(null);
+  const [sceneNameDraft, setSceneNameDraft] = useState('');
+  const [selectedSceneId, setSelectedSceneId] = useState('');
 
   const handleFiltersOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setFiltersAnchor(event.currentTarget);
@@ -78,6 +82,17 @@ export function TopBar() {
 
   const handleSceneDiffClose = () => {
     setSceneDiffAnchor(null);
+  };
+
+  const handleScenesOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setScenesAnchor(event.currentTarget);
+    if (!sceneNameDraft.trim()) {
+      setSceneNameDraft(`Scene ${Object.keys(state.scenes).length + 1}`);
+    }
+  };
+
+  const handleScenesClose = () => {
+    setScenesAnchor(null);
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,6 +220,76 @@ export function TopBar() {
     });
   };
 
+  const handleSceneNameDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSceneNameDraft(event.target.value);
+  };
+
+  const handleSceneSelectionChange = (event: SelectChangeEvent<string>) => {
+    setSelectedSceneId(event.target.value || '');
+  };
+
+  const handleSaveScene = () => {
+    const routeCount = Object.keys(state.liveRoutes).length;
+    const fallbackName = `Scene ${Object.keys(state.scenes).length + 1}`;
+    const sceneName = sceneNameDraft.trim() || fallbackName;
+
+    dispatch({
+      type: 'SAVE_SCENE',
+      payload: {
+        name: sceneName,
+        description: 'Saved from TopBar',
+        tags: ['topbar'],
+      },
+    });
+    notify.success(`Saved scene "${sceneName}" (${routeCount} routes).`);
+    setSceneNameDraft('');
+  };
+
+  const handleRecallScene = () => {
+    if (!selectedSceneId) {
+      notify.warning('Select a saved scene before recalling.');
+      return;
+    }
+
+    const scene = state.scenes[selectedSceneId];
+    if (!scene) {
+      notify.warning('Selected scene is no longer available. Choose another saved scene.');
+      setSelectedSceneId('');
+      return;
+    }
+
+    dispatch({
+      type: 'RECALL_SCENE',
+      payload: {
+        scene_id: scene.id,
+      },
+    });
+    notify.info(`Recalled scene "${scene.name}".`);
+  };
+
+  const handleDeleteScene = () => {
+    if (!selectedSceneId) {
+      notify.warning('Select a saved scene before deleting.');
+      return;
+    }
+
+    const scene = state.scenes[selectedSceneId];
+    if (!scene) {
+      notify.warning('Selected scene is no longer available. Choose another saved scene.');
+      setSelectedSceneId('');
+      return;
+    }
+
+    dispatch({
+      type: 'DELETE_SCENE',
+      payload: {
+        scene_id: scene.id,
+      },
+    });
+    notify.info(`Deleted scene "${scene.name}".`);
+    setSelectedSceneId('');
+  };
+
   const handleGenerateSceneDiff = () => {
     const baselineSceneId = state.sceneDiff.baseline_scene_id;
     const compareSceneId = state.sceneDiff.compare_scene_id;
@@ -295,6 +380,7 @@ export function TopBar() {
   const connectedCount = Object.values(state.liveRoutes).filter(r => r.state === 'connected').length;
   const endpointCount = Object.keys(state.endpoints).length;
   const filtersOpen = Boolean(filtersAnchor);
+  const scenesOpen = Boolean(scenesAnchor);
   const sceneDiffOpen = Boolean(sceneDiffAnchor);
   const defaultFilters = initialRoutingState.filters;
   const activeFilterCount = [
@@ -318,8 +404,32 @@ export function TopBar() {
   const sceneOptions = Object.values(state.scenes)
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name));
+  const selectedScene = selectedSceneId ? state.scenes[selectedSceneId] : null;
+  const selectedSceneIdValue = selectedScene ? selectedScene.id : '';
   const selectedBaselineScene = state.sceneDiff.baseline_scene_id ?? '';
   const selectedCompareScene = state.sceneDiff.compare_scene_id ?? '';
+  const baselineScene = state.sceneDiff.baseline_scene_id
+    ? state.scenes[state.sceneDiff.baseline_scene_id]
+    : null;
+  const compareScene = state.sceneDiff.compare_scene_id
+    ? state.scenes[state.sceneDiff.compare_scene_id]
+    : null;
+  const baselineSceneLabel = baselineScene
+    ? baselineScene.name
+    : state.sceneDiff.baseline_scene_id ? 'Missing' : 'None';
+  const compareSceneLabel = compareScene
+    ? compareScene.name
+    : state.sceneDiff.compare_scene_id ? 'Missing' : 'None';
+  const baselineSceneMissing = Boolean(state.sceneDiff.baseline_scene_id && !baselineScene);
+  const compareSceneMissing = Boolean(state.sceneDiff.compare_scene_id && !compareScene);
+  const sceneDiffSelectionStale = baselineSceneMissing || compareSceneMissing;
+  const sceneDiffSelectionReady =
+    Boolean(state.sceneDiff.baseline_scene_id && state.sceneDiff.compare_scene_id) && !sceneDiffSelectionStale;
+  const sceneDiffSelectionLabel = sceneDiffSelectionStale
+    ? 'Diff selection stale'
+    : sceneDiffSelectionReady
+      ? 'Diff selection ready'
+      : 'Diff selection incomplete';
   const sceneDiffError =
     state.error && state.error.toLowerCase().includes('scene diff')
       ? state.error
@@ -377,6 +487,36 @@ export function TopBar() {
           />
         </Box>
 
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }} data-testid="topbar-scene-status-strip">
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`${sceneOptions.length} scene${sceneOptions.length === 1 ? '' : 's'}`}
+            data-testid="topbar-scene-status-count"
+          />
+          <Chip
+            size="small"
+            variant="outlined"
+            color={baselineSceneMissing ? 'warning' : 'default'}
+            label={`Baseline: ${baselineSceneLabel}`}
+            data-testid="topbar-scene-status-baseline"
+          />
+          <Chip
+            size="small"
+            variant="outlined"
+            color={compareSceneMissing ? 'warning' : 'default'}
+            label={`Compare: ${compareSceneLabel}`}
+            data-testid="topbar-scene-status-compare"
+          />
+          <Chip
+            size="small"
+            variant="outlined"
+            color={sceneDiffSelectionStale ? 'warning' : sceneDiffSelectionReady ? 'success' : 'default'}
+            label={sceneDiffSelectionLabel}
+            data-testid="topbar-scene-status-readiness"
+          />
+        </Box>
+
         <Box sx={{ flex: 1 }} /> {/* Spacer */}
 
         {/* Filters */}
@@ -389,6 +529,19 @@ export function TopBar() {
             data-testid="topbar-filters-button"
           >
             Filters
+          </Button>
+        </Tooltip>
+
+        {/* Scenes */}
+        <Tooltip title="Save, recall, and delete scene snapshots">
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<BookmarkIcon />}
+            onClick={handleScenesOpen}
+            data-testid="topbar-scenes-button"
+          >
+            Scenes
           </Button>
         </Tooltip>
 
@@ -485,6 +638,109 @@ export function TopBar() {
           </Tooltip>
         </Box>
       </Toolbar>
+
+      <Popover
+        open={scenesOpen}
+        anchorEl={scenesAnchor}
+        onClose={handleScenesClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, width: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Scene Management
+          </Typography>
+
+          <TextField
+            size="small"
+            label="Scene Name"
+            value={sceneNameDraft}
+            onChange={handleSceneNameDraftChange}
+            inputProps={{ 'data-testid': 'topbar-scene-name-input' }}
+          />
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleSaveScene}
+              data-testid="topbar-scene-save"
+            >
+              Save Current
+            </Button>
+            <Chip
+              size="small"
+              variant="outlined"
+              label={`${Object.keys(state.liveRoutes).length} live routes`}
+              data-testid="topbar-scene-live-route-count"
+            />
+          </Box>
+
+          <Divider />
+
+          <FormControl size="small">
+            <InputLabel id="scene-action-select-label">Saved Scene</InputLabel>
+            <Select
+              labelId="scene-action-select-label"
+              label="Saved Scene"
+              value={selectedSceneIdValue}
+              onChange={handleSceneSelectionChange}
+              data-testid="topbar-scene-select"
+            >
+              <MenuItem value="" data-testid="topbar-scene-select-none">
+                <em>None</em>
+              </MenuItem>
+              {sceneOptions.map((scene) => (
+                <MenuItem
+                  key={scene.id}
+                  value={scene.id}
+                  data-testid={`topbar-scene-option-${sanitizeFilterIdValue(scene.name)}`}
+                >
+                  {scene.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            data-testid="topbar-scene-selected-summary"
+          >
+            {selectedScene
+              ? `Selected: ${selectedScene.name} (${selectedScene.routes.length} routes)`
+              : 'Select a saved scene to recall or delete.'}
+          </Typography>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                onClick={handleRecallScene}
+                data-testid="topbar-scene-recall"
+              >
+                Recall
+              </Button>
+              <Button
+                size="small"
+                color="error"
+                onClick={handleDeleteScene}
+                data-testid="topbar-scene-delete"
+              >
+                Delete
+              </Button>
+            </Box>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleScenesClose}
+              data-testid="topbar-scene-close"
+            >
+              Done
+            </Button>
+          </Box>
+        </Box>
+      </Popover>
 
       <Popover
         open={filtersOpen}
