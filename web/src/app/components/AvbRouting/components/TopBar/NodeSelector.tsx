@@ -69,12 +69,12 @@ function getDeviceIcon(node: AvbNode) {
 interface NodeTabProps {
   node: AvbNode;
   isLocal: boolean;
-  selected: boolean;
+  highlighted: boolean;
   tabValue: number;
   onClick: () => void;
 }
 
-function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
+function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -121,6 +121,8 @@ function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
         <Tab
           label={
             <Box
+              data-testid={`node-selector-label-${node.node_id}`}
+              data-node-selected={highlighted ? 'true' : 'false'}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -139,7 +141,7 @@ function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
                 component="span"
                 sx={{
                   fontSize: 13,
-                  fontWeight: selected ? 600 : 400,
+                  fontWeight: highlighted ? 600 : 400,
                   maxWidth: 100,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -161,6 +163,14 @@ function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
                 )}
               </Box>
 
+              <Box
+                component="span"
+                data-testid={`node-selector-selected-marker-${node.node_id}`}
+                sx={{ display: 'none' }}
+              >
+                {highlighted ? 'selected' : 'unselected'}
+              </Box>
+
               {/* Endpoint count badge */}
               <Chip
                 label={totalEndpoints}
@@ -168,8 +178,8 @@ function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
                 sx={{
                   height: 18,
                   fontSize: 10,
-                  bgcolor: selected ? node.color : 'transparent',
-                  color: selected ? '#fff' : 'text.secondary',
+                  bgcolor: highlighted ? node.color : 'transparent',
+                  color: highlighted ? '#fff' : 'text.secondary',
                   border: `1px solid ${node.color}`,
                   '& .MuiChip-label': { px: 0.75 },
                 }}
@@ -205,11 +215,12 @@ function NodeTab({ node, isLocal, selected, tabValue, onClick }: NodeTabProps) {
           value={tabValue}
           onClick={onClick}
           data-testid={`node-selector-tab-${node.node_id}`}
-          data-selected={selected ? 'true' : 'false'}
+          data-selected={highlighted ? 'true' : 'false'}
+          data-node-selected={highlighted ? 'true' : 'false'}
           sx={{
             minHeight: 48,
             textTransform: 'none',
-            borderBottom: selected ? `3px solid ${node.color}` : 'none',
+            borderBottom: highlighted ? `3px solid ${node.color}` : 'none',
             opacity: node.status === 'offline' ? 0.5 : 1,
           }}
         />
@@ -244,6 +255,7 @@ export function NodeSelector() {
 
   const currentNodeId = state.network.nodeSelection.current_node_id;
   const viewMode = state.network.nodeSelection.view_mode;
+  const selectedNodeIds = state.network.nodeSelection.selected_node_ids;
 
   // Filter to online nodes by default (configurable)
   const visibleNodes = state.network.nodeSelection.show_offline
@@ -349,19 +361,28 @@ export function NodeSelector() {
         />
 
         {/* Individual node tabs */}
-        {sortedVisibleNodes.map((node, index) => (
+        {sortedVisibleNodes.map((node, index) => {
+          const isNodeSelected =
+            viewMode === 'single_node'
+              ? currentNodeId === node.node_id
+              : viewMode === 'multi_select'
+                ? selectedNodeIds.includes(node.node_id)
+                : false;
+
+          return (
           <NodeTab
             key={node.node_id}
             node={node}
             isLocal={node.node_id === localNodeId}
-            selected={currentNodeId === node.node_id && viewMode === 'single_node'}
+            highlighted={isNodeSelected}
             tabValue={index + 1}
             onClick={() => {
               handleViewModeChange('single_node');
               handleNodeSelect(node.node_id);
             }}
           />
-        ))}
+          );
+        })}
       </Tabs>
 
       {/* Network stats */}

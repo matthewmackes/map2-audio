@@ -286,4 +286,24 @@ describe('NodeTree status badge behavior', () => {
 
     expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-selected')).toBe('true')
   })
+
+  it('marks multi-select node ids as selected', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local', 'node-degraded'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeTree />)
+
+    expect(screen.getByTestId('node-tree-item-node-local').getAttribute('data-selected')).toBe('true')
+    expect(screen.getByTestId('node-tree-item-node-degraded').getAttribute('data-selected')).toBe('true')
+    expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-selected')).toBe('false')
+  })
 })

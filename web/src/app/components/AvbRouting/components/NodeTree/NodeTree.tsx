@@ -151,6 +151,7 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
         onClick={onSelect}
         data-testid={`node-tree-item-${node.node_id}`}
         data-selected={isSelected ? 'true' : 'false'}
+        data-node-selected={isSelected ? 'true' : 'false'}
         sx={{
           py: 1,
           borderLeft: `4px solid ${isSelected ? node.color : 'transparent'}`,
@@ -283,8 +284,12 @@ export function NodeTree() {
   const { data: nodes = [] } = useNodes();
   const localNodeId = useLocalNodeId();
 
-  const currentNodeId = state.network.nodeSelection.current_node_id;
-  const showOfflineNodes = state.network.nodeSelection.show_offline;
+  const {
+    current_node_id: currentNodeId,
+    show_offline: showOfflineNodes,
+    view_mode: viewMode,
+    selected_node_ids: selectedNodeIds,
+  } = state.network.nodeSelection;
   const visibleNodes = showOfflineNodes ? nodes : nodes.filter((node) => node.status === 'online');
 
   const sortedNodes = sortNodesForNavigation(visibleNodes, localNodeId);
@@ -339,7 +344,13 @@ export function NodeTree() {
             key={node.node_id}
             node={node}
             isLocal={node.node_id === localNodeId}
-            isSelected={currentNodeId === node.node_id}
+            isSelected={
+              viewMode === 'single_node'
+                ? currentNodeId === node.node_id
+                : viewMode === 'multi_select'
+                  ? selectedNodeIds.includes(node.node_id)
+                  : false
+            }
             onSelect={() => handleNodeSelect(node.node_id)}
           />
         ))}

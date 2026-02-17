@@ -366,7 +366,7 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     const { rerender } = render(<NodeSelector />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('node-selector-tab-node-offline').getAttribute('data-selected')).toBe('true')
+      expect(screen.getByTestId('node-selector-selected-marker-node-offline').textContent).toBe('selected')
     })
 
     mockState = {
@@ -404,7 +404,7 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     rerender(<NodeSelector />)
 
     await waitFor(() => {
-      expect(screen.getByTestId('node-selector-tab-node-offline').getAttribute('data-selected')).toBe('true')
+      expect(screen.getByTestId('node-selector-selected-marker-node-offline').textContent).toBe('selected')
     })
   })
 
@@ -484,5 +484,34 @@ describe('NodeSelector degraded/offline badge visibility', () => {
       type: 'SET_VIEW_MODE',
       payload: 'all_nodes',
     })
+  })
+
+  it('aligns multi-select selected node ids across NodeSelector and NodeTree', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local', 'node-degraded'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(
+      <>
+        <NodeSelector />
+        <NodeTree />
+      </>,
+    )
+
+    expect(screen.getByTestId('node-selector-selected-marker-node-local').textContent).toBe('selected')
+    expect(screen.getByTestId('node-selector-selected-marker-node-degraded').textContent).toBe('selected')
+    expect(screen.getByTestId('node-selector-selected-marker-node-offline').textContent).toBe('unselected')
+
+    expect(screen.getByTestId('node-tree-item-node-local').getAttribute('data-node-selected')).toBe('true')
+    expect(screen.getByTestId('node-tree-item-node-degraded').getAttribute('data-node-selected')).toBe('true')
+    expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-node-selected')).toBe('false')
   })
 })

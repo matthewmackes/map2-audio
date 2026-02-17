@@ -154,6 +154,12 @@
 - Inspector multi-select context assertions added:
   - `web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx`
   - validates selected route details hide outside `selected_node_ids` and restore when relevant node IDs are re-included
+- Cross-surface multi-select selection assertions added:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates `selected_node_ids` are reflected consistently across NodeTree and NodeSelector in `multi_select` mode
 
 ---
 
@@ -168,7 +174,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
+- Add node-removal/rejoin integration assertions while multi-select state is active.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -181,6 +187,6 @@
 
 ## Next Recommended Slice
 
-1. Add cross-surface assertions for `selected_node_ids` behavior in `multi_select` mode.
-2. Add node-removal/rejoin integration assertions while multi-select state is active.
-3. Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
+1. Add node-removal/rejoin integration assertions while multi-select state is active.
+2. Add dispatch-contract tests for explicit `TOGGLE_NODE_SELECTION` UI flows.
+3. Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
