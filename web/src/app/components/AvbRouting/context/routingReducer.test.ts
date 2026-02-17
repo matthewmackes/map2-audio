@@ -375,6 +375,99 @@ describe('routingReducer safe mode workflow history', () => {
     expect(applied.liveRoutes[connectRouteId]?.listener_node_id).toBe('node-b')
     expect(applied.liveRoutes[connectRouteId]?.cross_node).toBe(true)
   })
+
+  it('restores mixed safe-batch staged intent via undo/redo after API re-sync churn', () => {
+    const connectRouteId = 'talker-1→listener-1'
+    const disconnectRouteId = 'talker-2→listener-2'
+    const churnRouteId = 'talker-3→listener-3'
+
+    const talkerA = makeEndpoint({
+      endpoint_id: 'talker-1',
+      direction: 'talker',
+      unique_id: 1,
+      node_id: 'node-a',
+    })
+    const listenerA = makeEndpoint({
+      endpoint_id: 'listener-1',
+      direction: 'listener',
+      unique_id: 2,
+      node_id: 'node-b',
+    })
+    const talkerB = makeEndpoint({
+      endpoint_id: 'talker-2',
+      direction: 'talker',
+      unique_id: 3,
+      node_id: 'node-a',
+    })
+    const listenerB = makeEndpoint({
+      endpoint_id: 'listener-2',
+      direction: 'listener',
+      unique_id: 4,
+      node_id: 'node-b',
+    })
+
+    let state = {
+      ...cloneState(),
+      endpoints: {
+        [talkerA.endpoint_id]: talkerA,
+        [listenerA.endpoint_id]: listenerA,
+        [talkerB.endpoint_id]: talkerB,
+        [listenerB.endpoint_id]: listenerB,
+      },
+      liveRoutes: {
+        [disconnectRouteId]: makeConnectedRoute(disconnectRouteId),
+      },
+    }
+
+    state = routingReducer(state, { type: 'ENTER_SAFE_MODE' })
+    state = routingReducer(state, {
+      type: 'BATCH_PATCH',
+      payload: {
+        operations: [
+          { action: 'connect', talker_id: 'talker-1', listener_id: 'listener-1' },
+          { action: 'disconnect', talker_id: 'talker-2', listener_id: 'listener-2' },
+        ],
+      },
+    })
+    state = routingReducer(state, {
+      type: 'CONNECTIONS_UPDATED',
+      payload: [makeConnectedRoute(churnRouteId)],
+    })
+    state = routingReducer(state, {
+      type: 'CONNECTIONS_UPDATED',
+      payload: [makeConnectedRoute(disconnectRouteId), makeConnectedRoute(churnRouteId)],
+    })
+
+    expect(state.safePatchMode).toBe(true)
+    expect(state.pendingRoutes[connectRouteId]?.state).toBe('connecting')
+    expect(state.pendingRoutes[disconnectRouteId]?.state).toBe('disconnecting')
+    expect(state.liveRoutes[disconnectRouteId]?.state).toBe('connected')
+    expect(state.liveRoutes[churnRouteId]?.state).toBe('connected')
+
+    const applied = routingReducer(state, { type: 'APPLY_SAFE_CHANGES' })
+    expect(applied.safePatchMode).toBe(false)
+    expect(applied.pendingRoutes[connectRouteId]).toBeUndefined()
+    expect(applied.pendingRoutes[disconnectRouteId]).toBeUndefined()
+    expect(applied.liveRoutes[connectRouteId]?.state).toBe('connected')
+    expect(applied.liveRoutes[disconnectRouteId]).toBeUndefined()
+    expect(applied.liveRoutes[churnRouteId]?.state).toBe('connected')
+
+    const undone = routingReducer(applied, { type: 'UNDO' })
+    expect(undone.safePatchMode).toBe(true)
+    expect(undone.pendingRoutes[connectRouteId]?.state).toBe('connecting')
+    expect(undone.pendingRoutes[disconnectRouteId]?.state).toBe('disconnecting')
+    expect(undone.liveRoutes[connectRouteId]).toBeUndefined()
+    expect(undone.liveRoutes[disconnectRouteId]?.state).toBe('connected')
+    expect(undone.liveRoutes[churnRouteId]?.state).toBe('connected')
+
+    const redone = routingReducer(undone, { type: 'REDO' })
+    expect(redone.safePatchMode).toBe(false)
+    expect(redone.pendingRoutes[connectRouteId]).toBeUndefined()
+    expect(redone.pendingRoutes[disconnectRouteId]).toBeUndefined()
+    expect(redone.liveRoutes[connectRouteId]?.state).toBe('connected')
+    expect(redone.liveRoutes[disconnectRouteId]).toBeUndefined()
+    expect(redone.liveRoutes[churnRouteId]?.state).toBe('connected')
+  })
 })
 
 describe('routingReducer multi-node route updates', () => {
