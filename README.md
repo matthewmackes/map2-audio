@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **640** TypeScript | **114** C++/H | **91** Docs | **193** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **640** TypeScript | **114** C++/H | **91** Docs | **195** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c32c635`](https://github.com/matthewmackes/map2-audio/commit/c32c6352c8e46949e0a35eb8e03e6303e43c468c) | avb-routing: fix history snapshots and cover safe-mode un... | Map2 Audio | 2026-02-16 |
+| [`29144fd`](https://github.com/matthewmackes/map2-audio/commit/29144fd6f875b4853812781218d043b90cf86f1d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`3a37b0e`](https://github.com/matthewmackes/map2-audio/commit/3a37b0eb6373c4ff4527aafa617005abac0af931) | avb-routing: add notification contract tests and CI summary | Map2 Audio | 2026-02-16 |
 | [`6ab1911`](https://github.com/matthewmackes/map2-audio/commit/6ab1911867c25aa7ddea5ab9ea32257874f95c96) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`5302465`](https://github.com/matthewmackes/map2-audio/commit/5302465e567839157a4036e0b216c787b05eebe1) | avb-routing: add reducer-backed keyboard integration tests | Map2 Audio | 2026-02-16 |
 | [`74410b0`](https://github.com/matthewmackes/map2-audio/commit/74410b03eb7e413d7fad08c26cc7cc560b32757b) | Add batch operations UI for drag selection | Map2 Audio | 2026-02-16 |
 | [`0ea758d`](https://github.com/matthewmackes/map2-audio/commit/0ea758d59e447a10f74b535c362acba64da695e7) | Add drag selection for batch routing operations | Map2 Audio | 2026-02-16 |
 | [`f9d5ca6`](https://github.com/matthewmackes/map2-audio/commit/f9d5ca6bef33b0585e86c8525ba3905cc3071364) | Add professional crosshair hover highlighting to routing ... | Map2 Audio | 2026-02-16 |
-| [`de79aaa`](https://github.com/matthewmackes/map2-audio/commit/de79aaaf4c6d0a7d1624daf5907b2f2d80548d24) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-02-16 |
-| [`7ce2a86`](https://github.com/matthewmackes/map2-audio/commit/7ce2a8637e2663c716b5757780666d30cade3137) | Add interactive network topology visualization with react... | Map2 Audio | 2026-02-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
