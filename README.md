@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **646** TypeScript | **114** C++/H | **91** Docs | **211** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **646** TypeScript | **114** C++/H | **91** Docs | **213** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`83235f8`](https://github.com/matthewmackes/map2-audio/commit/83235f86919050a95dd48eeb2094895cc50bc47b) | avb-routing: sync and replace stale cross-node route sets | Map2 Audio | 2026-02-16 |
+| [`c4e56ed`](https://github.com/matthewmackes/map2-audio/commit/c4e56ed7aad60a148c3aac23f3eaeba678c77ace) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`2b1aa66`](https://github.com/matthewmackes/map2-audio/commit/2b1aa6687883a18e9639cdd659a4d22431365d89) | avb-routing: cover degraded node health badges | Map2 Audio | 2026-02-16 |
 | [`c92b092`](https://github.com/matthewmackes/map2-audio/commit/c92b092c409a25265229c975f10aec8a0e8fc549) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`3ee7a25`](https://github.com/matthewmackes/map2-audio/commit/3ee7a251da87462775e885e1114a71f75ae97d32) | avb-routing: cover offline cross-node route reconciliation | Map2 Audio | 2026-02-16 |
 | [`61efb59`](https://github.com/matthewmackes/map2-audio/commit/61efb59cb6f6fb7d04f56adc0de00edd51e0e39d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`fad4947`](https://github.com/matthewmackes/map2-audio/commit/fad49479ae99d22e63153ac1a12dbff94a141334) | avb-routing: add cross-node UI badge test coverage | Map2 Audio | 2026-02-16 |
 | [`81e9e3c`](https://github.com/matthewmackes/map2-audio/commit/81e9e3c3c2e72fbcb89f8702ba952600ae8974a3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`24052a8`](https://github.com/matthewmackes/map2-audio/commit/24052a88bd2000fb1d00863f1f0bf5dc4e8505a1) | avb-routing: add cross-node context integration coverage | Map2 Audio | 2026-02-16 |
-| [`0ac0eab`](https://github.com/matthewmackes/map2-audio/commit/0ac0eab8cbc3d6bb7e537ceeea510b705f77cc40) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
