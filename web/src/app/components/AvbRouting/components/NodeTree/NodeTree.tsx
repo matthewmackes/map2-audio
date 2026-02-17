@@ -153,6 +153,11 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
   const [expanded, setExpanded] = useState(false);
   const endpoints = useFilteredEndpoints();
 
+  const handleExpandToggle = (event: React.SyntheticEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setExpanded((value) => !value);
+  };
+
   // Filter endpoints belonging to this node
   const nodeEndpoints = endpoints.filter((ep) => ep.node_id === node.node_id);
   const talkers = nodeEndpoints.filter((ep) => ep.direction === 'talker');
@@ -181,10 +186,15 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
         {/* Expand/collapse icon */}
         <IconButton
           size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded(!expanded);
+          onClick={handleExpandToggle}
+          onKeyDown={(event) => {
+            if (!isActivationKey(event.key)) {
+              return;
+            }
+            event.preventDefault();
+            handleExpandToggle(event);
           }}
+          data-testid={`node-tree-expand-${node.node_id}`}
           sx={{ mr: 0.5, width: 24, height: 24 }}
         >
           {expanded ? (

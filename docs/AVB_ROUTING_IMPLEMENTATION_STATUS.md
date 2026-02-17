@@ -208,6 +208,13 @@
 - Multi-select rapid API connection refresh churn coverage added:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates multi-select node/endpoint context remains stable while connection payloads rapidly alternate between active and empty route sets
+- Keyboard-safe NodeTree expand/collapse controls added:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - adds keyboard activation + propagation guardrails on expand controls so endpoint expansion does not trigger row selection/toggle dispatch
+- Concurrent node-status + connection refresh churn coverage added for multi-select:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates selected-node endpoint context remains stable while both node statuses and connection sets churn together
 
 ---
 
@@ -233,5 +240,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add keyboard-first multi-select flows for NodeTree expand/collapse controls.
-3. Expand integration coverage for multi-select workflows during concurrent node-status and connection refresh churn.
+2. Add keyboard-first multi-select operator flows for NodeSelector context menu trigger.
+3. Expand integration coverage for multi-select workflows during safe-patch + API refresh overlap windows.

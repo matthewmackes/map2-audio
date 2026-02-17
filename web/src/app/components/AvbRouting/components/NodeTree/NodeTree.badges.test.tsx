@@ -1,11 +1,12 @@
 import React from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NodeTree } from './NodeTree'
-import type { AvbNode } from '../../types'
+import type { AvbNode, Endpoint } from '../../types'
 
 let mockNodes: AvbNode[] = []
 let mockLocalNodeId = 'node-local'
 let mockState: any
+let mockFilteredEndpoints: Endpoint[] = []
 const mockDispatch = jest.fn()
 
 jest.mock('../../hooks/useNodeApi', () => ({
@@ -15,7 +16,7 @@ jest.mock('../../hooks/useNodeApi', () => ({
 
 jest.mock('../../context/RoutingContext', () => ({
   useRouting: () => ({ state: mockState, dispatch: mockDispatch }),
-  useFilteredEndpoints: () => [],
+  useFilteredEndpoints: () => mockFilteredEndpoints,
 }))
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {
@@ -69,10 +70,37 @@ function getRenderedNodeOrder(container: HTMLElement): string[] {
     .map((testId) => testId.replace('node-tree-item-', ''))
 }
 
+function makeEndpoint(overrides: Partial<Endpoint>): Endpoint {
+  return {
+    endpoint_id: 'endpoint-1',
+    entity_id: '001122fffe334455',
+    unique_id: 1,
+    direction: 'talker',
+    device_type: 'map2',
+    device_name: 'Endpoint',
+    channels: 2,
+    sample_rate: 48000,
+    format: '24-bit PCM',
+    mac_address: '00:11:22:33:44:55',
+    node_address: 'http://127.0.0.1:8080',
+    available: true,
+    last_seen: '2026-02-17T00:00:00Z',
+    node_id: 'node-local',
+    tags: [],
+    color: '#ffffff',
+    group: 'Default',
+    bank: 0,
+    pinned: false,
+    locked: false,
+    ...overrides,
+  }
+}
+
 describe('NodeTree status badge behavior', () => {
   beforeEach(() => {
     mockDispatch.mockReset()
     mockLocalNodeId = 'node-local'
+    mockFilteredEndpoints = []
     mockState = {
       network: {
         nodeSelection: {
@@ -205,6 +233,48 @@ describe('NodeTree status badge behavior', () => {
       type: 'TOGGLE_NODE_SELECTION',
       payload: 'node-offline',
     })
+  })
+
+  it('toggles node expansion from keyboard in multi-select mode without dispatching row selection', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    mockFilteredEndpoints = [
+      makeEndpoint({
+        endpoint_id: 'endpoint-offline-talker',
+        unique_id: 42,
+        direction: 'talker',
+        device_name: 'Offline Talker',
+        node_id: 'node-offline',
+      }),
+    ]
+
+    render(<NodeTree />)
+
+    expect(screen.queryByText('Offline Talker')).toBeNull()
+
+    fireEvent.keyDown(screen.getByTestId('node-tree-expand-node-offline'), { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(screen.getByText('Offline Talker')).toBeTruthy()
+    })
+    expect(mockDispatch).toHaveBeenCalledTimes(0)
+
+    fireEvent.keyDown(screen.getByTestId('node-tree-expand-node-offline'), { key: ' ' })
+
+    await waitFor(() => {
+      expect(screen.queryByText('Offline Talker')).toBeNull()
+    })
+    expect(mockDispatch).toHaveBeenCalledTimes(0)
   })
 
   it('hides degraded/offline nodes when show_offline is disabled', () => {
