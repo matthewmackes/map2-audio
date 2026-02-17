@@ -288,6 +288,14 @@
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
   - `package.json`
   - renders scene-diff summary counts + add/remove route lists when preview state is present, without introducing full dialog workflows
+- Minimal TopBar scene-diff operator controls added with focused control tests:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - `package.json`
+  - adds baseline/compare selection controls plus generate/clear actions in TopBar without introducing full scene-dialog workflows
+- Scene-diff error/reset integration coverage expanded for missing/invalid selections and delete-after-preview churn:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates reducer/provider error behavior when scene selections are missing/invalid and reset behavior when compared scenes are deleted after preview generation
 
 ---
 
@@ -313,5 +321,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add minimal scene-diff operator controls (baseline/compare selection + generate/clear actions) in TopBar without introducing full scene dialogs.
-3. Add integration coverage for scene-diff error/reset paths when selections are missing/invalid and when scene deletions occur after preview generation.
+2. Add provider-level integration coverage that TopBar scene-diff controls drive reducer state and preview rendering end-to-end (not probe-dispatch only).
+3. Surface lightweight operator feedback for scene-diff generation errors in TopBar (non-blocking) with focused component tests.

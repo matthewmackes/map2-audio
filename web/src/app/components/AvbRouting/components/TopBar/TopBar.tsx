@@ -22,7 +22,12 @@ import {
   FormControlLabel,
   Checkbox,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import SearchIcon from '@mui/icons-material/Search';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
@@ -31,6 +36,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -56,6 +62,7 @@ export function TopBar() {
   const notify = useNotifications();
   const [topologyModalOpen, setTopologyModalOpen] = useState(false);
   const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
+  const [sceneDiffAnchor, setSceneDiffAnchor] = useState<HTMLElement | null>(null);
 
   const handleFiltersOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setFiltersAnchor(event.currentTarget);
@@ -63,6 +70,14 @@ export function TopBar() {
 
   const handleFiltersClose = () => {
     setFiltersAnchor(null);
+  };
+
+  const handleSceneDiffOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setSceneDiffAnchor(event.currentTarget);
+  };
+
+  const handleSceneDiffClose = () => {
+    setSceneDiffAnchor(null);
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +189,30 @@ export function TopBar() {
     });
   };
 
+  const handleSceneDiffBaselineChange = (event: SelectChangeEvent<string>) => {
+    const raw = event.target.value;
+    dispatch({
+      type: 'SET_SCENE_DIFF_BASELINE',
+      payload: raw ? raw : null,
+    });
+  };
+
+  const handleSceneDiffCompareChange = (event: SelectChangeEvent<string>) => {
+    const raw = event.target.value;
+    dispatch({
+      type: 'SET_SCENE_DIFF_COMPARE',
+      payload: raw ? raw : null,
+    });
+  };
+
+  const handleGenerateSceneDiff = () => {
+    dispatch({ type: 'GENERATE_SCENE_DIFF' });
+  };
+
+  const handleClearSceneDiff = () => {
+    dispatch({ type: 'CLEAR_SCENE_DIFF' });
+  };
+
   const handleSafePatchToggle = () => {
     if (state.safePatchMode) {
       // If already in safe mode, this shouldn't toggle off directly
@@ -240,6 +279,7 @@ export function TopBar() {
   const connectedCount = Object.values(state.liveRoutes).filter(r => r.state === 'connected').length;
   const endpointCount = Object.keys(state.endpoints).length;
   const filtersOpen = Boolean(filtersAnchor);
+  const sceneDiffOpen = Boolean(sceneDiffAnchor);
   const defaultFilters = initialRoutingState.filters;
   const activeFilterCount = [
     state.filters.availableOnly !== defaultFilters.availableOnly,
@@ -259,6 +299,11 @@ export function TopBar() {
         .filter((group): group is string => typeof group === 'string' && group.length > 0)
     )
   ).sort((a, b) => a.localeCompare(b));
+  const sceneOptions = Object.values(state.scenes)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const selectedBaselineScene = state.sceneDiff.baseline_scene_id ?? '';
+  const selectedCompareScene = state.sceneDiff.compare_scene_id ?? '';
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -324,6 +369,19 @@ export function TopBar() {
             data-testid="topbar-filters-button"
           >
             Filters
+          </Button>
+        </Tooltip>
+
+        {/* Scene Diff */}
+        <Tooltip title="Select scenes for read-only diff preview">
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<CompareArrowsIcon />}
+            onClick={handleSceneDiffOpen}
+            data-testid="topbar-scene-diff-button"
+          >
+            Scene Diff
           </Button>
         </Tooltip>
 
@@ -567,6 +625,95 @@ export function TopBar() {
               variant="contained"
               onClick={handleFiltersClose}
               data-testid="topbar-filters-close"
+            >
+              Done
+            </Button>
+          </Box>
+        </Box>
+      </Popover>
+
+      <Popover
+        open={sceneDiffOpen}
+        anchorEl={sceneDiffAnchor}
+        onClose={handleSceneDiffClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, width: 340, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Scene Diff Controls
+          </Typography>
+
+          <FormControl size="small">
+            <InputLabel id="scene-diff-baseline-label">Baseline Scene</InputLabel>
+            <Select
+              labelId="scene-diff-baseline-label"
+              label="Baseline Scene"
+              value={selectedBaselineScene}
+              onChange={handleSceneDiffBaselineChange}
+              data-testid="topbar-scene-diff-baseline-select"
+            >
+              <MenuItem value="" data-testid="topbar-scene-diff-baseline-none">
+                <em>None</em>
+              </MenuItem>
+              {sceneOptions.map((scene) => (
+                <MenuItem
+                  key={scene.id}
+                  value={scene.id}
+                  data-testid={`topbar-scene-diff-baseline-${sanitizeFilterIdValue(scene.name)}`}
+                >
+                  {scene.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small">
+            <InputLabel id="scene-diff-compare-label">Compare Scene</InputLabel>
+            <Select
+              labelId="scene-diff-compare-label"
+              label="Compare Scene"
+              value={selectedCompareScene}
+              onChange={handleSceneDiffCompareChange}
+              data-testid="topbar-scene-diff-compare-select"
+            >
+              <MenuItem value="" data-testid="topbar-scene-diff-compare-none">
+                <em>None</em>
+              </MenuItem>
+              {sceneOptions.map((scene) => (
+                <MenuItem
+                  key={scene.id}
+                  value={scene.id}
+                  data-testid={`topbar-scene-diff-compare-${sanitizeFilterIdValue(scene.name)}`}
+                >
+                  {scene.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                onClick={handleGenerateSceneDiff}
+                data-testid="topbar-scene-diff-generate"
+              >
+                Generate
+              </Button>
+              <Button
+                size="small"
+                onClick={handleClearSceneDiff}
+                data-testid="topbar-scene-diff-clear"
+              >
+                Clear
+              </Button>
+            </Box>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleSceneDiffClose}
+              data-testid="topbar-scene-diff-close"
             >
               Done
             </Button>

@@ -244,6 +244,7 @@ function SceneDiffProbe() {
     ? preview.to_add.map((route) => `${route.talker_id}→${route.listener_id}`).sort().join('|') || 'none'
     : 'none'
   const liveRouteIds = Object.keys(state.liveRoutes).sort().join('|') || 'none'
+  const errorMessage = state.error || 'none'
 
   const baselineByName = sceneEntries.find((scene) => scene.name === 'Baseline Scene')?.id || null
   const compareByName = sceneEntries.find((scene) => scene.name === 'Compare Scene')?.id || null
@@ -256,6 +257,7 @@ function SceneDiffProbe() {
       <span data-testid="scene-diff-preview-summary">{previewSummary}</span>
       <span data-testid="scene-diff-preview-add-routes">{previewAddRoutes}</span>
       <span data-testid="scene-diff-live-route-ids">{liveRouteIds}</span>
+      <span data-testid="scene-diff-error">{errorMessage}</span>
 
       <button
         data-testid="scene-diff-save-baseline"
@@ -309,11 +311,32 @@ function SceneDiffProbe() {
         set-baseline
       </button>
       <button
+        data-testid="scene-diff-set-baseline-none"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_BASELINE', payload: null })}
+      >
+        set-baseline-none
+      </button>
+      <button
         data-testid="scene-diff-set-compare"
         type="button"
         onClick={() => dispatch({ type: 'SET_SCENE_DIFF_COMPARE', payload: compareByName })}
       >
         set-compare
+      </button>
+      <button
+        data-testid="scene-diff-set-compare-none"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_COMPARE', payload: null })}
+      >
+        set-compare-none
+      </button>
+      <button
+        data-testid="scene-diff-set-compare-invalid"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_COMPARE', payload: 'scene-invalid' })}
+      >
+        set-compare-invalid
       </button>
       <button
         data-testid="scene-diff-generate"
@@ -2484,6 +2507,124 @@ describe('RoutingContext API/reducer integration', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('scene-diff-scenes').textContent).not.toContain('Compare Scene:')
+      expect(screen.getByTestId('scene-diff-compare').textContent).toBe('none')
+      expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('none')
+    })
+  })
+
+  it('handles scene-diff missing/invalid selection errors and reset paths after preview generation', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+    ]
+    mockConnectionsData = undefined
+
+    const talker1 = makeEndpoint({
+      endpoint_id: 'talker-1',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const listener1 = makeEndpoint({
+      endpoint_id: 'listener-1',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const talker2 = makeEndpoint({
+      endpoint_id: 'talker-2',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 3,
+    })
+    const listener2 = makeEndpoint({
+      endpoint_id: 'listener-2',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 4,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [talker1.endpoint_id]: talker1,
+        [listener1.endpoint_id]: listener1,
+        [talker2.endpoint_id]: talker2,
+        [listener2.endpoint_id]: listener2,
+      },
+      liveRoutes: {
+        'talker-1→listener-1': {
+          id: 'talker-1→listener-1',
+          talker_id: 'talker-1',
+          listener_id: 'listener-1',
+          state: 'connected' as const,
+          established_time: '2026-02-17T04:20:00Z',
+          error_message: null,
+          connection_count: 1,
+          srp_reservation_id: null,
+          srp_admission_id: null,
+          locked: false,
+          valid: true,
+          messages: [],
+          talker_node_id: 'node-a',
+          listener_node_id: 'node-b',
+          cross_node: true,
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <SceneDiffProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-error').textContent).toBe(
+        'Scene diff requires both baseline and compare scene selections'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-save-baseline'))
+    fireEvent.click(screen.getByTestId('scene-diff-add-route'))
+    fireEvent.click(screen.getByTestId('scene-diff-save-compare'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-scenes').textContent).toContain('Baseline Scene:')
+      expect(screen.getByTestId('scene-diff-scenes').textContent).toContain('Compare Scene:')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-set-baseline'))
+    fireEvent.click(screen.getByTestId('scene-diff-set-compare-invalid'))
+    fireEvent.click(screen.getByTestId('scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-error').textContent).toBe('Scene diff scene selection is invalid')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-set-compare'))
+    fireEvent.click(screen.getByTestId('scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-error').textContent).toBe('none')
+      expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('1:1:0:1')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-delete-compare'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-compare').textContent).toBe('none')
+      expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('none')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-diff-clear'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-baseline').textContent).toBe('none')
       expect(screen.getByTestId('scene-diff-compare').textContent).toBe('none')
       expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('none')
     })
