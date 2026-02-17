@@ -1774,4 +1774,140 @@ describe('RoutingContext API/reducer integration', () => {
       expect(screen.getByTestId('safe-view-mode').textContent).toBe('multi_select')
     })
   })
+
+  it('retains multi-select context when safe mode exits during selected-node status transitions in the same sync window', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+    mockConnectionsData = {
+      count: 1,
+      connections: [
+        {
+          connection_id: 'talker-1→listener-1',
+          talker: { endpoint_id: 'talker-1', node_id: 'node-a' },
+          listener: { endpoint_id: 'listener-1', node_id: 'node-b' },
+          state: 'connected',
+          established_time: '2026-02-17T03:35:00Z',
+          error_message: null,
+          srp_reservation_id: null,
+          srp_admission_id: null,
+        },
+      ],
+    }
+
+    const talker = makeEndpoint({
+      endpoint_id: 'talker-1',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const listener = makeEndpoint({
+      endpoint_id: 'listener-1',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-c',
+      direction: 'talker',
+      unique_id: 3,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [talker.endpoint_id]: talker,
+        [listener.endpoint_id]: listener,
+        [endpointC.endpoint_id]: endpointC,
+      },
+    }
+
+    const { rerender } = render(
+      <RoutingProvider initialState={initialState}>
+        <SafePatchMultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-endpoint-ids').textContent).toBe('listener-1|talker-1')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-node-b-status').textContent).toBe('online')
+      expect(screen.getByTestId('safe-node-c-status').textContent).toBe('online')
+    })
+
+    fireEvent.click(screen.getByTestId('safe-enter'))
+    fireEvent.click(screen.getByTestId('safe-stage-disconnect'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('on')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('talker-1→listener-1')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-endpoint-ids').textContent).toBe('listener-1|talker-1')
+    })
+
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'degraded' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'offline' }),
+    ]
+    mockConnectionsData = {
+      count: 0,
+      connections: [],
+    }
+
+    fireEvent.click(screen.getByTestId('safe-apply'))
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <SafePatchMultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+      expect(screen.getByTestId('safe-pending-route-ids').textContent).toBe('none')
+      expect(screen.getByTestId('safe-live-route-ids').textContent).toBe('none')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-endpoint-ids').textContent).toBe('listener-1|talker-1')
+      expect(screen.getByTestId('safe-node-b-status').textContent).toBe('degraded')
+      expect(screen.getByTestId('safe-node-c-status').textContent).toBe('offline')
+      expect(screen.getByTestId('safe-view-mode').textContent).toBe('multi_select')
+    })
+
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'offline' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'degraded' }),
+    ]
+
+    rerender(
+      <RoutingProvider initialState={initialState}>
+        <SafePatchMultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('safe-mode').textContent).toBe('off')
+      expect(screen.getByTestId('safe-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('safe-endpoint-ids').textContent).toBe('listener-1|talker-1')
+      expect(screen.getByTestId('safe-node-b-status').textContent).toBe('offline')
+      expect(screen.getByTestId('safe-node-c-status').textContent).toBe('degraded')
+    })
+  })
 })

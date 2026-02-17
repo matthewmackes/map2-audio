@@ -242,6 +242,12 @@
 - Mixed safe-patch apply/discard race coverage added for node remove/rejoin + API connection re-sync churn:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates selected-node endpoint context, safe-mode pending/live route separation, and post-discard state consistency through concurrent inventory + connection churn windows
+- Reducer coverage added for mixed safe-mode batch staging under rapid API re-sync churn:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates `BATCH_PATCH` staged connect/disconnect operations persist through repeated `CONNECTIONS_UPDATED` payload replacement and still apply deterministic intent on `APPLY_SAFE_CHANGES`
+- Safe-mode exit + selected-node status transition integration coverage added:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates multi-select selected-node and filtered-endpoint context remains stable when safe mode exits in the same refresh window as selected-node status transitions (`online`/`degraded`/`offline`)
 
 ---
 
@@ -267,5 +273,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add reducer-level coverage for mixed multi-route safe-patch batches (staged connect + staged disconnect) under rapid API re-sync churn.
-3. Add integration assertions that multi-select context remains stable when safe mode is exited while selected nodes transition online/degraded/offline in the same sync window.
+2. Add reducer assertions for undo/redo history consistency after mixed safe-patch batches that overlap API re-sync churn.
+3. Add integration coverage for safe-mode exit while selected-node inventory remove/rejoin events overlap route-id replacement from API sync.
