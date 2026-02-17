@@ -23,6 +23,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { MatrixCell } from './MatrixCell';
 import { StickyHeaders } from './StickyHeaders';
 import { ConnectionHighlight } from './ConnectionHighlight';
+import { CrosshairOverlay } from './CrosshairOverlay';
 
 const CELL_WIDTH = 60;
 const CELL_HEIGHT = 50;
@@ -55,6 +56,18 @@ export function RoutingGrid() {
       listenerIndex: listenerIndex >= 0 ? listenerIndex : null,
     };
   }, [focusedCell, talkers, listeners]);
+
+  // Get hovered cell indices for crosshair overlay
+  const hoveredIndices = useMemo(() => {
+    const hoveredCell = state.selection.hoveredCell;
+    if (!hoveredCell) return { talkerIndex: null, listenerIndex: null };
+    const talkerIndex = talkers.findIndex(t => t.endpoint_id === hoveredCell.talker_id);
+    const listenerIndex = listeners.findIndex(l => l.endpoint_id === hoveredCell.listener_id);
+    return {
+      talkerIndex: talkerIndex >= 0 ? talkerIndex : null,
+      listenerIndex: listenerIndex >= 0 ? listenerIndex : null,
+    };
+  }, [state.selection.hoveredCell, talkers, listeners]);
 
   const getEndpointLabel = useCallback(
     (endpointId: string): string => {
@@ -214,6 +227,18 @@ export function RoutingGrid() {
   // Main render
   return (
     <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      {/* Crosshair overlay for hovered cell */}
+      <CrosshairOverlay
+        columnIndex={hoveredIndices.talkerIndex}
+        rowIndex={hoveredIndices.listenerIndex}
+        cellWidth={CELL_WIDTH}
+        cellHeight={CELL_HEIGHT}
+        headerWidth={HEADER_WIDTH}
+        headerHeight={HEADER_HEIGHT}
+        totalColumns={talkers.length}
+        totalRows={listeners.length}
+      />
+
       {/* Sticky headers */}
       <StickyHeaders
         talkers={talkers}
