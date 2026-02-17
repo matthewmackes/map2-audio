@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **633** TypeScript | **114** C++/H | **91** Docs | **184** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **639** TypeScript | **114** C++/H | **91** Docs | **191** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5302465`](https://github.com/matthewmackes/map2-audio/commit/5302465e567839157a4036e0b216c787b05eebe1) | avb-routing: add reducer-backed keyboard integration tests | Map2 Audio | 2026-02-16 |
+| [`74410b0`](https://github.com/matthewmackes/map2-audio/commit/74410b03eb7e413d7fad08c26cc7cc560b32757b) | Add batch operations UI for drag selection | Map2 Audio | 2026-02-16 |
+| [`0ea758d`](https://github.com/matthewmackes/map2-audio/commit/0ea758d59e447a10f74b535c362acba64da695e7) | Add drag selection for batch routing operations | Map2 Audio | 2026-02-16 |
+| [`f9d5ca6`](https://github.com/matthewmackes/map2-audio/commit/f9d5ca6bef33b0585e86c8525ba3905cc3071364) | Add professional crosshair hover highlighting to routing ... | Map2 Audio | 2026-02-16 |
+| [`de79aaa`](https://github.com/matthewmackes/map2-audio/commit/de79aaaf4c6d0a7d1624daf5907b2f2d80548d24) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-02-16 |
+| [`7ce2a86`](https://github.com/matthewmackes/map2-audio/commit/7ce2a8637e2663c716b5757780666d30cade3137) | Add interactive network topology visualization with react... | Map2 Audio | 2026-02-16 |
+| [`246cce8`](https://github.com/matthewmackes/map2-audio/commit/246cce87715478c35ebc07dc3171cb5db040b575) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`7bb68e8`](https://github.com/matthewmackes/map2-audio/commit/7bb68e8a2e7dc577e2095eaeb85910d7d0d8144c) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-02-16 |
-| [`5d0101a`](https://github.com/matthewmackes/map2-audio/commit/5d0101a8b5a8f294b6e1985761156a3415dd8767) | Add network-first multi-node control to AVB routing matrix | Map2 Audio | 2026-02-16 |
-| [`1a66ba9`](https://github.com/matthewmackes/map2-audio/commit/1a66ba9c526c8ca906ac7b9328f88bf11954bc08) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`58a3df2`](https://github.com/matthewmackes/map2-audio/commit/58a3df283be27150d784b73611f83702857993e2) | avb-routing: split focus/hover state and gate CI with rou... | Map2 Audio | 2026-02-16 |
-| [`4d265a2`](https://github.com/matthewmackes/map2-audio/commit/4d265a2a135c9bfabda6d40d2903e5bb6a4e3176) | avb-routing: wire notifications and harden safe patch apply | Map2 Audio | 2026-02-16 |
-| [`59ca4ac`](https://github.com/matthewmackes/map2-audio/commit/59ca4ac4555551cc051a030666a079701f2a2847) | avb-routing: wire app route and add keyboard highlight UX | Map2 Audio | 2026-02-16 |
-| [`1012914`](https://github.com/matthewmackes/map2-audio/commit/1012914fa29c507fb1756a759cc230cbcf3f2e14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
-| [`37dadc4`](https://github.com/matthewmackes/map2-audio/commit/37dadc4864744d74d14a7b9b4d9c51eec2fb2bae) | docs: add AVB routing recommendations | Map2 Audio | 2026-02-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
