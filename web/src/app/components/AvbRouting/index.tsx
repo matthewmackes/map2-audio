@@ -65,3 +65,4 @@ export { TopBar } from './components/TopBar/TopBar';
 export { NodeSelector } from './components/TopBar/NodeSelector';
 export { NodeTree } from './components/NodeTree/NodeTree';
 export { InspectorPanel } from './components/Inspector/InspectorPanel';
+export { NetworkTopologyModal } from './components/NetworkTopology/NetworkTopologyModal';

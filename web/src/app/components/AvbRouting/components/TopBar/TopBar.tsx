@@ -5,7 +5,7 @@
  * Contains search, filters, safe patch toggle, and undo/redo controls.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -24,10 +24,12 @@ import RedoIcon from '@mui/icons-material/Redo';
 import SecurityIcon from '@mui/icons-material/Security';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
 import { NodeSelector } from './NodeSelector';
+import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
 
 /**
  * Top bar component
@@ -38,6 +40,7 @@ export function TopBar() {
   const canRedo = useCanRedo();
   const batchPatchMutation = useBatchPatchMutation();
   const notify = useNotifications();
+  const [topologyModalOpen, setTopologyModalOpen] = useState(false);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'SET_SEARCH', payload: event.target.value });
@@ -196,6 +199,18 @@ export function TopBar() {
           </Tooltip>
         )}
 
+        {/* Network Topology */}
+        <Tooltip title="View network topology graph">
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<AccountTreeIcon />}
+            onClick={() => setTopologyModalOpen(true)}
+          >
+            Topology
+          </Button>
+        </Tooltip>
+
         {/* Undo/Redo */}
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <Tooltip title="Undo (Ctrl+Z)">
@@ -222,6 +237,12 @@ export function TopBar() {
           </Tooltip>
         </Box>
       </Toolbar>
+
+      {/* Network Topology Modal */}
+      <NetworkTopologyModal
+        open={topologyModalOpen}
+        onClose={() => setTopologyModalOpen(false)}
+      />
     </AppBar>
   );
 }
