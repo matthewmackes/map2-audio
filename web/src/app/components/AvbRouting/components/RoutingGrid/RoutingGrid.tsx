@@ -12,12 +12,12 @@
  * - Responsive sizing
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeGrid as Grid, type GridChildComponentProps } from 'react-window';
 import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
-import { usePatchMutation, useUnpatchMutation } from '../../hooks/useAvbApi';
+import { usePatchMutation, useUnpatchMutation, useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useKeyboardNavigation, useFocusedCell } from '../../hooks/useKeyboardNavigation';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useDragSelection } from '../../hooks/useDragSelection';
@@ -26,6 +26,7 @@ import { StickyHeaders } from './StickyHeaders';
 import { ConnectionHighlight } from './ConnectionHighlight';
 import { CrosshairOverlay } from './CrosshairOverlay';
 import { SelectionOverlay } from './SelectionOverlay';
+import { BatchActionsBar } from './BatchActionsBar';
 
 const CELL_WIDTH = 60;
 const CELL_HEIGHT = 50;
@@ -42,7 +43,11 @@ export function RoutingGrid() {
 
   const patchMutation = usePatchMutation();
   const unpatchMutation = useUnpatchMutation();
+  const batchPatchMutation = useBatchPatchMutation();
   const notify = useNotifications();
+
+  // Batch operations loading state
+  const [isBatchLoading, setIsBatchLoading] = useState(false);
 
   // Keyboard navigation
   useKeyboardNavigation({ enabled: true });
@@ -154,6 +159,125 @@ export function RoutingGrid() {
     },
     [dispatch]
   );
+
+  // Handle batch connect all selected
+  const handleBatchConnectAll = useCallback(async () => {
+    const selectedCells = dragSelection.getSelectedCells();
+    if (selectedCells.length === 0) return;
+
+    setIsBatchLoading(true);
+
+    try {
+      // Build list of connections to create
+      const connections = selectedCells
+        .map((cell) => {
+          const talker = talkers[cell.col];
+          const listener = listeners[cell.row];
+          if (!talker || !listener) return null;
+
+          // Skip if already connected
+          const existingRoute =
+            state.liveRoutes[`${talker.endpoint_id}→${listener.endpoint_id}`];
+          if (existingRoute?.state === 'connected') return null;
+
+          return {
+            talker_id: talker.endpoint_id,
+            listener_id: listener.endpoint_id,
+          };
+        })
+        .filter((conn): conn is { talker_id: string; listener_id: string } => conn !== null);
+
+      if (connections.length === 0) {
+        notify.info('All selected cells are already connected');
+        setIsBatchLoading(false);
+        return;
+      }
+
+      // Execute batch operation
+      await batchPatchMutation.mutateAsync(
+        { connections },
+        {
+          onSuccess: () => {
+            notify.success(`Successfully connected ${connections.length} route${connections.length === 1 ? '' : 's'}`);
+            dragSelection.clearSelection();
+          },
+          onError: (error) => {
+            const message = error instanceof Error ? error.message : 'Batch connect failed';
+            dispatch({ type: 'SET_ERROR', payload: message });
+            notify.error(`Batch connect failed: ${message}`);
+          },
+        }
+      );
+    } finally {
+      setIsBatchLoading(false);
+    }
+  }, [dragSelection, talkers, listeners, state.liveRoutes, batchPatchMutation, notify, dispatch]);
+
+  // Handle batch disconnect all selected
+  const handleBatchDisconnectAll = useCallback(async () => {
+    const selectedCells = dragSelection.getSelectedCells();
+    if (selectedCells.length === 0) return;
+
+    setIsBatchLoading(true);
+
+    try {
+      // Build list of connections to disconnect
+      const disconnections = selectedCells
+        .map((cell) => {
+          const talker = talkers[cell.col];
+          const listener = listeners[cell.row];
+          if (!talker || !listener) return null;
+
+          // Only disconnect if there's an active connection
+          const existingRoute =
+            state.liveRoutes[`${talker.endpoint_id}→${listener.endpoint_id}`];
+          if (!existingRoute || existingRoute.state !== 'connected') return null;
+
+          // Check if locked
+          if (existingRoute.locked) {
+            notify.warning(`Skipping locked route: ${getEndpointLabel(talker.endpoint_id)} -> ${getEndpointLabel(listener.endpoint_id)}`);
+            return null;
+          }
+
+          return {
+            talker_id: talker.endpoint_id,
+            listener_id: listener.endpoint_id,
+          };
+        })
+        .filter((conn): conn is { talker_id: string; listener_id: string } => conn !== null);
+
+      if (disconnections.length === 0) {
+        notify.info('No connected routes to disconnect in selection');
+        setIsBatchLoading(false);
+        return;
+      }
+
+      // Execute batch disconnections (one at a time for now, since we don't have batch unpatch)
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const { talker_id, listener_id } of disconnections) {
+        try {
+          await unpatchMutation.mutateAsync({ talker_id, listener_id });
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error('Failed to disconnect:', talker_id, listener_id, error);
+        }
+      }
+
+      if (successCount > 0) {
+        notify.success(`Successfully disconnected ${successCount} route${successCount === 1 ? '' : 's'}`);
+      }
+      if (failCount > 0) {
+        notify.error(`Failed to disconnect ${failCount} route${failCount === 1 ? '' : 's'}`);
+      }
+
+      dragSelection.clearSelection();
+    } finally {
+      setIsBatchLoading(false);
+    }
+  }, [dragSelection, talkers, listeners, state.liveRoutes, unpatchMutation, notify, getEndpointLabel]);
 
   // Grid cell renderer
   const Cell = useCallback(
@@ -326,6 +450,15 @@ export function RoutingGrid() {
           {talkers.length} talkers × {listeners.length} listeners
         </Typography>
       </Box>
+
+      {/* Batch actions bar */}
+      <BatchActionsBar
+        selectedCount={dragSelection.selectedCells.length}
+        onConnectAll={handleBatchConnectAll}
+        onDisconnectAll={handleBatchDisconnectAll}
+        onClearSelection={dragSelection.clearSelection}
+        isLoading={isBatchLoading}
+      />
     </Box>
   );
 }

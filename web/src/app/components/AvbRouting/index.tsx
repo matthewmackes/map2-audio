@@ -71,6 +71,7 @@ export { StickyHeaders } from './components/RoutingGrid/StickyHeaders';
 export { ConnectionHighlight } from './components/RoutingGrid/ConnectionHighlight';
 export { CrosshairOverlay } from './components/RoutingGrid/CrosshairOverlay';
 export { SelectionOverlay } from './components/RoutingGrid/SelectionOverlay';
+export { BatchActionsBar } from './components/RoutingGrid/BatchActionsBar';
 export { TopBar } from './components/TopBar/TopBar';
 export { NodeSelector } from './components/TopBar/NodeSelector';
 export { NodeTree } from './components/NodeTree/NodeTree';
