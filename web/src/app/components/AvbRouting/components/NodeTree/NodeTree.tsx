@@ -152,6 +152,7 @@ interface NodeTreeItemProps {
 function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps) {
   const [expanded, setExpanded] = useState(false);
   const endpoints = useFilteredEndpoints();
+  const endpointListId = `node-tree-endpoints-${node.node_id}`;
 
   const handleExpandToggle = (event: React.SyntheticEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -195,6 +196,9 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
             handleExpandToggle(event);
           }}
           data-testid={`node-tree-expand-${node.node_id}`}
+          aria-label={`Toggle endpoints for ${node.name}`}
+          aria-expanded={expanded ? 'true' : 'false'}
+          aria-controls={endpointListId}
           sx={{ mr: 0.5, width: 24, height: 24 }}
         >
           {expanded ? (
@@ -260,7 +264,7 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
       </ListItemButton>
 
       {/* Expandable endpoint list */}
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
+      <Collapse id={endpointListId} in={expanded} timeout="auto" unmountOnExit>
         <List dense disablePadding>
           {/* Talkers */}
           {talkers.length > 0 && (

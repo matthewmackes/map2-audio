@@ -261,18 +261,24 @@ describe('NodeTree status badge behavior', () => {
     render(<NodeTree />)
 
     expect(screen.queryByText('Offline Talker')).toBeNull()
+    const expandTrigger = screen.getByTestId('node-tree-expand-node-offline')
+    expect(expandTrigger.getAttribute('aria-expanded')).toBe('false')
+    expect(expandTrigger.getAttribute('aria-controls')).toBe('node-tree-endpoints-node-offline')
+    expect(expandTrigger.getAttribute('tabindex')).toBe('0')
 
-    fireEvent.keyDown(screen.getByTestId('node-tree-expand-node-offline'), { key: 'Enter' })
+    fireEvent.keyDown(expandTrigger, { key: 'Enter' })
 
     await waitFor(() => {
       expect(screen.getByText('Offline Talker')).toBeTruthy()
+      expect(expandTrigger.getAttribute('aria-expanded')).toBe('true')
     })
     expect(mockDispatch).toHaveBeenCalledTimes(0)
 
-    fireEvent.keyDown(screen.getByTestId('node-tree-expand-node-offline'), { key: ' ' })
+    fireEvent.keyDown(expandTrigger, { key: ' ' })
 
     await waitFor(() => {
       expect(screen.queryByText('Offline Talker')).toBeNull()
+      expect(expandTrigger.getAttribute('aria-expanded')).toBe('false')
     })
     expect(mockDispatch).toHaveBeenCalledTimes(0)
   })

@@ -229,6 +229,13 @@
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
   - adds stable ARIA menu linkage (`aria-haspopup`, `aria-controls`, `aria-expanded`) and keyboard close-path assertions via `Escape`
+- Safe-patch apply/discard overlap coverage added for selected-node inventory remove/rejoin churn:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates staged safe-mode operations retain selected-node context and endpoint filtering while selected nodes disappear from/rejoin inventory during API route churn
+- NodeTree expand-control accessibility semantics hardened:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - adds explicit `aria-label`/`aria-controls`/`aria-expanded` semantics and keyboard assertions for expand controls without dispatching row-selection actions
 
 ---
 
@@ -254,5 +261,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Expand integration coverage for safe-patch apply/discard behavior while node inventories remove/rejoin selected nodes.
-3. Add keyboard-first accessibility assertions for NodeTree expand-control focus semantics.
+2. Expand safe-patch overlap coverage for mixed apply/discard windows with simultaneous node remove/rejoin and connection re-sync races.
+3. Add keyboard-first accessibility assertions for NodeTree expand-control behavior under repeated rapid toggles.
