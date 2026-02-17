@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **629** TypeScript | **114** C++/H | **88** Docs | **181** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **633** TypeScript | **114** C++/H | **91** Docs | **184** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -132,10 +132,10 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |:---------|:------------|
 | [LEGAL DISCLAIMER – IMPORTANT NOTICE](https://github.com/matthewmackes/map2-audio/blob/master/docs/# LEGAL DISCLAIMER – IMPORTANT NOTICE.md) | 2026-02-16 |
 | [MAP2 Audio Engine — Audit Fixes Applied](https://github.com/matthewmackes/map2-audio/blob/master/docs/AUDIT_FIXES_APPLIED.md) | 2026-02-16 |
+| [AVB Routing Matrix - Multi-Node Architecture](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MULTI_NODE_ARCHITECTURE.md) | 2026-02-16 |
+| [AVB Routing Matrix - Multi-Node Implementation Summary](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MULTI_NODE_IMPLEMENTATION_SUMMARY.md) | 2026-02-16 |
+| [AVB Routing Matrix - Complete Implementation Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_COMPLETE_IMPLEMENTATION_PLAN.md) | 2026-02-16 |
 | [AVB Routing Matrix - Implementation Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_IMPLEMENTATION_PLAN.md) | 2026-02-16 |
-| [AVB Routing Matrix - Implementation Status](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_IMPLEMENTATION_STATUS.md) | 2026-02-16 |
-| [AVB Routing Matrix - Phase 1 Complete! 🎉](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_PHASE1_COMPLETE.md) | 2026-02-16 |
-| [AVB Routing Matrix - Phase 2 Complete! 🎉](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_PHASE2_COMPLETE.md) | 2026-02-16 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -148,7 +148,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7bb68e8`](https://github.com/matthewmackes/map2-audio/commit/7bb68e8a2e7dc577e2095eaeb85910d7d0d8144c) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-02-16 |
+| [`5d0101a`](https://github.com/matthewmackes/map2-audio/commit/5d0101a8b5a8f294b6e1985761156a3415dd8767) | Add network-first multi-node control to AVB routing matrix | Map2 Audio | 2026-02-16 |
+| [`1a66ba9`](https://github.com/matthewmackes/map2-audio/commit/1a66ba9c526c8ca906ac7b9328f88bf11954bc08) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`58a3df2`](https://github.com/matthewmackes/map2-audio/commit/58a3df283be27150d784b73611f83702857993e2) | avb-routing: split focus/hover state and gate CI with rou... | Map2 Audio | 2026-02-16 |
 | [`4d265a2`](https://github.com/matthewmackes/map2-audio/commit/4d265a2a135c9bfabda6d40d2903e5bb6a4e3176) | avb-routing: wire notifications and harden safe patch apply | Map2 Audio | 2026-02-16 |
 | [`59ca4ac`](https://github.com/matthewmackes/map2-audio/commit/59ca4ac4555551cc051a030666a079701f2a2847) | avb-routing: wire app route and add keyboard highlight UX | Map2 Audio | 2026-02-16 |
 | [`1012914`](https://github.com/matthewmackes/map2-audio/commit/1012914fa29c507fb1756a759cc230cbcf3f2e14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`37dadc4`](https://github.com/matthewmackes/map2-audio/commit/37dadc4864744d74d14a7b9b4d9c51eec2fb2bae) | docs: add AVB routing recommendations | Map2 Audio | 2026-02-16 |
-| [`f2c59a9`](https://github.com/matthewmackes/map2-audio/commit/f2c59a9c8f2ff124e5d9fbd162178567419758e9) | avb-routing: add implementation docs and phase UI components | Map2 Audio | 2026-02-16 |
-| [`53991dd`](https://github.com/matthewmackes/map2-audio/commit/53991dd4d982e259317b70898762514b08a130b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
-| [`cda14bd`](https://github.com/matthewmackes/map2-audio/commit/cda14bd9033842a4c0915d9f32df9c05bd299de6) | avb: harden SRP release observability and rollback handling | Map2 Audio | 2026-02-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
