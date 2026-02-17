@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **648** TypeScript | **114** C++/H | **91** Docs | **233** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **648** TypeScript | **114** C++/H | **91** Docs | **235** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f50074f`](https://github.com/matthewmackes/map2-audio/commit/f50074ff92cf8126f3337e1d48de5416ad62e2d8) | avb-routing: add explicit multi-select toggle flow coverage | Map2 Audio | 2026-02-16 |
+| [`03dc558`](https://github.com/matthewmackes/map2-audio/commit/03dc558d38cfb0812ac2af6de214a631eedec002) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`07b86c2`](https://github.com/matthewmackes/map2-audio/commit/07b86c2eeb0767efe9fcb47f6593c5e616f2ff7a) | avb-routing: cover multi-select node removal and rejoin | Map2 Audio | 2026-02-16 |
 | [`cc66e30`](https://github.com/matthewmackes/map2-audio/commit/cc66e30bc6795a5bfcb1ffe4de869dbfb1c598ba) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`f118ae1`](https://github.com/matthewmackes/map2-audio/commit/f118ae18ab5e04cf403d35b4ed9cbbe3d6f61e41) | avb-routing: align multi-select selection across node sur... | Map2 Audio | 2026-02-16 |
 | [`764f800`](https://github.com/matthewmackes/map2-audio/commit/764f80096afce9e3a8cf32b0990ccd3dfdb93414) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`d1e89e2`](https://github.com/matthewmackes/map2-audio/commit/d1e89e25c0baf987db5dd1a4dc2f7103a2c19f18) | avb-routing: extend inspector assertions for multi-select... | Map2 Audio | 2026-02-16 |
 | [`e952691`](https://github.com/matthewmackes/map2-audio/commit/e95269145538dfb9b31a85078a87a4ad41eeaa1d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`e3cefa8`](https://github.com/matthewmackes/map2-audio/commit/e3cefa8fb25d1019e7e29dd43f3b553fa19a638e) | avb-routing: assert multi-select retention through node c... | Map2 Audio | 2026-02-16 |
-| [`d0bb605`](https://github.com/matthewmackes/map2-audio/commit/d0bb60503efffeeabb279ead12d491a19cb74d6a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
