@@ -430,6 +430,15 @@ Click the multi-select toggle again, or switch to All Nodes / single-node tab fo
 Operational note:
 - Multi-select filtering affects endpoint visibility and inspector context only; it does not auto-create or auto-remove AVB routes.
 
+Troubleshooting:
+- A selected node disappears from node tabs/tree:
+  - verify `show_offline` visibility is enabled in the node navigation UI
+  - if the node is currently offline, selection state is retained and reappears when visibility/node presence returns
+- Inspector appears empty during multi-select:
+  - confirm the selected endpoint/route belongs to at least one node in the active multi-select set
+- Unexpected multi-select order in diagnostics:
+  - selected node IDs are normalized (deduplicated + deterministic lexical order) by reducer design
+
 ---
 
 ## Quick Start Checklist

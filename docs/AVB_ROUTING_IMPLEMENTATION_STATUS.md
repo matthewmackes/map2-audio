@@ -188,6 +188,12 @@
 - Operator guidance for multi-select workflows added:
   - `docs/OPERATIONS_GUIDE.md`
   - documents enter/exit controls, node-set editing from NodeSelector/NodeTree, and inspector visibility behavior under active multi-select context
+- Mixed-surface multi-select integration coverage added (real provider + reducer):
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates end-to-end node-set editing across both NodeSelector tabs and NodeTree rows during multi-select workflows
+- Operator troubleshooting notes added for multi-select/filter node churn behavior:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents retained selection behavior for offline/removed nodes, inspector context checks, and reducer normalization expectations
 
 ---
 
@@ -212,6 +218,6 @@
 
 ## Next Recommended Slice
 
-1. Expand end-to-end interaction tests for mixed node-tab + NodeTree multi-select editing flows.
-2. Continue Phase 4 search/filter and scene-diff UX work.
-3. Add operator-facing troubleshooting notes for multi-select/filter interactions during node churn.
+1. Continue Phase 4 search/filter and scene-diff UX work.
+2. Expand integration coverage for multi-select + safe-patch operator workflows.
+3. Add keyboard-first multi-select operator flows to navigation tests.

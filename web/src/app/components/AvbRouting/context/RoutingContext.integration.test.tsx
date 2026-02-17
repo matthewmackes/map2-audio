@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { RoutingProvider, useFilteredEndpoints, useRoutingState } from './RoutingContext'
 import { initialRoutingState } from '../types'
 import type {
@@ -9,6 +9,8 @@ import type {
   EndpointsResponse,
   NetworkSyncStatus,
 } from '../types'
+import { NodeSelector } from '../components/TopBar/NodeSelector'
+import { NodeTree } from '../components/NodeTree/NodeTree'
 
 let mockEndpointsData: EndpointsResponse | undefined
 let mockConnectionsData: ConnectionsResponse | undefined
@@ -136,6 +138,7 @@ function MultiSelectProbe() {
 
   return (
     <div>
+      <span data-testid="multi-view-mode">{state.network.nodeSelection.view_mode}</span>
       <span data-testid="multi-selected-node-ids">{selectedNodeIds}</span>
       <span data-testid="multi-endpoint-ids">{filteredEndpointIds}</span>
       <span data-testid="multi-node-ids">{nodeIds}</span>
@@ -536,6 +539,99 @@ describe('RoutingContext API/reducer integration', () => {
       expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
       expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
       expect(screen.getByTestId('multi-node-ids').textContent).toBe('node-a|node-b|node-c')
+    })
+  })
+
+  it('supports mixed NodeSelector + NodeTree edits during multi-select workflow', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockConnectionsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      direction: 'talker',
+      unique_id: 1,
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      direction: 'listener',
+      unique_id: 2,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-c',
+      direction: 'talker',
+      unique_id: 3,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'single_node' as const,
+          current_node_id: 'node-a',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+        [endpointC.endpoint_id]: endpointC,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <NodeSelector />
+        <NodeTree />
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('node-selector-multi-select-toggle'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-view-mode').textContent).toBe('multi_select')
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a')
+    })
+
+    fireEvent.click(screen.getByTestId('node-selector-tab-node-b'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('node-tree-item-node-c'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-b|node-c')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b|endpoint-c')
+    })
+
+    fireEvent.click(screen.getByTestId('node-tree-item-node-b'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-selected-node-ids').textContent).toBe('node-a|node-c')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-c')
+    })
+
+    fireEvent.click(screen.getByTestId('node-selector-multi-select-toggle'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-view-mode').textContent).toBe('all_nodes')
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b|endpoint-c')
     })
   })
 })
