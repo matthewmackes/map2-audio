@@ -40,6 +40,10 @@ import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
 
 const DEVICE_TYPE_OPTIONS = ['map2', 'avdecc', 'unknown'] as const;
 
+function sanitizeFilterIdValue(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 /**
  * Top bar component
  */
@@ -98,11 +102,73 @@ export function TopBar() {
     });
   };
 
+  const handleToggleSampleRate = (sampleRate: number) => {
+    const selected = new Set(state.filters.sampleRates);
+    if (selected.has(sampleRate)) {
+      selected.delete(sampleRate);
+    } else {
+      selected.add(sampleRate);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        sampleRates: Array.from(selected).sort((a, b) => a - b),
+      },
+    });
+  };
+
+  const handleToggleChannelCount = (channelCount: number) => {
+    const selected = new Set(state.filters.channelCounts);
+    if (selected.has(channelCount)) {
+      selected.delete(channelCount);
+    } else {
+      selected.add(channelCount);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        channelCounts: Array.from(selected).sort((a, b) => a - b),
+      },
+    });
+  };
+
+  const handleToggleGroup = (group: string) => {
+    const selected = new Set(state.filters.groups);
+    if (selected.has(group)) {
+      selected.delete(group);
+    } else {
+      selected.add(group);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        groups: Array.from(selected).sort((a, b) => a.localeCompare(b)),
+      },
+    });
+  };
+
   const handleResetFilters = () => {
     dispatch({
       type: 'SET_FILTERS',
       payload: {
         ...initialRoutingState.filters,
+      },
+    });
+  };
+
+  const handleClearAllFilters = () => {
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        deviceTypes: [],
+        sampleRates: [],
+        channelCounts: [],
+        availableOnly: false,
+        showLocked: true,
+        groups: [],
       },
     });
   };
@@ -182,6 +248,16 @@ export function TopBar() {
     state.filters.channelCounts.length !== defaultFilters.channelCounts.length,
     state.filters.groups.length !== defaultFilters.groups.length,
   ].filter(Boolean).length;
+  const endpointValues = Object.values(state.endpoints);
+  const sampleRateOptions = Array.from(new Set(endpointValues.map((endpoint) => endpoint.sample_rate))).sort((a, b) => a - b);
+  const channelCountOptions = Array.from(new Set(endpointValues.map((endpoint) => endpoint.channels))).sort((a, b) => a - b);
+  const groupOptions = Array.from(
+    new Set(
+      endpointValues
+        .map((endpoint) => endpoint.group)
+        .filter((group): group is string => typeof group === 'string' && group.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -338,7 +414,7 @@ export function TopBar() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
-        <Box sx={{ p: 2, width: 320, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ p: 2, width: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Endpoint Filters
           </Typography>
@@ -382,19 +458,109 @@ export function TopBar() {
                     inputProps={{ 'data-testid': `topbar-filter-device-${deviceType}` }}
                   />
                 )}
-                label={deviceType.toUpperCase()}
-              />
-            ))}
+              label={deviceType.toUpperCase()}
+            />
+          ))}
           </FormGroup>
 
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Sample rates
+          </Typography>
+          {sampleRateOptions.length === 0 ? (
+            <Typography variant="body2" color="text.disabled">
+              No sample rates discovered
+            </Typography>
+          ) : (
+            <FormGroup>
+              {sampleRateOptions.map((sampleRate) => (
+                <FormControlLabel
+                  key={sampleRate}
+                  control={(
+                    <Checkbox
+                      checked={state.filters.sampleRates.includes(sampleRate)}
+                      onChange={() => handleToggleSampleRate(sampleRate)}
+                      inputProps={{ 'data-testid': `topbar-filter-sample-${sampleRate}` }}
+                    />
+                  )}
+                  label={`${sampleRate} Hz`}
+                />
+              ))}
+            </FormGroup>
+          )}
+
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Channel counts
+          </Typography>
+          {channelCountOptions.length === 0 ? (
+            <Typography variant="body2" color="text.disabled">
+              No channel counts discovered
+            </Typography>
+          ) : (
+            <FormGroup>
+              {channelCountOptions.map((channelCount) => (
+                <FormControlLabel
+                  key={channelCount}
+                  control={(
+                    <Checkbox
+                      checked={state.filters.channelCounts.includes(channelCount)}
+                      onChange={() => handleToggleChannelCount(channelCount)}
+                      inputProps={{ 'data-testid': `topbar-filter-channels-${channelCount}` }}
+                    />
+                  )}
+                  label={`${channelCount} channels`}
+                />
+              ))}
+            </FormGroup>
+          )}
+
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Groups
+          </Typography>
+          {groupOptions.length === 0 ? (
+            <Typography variant="body2" color="text.disabled">
+              No groups discovered
+            </Typography>
+          ) : (
+            <FormGroup>
+              {groupOptions.map((group) => (
+                <FormControlLabel
+                  key={group}
+                  control={(
+                    <Checkbox
+                      checked={state.filters.groups.includes(group)}
+                      onChange={() => handleToggleGroup(group)}
+                      inputProps={{ 'data-testid': `topbar-filter-group-${sanitizeFilterIdValue(group)}` }}
+                    />
+                  )}
+                  label={group}
+                />
+              ))}
+            </FormGroup>
+          )}
+
           <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
-            <Button
-              size="small"
-              onClick={handleResetFilters}
-              data-testid="topbar-filters-reset"
-            >
-              Reset Filters
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                onClick={handleClearAllFilters}
+                data-testid="topbar-filters-clear-all"
+              >
+                Clear All
+              </Button>
+              <Button
+                size="small"
+                onClick={handleResetFilters}
+                data-testid="topbar-filters-reset"
+              >
+                Reset Defaults
+              </Button>
+            </Box>
             <Button
               size="small"
               variant="contained"

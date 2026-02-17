@@ -262,6 +262,14 @@
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.filters.test.tsx`
   - `package.json`
   - adds reducer-backed filter popover controls (`availableOnly`, `showLocked`, device types), active-filter summary chip, reset flow, and dedicated search/filter dispatch-contract tests
+- Provider-level TopBar filter integration coverage added for multi-select node context:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates TopBar filter controls drive `useFilteredEndpoints()` output correctly while `multi_select` node scope is active
+- Filter panel depth expanded with sample-rate/channel/group controls and clear-all behavior:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.filters.test.tsx`
+  - `package.json`
+  - adds reducer-backed sample-rate/channel/group toggles, explicit `Clear All` action, and focused dispatch-contract coverage for expanded filter paths
 
 ---
 
@@ -287,5 +295,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add provider-level integration coverage that TopBar filter controls update `useFilteredEndpoints()` output under multi-select node context.
-3. Expand filter panel depth with sample-rate/channel/group controls plus clear-all behavior and focused reducer/component tests.
+2. Add integration coverage for combined search-text + expanded filter controls under multi-select to validate stable endpoint ordering and deterministic filtering.
+3. Begin Phase 4 scene-diff UX foundations (state shape + reducer actions + focused tests) without introducing full dialog workflows yet.

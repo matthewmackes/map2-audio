@@ -59,7 +59,18 @@ describe('TopBar filter and search wiring', () => {
       },
       search: '',
       safePatchMode: false,
-      endpoints: {},
+      endpoints: {
+        'endpoint-a': {
+          sample_rate: 48000,
+          channels: 2,
+          group: 'Stage',
+        },
+        'endpoint-b': {
+          sample_rate: 96000,
+          channels: 8,
+          group: 'FOH',
+        },
+      },
       liveRoutes: {},
       pendingRoutes: {},
     }
@@ -113,6 +124,63 @@ describe('TopBar filter and search wiring', () => {
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'SET_FILTERS',
       payload: { deviceTypes: ['avdecc'] },
+    })
+  })
+
+  it('dispatches SET_FILTERS for sample-rate, channel, and group toggles', () => {
+    render(<TopBar />)
+
+    fireEvent.click(screen.getByTestId('topbar-filters-button'))
+    fireEvent.click(screen.getByTestId('topbar-filter-sample-96000'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { sampleRates: [96000] },
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-channels-8'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { channelCounts: [8] },
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-group-foh'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { groups: ['FOH'] },
+    })
+  })
+
+  it('clears all filter constraints in one action', () => {
+    mockState = {
+      ...mockState,
+      filters: {
+        deviceTypes: ['map2'],
+        sampleRates: [96000],
+        channelCounts: [8],
+        availableOnly: true,
+        showLocked: false,
+        groups: ['FOH'],
+      },
+    }
+
+    render(<TopBar />)
+
+    fireEvent.click(screen.getByTestId('topbar-filters-button'))
+    fireEvent.click(screen.getByTestId('topbar-filters-clear-all'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: {
+        deviceTypes: [],
+        sampleRates: [],
+        channelCounts: [],
+        availableOnly: false,
+        showLocked: true,
+        groups: [],
+      },
     })
   })
 
