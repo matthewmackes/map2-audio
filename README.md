@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **648** TypeScript | **114** C++/H | **92** Docs | **253** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **648** TypeScript | **114** C++/H | **92** Docs | **255** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -148,7 +148,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cfe99a3`](https://github.com/matthewmackes/map2-audio/commit/cfe99a3cf3bc0f4ac0a11f3f969f8d034e64ce43) | avb-routing: extend safe-patch inventory churn and NodeTr... | Map2 Audio | 2026-02-17 |
+| [`78c1b96`](https://github.com/matthewmackes/map2-audio/commit/78c1b96d3364c56520e9ceb354e5c9efe0e4bbfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`0c0e0e4`](https://github.com/matthewmackes/map2-audio/commit/0c0e0e482b973305acdb0abebed90d7ddad4552a) | avb-routing: harden menu a11y and concurrent safe-churn t... | Map2 Audio | 2026-02-17 |
 | [`7b51f7f`](https://github.com/matthewmackes/map2-audio/commit/7b51f7f60feed276d6d931874badd96f0dbc85f9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`2bcf256`](https://github.com/matthewmackes/map2-audio/commit/2bcf2568a7dd2a719a1ff7ce88efa761b938bccb) | avb-routing: cover menu keyboard flow and safe refresh ov... | Map2 Audio | 2026-02-17 |
 | [`f681dc9`](https://github.com/matthewmackes/map2-audio/commit/f681dc9693948da72e931944be35429d62a6732a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`9548d1b`](https://github.com/matthewmackes/map2-audio/commit/9548d1bc571441e1c34e4af7b2dea787e7df060b) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-17 |
 | [`8fe6b52`](https://github.com/matthewmackes/map2-audio/commit/8fe6b5224584ceae069840c05a6e0eadc901517a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`91752ad`](https://github.com/matthewmackes/map2-audio/commit/91752adc1c3f2c781ca6b508db977aa48e30cd83) | avb-routing: guard NodeTree keyboard expand flow and chur... | Map2 Audio | 2026-02-16 |
-| [`3e8c39e`](https://github.com/matthewmackes/map2-audio/commit/3e8c39e0b817b8705ee8d387168aa2ff1c5ee3a0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
