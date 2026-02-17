@@ -486,6 +486,81 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     })
   })
 
+  it('enters multi-select mode from top-bar control and seeds current node selection', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: 'node-degraded',
+          local_node_id: 'node-local',
+          view_mode: 'single_node',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.click(screen.getByTestId('node-selector-multi-select-toggle'))
+
+    expect(mockDispatch).toHaveBeenNthCalledWith(1, {
+      type: 'SET_VIEW_MODE',
+      payload: 'multi_select',
+    })
+    expect(mockDispatch).toHaveBeenNthCalledWith(2, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-degraded',
+    })
+  })
+
+  it('exits multi-select mode from top-bar control', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local', 'node-degraded'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.click(screen.getByTestId('node-selector-multi-select-toggle'))
+
+    expect(mockDispatch).toHaveBeenCalledTimes(1)
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_VIEW_MODE',
+      payload: 'all_nodes',
+    })
+  })
+
+  it('dispatches multi-select toggle when clicking node tabs in multi-select mode', () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    fireEvent.click(screen.getByTestId('node-selector-tab-node-offline'))
+
+    expect(mockDispatch).toHaveBeenCalledTimes(1)
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-offline',
+    })
+  })
+
   it('aligns multi-select selected node ids across NodeSelector and NodeTree', () => {
     mockState = {
       network: {
@@ -513,5 +588,42 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     expect(screen.getByTestId('node-tree-item-node-local').getAttribute('data-node-selected')).toBe('true')
     expect(screen.getByTestId('node-tree-item-node-degraded').getAttribute('data-node-selected')).toBe('true')
     expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-node-selected')).toBe('false')
+  })
+
+  it('renders deterministic highlights and tab order with duplicate unsorted multi-select ids', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-offline', 'node-local', 'node-offline'],
+          show_offline: true,
+        },
+      },
+    }
+
+    const { container } = render(
+      <>
+        <NodeSelector />
+        <NodeTree />
+      </>,
+    )
+
+    await waitFor(() => {
+      expect(getRenderedTabOrder(container)).toEqual([
+        'node-local',
+        'node-degraded',
+        'node-offline',
+      ])
+    })
+
+    expect(screen.getByTestId('node-selector-selected-marker-node-local').textContent).toBe('selected')
+    expect(screen.getByTestId('node-selector-selected-marker-node-offline').textContent).toBe('selected')
+    expect(screen.getByTestId('node-selector-selected-marker-node-degraded').textContent).toBe('unselected')
+
+    expect(screen.getByTestId('node-tree-item-node-local').getAttribute('data-node-selected')).toBe('true')
+    expect(screen.getByTestId('node-tree-item-node-offline').getAttribute('data-node-selected')).toBe('true')
+    expect(screen.getByTestId('node-tree-item-node-degraded').getAttribute('data-node-selected')).toBe('false')
   })
 })

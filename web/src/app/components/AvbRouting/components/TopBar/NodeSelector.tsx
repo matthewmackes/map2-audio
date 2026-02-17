@@ -32,6 +32,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { useNodes, useLocalNodeId } from '../../hooks/useNodeApi';
 import { useRouting } from '../../context/RoutingContext';
 import type { AvbNode, NodeStatus } from '../../types';
@@ -276,19 +277,38 @@ export function NodeSelector() {
     });
   };
 
-  const handleViewModeChange = (mode: 'all_nodes' | 'single_node') => {
+  const handleViewModeChange = (mode: 'all_nodes' | 'single_node' | 'multi_select') => {
     dispatch({
       type: 'SET_VIEW_MODE',
       payload: mode,
     });
   };
 
+  const handleMultiSelectToggle = () => {
+    if (viewMode === 'multi_select') {
+      handleViewModeChange('all_nodes');
+      return;
+    }
+
+    handleViewModeChange('multi_select');
+
+    const seedNodeId = currentNodeId || localNodeId || null;
+    if (seedNodeId && !selectedNodeIds.includes(seedNodeId)) {
+      dispatch({
+        type: 'TOGGLE_NODE_SELECTION',
+        payload: seedNodeId,
+      });
+    }
+  };
+
   // Selected value for tabs
-  const selectedValue = viewMode === 'all_nodes' || !selectedNodeIsVisible
+  const selectedValue = viewMode === 'all_nodes'
     ? 'all'
-    : selectedNodeIndex >= 0
-      ? selectedNodeIndex + 1
-      : 'all';
+    : viewMode === 'single_node'
+      ? selectedNodeIsVisible && selectedNodeIndex >= 0
+        ? selectedNodeIndex + 1
+        : 'all'
+      : false;
 
   return (
     <Box
@@ -306,6 +326,7 @@ export function NodeSelector() {
         <IconButton
           size="small"
           onClick={() => handleViewModeChange('all_nodes')}
+          data-testid="node-selector-all-nodes-toggle"
           sx={{
             ml: 1,
             bgcolor: viewMode === 'all_nodes' ? 'primary.main' : 'transparent',
@@ -316,6 +337,23 @@ export function NodeSelector() {
           }}
         >
           <NetworkCheckIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title={viewMode === 'multi_select' ? 'Exit multi-select mode' : 'Enter multi-select mode'}>
+        <IconButton
+          size="small"
+          onClick={handleMultiSelectToggle}
+          data-testid="node-selector-multi-select-toggle"
+          sx={{
+            bgcolor: viewMode === 'multi_select' ? 'secondary.main' : 'transparent',
+            color: viewMode === 'multi_select' ? 'secondary.contrastText' : 'text.secondary',
+            '&:hover': {
+              bgcolor: viewMode === 'multi_select' ? 'secondary.dark' : 'action.hover',
+            },
+          }}
+        >
+          <DoneAllIcon fontSize="small" />
         </IconButton>
       </Tooltip>
 
@@ -377,6 +415,14 @@ export function NodeSelector() {
             highlighted={isNodeSelected}
             tabValue={index + 1}
             onClick={() => {
+              if (viewMode === 'multi_select') {
+                dispatch({
+                  type: 'TOGGLE_NODE_SELECTION',
+                  payload: node.node_id,
+                });
+                return;
+              }
+
               handleViewModeChange('single_node');
               handleNodeSelect(node.node_id);
             }}

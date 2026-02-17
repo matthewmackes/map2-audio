@@ -399,6 +399,39 @@ python3 -m tui.node_console
 
 ---
 
+## 12. AVB ROUTING MULTI-SELECT WORKFLOW
+
+Use this workflow when operating multiple nodes at once in the AVB Routing UI (`/avb-routing`):
+
+1. Enter multi-select mode:
+```text
+Click the top-bar multi-select toggle (checklist icon) in the node strip.
+```
+
+2. Build the active node set:
+```text
+Click node tabs (top strip) or node rows (left NodeTree) to add/remove nodes.
+```
+- Selection is fail-safe normalized in UI state:
+  - duplicate node IDs are removed
+  - ordering is deterministic for stable operator context
+
+3. Validate active context:
+```text
+Selected nodes are highlighted in both NodeSelector and NodeTree.
+Inspector endpoint/route details are shown only when the selected object belongs to the active node set.
+```
+
+4. Exit multi-select mode:
+```text
+Click the multi-select toggle again, or switch to All Nodes / single-node tab focus as needed.
+```
+
+Operational note:
+- Multi-select filtering affects endpoint visibility and inspector context only; it does not auto-create or auto-remove AVB routes.
+
+---
+
 ## Quick Start Checklist
 
 - [ ] Backend running: `systemctl status map2-backend`

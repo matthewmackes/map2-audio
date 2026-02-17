@@ -248,4 +248,53 @@ describe('InspectorPanel node-context filtering', () => {
     expect(screen.getByText('Selected Route')).toBeTruthy()
     expect(screen.getByText('Talker B')).toBeTruthy()
   })
+
+  it('hides and restores selected endpoint details as multi-select node context changes', () => {
+    const endpointB = makeEndpoint({
+      endpoint_id: 'listener-b',
+      direction: 'listener',
+      device_name: 'Listener B',
+      node_id: 'node-b',
+    })
+
+    mockState = {
+      ...makeBaseState(),
+      network: {
+        ...makeBaseState().network,
+        nodeSelection: {
+          ...makeBaseState().network.nodeSelection,
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-a'],
+        },
+      },
+      endpoints: {
+        [endpointB.endpoint_id]: endpointB,
+      },
+      selection: {
+        ...makeBaseState().selection,
+        selectedEndpoints: [endpointB.endpoint_id],
+      },
+    }
+
+    const { rerender } = render(<InspectorPanel />)
+
+    expect(screen.queryByText('Selected Endpoint')).toBeNull()
+    expect(screen.getByText('Click an endpoint or route to see details')).toBeTruthy()
+
+    mockState = {
+      ...mockState,
+      network: {
+        ...mockState.network,
+        nodeSelection: {
+          ...mockState.network.nodeSelection,
+          selected_node_ids: ['node-a', 'node-b'],
+        },
+      },
+    }
+
+    rerender(<InspectorPanel />)
+
+    expect(screen.getByText('Selected Endpoint')).toBeTruthy()
+    expect(screen.getByText('Listener B')).toBeTruthy()
+  })
 })

@@ -168,6 +168,26 @@
   - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
   - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
   - validates multi-select node clicks dispatch `TOGGLE_NODE_SELECTION`, and reducer toggles add/remove behavior deterministically
+- Multi-select selected-node set normalization added in reducer:
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - deduplicates stale `selected_node_ids` and enforces deterministic lexical ordering during multi-select transitions
+- Duplicate/unsorted multi-select UI-state assertions added across navigation surfaces:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates deterministic tab ordering and stable selected highlighting when `selected_node_ids` contains duplicates or unsorted IDs
+- Inspector multi-select endpoint-context assertions added:
+  - `web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx`
+  - validates selected endpoint details hide outside active `selected_node_ids` context and restore when relevant node IDs are re-included
+- Top-bar multi-select operator controls added:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - adds explicit enter/exit `multi_select` toggle control and seeds selection from current node when entering multi-select mode
+  - node tab clicks now dispatch `TOGGLE_NODE_SELECTION` while in `multi_select` mode
+- Top-bar multi-select mode transition assertions added:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates enter/exit control dispatch contract and multi-select tab click behavior
+- Operator guidance for multi-select workflows added:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents enter/exit controls, node-set editing from NodeSelector/NodeTree, and inspector visibility behavior under active multi-select context
 
 ---
 
@@ -181,9 +201,6 @@
 
 ## Remaining Work
 
-### Phase 3 (in progress)
-- Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
-
 ### Phase 4+
 - Search/filter panel enhancements.
 - Scene management dialogs and diff UX.
@@ -195,6 +212,6 @@
 
 ## Next Recommended Slice
 
-1. Add reducer + UI assertions for multi-select de-duplication and deterministic selected-node ordering.
-2. Add node-context inspector assertions for multi-select endpoint details (not just routes).
-3. Add top-bar level operator controls for entering/exiting multi-select mode.
+1. Expand end-to-end interaction tests for mixed node-tab + NodeTree multi-select editing flows.
+2. Continue Phase 4 search/filter and scene-diff UX work.
+3. Add operator-facing troubleshooting notes for multi-select/filter interactions during node churn.

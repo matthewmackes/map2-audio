@@ -33,6 +33,10 @@ function generateId(): string {
   return `${timestamp}-${randomA}-${randomB}`;
 }
 
+function normalizeSelectedNodeIds(nodeIds: string[]): string[] {
+  return Array.from(new Set(nodeIds)).sort((a, b) => a.localeCompare(b));
+}
+
 /**
  * Create a new audit log entry
  */
@@ -912,6 +916,7 @@ export function routingReducer(
           nodeSelection: {
             ...state.network.nodeSelection,
             view_mode: action.payload,
+            selected_node_ids: normalizeSelectedNodeIds(state.network.nodeSelection.selected_node_ids),
           },
         },
       };
@@ -919,7 +924,7 @@ export function routingReducer(
 
     case 'TOGGLE_NODE_SELECTION': {
       const nodeId = action.payload;
-      const selected = state.network.nodeSelection.selected_node_ids;
+      const selected = normalizeSelectedNodeIds(state.network.nodeSelection.selected_node_ids);
       const isSelected = selected.includes(nodeId);
 
       return {
@@ -930,7 +935,7 @@ export function routingReducer(
             ...state.network.nodeSelection,
             selected_node_ids: isSelected
               ? selected.filter((id) => id !== nodeId)
-              : [...selected, nodeId],
+              : normalizeSelectedNodeIds([...selected, nodeId]),
           },
         },
       };
@@ -944,6 +949,7 @@ export function routingReducer(
           nodeSelection: {
             ...state.network.nodeSelection,
             show_offline: action.payload,
+            selected_node_ids: normalizeSelectedNodeIds(state.network.nodeSelection.selected_node_ids),
           },
         },
       };

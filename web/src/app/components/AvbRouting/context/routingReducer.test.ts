@@ -500,4 +500,30 @@ describe('routingReducer multi-select node toggles', () => {
     expect(withoutNodeA.network.nodeSelection.selected_node_ids).toEqual(['node-b'])
     expect(withoutNodeA.network.nodeSelection.view_mode).toBe('multi_select')
   })
+
+  it('deduplicates stale selected node ids and keeps lexical ordering', () => {
+    const state = {
+      ...cloneState(),
+      network: {
+        ...cloneState().network,
+        nodeSelection: {
+          ...cloneState().network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-b', 'node-a', 'node-b'],
+        },
+      },
+    }
+
+    const withNodeC = routingReducer(state, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-c',
+    })
+    expect(withNodeC.network.nodeSelection.selected_node_ids).toEqual(['node-a', 'node-b', 'node-c'])
+
+    const withoutNodeB = routingReducer(withNodeC, {
+      type: 'TOGGLE_NODE_SELECTION',
+      payload: 'node-b',
+    })
+    expect(withoutNodeB.network.nodeSelection.selected_node_ids).toEqual(['node-a', 'node-c'])
+  })
 })
