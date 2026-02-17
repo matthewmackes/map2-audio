@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **648** TypeScript | **114** C++/H | **91** Docs | **245** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **648** TypeScript | **114** C++/H | **91** Docs | **247** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`91752ad`](https://github.com/matthewmackes/map2-audio/commit/91752adc1c3f2c781ca6b508db977aa48e30cd83) | avb-routing: guard NodeTree keyboard expand flow and chur... | Map2 Audio | 2026-02-16 |
+| [`3e8c39e`](https://github.com/matthewmackes/map2-audio/commit/3e8c39e0b817b8705ee8d387168aa2ff1c5ee3a0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`e87f470`](https://github.com/matthewmackes/map2-audio/commit/e87f47099fa150bed8d6b08a252c79165b41738d) | avb-routing: harden keyboard and churn coverage for multi... | Map2 Audio | 2026-02-16 |
 | [`6849026`](https://github.com/matthewmackes/map2-audio/commit/6849026c7a188d34f666ab9fb5ec14c3a4aae0a1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`0e0ed66`](https://github.com/matthewmackes/map2-audio/commit/0e0ed66374377b3fbce89f770dabe80c51c31e87) | avb-routing: add keyboard-first node selector flow coverage | Map2 Audio | 2026-02-16 |
 | [`4c56f23`](https://github.com/matthewmackes/map2-audio/commit/4c56f2392e9ed6a3e6550780055458699ad992eb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 | [`fc8a620`](https://github.com/matthewmackes/map2-audio/commit/fc8a62044a7e536263970957eb7f5d49b27c37f8) | avb-routing: cover safe-patch flow retention in multi-sel... | Map2 Audio | 2026-02-16 |
 | [`50b049f`](https://github.com/matthewmackes/map2-audio/commit/50b049fbd7df41321a06825292572e875ce0c921) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
-| [`c2c5e44`](https://github.com/matthewmackes/map2-audio/commit/c2c5e44d3530bb2aa16dd6303e70be5399d2761b) | avb-routing: add mixed-surface multi-select integration c... | Map2 Audio | 2026-02-16 |
-| [`17a1535`](https://github.com/matthewmackes/map2-audio/commit/17a1535fe941fe9c0c08b193b75c5f099160edd1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
