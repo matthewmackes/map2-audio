@@ -110,12 +110,14 @@ function RoutingStateProbe() {
     ? `${route.state}:${route.talker_node_id ?? 'none'}:${route.listener_node_id ?? 'none'}:${route.cross_node ? 'cross' : 'local'}`
     : 'none'
   const nodeIds = Object.keys(state.network.nodes).sort().join('|') || 'none'
+  const nodeBStatus = state.network.nodes['node-b']?.status ?? 'missing'
 
   return (
     <div>
       <span data-testid="route-summary">{routeSummary}</span>
       <span data-testid="node-ids">{nodeIds}</span>
       <span data-testid="local-node-id">{state.network.nodeSelection.local_node_id}</span>
+      <span data-testid="node-b-status">{nodeBStatus}</span>
     </div>
   )
 }
@@ -207,6 +209,75 @@ describe('RoutingContext API/reducer integration', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('route-summary').textContent).toBe('connected:node-a:node-b:cross')
+    })
+  })
+
+  it('reconciles stale cross-node routes when a remote node goes offline', async () => {
+    mockLocalNodeId = 'node-a'
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+    ]
+    mockEndpointsData = {
+      count: 2,
+      endpoints: [
+        makeEndpoint({
+          endpoint_id: 'talker-1',
+          direction: 'talker',
+          unique_id: 1,
+        }),
+        makeEndpoint({
+          endpoint_id: 'listener-1',
+          direction: 'listener',
+          unique_id: 2,
+        }),
+      ],
+    }
+    mockConnectionsData = {
+      count: 1,
+      connections: [
+        {
+          connection_id: 'talker-1→listener-1',
+          talker: { endpoint_id: 'talker-1', node_id: 'node-a' },
+          listener: { endpoint_id: 'listener-1', node_id: 'node-b' },
+          state: 'connected',
+          established_time: '2026-02-17T01:00:00Z',
+          error_message: null,
+          srp_reservation_id: null,
+          srp_admission_id: null,
+        },
+      ],
+    }
+
+    const { rerender } = render(
+      <RoutingProvider>
+        <RoutingStateProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('route-summary').textContent).toBe('connected:node-a:node-b:cross')
+      expect(screen.getByTestId('node-b-status').textContent).toBe('online')
+    })
+
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'offline' }),
+    ]
+    mockConnectionsData = {
+      count: 0,
+      connections: [],
+    }
+
+    rerender(
+      <RoutingProvider>
+        <RoutingStateProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('route-summary').textContent).toBe('none')
+      expect(screen.getByTestId('node-b-status').textContent).toBe('offline')
     })
   })
 })

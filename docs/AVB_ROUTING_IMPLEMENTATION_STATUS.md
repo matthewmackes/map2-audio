@@ -88,6 +88,9 @@
 - API/reducer integration coverage added for cross-node route lifecycle:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates provider sync of API payloads into reducer state for `connecting -> connected` cross-node transitions
+- Topology/route reconciliation coverage added for node offline transitions:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates stale cross-node route cleanup when remote node status changes to offline and API connections clear
 - Focused UI assertions added for cross-node indicators and topology badges:
   - `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx`
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
@@ -106,7 +109,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add topology/route reconciliation tests when nodes go offline and recover.
+- Add matrix/topology UX assertions for degraded node health surfacing.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -119,6 +122,6 @@
 
 ## Next Recommended Slice
 
-1. Add topology/route reconciliation tests when nodes go offline and recover.
-2. Add matrix/topology UX assertions for degraded node health surfacing.
-3. Add scenario tests for route cleanup when stale cross-node entries are replaced by live API sync.
+1. Add matrix/topology UX assertions for degraded node health surfacing.
+2. Add NodeTree and NodeSelector badge assertions for degraded/offline health visibility.
+3. Add topology node-card assertions for per-node health metrics rendering.
