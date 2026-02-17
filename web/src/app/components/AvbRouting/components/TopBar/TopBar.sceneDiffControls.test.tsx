@@ -88,10 +88,14 @@ describe('TopBar scene diff controls', () => {
     }
   })
 
+  function openSceneDiffControls() {
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+  }
+
   it('dispatches scene-diff baseline/compare selection actions from TopBar controls', async () => {
     render(<TopBar />)
 
-    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    openSceneDiffControls()
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
@@ -110,14 +114,83 @@ describe('TopBar scene diff controls', () => {
     })
   })
 
-  it('dispatches generate and clear scene-diff actions', () => {
+  it('warns and blocks generation when scene selections are missing', () => {
     render(<TopBar />)
 
-    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    openSceneDiffControls()
     fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
-    fireEvent.click(screen.getByTestId('topbar-scene-diff-clear'))
+
+    expect(mockNotify.warning).toHaveBeenCalledWith(
+      'Select both baseline and compare scenes before generating a diff.'
+    )
+    expect(mockDispatch).not.toHaveBeenCalledWith({ type: 'GENERATE_SCENE_DIFF' })
+  })
+
+  it('warns and blocks generation when selected scenes are stale', () => {
+    const muiWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockState = {
+      ...mockState,
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+        preview: null,
+      },
+    }
+
+    try {
+      render(<TopBar />)
+
+      openSceneDiffControls()
+      fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
+
+      expect(mockNotify.warning).toHaveBeenCalledWith(
+        'Selected scene is no longer available. Reselect scenes and retry diff generation.'
+      )
+      expect(mockDispatch).not.toHaveBeenCalledWith({ type: 'GENERATE_SCENE_DIFF' })
+    } finally {
+      muiWarnSpy.mockRestore()
+    }
+  })
+
+  it('dispatches generate and info notification when scene selections are valid', () => {
+    mockState = {
+      ...mockState,
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: null,
+      },
+    }
+
+    render(<TopBar />)
+
+    openSceneDiffControls()
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
 
     expect(mockDispatch).toHaveBeenCalledWith({ type: 'GENERATE_SCENE_DIFF' })
+    expect(mockNotify.info).toHaveBeenCalledWith('Generated scene diff: Baseline Scene vs Compare Scene.')
+  })
+
+  it('dispatches clear scene-diff action', () => {
+    render(<TopBar />)
+
+    openSceneDiffControls()
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-clear'))
+
     expect(mockDispatch).toHaveBeenCalledWith({ type: 'CLEAR_SCENE_DIFF' })
+  })
+
+  it('renders inline scene-diff error feedback inside scene-diff controls', () => {
+    mockState = {
+      ...mockState,
+      error: 'Scene diff scene selection is invalid',
+    }
+
+    render(<TopBar />)
+
+    openSceneDiffControls()
+    expect(screen.getByTestId('topbar-scene-diff-error').textContent).toContain(
+      'Scene diff scene selection is invalid'
+    )
   })
 })

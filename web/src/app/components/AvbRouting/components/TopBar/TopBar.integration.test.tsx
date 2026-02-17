@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TopBar } from './TopBar'
 import { RoutingProvider, useFilteredEndpoints, useRoutingState } from '../../context/RoutingContext'
 import { initialRoutingState } from '../../types'
-import type { AvbNode, ConnectionsResponse, Endpoint, EndpointsResponse } from '../../types'
+import type { AvbNode, ConnectionsResponse, Endpoint, EndpointsResponse, Route } from '../../types'
 
 let mockEndpointsData: EndpointsResponse | undefined
 let mockConnectionsData: ConnectionsResponse | undefined
@@ -119,6 +119,24 @@ function makeNode(overrides: Partial<AvbNode>): AvbNode {
     pinned: false,
     notes: '',
     ...overrides,
+  }
+}
+
+function makeSceneRoute(talker_id: string, listener_id: string): Route {
+  return {
+    id: `${talker_id}→${listener_id}`,
+    talker_id,
+    listener_id,
+    state: 'connected',
+    established_time: '2026-02-17T00:00:00Z',
+    error_message: null,
+    connection_count: 1,
+    srp_reservation_id: null,
+    srp_admission_id: null,
+    locked: false,
+    valid: true,
+    messages: [],
+    cross_node: false,
   }
 }
 
@@ -377,6 +395,97 @@ describe('TopBar filter controls provider integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('probe-endpoint-order').textContent).toBe('endpoint-c|endpoint-b|endpoint-a')
       expect(screen.getByTestId('probe-selected-node-ids').textContent).toBe('node-a|node-b')
+    })
+  })
+
+  it('drives scene diff preview generation and clear actions through TopBar controls with provider state', async () => {
+    const talkerOne = makeEndpoint({
+      endpoint_id: 'talker-1',
+      direction: 'talker',
+      unique_id: 11,
+      device_name: 'Talker One',
+    })
+    const listenerOne = makeEndpoint({
+      endpoint_id: 'listener-1',
+      direction: 'listener',
+      unique_id: 12,
+      device_name: 'Listener One',
+    })
+    const talkerTwo = makeEndpoint({
+      endpoint_id: 'talker-2',
+      direction: 'talker',
+      unique_id: 13,
+      device_name: 'Talker Two',
+    })
+    const listenerTwo = makeEndpoint({
+      endpoint_id: 'listener-2',
+      direction: 'listener',
+      unique_id: 14,
+      device_name: 'Listener Two',
+    })
+
+    const baselineRoute = makeSceneRoute('talker-1', 'listener-1')
+    const compareOnlyRoute = makeSceneRoute('talker-2', 'listener-2')
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [talkerOne.endpoint_id]: talkerOne,
+        [listenerOne.endpoint_id]: listenerOne,
+        [talkerTwo.endpoint_id]: talkerTwo,
+        [listenerTwo.endpoint_id]: listenerTwo,
+      },
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [baselineRoute],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [baselineRoute, compareOnlyRoute],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    expect(screen.queryByTestId('scene-diff-preview')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-preview')).toBeTruthy()
+      expect(screen.getByTestId('scene-diff-preview-scope').textContent).toContain('Baseline Scene vs Compare Scene')
+      expect(screen.getByTestId('scene-diff-preview-add-count').textContent).toContain('1 add')
+      expect(screen.getByTestId('scene-diff-preview-remove-count').textContent).toContain('0 remove')
+      expect(screen.getByTestId('scene-diff-preview-total-changes').textContent).toContain('Total changes: 1')
+      expect(screen.getByTestId('scene-diff-preview-add-routes').textContent).toContain('Talker Two -> Listener Two')
+    })
+
+    expect(mockNotify.info).toHaveBeenCalledWith('Generated scene diff: Baseline Scene vs Compare Scene.')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-clear'))
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('scene-diff-preview')).toBeNull()
     })
   })
 })

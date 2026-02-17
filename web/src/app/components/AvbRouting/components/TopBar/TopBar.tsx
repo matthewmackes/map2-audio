@@ -206,7 +206,23 @@ export function TopBar() {
   };
 
   const handleGenerateSceneDiff = () => {
+    const baselineSceneId = state.sceneDiff.baseline_scene_id;
+    const compareSceneId = state.sceneDiff.compare_scene_id;
+
+    if (!baselineSceneId || !compareSceneId) {
+      notify.warning('Select both baseline and compare scenes before generating a diff.');
+      return;
+    }
+
+    const baselineScene = state.scenes[baselineSceneId];
+    const compareScene = state.scenes[compareSceneId];
+    if (!baselineScene || !compareScene) {
+      notify.warning('Selected scene is no longer available. Reselect scenes and retry diff generation.');
+      return;
+    }
+
     dispatch({ type: 'GENERATE_SCENE_DIFF' });
+    notify.info(`Generated scene diff: ${baselineScene.name} vs ${compareScene.name}.`);
   };
 
   const handleClearSceneDiff = () => {
@@ -304,6 +320,10 @@ export function TopBar() {
     .sort((a, b) => a.name.localeCompare(b.name));
   const selectedBaselineScene = state.sceneDiff.baseline_scene_id ?? '';
   const selectedCompareScene = state.sceneDiff.compare_scene_id ?? '';
+  const sceneDiffError =
+    state.error && state.error.toLowerCase().includes('scene diff')
+      ? state.error
+      : null;
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -718,6 +738,15 @@ export function TopBar() {
               Done
             </Button>
           </Box>
+          {sceneDiffError && (
+            <Typography
+              variant="caption"
+              color="warning.main"
+              data-testid="topbar-scene-diff-error"
+            >
+              {sceneDiffError}
+            </Typography>
+          )}
         </Box>
       </Popover>
 

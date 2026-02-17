@@ -296,6 +296,17 @@
 - Scene-diff error/reset integration coverage expanded for missing/invalid selections and delete-after-preview churn:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates reducer/provider error behavior when scene selections are missing/invalid and reset behavior when compared scenes are deleted after preview generation
+- TopBar scene-diff generation validation/feedback hardened:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - blocks generate dispatch when baseline/compare selections are missing or stale and emits operator-facing warning guidance
+- Provider-level TopBar scene-diff integration coverage added for preview lifecycle:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates baseline/compare UI selection drives reducer preview generation end-to-end and `Clear` removes preview state/rendering
+- Inline TopBar scene-diff error feedback surfaced with focused component assertions:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - renders reducer scene-diff error context directly in the scene-diff controls popover for lightweight operator remediation
 
 ---
 
@@ -320,6 +331,6 @@
 
 ## Next Recommended Slice
 
-1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add provider-level integration coverage that TopBar scene-diff controls drive reducer state and preview rendering end-to-end (not probe-dispatch only).
-3. Surface lightweight operator feedback for scene-diff generation errors in TopBar (non-blocking) with focused component tests.
+1. Continue Phase 4 scene management UX by adding lightweight scene save/recall/delete controls in TopBar (without full modal workflows yet).
+2. Add a read-only scene inventory/status strip that makes baseline/compare availability explicit before opening scene-diff controls.
+3. Add provider-level integration coverage for scene lifecycle churn where active diff selections are replaced by newly saved/renamed scenes.
