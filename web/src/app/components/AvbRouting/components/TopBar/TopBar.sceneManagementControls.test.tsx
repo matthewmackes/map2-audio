@@ -62,18 +62,18 @@ describe('TopBar scene management controls', () => {
         'scene-a': {
           id: 'scene-a',
           name: 'Baseline Scene',
-          description: '',
+          description: 'Baseline description',
           routes: [],
           timestamp: '2026-02-17T00:00:00Z',
-          tags: [],
+          tags: ['baseline'],
         },
         'scene-b': {
           id: 'scene-b',
           name: 'Compare Scene',
-          description: '',
+          description: 'Compare description',
           routes: [],
           timestamp: '2026-02-17T00:00:00Z',
-          tags: [],
+          tags: ['compare'],
         },
       },
       sceneDiff: {
@@ -147,7 +147,38 @@ describe('TopBar scene management controls', () => {
     })
   })
 
-  it('dispatches recall and delete for selected saved scene', async () => {
+  it('updates selected scene metadata from TopBar controls', async () => {
+    render(<TopBar />)
+
+    openSceneControls()
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
+      target: { value: 'Baseline Scene Renamed' },
+    })
+    fireEvent.change(screen.getByTestId('topbar-scene-edit-description-input'), {
+      target: { value: 'Updated baseline description' },
+    })
+    fireEvent.change(screen.getByTestId('topbar-scene-edit-tags-input'), {
+      target: { value: 'critical, stage-left,  monitor ' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-update'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: 'scene-a',
+        name: 'Baseline Scene Renamed',
+        description: 'Updated baseline description',
+        tags: ['critical', 'stage-left', 'monitor'],
+      },
+    })
+    expect(mockNotify.success).toHaveBeenCalledWith('Updated scene metadata for "Baseline Scene Renamed".')
+  })
+
+  it('requires confirmation before recall and delete dispatch for selected saved scene', async () => {
     render(<TopBar />)
 
     openSceneControls()
@@ -156,7 +187,19 @@ describe('TopBar scene management controls', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
 
     fireEvent.click(screen.getByTestId('topbar-scene-recall'))
-    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    expect(mockDispatch).not.toHaveBeenCalledWith({
+      type: 'RECALL_SCENE',
+      payload: {
+        scene_id: 'scene-a',
+      },
+    })
+    expect(mockNotify.warning).toHaveBeenCalledWith('Confirm recall for "Baseline Scene" to replace current live routes.')
+    expect(screen.getByTestId('topbar-scene-impact-text').textContent).toContain(
+      'Confirm recall to replace current live routes with "Baseline Scene".'
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-recall'))
 
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'RECALL_SCENE',
@@ -164,20 +207,34 @@ describe('TopBar scene management controls', () => {
         scene_id: 'scene-a',
       },
     })
+    expect(mockNotify.info).toHaveBeenCalledWith('Recalled scene "Baseline Scene".')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    expect(mockDispatch).not.toHaveBeenCalledWith({
+      type: 'DELETE_SCENE',
+      payload: {
+        scene_id: 'scene-a',
+      },
+    })
+    expect(mockNotify.warning).toHaveBeenCalledWith('Confirm delete for "Baseline Scene" to permanently remove this snapshot.')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'DELETE_SCENE',
       payload: {
         scene_id: 'scene-a',
       },
     })
-    expect(mockNotify.info).toHaveBeenCalledWith('Recalled scene "Baseline Scene".')
     expect(mockNotify.info).toHaveBeenCalledWith('Deleted scene "Baseline Scene".')
   })
 
-  it('warns when recall/delete are requested without a selected scene', () => {
+  it('warns when recall/delete are requested without selection and keeps metadata update disabled', () => {
     render(<TopBar />)
 
     openSceneControls()
+    expect(screen.getByTestId('topbar-scene-update')).toHaveProperty('disabled', true)
     fireEvent.click(screen.getByTestId('topbar-scene-recall'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
 

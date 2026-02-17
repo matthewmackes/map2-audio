@@ -593,6 +593,66 @@ export function routingReducer(
       };
     }
 
+    case 'UPDATE_SCENE_METADATA': {
+      const { scene_id, name, description, tags } = action.payload;
+      const scene = state.scenes[scene_id];
+
+      if (!scene) {
+        return { ...state, error: `Scene not found: ${scene_id}` };
+      }
+
+      const nextName = name.trim() || scene.name;
+      const nextDescription = description.trim();
+      const nextTags = tags
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      const modifiedAt = new Date().toISOString();
+      const updatedScene = {
+        ...scene,
+        name: nextName,
+        description: nextDescription,
+        tags: nextTags,
+        modified_at: modifiedAt,
+        modified_by: 'user',
+      };
+
+      const updatedPreview =
+        state.sceneDiff.preview?.scene_id === scene_id
+          ? {
+              ...state.sceneDiff.preview,
+              scene_name: nextName,
+            }
+          : state.sceneDiff.preview;
+
+      const newState = {
+        ...state,
+        error: null,
+        scenes: {
+          ...state.scenes,
+          [scene_id]: updatedScene,
+        },
+        sceneDiff: {
+          ...state.sceneDiff,
+          preview: updatedPreview,
+        },
+        auditLog: [
+          ...state.auditLog,
+          createAuditEntry(
+            'UPDATE_SCENE',
+            {
+              scene_id,
+              name: nextName,
+              description: nextDescription,
+              tags: nextTags,
+            },
+            `Updated scene metadata: ${scene.name} -> ${nextName}`
+          ),
+        ],
+      };
+
+      return saveToHistory(state, newState);
+    }
+
     case 'SET_SCENE_DIFF_BASELINE': {
       return {
         ...state,

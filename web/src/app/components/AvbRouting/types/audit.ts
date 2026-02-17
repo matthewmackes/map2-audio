@@ -23,6 +23,7 @@ export type AuditEventType =
   | 'SAVE_SCENE'
   | 'RECALL_SCENE'
   | 'DELETE_SCENE'
+  | 'UPDATE_SCENE'
   | 'SCENE_DIFF'
 
   // Endpoint events

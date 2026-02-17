@@ -866,4 +866,70 @@ describe('routingReducer scene diff foundations', () => {
     expect(next.sceneDiff.compare_scene_id).toBeNull()
     expect(next.sceneDiff.preview).toBeNull()
   })
+
+  it('updates scene metadata deterministically and syncs preview scene name', () => {
+    const routeA = makeConnectedRoute('talker-1→listener-1')
+    const routeB = makeConnectedRoute('talker-2→listener-2')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [routeA]),
+        'scene-b': makeScene('scene-b', 'Scene B', [routeA, routeB]),
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: {
+          scene_id: 'scene-b',
+          scene_name: 'Scene B',
+          to_add: [{ talker_id: 'talker-2', listener_id: 'listener-2' }],
+          to_remove: [],
+          unchanged: ['talker-1→listener-1'],
+          total_changes: 1,
+        },
+      },
+    }
+
+    const updated = routingReducer(state, {
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: 'scene-b',
+        name: 'Scene B Renamed',
+        description: 'Updated compare scene',
+        tags: ['compare', 'critical'],
+      },
+    })
+
+    expect(updated.scenes['scene-b'].name).toBe('Scene B Renamed')
+    expect(updated.scenes['scene-b'].description).toBe('Updated compare scene')
+    expect(updated.scenes['scene-b'].tags).toEqual(['compare', 'critical'])
+    expect(updated.scenes['scene-b'].modified_at).toBeTruthy()
+    expect(updated.scenes['scene-b'].modified_by).toBe('user')
+    expect(updated.sceneDiff.preview?.scene_name).toBe('Scene B Renamed')
+    expect(updated.auditLog[updated.auditLog.length - 1]?.event_type).toBe('UPDATE_SCENE')
+    expect(updated.error).toBeNull()
+    expect(updated.history.past.length).toBe(1)
+  })
+
+  it('returns a scene-not-found error when updating missing scene metadata', () => {
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', []),
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: 'scene-missing',
+        name: 'Missing Scene',
+        description: 'No-op',
+        tags: ['none'],
+      },
+    })
+
+    expect(next.error).toBe('Scene not found: scene-missing')
+    expect(next.scenes).toEqual(state.scenes)
+  })
 })

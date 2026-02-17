@@ -321,6 +321,19 @@
 - AVB routing test command extended with TopBar scene-management suite:
   - `package.json`
   - includes `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+- Reducer-level scene metadata update support added with audit/history coverage:
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/types/audit.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - adds `UPDATE_SCENE_METADATA` action handling for rename/description/tags updates, preview-name synchronization, and deterministic scene-not-found error behavior
+- TopBar scene metadata editing and destructive-action guardrails added:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds selected-scene metadata edit fields, apply-metadata action, recall/delete two-step confirmation flow, and operator-facing impact text
+- Provider-level duplicate-name scene selection determinism coverage added:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates duplicate-name scene dropdown ordering (`name` + `id` tie-break), disambiguated option labeling, and deterministic baseline/compare selection behavior
 
 ---
 
@@ -345,6 +358,6 @@
 
 ## Next Recommended Slice
 
-1. Add scene metadata editing/rename support (name/description/tags) with deterministic reducer and TopBar tests.
-2. Add explicit destructive-action guardrails for scene delete/recall paths (confirmation affordance + operator-facing impact text).
-3. Add provider-level integration coverage for duplicate-name scenes and deterministic selection behavior in TopBar dropdowns.
+1. Add scene metadata validation policy (length limits, duplicate-name warnings, reserved-character normalization) with reducer and TopBar tests.
+2. Add pre-recall impact preview (route add/remove summary) directly in scene controls before confirmation.
+3. Add lightweight scene list filtering/search in TopBar controls for large scene inventories.

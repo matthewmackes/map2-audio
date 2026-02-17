@@ -5,7 +5,7 @@
  * Contains search, filters, safe patch toggle, and undo/redo controls.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -52,6 +52,13 @@ function sanitizeFilterIdValue(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+function parseSceneTags(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+}
+
 /**
  * Top bar component
  */
@@ -65,8 +72,12 @@ export function TopBar() {
   const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
   const [scenesAnchor, setScenesAnchor] = useState<HTMLElement | null>(null);
   const [sceneDiffAnchor, setSceneDiffAnchor] = useState<HTMLElement | null>(null);
-  const [sceneNameDraft, setSceneNameDraft] = useState('');
+  const [sceneCreateNameDraft, setSceneCreateNameDraft] = useState('');
   const [selectedSceneId, setSelectedSceneId] = useState('');
+  const [sceneEditNameDraft, setSceneEditNameDraft] = useState('');
+  const [sceneEditDescriptionDraft, setSceneEditDescriptionDraft] = useState('');
+  const [sceneEditTagsDraft, setSceneEditTagsDraft] = useState('');
+  const [pendingSceneAction, setPendingSceneAction] = useState<{ action: 'recall' | 'delete'; scene_id: string } | null>(null);
 
   const handleFiltersOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setFiltersAnchor(event.currentTarget);
@@ -86,13 +97,14 @@ export function TopBar() {
 
   const handleScenesOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setScenesAnchor(event.currentTarget);
-    if (!sceneNameDraft.trim()) {
-      setSceneNameDraft(`Scene ${Object.keys(state.scenes).length + 1}`);
+    if (!sceneCreateNameDraft.trim()) {
+      setSceneCreateNameDraft(`Scene ${Object.keys(state.scenes).length + 1}`);
     }
   };
 
   const handleScenesClose = () => {
     setScenesAnchor(null);
+    setPendingSceneAction(null);
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,18 +232,31 @@ export function TopBar() {
     });
   };
 
-  const handleSceneNameDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSceneNameDraft(event.target.value);
+  const handleSceneCreateNameDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSceneCreateNameDraft(event.target.value);
+  };
+
+  const handleSceneEditNameDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSceneEditNameDraft(event.target.value);
+  };
+
+  const handleSceneEditDescriptionDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSceneEditDescriptionDraft(event.target.value);
+  };
+
+  const handleSceneEditTagsDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSceneEditTagsDraft(event.target.value);
   };
 
   const handleSceneSelectionChange = (event: SelectChangeEvent<string>) => {
     setSelectedSceneId(event.target.value || '');
+    setPendingSceneAction(null);
   };
 
   const handleSaveScene = () => {
     const routeCount = Object.keys(state.liveRoutes).length;
     const fallbackName = `Scene ${Object.keys(state.scenes).length + 1}`;
-    const sceneName = sceneNameDraft.trim() || fallbackName;
+    const sceneName = sceneCreateNameDraft.trim() || fallbackName;
 
     dispatch({
       type: 'SAVE_SCENE',
@@ -242,7 +267,51 @@ export function TopBar() {
       },
     });
     notify.success(`Saved scene "${sceneName}" (${routeCount} routes).`);
-    setSceneNameDraft('');
+    setSceneCreateNameDraft('');
+  };
+
+  const handleUpdateSceneMetadata = () => {
+    if (!selectedSceneId) {
+      notify.warning('Select a saved scene before updating metadata.');
+      return;
+    }
+
+    const scene = state.scenes[selectedSceneId];
+    if (!scene) {
+      notify.warning('Selected scene is no longer available. Choose another saved scene.');
+      setSelectedSceneId('');
+      setPendingSceneAction(null);
+      return;
+    }
+
+    const nextName = sceneEditNameDraft.trim();
+    if (!nextName) {
+      notify.warning('Scene name cannot be empty when updating metadata.');
+      return;
+    }
+    const nextDescription = sceneEditDescriptionDraft.trim();
+    const nextTags = parseSceneTags(sceneEditTagsDraft);
+    const unchanged =
+      nextName === scene.name &&
+      nextDescription === scene.description &&
+      nextTags.join('|') === scene.tags.join('|');
+
+    if (unchanged) {
+      notify.info('No scene metadata changes to apply.');
+      return;
+    }
+
+    dispatch({
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: scene.id,
+        name: nextName,
+        description: nextDescription,
+        tags: nextTags,
+      },
+    });
+    notify.success(`Updated scene metadata for "${nextName}".`);
+    setPendingSceneAction(null);
   };
 
   const handleRecallScene = () => {
@@ -255,6 +324,13 @@ export function TopBar() {
     if (!scene) {
       notify.warning('Selected scene is no longer available. Choose another saved scene.');
       setSelectedSceneId('');
+      setPendingSceneAction(null);
+      return;
+    }
+
+    if (!pendingSceneAction || pendingSceneAction.action !== 'recall' || pendingSceneAction.scene_id !== scene.id) {
+      setPendingSceneAction({ action: 'recall', scene_id: scene.id });
+      notify.warning(`Confirm recall for "${scene.name}" to replace current live routes.`);
       return;
     }
 
@@ -265,6 +341,7 @@ export function TopBar() {
       },
     });
     notify.info(`Recalled scene "${scene.name}".`);
+    setPendingSceneAction(null);
   };
 
   const handleDeleteScene = () => {
@@ -277,6 +354,13 @@ export function TopBar() {
     if (!scene) {
       notify.warning('Selected scene is no longer available. Choose another saved scene.');
       setSelectedSceneId('');
+      setPendingSceneAction(null);
+      return;
+    }
+
+    if (!pendingSceneAction || pendingSceneAction.action !== 'delete' || pendingSceneAction.scene_id !== scene.id) {
+      setPendingSceneAction({ action: 'delete', scene_id: scene.id });
+      notify.warning(`Confirm delete for "${scene.name}" to permanently remove this snapshot.`);
       return;
     }
 
@@ -288,6 +372,7 @@ export function TopBar() {
     });
     notify.info(`Deleted scene "${scene.name}".`);
     setSelectedSceneId('');
+    setPendingSceneAction(null);
   };
 
   const handleGenerateSceneDiff = () => {
@@ -403,7 +488,20 @@ export function TopBar() {
   ).sort((a, b) => a.localeCompare(b));
   const sceneOptions = Object.values(state.scenes)
     .slice()
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => {
+      const byName = a.name.localeCompare(b.name);
+      return byName !== 0 ? byName : a.id.localeCompare(b.id);
+    });
+  const sceneNameCounts = sceneOptions.reduce((counts, scene) => {
+    const previous = counts.get(scene.name) || 0;
+    counts.set(scene.name, previous + 1);
+    return counts;
+  }, new Map<string, number>());
+  const renderSceneOptionLabel = (scene: (typeof sceneOptions)[number]) => (
+    (sceneNameCounts.get(scene.name) || 0) > 1
+      ? `${scene.name} (${scene.id})`
+      : scene.name
+  );
   const selectedScene = selectedSceneId ? state.scenes[selectedSceneId] : null;
   const selectedSceneIdValue = selectedScene ? selectedScene.id : '';
   const selectedBaselineScene = state.sceneDiff.baseline_scene_id ?? '';
@@ -434,6 +532,39 @@ export function TopBar() {
     state.error && state.error.toLowerCase().includes('scene diff')
       ? state.error
       : null;
+  const pendingSceneActionMatchesSelection =
+    Boolean(
+      selectedScene &&
+      pendingSceneAction &&
+      pendingSceneAction.scene_id === selectedScene.id
+    );
+  const sceneImpactText = !selectedScene
+    ? 'Select a saved scene to review recall/delete impact.'
+    : pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'recall'
+      ? `Confirm recall to replace current live routes with "${selectedScene.name}". Press Recall again to proceed.`
+      : pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'delete'
+        ? `Confirm delete to permanently remove "${selectedScene.name}". Press Delete again to proceed.`
+        : `Recall will replace current live routes with "${selectedScene.name}". Delete permanently removes this snapshot.`;
+
+  useEffect(() => {
+    if (!selectedScene) {
+      setSceneEditNameDraft('');
+      setSceneEditDescriptionDraft('');
+      setSceneEditTagsDraft('');
+      return;
+    }
+
+    setSceneEditNameDraft(selectedScene.name);
+    setSceneEditDescriptionDraft(selectedScene.description);
+    setSceneEditTagsDraft(selectedScene.tags.join(', '));
+  }, [selectedScene]);
+
+  useEffect(() => {
+    if (selectedSceneId && !selectedScene) {
+      setSelectedSceneId('');
+      setPendingSceneAction(null);
+    }
+  }, [selectedSceneId, selectedScene]);
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -653,9 +784,9 @@ export function TopBar() {
 
           <TextField
             size="small"
-            label="Scene Name"
-            value={sceneNameDraft}
-            onChange={handleSceneNameDraftChange}
+            label="New Scene Name"
+            value={sceneCreateNameDraft}
+            onChange={handleSceneCreateNameDraftChange}
             inputProps={{ 'data-testid': 'topbar-scene-name-input' }}
           />
 
@@ -694,9 +825,9 @@ export function TopBar() {
                 <MenuItem
                   key={scene.id}
                   value={scene.id}
-                  data-testid={`topbar-scene-option-${sanitizeFilterIdValue(scene.name)}`}
+                  data-testid={`topbar-scene-option-${sanitizeFilterIdValue(scene.name)}-${sanitizeFilterIdValue(scene.id)}`}
                 >
-                  {scene.name}
+                  {renderSceneOptionLabel(scene)}
                 </MenuItem>
               ))}
             </Select>
@@ -712,6 +843,51 @@ export function TopBar() {
               : 'Select a saved scene to recall or delete.'}
           </Typography>
 
+          <TextField
+            size="small"
+            label="Selected Scene Name"
+            value={sceneEditNameDraft}
+            onChange={handleSceneEditNameDraftChange}
+            inputProps={{ 'data-testid': 'topbar-scene-edit-name-input' }}
+            disabled={!selectedScene}
+          />
+
+          <TextField
+            size="small"
+            label="Description"
+            value={sceneEditDescriptionDraft}
+            onChange={handleSceneEditDescriptionDraftChange}
+            inputProps={{ 'data-testid': 'topbar-scene-edit-description-input' }}
+            disabled={!selectedScene}
+          />
+
+          <TextField
+            size="small"
+            label="Tags (comma separated)"
+            value={sceneEditTagsDraft}
+            onChange={handleSceneEditTagsDraftChange}
+            inputProps={{ 'data-testid': 'topbar-scene-edit-tags-input' }}
+            disabled={!selectedScene}
+          />
+
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleUpdateSceneMetadata}
+            data-testid="topbar-scene-update"
+            disabled={!selectedScene}
+          >
+            Apply Metadata
+          </Button>
+
+          <Typography
+            variant="caption"
+            color={pendingSceneActionMatchesSelection ? 'warning.main' : 'text.secondary'}
+            data-testid="topbar-scene-impact-text"
+          >
+            {sceneImpactText}
+          </Typography>
+
           <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button
@@ -719,7 +895,9 @@ export function TopBar() {
                 onClick={handleRecallScene}
                 data-testid="topbar-scene-recall"
               >
-                Recall
+                {pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'recall'
+                  ? 'Recall (Confirm)'
+                  : 'Recall'}
               </Button>
               <Button
                 size="small"
@@ -727,7 +905,9 @@ export function TopBar() {
                 onClick={handleDeleteScene}
                 data-testid="topbar-scene-delete"
               >
-                Delete
+                {pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'delete'
+                  ? 'Delete (Confirm)'
+                  : 'Delete'}
               </Button>
             </Box>
             <Button
@@ -936,9 +1116,9 @@ export function TopBar() {
                 <MenuItem
                   key={scene.id}
                   value={scene.id}
-                  data-testid={`topbar-scene-diff-baseline-${sanitizeFilterIdValue(scene.name)}`}
+                  data-testid={`topbar-scene-diff-baseline-${sanitizeFilterIdValue(scene.name)}-${sanitizeFilterIdValue(scene.id)}`}
                 >
-                  {scene.name}
+                  {renderSceneOptionLabel(scene)}
                 </MenuItem>
               ))}
             </Select>
@@ -960,9 +1140,9 @@ export function TopBar() {
                 <MenuItem
                   key={scene.id}
                   value={scene.id}
-                  data-testid={`topbar-scene-diff-compare-${sanitizeFilterIdValue(scene.name)}`}
+                  data-testid={`topbar-scene-diff-compare-${sanitizeFilterIdValue(scene.name)}-${sanitizeFilterIdValue(scene.id)}`}
                 >
-                  {scene.name}
+                  {renderSceneOptionLabel(scene)}
                 </MenuItem>
               ))}
             </Select>

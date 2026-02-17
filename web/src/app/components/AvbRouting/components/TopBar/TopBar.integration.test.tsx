@@ -569,9 +569,11 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Legacy Baseline v1' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Legacy Compare v1' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
 
     await waitFor(() => {
@@ -596,6 +598,98 @@ describe('TopBar filter controls provider integration', () => {
       expect(screen.getByTestId('topbar-scene-status-readiness').textContent).toContain('Diff selection ready')
       expect(screen.getByTestId('scene-diff-preview')).toBeTruthy()
       expect(screen.getByTestId('scene-diff-preview-total-changes').textContent).toContain('Total changes: 0')
+    })
+  })
+
+  it('keeps duplicate-name scene selection deterministic in TopBar dropdown workflows', async () => {
+    const talkerOne = makeEndpoint({
+      endpoint_id: 'talker-1',
+      direction: 'talker',
+      unique_id: 31,
+      device_name: 'Talker One',
+    })
+    const listenerOne = makeEndpoint({
+      endpoint_id: 'listener-1',
+      direction: 'listener',
+      unique_id: 32,
+      device_name: 'Listener One',
+    })
+    const talkerTwo = makeEndpoint({
+      endpoint_id: 'talker-2',
+      direction: 'talker',
+      unique_id: 33,
+      device_name: 'Talker Two',
+    })
+    const listenerTwo = makeEndpoint({
+      endpoint_id: 'listener-2',
+      direction: 'listener',
+      unique_id: 34,
+      device_name: 'Listener Two',
+    })
+    const routeA = makeSceneRoute('talker-1', 'listener-1')
+    const routeB = makeSceneRoute('talker-2', 'listener-2')
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [talkerOne.endpoint_id]: talkerOne,
+        [listenerOne.endpoint_id]: listenerOne,
+        [talkerTwo.endpoint_id]: talkerTwo,
+        [listenerTwo.endpoint_id]: listenerTwo,
+      },
+      scenes: {
+        'scene-twin-a': {
+          id: 'scene-twin-a',
+          name: 'Twin Scene',
+          description: '',
+          routes: [routeA],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-twin-b': {
+          id: 'scene-twin-b',
+          name: 'Twin Scene',
+          description: '',
+          routes: [routeA, routeB],
+          timestamp: '2026-02-17T00:01:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+
+    const duplicateSceneOptions = await screen.findAllByRole('option', {
+      name: /Twin Scene \(scene-twin-[ab]\)/,
+    })
+    expect(duplicateSceneOptions.map((option) => option.textContent)).toEqual([
+      'Twin Scene (scene-twin-a)',
+      'Twin Scene (scene-twin-b)',
+    ])
+
+    fireEvent.click(await screen.findByRole('option', { name: 'Twin Scene (scene-twin-a)' }))
+    expect(screen.getByTestId('topbar-scene-selected-summary').textContent).toContain('Selected: Twin Scene (1 routes)')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Twin Scene (scene-twin-a)' }))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Twin Scene (scene-twin-b)' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-preview-add-count').textContent).toContain('1 add')
+      expect(screen.getByTestId('scene-diff-preview-remove-count').textContent).toContain('0 remove')
+      expect(screen.getByTestId('scene-diff-preview-add-routes').textContent).toContain('Talker Two -> Listener Two')
     })
   })
 })

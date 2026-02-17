@@ -115,6 +115,16 @@ export type DeleteSceneAction = {
   };
 };
 
+export type UpdateSceneMetadataAction = {
+  type: 'UPDATE_SCENE_METADATA';
+  payload: {
+    scene_id: string;
+    name: string;
+    description: string;
+    tags: string[];
+  };
+};
+
 export type SetSceneDiffBaselineAction = {
   type: 'SET_SCENE_DIFF_BASELINE';
   payload: string | null;
@@ -339,6 +349,7 @@ export type RoutingAction =
   | SaveSceneAction
   | RecallSceneAction
   | DeleteSceneAction
+  | UpdateSceneMetadataAction
   | SetSceneDiffBaselineAction
   | SetSceneDiffCompareAction
   | GenerateSceneDiffAction
