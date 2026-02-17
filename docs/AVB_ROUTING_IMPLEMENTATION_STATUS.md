@@ -222,6 +222,13 @@
 - Safe-patch + API refresh overlap coverage added for multi-select:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates pending staged disconnect context and selected-node filtering remain stable while API connections churn empty/restored during active safe mode
+- Safe-patch + concurrent node-status/API refresh overlap coverage added:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates selected-node endpoint filtering, pending safe-mode operations, and node status surfaces remain stable while node health/status and connections churn together
+- NodeSelector menu-trigger accessibility semantics hardened:
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - adds stable ARIA menu linkage (`aria-haspopup`, `aria-controls`, `aria-expanded`) and keyboard close-path assertions via `Escape`
 
 ---
 
@@ -247,5 +254,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Expand integration coverage for multi-select workflows during safe-patch + concurrent node-status churn overlap windows.
-3. Add keyboard-first accessibility assertions for NodeSelector menu-trigger focus semantics.
+2. Expand integration coverage for safe-patch apply/discard behavior while node inventories remove/rejoin selected nodes.
+3. Add keyboard-first accessibility assertions for NodeTree expand-control focus semantics.

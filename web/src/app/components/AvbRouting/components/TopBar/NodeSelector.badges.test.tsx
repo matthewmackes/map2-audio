@@ -682,6 +682,42 @@ describe('NodeSelector degraded/offline badge visibility', () => {
     expect(mockDispatch).toHaveBeenCalledTimes(0)
   })
 
+  it('keeps node menu trigger keyboard-focusable with stable aria-expanded semantics', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+
+    render(<NodeSelector />)
+
+    const trigger = screen.getByTestId('node-selector-menu-trigger-node-offline')
+    expect(trigger.getAttribute('role')).toBe('button')
+    expect(trigger.getAttribute('tabindex')).toBe('0')
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(screen.getByText('View Details')).toBeTruthy()
+      expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    })
+
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    })
+    expect(mockDispatch).toHaveBeenCalledTimes(0)
+  })
+
   it('aligns multi-select selected node ids across NodeSelector and NodeTree', () => {
     mockState = {
       network: {

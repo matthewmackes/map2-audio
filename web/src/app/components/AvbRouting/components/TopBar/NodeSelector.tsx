@@ -93,6 +93,8 @@ interface NodeTabProps {
 
 function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps) {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const menuId = `node-selector-menu-${node.node_id}`;
+  const menuTriggerId = `node-selector-menu-trigger-${node.node_id}`;
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -216,7 +218,11 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
                 tabIndex={0}
                 onClick={handleMenuClick}
                 onKeyDown={handleMenuKeyDown}
-                data-testid={`node-selector-menu-trigger-${node.node_id}`}
+                data-testid={menuTriggerId}
+                id={menuTriggerId}
+                aria-haspopup="menu"
+                aria-controls={menuId}
+                aria-expanded={anchorEl ? 'true' : 'false'}
                 sx={{
                   ml: 0.5,
                   width: 20,
@@ -249,7 +255,15 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
       </Tooltip>
 
       {/* Node context menu */}
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+      <Menu
+        id={menuId}
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        MenuListProps={{
+          'aria-labelledby': menuTriggerId,
+        }}
+      >
         <MenuItem onClick={handleMenuClose} disabled>
           View Details
         </MenuItem>
