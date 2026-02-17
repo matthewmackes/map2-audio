@@ -236,6 +236,12 @@
   - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.tsx`
   - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
   - adds explicit `aria-label`/`aria-controls`/`aria-expanded` semantics and keyboard assertions for expand controls without dispatching row-selection actions
+- Rapid-toggle keyboard accessibility stability coverage added for NodeTree expand controls:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - validates repeated Enter/Space toggles preserve `aria-expanded` consistency, endpoint visibility, and dispatch isolation
+- Mixed safe-patch apply/discard race coverage added for node remove/rejoin + API connection re-sync churn:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates selected-node endpoint context, safe-mode pending/live route separation, and post-discard state consistency through concurrent inventory + connection churn windows
 
 ---
 
@@ -261,5 +267,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Expand safe-patch overlap coverage for mixed apply/discard windows with simultaneous node remove/rejoin and connection re-sync races.
-3. Add keyboard-first accessibility assertions for NodeTree expand-control behavior under repeated rapid toggles.
+2. Add reducer-level coverage for mixed multi-route safe-patch batches (staged connect + staged disconnect) under rapid API re-sync churn.
+3. Add integration assertions that multi-select context remains stable when safe mode is exited while selected nodes transition online/degraded/offline in the same sync window.

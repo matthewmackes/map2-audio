@@ -283,6 +283,57 @@ describe('NodeTree status badge behavior', () => {
     expect(mockDispatch).toHaveBeenCalledTimes(0)
   })
 
+  it('retains stable expand-control accessibility semantics under repeated rapid keyboard toggles', async () => {
+    mockState = {
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'multi_select',
+          selected_node_ids: ['node-local'],
+          show_offline: true,
+        },
+      },
+    }
+
+    mockFilteredEndpoints = [
+      makeEndpoint({
+        endpoint_id: 'endpoint-offline-talker',
+        unique_id: 42,
+        direction: 'talker',
+        device_name: 'Offline Talker',
+        node_id: 'node-offline',
+      }),
+    ]
+
+    render(<NodeTree />)
+
+    const expandTrigger = screen.getByTestId('node-tree-expand-node-offline')
+    expect(expandTrigger.getAttribute('aria-controls')).toBe('node-tree-endpoints-node-offline')
+    expect(expandTrigger.getAttribute('aria-label')).toBe('Toggle endpoints for Remote Offline')
+    expect(expandTrigger.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.keyDown(expandTrigger, { key: 'Enter' })
+    fireEvent.keyDown(expandTrigger, { key: ' ' })
+    fireEvent.keyDown(expandTrigger, { key: 'Enter' })
+    fireEvent.keyDown(expandTrigger, { key: ' ' })
+    fireEvent.keyDown(expandTrigger, { key: 'Enter' })
+
+    await waitFor(() => {
+      expect(expandTrigger.getAttribute('aria-expanded')).toBe('true')
+      expect(screen.getByText('Offline Talker')).toBeTruthy()
+    })
+
+    fireEvent.keyDown(expandTrigger, { key: ' ' })
+
+    await waitFor(() => {
+      expect(expandTrigger.getAttribute('aria-expanded')).toBe('false')
+      expect(screen.queryByText('Offline Talker')).toBeNull()
+    })
+
+    expect(mockDispatch).toHaveBeenCalledTimes(0)
+  })
+
   it('hides degraded/offline nodes when show_offline is disabled', () => {
     mockState = {
       network: {
