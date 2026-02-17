@@ -17,6 +17,11 @@ import {
   Chip,
   Box,
   Tooltip,
+  Popover,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Divider,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -25,11 +30,15 @@ import SecurityIcon from '@mui/icons-material/Security';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
+import { initialRoutingState } from '../../types';
 import { NodeSelector } from './NodeSelector';
 import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
+
+const DEVICE_TYPE_OPTIONS = ['map2', 'avdecc', 'unknown'] as const;
 
 /**
  * Top bar component
@@ -41,9 +50,61 @@ export function TopBar() {
   const batchPatchMutation = useBatchPatchMutation();
   const notify = useNotifications();
   const [topologyModalOpen, setTopologyModalOpen] = useState(false);
+  const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
+
+  const handleFiltersOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setFiltersAnchor(event.currentTarget);
+  };
+
+  const handleFiltersClose = () => {
+    setFiltersAnchor(null);
+  };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'SET_SEARCH', payload: event.target.value });
+  };
+
+  const handleToggleAvailableOnly = (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        availableOnly: checked,
+      },
+    });
+  };
+
+  const handleToggleShowLocked = (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        showLocked: checked,
+      },
+    });
+  };
+
+  const handleToggleDeviceType = (deviceType: typeof DEVICE_TYPE_OPTIONS[number]) => {
+    const selected = new Set(state.filters.deviceTypes);
+    if (selected.has(deviceType)) {
+      selected.delete(deviceType);
+    } else {
+      selected.add(deviceType);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        deviceTypes: DEVICE_TYPE_OPTIONS.filter((option) => selected.has(option)),
+      },
+    });
+  };
+
+  const handleResetFilters = () => {
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        ...initialRoutingState.filters,
+      },
+    });
   };
 
   const handleSafePatchToggle = () => {
@@ -111,6 +172,16 @@ export function TopBar() {
   const pendingCount = Object.keys(state.pendingRoutes).length;
   const connectedCount = Object.values(state.liveRoutes).filter(r => r.state === 'connected').length;
   const endpointCount = Object.keys(state.endpoints).length;
+  const filtersOpen = Boolean(filtersAnchor);
+  const defaultFilters = initialRoutingState.filters;
+  const activeFilterCount = [
+    state.filters.availableOnly !== defaultFilters.availableOnly,
+    state.filters.showLocked !== defaultFilters.showLocked,
+    [...state.filters.deviceTypes].sort().join('|') !== [...defaultFilters.deviceTypes].sort().join('|'),
+    state.filters.sampleRates.length !== defaultFilters.sampleRates.length,
+    state.filters.channelCounts.length !== defaultFilters.channelCounts.length,
+    state.filters.groups.length !== defaultFilters.groups.length,
+  ].filter(Boolean).length;
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -130,6 +201,7 @@ export function TopBar() {
           placeholder="Search endpoints..."
           value={state.search}
           onChange={handleSearchChange}
+          inputProps={{ 'data-testid': 'topbar-search-input' }}
           sx={{ width: 300 }}
           InputProps={{
             startAdornment: (
@@ -153,9 +225,30 @@ export function TopBar() {
             color="success"
             variant="outlined"
           />
+          <Chip
+            icon={<FilterListIcon />}
+            label={activeFilterCount > 0 ? `${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}` : 'No filters'}
+            size="small"
+            color={activeFilterCount > 0 ? 'primary' : 'default'}
+            variant="outlined"
+            data-testid="topbar-filter-summary"
+          />
         </Box>
 
         <Box sx={{ flex: 1 }} /> {/* Spacer */}
+
+        {/* Filters */}
+        <Tooltip title="Open endpoint filter controls">
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={handleFiltersOpen}
+            data-testid="topbar-filters-button"
+          >
+            Filters
+          </Button>
+        </Tooltip>
 
         {/* Safe Patch Mode */}
         {state.safePatchMode ? (
@@ -237,6 +330,82 @@ export function TopBar() {
           </Tooltip>
         </Box>
       </Toolbar>
+
+      <Popover
+        open={filtersOpen}
+        anchorEl={filtersAnchor}
+        onClose={handleFiltersClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        <Box sx={{ p: 2, width: 320, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Endpoint Filters
+          </Typography>
+
+          <FormGroup>
+            <FormControlLabel
+              control={(
+                <Checkbox
+                  checked={state.filters.availableOnly}
+                  onChange={handleToggleAvailableOnly}
+                  inputProps={{ 'data-testid': 'topbar-filter-available-only' }}
+                />
+              )}
+              label="Available only"
+            />
+            <FormControlLabel
+              control={(
+                <Checkbox
+                  checked={state.filters.showLocked}
+                  onChange={handleToggleShowLocked}
+                  inputProps={{ 'data-testid': 'topbar-filter-show-locked' }}
+                />
+              )}
+              label="Show locked endpoints"
+            />
+          </FormGroup>
+
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Device types
+          </Typography>
+          <FormGroup>
+            {DEVICE_TYPE_OPTIONS.map((deviceType) => (
+              <FormControlLabel
+                key={deviceType}
+                control={(
+                  <Checkbox
+                    checked={state.filters.deviceTypes.includes(deviceType)}
+                    onChange={() => handleToggleDeviceType(deviceType)}
+                    inputProps={{ 'data-testid': `topbar-filter-device-${deviceType}` }}
+                  />
+                )}
+                label={deviceType.toUpperCase()}
+              />
+            ))}
+          </FormGroup>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
+            <Button
+              size="small"
+              onClick={handleResetFilters}
+              data-testid="topbar-filters-reset"
+            >
+              Reset Filters
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleFiltersClose}
+              data-testid="topbar-filters-close"
+            >
+              Done
+            </Button>
+          </Box>
+        </Box>
+      </Popover>
 
       {/* Network Topology Modal */}
       <NetworkTopologyModal

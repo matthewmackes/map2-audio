@@ -254,6 +254,14 @@
 - Safe-mode exit overlap coverage added for node remove/rejoin + route-id replacement sync:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - validates selected-node endpoint filtering and view context remain stable while safe mode exits during simultaneous inventory churn and API route-id replacement
+- Safe-mode exit undo/redo churn integration coverage added:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates `UNDO`/`REDO` consistency after safe-mode exit while API route IDs are replaced and selected-node statuses churn in the same sync window
+- TopBar search/filter panel wiring added with focused component coverage:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.filters.test.tsx`
+  - `package.json`
+  - adds reducer-backed filter popover controls (`availableOnly`, `showLocked`, device types), active-filter summary chip, reset flow, and dedicated search/filter dispatch-contract tests
 
 ---
 
@@ -279,5 +287,5 @@
 ## Next Recommended Slice
 
 1. Continue Phase 4 search/filter and scene-diff UX work.
-2. Add integration coverage for undo/redo transitions after safe-mode exit when API route-id replacement and node-status churn occur in the same window.
-3. Begin Phase 4 search/filter panel implementation with reducer-backed filter state wiring and focused component tests.
+2. Add provider-level integration coverage that TopBar filter controls update `useFilteredEndpoints()` output under multi-select node context.
+3. Expand filter panel depth with sample-rate/channel/group controls plus clear-all behavior and focused reducer/component tests.
