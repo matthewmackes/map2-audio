@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **621** TypeScript | **114** C++/H | **88** Docs | **177** total commits | **8** stars | **0** forks | **0** open issues
+**550** Python | **629** TypeScript | **114** C++/H | **88** Docs | **181** total commits | **8** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`58a3df2`](https://github.com/matthewmackes/map2-audio/commit/58a3df283be27150d784b73611f83702857993e2) | avb-routing: split focus/hover state and gate CI with rou... | Map2 Audio | 2026-02-16 |
+| [`4d265a2`](https://github.com/matthewmackes/map2-audio/commit/4d265a2a135c9bfabda6d40d2903e5bb6a4e3176) | avb-routing: wire notifications and harden safe patch apply | Map2 Audio | 2026-02-16 |
+| [`59ca4ac`](https://github.com/matthewmackes/map2-audio/commit/59ca4ac4555551cc051a030666a079701f2a2847) | avb-routing: wire app route and add keyboard highlight UX | Map2 Audio | 2026-02-16 |
+| [`1012914`](https://github.com/matthewmackes/map2-audio/commit/1012914fa29c507fb1756a759cc230cbcf3f2e14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`37dadc4`](https://github.com/matthewmackes/map2-audio/commit/37dadc4864744d74d14a7b9b4d9c51eec2fb2bae) | docs: add AVB routing recommendations | Map2 Audio | 2026-02-16 |
 | [`f2c59a9`](https://github.com/matthewmackes/map2-audio/commit/f2c59a9c8f2ff124e5d9fbd162178567419758e9) | avb-routing: add implementation docs and phase UI components | Map2 Audio | 2026-02-16 |
 | [`53991dd`](https://github.com/matthewmackes/map2-audio/commit/53991dd4d982e259317b70898762514b08a130b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
 | [`cda14bd`](https://github.com/matthewmackes/map2-audio/commit/cda14bd9033842a4c0915d9f32df9c05bd299de6) | avb: harden SRP release observability and rollback handling | Map2 Audio | 2026-02-16 |
-| [`663a251`](https://github.com/matthewmackes/map2-audio/commit/663a251c6717369c95d81ce8ecf158caa478fa0b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
-| [`00e29e1`](https://github.com/matthewmackes/map2-audio/commit/00e29e1aa22b572a6a862439aa9e8e589dd6680a) | Add AVB SRP admission control, fix health-overview API, u... | Map2 Audio | 2026-02-16 |
-| [`73d1e7f`](https://github.com/matthewmackes/map2-audio/commit/73d1e7f8c0a8519496d159a4cc4777e13c10d5a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-16 |
-| [`dc92e19`](https://github.com/matthewmackes/map2-audio/commit/dc92e1922136eaeebc839d85ee459a55081c0fe0) | docs: move 1 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
