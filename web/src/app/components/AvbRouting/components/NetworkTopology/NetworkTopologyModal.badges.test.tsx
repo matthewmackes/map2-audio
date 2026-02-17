@@ -22,8 +22,17 @@ jest.mock('../../hooks/useNodeApi', () => ({
 jest.mock('reactflow', () => {
   return {
     __esModule: true,
-    default: ({ nodes, edges, children }: any) => (
+    default: ({ nodes, edges, nodeTypes, children }: any) => (
       <div data-testid="reactflow-mock">
+        <div data-testid="topology-nodes-rendered">
+          {nodes.map((node: any) => {
+            const NodeComponent = nodeTypes?.[node.type]
+            if (!NodeComponent) {
+              return null
+            }
+            return <NodeComponent key={node.id} data={node.data} />
+          })}
+        </div>
         <span data-testid="topology-node-count">{nodes.length}</span>
         <span data-testid="topology-edge-count">{edges.length}</span>
         {children}
@@ -182,5 +191,35 @@ describe('NetworkTopologyModal status badges', () => {
     expect(screen.getByText('PTP Sync Active')).toBeTruthy()
     expect(screen.getByTestId('topology-node-count').textContent).toBe('2')
     expect(screen.getByTestId('topology-edge-count').textContent).toBe('2')
+  })
+
+  it('renders per-node health metrics in topology cards', () => {
+    mockNodesData = [
+      makeNode({
+        node_id: 'node-a',
+        name: 'Node A',
+        status: 'degraded',
+        health: {
+          cpu_usage: 73.2,
+          memory_usage: 58.1,
+          latency_ms: 1.7,
+          packet_loss: 0.02,
+          last_check: '2026-02-17T00:00:00Z',
+          status: 'degraded',
+        },
+      }),
+    ]
+    mockPtpStatus = {
+      synchronized: false,
+      master_node_id: null,
+      synced_nodes: 0,
+      total_nodes: 1,
+      max_offset_ns: null,
+      last_check: '2026-02-17T00:00:00Z',
+    }
+
+    render(<NetworkTopologyModal open onClose={() => {}} />)
+
+    expect(screen.getByText('Health: degraded · CPU 73.2% · Lat 1.7ms')).toBeTruthy()
   })
 })

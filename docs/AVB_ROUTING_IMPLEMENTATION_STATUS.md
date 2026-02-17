@@ -95,6 +95,14 @@
   - `web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx`
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
   - validates matrix cross-node link indicator and topology node/route/PTP badge summaries
+- Degraded/offline node visibility assertions added for node navigation surfaces:
+  - `web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx`
+  - validates degraded/offline badge visibility and filtered visibility behavior
+- Topology node-card health metric rendering added with test coverage:
+  - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
+  - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
+  - renders `Health: <status> · CPU ... · Lat ...` row when node health data is present
 
 ---
 
@@ -109,7 +117,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add matrix/topology UX assertions for degraded node health surfacing.
+- Add scenario tests for stale cross-node route replacement during rapid API resync.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -122,6 +130,6 @@
 
 ## Next Recommended Slice
 
-1. Add matrix/topology UX assertions for degraded node health surfacing.
-2. Add NodeTree and NodeSelector badge assertions for degraded/offline health visibility.
-3. Add topology node-card assertions for per-node health metrics rendering.
+1. Add scenario tests for stale cross-node route replacement during rapid API resync.
+2. Add assertions for degraded/critical health color semantics in topology node cards.
+3. Add targeted tests for node-list sorting stability across status transitions.

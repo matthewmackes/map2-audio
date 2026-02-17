@@ -114,6 +114,7 @@ function EndpointItem({ endpoint, nodeColor }: EndpointItemProps) {
         }}
         secondaryTypographyProps={{
           fontSize: 10,
+          component: 'div',
         }}
       />
       {endpoint.pinned && <PushPinIcon sx={{ fontSize: 12, color: 'text.disabled' }} />}
@@ -221,6 +222,9 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
               </Tooltip>
             </Box>
           }
+          secondaryTypographyProps={{
+            component: 'div',
+          }}
         />
       </ListItemButton>
 

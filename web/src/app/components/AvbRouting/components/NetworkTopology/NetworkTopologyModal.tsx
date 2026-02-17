@@ -151,6 +151,24 @@ function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
           ⏱ {data.ptp.offset_ns}ns offset
         </Typography>
       )}
+
+      {/* Health Metrics */}
+      {data.health && (
+        <Typography
+          variant="caption"
+          color={
+            data.health.status === 'critical'
+              ? 'error.main'
+              : data.health.status === 'degraded'
+                ? 'warning.main'
+                : 'success.main'
+          }
+          display="block"
+          sx={{ mt: 0.5 }}
+        >
+          Health: {data.health.status} · CPU {data.health.cpu_usage.toFixed(1)}% · Lat {data.health.latency_ms.toFixed(1)}ms
+        </Typography>
+      )}
     </Paper>
   );
 }

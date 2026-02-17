@@ -173,20 +173,31 @@ function NodeTab({ node, isLocal, selected, onClick }: NodeTabProps) {
                 }}
               />
 
-              {/* Menu button */}
-              <IconButton
-                size="small"
+              {/* Menu trigger (span avoids nested-button DOM in Tab) */}
+              <Box
+                component="span"
+                role="button"
+                tabIndex={0}
                 onClick={handleMenuClick}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    handleMenuClick(event as unknown as React.MouseEvent<HTMLElement>)
+                  }
+                }}
                 sx={{
                   ml: 0.5,
                   width: 20,
                   height: 20,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
                   opacity: 0.5,
-                  '&:hover': { opacity: 1 },
+                  '&:hover': { opacity: 1, bgcolor: 'action.hover' },
                 }}
               >
                 <MoreVertIcon sx={{ fontSize: 14 }} />
-              </IconButton>
+              </Box>
             </Box>
           }
           value={node.node_id}
