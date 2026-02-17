@@ -14,6 +14,7 @@ import React from 'react';
 import { Box, CircularProgress, Alert, Typography } from '@mui/material';
 import { RoutingProvider, useRoutingState } from './context/RoutingContext';
 import { TopBar } from './components/TopBar/TopBar';
+import { NodeTree } from './components/NodeTree/NodeTree';
 import { RoutingGrid } from './components/RoutingGrid/RoutingGrid';
 import { InspectorPanel } from './components/Inspector/InspectorPanel';
 
@@ -89,6 +90,9 @@ function AvbRoutingAppInner() {
           overflow: 'hidden',
         }}
       >
+        {/* Node tree sidebar (left) */}
+        <NodeTree />
+
         {/* Routing grid (center) */}
         <Box
           sx={{

@@ -22,6 +22,8 @@ import { Box, CircularProgress, Tooltip } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import LockIcon from '@mui/icons-material/Lock';
+import LinkIcon from '@mui/icons-material/Link';
+import { useRouting } from '../../context/RoutingContext';
 import type { Endpoint, Route } from '../../types';
 
 interface MatrixCellProps {
@@ -48,10 +50,19 @@ export function MatrixCell({
   onClick,
   onHover,
 }: MatrixCellProps) {
+  const { state } = useRouting();
+
   const isConnected = route?.state === 'connected';
   const isConnecting = route?.state === 'connecting';
   const isError = route?.state === 'error';
   const isLocked = route?.locked || false;
+
+  // Cross-node routing detection
+  const isCrossNode = talker.node_id !== listener.node_id;
+  const talkerNode = state.network.nodes[talker.node_id];
+  const listenerNode = state.network.nodes[listener.node_id];
+  const talkerColor = talkerNode?.color || '#1976d2';
+  const listenerColor = listenerNode?.color || '#1976d2';
 
   // Validation warnings
   const hasWarning =
@@ -63,8 +74,14 @@ export function MatrixCell({
     <div>
       <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
         {talker.device_name} → {listener.device_name}
+        {isCrossNode && ' 🔗'}
       </div>
       <div>State: {route.state}</div>
+      {isCrossNode && (
+        <div style={{ color: '#90caf9' }}>
+          Cross-Node: {talkerNode?.name || 'Unknown'} → {listenerNode?.name || 'Unknown'}
+        </div>
+      )}
       {route.established_time && (
         <div>Connected: {new Date(route.established_time).toLocaleTimeString()}</div>
       )}
@@ -103,10 +120,16 @@ export function MatrixCell({
     </div>
   );
 
-  // Cell background color
+  // Cell background color or gradient (for cross-node)
   const getBgColor = () => {
-    if (isConnected) return isPending ? '#ffd43b' : '#4caf50';
-    if (isConnecting) return '#2196f3';
+    if (isConnected) {
+      if (isCrossNode) {
+        // Gradient from talker color to listener color
+        return `linear-gradient(135deg, ${talkerColor}AA 0%, ${listenerColor}AA 100%)`;
+      }
+      return isPending ? '#ffd43b' : '#4caf50';
+    }
+    if (isConnecting) return isCrossNode ? `linear-gradient(135deg, ${talkerColor}66 0%, ${listenerColor}66 100%)` : '#2196f3';
     if (isError) return '#f44336';
     if (isPending) return '#ff9800';
     if (isHovered) return 'rgba(255, 255, 255, 0.1)';
@@ -116,6 +139,7 @@ export function MatrixCell({
   // Cell border
   const getBorder = () => {
     if (isPending) return '2px solid #ff9800';
+    if (isCrossNode && (isConnected || isConnecting)) return '2px dashed rgba(255, 255, 255, 0.5)';
     if (hasWarning && !isConnected) return '1px dashed #ffd43b';
     return '1px solid rgba(255, 255, 255, 0.12)';
   };
@@ -133,7 +157,7 @@ export function MatrixCell({
           alignItems: 'center',
           justifyContent: 'center',
           cursor: isLocked ? 'not-allowed' : 'pointer',
-          bgcolor: getBgColor(),
+          background: getBgColor(), // Use 'background' instead of 'bgcolor' for gradient support
           border: getBorder(),
           outline: isFocused ? '2px solid #90caf9' : 'none',
           outlineOffset: isFocused ? -2 : 0,
@@ -142,8 +166,8 @@ export function MatrixCell({
           transition: 'all 0.2s ease',
           position: 'relative',
           '&:hover': {
-            bgcolor: isConnected
-              ? '#66bb6a'
+            background: isConnected
+              ? (isCrossNode ? getBgColor() : '#66bb6a')
               : isLocked
               ? getBgColor()
               : 'rgba(255, 255, 255, 0.15)',
@@ -159,7 +183,20 @@ export function MatrixCell({
         {isConnected && <CheckCircleIcon sx={{ fontSize: 24, color: 'white' }} />}
         {isError && <ErrorIcon sx={{ fontSize: 24, color: 'white' }} />}
 
-        {/* Lock indicator (overlay) */}
+        {/* Cross-node indicator (overlay top-left) */}
+        {isCrossNode && (isConnected || isConnecting) && (
+          <LinkIcon
+            sx={{
+              position: 'absolute',
+              top: 2,
+              left: 2,
+              fontSize: 12,
+              color: 'rgba(255, 255, 255, 0.9)',
+            }}
+          />
+        )}
+
+        {/* Lock indicator (overlay top-right) */}
         {isLocked && (
           <LockIcon
             sx={{

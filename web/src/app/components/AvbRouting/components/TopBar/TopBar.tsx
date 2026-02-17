@@ -27,6 +27,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
+import { NodeSelector } from './NodeSelector';
 
 /**
  * Top bar component
@@ -110,6 +111,10 @@ export function TopBar() {
 
   return (
     <AppBar position="static" color="default" elevation={1}>
+      {/* Node Selector - Top Row */}
+      <NodeSelector />
+
+      {/* Controls - Bottom Row */}
       <Toolbar sx={{ gap: 2 }}>
         {/* Title */}
         <Typography variant="h6" sx={{ fontWeight: 600, minWidth: 200 }}>

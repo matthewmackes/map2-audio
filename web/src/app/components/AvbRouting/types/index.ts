@@ -4,6 +4,22 @@
  * Central export for all type definitions used in the AVB routing matrix.
  */
 
+// Node types (Multi-Node Support)
+export type {
+  AvbNode,
+  NodeType,
+  NodeStatus,
+  PtpState,
+  NodeCapabilities,
+  PtpSyncInfo,
+  NodeHealth,
+  TopologyEdge,
+  NetworkTopology,
+  NodeSelection,
+  NetworkSyncStatus,
+  CrossNodeRoute,
+} from './node';
+
 // Endpoint types
 export type {
   Endpoint,

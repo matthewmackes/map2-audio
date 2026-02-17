@@ -37,6 +37,9 @@ export interface Endpoint {
   available: boolean;
   last_seen: string;             // ISO 8601 timestamp
 
+  // Multi-node support
+  node_id: string;               // Which node owns this endpoint (for multi-node routing)
+
   // UI metadata (stored in localStorage, overlaid on backend data)
   tags: string[];                // User-defined tags for search/filtering
   color: string;                 // Hex color for visual grouping (#RRGGBB)

@@ -50,6 +50,14 @@ export interface Route {
   // Validation
   valid: boolean;                     // Passes validation checks
   messages: string[];                 // Validation warnings/errors
+
+  // Multi-node routing
+  talker_node_id?: string;            // Source node ID
+  listener_node_id?: string;          // Destination node ID
+  cross_node: boolean;                // Is this a cross-node route?
+  network_path?: string[];            // Path through network (for multi-hop)
+  latency_ms?: number | null;         // Measured latency
+  bandwidth_mbps?: number;            // Bandwidth usage
 }
 
 /**

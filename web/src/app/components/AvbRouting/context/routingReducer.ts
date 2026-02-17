@@ -857,6 +857,134 @@ export function routingReducer(
       };
     }
 
+    // ========================================================================
+    // Network/Node Actions (Multi-Node Support)
+    // ========================================================================
+
+    case 'NODES_UPDATED': {
+      const nodes = action.payload;
+      const nodesById = nodes.reduce(
+        (acc, node) => {
+          acc[node.node_id] = node;
+          return acc;
+        },
+        {} as Record<string, typeof nodes[0]>
+      );
+
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          nodes: nodesById,
+        },
+      };
+    }
+
+    case 'SELECT_NODE': {
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          nodeSelection: {
+            ...state.network.nodeSelection,
+            current_node_id: action.payload,
+          },
+        },
+      };
+    }
+
+    case 'SET_VIEW_MODE': {
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          nodeSelection: {
+            ...state.network.nodeSelection,
+            view_mode: action.payload,
+          },
+        },
+      };
+    }
+
+    case 'TOGGLE_NODE_SELECTION': {
+      const nodeId = action.payload;
+      const selected = state.network.nodeSelection.selected_node_ids;
+      const isSelected = selected.includes(nodeId);
+
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          nodeSelection: {
+            ...state.network.nodeSelection,
+            selected_node_ids: isSelected
+              ? selected.filter((id) => id !== nodeId)
+              : [...selected, nodeId],
+          },
+        },
+      };
+    }
+
+    case 'SET_SHOW_OFFLINE_NODES': {
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          nodeSelection: {
+            ...state.network.nodeSelection,
+            show_offline: action.payload,
+          },
+        },
+      };
+    }
+
+    case 'TOPOLOGY_UPDATED': {
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          topology: action.payload,
+        },
+      };
+    }
+
+    case 'SYNC_STATUS_UPDATED': {
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          syncStatus: action.payload,
+        },
+      };
+    }
+
+    case 'CROSS_NODE_ROUTE_UPDATED': {
+      const route = action.payload;
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          crossNodeRoutes: {
+            ...state.network.crossNodeRoutes,
+            [route.route_id]: route,
+          },
+        },
+      };
+    }
+
+    case 'SET_LOCAL_NODE_ID': {
+      return {
+        ...state,
+        network: {
+          ...state.network,
+          nodeSelection: {
+            ...state.network.nodeSelection,
+            local_node_id: action.payload,
+          },
+        },
+      };
+    }
+
     default:
       return state;
   }

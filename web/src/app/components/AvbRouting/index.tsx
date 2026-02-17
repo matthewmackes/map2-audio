@@ -40,6 +40,19 @@ export {
 } from './hooks/useKeyboardNavigation';
 export { useNotifications } from './hooks/useNotifications';
 
+// Multi-Node hooks
+export {
+  useNodes,
+  useNode,
+  usePtpStatus,
+  useNetworkTopology,
+  useLocalNodeId,
+  useOnlineNodes,
+  useOfflineNodes,
+  useNodesByType,
+  useUpdateNodeMetadata,
+} from './hooks/useNodeApi';
+
 // Types
 export type * from './types';
 
@@ -49,4 +62,6 @@ export { MatrixCell } from './components/RoutingGrid/MatrixCell';
 export { StickyHeaders } from './components/RoutingGrid/StickyHeaders';
 export { ConnectionHighlight } from './components/RoutingGrid/ConnectionHighlight';
 export { TopBar } from './components/TopBar/TopBar';
+export { NodeSelector } from './components/TopBar/NodeSelector';
+export { NodeTree } from './components/NodeTree/NodeTree';
 export { InspectorPanel } from './components/Inspector/InspectorPanel';

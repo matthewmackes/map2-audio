@@ -10,6 +10,12 @@ import type { Route } from './route';
 import type { Scene } from './scene';
 import type { FilterState } from './state';
 import type { PatchOperation } from './route';
+import type {
+  AvbNode,
+  NetworkTopology,
+  NetworkSyncStatus,
+  CrossNodeRoute,
+} from './node';
 
 /**
  * Connection actions
@@ -247,6 +253,54 @@ export type SetErrorAction = {
 };
 
 /**
+ * Network/Node actions (Multi-Node Support)
+ */
+export type NodesUpdatedAction = {
+  type: 'NODES_UPDATED';
+  payload: AvbNode[];
+};
+
+export type SelectNodeAction = {
+  type: 'SELECT_NODE';
+  payload: string | null; // node_id (null = deselect)
+};
+
+export type SetViewModeAction = {
+  type: 'SET_VIEW_MODE';
+  payload: 'all_nodes' | 'single_node' | 'multi_select';
+};
+
+export type ToggleNodeSelectionAction = {
+  type: 'TOGGLE_NODE_SELECTION';
+  payload: string; // node_id (for multi-select)
+};
+
+export type SetShowOfflineNodesAction = {
+  type: 'SET_SHOW_OFFLINE_NODES';
+  payload: boolean;
+};
+
+export type TopologyUpdatedAction = {
+  type: 'TOPOLOGY_UPDATED';
+  payload: NetworkTopology | null;
+};
+
+export type SyncStatusUpdatedAction = {
+  type: 'SYNC_STATUS_UPDATED';
+  payload: NetworkSyncStatus | null;
+};
+
+export type CrossNodeRouteUpdatedAction = {
+  type: 'CROSS_NODE_ROUTE_UPDATED';
+  payload: CrossNodeRoute;
+};
+
+export type SetLocalNodeIdAction = {
+  type: 'SET_LOCAL_NODE_ID';
+  payload: string;
+};
+
+/**
  * Union of all action types
  */
 export type RoutingAction =
@@ -282,4 +336,13 @@ export type RoutingAction =
   | RedoAction
   | ClearHistoryAction
   | SetLoadingAction
-  | SetErrorAction;
+  | SetErrorAction
+  | NodesUpdatedAction
+  | SelectNodeAction
+  | SetViewModeAction
+  | ToggleNodeSelectionAction
+  | SetShowOfflineNodesAction
+  | TopologyUpdatedAction
+  | SyncStatusUpdatedAction
+  | CrossNodeRouteUpdatedAction
+  | SetLocalNodeIdAction;

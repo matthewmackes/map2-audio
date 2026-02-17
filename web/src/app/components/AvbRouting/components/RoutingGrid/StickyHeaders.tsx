@@ -15,6 +15,7 @@
 import React from 'react';
 import { Box, Typography, Chip, Tooltip, Stack } from '@mui/material';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import { useRouting } from '../../context/RoutingContext';
 import type { Endpoint } from '../../types';
 
 interface StickyHeadersProps {
@@ -37,6 +38,14 @@ export function StickyHeaders({
   headerWidth,
   headerHeight,
 }: StickyHeadersProps) {
+  const { state } = useRouting();
+
+  // Helper function to get node color for an endpoint
+  const getNodeColor = (endpoint: Endpoint): string => {
+    const node = state.network.nodes[endpoint.node_id];
+    return node?.color || '#1976d2'; // Default blue
+  };
+
   return (
     <>
       {/* Top-left corner (empty spacer) */}
@@ -83,6 +92,7 @@ export function StickyHeaders({
             talker={talker}
             width={cellWidth}
             height={headerHeight}
+            nodeColor={getNodeColor(talker)}
           />
         ))}
       </Box>
@@ -107,6 +117,7 @@ export function StickyHeaders({
             listener={listener}
             width={headerWidth}
             height={cellHeight}
+            nodeColor={getNodeColor(listener)}
           />
         ))}
       </Box>
@@ -117,7 +128,17 @@ export function StickyHeaders({
 /**
  * Individual talker header cell
  */
-function TalkerHeader({ talker, width, height }: { talker: Endpoint; width: number; height: number }) {
+function TalkerHeader({
+  talker,
+  width,
+  height,
+  nodeColor
+}: {
+  talker: Endpoint;
+  width: number;
+  height: number;
+  nodeColor: string;
+}) {
   const deviceIcon = talker.device_type === 'map2' ? '🎛️' : '🔌';
   const statusColor = talker.available ? '#4caf50' : '#f44336';
 
@@ -151,9 +172,10 @@ function TalkerHeader({ talker, width, height }: { talker: Endpoint; width: numb
           borderRight: '1px solid',
           borderColor: 'divider',
           cursor: 'pointer',
-          bgcolor: talker.color !== '#ffffff' ? `${talker.color}22` : 'transparent',
+          bgcolor: `${nodeColor}15`, // Light tint of node color
+          borderTop: `3px solid ${nodeColor}`, // Bold top border with node color
           '&:hover': {
-            bgcolor: 'action.hover',
+            bgcolor: `${nodeColor}25`,
           },
         }}
       >
@@ -192,7 +214,17 @@ function TalkerHeader({ talker, width, height }: { talker: Endpoint; width: numb
 /**
  * Individual listener header cell
  */
-function ListenerHeader({ listener, width, height }: { listener: Endpoint; width: number; height: number }) {
+function ListenerHeader({
+  listener,
+  width,
+  height,
+  nodeColor,
+}: {
+  listener: Endpoint;
+  width: number;
+  height: number;
+  nodeColor: string;
+}) {
   const deviceIcon = listener.device_type === 'map2' ? '🎛️' : '🔌';
   const statusColor = listener.available ? '#4caf50' : '#f44336';
 
@@ -224,9 +256,10 @@ function ListenerHeader({ listener, width, height }: { listener: Endpoint; width
           borderBottom: '1px solid',
           borderColor: 'divider',
           cursor: 'pointer',
-          bgcolor: listener.color !== '#ffffff' ? `${listener.color}22` : 'transparent',
+          bgcolor: `${nodeColor}15`, // Light tint of node color
+          borderLeft: `3px solid ${nodeColor}`, // Bold left border with node color
           '&:hover': {
-            bgcolor: 'action.hover',
+            bgcolor: `${nodeColor}25`,
           },
         }}
       >

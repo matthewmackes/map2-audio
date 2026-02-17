@@ -9,6 +9,13 @@ import type { Endpoint } from './endpoint';
 import type { Route } from './route';
 import type { Scene } from './scene';
 import type { AuditLogEntry } from './audit';
+import type {
+  AvbNode,
+  NodeSelection,
+  NetworkTopology,
+  NetworkSyncStatus,
+  CrossNodeRoute,
+} from './node';
 
 /**
  * Filter state
@@ -69,8 +76,18 @@ export interface ValidationState {
  * Complete routing state
  *
  * This is the single source of truth for the routing matrix UI.
+ * Now includes multi-node network awareness as a first-class citizen.
  */
 export interface RoutingState {
+  // Network (Multi-Node)
+  network: {
+    nodes: Record<string, AvbNode>;          // All discovered nodes
+    nodeSelection: NodeSelection;             // Current node selection
+    topology: NetworkTopology | null;         // Network graph
+    syncStatus: NetworkSyncStatus | null;    // PTP/gPTP sync
+    crossNodeRoutes: Record<string, CrossNodeRoute>; // Cross-node routes
+  };
+
   // Data
   endpoints: Record<string, Endpoint>;
   liveRoutes: Record<string, Route>;
@@ -103,6 +120,20 @@ export interface RoutingState {
  * Initial/default state
  */
 export const initialRoutingState: RoutingState = {
+  network: {
+    nodes: {},
+    nodeSelection: {
+      current_node_id: null,
+      local_node_id: 'local',  // Will be replaced with actual local node ID
+      view_mode: 'all_nodes',
+      selected_node_ids: [],
+      show_offline: false,
+    },
+    topology: null,
+    syncStatus: null,
+    crossNodeRoutes: {},
+  },
+
   endpoints: {},
   liveRoutes: {},
   pendingRoutes: {},

@@ -19,6 +19,7 @@
 import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
 import { routingReducer } from './routingReducer';
 import { useEndpoints, useConnections } from '../hooks/useAvbApi';
+import { useNodes, usePtpStatus, useLocalNodeId } from '../hooks/useNodeApi';
 import type { RoutingState, RoutingAction, Endpoint, Route } from '../types';
 import { initialRoutingState } from '../types';
 
@@ -69,10 +70,56 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
     error: connectionsError,
   } = useConnections();
 
+  // Fetch nodes from backend (Multi-Node Support)
+  const {
+    data: nodesData,
+    isLoading: nodesLoading,
+    error: nodesError,
+  } = useNodes();
+
+  // Fetch PTP sync status
+  const {
+    data: ptpStatus,
+  } = usePtpStatus();
+
+  // Get local node ID
+  const localNodeId = useLocalNodeId();
+
+  // Sync nodes with reducer state
+  useEffect(() => {
+    if (!nodesData) return;
+
+    dispatch({
+      type: 'NODES_UPDATED',
+      payload: nodesData,
+    });
+  }, [nodesData]);
+
+  // Set local node ID
+  useEffect(() => {
+    if (localNodeId) {
+      dispatch({
+        type: 'SET_LOCAL_NODE_ID',
+        payload: localNodeId,
+      });
+    }
+  }, [localNodeId]);
+
+  // Sync PTP status
+  useEffect(() => {
+    if (ptpStatus) {
+      dispatch({
+        type: 'SYNC_STATUS_UPDATED',
+        payload: ptpStatus,
+      });
+    }
+  }, [ptpStatus]);
+
   // Sync endpoints with reducer state
   useEffect(() => {
     if (!endpointsData) return;
 
+    // Infer node_id from endpoint data (use entity_id or node_address as fallback)
     const endpoints: Endpoint[] = endpointsData.endpoints.map((ep) => ({
       ...ep,
       // Add default UI metadata (will be overlaid with localStorage later)
@@ -82,13 +129,15 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
       bank: 0,
       pinned: false,
       locked: false,
+      // Assign node_id (for now, use local until we have multi-node backend support)
+      node_id: localNodeId || 'local',
     }));
 
     dispatch({
       type: 'ENDPOINTS_UPDATED',
       payload: endpoints,
     });
-  }, [endpointsData]);
+  }, [endpointsData, localNodeId]);
 
   // Sync connections with reducer state
   useEffect(() => {
@@ -117,13 +166,13 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
 
   // Handle loading state
   useEffect(() => {
-    const loading = endpointsLoading || connectionsLoading;
+    const loading = endpointsLoading || connectionsLoading || nodesLoading;
     dispatch({ type: 'SET_LOADING', payload: loading });
-  }, [endpointsLoading, connectionsLoading]);
+  }, [endpointsLoading, connectionsLoading, nodesLoading]);
 
   // Handle errors
   useEffect(() => {
-    const error = endpointsError || connectionsError;
+    const error = endpointsError || connectionsError || nodesError;
     if (error) {
       dispatch({
         type: 'SET_ERROR',
@@ -132,7 +181,7 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
     } else {
       dispatch({ type: 'SET_ERROR', payload: null });
     }
-  }, [endpointsError, connectionsError]);
+  }, [endpointsError, connectionsError, nodesError]);
 
   // Provide context value
   const value: RoutingContextValue = {
@@ -191,6 +240,7 @@ export function useRoutingDispatch(): React.Dispatch<RoutingAction> {
  * Hook to access filtered endpoints
  *
  * Applies search and filter criteria from state.
+ * Supports multi-node filtering based on view mode.
  *
  * Usage:
  *   const talkers = useFilteredEndpoints('talker');
@@ -199,6 +249,18 @@ export function useFilteredEndpoints(direction?: 'talker' | 'listener'): Endpoin
   const { state } = useRouting();
 
   let endpoints = Object.values(state.endpoints);
+
+  // Filter by node selection (multi-node support)
+  const { view_mode, current_node_id, selected_node_ids } = state.network.nodeSelection;
+
+  if (view_mode === 'single_node' && current_node_id) {
+    // Show only endpoints from the selected node
+    endpoints = endpoints.filter((ep) => ep.node_id === current_node_id);
+  } else if (view_mode === 'multi_select' && selected_node_ids.length > 0) {
+    // Show only endpoints from selected nodes
+    endpoints = endpoints.filter((ep) => selected_node_ids.includes(ep.node_id));
+  }
+  // view_mode === 'all_nodes' shows all endpoints (no filter)
 
   // Filter by direction
   if (direction) {
