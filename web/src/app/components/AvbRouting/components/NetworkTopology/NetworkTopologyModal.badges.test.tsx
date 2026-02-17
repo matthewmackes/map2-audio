@@ -221,5 +221,56 @@ describe('NetworkTopologyModal status badges', () => {
     render(<NetworkTopologyModal open onClose={() => {}} />)
 
     expect(screen.getByText('Health: degraded · CPU 73.2% · Lat 1.7ms')).toBeTruthy()
+    expect(screen.getByTestId('topology-health-node-a').getAttribute('data-health-color')).toBe('warning.main')
+  })
+
+  it('maps health severity to warning/error/success color semantics', () => {
+    mockNodesData = [
+      makeNode({
+        node_id: 'node-degraded',
+        name: 'Node Degraded',
+        status: 'degraded',
+        health: {
+          cpu_usage: 74.5,
+          memory_usage: 62.3,
+          latency_ms: 2.1,
+          packet_loss: 0.03,
+          last_check: '2026-02-17T00:00:00Z',
+          status: 'degraded',
+        },
+      }),
+      makeNode({
+        node_id: 'node-critical',
+        name: 'Node Critical',
+        status: 'degraded',
+        health: {
+          cpu_usage: 92.8,
+          memory_usage: 89.4,
+          latency_ms: 8.3,
+          packet_loss: 0.11,
+          last_check: '2026-02-17T00:00:00Z',
+          status: 'critical',
+        },
+      }),
+      makeNode({
+        node_id: 'node-healthy',
+        name: 'Node Healthy',
+        status: 'online',
+        health: {
+          cpu_usage: 23.4,
+          memory_usage: 41.2,
+          latency_ms: 0.8,
+          packet_loss: 0,
+          last_check: '2026-02-17T00:00:00Z',
+          status: 'healthy',
+        },
+      }),
+    ]
+
+    render(<NetworkTopologyModal open onClose={() => {}} />)
+
+    expect(screen.getByTestId('topology-health-node-degraded').getAttribute('data-health-color')).toBe('warning.main')
+    expect(screen.getByTestId('topology-health-node-critical').getAttribute('data-health-color')).toBe('error.main')
+    expect(screen.getByTestId('topology-health-node-healthy').getAttribute('data-health-color')).toBe('success.main')
   })
 })

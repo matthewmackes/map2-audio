@@ -58,6 +58,12 @@ interface NetworkTopologyModalProps {
 function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
   const statusColor = data.status === 'online' ? '#4caf50' : data.status === 'degraded' ? '#ff9800' : '#f44336';
   const isPtpMaster = data.ptp?.is_master === true;
+  const healthColor =
+    data.health?.status === 'critical'
+      ? 'error.main'
+      : data.health?.status === 'degraded'
+        ? 'warning.main'
+        : 'success.main';
 
   return (
     <Paper
@@ -156,13 +162,9 @@ function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
       {data.health && (
         <Typography
           variant="caption"
-          color={
-            data.health.status === 'critical'
-              ? 'error.main'
-              : data.health.status === 'degraded'
-                ? 'warning.main'
-                : 'success.main'
-          }
+          color={healthColor}
+          data-testid={`topology-health-${data.node_id}`}
+          data-health-color={healthColor}
           display="block"
           sx={{ mt: 0.5 }}
         >

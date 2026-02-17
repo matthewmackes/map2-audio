@@ -107,6 +107,10 @@
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
   - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
   - renders `Health: <status> · CPU ... · Lat ...` row when node health data is present
+- Topology node-card health severity color semantics now asserted:
+  - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.tsx`
+  - `web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx`
+  - validates degraded/critical/healthy health statuses map to warning/error/success color semantics
 
 ---
 
@@ -121,7 +125,7 @@
 ## Remaining Work
 
 ### Phase 3 (in progress)
-- Add assertions for degraded/critical health color semantics in topology node cards.
+- Add targeted tests for node-list sorting stability across status transitions.
 
 ### Phase 4+
 - Search/filter panel enhancements.
@@ -134,6 +138,6 @@
 
 ## Next Recommended Slice
 
-1. Add assertions for degraded/critical health color semantics in topology node cards.
-2. Add targeted tests for node-list sorting stability across status transitions.
-3. Add multi-node filter/view-mode interaction tests for NodeSelector + NodeTree.
+1. Add targeted tests for node-list sorting stability across status transitions.
+2. Add multi-node filter/view-mode interaction tests for NodeSelector + NodeTree.
+3. Add focused integration assertions for TopBar + NodeTree after node status churn and API resync.
