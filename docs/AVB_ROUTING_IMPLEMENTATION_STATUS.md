@@ -334,6 +334,25 @@
 - Provider-level duplicate-name scene selection determinism coverage added:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates duplicate-name scene dropdown ordering (`name` + `id` tie-break), disambiguated option labeling, and deterministic baseline/compare selection behavior
+- Shared scene metadata normalization/validation utility added:
+  - `web/src/app/components/AvbRouting/utils/sceneValidation.ts`
+  - defines canonical limits and normalization for scene name/description/tags, duplicate-name detection helpers, and reusable validation result contract
+- Reducer-level scene metadata validation policy enforced:
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - applies length limits + reserved-character normalization on save/update, records duplicate-name events as warning-outcome audit entries, and preserves deterministic error behavior on invalid payloads
+- TopBar scene management validation guidance expanded:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - surfaces validation warnings for invalid lengths and duplicate names, plus metadata normalization notices before dispatching reducer actions
+- Pre-recall impact preview added to scene controls:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - displays add/remove/unchanged counts and route-level impact snippets prior to recall confirmation
+- Scene list filtering/search added for larger inventories:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds search input + filtered scene summary and deterministic filtered dropdown behavior for saved-scene selection workflows
 
 ---
 
@@ -358,6 +377,6 @@
 
 ## Next Recommended Slice
 
-1. Add scene metadata validation policy (length limits, duplicate-name warnings, reserved-character normalization) with reducer and TopBar tests.
-2. Add pre-recall impact preview (route add/remove summary) directly in scene controls before confirmation.
-3. Add lightweight scene list filtering/search in TopBar controls for large scene inventories.
+1. Add scene metadata conflict-resolution affordances (explicit duplicate-name disambiguation hints and optional auto-suffix naming) in TopBar save/update workflows.
+2. Add richer pre-recall impact drilldown (expandable route list with talker/listener names and truncation controls for large diffs).
+3. Add operator docs updates in `docs/OPERATIONS_GUIDE.md` for scene validation limits, normalization behavior, and recall/delete confirmation semantics.

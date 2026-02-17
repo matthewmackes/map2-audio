@@ -932,4 +932,57 @@ describe('routingReducer scene diff foundations', () => {
     expect(next.error).toBe('Scene not found: scene-missing')
     expect(next.scenes).toEqual(state.scenes)
   })
+
+  it('normalizes scene metadata on save and records duplicate-name warnings', () => {
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-existing': makeScene('scene-existing', 'Baseline Scene', []),
+      },
+      liveRoutes: {
+        'talker-1→listener-1': makeConnectedRoute('talker-1→listener-1'),
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'SAVE_SCENE',
+      payload: {
+        name: '  Baseline<Scene>  ',
+        description: '  Front<of>House  ',
+        tags: [' Main Stage ', 'main stage', 'ops|critical'],
+      },
+    })
+
+    const createdScene = Object.values(next.scenes).find((scene) => scene.id !== 'scene-existing')
+    expect(createdScene?.name).toBe('Baseline Scene')
+    expect(createdScene?.description).toBe('Front of House')
+    expect(createdScene?.tags).toEqual(['main-stage', 'ops-critical'])
+
+    const lastAudit = next.auditLog[next.auditLog.length - 1]
+    expect(lastAudit?.event_type).toBe('SAVE_SCENE')
+    expect(lastAudit?.validation_outcome).toBe('warning')
+    expect(next.error).toBeNull()
+  })
+
+  it('enforces scene metadata length limits during update', () => {
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', []),
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: 'scene-a',
+        name: 'x'.repeat(65),
+        description: '',
+        tags: [],
+      },
+    })
+
+    expect(next.error).toBe('Scene name cannot exceed 64 characters.')
+    expect(next.scenes['scene-a'].name).toBe('Scene A')
+  })
 })

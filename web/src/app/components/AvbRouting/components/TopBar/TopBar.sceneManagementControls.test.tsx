@@ -147,6 +147,64 @@ describe('TopBar scene management controls', () => {
     })
   })
 
+  it('blocks save when scene name exceeds configured limit', () => {
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'x'.repeat(65) },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    expect(mockNotify.warning).toHaveBeenCalledWith('Scene name cannot exceed 64 characters.')
+    expect(mockDispatch).not.toHaveBeenCalledWith({
+      type: 'SAVE_SCENE',
+      payload: expect.anything(),
+    })
+  })
+
+  it('normalizes save metadata and warns on duplicate scene names', () => {
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: ' Baseline<Scene> ' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    expect(mockNotify.warning).toHaveBeenCalledWith('Scene name "Baseline Scene" already exists. Saving duplicate snapshot name.')
+    expect(mockNotify.info).toHaveBeenCalledWith('Scene metadata was normalized to remove reserved characters and whitespace.')
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SAVE_SCENE',
+      payload: {
+        name: 'Baseline Scene',
+        description: 'Saved from TopBar',
+        tags: ['topbar'],
+      },
+    })
+  })
+
+  it('filters saved scenes by search query for large inventories', async () => {
+    render(<TopBar />)
+
+    openSceneControls()
+    expect(screen.getByTestId('topbar-scene-search-summary').textContent).toContain('2 scenes')
+
+    fireEvent.change(screen.getByTestId('topbar-scene-search-input'), {
+      target: { value: 'compare' },
+    })
+    expect(screen.getByTestId('topbar-scene-search-summary').textContent).toContain('1 of 2 scenes')
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    expect(await screen.findByRole('option', { name: 'Compare Scene' })).toBeTruthy()
+    expect(screen.queryByRole('option', { name: 'Baseline Scene' })).toBeNull()
+
+    fireEvent.change(screen.getByTestId('topbar-scene-search-input'), {
+      target: { value: 'does-not-exist' },
+    })
+    expect(screen.getByTestId('topbar-scene-search-summary').textContent).toContain('0 of 2 scenes')
+  })
+
   it('updates selected scene metadata from TopBar controls', async () => {
     render(<TopBar />)
 
@@ -176,6 +234,65 @@ describe('TopBar scene management controls', () => {
       },
     })
     expect(mockNotify.success).toHaveBeenCalledWith('Updated scene metadata for "Baseline Scene Renamed".')
+  })
+
+  it('shows recall impact preview summary for selected scene', async () => {
+    mockState = {
+      ...mockState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: 'Baseline description',
+          routes: [
+            {
+              id: 'talker-1→listener-1',
+              talker_id: 'talker-1',
+              listener_id: 'listener-1',
+              state: 'connected',
+              established_time: null,
+              error_message: null,
+              connection_count: 1,
+              srp_reservation_id: null,
+              srp_admission_id: null,
+              locked: false,
+              valid: true,
+              messages: [],
+              cross_node: false,
+            },
+            {
+              id: 'talker-2→listener-2',
+              talker_id: 'talker-2',
+              listener_id: 'listener-2',
+              state: 'connected',
+              established_time: null,
+              error_message: null,
+              connection_count: 1,
+              srp_reservation_id: null,
+              srp_admission_id: null,
+              locked: false,
+              valid: true,
+              messages: [],
+              cross_node: false,
+            },
+          ],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: ['baseline'],
+        },
+      },
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+
+    expect(screen.getByTestId('topbar-scene-impact-summary').textContent).toContain(
+      'Impact: +1 add, -0 remove, =1 unchanged'
+    )
+    expect(screen.getByTestId('topbar-scene-impact-routes').textContent).toContain('Add: talker-2→listener-2')
+    expect(screen.getByTestId('topbar-scene-impact-routes').textContent).toContain('Remove: none')
   })
 
   it('requires confirmation before recall and delete dispatch for selected saved scene', async () => {

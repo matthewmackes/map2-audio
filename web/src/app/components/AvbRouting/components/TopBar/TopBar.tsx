@@ -42,6 +42,14 @@ import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext
 import { useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
 import { initialRoutingState } from '../../types';
+import {
+  hasDuplicateSceneName,
+  normalizeAndValidateSceneMetadata,
+  SCENE_DESCRIPTION_MAX_LENGTH,
+  SCENE_MAX_TAGS,
+  SCENE_NAME_MAX_LENGTH,
+  SCENE_TAG_MAX_LENGTH,
+} from '../../utils/sceneValidation';
 import { NodeSelector } from './NodeSelector';
 import { SceneDiffPreview } from './SceneDiffPreview';
 import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
@@ -50,13 +58,6 @@ const DEVICE_TYPE_OPTIONS = ['map2', 'avdecc', 'unknown'] as const;
 
 function sanitizeFilterIdValue(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
-
-function parseSceneTags(raw: string): string[] {
-  return raw
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
 }
 
 /**
@@ -73,6 +74,7 @@ export function TopBar() {
   const [scenesAnchor, setScenesAnchor] = useState<HTMLElement | null>(null);
   const [sceneDiffAnchor, setSceneDiffAnchor] = useState<HTMLElement | null>(null);
   const [sceneCreateNameDraft, setSceneCreateNameDraft] = useState('');
+  const [sceneSearchQuery, setSceneSearchQuery] = useState('');
   const [selectedSceneId, setSelectedSceneId] = useState('');
   const [sceneEditNameDraft, setSceneEditNameDraft] = useState('');
   const [sceneEditDescriptionDraft, setSceneEditDescriptionDraft] = useState('');
@@ -105,6 +107,7 @@ export function TopBar() {
   const handleScenesClose = () => {
     setScenesAnchor(null);
     setPendingSceneAction(null);
+    setSceneSearchQuery('');
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +251,10 @@ export function TopBar() {
     setSceneEditTagsDraft(event.target.value);
   };
 
+  const handleSceneSearchQueryChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSceneSearchQuery(event.target.value);
+  };
+
   const handleSceneSelectionChange = (event: SelectChangeEvent<string>) => {
     setSelectedSceneId(event.target.value || '');
     setPendingSceneAction(null);
@@ -256,17 +263,39 @@ export function TopBar() {
   const handleSaveScene = () => {
     const routeCount = Object.keys(state.liveRoutes).length;
     const fallbackName = `Scene ${Object.keys(state.scenes).length + 1}`;
-    const sceneName = sceneCreateNameDraft.trim() || fallbackName;
+    const validation = normalizeAndValidateSceneMetadata(
+      {
+        name: sceneCreateNameDraft.trim() || fallbackName,
+        description: 'Saved from TopBar',
+        tags: ['topbar'],
+      },
+      { requireName: true }
+    );
+    if (validation.errors.length > 0) {
+      notify.warning(validation.errors[0]);
+      return;
+    }
+    const normalized = validation.normalized;
+    const duplicateName = hasDuplicateSceneName(
+      normalized.name,
+      Object.values(state.scenes).map((scene) => ({ id: scene.id, name: scene.name }))
+    );
+    if (duplicateName) {
+      notify.warning(`Scene name "${normalized.name}" already exists. Saving duplicate snapshot name.`);
+    }
+    if (validation.warnings.length > 0) {
+      notify.info(validation.warnings[0]);
+    }
 
     dispatch({
       type: 'SAVE_SCENE',
       payload: {
-        name: sceneName,
-        description: 'Saved from TopBar',
-        tags: ['topbar'],
+        name: normalized.name,
+        description: normalized.description,
+        tags: normalized.tags,
       },
     });
-    notify.success(`Saved scene "${sceneName}" (${routeCount} routes).`);
+    notify.success(`Saved scene "${normalized.name}" (${routeCount} routes).`);
     setSceneCreateNameDraft('');
   };
 
@@ -284,13 +313,32 @@ export function TopBar() {
       return;
     }
 
-    const nextName = sceneEditNameDraft.trim();
-    if (!nextName) {
-      notify.warning('Scene name cannot be empty when updating metadata.');
+    const validation = normalizeAndValidateSceneMetadata(
+      {
+        name: sceneEditNameDraft,
+        description: sceneEditDescriptionDraft,
+        tags: sceneEditTagsDraft.split(','),
+      },
+      { requireName: true }
+    );
+    if (validation.errors.length > 0) {
+      notify.warning(validation.errors[0]);
       return;
     }
-    const nextDescription = sceneEditDescriptionDraft.trim();
-    const nextTags = parseSceneTags(sceneEditTagsDraft);
+    const nextName = validation.normalized.name;
+    const nextDescription = validation.normalized.description;
+    const nextTags = validation.normalized.tags;
+    const duplicateName = hasDuplicateSceneName(
+      nextName,
+      Object.values(state.scenes).map((existingScene) => ({ id: existingScene.id, name: existingScene.name })),
+      { excludeSceneId: scene.id }
+    );
+    if (duplicateName) {
+      notify.warning(`Scene name "${nextName}" already exists. Update keeps a duplicate name.`);
+    }
+    if (validation.warnings.length > 0) {
+      notify.info(validation.warnings[0]);
+    }
     const unchanged =
       nextName === scene.name &&
       nextDescription === scene.description &&
@@ -492,6 +540,18 @@ export function TopBar() {
       const byName = a.name.localeCompare(b.name);
       return byName !== 0 ? byName : a.id.localeCompare(b.id);
     });
+  const normalizedSceneSearchQuery = sceneSearchQuery.trim().toLowerCase();
+  const filteredSceneOptions = normalizedSceneSearchQuery
+    ? sceneOptions.filter((scene) => (
+      scene.name.toLowerCase().includes(normalizedSceneSearchQuery) ||
+      scene.id.toLowerCase().includes(normalizedSceneSearchQuery) ||
+      scene.description.toLowerCase().includes(normalizedSceneSearchQuery) ||
+      scene.tags.some((tag) => tag.toLowerCase().includes(normalizedSceneSearchQuery))
+    ))
+    : sceneOptions;
+  const filteredSceneSummary = normalizedSceneSearchQuery
+    ? `${filteredSceneOptions.length} of ${sceneOptions.length} scenes`
+    : `${sceneOptions.length} scenes`;
   const sceneNameCounts = sceneOptions.reduce((counts, scene) => {
     const previous = counts.get(scene.name) || 0;
     counts.set(scene.name, previous + 1);
@@ -503,7 +563,8 @@ export function TopBar() {
       : scene.name
   );
   const selectedScene = selectedSceneId ? state.scenes[selectedSceneId] : null;
-  const selectedSceneIdValue = selectedScene ? selectedScene.id : '';
+  const selectedSceneVisible = Boolean(selectedScene && filteredSceneOptions.some((scene) => scene.id === selectedScene.id));
+  const selectedSceneIdValue = selectedSceneVisible && selectedScene ? selectedScene.id : '';
   const selectedBaselineScene = state.sceneDiff.baseline_scene_id ?? '';
   const selectedCompareScene = state.sceneDiff.compare_scene_id ?? '';
   const baselineScene = state.sceneDiff.baseline_scene_id
@@ -538,6 +599,21 @@ export function TopBar() {
       pendingSceneAction &&
       pendingSceneAction.scene_id === selectedScene.id
     );
+  const liveRouteIds = Object.keys(state.liveRoutes).sort((a, b) => a.localeCompare(b));
+  const sceneRouteIds = selectedScene
+    ? selectedScene.routes.map((route) => route.id).sort((a, b) => a.localeCompare(b))
+    : [];
+  const liveRouteIdSet = new Set(liveRouteIds);
+  const sceneRouteIdSet = new Set(sceneRouteIds);
+  const recallToAdd = sceneRouteIds.filter((routeId) => !liveRouteIdSet.has(routeId));
+  const recallToRemove = liveRouteIds.filter((routeId) => !sceneRouteIdSet.has(routeId));
+  const recallUnchanged = sceneRouteIds.filter((routeId) => liveRouteIdSet.has(routeId));
+  const recallImpactSummary = selectedScene
+    ? `Impact: +${recallToAdd.length} add, -${recallToRemove.length} remove, =${recallUnchanged.length} unchanged`
+    : 'Impact: no scene selected';
+  const recallImpactRoutes = selectedScene
+    ? `Add: ${recallToAdd.slice(0, 3).join(' | ') || 'none'} · Remove: ${recallToRemove.slice(0, 3).join(' | ') || 'none'}`
+    : 'Add: none · Remove: none';
   const sceneImpactText = !selectedScene
     ? 'Select a saved scene to review recall/delete impact.'
     : pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'recall'
@@ -787,6 +863,7 @@ export function TopBar() {
             label="New Scene Name"
             value={sceneCreateNameDraft}
             onChange={handleSceneCreateNameDraftChange}
+            helperText={`Max ${SCENE_NAME_MAX_LENGTH} chars`}
             inputProps={{ 'data-testid': 'topbar-scene-name-input' }}
           />
 
@@ -809,6 +886,18 @@ export function TopBar() {
 
           <Divider />
 
+          <TextField
+            size="small"
+            label="Search Saved Scenes"
+            value={sceneSearchQuery}
+            onChange={handleSceneSearchQueryChange}
+            inputProps={{ 'data-testid': 'topbar-scene-search-input' }}
+          />
+
+          <Typography variant="caption" color="text.secondary" data-testid="topbar-scene-search-summary">
+            {filteredSceneSummary}
+          </Typography>
+
           <FormControl size="small">
             <InputLabel id="scene-action-select-label">Saved Scene</InputLabel>
             <Select
@@ -821,7 +910,12 @@ export function TopBar() {
               <MenuItem value="" data-testid="topbar-scene-select-none">
                 <em>None</em>
               </MenuItem>
-              {sceneOptions.map((scene) => (
+              {filteredSceneOptions.length === 0 && (
+                <MenuItem value="" disabled data-testid="topbar-scene-select-empty">
+                  <em>No matching scenes</em>
+                </MenuItem>
+              )}
+              {filteredSceneOptions.map((scene) => (
                 <MenuItem
                   key={scene.id}
                   value={scene.id}
@@ -857,6 +951,7 @@ export function TopBar() {
             label="Description"
             value={sceneEditDescriptionDraft}
             onChange={handleSceneEditDescriptionDraftChange}
+            helperText={`Max ${SCENE_DESCRIPTION_MAX_LENGTH} chars`}
             inputProps={{ 'data-testid': 'topbar-scene-edit-description-input' }}
             disabled={!selectedScene}
           />
@@ -866,6 +961,7 @@ export function TopBar() {
             label="Tags (comma separated)"
             value={sceneEditTagsDraft}
             onChange={handleSceneEditTagsDraftChange}
+            helperText={`Up to ${SCENE_MAX_TAGS} tags, ${SCENE_TAG_MAX_LENGTH} chars each`}
             inputProps={{ 'data-testid': 'topbar-scene-edit-tags-input' }}
             disabled={!selectedScene}
           />
@@ -879,6 +975,22 @@ export function TopBar() {
           >
             Apply Metadata
           </Button>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            data-testid="topbar-scene-impact-summary"
+          >
+            {recallImpactSummary}
+          </Typography>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            data-testid="topbar-scene-impact-routes"
+          >
+            {recallImpactRoutes}
+          </Typography>
 
           <Typography
             variant="caption"

@@ -22,6 +22,10 @@ import type {
   Endpoint,
   AuditLogEntry,
 } from '../types';
+import {
+  hasDuplicateSceneName,
+  normalizeAndValidateSceneMetadata,
+} from '../utils/sceneValidation';
 
 function generateId(): string {
   if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
@@ -498,13 +502,28 @@ export function routingReducer(
 
     case 'SAVE_SCENE': {
       const { name, description, tags } = action.payload;
+      const validation = normalizeAndValidateSceneMetadata(
+        { name, description, tags },
+        { requireName: true }
+      );
+      if (validation.errors.length > 0) {
+        return {
+          ...state,
+          error: validation.errors[0],
+        };
+      }
+      const normalized = validation.normalized;
+      const duplicateName = hasDuplicateSceneName(
+        normalized.name,
+        Object.values(state.scenes).map((scene) => ({ id: scene.id, name: scene.name }))
+      );
       const scene_id = generateId();
 
       const scene = {
         id: scene_id,
-        name,
-        description,
-        tags,
+        name: normalized.name,
+        description: normalized.description,
+        tags: normalized.tags,
         routes: Object.values(state.liveRoutes),
         timestamp: new Date().toISOString(),
         created_by: 'user', // TODO: Get from auth
@@ -512,6 +531,7 @@ export function routingReducer(
 
       const newState = {
         ...state,
+        error: null,
         scenes: {
           ...state.scenes,
           [scene_id]: scene,
@@ -520,8 +540,15 @@ export function routingReducer(
           ...state.auditLog,
           createAuditEntry(
             'SAVE_SCENE',
-            action.payload,
-            `Saved scene: ${name} (${Object.keys(state.liveRoutes).length} routes)`
+            {
+              scene_id,
+              name: normalized.name,
+              description: normalized.description,
+              tags: normalized.tags,
+              duplicate_name: duplicateName,
+            },
+            `Saved scene: ${normalized.name} (${Object.keys(state.liveRoutes).length} routes)`,
+            duplicateName ? 'warning' : 'success'
           ),
         ],
       };
@@ -601,11 +628,24 @@ export function routingReducer(
         return { ...state, error: `Scene not found: ${scene_id}` };
       }
 
-      const nextName = name.trim() || scene.name;
-      const nextDescription = description.trim();
-      const nextTags = tags
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
+      const validation = normalizeAndValidateSceneMetadata(
+        { name, description, tags },
+        { requireName: true }
+      );
+      if (validation.errors.length > 0) {
+        return {
+          ...state,
+          error: validation.errors[0],
+        };
+      }
+      const nextName = validation.normalized.name;
+      const nextDescription = validation.normalized.description;
+      const nextTags = validation.normalized.tags;
+      const duplicateName = hasDuplicateSceneName(
+        nextName,
+        Object.values(state.scenes).map((existingScene) => ({ id: existingScene.id, name: existingScene.name })),
+        { excludeSceneId: scene_id }
+      );
       const modifiedAt = new Date().toISOString();
       const updatedScene = {
         ...scene,
@@ -644,8 +684,10 @@ export function routingReducer(
               name: nextName,
               description: nextDescription,
               tags: nextTags,
+              duplicate_name: duplicateName,
             },
-            `Updated scene metadata: ${scene.name} -> ${nextName}`
+            `Updated scene metadata: ${scene.name} -> ${nextName}`,
+            duplicateName ? 'warning' : 'success'
           ),
         ],
       };
