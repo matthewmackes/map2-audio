@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **765** TypeScript | **243** C++/H | **87** Docs | **293** total commits | **0** stars | **0** forks | **0** open issues
+**550** Python | **765** TypeScript | **243** C++/H | **87** Docs | **296** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6949e75c`](https://github.com/matthewmackes/map2-audio/commit/6949e75c3b17e4feeb54bfefa6622b91b7c9bf65) | Commit all pending updates | Map2 Audio | 2026-02-19 |
+| [`b22bb4c0`](https://github.com/matthewmackes/map2-audio/commit/b22bb4c0f93d5148bc9991b91cdd7cf2a0378ac8) | Add TopBar refresh reset coverage for conflict overrides | Map2 Audio | 2026-02-19 |
+| [`00374418`](https://github.com/matthewmackes/map2-audio/commit/003744186007b25f6fe5dd35f69e8102d1a84e10) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`a7c76438`](https://github.com/matthewmackes/map2-audio/commit/a7c764381179f07fc1ff9e483f990e56904cfc3d) | Add AVB TopBar coverage for refresh lifecycle and audit-f... | Map2 Audio | 2026-02-19 |
 | [`af83accf`](https://github.com/matthewmackes/map2-audio/commit/af83accf7cb18072f26726102c6420da9180df3f) | feat: add remaining plugin wrappers and refresh full buil... | Map2 Audio | 2026-02-19 |
 | [`756f2642`](https://github.com/matthewmackes/map2-audio/commit/756f2642516941bd24153eefc3594a660c29cfae) | chore: refresh full plugin build artifacts and logs | Map2 Audio | 2026-02-19 |
 | [`0439d2c7`](https://github.com/matthewmackes/map2-audio/commit/0439d2c7ef34748e95586fe35c38701a4a194915) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`c208beed`](https://github.com/matthewmackes/map2-audio/commit/c208beed0bac891f02da9d2f1052f5527e8a8d39) | Merge commit 'b62d083' into push-origin-b62d083 | Map2 Audio | 2026-02-19 |
-| [`b62d083a`](https://github.com/matthewmackes/map2-audio/commit/b62d083a1ee894773fcf01dc4dc04e75c5b0abaf) | chore: commit all current workspace changes | Map2 Audio | 2026-02-19 |
-| [`7f97bb18`](https://github.com/matthewmackes/map2-audio/commit/7f97bb18481da0fb168fa34e6b861d760f2df1bf) | Merge commit '66f85e9' into push-origin-66f85e9 | Map2 Audio | 2026-02-19 |
-| [`66f85e9f`](https://github.com/matthewmackes/map2-audio/commit/66f85e9f92152434e0b8518b43e2434026862bb5) | Add Windows wrappers for MAP2 effects plugins and build r... | Map2 Audio | 2026-02-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
