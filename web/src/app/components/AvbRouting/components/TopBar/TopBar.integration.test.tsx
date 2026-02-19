@@ -2458,6 +2458,292 @@ describe('TopBar filter controls provider integration', () => {
     })
   })
 
+  it('keeps scene-audit quick-filter chip keyboard activation aligned with pointer results after remote scene-sync mutations', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      auditLog: [
+        {
+          id: 'audit-legacy-delete-error',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'DELETE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Legacy Scene',
+          validation_outcome: 'error' as const,
+        },
+        {
+          id: 'audit-preview-warning',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'SCENE_DIFF' as const,
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (2 rows)',
+          validation_outcome: 'warning' as const,
+        },
+      ],
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarRemoteSceneSyncProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'legacy' },
+    })
+
+    act(() => {
+      topBarSceneSyncDispatch?.({
+        type: 'UPDATE_SCENE_METADATA',
+        payload: {
+          scene_id: 'scene-b',
+          name: 'Baseline Scene',
+          description: 'remote compare update',
+          tags: ['compare', 'remote'],
+        },
+      })
+      topBarSceneSyncDispatch?.({
+        type: 'DELETE_SCENE',
+        payload: { scene_id: 'scene-a' },
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-probe-scene-sync-audit-sequence').textContent).toBe(
+        'DELETE_SCENE|UPDATE_SCENE|DELETE_SCENE'
+      )
+      expect(screen.getByTestId('topbar-probe-scene-sync-audit-warnings').textContent).toBe('1')
+      expect(screen.getByTestId('topbar-probe-scene-sync-audit-errors').textContent).toBe('1')
+      expect(screen.getByTestId('topbar-probe-scene-sync-audit-deletes').textContent).toBe('2')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-all'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('3 of 3 matching (3 total)')
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-all'), { key: 'Enter' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('3 of 3 matching (3 total)')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-errors'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-errors'), { key: ' ' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-warnings'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Updated scene metadata: Compare Scene -> Baseline Scene')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-warnings'), { key: 'Enter' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Updated scene metadata: Compare Scene -> Baseline Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-deletes'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('delete')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-deletes'), { key: ' ' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('delete')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-diff-preview'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-diff-preview'), { key: 'Enter' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
+    })
+  })
+
+  it('keeps status-strip counter activation aligned with quick-chip filters under the same remote mutation window', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      auditLog: [
+        {
+          id: 'audit-legacy-delete-error',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'DELETE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Legacy Scene',
+          validation_outcome: 'error' as const,
+        },
+        {
+          id: 'audit-preview-warning',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'SCENE_DIFF' as const,
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (2 rows)',
+          validation_outcome: 'warning' as const,
+        },
+      ],
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarRemoteSceneSyncProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'legacy' },
+    })
+
+    act(() => {
+      topBarSceneSyncDispatch?.({
+        type: 'UPDATE_SCENE_METADATA',
+        payload: {
+          scene_id: 'scene-b',
+          name: 'Baseline Scene',
+          description: 'remote compare update',
+          tags: ['compare', 'remote'],
+        },
+      })
+      topBarSceneSyncDispatch?.({
+        type: 'DELETE_SCENE',
+        payload: { scene_id: 'scene-a' },
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-probe-scene-sync-audit-sequence').textContent).toBe(
+        'DELETE_SCENE|UPDATE_SCENE|DELETE_SCENE'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-errors'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-errors'), { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-warnings'), { key: ' ' })
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Updated scene metadata: Compare Scene -> Baseline Scene')).toBeTruthy()
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-status-warnings'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+      expect(screen.getByText('Updated scene metadata: Compare Scene -> Baseline Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-deletes'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('delete')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-deletes'), { key: ' ' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('delete')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (3 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-diff-preview'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
+    })
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-diff-preview-warnings'), { key: 'Enter' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
+    })
+  })
+
   it('refreshes scene-diff import preview deterministically when remote sync invalidates referenced scenes mid-session', async () => {
     const routeA = makeSceneRoute('talker-1', 'listener-1')
     const routeB = makeSceneRoute('talker-2', 'listener-2')

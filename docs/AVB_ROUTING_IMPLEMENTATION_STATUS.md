@@ -636,6 +636,16 @@
 - TopBar/provider integration coverage now asserts scene-audit quick-filter chip determinism after remote sync mutations while controls remain open:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates quick chips (`All`/`Errors`/`Warnings`/`Deletes`/`Diff Preview`) deterministically override stale remembered filters and produce stable summaries after remote compare-update + baseline-delete churn in-session
+- TopBar/provider integration coverage now asserts keyboard-activation parity for scene-audit quick-filter chips under remote sync mutation windows:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates `Enter`/`Space` activation paths for `All`/`Errors`/`Warnings`/`Deletes`/`Diff Preview` yield the same search/outcome summaries as pointer activation after remote compare-update + baseline-delete churn with `Remember Audit Filters` enabled
+- Provider/reducer coverage now asserts refreshed-to-cancelled preview lifecycle sequencing during remote inventory-reduction sync races:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates `preview opened -> preview refreshed -> remote compare update -> remote baseline delete -> preview cancelled` sequencing remains deterministic while stale presets are remediated and preview-history remains non-mutating outside scene-update history
+- TopBar/provider integration coverage now asserts status-strip counter activation parity with quick-chip filters under the same remote scene-sync mutation window:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates mixed pointer/keyboard activation paths (`quick chips` + `status-strip counters`) keep search outcomes and visible audit rows aligned after remote compare-update + baseline-delete churn with `Remember Audit Filters` enabled
 
 ---
 
@@ -643,7 +653,7 @@
 
 - `npm --prefix web run typecheck` passes (2026-02-19).
 - `npm --prefix web run build` passes (2026-02-18).
-- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `212` tests.
+- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `216` tests.
 
 ---
 
@@ -659,6 +669,6 @@
 
 ## Next Recommended Slice
 
-1. Add TopBar/provider coverage for keyboard-activation parity of scene-audit quick-filter chips under remote scene-sync mutation windows.
-2. Add reducer/provider coverage for remote scene-sync windows that emit preview `refreshed` followed by `cancelled` lifecycle events while scene inventories are concurrently reduced.
-3. Add integration coverage for remote scene-sync windows that mutate scene inventories while `Remember Audit Filters` is enabled and quick chips are toggled repeatedly in the same session.
+1. Add integration coverage for longer mixed status-strip + quick-chip toggling sequences (pointer/keyboard alternation) under remote scene-sync churn with `Remember Audit Filters` enabled.
+2. Extend operator docs with a concise “counter vs quick-chip precedence” matrix for remote sync sessions (status-strip presets, quick-chip overrides, and recovery order).
+3. Add TopBar/provider coverage for remembered scene-audit filter restoration after closing/reopening scene controls during remote scene-sync churn.
