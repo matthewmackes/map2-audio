@@ -1,0 +1,655 @@
+[  3%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
+[  6%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[ 13%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/Source/PluginProcessor.cpp.o
+[ 13%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/Source/PluginEditor.cpp.o
+[ 17%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp.o
+[ 20%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[ 24%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
+[ 27%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
+[ 31%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+[ 34%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[ 37%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.o
+[ 41%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.cpp.o
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:85:
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:535:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:192:33: note: in instantiation of member function 'CrapHelper<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>::get_crap' requested here
+  192 |   static Type & get () { return Crap (Type); }
+      |                                 ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-array.hh:83:36: note: in instantiation of member function 'CrapOrNullHelper<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>::get' requested here
+   83 |     if (unlikely (!length)) return CrapOrNull (Type);
+      |                                    ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:198:50: note: expanded from macro 'CrapOrNull'
+  198 | #define CrapOrNull(Type) CrapOrNullHelper<Type>::get ()
+      |                                                  ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-iter.hh:89:41: note: in instantiation of member function 'hb_array_t<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>::__item__' requested here
+   89 |   item_t operator * () { return thiz()->__item__ (); }
+      |                                         ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-iter.hh:446:55: note: in instantiation of member function 'hb_iter_t<hb_array_t<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>, hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t &>::operator*' requested here
+  446 |   { while (it && !hb_has (p.get (), hb_get (f.get (), *it))) ++it; }
+      |                                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-iter.hh:472:12: note: in instantiation of member function 'hb_filter_iter_t<hb_array_t<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>, bool (item_t::*)() const, const (unnamed struct at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:224:1) &>::hb_filter_iter_t' requested here
+  472 |   { return hb_filter_iter_t<Iter, Pred, Proj> (it, p, f); }
+      |            ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-iter.hh:359:51: note: in instantiation of function template specialization 'hb_filter_iter_factory_t<bool (item_t::*)() const, const (unnamed struct at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:224:1) &>::operator()<hb_array_t<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>, nullptr>' requested here
+  359 | operator | (Lhs&& lhs, Rhs&& rhs) HB_AUTO_RETURN (std::forward<Rhs> (rhs) (std::forward<Lhs> (lhs)))
+      |                                                   ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-meta.hh:76:55: note: expanded from macro 'HB_AUTO_RETURN'
+   76 | #define HB_AUTO_RETURN(E) -> decltype ((E)) { return (E); }
+      |                                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.hh:427:5: note: in instantiation of function template specialization 'operator|<hb_array_t<hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t>, hb_filter_iter_factory_t<bool (item_t::*)() const, const (unnamed struct at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:224:1) &>, nullptr>' requested here
+  427 |     | hb_filter (&item_t::is_real)
+      |     ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-meta.hh:76:55: note: expanded from macro 'HB_AUTO_RETURN'
+   76 | #define HB_AUTO_RETURN(E) -> decltype ((E)) { return (E); }
+      |                                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.hh:451:13: note: in instantiation of member function 'hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::iter_items' requested here
+  451 |     + this->iter_items ()
+      |             ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-meta.hh:76:55: note: expanded from macro 'HB_AUTO_RETURN'
+   76 | #define HB_AUTO_RETURN(E) -> decltype ((E)) { return (E); }
+      |                                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-multimap.hh:78:36: note: in instantiation of member function 'hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::values_ref' requested here
+   78 |     for (const auto &m : multiples.values_ref ())
+      |                                    ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_hashmap_t<unsigned int, Triple>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<hb_hashmap_t<unsigned int, Triple>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:219:30: note: in instantiation of member function 'CrapHelper<hb_hashmap_t<unsigned int, Triple>>::get_crap' requested here
+  219 |       return std::addressof (Crap (Type));
+      |                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-layout-common.hh:2661:15: note: in instantiation of function template specialization 'hb_vector_t<hb_hashmap_t<unsigned int, Triple>>::push<hb_hashmap_t<unsigned int, Triple>>' requested here
+ 2661 |       regions.push (std::move (axis_tuples));
+      |               ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_inc_bimap_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<hb_inc_bimap_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:210:30: note: in instantiation of member function 'CrapHelper<hb_inc_bimap_t>::get_crap' requested here
+  210 |       return std::addressof (Crap (Type));
+      |                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-layout-common.hh:3210:40: note: in instantiation of member function 'hb_vector_t<hb_inc_bimap_t>::push' requested here
+ 3210 |       hb_inc_bimap_t *map = inner_maps.push ();
+      |                                        ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'OT::tuple_delta_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<OT::tuple_delta_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:219:30: note: in instantiation of member function 'CrapHelper<OT::tuple_delta_t>::get_crap' requested here
+  219 |       return std::addressof (Crap (Type));
+      |                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GDEF/../../../hb-ot-var-common.hh:544:11: note: in instantiation of function template specialization 'hb_vector_t<OT::tuple_delta_t>::push<const OT::tuple_delta_t &>' requested here
+  544 |       out.push (*this);
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'OT::TupleVariationData::tuple_variations_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<OT::TupleVariationData::tuple_variations_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:219:30: note: in instantiation of member function 'CrapHelper<OT::TupleVariationData::tuple_variations_t>::get_crap' requested here
+  219 |       return std::addressof (Crap (Type));
+      |                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GDEF/../../../hb-ot-var-common.hh:1875:12: note: in instantiation of function template specialization 'hb_vector_t<OT::TupleVariationData::tuple_variations_t>::push<OT::TupleVariationData::tuple_variations_t>' requested here
+ 1875 |       vars.push (std::move (var_data_tuples));
+      |            ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_vector_t<int>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<hb_vector_t<int>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<hb_vector_t<int>>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GDEF/../../../hb-ot-var-common.hh:2005:23: note: in instantiation of member function 'hb_vector_t<hb_vector_t<int>>::operator[]' requested here
+ 2005 |       if (!(delta_rows[i].resize (num_cols))) return false;
+      |                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'OT::delta_row_encoding_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<OT::delta_row_encoding_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:219:30: note: in instantiation of member function 'CrapHelper<OT::delta_row_encoding_t>::get_crap' requested here
+  219 |       return std::addressof (Crap (Type));
+      |                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GDEF/../../../hb-ot-var-common.hh:2048:19: note: in instantiation of function template specialization 'hb_vector_t<OT::delta_row_encoding_t>::push<OT::delta_row_encoding_t>' requested here
+ 2048 |         encodings.push (std::move (obj));
+      |                   ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_set_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<hb_set_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<hb_set_t>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/../../../hb-ot-layout-gsubgpos.hh:135:31: note: in instantiation of member function 'hb_vector_t<hb_set_t>::operator[]' requested here
+  135 |     return active_glyphs_stack[active_glyphs_stack.length - 2];
+      |                               ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_vector_t<hb_aat_map_t::range_flags_t, true>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<hb_vector_t<hb_aat_map_t::range_flags_t, true>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<hb_vector_t<hb_aat_map_t::range_flags_t, true>>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-aat-layout-morx-table.hh:1162:23: note: in instantiation of member function 'hb_vector_t<hb_vector_t<hb_aat_map_t::range_flags_t, true>>::operator[]' requested here
+ 1162 |       map->chain_flags[i].push (hb_aat_map_t::range_flags_t {chain->compile_flags (mapper),
+      |                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-aat-layout.cc:217:10: note: in instantiation of member function 'AAT::mortmorx<AAT::ExtendedTypes, 1836020344>::compile_flags' requested here
+  217 |     morx.compile_flags (mapper, map);
+      |          ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'OT::VariationSelectorRecord' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<OT::VariationSelectorRecord>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-open-type.hh:638:37: note: in instantiation of member function 'CrapHelper<OT::VariationSelectorRecord>::get_crap' requested here
+  638 |     if (unlikely (i >= len)) return Crap (Type);
+      |                                     ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cmap-table.hh:1304:26: note: in instantiation of member function 'OT::ArrayOf<OT::VariationSelectorRecord, OT::IntType<unsigned int>>::operator[]' requested here
+ 1304 |       c->add_link (record[j].defaultUVS, obj_indices[i].first);
+      |                          ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::parsed_cs_str_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::parsed_cs_str_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<CFF::parsed_cs_str_t>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-subset-cff-common.hh:559:33: note: in instantiation of member function 'hb_vector_t<CFF::parsed_cs_str_t>::operator[]' requested here
+  559 |           return &(*parsed_local_subrs)[context.subr_num];
+      |                                        ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::cff1_private_dict_values_base_t<CFF::dict_val_t>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::cff1_private_dict_values_base_t<CFF::dict_val_t>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<CFF::cff1_private_dict_values_base_t<CFF::dict_val_t>>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1172:2: note: in instantiation of member function 'hb_vector_t<CFF::cff1_private_dict_values_base_t<CFF::dict_val_t>>::operator[]' requested here
+ 1172 |         privateDicts[i].init ();
+      |         ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1382:39: note: in instantiation of member function 'OT::cff1::accelerator_templ_t<CFF::cff1_private_dict_opset_t, CFF::cff1_private_dict_values_base_t<CFF::dict_val_t>>::accelerator_templ_t' requested here
+ 1382 |     accelerator_t (hb_face_t *face) : SUPER (face)
+      |                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::cff1_font_dict_values_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::cff1_font_dict_values_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:210:30: note: in instantiation of member function 'CrapHelper<CFF::cff1_font_dict_values_t>::get_crap' requested here
+  210 |       return std::addressof (Crap (Type));
+      |                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1185:21: note: in instantiation of member function 'hb_vector_t<CFF::cff1_font_dict_values_t>::push' requested here
+ 1185 |           font = fontDicts.push ();
+      |                            ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1382:39: note: in instantiation of member function 'OT::cff1::accelerator_templ_t<CFF::cff1_private_dict_opset_t, CFF::cff1_private_dict_values_base_t<CFF::dict_val_t>>::accelerator_templ_t' requested here
+ 1382 |     accelerator_t (hb_face_t *face) : SUPER (face)
+      |                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::cff1_private_dict_values_base_t<CFF::op_str_t>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::cff1_private_dict_values_base_t<CFF::op_str_t>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<CFF::cff1_private_dict_values_base_t<CFF::op_str_t>>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1172:2: note: in instantiation of member function 'hb_vector_t<CFF::cff1_private_dict_values_base_t<CFF::op_str_t>>::operator[]' requested here
+ 1172 |         privateDicts[i].init ();
+      |         ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1516:46: note: in instantiation of member function 'OT::cff1::accelerator_templ_t<CFF::cff1_private_dict_opset_subset_t, CFF::cff1_private_dict_values_base_t<CFF::op_str_t>>::accelerator_templ_t' requested here
+ 1516 |     accelerator_subset_t (hb_face_t *face) : SUPER (face) {}
+      |                                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::cff2_font_dict_values_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::cff2_font_dict_values_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:461:25: note: in instantiation of member function 'CrapHelper<CFF::cff2_font_dict_values_t>::get_crap' requested here
+  461 |         if (unlikely (font == &Crap (cff2_font_dict_values_t))) goto fail;
+      |                                ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:260:47: note: expanded from macro 'unlikely'
+  260 | #define unlikely(expr) __builtin_expect (bool(expr), 0)
+      |                                               ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:526:39: note: in instantiation of member function 'OT::cff2::accelerator_templ_t<CFF::cff2_private_dict_opset_t, CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>>::accelerator_templ_t' requested here
+  526 |     accelerator_t (hb_face_t *face) : accelerator_templ_t (face) {}
+      |                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:470:2: note: in instantiation of member function 'hb_vector_t<CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>>::operator[]' requested here
+  470 |         privateDicts[i].init ();
+      |         ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:526:39: note: in instantiation of member function 'OT::cff2::accelerator_templ_t<CFF::cff2_private_dict_opset_t, CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>>::accelerator_templ_t' requested here
+  526 |     accelerator_t (hb_face_t *face) : accelerator_templ_t (face) {}
+      |                                       ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'CFF::cff2_private_dict_values_base_t<CFF::op_str_t>' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<CFF::cff2_private_dict_values_base_t<CFF::op_str_t>>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<CFF::cff2_private_dict_values_base_t<CFF::op_str_t>>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:470:2: note: in instantiation of member function 'hb_vector_t<CFF::cff2_private_dict_values_base_t<CFF::op_str_t>>::operator[]' requested here
+  470 |         privateDicts[i].init ();
+      |         ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:537:46: note: in instantiation of member function 'OT::cff2::accelerator_templ_t<CFF::cff2_private_dict_opset_subset_t, CFF::cff2_private_dict_values_base_t<CFF::op_str_t>>::accelerator_templ_t' requested here
+  537 |     accelerator_subset_t (hb_face_t *face) : SUPER (face) {}
+      |                                              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'OT::IndexSubtableRecord' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<OT::IndexSubtableRecord>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<OT::IndexSubtableRecord>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Color/CBDT/CBDT.hh:607:66: note: in instantiation of member function 'hb_vector_t<OT::IndexSubtableRecord>::operator[]' requested here
+  607 |       IndexSubtableRecord* record = c->serializer->embed (records[i]);
+      |                                                                  ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'OT::index_map_subset_plan_t' [-Wnontrivial-memcall]
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:186:38: note: in instantiation of function template specialization 'Crap<OT::index_map_subset_plan_t>' requested here
+  186 |   static Type & get_crap () { return Crap<Type> (); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:159:14: note: in instantiation of member function 'CrapHelper<OT::index_map_subset_plan_t>::get_crap' requested here
+  159 |       return Crap (Type);
+      |              ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
+  188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/glyf/../../hb-ot-var-hvar-table.hh:207:20: note: in instantiation of member function 'hb_vector_t<OT::index_map_subset_plan_t>::operator[]' requested here
+  207 |     index_map_plans[0].init (*index_maps[0], outer_map, inner_sets, plan, false);
+      |                    ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: note: explicitly cast the pointer to silence this warning
+  179 |   memcpy (obj, std::addressof (Null (Type)), sizeof (*obj));
+      |           ^
+      |           (void*)
+19 warnings generated.
+[ 44%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[ 48%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[ 51%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
+[ 55%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
+[ 58%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+[ 62%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[ 65%] Building CXX object CMakeFiles/CircularDelayPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
+In file included from /home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:1:
+In file included from /home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.h:33:
+/home/mm/map2-audio/juce-engine/Source/Common.h:218:18: warning: non-static data member 'format' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  218 |     PluginFormat format = PluginFormat::Unknown;
+      |                  ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:129:18: note: declared here
+  129 |     PluginFormat format = PluginFormat::Unknown;  // NEW: Plugin format
+      |                  ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:219:17: warning: non-static data member 'formatName' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  219 |     std::string formatName;
+      |                 ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:130:17: note: declared here
+  130 |     std::string formatName;                        // NEW: Human-readable format
+      |                 ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:220:17: warning: non-static data member 'filePath' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  220 |     std::string filePath;
+      |                 ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:131:17: note: declared here
+  131 |     std::string filePath;                          // NEW: Path to plugin file
+      |                 ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:221:9: warning: non-static data member 'latencySamples' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  221 |     int latencySamples = 0;
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:132:9: note: declared here
+  132 |     int latencySamples = 0;                        // NEW: Reported latency
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/Common.h:256:13: warning: enumeration value 'Unknown' not explicitly handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |             ^~~~~~
+/home/mm/map2-audio/juce-engine/Source/Common.h:294:42: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  294 |     return static_cast<int>((frequency * fftSize) / sampleRate);
+      |                                        ~ ^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:20:25: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+   20 |     delayBuffer_.resize(maxDelaySamples, 0.0f);
+      |                  ~~~~~~ ^~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:99:38: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+   99 |                 float tapPanAngle = (tapIndex / static_cast<float>(numTaps)) * 360.0f +
+      |                                      ^~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:109:54: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  109 |                 float readOffset = (tapIndex + 1) * (delayLineSamples_ / static_cast<float>(numTaps));
+      |                                                      ^~~~~~~~~~~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:109:46: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  109 |                 float readOffset = (tapIndex + 1) * (delayLineSamples_ / static_cast<float>(numTaps));
+      |                                     ~~~~~~~~~^~~  ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:110:33: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  110 |                 float readPos = writePosition_ - readOffset;
+      |                                 ^~~~~~~~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:112:32: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  112 |                     readPos += delayBufferSize_;
+      |                             ~~ ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:124:41: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  124 |                     metering_.tapLevels[tapIndex] = std::max(metering_.tapLevels[tapIndex] * 0.99f,
+      |                     ~~~~~~~~~           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:124:82: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  124 |                     metering_.tapLevels[tapIndex] = std::max(metering_.tapLevels[tapIndex] * 0.99f,
+      |                                                              ~~~~~~~~~           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:126:41: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  126 |                     metering_.tapAngles[tapIndex] = tapPanAngle;
+      |                     ~~~~~~~~~           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:178:39: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  178 |                 float baseTapAngle = (tapIndex / static_cast<float>(numTaps)) * 360.0f;
+      |                                       ^~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:188:54: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  188 |                 float readOffset = (tapIndex + 1) * (delayLineSamples_ / static_cast<float>(numTaps));
+      |                                                      ^~~~~~~~~~~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:188:46: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  188 |                 float readOffset = (tapIndex + 1) * (delayLineSamples_ / static_cast<float>(numTaps));
+      |                                     ~~~~~~~~~^~~  ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:189:33: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  189 |                 float readPos = writePosition_ - readOffset;
+      |                                 ^~~~~~~~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:191:32: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  191 |                     readPos += delayBufferSize_;
+      |                             ~~ ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:203:41: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  203 |                     metering_.tapLevels[tapIndex] = std::max(metering_.tapLevels[tapIndex] * 0.99f,
+      |                     ~~~~~~~~~           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:203:82: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  203 |                     metering_.tapLevels[tapIndex] = std::max(metering_.tapLevels[tapIndex] * 0.99f,
+      |                                                              ~~~~~~~~~           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:205:41: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  205 |                     metering_.tapAngles[tapIndex] = tapPanAngle;
+      |                     ~~~~~~~~~           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:80:11: warning: unused variable 'initialAngle' [-Wunused-variable]
+   80 |     float initialAngle = initialPanAngle_.load();
+      |           ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:323:24: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  323 |     float baseAngle = (tapIndex / static_cast<float>(numTaps)) * 360.0f;
+      |                        ^~~~~~~~ ~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:365:25: warning: implicit conversion from 'const int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  365 |         readPosition += delayBufferSize_;
+      |                      ~~ ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:368:25: warning: implicit conversion from 'const int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  368 |         readPosition -= delayBufferSize_;
+      |                      ~~ ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:373:37: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  373 |     float fraction = readPosition - readIndex;
+      |                                   ~ ^~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:381:29: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  381 |     float y0 = delayBuffer_[idx0];
+      |                ~~~~~~~~~~~~ ^~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:382:29: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  382 |     float y1 = delayBuffer_[idx1];
+      |                ~~~~~~~~~~~~ ^~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:383:29: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  383 |     float y2 = delayBuffer_[idx2];
+      |                ~~~~~~~~~~~~ ^~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:384:29: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  384 |     float y3 = delayBuffer_[idx3];
+      |                ~~~~~~~~~~~~ ^~~~
+/home/mm/map2-audio/juce-engine/Source/CircularDelayProcessor.cpp:405:18: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
+  405 |     delayBuffer_[writePosition_] = sample;
+      |     ~~~~~~~~~~~~ ^~~~~~~~~~~~~~
+33 warnings generated.
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/Source/PluginEditor.cpp:1:
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/Source/PluginEditor.h:5:
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/Source/PluginProcessor.h:5:
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/CircularDelayProcessor.h:33:
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:218:18: warning: non-static data member 'format' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  218 |     PluginFormat format = PluginFormat::Unknown;
+      |                  ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:129:18: note: declared here
+  129 |     PluginFormat format = PluginFormat::Unknown;  // NEW: Plugin format
+      |                  ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:219:17: warning: non-static data member 'formatName' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  219 |     std::string formatName;
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:130:17: note: declared here
+  130 |     std::string formatName;                        // NEW: Human-readable format
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:220:17: warning: non-static data member 'filePath' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  220 |     std::string filePath;
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:131:17: note: declared here
+  131 |     std::string filePath;                          // NEW: Path to plugin file
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:221:9: warning: non-static data member 'latencySamples' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  221 |     int latencySamples = 0;
+      |         ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:132:9: note: declared here
+  132 |     int latencySamples = 0;                        // NEW: Reported latency
+      |         ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:256:13: warning: enumeration value 'Unknown' not explicitly handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |             ^~~~~~
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:294:42: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  294 |     return static_cast<int>((frequency * fftSize) / sampleRate);
+      |                                        ~ ^~~~~~~
+6 warnings generated.
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/Source/PluginProcessor.cpp:1:
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/Source/PluginProcessor.h:5:
+In file included from /home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/CircularDelayProcessor.h:33:
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:218:18: warning: non-static data member 'format' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  218 |     PluginFormat format = PluginFormat::Unknown;
+      |                  ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:129:18: note: declared here
+  129 |     PluginFormat format = PluginFormat::Unknown;  // NEW: Plugin format
+      |                  ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:219:17: warning: non-static data member 'formatName' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  219 |     std::string formatName;
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:130:17: note: declared here
+  130 |     std::string formatName;                        // NEW: Human-readable format
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:220:17: warning: non-static data member 'filePath' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  220 |     std::string filePath;
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:131:17: note: declared here
+  131 |     std::string filePath;                          // NEW: Path to plugin file
+      |                 ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:221:9: warning: non-static data member 'latencySamples' of 'PluginInfoExtended' shadows member inherited from type 'PluginInfo' [-Wshadow-field]
+  221 |     int latencySamples = 0;
+      |         ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:132:9: note: declared here
+  132 |     int latencySamples = 0;                        // NEW: Reported latency
+      |         ^
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:256:13: warning: enumeration value 'Unknown' not explicitly handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |             ^~~~~~
+/home/mm/map2-audio/juce-engine/CircularDelayPlugin/../Source/Common.h:294:42: warning: implicit conversion from 'int' to 'float' may lose precision [-Wimplicit-int-float-conversion]
+  294 |     return static_cast<int>((frequency * fftSize) / sampleRate);
+      |                                        ~ ^~~~~~~
+6 warnings generated.
+[ 68%] Linking CXX static library "CircularDelayPlugin_artefacts/Release/libMAP2 Circular Delay_SharedCode.a"
+[ 68%] Built target CircularDelayPlugin
+[ 82%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
+[ 82%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
+[ 82%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
+[ 82%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[ 89%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
+[ 89%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
+[ 93%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[ 96%] Building CXX object CMakeFiles/CircularDelayPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp:51:
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_VST3Headers.h:143:
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/VST3_SDK/base/source/fstring.cpp:41:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/VST3_SDK/pluginterfaces/base/fvariant.h:50:31: warning: first argument in call to 'memset' is a pointer to non-trivially copyable type 'Steinberg::FVariant' [-Wnontrivial-memcall]
+   50 |         inline FVariant () { memset (this, 0, sizeof (FVariant)); }
+      |                                      ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/VST3_SDK/pluginterfaces/base/fvariant.h:50:31: note: explicitly cast the pointer to silence this warning
+   50 |         inline FVariant () { memset (this, 0, sizeof (FVariant)); }
+      |                                      ^
+      |                                      (void*)
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/VST3_SDK/pluginterfaces/base/fvariant.h:259:10: warning: first argument in call to 'memset' is a pointer to non-trivially copyable type 'Steinberg::FVariant' [-Wnontrivial-memcall]
+  259 |         memset (this, 0, sizeof (FVariant));
+      |                 ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/VST3_SDK/pluginterfaces/base/fvariant.h:259:10: note: explicitly cast the pointer to silence this warning
+  259 |         memset (this, 0, sizeof (FVariant));
+      |                 ^
+      |                 (void*)
+2 warnings generated.
+[100%] Linking CXX shared module "CircularDelayPlugin_artefacts/Release/VST3/MAP2 Circular Delay.vst3/Contents/x86_64-linux/MAP2 Circular Delay.so"
+removing moduleinfo.json
+-- Installing: /home/mm/.vst3/MAP2 Circular Delay.vst3
+-- Installing: /home/mm/.vst3/MAP2 Circular Delay.vst3/Contents
+-- Installing: /home/mm/.vst3/MAP2 Circular Delay.vst3/Contents/x86_64-linux
+-- Installing: /home/mm/.vst3/MAP2 Circular Delay.vst3/Contents/x86_64-linux/MAP2 Circular Delay.so
+[100%] Built target CircularDelayPlugin_VST3

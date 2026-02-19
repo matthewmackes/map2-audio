@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+97126b87b70945cb8dbbb23bbf65094a H3000Plugin_artefacts/JuceLibraryCode/H3000Plugin_resources.rc

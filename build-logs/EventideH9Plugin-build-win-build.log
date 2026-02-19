@@ -1,0 +1,369 @@
+[  3%] Generating EventideH9Plugin_artefacts/JuceLibraryCode/EventideH9Plugin_resources.rc
+[  9%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.obj
+[  9%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/cmake/mingw_juce_shim.cpp.obj
+[ 12%] Building CXX object CMakeFiles/EventideH9Plugin.dir/Source/PluginProcessor.cpp.obj
+[ 15%] Building CXX object CMakeFiles/EventideH9Plugin.dir/Source/PluginEditor.cpp.obj
+[ 18%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp.obj
+[ 21%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.obj
+[ 25%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.obj
+[ 28%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.obj
+[ 31%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.obj
+[ 34%] Building RC object CMakeFiles/EventideH9Plugin_rc_lib.dir/EventideH9Plugin_artefacts/JuceLibraryCode/EventideH9Plugin_resources.rc.res
+[ 37%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.obj
+[ 37%] Built target EventideH9Plugin_rc_lib
+[ 40%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.obj
+[ 43%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.obj
+/home/mm/map2-audio/cmake/mingw_juce_shim.cpp:29:16: warning: redundant redeclaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)' in same scope [-Wredundant-decls]
+   29 | HRESULT WINAPI DCompositionCreateDevice2 (IUnknown*, REFIID, void**);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/mm/map2-audio/cmake/mingw_juce_shim.cpp:20:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h:425:8: note: previous declaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)'
+  425 | STDAPI DCompositionCreateDevice2(IUnknown *renderingDevice, REFIID iid, void **dcompositionDevice);
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+[ 46%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.cpp.obj
+[ 50%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.obj
+[ 53%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.obj
+[ 56%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.obj
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.cc:33,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:21,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:86:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh: In member function 'bool OT::cff1::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+ 1440 |         names = (hb_sorted_vector_t<gname_t> *) hb_calloc (sizeof (hb_sorted_vector_t<gname_t>), 1);
+      |                                                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:541,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:85:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_blob_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-blob.cc:290:34:   required from here
+  290 |   return hb_object_set_user_data (blob, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_buffer_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer.cc:872:34:   required from here
+  872 |   return hb_object_set_user_data (buffer, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_draw_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-draw.cc:288:34:   required from here
+  288 |   return hb_object_set_user_data (dfuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_face_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.cc:336:34:   required from here
+  336 |   return hb_object_set_user_data (face, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:815:34:   required from here
+  815 |   return hb_object_set_user_data (ffuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:2028:34:   required from here
+ 2028 |   return hb_object_set_user_data (font, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_map_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (map, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_paint_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint.cc:334:34:   required from here
+  334 |   return hb_object_set_user_data (funcs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_set_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-set.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (set, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_shape_plan_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-shape-plan.cc:347:34:   required from here
+  347 |   return hb_object_set_user_data (shape_plan, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_unicode_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-unicode.cc:295:34:   required from here
+  295 |   return hb_object_set_user_data (ufuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:536:
+In function 'int hb_memcmp(const void*, const void*, unsigned int)',
+    inlined from 'int hb_array_t< <template-parameter-1-1> >::cmp(const hb_array_t< <template-parameter-1-1> >&) const [with Type = const char]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-array.hh:169:22,
+    inlined from 'static int OT::post::accelerator_t::cmp_key(const void*, const void*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:251:44,
+    inlined from 'bool hb_bsearch_impl(unsigned int*, const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1074:20,
+    inlined from 'V* hb_bsearch(const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1112:26,
+    inlined from 'bool OT::post::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:207:30,
+    inlined from 'hb_bool_t hb_ot_get_glyph_from_name(hb_font_t*, void*, const char*, int, hb_codepoint_t*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-font.cc:473:42:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:984:17: warning: 'int memcmp(const void*, const void*, size_t)' specified bound [2147483648, 4294967295] exceeds source size 1850 [-Wstringop-overread]
+  984 |   return memcmp (a, b, len);
+      |          ~~~~~~~^~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:5:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc: In member function 'bool hb_buffer_t::verify(hb_buffer_t*, hb_font_t*, const hb_feature_t*, unsigned int, const char* const*)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:34:29: warning: '%s' directive argument is null [-Wformat-overflow=]
+   34 | #define BUFFER_VERIFY_ERROR "buffer verify error: "
+      |                             ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:415:40: note: in expansion of macro 'BUFFER_VERIFY_ERROR'
+  415 |       buffer_verify_error (this, font, BUFFER_VERIFY_ERROR "text was: %s.", bytes.arrayZ);
+      |                                        ^~~~~~~~~~~~~~~~~~~
+[ 59%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.obj
+[ 62%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.obj
+[ 65%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.obj
+[ 68%] Building CXX object CMakeFiles/EventideH9Plugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.obj
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:89: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   89 |   #pragma comment(lib, "Dwrite.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:90: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   90 |   #pragma comment(lib, "D2d1.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:91: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   91 |   #pragma comment(lib, "DXGI.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:92: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   92 |   #pragma comment(lib, "D3D11.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:93: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   93 |   #pragma comment(lib, "DComp.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:94: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   94 |   #pragma comment(lib, "dxguid.lib")
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:209:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp: In constructor 'juce::WindowsDirectWriteTypeface::WindowsDirectWriteTypeface(const juce::String&, const juce::String&, juce::ComSmartPtr<IDWriteFont>, juce::ComSmartPtr<IDWriteFontFace>, juce::HbFont, juce::TypefaceAscentDescent, juce::ComSmartPtr<IDWriteFontCollection>)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:815:47: warning: declaration of 'style' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  815 |                                 const String& style,
+      |                                 ~~~~~~~~~~~~~~^~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.h:137,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:50:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:391:12: note: shadowed declaration is here
+  391 |     String style;
+      |            ^~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:814:47: warning: declaration of 'name' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  814 |     WindowsDirectWriteTypeface (const String& name,
+      |                                 ~~~~~~~~~~~~~~^~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:390:12: note: shadowed declaration is here
+  390 |     String name;
+      |            ^~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:211:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp: In static member function 'static bool juce::D2DHelpers::isTransformAxisAligned(const juce::AffineTransform&)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:32: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                ~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:59: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                                           ~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:214:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp: In member function 'bool juce::Direct2DGraphicsContext::SavedState::isCurrentTransformAxisAligned() const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:94: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:145: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::PhaseVocoder::prepare(double, int)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:37:27: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   37 |     windowedInput_.resize(fftSize_, 0.0f);
+      |                           ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:38:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   38 |     fftBuffer_.resize(fftSize_, 0.0f);
+      |                       ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:39:31: warning: conversion to 'std::vector<std::complex<float> >::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   39 |     spectrum_.resize(fftSize_ / 2, {0.0f, 0.0f});
+      |                      ~~~~~~~~~^~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:40:36: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   40 |     previousPhase_.resize(fftSize_ / 2, 0.0f);
+      |                           ~~~~~~~~~^~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:41:39: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   41 |     outputBuffer_.resize(maxBlockSize * 4, 0.0f); // Extra headroom for pitch ratio changes
+      |                          ~~~~~~~~~~~~~^~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::PhaseVocoder::process(const float*, float*, int, float)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:141:40: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  141 |             outputBuffer_.at(writePos_ + j) += windowed[j];
+      |                              ~~~~~~~~~~^~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:141:57: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  141 |             outputBuffer_.at(writePos_ + j) += windowed[j];
+      |                                                         ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::GranularEngine::generateGrain(int)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:177:27: warning: conversion to 'std::array<map2::GranularEngine::Grain, 32>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  177 |     auto& grain = grains_[index];
+      |                           ^~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::GranularEngine::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:211:27: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  211 |             recordBuffer_[recordPos_] = input[i] * feedback_;
+      |                           ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:221:26: warning: conversion to 'std::array<map2::GranularEngine::Grain, 32>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  221 |             if (!grains_[g].active) {
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:250:46: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  250 |                 float sample = recordBuffer_[readPos_i];
+      |                                              ^~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:252:49: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  252 |                 sample += frac * (recordBuffer_[nextPos] - sample);
+      |                                                 ^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:235:19: warning: unused variable 'readPhase' [-Wunused-variable]
+  235 |             float readPhase = 0.0f;
+      |                   ^~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::MicroPitchAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:290:32: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  290 |     std::vector<float> output1(numSamples), output2(numSamples);
+      |                                ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:290:53: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  290 |     std::vector<float> output1(numSamples), output2(numSamples);
+      |                                                     ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:304:15: warning: unused variable 'ratio1' [-Wunused-variable]
+  304 |         float ratio1 = std::pow(2.0f, detune1 / 12.0f);
+      |               ^~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:305:15: warning: unused variable 'ratio2' [-Wunused-variable]
+  305 |         float ratio2 = std::pow(2.0f, detune2 / 12.0f);
+      |               ^~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::UltraShiftAlgorithm::prepare(double, int)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:319:24: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  319 |     workBuffer_.resize(maxBlockSize);
+      |                        ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::UltraShiftAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:343:61: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  343 |             data[i] = data[i] * (1.0f - mix_) + workBuffer_[i] * mix_;
+      |                                                             ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::SmartShiftAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:386:11: warning: unused variable 'ratio' [-Wunused-variable]
+  386 |     float ratio = targetPitch / detectedPitch;
+      |           ^~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::PitchFactorAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:444:34: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  444 |         std::vector<float> mixed(numSamples, 0.0f);
+      |                                  ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:447:50: warning: conversion to 'std::array<float, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  447 |             float ratio = std::pow(2.0f, voices_[v] / 12.0f);
+      |                                                  ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:450:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  450 |                 mixed[i] += data[i] * ratio * (0.25f + voiceMix_ * 0.1f);
+      |                       ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:455:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  455 |             data[i] = mixed[i] * 0.5f;
+      |                             ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::ReverseDelaysAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:486:42: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  486 |             float delayed = delayBuffer_[readPos];
+      |                                          ^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:489:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  489 |             delayBuffer_[writePos_] = data[i] + delayed * feedback_;
+      |                          ^~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::ShimmerVerbAlgorithm::prepare(double, int)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:504:22: warning: conversion to 'std::array<std::vector<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  504 |         combBuffers_[i].resize(combSizes[i], 0.0f);
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:504:42: warning: conversion to 'std::array<int, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  504 |         combBuffers_[i].resize(combSizes[i], 0.0f);
+      |                                          ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:504:31: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'std::array<int, 8>::value_type' {aka 'int'} may change the sign of the result [-Wsign-conversion]
+  504 |         combBuffers_[i].resize(combSizes[i], 0.0f);
+      |         ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:510:25: warning: conversion to 'std::array<std::vector<float>, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  510 |         allpassBuffers_[i].resize(allpassSizes[i], 0.0f);
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:510:48: warning: conversion to 'std::array<int, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  510 |         allpassBuffers_[i].resize(allpassSizes[i], 0.0f);
+      |                                                ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:510:34: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'std::array<int, 4>::value_type' {aka 'int'} may change the sign of the result [-Wsign-conversion]
+  510 |         allpassBuffers_[i].resize(allpassSizes[i], 0.0f);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::MotionVerbAlgorithm::prepare(double, int)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:549:23: warning: conversion to 'std::array<std::vector<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  549 |         delayBuffers_[i].resize(88200, 0.0f); // 2 seconds max
+      |                       ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::MotionVerbAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:577:62: warning: conversion to 'std::array<float, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  577 |                 int readPos = static_cast<int>(delayReadPos_[d]) % static_cast<int>(delayBuffers_[d].size());
+      |                                                              ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:577:99: warning: conversion to 'std::array<std::vector<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  577 |                 int readPos = static_cast<int>(delayReadPos_[d]) % static_cast<int>(delayBuffers_[d].size());
+      |                                                                                                   ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:578:41: warning: conversion to 'std::array<std::vector<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  578 |                 output += delayBuffers_[d][readPos] * (1.0f / NUM_MODULATED_DELAYS);
+      |                                         ^
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:578:44: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  578 |                 output += delayBuffers_[d][readPos] * (1.0f / NUM_MODULATED_DELAYS);
+      |                                            ^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:575:23: warning: unused variable 'delayTime' [-Wunused-variable]
+  575 |                 float delayTime = (100.0f + lfoValue * 50.0f * modDepth_) * sampleRate_ / 1000.0f;
+      |                       ^~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp: In member function 'void map2::CrystallizeAlgorithm::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:636:46: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  636 |             float allpass1 = allpassBuffer1_[allpassWritePos1_];
+      |                                              ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:637:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  637 |             allpassBuffer1_[allpassWritePos1_] = data[i] + allpass1 * damping_;
+      |                             ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:638:52: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  638 |             allpassWritePos1_ = (allpassWritePos1_ + 1) % allpassBuffer1_.size();
+      |                                 ~~~~~~~~~~~~~~~~~~~^~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:640:46: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  640 |             float allpass2 = allpassBuffer2_[allpassWritePos2_];
+      |                                              ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:641:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  641 |             allpassBuffer2_[allpassWritePos2_] = allpass1 + allpass2 * damping_;
+      |                             ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/EventideH9Processor.cpp:642:52: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  642 |             allpassWritePos2_ = (allpassWritePos2_ + 1) % allpassBuffer2_.size();
+      |                                 ~~~~~~~~~~~~~~~~~~~^~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginProcessor.h:3,
+                 from /home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginEditor.h:5,
+                 from /home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginEditor.cpp:1:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void EventideH9AudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginProcessor.h:3,
+                 from /home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginProcessor.cpp:1:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/EventideH9Plugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void EventideH9AudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+[ 71%] Linking CXX static library "EventideH9Plugin_artefacts/Release/libMAP2 Eventide H9_SharedCode.a"
+[ 71%] Built target EventideH9Plugin
+[ 81%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.obj
+[ 81%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.obj
+[ 81%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.obj
+[ 84%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.obj
+[ 87%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.obj
+[ 90%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.obj
+[ 96%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.obj
+[ 96%] Building CXX object CMakeFiles/EventideH9Plugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.obj
+[100%] Linking CXX shared module "EventideH9Plugin_artefacts/Release/VST3/MAP2 Eventide H9.vst3/Contents/x86_64-win/MAP2 Eventide H9.vst3"
+removing moduleinfo.json
+[100%] Built target EventideH9Plugin_VST3

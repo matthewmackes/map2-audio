@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+772600db9274f03bcc54b098c1c15608 IntelliFX8VoiceChorusPlugin_artefacts/JuceLibraryCode/IntelliFX8VoiceChorusPlugin_resources.rc

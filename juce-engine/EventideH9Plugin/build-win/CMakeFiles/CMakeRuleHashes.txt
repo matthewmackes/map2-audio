@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+41fc9727d86c5fdc4932dfa92de20d6c EventideH9Plugin_artefacts/JuceLibraryCode/EventideH9Plugin_resources.rc

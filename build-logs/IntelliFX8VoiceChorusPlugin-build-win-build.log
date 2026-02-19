@@ -1,0 +1,1096 @@
+[  3%] Generating IntelliFX8VoiceChorusPlugin_artefacts/JuceLibraryCode/IntelliFX8VoiceChorusPlugin_resources.rc
+[  6%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/cmake/mingw_juce_shim.cpp.obj
+[  9%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/Source/PluginProcessor.cpp.obj
+[ 12%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/Source/PluginEditor.cpp.obj
+[ 15%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp.obj
+[ 21%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.obj
+[ 21%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.obj
+[ 25%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.obj
+[ 28%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.obj
+[ 31%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.obj
+[ 34%] Building RC object CMakeFiles/IntelliFX8VoiceChorusPlugin_rc_lib.dir/IntelliFX8VoiceChorusPlugin_artefacts/JuceLibraryCode/IntelliFX8VoiceChorusPlugin_resources.rc.res
+[ 37%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.obj
+[ 37%] Built target IntelliFX8VoiceChorusPlugin_rc_lib
+[ 40%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.obj
+[ 43%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.obj
+/home/mm/map2-audio/cmake/mingw_juce_shim.cpp:29:16: warning: redundant redeclaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)' in same scope [-Wredundant-decls]
+   29 | HRESULT WINAPI DCompositionCreateDevice2 (IUnknown*, REFIID, void**);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/mm/map2-audio/cmake/mingw_juce_shim.cpp:20:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h:425:8: note: previous declaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)'
+  425 | STDAPI DCompositionCreateDevice2(IUnknown *renderingDevice, REFIID iid, void **dcompositionDevice);
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+[ 46%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.cpp.obj
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.cc:33,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:21,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:86:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh: In member function 'bool OT::cff1::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+ 1440 |         names = (hb_sorted_vector_t<gname_t> *) hb_calloc (sizeof (hb_sorted_vector_t<gname_t>), 1);
+      |                                                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:541,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:85:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_blob_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-blob.cc:290:34:   required from here
+  290 |   return hb_object_set_user_data (blob, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_buffer_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer.cc:872:34:   required from here
+  872 |   return hb_object_set_user_data (buffer, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_draw_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-draw.cc:288:34:   required from here
+  288 |   return hb_object_set_user_data (dfuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_face_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.cc:336:34:   required from here
+  336 |   return hb_object_set_user_data (face, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:815:34:   required from here
+  815 |   return hb_object_set_user_data (ffuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:2028:34:   required from here
+ 2028 |   return hb_object_set_user_data (font, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_map_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (map, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_paint_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint.cc:334:34:   required from here
+  334 |   return hb_object_set_user_data (funcs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_set_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-set.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (set, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_shape_plan_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-shape-plan.cc:347:34:   required from here
+  347 |   return hb_object_set_user_data (shape_plan, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_unicode_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-unicode.cc:295:34:   required from here
+  295 |   return hb_object_set_user_data (ufuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:536:
+In function 'int hb_memcmp(const void*, const void*, unsigned int)',
+    inlined from 'int hb_array_t< <template-parameter-1-1> >::cmp(const hb_array_t< <template-parameter-1-1> >&) const [with Type = const char]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-array.hh:169:22,
+    inlined from 'static int OT::post::accelerator_t::cmp_key(const void*, const void*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:251:44,
+    inlined from 'bool hb_bsearch_impl(unsigned int*, const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1074:20,
+    inlined from 'V* hb_bsearch(const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1112:26,
+    inlined from 'bool OT::post::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:207:30,
+    inlined from 'hb_bool_t hb_ot_get_glyph_from_name(hb_font_t*, void*, const char*, int, hb_codepoint_t*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-font.cc:473:42:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:984:17: warning: 'int memcmp(const void*, const void*, size_t)' specified bound [2147483648, 4294967295] exceeds source size 1850 [-Wstringop-overread]
+  984 |   return memcmp (a, b, len);
+      |          ~~~~~~~^~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:5:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc: In member function 'bool hb_buffer_t::verify(hb_buffer_t*, hb_font_t*, const hb_feature_t*, unsigned int, const char* const*)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:34:29: warning: '%s' directive argument is null [-Wformat-overflow=]
+   34 | #define BUFFER_VERIFY_ERROR "buffer verify error: "
+      |                             ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:415:40: note: in expansion of macro 'BUFFER_VERIFY_ERROR'
+  415 |       buffer_verify_error (this, font, BUFFER_VERIFY_ERROR "text was: %s.", bytes.arrayZ);
+      |                                        ^~~~~~~~~~~~~~~~~~~
+[ 50%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.obj
+[ 53%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.obj
+[ 56%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.obj
+[ 59%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.obj
+[ 62%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.obj
+[ 65%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.obj
+[ 68%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.obj
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:89: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   89 |   #pragma comment(lib, "Dwrite.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:90: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   90 |   #pragma comment(lib, "D2d1.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:91: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   91 |   #pragma comment(lib, "DXGI.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:92: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   92 |   #pragma comment(lib, "D3D11.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:93: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   93 |   #pragma comment(lib, "DComp.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:94: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   94 |   #pragma comment(lib, "dxguid.lib")
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:209:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp: In constructor 'juce::WindowsDirectWriteTypeface::WindowsDirectWriteTypeface(const juce::String&, const juce::String&, juce::ComSmartPtr<IDWriteFont>, juce::ComSmartPtr<IDWriteFontFace>, juce::HbFont, juce::TypefaceAscentDescent, juce::ComSmartPtr<IDWriteFontCollection>)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:815:47: warning: declaration of 'style' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  815 |                                 const String& style,
+      |                                 ~~~~~~~~~~~~~~^~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.h:137,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:50:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:391:12: note: shadowed declaration is here
+  391 |     String style;
+      |            ^~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:814:47: warning: declaration of 'name' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  814 |     WindowsDirectWriteTypeface (const String& name,
+      |                                 ~~~~~~~~~~~~~~^~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:390:12: note: shadowed declaration is here
+  390 |     String name;
+      |            ^~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:211:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp: In static member function 'static bool juce::D2DHelpers::isTransformAxisAligned(const juce::AffineTransform&)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:32: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                ~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:59: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                                           ~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:214:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp: In member function 'bool juce::Direct2DGraphicsContext::SavedState::isCurrentTransformAxisAligned() const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:94: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:145: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.h:16,
+                 from /home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:6:
+/home/mm/map2-audio/juce-engine/Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: At global scope:
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:54:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   54 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:64:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   64 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:65:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   65 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:66:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   66 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:67:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   67 |         .regenL = -20.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:68:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   68 |         .regenR = -20.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:69:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   69 |         .hush = {true, -50.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:70:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   70 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:74:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   74 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:84:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   84 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:85:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   85 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:86:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   86 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:87:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   87 |         .regenL = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:88:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   88 |         .regenR = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:89:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   89 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:90:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   90 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:94:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+   94 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:104:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  104 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:105:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  105 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:106:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  106 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:107:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  107 |         .regenL = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:108:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  108 |         .regenR = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:109:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  109 |         .hush = {true, -45.0f, 150.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:110:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  110 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:114:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  114 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:124:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  124 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:125:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  125 |         .directLevelL = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:126:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  126 |         .directLevelR = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:127:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  127 |         .regenL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:128:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  128 |         .regenR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:129:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  129 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:130:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  130 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:134:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  134 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:144:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  144 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:145:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  145 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:146:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  146 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:147:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  147 |         .regenL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:148:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  148 |         .regenR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:149:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  149 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:150:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  150 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:154:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  154 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:164:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  164 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:165:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  165 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:166:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  166 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:167:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  167 |         .regenL = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:168:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  168 |         .regenR = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:169:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  169 |         .hush = {true, -50.0f, 250.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:170:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  170 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:174:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  174 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:184:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  184 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:185:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  185 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:186:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  186 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:187:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  187 |         .regenL = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:188:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  188 |         .regenR = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:189:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  189 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:190:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  190 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:194:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  194 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:204:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  204 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:205:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  205 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:206:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  206 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:207:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  207 |         .regenL = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:208:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  208 |         .regenR = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:209:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  209 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:210:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  210 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:214:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  214 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:224:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  224 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:225:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  225 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:226:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  226 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:227:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  227 |         .regenL = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:228:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  228 |         .regenR = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:229:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  229 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:230:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  230 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:234:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  234 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:244:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  244 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:245:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  245 |         .directLevelL = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:246:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  246 |         .directLevelR = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:247:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  247 |         .regenL = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:248:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  248 |         .regenR = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:249:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  249 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:250:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  250 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:254:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  254 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:264:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  264 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:265:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  265 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:266:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  266 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:267:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  267 |         .regenL = -18.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:268:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  268 |         .regenR = -18.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:269:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  269 |         .hush = {true, -45.0f, 180.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:270:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  270 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:274:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  274 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:284:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  284 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:285:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  285 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:286:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  286 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:287:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  287 |         .regenL = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:288:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  288 |         .regenR = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:289:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  289 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:290:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  290 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:294:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  294 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:304:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  304 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:305:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  305 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:306:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  306 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:307:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  307 |         .regenL = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:308:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  308 |         .regenR = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:309:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  309 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:310:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  310 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:314:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  314 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:324:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  324 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:325:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  325 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:326:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  326 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:327:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  327 |         .regenL = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:328:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  328 |         .regenR = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:329:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  329 |         .hush = {true, -50.0f, 300.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:330:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  330 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:334:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  334 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:344:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  344 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:345:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  345 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:346:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  346 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:347:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  347 |         .regenL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:348:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  348 |         .regenR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:349:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  349 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:350:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  350 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:354:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  354 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:364:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  364 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:365:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  365 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:366:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  366 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:367:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  367 |         .regenL = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:368:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  368 |         .regenR = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:369:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  369 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:370:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  370 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:374:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  374 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:384:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  384 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:385:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  385 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:386:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  386 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:387:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  387 |         .regenL = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:388:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  388 |         .regenR = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:389:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  389 |         .hush = {true, -45.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:390:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  390 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:394:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  394 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:404:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  404 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:405:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  405 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:406:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  406 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:407:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  407 |         .regenL = -20.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:408:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  408 |         .regenR = -20.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:409:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  409 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:410:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  410 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:414:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  414 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:424:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  424 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:425:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  425 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:426:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  426 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:427:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  427 |         .regenL = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:428:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  428 |         .regenR = -12.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:429:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  429 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:430:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  430 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:434:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  434 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:444:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  444 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:445:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  445 |         .directLevelL = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:446:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  446 |         .directLevelR = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:447:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  447 |         .regenL = -1.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:448:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  448 |         .regenR = -1.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:449:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  449 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:450:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  450 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:454:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  454 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:464:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  464 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:465:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  465 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:466:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  466 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:467:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  467 |         .regenL = -25.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:468:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  468 |         .regenR = -25.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:469:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  469 |         .hush = {true, -50.0f, 250.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:470:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  470 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:474:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  474 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:484:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  484 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:485:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  485 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:486:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  486 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:487:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  487 |         .regenL = -18.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:488:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  488 |         .regenR = -18.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:489:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  489 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:490:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  490 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:494:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  494 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:504:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  504 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:505:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  505 |         .directLevelL = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:506:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  506 |         .directLevelR = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:507:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  507 |         .regenL = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:508:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  508 |         .regenR = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:509:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  509 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:510:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  510 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:514:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  514 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:524:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  524 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:525:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  525 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:526:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  526 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:527:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  527 |         .regenL = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:528:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  528 |         .regenR = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:529:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  529 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:530:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  530 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:534:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  534 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:544:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  544 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:545:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  545 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:546:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  546 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:547:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  547 |         .regenL = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:548:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  548 |         .regenR = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:549:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  549 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:550:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  550 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:554:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  554 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:564:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  564 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:565:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  565 |         .directLevelL = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:566:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  566 |         .directLevelR = -3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:567:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  567 |         .regenL = -20.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:568:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  568 |         .regenR = -20.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:569:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  569 |         .hush = {true, -48.0f, 180.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:570:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  570 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:574:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  574 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:584:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  584 |         .chorusLevel = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:585:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  585 |         .directLevelL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:586:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  586 |         .directLevelR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:587:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  587 |         .regenL = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:588:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  588 |         .regenR = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:589:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  589 |         .hush = {true, -50.0f, 350.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:590:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  590 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:594:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  594 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:604:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  604 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:605:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  605 |         .directLevelL = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:606:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  606 |         .directLevelR = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:607:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  607 |         .regenL = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:608:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  608 |         .regenR = -6.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:609:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  609 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:610:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  610 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:614:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  614 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:624:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  624 |         .chorusLevel = 3.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:625:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  625 |         .directLevelL = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:626:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  626 |         .directLevelR = -9.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:627:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  627 |         .regenL = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:628:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  628 |         .regenR = -15.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:629:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  629 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:630:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  630 |         .bypass = false
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:634:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  634 |         .voices = {{
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:644:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  644 |         .chorusLevel = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:645:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  645 |         .directLevelL = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:646:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  646 |         .directLevelR = 0.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:647:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  647 |         .regenL = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:648:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  648 |         .regenR = -100.0f,
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:649:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  649 |         .hush = {false, -40.0f, 200.0f},
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:650:9: warning: C++ designated initializers only available with '-std=c++20' or '-std=gnu++20' [-Wc++20-extensions]
+  650 |         .bypass = true
+      |         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In constructor 'map2::IntelliFX8VoiceChorusProcessor::IntelliFX8VoiceChorusProcessor()':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:661:30: warning: conversion to 'std::array<std::atomic<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  661 |         meterVoiceLfoPhases_[i].store(0.0f);
+      |                              ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::prepare(double, int, int)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:679:36: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::VoiceState, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  679 |         auto& state = voiceStates_[v];
+      |                                    ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:681:35: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  681 |         state.delayBufferL.resize(bufferSize, 0.0f);
+      |                                   ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:682:35: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  682 |         state.delayBufferR.resize(bufferSize, 0.0f);
+      |                                   ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:693:36: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  693 |         float delay = voiceParams_[v].delay.load();
+      |                                    ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:694:36: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  694 |         float level = voiceParams_[v].level.load();
+      |                                    ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:695:34: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  695 |         float pan = voiceParams_[v].pan.load();
+      |                                  ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:669:90: warning: unused parameter 'numChannels' [-Wunused-parameter]
+  669 | void IntelliFX8VoiceChorusProcessor::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
+      |                                                                                      ~~~~^~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:772:36: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::VoiceState, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  772 |         auto& state = voiceStates_[v];
+      |                                    ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:773:57: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  773 |         state.smoothedDelay.setTargetValue(voiceParams_[v].delay.load());
+      |                                                         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:774:68: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  774 |         state.smoothedLevel.setTargetValue(dbToLinear(voiceParams_[v].level.load()));
+      |                                                                    ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:775:34: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  775 |         float pan = voiceParams_[v].pan.load();
+      |                                  ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:825:40: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::VoiceState, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  825 |             auto& state = voiceStates_[v];
+      |                                        ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:826:41: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  826 |             auto& params = voiceParams_[v];
+      |                                         ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:858:38: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  858 |             state.delayBufferL[state.writePos] = inputL;
+      |                                ~~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:859:38: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  859 |             state.delayBufferR[state.writePos] = inputR;
+      |                                ~~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:873:34: warning: conversion to 'std::array<std::atomic<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  873 |             meterVoiceLfoPhases_[v].store(static_cast<float>(state.lfoPhase));
+      |                                  ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::setVoiceLevel(int, float)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:918:18: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  918 |     voiceParams_[voice].level.store(dB);
+      |                  ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'float map2::IntelliFX8VoiceChorusProcessor::getVoiceLevel(int) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:923:25: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  923 |     return voiceParams_[voice].level.load();
+      |                         ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::setVoicePan(int, float)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:929:18: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  929 |     voiceParams_[voice].pan.store(pan);
+      |                  ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'float map2::IntelliFX8VoiceChorusProcessor::getVoicePan(int) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:934:25: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  934 |     return voiceParams_[voice].pan.load();
+      |                         ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::setVoiceDelay(int, float)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:940:18: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  940 |     voiceParams_[voice].delay.store(ms);
+      |                  ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'float map2::IntelliFX8VoiceChorusProcessor::getVoiceDelay(int) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:945:25: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  945 |     return voiceParams_[voice].delay.load();
+      |                         ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::setVoiceDepth(int, float)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:951:18: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  951 |     voiceParams_[voice].depth.store(depth);
+      |                  ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'float map2::IntelliFX8VoiceChorusProcessor::getVoiceDepth(int) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:956:25: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  956 |     return voiceParams_[voice].depth.load();
+      |                         ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::setVoiceRate(int, float)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:962:18: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  962 |     voiceParams_[voice].rate.store(rate);
+      |                  ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'float map2::IntelliFX8VoiceChorusProcessor::getVoiceRate(int) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:967:25: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  967 |     return voiceParams_[voice].rate.load();
+      |                         ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'map2::IntelliFX8VoiceChorusProcessor::VoiceParameters map2::IntelliFX8VoiceChorusProcessor::getVoiceParameters(int) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:975:33: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  975 |     params.level = voiceParams_[voice].level.load();
+      |                                 ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:976:31: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  976 |     params.pan = voiceParams_[voice].pan.load();
+      |                               ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:977:33: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  977 |     params.delay = voiceParams_[voice].delay.load();
+      |                                 ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:978:33: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  978 |     params.depth = voiceParams_[voice].depth.load();
+      |                                 ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:979:32: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::AtomicVoiceParams, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  979 |     params.rate = voiceParams_[voice].rate.load();
+      |                                ^~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'map2::IntelliFX8VoiceChorusProcessor::Parameters map2::IntelliFX8VoiceChorusProcessor::getParameters() const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:1073:23: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::VoiceParameters, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+ 1073 |         params.voices[v] = getVoiceParameters(v);
+      |                       ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'void map2::IntelliFX8VoiceChorusProcessor::setParameters(const Parameters&)':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:1089:45: warning: conversion to 'std::array<map2::IntelliFX8VoiceChorusProcessor::VoiceParameters, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+ 1089 |         setVoiceParameters(v, params.voices[v]);
+      |                                             ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'map2::IntelliFX8VoiceChorusProcessor::Metering map2::IntelliFX8VoiceChorusProcessor::getMetering() const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:1144:26: warning: conversion to 'std::array<float, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+ 1144 |         m.voiceLfoPhases[v] = meterVoiceLfoPhases_[v].load();
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:1144:52: warning: conversion to 'std::array<std::atomic<float>, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+ 1144 |         m.voiceLfoPhases[v] = meterVoiceLfoPhases_[v].load();
+      |                                                    ^
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp: In member function 'float map2::IntelliFX8VoiceChorusProcessor::readDelayLine(const std::vector<float>&, int, float) const':
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:1185:19: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+ 1185 |     return buffer[readIndex] * (1.0f - frac) + buffer[nextIndex] * frac;
+      |                   ^~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp:1185:55: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+ 1185 |     return buffer[readIndex] * (1.0f - frac) + buffer[nextIndex] * frac;
+      |                                                       ^~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/../Source/IntelliFX8VoiceChorusProcessor.h:16,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.h:5,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.cpp:1:
+/home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/../Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/../Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.h:3:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h: At global scope:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void IntelliFX8VoiceChorusAudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/../Source/IntelliFX8VoiceChorusProcessor.h:16,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.h:5,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginEditor.h:5,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginEditor.cpp:1:
+/home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/../Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/../Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.h:3:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h: At global scope:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/IntelliFX8VoiceChorusPlugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void IntelliFX8VoiceChorusAudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+[ 71%] Linking CXX static library "IntelliFX8VoiceChorusPlugin_artefacts/Release/libMAP2 IntelliFX 8 Voice Chorus_SharedCode.a"
+[ 71%] Built target IntelliFX8VoiceChorusPlugin
+[ 84%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.obj
+[ 84%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.obj
+[ 84%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.obj
+[ 84%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.obj
+[ 87%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.obj
+[ 90%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.obj
+[ 93%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.obj
+[ 96%] Building CXX object CMakeFiles/IntelliFX8VoiceChorusPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.obj
+[100%] Linking CXX shared module "IntelliFX8VoiceChorusPlugin_artefacts/Release/VST3/MAP2 IntelliFX 8 Voice Chorus.vst3/Contents/x86_64-win/MAP2 IntelliFX 8 Voice Chorus.vst3"
+removing moduleinfo.json
+[100%] Built target IntelliFX8VoiceChorusPlugin_VST3

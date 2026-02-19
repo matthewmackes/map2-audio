@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/build-win/ShoeGazePlugin_artefacts/JuceLibraryCode/ShoeGazePlugin_resources.rc
+windows.h
+-
+

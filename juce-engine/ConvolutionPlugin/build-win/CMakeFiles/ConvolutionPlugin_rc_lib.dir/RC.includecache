@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/ConvolutionPlugin/build-win/ConvolutionPlugin_artefacts/JuceLibraryCode/ConvolutionPlugin_resources.rc
+windows.h
+-
+

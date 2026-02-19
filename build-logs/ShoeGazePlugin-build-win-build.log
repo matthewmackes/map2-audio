@@ -1,0 +1,440 @@
+[  3%] Generating ShoeGazePlugin_artefacts/JuceLibraryCode/ShoeGazePlugin_resources.rc
+[  9%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.obj
+[  9%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/cmake/mingw_juce_shim.cpp.obj
+[ 12%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/Source/PluginProcessor.cpp.obj
+[ 15%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/Source/PluginEditor.cpp.obj
+[ 18%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp.obj
+[ 21%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.obj
+[ 25%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.obj
+[ 28%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.obj
+[ 31%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.obj
+[ 34%] Building RC object CMakeFiles/ShoeGazePlugin_rc_lib.dir/ShoeGazePlugin_artefacts/JuceLibraryCode/ShoeGazePlugin_resources.rc.res
+[ 37%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.obj
+[ 37%] Built target ShoeGazePlugin_rc_lib
+[ 40%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.obj
+[ 43%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.obj
+/home/mm/map2-audio/cmake/mingw_juce_shim.cpp:29:16: warning: redundant redeclaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)' in same scope [-Wredundant-decls]
+   29 | HRESULT WINAPI DCompositionCreateDevice2 (IUnknown*, REFIID, void**);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/mm/map2-audio/cmake/mingw_juce_shim.cpp:20:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h:425:8: note: previous declaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)'
+  425 | STDAPI DCompositionCreateDevice2(IUnknown *renderingDevice, REFIID iid, void **dcompositionDevice);
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+[ 46%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.cpp.obj
+[ 50%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.obj
+[ 53%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.obj
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.cc:33,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:21,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:86:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh: In member function 'bool OT::cff1::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+ 1440 |         names = (hb_sorted_vector_t<gname_t> *) hb_calloc (sizeof (hb_sorted_vector_t<gname_t>), 1);
+      |                                                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:541,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:85:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_blob_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-blob.cc:290:34:   required from here
+  290 |   return hb_object_set_user_data (blob, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_buffer_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer.cc:872:34:   required from here
+  872 |   return hb_object_set_user_data (buffer, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_draw_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-draw.cc:288:34:   required from here
+  288 |   return hb_object_set_user_data (dfuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_face_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.cc:336:34:   required from here
+  336 |   return hb_object_set_user_data (face, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:815:34:   required from here
+  815 |   return hb_object_set_user_data (ffuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:2028:34:   required from here
+ 2028 |   return hb_object_set_user_data (font, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_map_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (map, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_paint_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint.cc:334:34:   required from here
+  334 |   return hb_object_set_user_data (funcs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_set_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-set.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (set, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_shape_plan_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-shape-plan.cc:347:34:   required from here
+  347 |   return hb_object_set_user_data (shape_plan, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_unicode_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-unicode.cc:295:34:   required from here
+  295 |   return hb_object_set_user_data (ufuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:536:
+In function 'int hb_memcmp(const void*, const void*, unsigned int)',
+    inlined from 'int hb_array_t< <template-parameter-1-1> >::cmp(const hb_array_t< <template-parameter-1-1> >&) const [with Type = const char]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-array.hh:169:22,
+    inlined from 'static int OT::post::accelerator_t::cmp_key(const void*, const void*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:251:44,
+    inlined from 'bool hb_bsearch_impl(unsigned int*, const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1074:20,
+    inlined from 'V* hb_bsearch(const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1112:26,
+    inlined from 'bool OT::post::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:207:30,
+    inlined from 'hb_bool_t hb_ot_get_glyph_from_name(hb_font_t*, void*, const char*, int, hb_codepoint_t*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-font.cc:473:42:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:984:17: warning: 'int memcmp(const void*, const void*, size_t)' specified bound [2147483648, 4294967295] exceeds source size 1850 [-Wstringop-overread]
+  984 |   return memcmp (a, b, len);
+      |          ~~~~~~~^~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:5:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc: In member function 'bool hb_buffer_t::verify(hb_buffer_t*, hb_font_t*, const hb_feature_t*, unsigned int, const char* const*)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:34:29: warning: '%s' directive argument is null [-Wformat-overflow=]
+   34 | #define BUFFER_VERIFY_ERROR "buffer verify error: "
+      |                             ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:415:40: note: in expansion of macro 'BUFFER_VERIFY_ERROR'
+  415 |       buffer_verify_error (this, font, BUFFER_VERIFY_ERROR "text was: %s.", bytes.arrayZ);
+      |                                        ^~~~~~~~~~~~~~~~~~~
+[ 56%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.obj
+[ 59%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.obj
+[ 62%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.obj
+[ 65%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.obj
+[ 68%] Building CXX object CMakeFiles/ShoeGazePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.obj
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:89: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   89 |   #pragma comment(lib, "Dwrite.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:90: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   90 |   #pragma comment(lib, "D2d1.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:91: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   91 |   #pragma comment(lib, "DXGI.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:92: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   92 |   #pragma comment(lib, "D3D11.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:93: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   93 |   #pragma comment(lib, "DComp.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:94: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   94 |   #pragma comment(lib, "dxguid.lib")
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:209:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp: In constructor 'juce::WindowsDirectWriteTypeface::WindowsDirectWriteTypeface(const juce::String&, const juce::String&, juce::ComSmartPtr<IDWriteFont>, juce::ComSmartPtr<IDWriteFontFace>, juce::HbFont, juce::TypefaceAscentDescent, juce::ComSmartPtr<IDWriteFontCollection>)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:815:47: warning: declaration of 'style' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  815 |                                 const String& style,
+      |                                 ~~~~~~~~~~~~~~^~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.h:137,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:50:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:391:12: note: shadowed declaration is here
+  391 |     String style;
+      |            ^~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:814:47: warning: declaration of 'name' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  814 |     WindowsDirectWriteTypeface (const String& name,
+      |                                 ~~~~~~~~~~~~~~^~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:390:12: note: shadowed declaration is here
+  390 |     String name;
+      |            ^~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:211:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp: In static member function 'static bool juce::D2DHelpers::isTransformAxisAligned(const juce::AffineTransform&)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:32: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                ~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:59: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                                           ~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:214:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp: In member function 'bool juce::Direct2DGraphicsContext::SavedState::isCurrentTransformAxisAligned() const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:94: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:145: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.h:14,
+                 from /home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:13:
+/home/mm/map2-audio/juce-engine/Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'void map2::ShoeGazeProcessor::AllPassFilter::prepare(int)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:24:19: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   24 |     buffer.resize(maxSamples, 0.0f);
+      |                   ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'float map2::ShoeGazeProcessor::AllPassFilter::process(float)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:34:28: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   34 |     float delayed = buffer[readPos];
+      |                            ^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:36:12: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   36 |     buffer[writePos] = input + delayed * feedback;
+      |            ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'void map2::ShoeGazeProcessor::prepare(double, int, int)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:70:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   70 |     delayBufferL_.resize(maxDelaySamples, 0.0f);
+      |                          ^~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:71:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   71 |     delayBufferR_.resize(maxDelaySamples, 0.0f);
+      |                          ^~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:74:28: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   74 |     shimmerBufferL_.resize(shimmerBufferSize, 0.0f);
+      |                            ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:75:28: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   75 |     shimmerBufferR_.resize(shimmerBufferSize, 0.0f);
+      |                            ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:81:25: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ShimmerGrain, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   81 |         shimmerGrainsL_[i].readPos = phase * shimmerGrainSize_;
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:82:25: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ShimmerGrain, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   82 |         shimmerGrainsL_[i].sampleCount = static_cast<int>(phase * shimmerGrainSize_);
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:83:25: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ShimmerGrain, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   83 |         shimmerGrainsL_[i].active = true;
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:85:25: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ShimmerGrain, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   85 |         shimmerGrainsR_[i].readPos = phase * shimmerGrainSize_;
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:86:25: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ShimmerGrain, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   86 |         shimmerGrainsR_[i].sampleCount = static_cast<int>(phase * shimmerGrainSize_);
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:87:25: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ShimmerGrain, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   87 |         shimmerGrainsR_[i].active = true;
+      |                         ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:94:26: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   94 |         delayDiffusersL_[i].prepare(scaledDelay * 2);
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:95:26: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   95 |         delayDiffusersL_[i].delaySamples = scaledDelay;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:96:26: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   96 |         delayDiffusersL_[i].feedback = 0.5f;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:98:26: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   98 |         delayDiffusersR_[i].prepare(scaledDelay * 2);
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:99:26: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+   99 |         delayDiffusersR_[i].delaySamples = scaledDelay;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:100:26: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  100 |         delayDiffusersR_[i].feedback = 0.5f;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:105:58: warning: conversion to 'std::array<int, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  105 |         int scaledDelay = static_cast<int>(REVERB_DELAYS[i] * sampleRate / 48000.0);
+      |                                                          ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:106:22: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  106 |         reverbTapsL_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:106:39: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  106 |         reverbTapsL_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                                       ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:107:22: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  107 |         reverbTapsL_[i].delaySamples = scaledDelay;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:108:22: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  108 |         reverbTapsL_[i].modPhase = static_cast<double>(i) / NUM_REVERB_TAPS;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:110:22: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  110 |         reverbTapsR_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:110:39: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  110 |         reverbTapsR_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                                       ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:111:22: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  111 |         reverbTapsR_[i].delaySamples = scaledDelay;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:112:22: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  112 |         reverbTapsR_[i].modPhase = static_cast<double>(i) / NUM_REVERB_TAPS + 0.5;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:119:27: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  119 |         reverbDiffusersL_[i].prepare(scaledDelay * 2);
+      |                           ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:120:27: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  120 |         reverbDiffusersL_[i].delaySamples = scaledDelay;
+      |                           ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:121:27: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  121 |         reverbDiffusersL_[i].feedback = 0.6f;
+      |                           ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:123:27: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  123 |         reverbDiffusersR_[i].prepare(scaledDelay * 2);
+      |                           ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:124:27: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  124 |         reverbDiffusersR_[i].delaySamples = scaledDelay;
+      |                           ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:125:27: warning: conversion to 'std::array<map2::ShoeGazeProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  125 |         reverbDiffusersR_[i].feedback = 0.6f;
+      |                           ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:130:24: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  130 |         chorusVoicesL_[i].buffer.resize(chorusBufferSize, 0.0f);
+      |                        ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:130:41: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  130 |         chorusVoicesL_[i].buffer.resize(chorusBufferSize, 0.0f);
+      |                                         ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:131:24: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  131 |         chorusVoicesL_[i].lfoPhase = static_cast<double>(i) / MAX_CHORUS_VOICES;
+      |                        ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:132:24: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  132 |         chorusVoicesL_[i].pan = -1.0f + 2.0f * static_cast<float>(i) / (MAX_CHORUS_VOICES - 1);
+      |                        ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:134:24: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  134 |         chorusVoicesR_[i].buffer.resize(chorusBufferSize, 0.0f);
+      |                        ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:134:41: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  134 |         chorusVoicesR_[i].buffer.resize(chorusBufferSize, 0.0f);
+      |                                         ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:135:24: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  135 |         chorusVoicesR_[i].lfoPhase = static_cast<double>(i) / MAX_CHORUS_VOICES + 0.5;
+      |                        ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:136:24: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  136 |         chorusVoicesR_[i].pan = -1.0f + 2.0f * static_cast<float>(i) / (MAX_CHORUS_VOICES - 1);
+      |                        ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'void map2::ShoeGazeProcessor::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:321:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  321 |         delayBufferL_[delayWritePos_] = satL;
+      |                       ^~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:322:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  322 |         delayBufferR_[delayWritePos_] = satR;
+      |                       ^~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:347:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  347 |         delayBufferL_[delayWritePos_] += diffusedL * delayFb;
+      |                       ^~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:348:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  348 |         delayBufferR_[delayWritePos_] += diffusedR * delayFb;
+      |                       ^~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:367:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  367 |             shimmerBufferL_[shimmerWritePos_] = shimmerInL;
+      |                             ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:368:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  368 |             shimmerBufferR_[shimmerWritePos_] = shimmerInR;
+      |                             ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:442:39: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  442 |             auto& tapL = reverbTapsL_[t];
+      |                                       ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:443:39: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  443 |             auto& tapR = reverbTapsR_[t];
+      |                                       ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:460:41: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  460 |             float tapOutL = tapL.buffer[readPosL];
+      |                                         ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:461:41: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  461 |             float tapOutR = tapR.buffer[readPosR];
+      |                                         ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:475:30: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  475 |             tapL.buffer[tapL.writePos] = reverbInL + dampedR * reverbFeedback;
+      |                         ~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:476:30: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  476 |             tapR.buffer[tapR.writePos] = reverbInR + dampedL * reverbFeedback;
+      |                         ~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:506:47: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  506 |                 auto& voiceL = chorusVoicesL_[v];
+      |                                               ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:507:47: warning: conversion to 'std::array<map2::ShoeGazeProcessor::ChorusVoice, 6>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  507 |                 auto& voiceR = chorusVoicesR_[v];
+      |                                               ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:510:38: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  510 |                 voiceL.buffer[voiceL.writePos] = reverbAccumL;
+      |                               ~~~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:511:38: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  511 |                 voiceR.buffer[voiceR.writePos] = reverbAccumR;
+      |                               ~~~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'float map2::ShoeGazeProcessor::processSaturation(float, float, float)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:600:82: warning: unused parameter 'toneAmount' [-Wunused-parameter]
+  600 | float ShoeGazeProcessor::processSaturation(float input, float driveAmount, float toneAmount) {
+      |                                                                            ~~~~~~^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'float map2::ShoeGazeProcessor::readDelayLine(const std::vector<float>&, int, float) const':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:669:19: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  669 |     return buffer[idx0] * (1.0f - frac) + buffer[idx1] * frac;
+      |                   ^~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:669:50: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  669 |     return buffer[idx0] * (1.0f - frac) + buffer[idx1] * frac;
+      |                                                  ^~~~
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In member function 'void map2::ShoeGazeProcessor::applyPreset(Preset)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:703:12: warning: enumeration value 'NumPresets' not handled in switch [-Wswitch-enum]
+  703 |     switch (preset) {
+      |            ^
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp: In static member function 'static map2::ShoeGazeProcessor::PresetInfo map2::ShoeGazeProcessor::getPresetInfo(Preset)':
+/home/mm/map2-audio/juce-engine/Source/ShoeGazeProcessor.cpp:827:12: warning: enumeration value 'NumPresets' not handled in switch [-Wswitch-enum]
+  827 |     switch (preset) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/../Source/ShoeGazeProcessor.h:14,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.h:5,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginEditor.h:5,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginEditor.cpp:1:
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/../Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/../Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.h:3:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h: At global scope:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void ShoeGazeAudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/../Source/ShoeGazeProcessor.h:14,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.h:5,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.cpp:1:
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/../Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/../Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.h:3:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h: At global scope:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/ShoeGazePlugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void ShoeGazeAudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+[ 71%] Linking CXX static library "ShoeGazePlugin_artefacts/Release/libMAP2 Shoe Gaze_SharedCode.a"
+[ 71%] Built target ShoeGazePlugin
+[ 84%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.obj
+[ 84%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.obj
+[ 84%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.obj
+[ 84%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.obj
+[ 87%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.obj
+[ 90%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.obj
+[ 93%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.obj
+[ 96%] Building CXX object CMakeFiles/ShoeGazePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.obj
+[100%] Linking CXX shared module "ShoeGazePlugin_artefacts/Release/VST3/MAP2 Shoe Gaze.vst3/Contents/x86_64-win/MAP2 Shoe Gaze.vst3"
+removing moduleinfo.json
+[100%] Built target ShoeGazePlugin_VST3

@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+7f4e76b0a394396659171b79972cbd12 PassionFXPlugin_artefacts/JuceLibraryCode/PassionFXPlugin_resources.rc

@@ -1,0 +1,383 @@
+[  3%] Generating LexiLovePlugin_artefacts/JuceLibraryCode/LexiLovePlugin_resources.rc
+[  9%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.obj
+[  9%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/cmake/mingw_juce_shim.cpp.obj
+[ 12%] Building CXX object CMakeFiles/LexiLovePlugin.dir/Source/PluginProcessor.cpp.obj
+[ 15%] Building CXX object CMakeFiles/LexiLovePlugin.dir/Source/PluginEditor.cpp.obj
+[ 18%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp.obj
+[ 21%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.obj
+[ 25%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.obj
+[ 28%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.obj
+[ 31%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.obj
+[ 34%] Building RC object CMakeFiles/LexiLovePlugin_rc_lib.dir/LexiLovePlugin_artefacts/JuceLibraryCode/LexiLovePlugin_resources.rc.res
+[ 37%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.obj
+[ 40%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.obj
+[ 40%] Built target LexiLovePlugin_rc_lib
+[ 43%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.obj
+/home/mm/map2-audio/cmake/mingw_juce_shim.cpp:29:16: warning: redundant redeclaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)' in same scope [-Wredundant-decls]
+   29 | HRESULT WINAPI DCompositionCreateDevice2 (IUnknown*, REFIID, void**);
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/mm/map2-audio/cmake/mingw_juce_shim.cpp:20:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h:425:8: note: previous declaration of 'HRESULT DCompositionCreateDevice2(IUnknown*, const IID&, void**)'
+  425 | STDAPI DCompositionCreateDevice2(IUnknown *renderingDevice, REFIID iid, void **dcompositionDevice);
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~
+[ 46%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.cpp.obj
+[ 50%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.obj
+[ 53%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.obj
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.cc:33,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:21,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:86:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh: In member function 'bool OT::cff1::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+ 1440 |         names = (hb_sorted_vector_t<gname_t> *) hb_calloc (sizeof (hb_sorted_vector_t<gname_t>), 1);
+      |                                                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff1-table.hh:1440:60: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:541,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:85:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_blob_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-blob.cc:290:34:   required from here
+  290 |   return hb_object_set_user_data (blob, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_buffer_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer.cc:872:34:   required from here
+  872 |   return hb_object_set_user_data (buffer, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_draw_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-draw.cc:288:34:   required from here
+  288 |   return hb_object_set_user_data (dfuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_face_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.cc:336:34:   required from here
+  336 |   return hb_object_set_user_data (face, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:815:34:   required from here
+  815 |   return hb_object_set_user_data (ffuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_font_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.cc:2028:34:   required from here
+ 2028 |   return hb_object_set_user_data (font, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_map_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (map, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_paint_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint.cc:334:34:   required from here
+  334 |   return hb_object_set_user_data (funcs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_set_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-set.cc:132:34:   required from here
+  132 |   return hb_object_set_user_data (set, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_shape_plan_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-shape-plan.cc:347:34:   required from here
+  347 |   return hb_object_set_user_data (shape_plan, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh: In instantiation of 'bool hb_object_set_user_data(Type*, hb_user_data_key_t*, void*, hb_destroy_func_t, hb_bool_t) [with Type = hb_unicode_funcs_t; hb_user_data_key_t = hb_user_data_key_t; hb_destroy_func_t = void (*)(void*); hb_bool_t = int]':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-unicode.cc:295:34:   required from here
+  295 |   return hb_object_set_user_data (ufuncs, key, data, destroy, replace);
+      |          ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: warning: 'void* calloc(size_t, size_t)' sizes specified with 'sizeof' in the earlier argument and not in the later argument [-Wcalloc-transposed-args]
+  328 |     user_data = (hb_user_data_array_t *) hb_calloc (sizeof (hb_user_data_array_t), 1);
+      |                                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-object.hh:328:53: note: earlier argument should specify number of elements, later size of each element
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:536:
+In function 'int hb_memcmp(const void*, const void*, unsigned int)',
+    inlined from 'int hb_array_t< <template-parameter-1-1> >::cmp(const hb_array_t< <template-parameter-1-1> >&) const [with Type = const char]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-array.hh:169:22,
+    inlined from 'static int OT::post::accelerator_t::cmp_key(const void*, const void*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:251:44,
+    inlined from 'bool hb_bsearch_impl(unsigned int*, const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1074:20,
+    inlined from 'V* hb_bsearch(const K&, V*, size_t, size_t, int (*)(const void*, const void*, Ts ...), Ts ...) [with V = short unsigned int; K = hb_array_t<const char>; Ts = {void*}]' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:1112:26,
+    inlined from 'bool OT::post::accelerator_t::get_glyph_from_name(const char*, int, hb_codepoint_t*) const' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-post-table.hh:207:30,
+    inlined from 'hb_bool_t hb_ot_get_glyph_from_name(hb_font_t*, void*, const char*, int, hb_codepoint_t*, void*)' at /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-font.cc:473:42:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-algs.hh:984:17: warning: 'int memcmp(const void*, const void*, size_t)' specified bound [2147483648, 4294967295] exceeds source size 1850 [-Wstringop-overread]
+  984 |   return memcmp (a, b, len);
+      |          ~~~~~~~^~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/harfbuzz.cc:5:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc: In member function 'bool hb_buffer_t::verify(hb_buffer_t*, hb_font_t*, const hb_feature_t*, unsigned int, const char* const*)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:34:29: warning: '%s' directive argument is null [-Wformat-overflow=]
+   34 | #define BUFFER_VERIFY_ERROR "buffer verify error: "
+      |                             ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:415:40: note: in expansion of macro 'BUFFER_VERIFY_ERROR'
+  415 |       buffer_verify_error (this, font, BUFFER_VERIFY_ERROR "text was: %s.", bytes.arrayZ);
+      |                                        ^~~~~~~~~~~~~~~~~~~
+[ 56%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.obj
+[ 59%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.obj
+[ 62%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.obj
+[ 65%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.obj
+[ 68%] Building CXX object CMakeFiles/LexiLovePlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.obj
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:89: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   89 |   #pragma comment(lib, "Dwrite.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:90: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   90 |   #pragma comment(lib, "D2d1.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:91: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   91 |   #pragma comment(lib, "DXGI.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:92: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   92 |   #pragma comment(lib, "D3D11.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:93: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   93 |   #pragma comment(lib, "DComp.lib")
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:94: warning: ignoring '#pragma comment ' [-Wunknown-pragmas]
+   94 |   #pragma comment(lib, "dxguid.lib")
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:209:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp: In constructor 'juce::WindowsDirectWriteTypeface::WindowsDirectWriteTypeface(const juce::String&, const juce::String&, juce::ComSmartPtr<IDWriteFont>, juce::ComSmartPtr<IDWriteFontFace>, juce::HbFont, juce::TypefaceAscentDescent, juce::ComSmartPtr<IDWriteFontCollection>)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:815:47: warning: declaration of 'style' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  815 |                                 const String& style,
+      |                                 ~~~~~~~~~~~~~~^~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.h:137,
+                 from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:50:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:391:12: note: shadowed declaration is here
+  391 |     String style;
+      |            ^~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_DirectWriteTypeface_windows.cpp:814:47: warning: declaration of 'name' shadows a member of 'juce::WindowsDirectWriteTypeface' [-Wshadow]
+  814 |     WindowsDirectWriteTypeface (const String& name,
+      |                                 ~~~~~~~~~~~~~~^~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Typeface.h:390:12: note: shadowed declaration is here
+  390 |     String name;
+      |            ^~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:211:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp: In static member function 'static bool juce::D2DHelpers::isTransformAxisAligned(const juce::AffineTransform&)':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:32: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                ~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DHelpers_windows.cpp:114:59: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  114 |         return transform.mat01 == 0.0f && transform.mat10 == 0.0f;
+      |                                           ~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:214:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp: In member function 'bool juce::Direct2DGraphicsContext::SavedState::isCurrentTransformAxisAligned() const':
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:94: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:421:145: warning: comparing floating-point with '==' or '!=' is unsafe [-Wfloat-equal]
+  421 |         return currentTransform.isOnlyTranslated || (currentTransform.complexTransform.mat01 == 0.0f && currentTransform.complexTransform.mat10 == 0.0f);
+      |                                                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.h:28,
+                 from /home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:14:
+/home/mm/map2-audio/juce-engine/Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'void map2::LexiLoveProcessor::AllPassFilter::prepare(int)':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:112:19: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  112 |     buffer.resize(maxSamples, 0.0f);
+      |                   ^~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'float map2::LexiLoveProcessor::AllPassFilter::process(float)':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:122:28: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  122 |     float delayed = buffer[readPos];
+      |                            ^~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:124:12: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  124 |     buffer[writePos] = input + delayed * feedback;
+      |            ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'void map2::LexiLoveProcessor::prepare(double, int, int)':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:153:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  153 |     preDelayBufferL_.resize(maxPreDelaySamples, 0.0f);
+      |                             ^~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:154:29: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  154 |     preDelayBufferR_.resize(maxPreDelaySamples, 0.0f);
+      |                             ^~~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:158:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  158 |     earlyBufferL_.resize(earlyBufferSize, 0.0f);
+      |                          ^~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:159:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  159 |     earlyBufferR_.resize(earlyBufferSize, 0.0f);
+      |                          ^~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:165:26: warning: conversion to 'std::array<map2::LexiLoveProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  165 |         inputDiffusersL_[i].prepare(scaledDelay * 2);
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:166:26: warning: conversion to 'std::array<map2::LexiLoveProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  166 |         inputDiffusersL_[i].delaySamples = scaledDelay;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:167:26: warning: conversion to 'std::array<map2::LexiLoveProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  167 |         inputDiffusersL_[i].feedback = 0.6f;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:169:26: warning: conversion to 'std::array<map2::LexiLoveProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  169 |         inputDiffusersR_[i].prepare(scaledDelay * 2);
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:170:26: warning: conversion to 'std::array<map2::LexiLoveProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  170 |         inputDiffusersR_[i].delaySamples = scaledDelay;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:171:26: warning: conversion to 'std::array<map2::LexiLoveProcessor::AllPassFilter, 4>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  171 |         inputDiffusersR_[i].feedback = 0.6f;
+      |                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:177:58: warning: conversion to 'std::array<int, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  177 |         int scaledDelay = static_cast<int>(REVERB_DELAYS[i] * sampleRate / 48000.0);
+      |                                                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:178:22: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  178 |         reverbTapsL_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:178:39: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  178 |         reverbTapsL_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                                       ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:179:22: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  179 |         reverbTapsL_[i].delaySamples = scaledDelay;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:180:22: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  180 |         reverbTapsL_[i].modPhase = static_cast<double>(i) / NUM_REVERB_TAPS;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:182:22: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  182 |         reverbTapsR_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:182:39: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  182 |         reverbTapsR_[i].buffer.resize(reverbBufferSize, 0.0f);
+      |                                       ^~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:183:22: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  183 |         reverbTapsR_[i].delaySamples = scaledDelay;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:184:22: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  184 |         reverbTapsR_[i].modPhase = static_cast<double>(i) / NUM_REVERB_TAPS + 0.5;
+      |                      ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'void map2::LexiLoveProcessor::process(juce::AudioBuffer<float>&)':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:336:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  336 |         preDelayBufferL_[preDelayWritePos_] = inputL;
+      |                          ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:337:26: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  337 |         preDelayBufferR_[preDelayWritePos_] = inputR;
+      |                          ^~~~~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:347:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  347 |         earlyBufferL_[earlyWritePos_] = preDelayedL;
+      |                       ^~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:348:23: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  348 |         earlyBufferR_[earlyWritePos_] = preDelayedR;
+      |                       ^~~~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:354:42: warning: conversion to 'std::array<map2::LexiLoveProcessor::EarlyTap, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  354 |             const auto& tap = earlyTaps_[t];
+      |                                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:398:39: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  398 |             auto& tapL = reverbTapsL_[t];
+      |                                       ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:399:39: warning: conversion to 'std::array<map2::LexiLoveProcessor::ReverbTap, 8>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  399 |             auto& tapR = reverbTapsR_[t];
+      |                                       ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:416:41: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  416 |             float tapOutL = tapL.buffer[readPosL];
+      |                                         ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:417:41: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  417 |             float tapOutR = tapR.buffer[readPosR];
+      |                                         ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:454:30: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  454 |             tapL.buffer[tapL.writePos] = diffusedL + feedbackR * 0.7f + feedbackL * 0.3f;
+      |                         ~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:455:30: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  455 |             tapR.buffer[tapR.writePos] = diffusedR + feedbackL * 0.7f + feedbackR * 0.3f;
+      |                         ~~~~~^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'void map2::LexiLoveProcessor::updateEarlyTaps()':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:536:42: warning: conversion to 'std::array<map2::LexiLoveProcessor::AlgorithmEarlyPattern, 9>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  536 |     const auto& pattern = EARLY_PATTERNS[algIndex];
+      |                                          ^~~~~~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:541:41: warning: conversion to 'std::array<float, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  541 |         float delayMs = pattern.delayMs[t] * (0.5f + patternDensity);
+      |                                         ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:542:20: warning: conversion to 'std::array<map2::LexiLoveProcessor::EarlyTap, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  542 |         earlyTaps_[t].delaySamples = static_cast<int>(delayMs * sampleRate_ / 1000.0f);
+      |                    ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:543:20: warning: conversion to 'std::array<map2::LexiLoveProcessor::EarlyTap, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  543 |         earlyTaps_[t].gain = pattern.gains[t];
+      |                    ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:543:44: warning: conversion to 'std::array<float, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  543 |         earlyTaps_[t].gain = pattern.gains[t];
+      |                                            ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:544:20: warning: conversion to 'std::array<map2::LexiLoveProcessor::EarlyTap, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  544 |         earlyTaps_[t].pan = pattern.pans[t];
+      |                    ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:544:42: warning: conversion to 'std::array<float, 12>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  544 |         earlyTaps_[t].pan = pattern.pans[t];
+      |                                          ^
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'void map2::LexiLoveProcessor::applyAlgorithm(Algorithm)':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:552:42: warning: conversion to 'std::array<map2::LexiLoveProcessor::PresetData, 9>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  552 |     const auto& preset = FACTORY_PRESETS[idx];
+      |                                          ^~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In member function 'float map2::LexiLoveProcessor::readDelayLine(const std::vector<float>&, int, float) const':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:589:19: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  589 |     return buffer[idx0] * (1.0f - frac) + buffer[idx1] * frac;
+      |                   ^~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:589:50: warning: conversion to 'std::vector<float>::size_type' {aka 'long long unsigned int'} from 'int' may change the sign of the result [-Wsign-conversion]
+  589 |     return buffer[idx0] * (1.0f - frac) + buffer[idx1] * frac;
+      |                                                  ^~~~
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp: In static member function 'static map2::LexiLoveProcessor::AlgorithmInfo map2::LexiLoveProcessor::getAlgorithmInfo(Algorithm)':
+/home/mm/map2-audio/juce-engine/Source/LexiLoveProcessor.cpp:615:12: warning: enumeration value 'NumAlgorithms' not handled in switch [-Wswitch-enum]
+  615 |     switch (algorithm) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/LexiLovePlugin/../Source/LexiLoveProcessor.h:28,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.h:5,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.cpp:1:
+/home/mm/map2-audio/juce-engine/LexiLovePlugin/../Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/LexiLovePlugin/../Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.h:3:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h: At global scope:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void LexiLoveAudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+In file included from /home/mm/map2-audio/juce-engine/LexiLovePlugin/../Source/LexiLoveProcessor.h:28,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.h:5,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginEditor.h:5,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginEditor.cpp:1:
+/home/mm/map2-audio/juce-engine/LexiLovePlugin/../Source/Common.h: In function 'std::string map2::pluginFormatToString(PluginFormat)':
+/home/mm/map2-audio/juce-engine/LexiLovePlugin/../Source/Common.h:256:12: warning: enumeration value 'Unknown' not handled in switch [-Wswitch-enum]
+  256 |     switch (format) {
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:154,
+                 from /home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.h:3:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h: At global scope:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:289:18: warning: 'virtual void juce::AudioProcessor::processBlock(juce::AudioBuffer<double>&, juce::MidiBuffer&)' was hidden [-Woverloaded-virtual=]
+  289 |     virtual void processBlock (AudioBuffer<double>& buffer,
+      |                  ^~~~~~~~~~~~
+/home/mm/map2-audio/juce-engine/LexiLovePlugin/Source/PluginProcessor.h:16:10: note:   by 'virtual void LexiLoveAudioProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)'
+   16 |     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+      |          ^~~~~~~~~~~~
+[ 71%] Linking CXX static library "LexiLovePlugin_artefacts/Release/libMAP2 Lexi Love_SharedCode.a"
+[ 71%] Built target LexiLovePlugin
+[ 78%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.obj
+[ 78%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.obj
+[ 81%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.obj
+[ 84%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.obj
+[ 87%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.obj
+[ 90%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.obj
+[ 93%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.obj
+[ 96%] Building CXX object CMakeFiles/LexiLovePlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.obj
+[100%] Linking CXX shared module "LexiLovePlugin_artefacts/Release/VST3/MAP2 Lexi Love.vst3/Contents/x86_64-win/MAP2 Lexi Love.vst3"
+removing moduleinfo.json
+[100%] Built target LexiLovePlugin_VST3

@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+7b1fe0cdf4f8f8b8821b05020210731f ParallelMixerPlugin_artefacts/JuceLibraryCode/ParallelMixerPlugin_resources.rc

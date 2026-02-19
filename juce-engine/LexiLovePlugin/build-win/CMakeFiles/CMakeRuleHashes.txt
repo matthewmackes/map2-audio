@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+7b12a4aaf9d5659e400b7d49c013e94d LexiLovePlugin_artefacts/JuceLibraryCode/LexiLovePlugin_resources.rc

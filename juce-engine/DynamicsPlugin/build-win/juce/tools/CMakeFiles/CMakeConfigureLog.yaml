@@ -704,3 +704,38 @@ events:
         
       exitCode: 0
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/juce/tools/check_atomic_dir_jo7wVvEUWk7o1Jxq/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/juce/tools/check_atomic_dir_jo7wVvEUWk7o1Jxq/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/juce/tools/check_atomic_dir_jo7wVvEUWk7o1Jxq/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ec78a/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ec78a.dir/build.make CMakeFiles/cmTC_ec78a.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/juce/tools/check_atomic_dir_jo7wVvEUWk7o1Jxq/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_ec78a.dir/check_atomic_opaO0JivJF87xtLE.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_ec78a.dir/check_atomic_opaO0JivJF87xtLE.cpp.o -c /home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/juce/tools/check_atomic_opaO0JivJF87xtLE.cpp
+        Linking CXX executable cmTC_ec78a
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ec78a.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_ec78a.dir/check_atomic_opaO0JivJF87xtLE.cpp.o -o cmTC_ec78a
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/juce/tools/check_atomic_dir_jo7wVvEUWk7o1Jxq/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...

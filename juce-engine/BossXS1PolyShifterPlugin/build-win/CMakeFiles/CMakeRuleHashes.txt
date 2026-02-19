@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+6129bb84e9687034962ca747f68ccf94 BossXS1PolyShifterPlugin_artefacts/JuceLibraryCode/BossXS1PolyShifterPlugin_resources.rc

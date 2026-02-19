@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/NAMPlugin/build-win/NAMPlugin_artefacts/JuceLibraryCode/NAMPlugin_resources.rc
+windows.h
+-
+

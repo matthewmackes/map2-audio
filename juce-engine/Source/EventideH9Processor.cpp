@@ -269,8 +269,8 @@ void MicroPitchAlgorithm::prepare(double sampleRate, int maxBlockSize) {
     vocoder1_->prepare(sampleRate, maxBlockSize);
     vocoder2_->prepare(sampleRate, maxBlockSize);
     
-    lfo1_.prepare({sampleRate, maxBlockSize, 2});
-    lfo2_.prepare({sampleRate, maxBlockSize, 2});
+    lfo1_.prepare({sampleRate, static_cast<juce::uint32>(maxBlockSize), 2});
+    lfo2_.prepare({sampleRate, static_cast<juce::uint32>(maxBlockSize), 2});
     lfo1_.setFrequency(modRate_);
     lfo2_.setFrequency(modRate_);
 }
@@ -549,7 +549,7 @@ void MotionVerbAlgorithm::prepare(double sampleRate, int maxBlockSize) {
         delayBuffers_[i].resize(88200, 0.0f); // 2 seconds max
     }
     
-    lfo_.prepare({sampleRate, maxBlockSize, 2});
+    lfo_.prepare({sampleRate, static_cast<juce::uint32>(maxBlockSize), 2});
     lfo_.setFrequency(modRate_);
 }
 

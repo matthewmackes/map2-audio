@@ -1,0 +1,3 @@
+/usr/bin/cmake -E rm -f CMakeFiles/EventideH9Plugin_VST3.dir/objects.a
+x86_64-w64-mingw32-ar qc CMakeFiles/EventideH9Plugin_VST3.dir/objects.a @CMakeFiles/EventideH9Plugin_VST3.dir/objects1.rsp
+/usr/lib64/ccache/x86_64-w64-mingw32-g++ -O3 -DNDEBUG -fno-lto -shared -o "EventideH9Plugin_artefacts/Release/VST3/MAP2 Eventide H9.vst3/Contents/x86_64-win/MAP2 Eventide H9.vst3" -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles/EventideH9Plugin_VST3.dir/objects.a -Wl,--no-whole-archive @CMakeFiles/EventideH9Plugin_VST3.dir/linkLibs.rsp

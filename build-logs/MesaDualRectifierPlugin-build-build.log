@@ -1,15 +1,21 @@
-[  3%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.cpp.o
-[  6%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
-[ 15%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFTriode.cpp.o
+[  6%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.cpp.o
+[  6%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.cpp.o
+[  9%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/Source/PluginProcessor.cpp.o
+[ 12%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/Source/PluginEditor.cpp.o
 [ 15%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFElements.cpp.o
-[ 18%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/Source/PluginEditor.cpp.o
-[ 21%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.cpp.o
-[ 21%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/Source/PluginProcessor.cpp.o
-[ 24%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/DSP/Oversampler.cpp.o
-[ 27%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[ 18%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/DSP/Oversampler.cpp.o
+[ 21%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFTriode.cpp.o
+[ 24%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[ 27%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o
 [ 30%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o
 [ 33%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
 [ 36%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.cpp:1:
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.h:111:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
+  111 |         switch (t) {
+      |                 ^
+1 warning generated.
+[ 39%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
 In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/DSP/Oversampler.cpp:1:
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/DSP/Oversampler.h:43:26: warning: implicit conversion changes signedness: 'int' to 'size_type' (aka 'unsigned long') [-Wsign-conversion]
    43 |             coefficients[n] = sinc * bessel;
@@ -45,7 +51,7 @@ In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/DSP/Ov
   128 |             output += upsampleBuffer[i];
       |                       ~~~~~~~~~~~~~~ ^
 11 warnings generated.
-[ 39%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[ 42%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
 In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFTriode.cpp:1:
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFTriode.h:86:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
    86 |         switch (t) {
@@ -57,19 +63,32 @@ In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WD
    74 |     double Ip = 0.0;           // Plate current
       |            ^
 2 warnings generated.
-In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.cpp:1:
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.h:111:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
-  111 |         switch (t) {
-      |                 ^
-1 warning generated.
-[ 42%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[ 45%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.o
 [ 48%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.cpp.o
-[ 48%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/juce_events.cpp.o
 [ 51%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
 [ 54%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
 [ 57%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
 [ 60%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
 [ 63%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.cpp:1:
+In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.h:5:
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFTriode.h:86:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
+   86 |         switch (t) {
+      |                 ^
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFTriode.h:127:16: warning: declaration shadows a field of 'WDF::WDFTriode' [-Wshadow]
+  127 |         double Ip = std::pow(E1, params.ex) / params.kg1;
+      |                ^
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFTriode.h:74:12: note: previous declaration is here
+   74 |     double Ip = 0.0;           // Plate current
+      |            ^
+In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.cpp:1:
+In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.h:6:
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFToneStack.h:111:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
+  111 |         switch (t) {
+      |                 ^
+3 warnings generated.
+[ 66%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[ 69%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
 In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp:85:
 In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:535:
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:179:11: warning: first argument in call to 'memcpy' is a pointer to non-trivially copyable type 'hb_hashmap_t<unsigned int, hb_vector_t<unsigned int>>::item_t' [-Wnontrivial-memcall]
@@ -395,9 +414,9 @@ In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modul
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-null.hh:188:38: note: expanded from macro 'Crap'
   188 | #define Crap(Type) CrapHelper<Type>::get_crap ()
       |                                      ^
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:263:25: note: expanded from macro 'unlikely'
-  263 | #define unlikely(expr) (expr)
-      |                         ^
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb.hh:260:47: note: expanded from macro 'unlikely'
+  260 | #define unlikely(expr) __builtin_expect (bool(expr), 0)
+      |                                               ^
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-cff2-table.hh:526:39: note: in instantiation of member function 'OT::cff2::accelerator_templ_t<CFF::cff2_private_dict_opset_t, CFF::cff2_private_dict_values_base_t<CFF::dict_val_t>>::accelerator_templ_t' requested here
   526 |     accelerator_t (hb_face_t *face) : accelerator_templ_t (face) {}
       |                                       ^
@@ -488,25 +507,6 @@ In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modul
       |           ^
       |           (void*)
 19 warnings generated.
-[ 66%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
-[ 69%] Building CXX object CMakeFiles/MesaDualRectifierPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
-In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.cpp:1:
-In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.h:5:
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFTriode.h:86:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
-   86 |         switch (t) {
-      |                 ^
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFTriode.h:127:16: warning: declaration shadows a field of 'WDF::WDFTriode' [-Wshadow]
-  127 |         double Ip = std::pow(E1, params.ex) / params.kg1;
-      |                ^
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFTriode.h:74:12: note: previous declaration is here
-   74 |     double Ip = 0.0;           // Plate current
-      |            ^
-In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.cpp:1:
-In file included from /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/MesaDualRectifier.h:6:
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/../WDF/WDFToneStack.h:111:17: warning: enumeration value 'Custom' not explicitly handled in switch [-Wswitch-enum]
-  111 |         switch (t) {
-      |                 ^
-3 warnings generated.
 In file included from /home/mm/map2-audio/juce-engine/MesaDualRectifierPlugin/Source/PluginEditor.cpp:1:
 In file included from /home/mm/map2-audio/juce-engine/MesaDualRectifierPlugin/Source/PluginEditor.h:4:
 In file included from /home/mm/map2-audio/juce-engine/MesaDualRectifierPlugin/Source/PluginProcessor.h:7:
@@ -633,16 +633,16 @@ In file included from /home/mm/map2-audio/juce-engine/MesaDualRectifierPlugin/So
   149 |             upsampleBuffer[i] = processor.processSample(upsampleBuffer[i]);
       |                                                         ~~~~~~~~~~~~~~ ^
 16 warnings generated.
-[ 72%] Linking CXX static library "MesaDualRectifierPlugin_artefacts/libMesa Dual Rectifier_SharedCode.a"
+[ 72%] Linking CXX static library "MesaDualRectifierPlugin_artefacts/Release/libMesa Dual Rectifier_SharedCode.a"
 [ 72%] Built target MesaDualRectifierPlugin
 [ 81%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Standalone.cpp.o
-[ 81%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
+[ 81%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
 [ 81%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_ARA.cpp.o
-[ 84%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_Unity.cpp.o
+[ 84%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX.cpp.o
 [ 87%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_AAX_utils.cpp.o
 [ 90%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_LV2.cpp.o
-[ 93%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
-[ 96%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[ 93%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST2.cpp.o
+[ 96%] Building CXX object CMakeFiles/MesaDualRectifierPlugin_VST3.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp.o
 In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp:51:
 In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_VST3Headers.h:143:
 In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/VST3_SDK/base/source/fstring.cpp:41:
@@ -661,7 +661,7 @@ In file included from /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modul
       |                 ^
       |                 (void*)
 2 warnings generated.
-[100%] Linking CXX shared module "MesaDualRectifierPlugin_artefacts/VST3/Mesa Dual Rectifier.vst3/Contents/x86_64-linux/Mesa Dual Rectifier.so"
+[100%] Linking CXX shared module "MesaDualRectifierPlugin_artefacts/Release/VST3/Mesa Dual Rectifier.vst3/Contents/x86_64-linux/Mesa Dual Rectifier.so"
 removing moduleinfo.json
 -- Destination /home/mm/.vst3/Mesa Dual Rectifier.vst3 exists, overwriting
 -- Installing: /home/mm/.vst3/Mesa Dual Rectifier.vst3
