@@ -143,6 +143,61 @@ export type ClearSceneDiffAction = {
   type: 'CLEAR_SCENE_DIFF';
 };
 
+export type SaveSceneDiffPresetAction = {
+  type: 'SAVE_SCENE_DIFF_PRESET';
+  payload: {
+    name: string;
+    notes?: string;
+    preset_version?: number;
+    preferred_conflict_action?: 'upsert' | 'rename' | 'skip';
+  };
+};
+
+export type ApplySceneDiffPresetAction = {
+  type: 'APPLY_SCENE_DIFF_PRESET';
+  payload: {
+    preset_id: string;
+  };
+};
+
+export type DeleteSceneDiffPresetAction = {
+  type: 'DELETE_SCENE_DIFF_PRESET';
+  payload: {
+    preset_id: string;
+  };
+};
+
+export type ImportSceneDiffPresetsAction = {
+  type: 'IMPORT_SCENE_DIFF_PRESETS';
+  payload: {
+    presets: Array<{
+      name: string;
+      baseline_scene_id: string;
+      compare_scene_id: string;
+      notes?: string;
+      preset_version?: number;
+      preferred_conflict_action?: 'upsert' | 'rename' | 'skip';
+    }>;
+  };
+};
+
+export type SwapSceneDiffSelectionAction = {
+  type: 'SWAP_SCENE_DIFF_SELECTION';
+};
+
+export type LogSceneDiffPresetPreviewAction = {
+  type: 'LOG_SCENE_DIFF_PRESET_PREVIEW';
+  payload: {
+    phase: 'opened' | 'refreshed' | 'cancelled';
+    reason?: 'transfer_draft_changed' | 'popover_closed' | 'exported_payload_reset';
+    source_count?: number;
+    accepted_count?: number;
+    conflict_count?: number;
+    skipped_count?: number;
+    preferred_conflict_action?: 'upsert' | 'rename' | 'skip' | null;
+  };
+};
+
 /**
  * UI state actions
  */
@@ -354,6 +409,12 @@ export type RoutingAction =
   | SetSceneDiffCompareAction
   | GenerateSceneDiffAction
   | ClearSceneDiffAction
+  | SaveSceneDiffPresetAction
+  | ApplySceneDiffPresetAction
+  | DeleteSceneDiffPresetAction
+  | ImportSceneDiffPresetsAction
+  | SwapSceneDiffSelectionAction
+  | LogSceneDiffPresetPreviewAction
   | SetFiltersAction
   | SetSearchAction
   | SetBankAction

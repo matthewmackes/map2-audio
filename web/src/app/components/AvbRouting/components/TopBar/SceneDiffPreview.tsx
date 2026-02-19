@@ -7,12 +7,12 @@
  */
 
 import React from 'react';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Button, Chip, Typography } from '@mui/material';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
-import { useRoutingState } from '../../context/RoutingContext';
+import { useRouting } from '../../context/RoutingContext';
 
 function renderAddRouteLabel(route: {
   talker_id: string;
@@ -38,11 +38,19 @@ function renderRemoveRouteLabel(route: {
 }
 
 export function SceneDiffPreview() {
-  const state = useRoutingState();
+  const { state, dispatch } = useRouting();
   const preview = state.sceneDiff.preview;
   if (!preview) {
     return null;
   }
+
+  const sceneDiffPresets = (state.sceneDiff.presets || [])
+    .slice()
+    .sort((a, b) => {
+      const byName = a.name.localeCompare(b.name);
+      return byName !== 0 ? byName : a.id.localeCompare(b.id);
+    });
+  const activePresetId = state.sceneDiff.active_preset_id || null;
 
   const baselineName = state.sceneDiff.baseline_scene_id
     ? (state.scenes[state.sceneDiff.baseline_scene_id]?.name || 'Unknown Scene')
@@ -50,6 +58,22 @@ export function SceneDiffPreview() {
   const compareName = state.sceneDiff.compare_scene_id
     ? (state.scenes[state.sceneDiff.compare_scene_id]?.name || preview.scene_name)
     : preview.scene_name;
+
+  const handleSwapSelections = () => {
+    if (!state.sceneDiff.baseline_scene_id || !state.sceneDiff.compare_scene_id) {
+      return;
+    }
+    dispatch({ type: 'SWAP_SCENE_DIFF_SELECTION' });
+    dispatch({ type: 'GENERATE_SCENE_DIFF' });
+  };
+
+  const handleApplyPreset = (presetId: string) => {
+    dispatch({
+      type: 'APPLY_SCENE_DIFF_PRESET',
+      payload: { preset_id: presetId },
+    });
+    dispatch({ type: 'GENERATE_SCENE_DIFF' });
+  };
 
   return (
     <Box
@@ -69,6 +93,14 @@ export function SceneDiffPreview() {
         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
           Scene Diff Preview
         </Typography>
+        <Button
+          size="small"
+          onClick={handleSwapSelections}
+          disabled={!state.sceneDiff.baseline_scene_id || !state.sceneDiff.compare_scene_id}
+          data-testid="scene-diff-preview-swap"
+        >
+          Swap
+        </Button>
         <Typography variant="caption" color="text.secondary" data-testid="scene-diff-preview-scope">
           {baselineName} vs {compareName}
         </Typography>
@@ -96,6 +128,33 @@ export function SceneDiffPreview() {
           data-testid="scene-diff-preview-unchanged-count"
         />
       </Box>
+
+      {sceneDiffPresets.length > 0 && (
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Typography variant="caption" color="text.secondary">
+            Presets:
+          </Typography>
+          {sceneDiffPresets.slice(0, 4).map((preset) => (
+            <Chip
+              key={preset.id}
+              size="small"
+              variant={activePresetId === preset.id ? 'filled' : 'outlined'}
+              color={activePresetId === preset.id ? 'primary' : 'default'}
+              label={preset.name}
+              onClick={() => handleApplyPreset(preset.id)}
+              data-testid="scene-diff-preview-preset-chip"
+            />
+          ))}
+          {sceneDiffPresets.length > 4 && (
+            <Chip
+              size="small"
+              variant="outlined"
+              label={`+${sceneDiffPresets.length - 4}`}
+              data-testid="scene-diff-preview-preset-overflow"
+            />
+          )}
+        </Box>
+      )}
 
       {preview.to_add.length > 0 && (
         <Typography variant="body2" color="success.main" data-testid="scene-diff-preview-add-routes">

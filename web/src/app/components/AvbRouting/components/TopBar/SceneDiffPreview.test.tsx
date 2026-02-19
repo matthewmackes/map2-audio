@@ -1,16 +1,22 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { SceneDiffPreview } from './SceneDiffPreview'
 import { initialRoutingState } from '../../types'
+import type { RoutingState } from '../../types'
 
-let mockState: any
+let mockState: RoutingState
+const mockDispatch = jest.fn()
 
 jest.mock('../../context/RoutingContext', () => ({
-  useRoutingState: () => mockState,
+  useRouting: () => ({
+    state: mockState,
+    dispatch: mockDispatch,
+  }),
 }))
 
 describe('SceneDiffPreview', () => {
   beforeEach(() => {
+    mockDispatch.mockReset()
     mockState = {
       ...initialRoutingState,
       scenes: {},
@@ -18,6 +24,8 @@ describe('SceneDiffPreview', () => {
         baseline_scene_id: null,
         compare_scene_id: null,
         preview: null,
+        presets: [],
+        active_preset_id: null,
       },
     }
   })
@@ -74,6 +82,23 @@ describe('SceneDiffPreview', () => {
           unchanged: ['talker-3→listener-3'],
           total_changes: 2,
         },
+        presets: [
+          {
+            id: 'preset-a',
+            name: 'Ops A/B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-b',
+            name: 'Ops Reverse',
+            baseline_scene_id: 'scene-b',
+            compare_scene_id: 'scene-a',
+            updated_at: '2026-02-17T00:01:00Z',
+          },
+        ],
+        active_preset_id: 'preset-a',
       },
     }
 
@@ -87,5 +112,64 @@ describe('SceneDiffPreview', () => {
     expect(screen.getByTestId('scene-diff-preview-add-routes').textContent).toContain('Talker Two -> Listener Two')
     expect(screen.getByTestId('scene-diff-preview-remove-routes').textContent).toContain('Talker One -> Listener One')
     expect(screen.getByTestId('scene-diff-preview-total-changes').textContent).toContain('Total changes: 2')
+    expect(screen.getAllByTestId('scene-diff-preview-preset-chip')).toHaveLength(2)
+  })
+
+  it('supports quick swap and preset application controls from preview surface', () => {
+    mockState = {
+      ...mockState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: {
+          scene_id: 'scene-b',
+          scene_name: 'Compare Scene',
+          to_add: [],
+          to_remove: [],
+          unchanged: ['talker-1→listener-1'],
+          total_changes: 0,
+        },
+        presets: [
+          {
+            id: 'preset-a',
+            name: 'Ops A/B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+        active_preset_id: 'preset-a',
+      },
+    }
+
+    render(<SceneDiffPreview />)
+
+    fireEvent.click(screen.getByTestId('scene-diff-preview-swap'))
+    expect(mockDispatch).toHaveBeenCalledWith({ type: 'SWAP_SCENE_DIFF_SELECTION' })
+    expect(mockDispatch).toHaveBeenCalledWith({ type: 'GENERATE_SCENE_DIFF' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ops A/B' }))
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'APPLY_SCENE_DIFF_PRESET',
+      payload: { preset_id: 'preset-a' },
+    })
   })
 })

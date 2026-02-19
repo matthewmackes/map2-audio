@@ -2,8 +2,9 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { TopBar } from './TopBar'
 import { initialRoutingState } from '../../types'
+import type { RoutingState } from '../../types'
 
-let mockState: any
+let mockState: RoutingState
 let mockCanUndo = false
 let mockCanRedo = false
 
@@ -163,7 +164,7 @@ describe('TopBar scene management controls', () => {
     })
   })
 
-  it('normalizes save metadata and warns on duplicate scene names', () => {
+  it('normalizes save metadata and auto-suffixes duplicate scene names by default', () => {
     render(<TopBar />)
 
     openSceneControls()
@@ -172,8 +173,34 @@ describe('TopBar scene management controls', () => {
     })
     fireEvent.click(screen.getByTestId('topbar-scene-save'))
 
-    expect(mockNotify.warning).toHaveBeenCalledWith('Scene name "Baseline Scene" already exists. Saving duplicate snapshot name.')
+    expect(mockNotify.info).toHaveBeenCalledWith('Duplicate name detected. Auto-suffixed to "Baseline Scene (2)".')
     expect(mockNotify.info).toHaveBeenCalledWith('Scene metadata was normalized to remove reserved characters and whitespace.')
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SAVE_SCENE',
+      payload: {
+        name: 'Baseline Scene (2)',
+        description: 'Saved from TopBar',
+        tags: ['topbar'],
+      },
+    })
+  })
+
+  it('supports disabling duplicate auto-suffix policy and keeps duplicate names', () => {
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.click(screen.getByTestId('topbar-scene-autosuffix-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'Baseline Scene' },
+    })
+
+    expect(screen.getByTestId('topbar-scene-duplicate-hint').textContent).toContain(
+      'Duplicate new-scene name detected. Save will keep duplicate naming.'
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    expect(mockNotify.warning).toHaveBeenCalledWith('Scene name "Baseline Scene" already exists. Saving duplicate snapshot name.')
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'SAVE_SCENE',
       payload: {
@@ -236,9 +263,577 @@ describe('TopBar scene management controls', () => {
     expect(mockNotify.success).toHaveBeenCalledWith('Updated scene metadata for "Baseline Scene Renamed".')
   })
 
+  it('surfaces recent scene operation audit entries with outcome badges', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: { scene_id: 'scene-a' },
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: { scene_id: 'scene-a' },
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(2)
+    expect(screen.getByText('Saved scene: Baseline Scene (1 routes)')).toBeTruthy()
+    expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+    expect(screen.getAllByTestId('topbar-scene-audit-outcome')[0].textContent).toContain('warning')
+    expect(screen.getAllByTestId('topbar-scene-audit-outcome')[1].textContent).toContain('success')
+  })
+
+  it('filters scene audit entries by search text and validation outcome', async () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: { scene_id: 'scene-a' },
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: { scene_id: 'scene-a' },
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: { scene_id: 'scene-a' },
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('3 of 3 matching (3 total)')
+
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'deleted' },
+    })
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Outcome' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Error' }))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Outcome' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Success' }))
+    expect(screen.queryAllByTestId('topbar-scene-audit-entry')).toHaveLength(0)
+    expect(screen.getByText('No scene operations match current audit filters.')).toBeTruthy()
+  })
+
+  it('optionally remembers scene-audit filters across scene popover close/open', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'deleted' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    openSceneControls()
+    expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'deleted' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    openSceneControls()
+    expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('deleted')
+  })
+
+  it('supports quick scene-audit filter chips for errors, warnings, and deletes', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'SCENE_DIFF',
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_opened',
+            phase: 'opened',
+            source_count: 2,
+          },
+          diff_summary: 'Opened scene diff preset import preview (2 rows)',
+          validation_outcome: 'success',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-errors'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-warnings'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-deletes'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-diff-preview'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Opened scene diff preset import preview (2 rows)')).toBeTruthy()
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-quick-all'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(3)
+  })
+
+  it('supports keyboard activation for scene-audit quick-filter chips', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'SCENE_DIFF',
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_opened',
+            phase: 'opened',
+            source_count: 2,
+          },
+          diff_summary: 'Opened scene diff preset import preview (2 rows)',
+          validation_outcome: 'success',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-errors'), { key: 'Enter' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-warnings'), { key: ' ' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-diff-preview'), { key: 'Enter' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Opened scene diff preset import preview (2 rows)')).toBeTruthy()
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-audit-quick-all'), { key: ' ' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(3)
+  })
+
+  it('shows compact scene-audit counters in the status strip', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Compare Scene',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-5',
+          timestamp: '2026-02-17T00:04:00Z',
+          event_type: 'SCENE_DIFF',
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'popover_closed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (2 rows)',
+          validation_outcome: 'warning',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    expect(screen.getByTestId('topbar-scene-status-errors').textContent).toContain('Errors: 1')
+    expect(screen.getByTestId('topbar-scene-status-warnings').textContent).toContain('Warnings: 2')
+    expect(screen.getByTestId('topbar-scene-status-deletes').textContent).toContain('Deletes: 2')
+    expect(screen.getByTestId('topbar-scene-status-diff-preview-warnings').textContent).toContain('Diff Preview Warnings: 1')
+  })
+
+  it('opens scene controls with pre-filtered audit views from status-strip counters', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'SCENE_DIFF',
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (3 rows)',
+          validation_outcome: 'warning',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-errors'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-warnings'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-deletes'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-diff-preview-warnings'))
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Cancelled scene diff preset import preview (3 rows)')).toBeTruthy()
+  })
+
+  it('supports keyboard activation for status-strip scene-audit counters', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'SCENE_DIFF',
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (3 rows)',
+          validation_outcome: 'warning',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-errors'), { key: 'Enter' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-warnings'), { key: ' ' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-deletes'), { key: 'Enter' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-diff-preview-warnings'), { key: ' ' })
+    expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+    expect(screen.getByText('Cancelled scene diff preset import preview (3 rows)')).toBeTruthy()
+  })
+
+  it('overrides remembered stale audit filters for all status-strip counters in one flow', () => {
+    mockState = {
+      ...mockState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success',
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning',
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE',
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error',
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'SCENE_DIFF',
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (3 rows)',
+          validation_outcome: 'warning',
+        },
+      ],
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-errors'))
+    expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-warnings'), { key: 'Enter' })
+    expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+    expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-deletes'))
+    expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('delete')
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (3 total)')
+    expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
+
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-diff-preview-warnings'), { key: 'Enter' })
+    expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+    expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+    expect(screen.getByText('Cancelled scene diff preset import preview (3 rows)')).toBeTruthy()
+  })
+
   it('shows recall impact preview summary for selected scene', async () => {
     mockState = {
       ...mockState,
+      endpoints: {
+        'talker-1': { endpoint_id: 'talker-1', device_name: 'Talker 1' },
+        'listener-1': { endpoint_id: 'listener-1', device_name: 'Listener 1' },
+        'talker-2': { endpoint_id: 'talker-2', device_name: 'Talker 2' },
+        'listener-2': { endpoint_id: 'listener-2', device_name: 'Listener 2' },
+      },
       scenes: {
         'scene-a': {
           id: 'scene-a',
@@ -291,8 +886,60 @@ describe('TopBar scene management controls', () => {
     expect(screen.getByTestId('topbar-scene-impact-summary').textContent).toContain(
       'Impact: +1 add, -0 remove, =1 unchanged'
     )
-    expect(screen.getByTestId('topbar-scene-impact-routes').textContent).toContain('Add: talker-2→listener-2')
+    expect(screen.getByTestId('topbar-scene-impact-routes').textContent).toContain('Add: Talker 2 -> Listener 2')
     expect(screen.getByTestId('topbar-scene-impact-routes').textContent).toContain('Remove: none')
+  })
+
+  it('expands recall impact details with truncation and paging controls', async () => {
+    const makeRoute = (index: number) => ({
+      id: `talker-${index}\u2192listener-${index}`,
+      talker_id: `talker-${index}`,
+      listener_id: `listener-${index}`,
+      state: 'connected' as const,
+      established_time: null,
+      error_message: null,
+      connection_count: 1,
+      srp_reservation_id: null,
+      srp_admission_id: null,
+      locked: false,
+      valid: true,
+      messages: [],
+      cross_node: false,
+    })
+
+    mockState = {
+      ...mockState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: 'Baseline description',
+          routes: [1, 2, 3, 4, 5, 6, 7].map(makeRoute),
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: ['baseline'],
+        },
+      },
+      liveRoutes: {
+        'talker-1→listener-1': makeRoute(1),
+      },
+    }
+
+    render(<TopBar />)
+
+    openSceneControls()
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-impact-toggle'))
+
+    expect(screen.getAllByTestId('topbar-scene-impact-entry')).toHaveLength(5)
+    expect(screen.getByTestId('topbar-scene-impact-truncation').textContent).toContain('Showing 5 of 7 impact entries.')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-impact-show-more'))
+    expect(screen.getAllByTestId('topbar-scene-impact-entry')).toHaveLength(7)
+    expect(screen.getByTestId('topbar-scene-impact-reset')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('topbar-scene-impact-reset'))
+    expect(screen.getAllByTestId('topbar-scene-impact-entry')).toHaveLength(5)
   })
 
   it('requires confirmation before recall and delete dispatch for selected saved scene', async () => {

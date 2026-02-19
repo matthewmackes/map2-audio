@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+0d40d84855d4131fddeac3e73f6c298a MesaDualRectifierPlugin_artefacts/JuceLibraryCode/MesaDualRectifierPlugin_resources.rc

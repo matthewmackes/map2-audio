@@ -1,0 +1,10 @@
+-- Copied pre-built juceaide to build directory
+-- Using existing JUCE from: /home/mm/map2-audio/juce-engine/ChorusPlugin/../build/_deps/juce-src
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (2.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/mm/map2-audio/juce-engine/ChorusPlugin/build-win

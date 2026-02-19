@@ -60,6 +60,22 @@ export interface SceneDiff {
 }
 
 /**
+ * Saved scene-diff compare preset
+ *
+ * Presets capture baseline/compare scene pairs for quick re-selection.
+ */
+export interface SceneDiffPreset {
+  id: string;
+  name: string;
+  baseline_scene_id: string;
+  compare_scene_id: string;
+  updated_at: string;
+  preset_version?: number;
+  notes?: string;
+  preferred_conflict_action?: 'upsert' | 'rename' | 'skip';
+}
+
+/**
  * Scene metadata for listing
  */
 export interface SceneSummary {

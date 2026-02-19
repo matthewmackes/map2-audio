@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+fb387f87b2d7f67cd40c9cebd0d00caf ChorusPlugin_artefacts/JuceLibraryCode/ChorusPlugin_resources.rc

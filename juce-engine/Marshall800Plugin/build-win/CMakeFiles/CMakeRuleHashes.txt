@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+86bdd31a630e98ba0ca306883304b3a9 Marshall800Plugin_artefacts/JuceLibraryCode/Marshall800Plugin_resources.rc

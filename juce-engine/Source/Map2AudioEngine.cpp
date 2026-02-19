@@ -393,22 +393,56 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
 void Map2AudioEngine::setSampleRate(double rate) {
     sampleRate_ = rate;
     if (initialized_) {
+        // RT-SAFE FIX: Stop audio before changing sample rate
+        // Sample rate changes can trigger buffer reallocations in processors
+        bool wasRunning = audioRunning_.load(std::memory_order_acquire);
+
+        if (wasRunning) {
+            std::cout << "Stopping audio for safe sample rate change..." << std::endl;
+            stopAudio();
+        }
+
+        // Now safe to reconfigure (no RT thread active)
         audioIO_.setSampleRate(rate);
         audioGraph_->setSampleRate(rate);
-        // Fix #4: Use unified prepare method instead of individual calls
+
+        // Re-prepare all processors with new sample rate
         prepareAllProcessors(rate, bufferSize_, 2);
+
+        // Restart audio if it was running
+        if (wasRunning) {
+            std::cout << "Restarting audio with new sample rate: " << rate << " Hz" << std::endl;
+            startAudio();
+        }
     }
 }
 
 void Map2AudioEngine::setBufferSize(int size) {
     bufferSize_ = size;
     if (initialized_) {
+        // RT-SAFE FIX: Stop audio before reallocating buffers to prevent RT thread allocation
+        // Buffer reallocation can trigger heap allocation → xruns/page faults
+        bool wasRunning = audioRunning_.load(std::memory_order_acquire);
+
+        if (wasRunning) {
+            std::cout << "Stopping audio for safe buffer resize..." << std::endl;
+            stopAudio();
+        }
+
+        // Now safe to reallocate (no RT thread active)
         audioIO_.setBufferSize(size);
         audioGraph_->setBufferSize(size);
         callbackBuffer_.setSize(numOutputChannels_, std::max(size, MAX_AUDIO_BUFFER_SIZE),
                                 false, false, true);
-        // Fix #4: Use unified prepare method instead of individual calls
+
+        // Re-prepare all processors with new buffer size
         prepareAllProcessors(sampleRate_, size, 2);
+
+        // Restart audio if it was running
+        if (wasRunning) {
+            std::cout << "Restarting audio with new buffer size: " << size << std::endl;
+            startAudio();
+        }
     }
 }
 

@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/Peavey5150Plugin/build-win/Peavey5150Plugin_artefacts/JuceLibraryCode/Peavey5150Plugin_resources.rc
+windows.h
+-
+

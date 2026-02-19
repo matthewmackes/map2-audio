@@ -44,6 +44,7 @@ export type {
 export type {
   Scene,
   SceneDiff,
+  SceneDiffPreset,
   SceneSummary,
 } from './scene';
 

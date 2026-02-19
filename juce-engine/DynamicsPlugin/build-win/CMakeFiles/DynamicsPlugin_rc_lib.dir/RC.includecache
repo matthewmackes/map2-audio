@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/DynamicsPlugin/build-win/DynamicsPlugin_artefacts/JuceLibraryCode/DynamicsPlugin_resources.rc
+windows.h
+-
+

@@ -21,6 +21,7 @@ import type {
   Route,
   Endpoint,
   AuditLogEntry,
+  SceneDiffPreset,
 } from '../types';
 import {
   hasDuplicateSceneName,
@@ -39,6 +40,46 @@ function generateId(): string {
 
 function normalizeSelectedNodeIds(nodeIds: string[]): string[] {
   return Array.from(new Set(nodeIds)).sort((a, b) => a.localeCompare(b));
+}
+
+const DEFAULT_ACTOR_ID = 'user';
+
+function getCurrentActorId(): string {
+  if (typeof globalThis === 'undefined') {
+    return DEFAULT_ACTOR_ID;
+  }
+
+  const runtime = globalThis as typeof globalThis & {
+    __MAP2_AVB_ACTOR__?: unknown;
+  };
+  const runtimeActor = runtime.__MAP2_AVB_ACTOR__;
+  if (typeof runtimeActor === 'string') {
+    const normalized = runtimeActor.trim();
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+
+  return DEFAULT_ACTOR_ID;
+}
+
+function getSceneDiffPresets(state: RoutingState): SceneDiffPreset[] {
+  return state.sceneDiff.presets || [];
+}
+
+function isConflictResolutionMode(
+  value: unknown
+): value is NonNullable<SceneDiffPreset['preferred_conflict_action']> {
+  return value === 'upsert' || value === 'rename' || value === 'skip';
+}
+
+function sortSceneDiffPresets(presets: SceneDiffPreset[]): SceneDiffPreset[] {
+  return presets
+    .slice()
+    .sort((a, b) => {
+      const byName = a.name.localeCompare(b.name);
+      return byName !== 0 ? byName : a.id.localeCompare(b.id);
+    });
 }
 
 function buildSceneDiffPreview(
@@ -98,7 +139,7 @@ function createAuditEntry(
     id: generateId(),
     timestamp: new Date().toISOString(),
     event_type: type,
-    actor: 'user', // TODO: Get from auth context
+    actor: getCurrentActorId(),
     payload,
     diff_summary: summary,
     validation_outcome: outcome,
@@ -304,6 +345,7 @@ export function routingReducer(
     case 'LOCK_ROUTE': {
       const { route_id, reason } = action.payload;
       const route = state.liveRoutes[route_id];
+      const actorId = getCurrentActorId();
 
       if (!route) {
         return { ...state, error: `Route not found: ${route_id}` };
@@ -317,7 +359,7 @@ export function routingReducer(
             ...route,
             locked: true,
             lock_reason: reason,
-            locked_by: 'user', // TODO: Get from auth
+            locked_by: actorId,
             locked_at: new Date().toISOString(),
           },
         },
@@ -518,6 +560,7 @@ export function routingReducer(
         Object.values(state.scenes).map((scene) => ({ id: scene.id, name: scene.name }))
       );
       const scene_id = generateId();
+      const actorId = getCurrentActorId();
 
       const scene = {
         id: scene_id,
@@ -526,7 +569,7 @@ export function routingReducer(
         tags: normalized.tags,
         routes: Object.values(state.liveRoutes),
         timestamp: new Date().toISOString(),
-        created_by: 'user', // TODO: Get from auth
+        created_by: actorId,
       };
 
       const newState = {
@@ -604,14 +647,26 @@ export function routingReducer(
         state.sceneDiff.preview?.scene_id === scene_id ||
         state.sceneDiff.baseline_scene_id === scene_id ||
         state.sceneDiff.compare_scene_id === scene_id;
+      const retainedPresets = getSceneDiffPresets(state).filter((preset) => (
+        preset.baseline_scene_id !== scene_id &&
+        preset.compare_scene_id !== scene_id
+      ));
+      const retainedActivePresetId =
+        state.sceneDiff.active_preset_id &&
+        retainedPresets.some((preset) => preset.id === state.sceneDiff.active_preset_id)
+          ? state.sceneDiff.active_preset_id
+          : null;
 
       return {
         ...state,
         scenes: newScenes,
         sceneDiff: {
+          ...state.sceneDiff,
           baseline_scene_id: baselineSceneId,
           compare_scene_id: compareSceneId,
           preview: previewReferencesDeletedScene ? null : state.sceneDiff.preview,
+          presets: retainedPresets,
+          active_preset_id: retainedActivePresetId,
         },
         auditLog: [
           ...state.auditLog,
@@ -696,23 +751,41 @@ export function routingReducer(
     }
 
     case 'SET_SCENE_DIFF_BASELINE': {
+      const matchingPreset =
+        action.payload && state.sceneDiff.compare_scene_id
+          ? getSceneDiffPresets(state).find((preset) => (
+              preset.baseline_scene_id === action.payload &&
+              preset.compare_scene_id === state.sceneDiff.compare_scene_id
+            ))
+          : null;
+
       return {
         ...state,
         sceneDiff: {
           ...state.sceneDiff,
           baseline_scene_id: action.payload,
           preview: null,
+          active_preset_id: matchingPreset ? matchingPreset.id : null,
         },
       };
     }
 
     case 'SET_SCENE_DIFF_COMPARE': {
+      const matchingPreset =
+        state.sceneDiff.baseline_scene_id && action.payload
+          ? getSceneDiffPresets(state).find((preset) => (
+              preset.baseline_scene_id === state.sceneDiff.baseline_scene_id &&
+              preset.compare_scene_id === action.payload
+            ))
+          : null;
+
       return {
         ...state,
         sceneDiff: {
           ...state.sceneDiff,
           compare_scene_id: action.payload,
           preview: null,
+          active_preset_id: matchingPreset ? matchingPreset.id : null,
         },
       };
     }
@@ -749,10 +822,357 @@ export function routingReducer(
       return {
         ...state,
         sceneDiff: {
+          ...state.sceneDiff,
           baseline_scene_id: null,
           compare_scene_id: null,
           preview: null,
+          active_preset_id: null,
         },
+      };
+    }
+
+    case 'SAVE_SCENE_DIFF_PRESET': {
+      const baselineSceneId = state.sceneDiff.baseline_scene_id;
+      const compareSceneId = state.sceneDiff.compare_scene_id;
+      if (!baselineSceneId || !compareSceneId) {
+        return {
+          ...state,
+          error: 'Scene diff preset requires both baseline and compare scene selections',
+        };
+      }
+
+      const baselineScene = state.scenes[baselineSceneId];
+      const compareScene = state.scenes[compareSceneId];
+      if (!baselineScene || !compareScene) {
+        return {
+          ...state,
+          error: 'Scene diff preset scene selection is invalid',
+        };
+      }
+
+      const fallbackName = `${baselineScene.name} vs ${compareScene.name}`;
+      const requestedNotes = typeof action.payload.notes === 'string' ? action.payload.notes : '';
+      const validation = normalizeAndValidateSceneMetadata(
+        { name: action.payload.name || fallbackName, description: requestedNotes, tags: [] },
+        { requireName: true }
+      );
+      if (validation.errors.length > 0) {
+        return {
+          ...state,
+          error: validation.errors[0],
+        };
+      }
+
+      const normalizedPresetName = validation.normalized.name;
+      const normalizedPresetNotes = validation.normalized.description;
+      const normalizedPresetNameLower = normalizedPresetName.toLowerCase();
+      const existingPresets = getSceneDiffPresets(state);
+      const existingPreset = existingPresets.find(
+        (preset) => preset.name.toLowerCase() === normalizedPresetNameLower
+      );
+      const incomingVersion = action.payload.preset_version;
+      const normalizedPresetVersion =
+        typeof incomingVersion === 'number' && Number.isFinite(incomingVersion) && incomingVersion > 0
+          ? Math.floor(incomingVersion)
+          : existingPreset?.preset_version || 1;
+      const normalizedPreferredConflictAction =
+        isConflictResolutionMode(action.payload.preferred_conflict_action)
+          ? action.payload.preferred_conflict_action
+          : existingPreset?.preferred_conflict_action;
+      const presetId = existingPreset ? existingPreset.id : generateId();
+      const mode = existingPreset ? 'updated' : 'created';
+      const nextPreset = {
+        id: presetId,
+        name: normalizedPresetName,
+        baseline_scene_id: baselineSceneId,
+        compare_scene_id: compareSceneId,
+        updated_at: new Date().toISOString(),
+        preset_version: normalizedPresetVersion,
+        notes: normalizedPresetNotes || undefined,
+        preferred_conflict_action: normalizedPreferredConflictAction,
+      };
+      const nextPresets = sortSceneDiffPresets(
+        existingPreset
+          ? existingPresets.map((preset) => (preset.id === presetId ? nextPreset : preset))
+          : [...existingPresets, nextPreset]
+      );
+
+      const newState = {
+        ...state,
+        error: null,
+        sceneDiff: {
+          ...state.sceneDiff,
+          presets: nextPresets,
+          active_preset_id: presetId,
+        },
+        auditLog: [
+          ...state.auditLog,
+          createAuditEntry(
+            'SCENE_DIFF',
+            {
+              preset_id: presetId,
+              preset_name: normalizedPresetName,
+              baseline_scene_id: baselineSceneId,
+              compare_scene_id: compareSceneId,
+              notes: normalizedPresetNotes,
+              preset_version: normalizedPresetVersion,
+              preferred_conflict_action: normalizedPreferredConflictAction,
+              mode,
+            },
+            `${mode === 'created' ? 'Saved' : 'Updated'} scene diff preset: ${normalizedPresetName}`
+          ),
+        ],
+      };
+
+      return saveToHistory(state, newState);
+    }
+
+    case 'APPLY_SCENE_DIFF_PRESET': {
+      const existingPresets = getSceneDiffPresets(state);
+      const preset = existingPresets.find(
+        (entry) => entry.id === action.payload.preset_id
+      );
+      if (!preset) {
+        return {
+          ...state,
+          error: `Scene diff preset not found: ${action.payload.preset_id}`,
+        };
+      }
+      if (!state.scenes[preset.baseline_scene_id] || !state.scenes[preset.compare_scene_id]) {
+        const retainedPresets = existingPresets.filter((entry) => entry.id !== preset.id);
+        const newState = {
+          ...state,
+          error: `Scene diff preset "${preset.name}" references missing scenes and was removed`,
+          sceneDiff: {
+            ...state.sceneDiff,
+            presets: retainedPresets,
+            active_preset_id:
+              state.sceneDiff.active_preset_id === preset.id
+                ? null
+                : state.sceneDiff.active_preset_id || null,
+          },
+          auditLog: [
+            ...state.auditLog,
+            createAuditEntry(
+              'SCENE_DIFF',
+              {
+                preset_id: preset.id,
+                preset_name: preset.name,
+                mode: 'stale_removed',
+              },
+              `Removed stale scene diff preset: ${preset.name}`,
+              'warning'
+            ),
+          ],
+        };
+
+        return saveToHistory(state, newState);
+      }
+
+      return {
+        ...state,
+        error: null,
+        sceneDiff: {
+          ...state.sceneDiff,
+          baseline_scene_id: preset.baseline_scene_id,
+          compare_scene_id: preset.compare_scene_id,
+          preview: null,
+          active_preset_id: preset.id,
+        },
+      };
+    }
+
+    case 'DELETE_SCENE_DIFF_PRESET': {
+      const existingPresets = getSceneDiffPresets(state);
+      const preset = existingPresets.find((entry) => entry.id === action.payload.preset_id);
+      if (!preset) {
+        return state;
+      }
+
+      const nextPresets = existingPresets.filter((entry) => entry.id !== preset.id);
+      const newState = {
+        ...state,
+        error: null,
+        sceneDiff: {
+          ...state.sceneDiff,
+          presets: nextPresets,
+          active_preset_id:
+            state.sceneDiff.active_preset_id === preset.id
+              ? null
+              : state.sceneDiff.active_preset_id || null,
+        },
+        auditLog: [
+          ...state.auditLog,
+          createAuditEntry(
+            'SCENE_DIFF',
+            {
+              preset_id: preset.id,
+              preset_name: preset.name,
+              mode: 'deleted',
+            },
+            `Deleted scene diff preset: ${preset.name}`
+          ),
+        ],
+      };
+
+      return saveToHistory(state, newState);
+    }
+
+    case 'IMPORT_SCENE_DIFF_PRESETS': {
+      const existingPresets = getSceneDiffPresets(state);
+      let nextPresets = existingPresets.slice();
+      const nameToPresetId = new Map(
+        existingPresets.map((preset) => [preset.name.toLowerCase(), preset.id])
+      );
+
+      let importedCount = 0;
+      let skippedCount = 0;
+
+      action.payload.presets.forEach((presetInput) => {
+        if (!state.scenes[presetInput.baseline_scene_id] || !state.scenes[presetInput.compare_scene_id]) {
+          skippedCount += 1;
+          return;
+        }
+
+        const hasNotesField = typeof presetInput.notes === 'string';
+        const rawNotes = hasNotesField ? presetInput.notes : '';
+        const validation = normalizeAndValidateSceneMetadata(
+          { name: presetInput.name, description: rawNotes, tags: [] },
+          { requireName: true }
+        );
+        if (validation.errors.length > 0) {
+          skippedCount += 1;
+          return;
+        }
+
+        const normalizedName = validation.normalized.name;
+        const normalizedNotes = validation.normalized.description;
+        const normalizedNameLower = normalizedName.toLowerCase();
+        const existingId = nameToPresetId.get(normalizedNameLower);
+        const existingPreset = existingId
+          ? nextPresets.find((preset) => preset.id === existingId)
+          : null;
+        const incomingVersion = presetInput.preset_version;
+        const normalizedVersion =
+          typeof incomingVersion === 'number' && Number.isFinite(incomingVersion) && incomingVersion > 0
+            ? Math.floor(incomingVersion)
+            : existingPreset?.preset_version || 1;
+        const preferredConflictAction = isConflictResolutionMode(presetInput.preferred_conflict_action)
+          ? presetInput.preferred_conflict_action
+          : existingPreset?.preferred_conflict_action;
+        const nextPreset = {
+          id: existingId || generateId(),
+          name: normalizedName,
+          baseline_scene_id: presetInput.baseline_scene_id,
+          compare_scene_id: presetInput.compare_scene_id,
+          updated_at: new Date().toISOString(),
+          preset_version: normalizedVersion,
+          notes: hasNotesField
+            ? (normalizedNotes || undefined)
+            : existingPreset?.notes,
+          preferred_conflict_action: preferredConflictAction,
+        };
+
+        if (existingId) {
+          nextPresets = nextPresets.map((preset) => (preset.id === existingId ? nextPreset : preset));
+        } else {
+          nextPresets = [...nextPresets, nextPreset];
+          nameToPresetId.set(normalizedNameLower, nextPreset.id);
+        }
+        importedCount += 1;
+      });
+
+      if (importedCount === 0) {
+        return {
+          ...state,
+          error: 'No valid scene diff presets to import',
+        };
+      }
+
+      const sortedPresets = sortSceneDiffPresets(nextPresets);
+      const nextActivePresetId =
+        state.sceneDiff.active_preset_id &&
+        sortedPresets.some((preset) => preset.id === state.sceneDiff.active_preset_id)
+          ? state.sceneDiff.active_preset_id
+          : null;
+      const newState = {
+        ...state,
+        error: null,
+        sceneDiff: {
+          ...state.sceneDiff,
+          presets: sortedPresets,
+          active_preset_id: nextActivePresetId,
+        },
+        auditLog: [
+          ...state.auditLog,
+          createAuditEntry(
+            'SCENE_DIFF',
+            {
+              mode: 'import',
+              imported_count: importedCount,
+              skipped_count: skippedCount,
+            },
+            `Imported ${importedCount} scene diff preset${importedCount === 1 ? '' : 's'}`
+          ),
+        ],
+      };
+
+      return saveToHistory(state, newState);
+    }
+
+    case 'SWAP_SCENE_DIFF_SELECTION': {
+      const baselineSceneId = state.sceneDiff.baseline_scene_id;
+      const compareSceneId = state.sceneDiff.compare_scene_id;
+      if (!baselineSceneId || !compareSceneId) {
+        return {
+          ...state,
+          error: 'Scene diff swap requires both baseline and compare scene selections',
+        };
+      }
+
+      return {
+        ...state,
+        error: null,
+        sceneDiff: {
+          ...state.sceneDiff,
+          baseline_scene_id: compareSceneId,
+          compare_scene_id: baselineSceneId,
+          preview: null,
+          active_preset_id: null,
+        },
+      };
+    }
+
+    case 'LOG_SCENE_DIFF_PRESET_PREVIEW': {
+      const { phase } = action.payload;
+      const sourceCount =
+        typeof action.payload.source_count === 'number' && Number.isFinite(action.payload.source_count)
+          ? Math.floor(action.payload.source_count)
+          : null;
+      const summaryPrefix =
+        phase === 'opened'
+          ? 'Opened'
+          : phase === 'refreshed'
+            ? 'Refreshed'
+            : 'Cancelled';
+      const summary = sourceCount === null
+        ? `${summaryPrefix} scene diff preset import preview`
+        : `${summaryPrefix} scene diff preset import preview (${sourceCount} row${sourceCount === 1 ? '' : 's'})`;
+
+      return {
+        ...state,
+        auditLog: [
+          ...state.auditLog,
+          createAuditEntry(
+            'SCENE_DIFF',
+            {
+              ...action.payload,
+              mode: `preset_import_preview_${phase}`,
+            },
+            summary,
+            phase === 'cancelled' ? 'warning' : 'success'
+          ),
+        ],
       };
     }
 

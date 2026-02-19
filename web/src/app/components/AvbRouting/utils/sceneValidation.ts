@@ -3,17 +3,24 @@ export const SCENE_DESCRIPTION_MAX_LENGTH = 280;
 export const SCENE_MAX_TAGS = 8;
 export const SCENE_TAG_MAX_LENGTH = 24;
 
-const CONTROL_CHARS_PATTERN = /[\u0000-\u001F\u007F]/g;
 const RESERVED_CHARS_PATTERN = /[<>`|\\]/g;
 
 function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function stripControlCharacters(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return code >= 0x20 && code !== 0x7f;
+    })
+    .join('');
+}
+
 function normalizeCommon(value: string): string {
   return collapseWhitespace(
-    value
-      .replace(CONTROL_CHARS_PATTERN, '')
+    stripControlCharacters(value)
       .replace(RESERVED_CHARS_PATTERN, ' ')
   );
 }
@@ -112,4 +119,33 @@ export function hasDuplicateSceneName(
     scene.id !== excludeSceneId &&
     normalizeSceneName(scene.name).toLowerCase() === normalizedName
   ));
+}
+
+export function generateUniqueSceneName(
+  sceneName: string,
+  scenes: Array<{ id: string; name: string }>,
+  options?: { excludeSceneId?: string }
+): string {
+  const normalizedName = normalizeSceneName(sceneName);
+  if (!normalizedName) {
+    return normalizedName;
+  }
+  if (!hasDuplicateSceneName(normalizedName, scenes, options)) {
+    return normalizedName;
+  }
+
+  const rootName = normalizedName.replace(/\s\(\d+\)$/g, '');
+  let suffixIndex = 2;
+  while (suffixIndex < 1000) {
+    const suffix = ` (${suffixIndex})`;
+    const maxRootLength = Math.max(1, SCENE_NAME_MAX_LENGTH - suffix.length);
+    const candidateRoot = rootName.slice(0, maxRootLength).trimEnd();
+    const candidateName = `${candidateRoot}${suffix}`;
+    if (!hasDuplicateSceneName(candidateName, scenes, options)) {
+      return candidateName;
+    }
+    suffixIndex += 1;
+  }
+
+  return normalizedName;
 }

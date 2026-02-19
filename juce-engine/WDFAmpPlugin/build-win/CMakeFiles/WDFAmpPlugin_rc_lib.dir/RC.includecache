@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/build-win/WDFAmpPlugin_artefacts/JuceLibraryCode/WDFAmpPlugin_resources.rc
+windows.h
+-
+

@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/Marshall800Plugin/build-win/Marshall800Plugin_artefacts/JuceLibraryCode/Marshall800Plugin_resources.rc
+windows.h
+-
+
