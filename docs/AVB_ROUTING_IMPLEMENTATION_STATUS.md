@@ -623,9 +623,19 @@
 - Operations guide now includes explicit remote scene-sync troubleshooting for invalidated baseline/compare selections and preset references:
   - `docs/OPERATIONS_GUIDE.md`
   - documents symptoms (`Baseline: None`, `Compare: Missing`, readiness downgrade), and a step-by-step remediation flow covering delete-audit verification, scene re-selection, diff regeneration, and preset refresh/export after sync churn
+- Operations guide now includes a focused playbook for remote scene-sync events during in-progress import preview sessions:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents refresh-first import behavior, post-refresh conflict-plan reapplication, selection revalidation (`Baseline: None` / `Compare: Missing`), and expected preview lifecycle audit ordering under concurrent remote delete/update churn
 - TopBar/provider integration coverage now asserts scene-diff import preview refresh determinism when remote scene-sync churn invalidates referenced scenes mid-session:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates in-progress import preview sessions recalculate from deterministic defaults after remote compare-scene update + baseline deletion churn, including refreshed accepted/conflict/skipped outcomes, conflict-plan reset, and lifecycle audit `opened -> refreshed` sequencing
+- Provider/reducer coverage now asserts remote scene-sync race windows keep preview-cancellation sequencing deterministic while stale presets are remediated:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates `preview opened -> remote compare update -> remote baseline delete -> preview cancelled` sequencing preserves deterministic audit ordering, non-mutating preview-history behavior, and stale-preset cleanup in the same sync window
+- TopBar/provider integration coverage now asserts scene-audit quick-filter chip determinism after remote sync mutations while controls remain open:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates quick chips (`All`/`Errors`/`Warnings`/`Deletes`/`Diff Preview`) deterministically override stale remembered filters and produce stable summaries after remote compare-update + baseline-delete churn in-session
 
 ---
 
@@ -633,7 +643,7 @@
 
 - `npm --prefix web run typecheck` passes (2026-02-19).
 - `npm --prefix web run build` passes (2026-02-18).
-- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `209` tests.
+- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `212` tests.
 
 ---
 
@@ -649,6 +659,6 @@
 
 ## Next Recommended Slice
 
-1. Add reducer/provider coverage for remote scene-sync race windows where stale-preset remediation and preview lifecycle cancellation events are emitted in the same refresh cycle.
-2. Add TopBar/provider coverage for scene-audit quick-filter chip determinism (`All`/`Errors`/`Warnings`/`Deletes`/`Diff Preview`) after remote scene-sync mutations while controls remain open.
-3. Extend operator docs with a focused remote scene-sync playbook for in-progress scene-diff import preview sessions (what to refresh, what to discard, what to re-save).
+1. Add TopBar/provider coverage for keyboard-activation parity of scene-audit quick-filter chips under remote scene-sync mutation windows.
+2. Add reducer/provider coverage for remote scene-sync windows that emit preview `refreshed` followed by `cancelled` lifecycle events while scene inventories are concurrently reduced.
+3. Add integration coverage for remote scene-sync windows that mutate scene inventories while `Remember Audit Filters` is enabled and quick chips are toggled repeatedly in the same session.

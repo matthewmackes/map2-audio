@@ -597,6 +597,16 @@ Troubleshooting:
     3. if compare-scene metadata changed, reopen `Scene Diff` and reselect baseline/compare using current scene names
     4. run `Generate Diff` again to rebuild preview state after the sync window
     5. if presets were remediated (removed), save a fresh preset pair and export the refreshed preset set
+- Remote scene sync occurs while `Preview JSON` is already open:
+  - quick playbook:
+    1. keep the popover open and rerun `Preview JSON` once remote churn settles (do not import from a stale preview table)
+    2. confirm preview counters and rows are recalculated (accepted/conflict/skipped may change after scene inventory updates)
+    3. if conflict actions or rename drafts were edited before the sync event, re-apply those choices after refresh (refresh resets preview planning state)
+    4. review scene status strip for `Baseline: None` / `Compare: Missing`; reselect baseline/compare scenes if needed
+    5. only then run `Import JSON`, and immediately save/export refreshed presets for handoff consistency
+  - expected audit behavior:
+    - preview lifecycle entries remain ordered (`opened`/`refreshed`/`cancelled`) even when remote scene delete/update events occur in the same window
+    - scene delete/update audit entries stay visible via quick chips (`Deletes`, `Warnings`) without needing to close the popover
 - Too many scene audit rows:
   - use status-strip counters (`Errors`, `Warnings`, `Deletes`, `Diff Preview Warnings`) to open scene controls with pre-filtered audit views
   - counters support keyboard activation (`Enter` / `Space`) for keyboard-only triage flows

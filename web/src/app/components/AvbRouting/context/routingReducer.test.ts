@@ -1326,6 +1326,123 @@ describe('routingReducer scene diff foundations', () => {
     expect(next.history.past.length).toBe(1)
   })
 
+  it('keeps preview-cancellation audit ordering deterministic when remote stale-preset remediation occurs in the same sync window', () => {
+    const routeA = makeConnectedRoute('talker-1→listener-1')
+    const routeB = makeConnectedRoute('talker-2→listener-2')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Baseline Scene', [routeA]),
+        'scene-b': makeScene('scene-b', 'Compare Scene', [routeA, routeB]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: {
+          scene_id: 'scene-b',
+          scene_name: 'Compare Scene',
+          to_add: [{ talker_id: 'talker-2', listener_id: 'listener-2' }],
+          to_remove: [],
+          unchanged: ['talker-1→listener-1'],
+          total_changes: 1,
+        },
+        presets: [
+          {
+            id: 'preset-live',
+            name: 'Live Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-stale-active',
+            name: 'Stale Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-missing',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+        active_preset_id: 'preset-stale-active',
+      },
+      liveRoutes: {
+        [routeA.id]: routeA,
+      },
+    }
+
+    const withPreviewOpened = routingReducer(state, {
+      type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+      payload: {
+        phase: 'opened',
+        source_count: 5,
+        accepted_count: 3,
+        conflict_count: 1,
+        skipped_count: 1,
+        preferred_conflict_action: 'rename',
+      },
+    })
+    const withRemoteCompareUpdate = routingReducer(withPreviewOpened, {
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: 'scene-b',
+        name: 'Compare Scene Remote',
+        description: 'remote compare update',
+        tags: ['compare', 'remote'],
+      },
+    })
+    const withRemoteBaselineDelete = routingReducer(withRemoteCompareUpdate, {
+      type: 'DELETE_SCENE',
+      payload: { scene_id: 'scene-a' },
+    })
+    const next = routingReducer(withRemoteBaselineDelete, {
+      type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+      payload: {
+        phase: 'cancelled',
+        reason: 'popover_closed',
+        source_count: 4,
+        accepted_count: 2,
+        conflict_count: 1,
+        skipped_count: 1,
+        preferred_conflict_action: 'rename',
+      },
+    })
+
+    expect(next.scenes['scene-a']).toBeUndefined()
+    expect(next.scenes['scene-b']?.name).toBe('Compare Scene Remote')
+    expect(next.sceneDiff.baseline_scene_id).toBeNull()
+    expect(next.sceneDiff.compare_scene_id).toBe('scene-b')
+    expect(next.sceneDiff.preview).toBeNull()
+    expect(next.sceneDiff.presets).toEqual([])
+    expect(next.sceneDiff.active_preset_id).toBeNull()
+    expect(next.history.past.length).toBe(1)
+    expect(next.history.future.length).toBe(0)
+
+    const sceneOperationEntries = next.auditLog.filter((entry) => (
+      entry.event_type === 'UPDATE_SCENE' ||
+      entry.event_type === 'DELETE_SCENE'
+    ))
+    expect(sceneOperationEntries).toHaveLength(2)
+    expect(sceneOperationEntries.map((entry) => entry.event_type)).toEqual([
+      'UPDATE_SCENE',
+      'DELETE_SCENE',
+    ])
+
+    const previewLifecycleEntries = next.auditLog.filter((entry) => (
+      entry.event_type === 'SCENE_DIFF' &&
+      typeof entry.payload.mode === 'string' &&
+      entry.payload.mode.startsWith('preset_import_preview_')
+    ))
+    expect(previewLifecycleEntries).toHaveLength(2)
+    expect(previewLifecycleEntries.map((entry) => `${entry.payload.phase}:${entry.payload.reason || 'none'}`)).toEqual([
+      'opened:none',
+      'cancelled:popover_closed',
+    ])
+    expect(previewLifecycleEntries.map((entry) => entry.validation_outcome)).toEqual([
+      'success',
+      'warning',
+    ])
+  })
+
   it('imports scene diff presets with deterministic upsert and skip behavior', () => {
     const route = makeConnectedRoute('talker-1→listener-1')
     const state = {
