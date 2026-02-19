@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **765** TypeScript | **243** C++/H | **87** Docs | **300** total commits | **0** stars | **0** forks | **0** open issues
+**550** Python | **765** TypeScript | **243** C++/H | **87** Docs | **302** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bcbdb287`](https://github.com/matthewmackes/map2-audio/commit/bcbdb287296671222c2f9be90979e9da6ec190cc) | test: cover remote scene-sync race and quick-filter deter... | Map2 Audio | 2026-02-19 |
+| [`334b4b12`](https://github.com/matthewmackes/map2-audio/commit/334b4b1214e8ad0c70c82f9d57c7557855bca997) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`6448b0b0`](https://github.com/matthewmackes/map2-audio/commit/6448b0b04fc833b258a1cf5cf3fcbe429608596c) | test: expand remote scene-sync and preview churn coverage | Map2 Audio | 2026-02-19 |
 | [`82972ae4`](https://github.com/matthewmackes/map2-audio/commit/82972ae456b15bc2ae1a734bd968773acd401be2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`aa7796c6`](https://github.com/matthewmackes/map2-audio/commit/aa7796c6bb183fc536b7bec7f38cdde250b6600b) | test: expand AVB scene sync audit coverage | Map2 Audio | 2026-02-19 |
 | [`d478a91b`](https://github.com/matthewmackes/map2-audio/commit/d478a91be45ef3a613e794ff54dd3efd3e04b7ac) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`6949e75c`](https://github.com/matthewmackes/map2-audio/commit/6949e75c3b17e4feeb54bfefa6622b91b7c9bf65) | Commit all pending updates | Map2 Audio | 2026-02-19 |
 | [`b22bb4c0`](https://github.com/matthewmackes/map2-audio/commit/b22bb4c0f93d5148bc9991b91cdd7cf2a0378ac8) | Add TopBar refresh reset coverage for conflict overrides | Map2 Audio | 2026-02-19 |
-| [`00374418`](https://github.com/matthewmackes/map2-audio/commit/003744186007b25f6fe5dd35f69e8102d1a84e10) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
-| [`a7c76438`](https://github.com/matthewmackes/map2-audio/commit/a7c764381179f07fc1ff9e483f990e56904cfc3d) | Add AVB TopBar coverage for refresh lifecycle and audit-f... | Map2 Audio | 2026-02-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
