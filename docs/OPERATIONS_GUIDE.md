@@ -592,6 +592,17 @@ Troubleshooting:
   - use the `Search Operations` field and `Outcome` filter in the scene popover to narrow to matching save/recall/delete/update events
   - enable `Remember Audit Filters` to persist current search/outcome filters across scene popover close/reopen cycles
   - use quick chips (`All`, `Errors`, `Warnings`, `Deletes`) for one-click filter presets during live operations
+- Counter result does not match remembered filters:
+  - expected precedence: status-strip counter presets override stale remembered filters when opening scene controls
+  - `Errors`: clears search, forces `Outcome=error`, disables diff-preview-only mode
+  - `Warnings`: clears search, forces `Outcome=warning`, disables diff-preview-only mode
+  - `Deletes`: sets search to `delete`, forces `Outcome=all`, disables diff-preview-only mode
+  - `Diff Preview Warnings`: clears search, enables diff-preview-only mode, forces `Outcome=warning`
+  - troubleshooting flow:
+    1. activate the intended counter from the status strip (pointer click or `Enter` / `Space`)
+    2. verify `Search Operations`, `Outcome`, and summary text (`x of y matching (z total)`) reflect the counter preset
+    3. if stale filters remain, toggle off `Remember Audit Filters`, close the scene popover, and reopen via the same counter
+    4. confirm the preset is reapplied before re-enabling `Remember Audit Filters`
 
 ---
 
@@ -616,6 +627,6 @@ Troubleshooting:
 
 ---
 
-**Last Updated**: February 18, 2026  
+**Last Updated**: February 19, 2026  
 **Version**: 2.0  
 **Status**: All operations current and validated

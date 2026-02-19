@@ -378,6 +378,125 @@ function SceneDiffProbe() {
   )
 }
 
+function SceneSyncAuditProbe() {
+  const { state, dispatch } = useRouting()
+  const sceneEntries = Object.values(state.scenes)
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const sceneSummary = sceneEntries.map((scene) => `${scene.name}:${scene.id}`).join('|') || 'none'
+  const baselineSceneId = state.sceneDiff.baseline_scene_id
+  const compareSceneId = state.sceneDiff.compare_scene_id
+  const baselineSceneName = baselineSceneId ? (state.scenes[baselineSceneId]?.name || 'missing') : 'none'
+  const compareSceneName = compareSceneId ? (state.scenes[compareSceneId]?.name || 'missing') : 'none'
+  const selectionValidity = !baselineSceneId || !compareSceneId
+    ? 'incomplete'
+    : (!state.scenes[baselineSceneId] || !state.scenes[compareSceneId] ? 'stale' : 'ready')
+  const previewSummary = state.sceneDiff.preview
+    ? `${state.sceneDiff.preview.total_changes}`
+    : 'none'
+  const sceneOperationEntries = state.auditLog.filter((entry) => (
+    entry.event_type === 'SAVE_SCENE' ||
+    entry.event_type === 'RECALL_SCENE' ||
+    entry.event_type === 'DELETE_SCENE' ||
+    entry.event_type === 'UPDATE_SCENE'
+  ))
+  const sceneAuditWarnings = sceneOperationEntries.filter((entry) => entry.validation_outcome === 'warning').length
+  const sceneAuditErrors = sceneOperationEntries.filter((entry) => entry.validation_outcome === 'error').length
+  const sceneAuditDeletes = sceneOperationEntries.filter((entry) => entry.event_type === 'DELETE_SCENE').length
+  const sceneAuditSequence = sceneOperationEntries.map((entry) => entry.event_type).join('|') || 'none'
+
+  const baselineByName = sceneEntries.find((scene) => scene.name === 'Baseline Scene')?.id || null
+  const compareByName = sceneEntries.find((scene) => scene.name === 'Compare Scene')?.id || null
+
+  return (
+    <div>
+      <span data-testid="scene-sync-scenes">{sceneSummary}</span>
+      <span data-testid="scene-sync-baseline">{baselineSceneName}</span>
+      <span data-testid="scene-sync-compare">{compareSceneName}</span>
+      <span data-testid="scene-sync-selection-validity">{selectionValidity}</span>
+      <span data-testid="scene-sync-preview-summary">{previewSummary}</span>
+      <span data-testid="scene-sync-audit-sequence">{sceneAuditSequence}</span>
+      <span data-testid="scene-sync-audit-warnings">{String(sceneAuditWarnings)}</span>
+      <span data-testid="scene-sync-audit-errors">{String(sceneAuditErrors)}</span>
+      <span data-testid="scene-sync-audit-deletes">{String(sceneAuditDeletes)}</span>
+
+      <button
+        data-testid="scene-sync-set-baseline"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_BASELINE', payload: baselineByName })}
+      >
+        sync-set-baseline
+      </button>
+      <button
+        data-testid="scene-sync-set-compare"
+        type="button"
+        onClick={() => dispatch({ type: 'SET_SCENE_DIFF_COMPARE', payload: compareByName })}
+      >
+        sync-set-compare
+      </button>
+      <button
+        data-testid="scene-sync-generate"
+        type="button"
+        onClick={() => dispatch({ type: 'GENERATE_SCENE_DIFF' })}
+      >
+        sync-generate
+      </button>
+      <button
+        data-testid="scene-sync-remote-save"
+        type="button"
+        onClick={() => dispatch({
+          type: 'SAVE_SCENE',
+          payload: {
+            name: 'Remote Sync Scene',
+            description: 'remote scene add',
+            tags: ['remote'],
+          },
+        })}
+      >
+        sync-remote-save
+      </button>
+      <button
+        data-testid="scene-sync-remote-update-compare"
+        type="button"
+        onClick={() => {
+          const targetSceneId = state.sceneDiff.compare_scene_id || compareByName
+          if (!targetSceneId) {
+            return
+          }
+          const compareScene = state.scenes[targetSceneId]
+          if (!compareScene) {
+            return
+          }
+          dispatch({
+            type: 'UPDATE_SCENE_METADATA',
+            payload: {
+              scene_id: targetSceneId,
+              name: 'Compare Scene Remote',
+              description: 'remote compare update',
+              tags: ['compare', 'remote'],
+            },
+          })
+        }}
+      >
+        sync-remote-update-compare
+      </button>
+      <button
+        data-testid="scene-sync-remote-delete-baseline"
+        type="button"
+        onClick={() => {
+          const targetSceneId = baselineByName || state.sceneDiff.baseline_scene_id
+          if (!targetSceneId) {
+            return
+          }
+          dispatch({ type: 'DELETE_SCENE', payload: { scene_id: targetSceneId } })
+        }}
+      >
+        sync-remote-delete-baseline
+      </button>
+    </div>
+  )
+}
+
 function SceneDiffPreviewLifecycleProbe() {
   const { state, dispatch } = useRouting()
   const previewLifecycleEntries = state.auditLog.filter((entry) => {
@@ -2804,6 +2923,141 @@ describe('RoutingContext API/reducer integration', () => {
       expect(screen.getByTestId('scene-diff-baseline').textContent).toBe('none')
       expect(screen.getByTestId('scene-diff-compare').textContent).toBe('none')
       expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('none')
+    })
+  })
+
+  it('preserves deterministic scene-diff validity and scene-audit counters during remote scene add/update/delete sync churn', async () => {
+    mockLocalNodeId = 'node-a'
+    mockEndpointsData = undefined
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'online' }),
+    ]
+    mockConnectionsData = undefined
+
+    const routeA = {
+      id: 'talker-1→listener-1',
+      talker_id: 'talker-1',
+      listener_id: 'listener-1',
+      state: 'connected' as const,
+      established_time: '2026-02-17T05:00:00Z',
+      error_message: null,
+      connection_count: 1,
+      srp_reservation_id: null,
+      srp_admission_id: null,
+      locked: false,
+      valid: true,
+      messages: [],
+      talker_node_id: 'node-a',
+      listener_node_id: 'node-b',
+      cross_node: true,
+    }
+    const routeB = {
+      id: 'talker-2→listener-2',
+      talker_id: 'talker-2',
+      listener_id: 'listener-2',
+      state: 'connected' as const,
+      established_time: '2026-02-17T05:01:00Z',
+      error_message: null,
+      connection_count: 1,
+      srp_reservation_id: null,
+      srp_admission_id: null,
+      locked: false,
+      valid: true,
+      messages: [],
+      talker_node_id: 'node-a',
+      listener_node_id: 'node-b',
+      cross_node: true,
+    }
+
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [routeA],
+          timestamp: '2026-02-17T05:02:00Z',
+          tags: ['baseline'],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [routeA, routeB],
+          timestamp: '2026-02-17T05:03:00Z',
+          tags: ['compare'],
+        },
+      },
+      endpoints: {
+        'talker-1': makeEndpoint({
+          endpoint_id: 'talker-1',
+          node_id: 'node-a',
+          direction: 'talker',
+          unique_id: 1,
+        }),
+        'listener-1': makeEndpoint({
+          endpoint_id: 'listener-1',
+          node_id: 'node-b',
+          direction: 'listener',
+          unique_id: 2,
+        }),
+        'talker-2': makeEndpoint({
+          endpoint_id: 'talker-2',
+          node_id: 'node-a',
+          direction: 'talker',
+          unique_id: 3,
+        }),
+        'listener-2': makeEndpoint({
+          endpoint_id: 'listener-2',
+          node_id: 'node-b',
+          direction: 'listener',
+          unique_id: 4,
+        }),
+      },
+      liveRoutes: {
+        [routeA.id]: routeA,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <SceneSyncAuditProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('scene-sync-set-baseline'))
+    fireEvent.click(screen.getByTestId('scene-sync-set-compare'))
+    fireEvent.click(screen.getByTestId('scene-sync-generate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-sync-baseline').textContent).toBe('Baseline Scene')
+      expect(screen.getByTestId('scene-sync-compare').textContent).toBe('Compare Scene')
+      expect(screen.getByTestId('scene-sync-selection-validity').textContent).toBe('ready')
+      expect(screen.getByTestId('scene-sync-preview-summary').textContent).toBe('1')
+      expect(screen.getByTestId('scene-sync-audit-sequence').textContent).toBe('none')
+      expect(screen.getByTestId('scene-sync-audit-warnings').textContent).toBe('0')
+      expect(screen.getByTestId('scene-sync-audit-errors').textContent).toBe('0')
+      expect(screen.getByTestId('scene-sync-audit-deletes').textContent).toBe('0')
+    })
+
+    fireEvent.click(screen.getByTestId('scene-sync-remote-save'))
+    fireEvent.click(screen.getByTestId('scene-sync-remote-update-compare'))
+    fireEvent.click(screen.getByTestId('scene-sync-remote-delete-baseline'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-sync-scenes').textContent).toContain('Compare Scene Remote:scene-b')
+      expect(screen.getByTestId('scene-sync-scenes').textContent).toContain('Remote Sync Scene:')
+      expect(screen.getByTestId('scene-sync-scenes').textContent).not.toContain('Baseline Scene:scene-a')
+      expect(screen.getByTestId('scene-sync-baseline').textContent).toBe('none')
+      expect(screen.getByTestId('scene-sync-compare').textContent).toBe('Compare Scene Remote')
+      expect(screen.getByTestId('scene-sync-selection-validity').textContent).toBe('incomplete')
+      expect(screen.getByTestId('scene-sync-preview-summary').textContent).toBe('none')
+      expect(screen.getByTestId('scene-sync-audit-sequence').textContent).toBe('SAVE_SCENE|UPDATE_SCENE|DELETE_SCENE')
+      expect(screen.getByTestId('scene-sync-audit-warnings').textContent).toBe('0')
+      expect(screen.getByTestId('scene-sync-audit-errors').textContent).toBe('0')
+      expect(screen.getByTestId('scene-sync-audit-deletes').textContent).toBe('1')
     })
   })
 

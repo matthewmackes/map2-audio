@@ -1168,6 +1168,80 @@ describe('routingReducer scene diff foundations', () => {
     expect(next.history.past.length).toBe(1)
   })
 
+  it('keeps scene-diff validity and scene-audit counters deterministic across remote-style save/update/delete churn', () => {
+    const routeA = makeConnectedRoute('talker-1→listener-1')
+    const routeB = makeConnectedRoute('talker-2→listener-2')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Baseline Scene', [routeA]),
+        'scene-b': makeScene('scene-b', 'Compare Scene', [routeA, routeB]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: {
+          scene_id: 'scene-b',
+          scene_name: 'Compare Scene',
+          to_add: [{ talker_id: 'talker-2', listener_id: 'listener-2' }],
+          to_remove: [],
+          unchanged: ['talker-1→listener-1'],
+          total_changes: 1,
+        },
+      },
+      liveRoutes: {
+        [routeA.id]: routeA,
+      },
+    }
+
+    const withRemoteSave = routingReducer(state, {
+      type: 'SAVE_SCENE',
+      payload: {
+        name: 'Remote Sync Scene',
+        description: 'remote scene add',
+        tags: ['remote'],
+      },
+    })
+
+    const withRemoteUpdate = routingReducer(withRemoteSave, {
+      type: 'UPDATE_SCENE_METADATA',
+      payload: {
+        scene_id: 'scene-b',
+        name: 'Compare Scene Remote',
+        description: 'remote compare update',
+        tags: ['compare', 'remote'],
+      },
+    })
+
+    const next = routingReducer(withRemoteUpdate, {
+      type: 'DELETE_SCENE',
+      payload: { scene_id: 'scene-a' },
+    })
+
+    expect(next.scenes['scene-a']).toBeUndefined()
+    expect(Object.values(next.scenes).some((scene) => scene.name === 'Remote Sync Scene')).toBe(true)
+    expect(next.scenes['scene-b']?.name).toBe('Compare Scene Remote')
+    expect(next.sceneDiff.baseline_scene_id).toBeNull()
+    expect(next.sceneDiff.compare_scene_id).toBe('scene-b')
+    expect(next.sceneDiff.preview).toBeNull()
+
+    const sceneOperationEntries = next.auditLog.filter((entry) => (
+      entry.event_type === 'SAVE_SCENE' ||
+      entry.event_type === 'UPDATE_SCENE' ||
+      entry.event_type === 'DELETE_SCENE'
+    ))
+    expect(sceneOperationEntries).toHaveLength(3)
+    expect(sceneOperationEntries.map((entry) => entry.event_type)).toEqual([
+      'SAVE_SCENE',
+      'UPDATE_SCENE',
+      'DELETE_SCENE',
+    ])
+    expect(sceneOperationEntries.filter((entry) => entry.validation_outcome === 'warning')).toHaveLength(0)
+    expect(sceneOperationEntries.filter((entry) => entry.validation_outcome === 'error')).toHaveLength(0)
+    expect(sceneOperationEntries.filter((entry) => entry.event_type === 'DELETE_SCENE')).toHaveLength(1)
+  })
+
   it('imports scene diff presets with deterministic upsert and skip behavior', () => {
     const route = makeConnectedRoute('talker-1→listener-1')
     const state = {

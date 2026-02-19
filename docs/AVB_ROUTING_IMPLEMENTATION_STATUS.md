@@ -606,6 +606,10 @@
 - Integration coverage now asserts repeated refresh cycles clear row-level rename validation errors deterministically:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates invalid conflict-row rename drafts (`already exists`) are cleared by each `Preview JSON` refresh and that refreshed rename defaults rehydrate deterministically across repeated refresh cycles
+- Provider/reducer coverage now asserts remote scene-sync churn keeps scene-diff validity and scene-audit counters deterministic:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates remote-style scene `save`/`update`/`delete` sequences clear invalidated baseline selection, preserve compare-scene integrity, clear stale previews, and keep scene-operation counter totals (`warnings`/`errors`/`deletes`) deterministic
 
 ---
 
@@ -613,7 +617,7 @@
 
 - `npm --prefix web run typecheck` passes (2026-02-19).
 - `npm --prefix web run build` passes (2026-02-18).
-- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `202` tests.
+- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `204` tests.
 
 ---
 
@@ -629,6 +633,6 @@
 
 ## Next Recommended Slice
 
-1. Add provider/reducer coverage for future WebSocket scene-sync hooks to ensure remote scene add/update/delete events preserve deterministic scene-diff baseline/compare validity and audit counter totals.
-2. Extend operator documentation with an explicit troubleshooting flow for scene-audit counter precedence versus remembered filters (`Remember Audit Filters`) during active scene churn sessions.
-3. Add integration coverage that combines bulk conflict actions (`Upsert`/`Rename`/`Skip`) with refresh cycles to verify deterministic rename-inventory regeneration and per-row action reset ordering across repeated refreshes.
+1. Extend operator documentation with an explicit troubleshooting flow for scene-audit counter precedence versus remembered filters (`Remember Audit Filters`) during active scene churn sessions.
+2. Add integration coverage that combines bulk conflict actions (`Upsert`/`Rename`/`Skip`) with refresh cycles to verify deterministic rename-inventory regeneration and per-row action reset ordering across repeated refreshes.
+3. Add provider/reducer coverage for remote scene-sync edge cases where compare-scene metadata updates and baseline-scene deletions occur in one sync window while stale scene-diff presets are active.
