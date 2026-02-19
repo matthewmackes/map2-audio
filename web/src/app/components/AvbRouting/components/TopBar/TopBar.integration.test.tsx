@@ -2509,6 +2509,148 @@ describe('TopBar filter controls provider integration', () => {
     })
   })
 
+  it('clears invalid rename-row errors and rehydrates deterministic rename defaults across repeated refreshes', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        ...initialRoutingState.sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing-a',
+            name: 'Ops Existing A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-b',
+            name: 'Ops Existing B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const payload = JSON.stringify([
+      {
+        name: 'Ops Existing A',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing B',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Accepted Preset',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+    ])
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarSceneDiffPreviewLifecycleProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: { value: payload },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-rename-row-1'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1'), {
+      target: { value: 'Ops Existing B' },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-error-row-1').textContent).toContain(
+        'rename "Ops Existing B" already exists.'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('2')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe('opened:none|refreshed:none')
+      expect(screen.queryByTestId('topbar-scene-diff-import-preview-conflict-rename-error-row-1')).toBeNull()
+      expect(screen.queryByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1')).toBeNull()
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-rename-row-1'))
+
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1') as HTMLInputElement).value
+      ).toBe('Ops Existing A Imported')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-valid-row-1').textContent).toContain(
+        'Rename target is valid.'
+      )
+    })
+
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1'), {
+      target: { value: 'Ops Existing B' },
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-error-row-1').textContent).toContain(
+        'rename "Ops Existing B" already exists.'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-rename-row-1'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('3')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe(
+        'opened:none|refreshed:none|refreshed:none'
+      )
+      expect(screen.queryByTestId('topbar-scene-diff-import-preview-conflict-rename-error-row-1')).toBeNull()
+      expect(
+        (screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1') as HTMLInputElement).value
+      ).toBe('Ops Existing A Imported')
+    })
+  })
+
   it('keeps mixed remember-filter toggles and status-counter activation deterministic during scene churn', async () => {
     const route = makeSceneRoute('talker-1', 'listener-1')
     const initialState = {
