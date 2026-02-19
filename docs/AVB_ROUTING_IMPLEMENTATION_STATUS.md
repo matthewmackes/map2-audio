@@ -600,6 +600,9 @@
 - Integration coverage now asserts deterministic scene-audit summaries under repeated remember-filter + status-counter toggles during churn:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates repeated `Remember Audit Filters` toggling with mixed pointer/keyboard status-counter activation preserves deterministic `Errors`/`Warnings`/`Deletes`/`Diff Preview Warnings` summaries after in-session save/update/delete churn
+- Integration coverage now asserts preview refresh resets manual conflict-row edits and pagination deterministically:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates manual per-row `rename`/`skip` overrides, custom rename drafts, and non-default collapse/page navigation reset to deterministic defaults on `Preview JSON` refresh without stale rename drafts leaking across cycles
 
 ---
 
@@ -607,7 +610,7 @@
 
 - `npm --prefix web run typecheck` passes (2026-02-19).
 - `npm --prefix web run build` passes (2026-02-18).
-- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `200` tests.
+- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `201` tests.
 
 ---
 
@@ -623,6 +626,6 @@
 
 ## Next Recommended Slice
 
-1. Add integration coverage that preview refreshes after manual conflict-action overrides (row-level `upsert`/`rename`/`skip`) deterministically reset per-row controls, collapse state, and page index without stale rename drafts leaking between refresh cycles.
-2. Add provider/reducer coverage for future WebSocket scene-sync hooks to ensure remote scene add/update/delete events preserve deterministic scene-diff baseline/compare validity and audit counter totals.
-3. Extend operator documentation with an explicit troubleshooting flow for scene-audit counter precedence versus remembered filters (`Remember Audit Filters`) during active scene churn sessions.
+1. Add provider/reducer coverage for future WebSocket scene-sync hooks to ensure remote scene add/update/delete events preserve deterministic scene-diff baseline/compare validity and audit counter totals.
+2. Extend operator documentation with an explicit troubleshooting flow for scene-audit counter precedence versus remembered filters (`Remember Audit Filters`) during active scene churn sessions.
+3. Add integration coverage that refreshes after invalid rename-draft edits clear row-level validation errors and rehydrate deterministic default rename suggestions across repeated refresh cycles.

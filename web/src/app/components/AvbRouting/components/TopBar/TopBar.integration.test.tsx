@@ -2348,6 +2348,167 @@ describe('TopBar filter controls provider integration', () => {
     })
   })
 
+  it('resets manual conflict overrides, rename drafts, and preview pagination state on refresh', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        ...initialRoutingState.sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing-a',
+            name: 'Ops Existing A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-b',
+            name: 'Ops Existing B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-c',
+            name: 'Ops Existing C',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const payload = JSON.stringify([
+      {
+        name: 'Ops Existing A',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing B',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing C',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      ...Array.from({ length: 10 }, (_, index) => ({
+        name: `Accepted Preset ${index + 1}`,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      })),
+      {
+        name: 'Missing Compare 1',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+      {
+        name: 'Missing Compare 2',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+    ])
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarSceneDiffPreviewLifecycleProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: { value: payload },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('1')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe('opened:none')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 3')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 15 visible rows (15 total)'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-rename-row-1'))
+    const rowOneRenameInput = screen.getByTestId(
+      'topbar-scene-diff-import-preview-conflict-rename-input-row-1'
+    ) as HTMLInputElement
+    expect(rowOneRenameInput.value).toBe('Ops Existing A Imported')
+    fireEvent.change(rowOneRenameInput, {
+      target: { value: 'Carryover Rename Draft' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-skip-row-2'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-upsert-row-3'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 1')
+      expect(
+        (screen.getByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1') as HTMLInputElement).value
+      ).toBe('Carryover Rename Draft')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-skipped'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-page-next'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 13-13 of 13 visible rows (15 total)'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('2')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe('opened:none|refreshed:none')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 3')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 15 visible rows (15 total)'
+      )
+      expect(screen.queryByTestId('topbar-scene-diff-import-preview-conflict-rename-input-row-1')).toBeNull()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-rename-row-1'))
+
+    await waitFor(() => {
+      const refreshedRowOneRenameInput = screen.getByTestId(
+        'topbar-scene-diff-import-preview-conflict-rename-input-row-1'
+      ) as HTMLInputElement
+      expect(refreshedRowOneRenameInput.value).toBe('Ops Existing A Imported')
+      expect(refreshedRowOneRenameInput.value).not.toBe('Carryover Rename Draft')
+    })
+  })
+
   it('keeps mixed remember-filter toggles and status-counter activation deterministic during scene churn', async () => {
     const route = makeSceneRoute('talker-1', 'listener-1')
     const initialState = {
