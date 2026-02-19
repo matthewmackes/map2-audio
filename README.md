@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **700** TypeScript | **165** C++/H | **87** Docs | **289** total commits | **0** stars | **0** forks | **0** open issues
+**550** Python | **765** TypeScript | **243** C++/H | **87** Docs | **293** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -148,7 +148,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`c208bee`](https://github.com/matthewmackes/map2-audio/commit/c208beed0bac891f02da9d2f1052f5527e8a8d39) | Merge commit 'b62d083' into push-origin-b62d083 | Map2 Audio | 2026-02-19 |
-| [`b62d083`](https://github.com/matthewmackes/map2-audio/commit/b62d083a1ee894773fcf01dc4dc04e75c5b0abaf) | chore: commit all current workspace changes | Map2 Audio | 2026-02-19 |
-| [`7f97bb1`](https://github.com/matthewmackes/map2-audio/commit/7f97bb18481da0fb168fa34e6b861d760f2df1bf) | Merge commit '66f85e9' into push-origin-66f85e9 | Map2 Audio | 2026-02-19 |
-| [`66f85e9`](https://github.com/matthewmackes/map2-audio/commit/66f85e9f92152434e0b8518b43e2434026862bb5) | Add Windows wrappers for MAP2 effects plugins and build r... | Map2 Audio | 2026-02-19 |
-| [`ceb858f`](https://github.com/matthewmackes/map2-audio/commit/ceb858f2c6f9c2d40be5f3f1d0491beccdbc7b25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
-| [`b2e6124`](https://github.com/matthewmackes/map2-audio/commit/b2e6124a09281eb640afb6402ab32209bd39ac70) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-18 |
-| [`9a15488`](https://github.com/matthewmackes/map2-audio/commit/9a154881f4827c667d219ae0bcb822842af8205b) | Delete MATTS-BUILD-TUI | Matthew Mackes | 2026-02-17 |
-| [`10461e9`](https://github.com/matthewmackes/map2-audio/commit/10461e975b113c7009bd6a632c8e4b97b7070375) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-17 |
+| [`a7c76438`](https://github.com/matthewmackes/map2-audio/commit/a7c764381179f07fc1ff9e483f990e56904cfc3d) | Add AVB TopBar coverage for refresh lifecycle and audit-f... | Map2 Audio | 2026-02-19 |
+| [`af83accf`](https://github.com/matthewmackes/map2-audio/commit/af83accf7cb18072f26726102c6420da9180df3f) | feat: add remaining plugin wrappers and refresh full buil... | Map2 Audio | 2026-02-19 |
+| [`756f2642`](https://github.com/matthewmackes/map2-audio/commit/756f2642516941bd24153eefc3594a660c29cfae) | chore: refresh full plugin build artifacts and logs | Map2 Audio | 2026-02-19 |
+| [`0439d2c7`](https://github.com/matthewmackes/map2-audio/commit/0439d2c7ef34748e95586fe35c38701a4a194915) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
+| [`c208beed`](https://github.com/matthewmackes/map2-audio/commit/c208beed0bac891f02da9d2f1052f5527e8a8d39) | Merge commit 'b62d083' into push-origin-b62d083 | Map2 Audio | 2026-02-19 |
+| [`b62d083a`](https://github.com/matthewmackes/map2-audio/commit/b62d083a1ee894773fcf01dc4dc04e75c5b0abaf) | chore: commit all current workspace changes | Map2 Audio | 2026-02-19 |
+| [`7f97bb18`](https://github.com/matthewmackes/map2-audio/commit/7f97bb18481da0fb168fa34e6b861d760f2df1bf) | Merge commit '66f85e9' into push-origin-66f85e9 | Map2 Audio | 2026-02-19 |
+| [`66f85e9f`](https://github.com/matthewmackes/map2-audio/commit/66f85e9f92152434e0b8518b43e2434026862bb5) | Add Windows wrappers for MAP2 effects plugins and build r... | Map2 Audio | 2026-02-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
