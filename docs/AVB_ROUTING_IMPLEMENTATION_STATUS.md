@@ -1,6 +1,6 @@
 # AVB Routing Matrix - Implementation Status
 
-**Last Updated:** February 18, 2026  
+**Last Updated:** February 19, 2026  
 **Status:** Phases 1-2 complete, Phase 3 integration in stabilization
 
 ---
@@ -606,10 +606,26 @@
 - Integration coverage now asserts repeated refresh cycles clear row-level rename validation errors deterministically:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates invalid conflict-row rename drafts (`already exists`) are cleared by each `Preview JSON` refresh and that refreshed rename defaults rehydrate deterministically across repeated refresh cycles
+- Integration coverage now asserts bulk conflict-action refresh cycles regenerate deterministic rename inventories:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates bulk `Rename`/`Skip`/`Upsert` action churn plus repeated `Preview JSON` refresh cycles reset per-row conflict actions to defaults and regenerate rename targets without stale drafts leaking across cycles
 - Provider/reducer coverage now asserts remote scene-sync churn keeps scene-diff validity and scene-audit counters deterministic:
   - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
   - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
   - validates remote-style scene `save`/`update`/`delete` sequences clear invalidated baseline selection, preserve compare-scene integrity, clear stale previews, and keep scene-operation counter totals (`warnings`/`errors`/`deletes`) deterministic
+- Provider/reducer coverage now asserts remote compare-update + baseline-delete sync windows remediate active stale presets deterministically:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates active stale scene-diff presets are dropped when baseline scenes are deleted during the same remote sync window as compare-scene metadata updates, while scene selections, preview invalidation, and scene-operation audit sequencing remain deterministic
+- TopBar/provider integration coverage now asserts remote scene-sync churn keeps stale-preset remediation and status-strip counter prefilters deterministic while controls stay open:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates remote compare-scene metadata updates plus baseline-scene deletion clear stale scene-diff presets/selection state in-session, and confirms status-strip `Deletes` + `Diff Preview Warnings` chips deterministically override remembered audit filters during the same open-controls window
+- Operations guide now includes explicit remote scene-sync troubleshooting for invalidated baseline/compare selections and preset references:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents symptoms (`Baseline: None`, `Compare: Missing`, readiness downgrade), and a step-by-step remediation flow covering delete-audit verification, scene re-selection, diff regeneration, and preset refresh/export after sync churn
+- TopBar/provider integration coverage now asserts scene-diff import preview refresh determinism when remote scene-sync churn invalidates referenced scenes mid-session:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates in-progress import preview sessions recalculate from deterministic defaults after remote compare-scene update + baseline deletion churn, including refreshed accepted/conflict/skipped outcomes, conflict-plan reset, and lifecycle audit `opened -> refreshed` sequencing
 
 ---
 
@@ -617,7 +633,7 @@
 
 - `npm --prefix web run typecheck` passes (2026-02-19).
 - `npm --prefix web run build` passes (2026-02-18).
-- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `204` tests.
+- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `209` tests.
 
 ---
 
@@ -633,6 +649,6 @@
 
 ## Next Recommended Slice
 
-1. Extend operator documentation with an explicit troubleshooting flow for scene-audit counter precedence versus remembered filters (`Remember Audit Filters`) during active scene churn sessions.
-2. Add integration coverage that combines bulk conflict actions (`Upsert`/`Rename`/`Skip`) with refresh cycles to verify deterministic rename-inventory regeneration and per-row action reset ordering across repeated refreshes.
-3. Add provider/reducer coverage for remote scene-sync edge cases where compare-scene metadata updates and baseline-scene deletions occur in one sync window while stale scene-diff presets are active.
+1. Add reducer/provider coverage for remote scene-sync race windows where stale-preset remediation and preview lifecycle cancellation events are emitted in the same refresh cycle.
+2. Add TopBar/provider coverage for scene-audit quick-filter chip determinism (`All`/`Errors`/`Warnings`/`Deletes`/`Diff Preview`) after remote scene-sync mutations while controls remain open.
+3. Extend operator docs with a focused remote scene-sync playbook for in-progress scene-diff import preview sessions (what to refresh, what to discard, what to re-save).

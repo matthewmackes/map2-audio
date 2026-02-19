@@ -586,6 +586,17 @@ Troubleshooting:
 - Stale preset is removed on apply:
   - if a preset references deleted/missing scenes, it is auto-removed during apply and logged with warning outcome
   - export/import fresh presets after large scene inventory churn windows
+- Remote scene sync invalidates active baseline/compare or preset references:
+  - symptoms:
+    - status strip changes to `Baseline: None` or `Compare: Missing`
+    - readiness changes from `Diff selection ready` to `Diff selection incomplete` or `Diff selection stale`
+    - previously selected scene-diff preset disappears (`Active preset: none`) after remote scene delete/update churn
+  - troubleshooting flow:
+    1. open `Scenes` and verify status-strip labels (`Baseline`, `Compare`, `Diff selection ...`) before changing filters
+    2. activate `Deletes` from the status strip to confirm whether a remote delete event landed (`Search Operations = delete`)
+    3. if compare-scene metadata changed, reopen `Scene Diff` and reselect baseline/compare using current scene names
+    4. run `Generate Diff` again to rebuild preview state after the sync window
+    5. if presets were remediated (removed), save a fresh preset pair and export the refreshed preset set
 - Too many scene audit rows:
   - use status-strip counters (`Errors`, `Warnings`, `Deletes`, `Diff Preview Warnings`) to open scene controls with pre-filtered audit views
   - counters support keyboard activation (`Enter` / `Space`) for keyboard-only triage flows
