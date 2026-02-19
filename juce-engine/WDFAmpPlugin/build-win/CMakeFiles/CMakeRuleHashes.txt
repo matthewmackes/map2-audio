@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+38d2e102cc9e426551f3d42e4da883c1 WDFAmpPlugin_artefacts/JuceLibraryCode/WDFAmpPlugin_resources.rc

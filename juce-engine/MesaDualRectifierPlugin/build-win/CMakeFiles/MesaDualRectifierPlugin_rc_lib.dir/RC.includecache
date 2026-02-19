@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/MesaDualRectifierPlugin/build-win/MesaDualRectifierPlugin_artefacts/JuceLibraryCode/MesaDualRectifierPlugin_resources.rc
+windows.h
+-
+

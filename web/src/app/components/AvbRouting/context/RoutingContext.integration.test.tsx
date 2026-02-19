@@ -378,6 +378,183 @@ function SceneDiffProbe() {
   )
 }
 
+function SceneDiffPreviewLifecycleProbe() {
+  const { state, dispatch } = useRouting()
+  const previewLifecycleEntries = state.auditLog.filter((entry) => {
+    if (entry.event_type !== 'SCENE_DIFF') {
+      return false
+    }
+    const mode = entry.payload.mode
+    return typeof mode === 'string' && mode.startsWith('preset_import_preview_')
+  })
+
+  const previewLifecycleSummary = previewLifecycleEntries
+    .map((entry) => {
+      const phase = typeof entry.payload.phase === 'string' ? entry.payload.phase : 'unknown'
+      const reason = typeof entry.payload.reason === 'string' ? entry.payload.reason : 'none'
+      const sourceCount = typeof entry.payload.source_count === 'number' ? entry.payload.source_count : 'none'
+      return `${phase}:${reason}:${sourceCount}:${entry.validation_outcome}`
+    })
+    .join('|') || 'none'
+
+  return (
+    <div>
+      <span data-testid="scene-diff-preview-lifecycle-count">{String(previewLifecycleEntries.length)}</span>
+      <span data-testid="scene-diff-preview-lifecycle-summary">{previewLifecycleSummary}</span>
+      <span data-testid="scene-diff-preview-history-past">{String(state.history.past.length)}</span>
+      <span data-testid="scene-diff-preview-history-future">{String(state.history.future.length)}</span>
+
+      <button
+        data-testid="scene-diff-preview-opened"
+        type="button"
+        onClick={() => dispatch({
+          type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+          payload: {
+            phase: 'opened',
+            source_count: 5,
+            accepted_count: 3,
+            conflict_count: 1,
+            skipped_count: 1,
+            preferred_conflict_action: 'rename',
+          },
+        })}
+      >
+        preview-opened
+      </button>
+      <button
+        data-testid="scene-diff-preview-refreshed"
+        type="button"
+        onClick={() => dispatch({
+          type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+          payload: {
+            phase: 'refreshed',
+            source_count: 4,
+            accepted_count: 2,
+            conflict_count: 1,
+            skipped_count: 1,
+            preferred_conflict_action: 'rename',
+          },
+        })}
+      >
+        preview-refreshed
+      </button>
+      <button
+        data-testid="scene-diff-preview-cancel-draft"
+        type="button"
+        onClick={() => dispatch({
+          type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+          payload: {
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+            source_count: 4,
+            accepted_count: 2,
+            conflict_count: 1,
+            skipped_count: 1,
+            preferred_conflict_action: 'rename',
+          },
+        })}
+      >
+        preview-cancel-draft
+      </button>
+      <button
+        data-testid="scene-diff-preview-cancel-export"
+        type="button"
+        onClick={() => dispatch({
+          type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+          payload: {
+            phase: 'cancelled',
+            reason: 'exported_payload_reset',
+            source_count: 4,
+            accepted_count: 2,
+            conflict_count: 1,
+            skipped_count: 1,
+            preferred_conflict_action: 'rename',
+          },
+        })}
+      >
+        preview-cancel-export
+      </button>
+      <button
+        data-testid="scene-diff-preview-cancel-popover"
+        type="button"
+        onClick={() => dispatch({
+          type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+          payload: {
+            phase: 'cancelled',
+            reason: 'popover_closed',
+            source_count: 4,
+            accepted_count: 2,
+            conflict_count: 1,
+            skipped_count: 1,
+            preferred_conflict_action: 'rename',
+          },
+        })}
+      >
+        preview-cancel-popover
+      </button>
+    </div>
+  )
+}
+
+function SceneDiffDuplicateHintPrecedenceProbe() {
+  const { state, dispatch } = useRouting()
+  const presets = (state.sceneDiff.presets || [])
+    .slice()
+    .sort((a, b) => {
+      const byName = a.name.localeCompare(b.name)
+      return byName !== 0 ? byName : a.id.localeCompare(b.id)
+    })
+  const presetSummary = presets
+    .map((preset) => `${preset.name}:${preset.compare_scene_id}:${preset.preferred_conflict_action || 'none'}`)
+    .join('|') || 'none'
+  const importEntries = state.auditLog.filter((entry) => (
+    entry.event_type === 'SCENE_DIFF' &&
+    entry.payload.mode === 'import'
+  ))
+  const latestImportPayload = importEntries[importEntries.length - 1]?.payload
+  const importedCount = typeof latestImportPayload?.imported_count === 'number'
+    ? String(latestImportPayload.imported_count)
+    : 'none'
+  const skippedCount = typeof latestImportPayload?.skipped_count === 'number'
+    ? String(latestImportPayload.skipped_count)
+    : 'none'
+
+  return (
+    <div>
+      <span data-testid="scene-diff-duplicate-presets-count">{String(presets.length)}</span>
+      <span data-testid="scene-diff-duplicate-presets-summary">{presetSummary}</span>
+      <span data-testid="scene-diff-duplicate-imported-count">{importedCount}</span>
+      <span data-testid="scene-diff-duplicate-skipped-count">{skippedCount}</span>
+
+      <button
+        data-testid="scene-diff-duplicate-import"
+        type="button"
+        onClick={() => dispatch({
+          type: 'IMPORT_SCENE_DIFF_PRESETS',
+          payload: {
+            presets: [
+              {
+                name: 'Ops Pair',
+                baseline_scene_id: 'scene-a',
+                compare_scene_id: 'scene-b',
+                preferred_conflict_action: 'rename',
+              },
+              {
+                name: '  Ops Pair  ',
+                baseline_scene_id: 'scene-a',
+                compare_scene_id: 'scene-c',
+                preferred_conflict_action: 'skip',
+              },
+            ],
+          },
+        })}
+      >
+        duplicate-import
+      </button>
+    </div>
+  )
+}
+
 describe('RoutingContext API/reducer integration', () => {
   beforeEach(() => {
     mockEndpointsData = undefined
@@ -2627,6 +2804,83 @@ describe('RoutingContext API/reducer integration', () => {
       expect(screen.getByTestId('scene-diff-baseline').textContent).toBe('none')
       expect(screen.getByTestId('scene-diff-compare').textContent).toBe('none')
       expect(screen.getByTestId('scene-diff-preview-summary').textContent).toBe('none')
+    })
+  })
+
+  it('sequences scene-diff preview cancellation reasons without mutating provider history', async () => {
+    render(
+      <RoutingProvider initialState={initialRoutingState}>
+        <SceneDiffPreviewLifecycleProbe />
+      </RoutingProvider>
+    )
+
+    expect(screen.getByTestId('scene-diff-preview-lifecycle-count').textContent).toBe('0')
+    expect(screen.getByTestId('scene-diff-preview-history-past').textContent).toBe('0')
+    expect(screen.getByTestId('scene-diff-preview-history-future').textContent).toBe('0')
+
+    fireEvent.click(screen.getByTestId('scene-diff-preview-opened'))
+    fireEvent.click(screen.getByTestId('scene-diff-preview-refreshed'))
+    fireEvent.click(screen.getByTestId('scene-diff-preview-cancel-draft'))
+    fireEvent.click(screen.getByTestId('scene-diff-preview-cancel-export'))
+    fireEvent.click(screen.getByTestId('scene-diff-preview-cancel-popover'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-preview-lifecycle-count').textContent).toBe('5')
+      expect(screen.getByTestId('scene-diff-preview-lifecycle-summary').textContent).toBe(
+        'opened:none:5:success|refreshed:none:4:success|cancelled:transfer_draft_changed:4:warning|cancelled:exported_payload_reset:4:warning|cancelled:popover_closed:4:warning'
+      )
+      expect(screen.getByTestId('scene-diff-preview-history-past').textContent).toBe('0')
+      expect(screen.getByTestId('scene-diff-preview-history-future').textContent).toBe('0')
+    })
+  })
+
+  it('applies duplicate-name valid conflict-policy hints with deterministic last-row precedence', async () => {
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Scene A',
+          description: '',
+          routes: [],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Scene B',
+          description: '',
+          routes: [],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-c': {
+          id: 'scene-c',
+          name: 'Scene C',
+          description: '',
+          routes: [],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <SceneDiffDuplicateHintPrecedenceProbe />
+      </RoutingProvider>
+    )
+
+    expect(screen.getByTestId('scene-diff-duplicate-presets-count').textContent).toBe('0')
+    expect(screen.getByTestId('scene-diff-duplicate-presets-summary').textContent).toBe('none')
+
+    fireEvent.click(screen.getByTestId('scene-diff-duplicate-import'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('scene-diff-duplicate-presets-count').textContent).toBe('1')
+      expect(screen.getByTestId('scene-diff-duplicate-presets-summary').textContent).toBe('Ops Pair:scene-c:skip')
+      expect(screen.getByTestId('scene-diff-duplicate-imported-count').textContent).toBe('2')
+      expect(screen.getByTestId('scene-diff-duplicate-skipped-count').textContent).toBe('0')
     })
   })
 })

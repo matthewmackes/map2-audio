@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+113c56688cbfa7d7b3d657cd0f8e5db5 DynamicsPlugin_artefacts/JuceLibraryCode/DynamicsPlugin_resources.rc

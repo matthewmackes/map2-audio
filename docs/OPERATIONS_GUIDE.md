@@ -441,6 +441,160 @@ Troubleshooting:
 
 ---
 
+## 13. AVB ROUTING SCENE OPERATIONS (VALIDATION + IMPACT PREVIEW)
+
+Use this workflow for scene save/update/recall/delete operations in the AVB Routing TopBar `Scenes` control:
+
+1. Open scene controls:
+```text
+Click TopBar -> Scenes.
+```
+
+2. Save a scene with validation guardrails:
+```text
+Enter a New Scene Name, then click Save Current.
+```
+- Validation limits:
+  - scene name: max 64 characters
+  - scene description: max 280 characters
+  - tags: max 8 entries
+  - tag length: max 24 characters per tag
+- Normalization behavior:
+  - trims/collapses whitespace
+  - strips control characters
+  - replaces reserved characters (`<`, `>`, `` ` ``, `|`, `\`) with spaces
+  - normalizes tags to lowercase kebab-case and deduplicates
+
+3. Handle duplicate names deterministically:
+```text
+Keep "Auto-suffix duplicate names" enabled (default) for deterministic disambiguation.
+```
+- When enabled:
+  - duplicate names auto-resolve to `Name (2)`, `Name (3)`, etc.
+  - a duplicate hint appears before save/update
+- When disabled:
+  - duplicate names are allowed as-is
+  - warning guidance is shown before save/update
+
+4. Review impact before recall:
+```text
+Select a saved scene and review Impact summary (+ add / - remove / = unchanged).
+```
+- Use `Show Impact Details` for route-level entries.
+- Large diffs are truncated by default; use `Show More` then `Reset` to page details.
+- Route labels are rendered as `Talker -> Listener` using endpoint names when available.
+
+5. Use scene-diff presets and swap controls for faster compare workflows:
+```text
+Open TopBar -> Scene Diff, select baseline/compare, then Save Preset.
+```
+- Preset workflow:
+  - save named baseline/compare pairs for repeatable compare runs
+  - add optional preset notes and version metadata for operator context and compatibility tracking
+  - apply presets from Scene Diff controls or directly from the Scene Diff Preview strip
+  - delete obsolete presets from Scene Diff controls
+  - export preset sets as JSON for deterministic team sharing
+  - preview preset JSON before import to see accepted/conflict/skipped row outcomes
+  - large preview payloads are paged (`Prev`/`Next`) to keep row rendering deterministic
+  - import preset JSON from either raw array form or `{ "presets": [...] }` wrapper form after preview
+  - wrapped import payloads must provide `schema_version: 1`; incompatible schema versions are rejected during preview
+  - wrapped payloads may include advisory `preferred_conflict_action` (`upsert`, `rename`, or `skip`) to pre-seed conflict defaults across teams
+  - mixed-hint example (wrapper default + row override):
+  ```json
+  {
+    "schema_version": 1,
+    "preferred_conflict_action": "skip",
+    "presets": [
+      {
+        "name": "Preset Explicit Rename",
+        "baseline_scene_id": "scene-a",
+        "compare_scene_id": "scene-b",
+        "preferred_conflict_action": "rename"
+      },
+      {
+        "name": "Preset Wrapper Only",
+        "baseline_scene_id": "scene-a",
+        "compare_scene_id": "scene-b"
+      }
+    ]
+  }
+  ```
+  - in this example, `Preset Explicit Rename` retains `Rename`, while `Preset Wrapper Only` imports with default persisted policy `Upsert`
+  - wrapper-level `preferred_conflict_action` is advisory preview metadata; persisted per-preset policy is only set when the row explicitly carries `preferred_conflict_action`
+  - saved presets show conflict-policy summary chips (`Preset Name: Upsert/Rename/Skip`) directly in scene-diff controls
+  - selected preset policy status is shown explicitly (`Selected preset policy: ...`) to avoid hidden metadata during operator handoffs
+  - a helper line indicates whether draft conflict policy edits are unsaved (`Save Preset to persist`) versus already matched to persisted preset metadata
+  - use `Use Default Upsert` to reset draft conflict policy before saving/updating a preset
+  - review conflict rows to compare incoming metadata against existing preset metadata before upsert-by-name import
+  - conflict rows support per-row actions before import dispatch: `Upsert`, `Rename`, or `Skip`
+  - preview rows are grouped in triage order (`Conflict`, `Accepted`, `Skipped`) for faster operator review
+  - use group toggles (`Hide/Show Conflict`, `Hide/Show Accepted`, `Hide/Show Skipped`) to collapse noisy sections in large previews
+  - page summary shows `visible` rows and `total` rows so collapsed-group context remains explicit
+  - planned conflict resolution chips (`Planned upsert/rename/skip`) update live as you choose row actions
+  - use bulk helpers (`All Conflicts -> Upsert/Rename/Skip`) for deterministic one-click policy application across all conflict rows
+  - rename mode surfaces inline validation feedback immediately (invalid/duplicate target names are shown before import click)
+  - keyboard activation is supported on group toggles and bulk conflict actions (`Enter` / `Space`)
+- Swap workflow:
+  - `Swap Baseline/Compare` in Scene Diff controls inverts selection and regenerates preview
+  - `Swap` in Scene Diff Preview performs the same quick inversion path
+
+6. Confirm destructive actions:
+```text
+Recall and Delete require two clicks (confirm pattern) on the selected scene.
+```
+- First click arms confirmation and shows warning context.
+- Second click executes the action.
+
+Troubleshooting:
+- Save/update blocked:
+  - check name/description/tag length limits
+  - remove unsupported characters from scene metadata
+- Unexpected duplicate suffix:
+  - disable `Auto-suffix duplicate names` if duplicate naming is intentionally required
+- Missing impact details:
+  - select a scene first, then expand `Show Impact Details`
+- Preset apply/swap fails:
+  - verify baseline and compare scenes still exist
+  - if scenes were deleted/renamed, reselect scenes and resave the preset
+- Import blocked before dispatch:
+  - use `Preview JSON` first, then `Import JSON` (import is intentionally gated on explicit preview)
+- Import skips entries:
+  - run `Preview JSON` and inspect skipped-row reasons before import
+  - use preview pagination controls (`Prev`/`Next`) when the row list is longer than one page
+  - use per-row conflict actions (`Skip`/`Rename`) to control exactly which conflicting presets are imported
+  - use bulk conflict action buttons when many conflict rows need the same policy
+  - ensure each entry includes `name`, `baseline_scene_id`, and `compare_scene_id`
+  - ensure referenced scene IDs currently exist in the node state
+  - fix malformed JSON before re-importing
+- Conflict rename is blocked:
+  - switch row action to `Rename` and inspect inline error text under `Rename Conflict Preset`
+  - invalid names must satisfy normal scene metadata limits
+  - rename targets cannot match any existing preset name
+- Expected rows are missing from preview table:
+  - check group toggle state (`Show Conflict/Accepted/Skipped`) because collapsed groups hide rows by status
+  - confirm visible/total counts in the preview page summary
+- Unsupported schema_version:
+  - wrapped payloads must use `schema_version: 1`
+  - re-export presets from a compatible MAP2 build, then retry preview/import
+- Unsupported preferred_conflict_action:
+  - supported values are `upsert`, `rename`, or `skip`
+  - remove or correct the field, then re-run `Preview JSON`
+- Preview cancelled audit entry appears:
+  - `transfer_draft_changed`: preview was open and JSON draft content changed; rerun `Preview JSON`
+  - `popover_closed`: scene-diff popover closed while preview was active; reopen Scene Diff and preview again
+  - `exported_payload_reset`: export action reset active preview context; rerun `Preview JSON` before importing
+- Stale preset is removed on apply:
+  - if a preset references deleted/missing scenes, it is auto-removed during apply and logged with warning outcome
+  - export/import fresh presets after large scene inventory churn windows
+- Too many scene audit rows:
+  - use status-strip counters (`Errors`, `Warnings`, `Deletes`, `Diff Preview Warnings`) to open scene controls with pre-filtered audit views
+  - counters support keyboard activation (`Enter` / `Space`) for keyboard-only triage flows
+  - use the `Search Operations` field and `Outcome` filter in the scene popover to narrow to matching save/recall/delete/update events
+  - enable `Remember Audit Filters` to persist current search/outcome filters across scene popover close/reopen cycles
+  - use quick chips (`All`, `Errors`, `Warnings`, `Deletes`) for one-click filter presets during live operations
+
+---
+
 ## Quick Start Checklist
 
 - [ ] Backend running: `systemctl status map2-backend`
@@ -462,6 +616,6 @@ Troubleshooting:
 
 ---
 
-**Last Updated**: February 8, 2026  
+**Last Updated**: February 18, 2026  
 **Version**: 2.0  
 **Status**: All operations current and validated

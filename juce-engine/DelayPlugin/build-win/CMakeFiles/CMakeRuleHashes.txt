@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+d7b923906fe4596b88b35196364e6f13 DelayPlugin_artefacts/JuceLibraryCode/DelayPlugin_resources.rc

@@ -9,6 +9,7 @@ import type { Endpoint } from './endpoint';
 import type { Route } from './route';
 import type { Scene } from './scene';
 import type { SceneDiff } from './scene';
+import type { SceneDiffPreset } from './scene';
 import type { AuditLogEntry } from './audit';
 import type {
   AvbNode,
@@ -98,6 +99,8 @@ export interface RoutingState {
     baseline_scene_id: string | null;
     compare_scene_id: string | null;
     preview: SceneDiff | null;
+    presets?: SceneDiffPreset[];
+    active_preset_id?: string | null;
   };
 
   // UI State
@@ -148,6 +151,8 @@ export const initialRoutingState: RoutingState = {
     baseline_scene_id: null,
     compare_scene_id: null,
     preview: null,
+    presets: [],
+    active_preset_id: null,
   },
 
   selection: {

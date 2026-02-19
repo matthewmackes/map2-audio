@@ -1,6 +1,6 @@
 # AVB Routing Matrix - Implementation Status
 
-**Last Updated:** February 17, 2026  
+**Last Updated:** February 18, 2026  
 **Status:** Phases 1-2 complete, Phase 3 integration in stabilization
 
 ---
@@ -353,22 +353,250 @@
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
   - adds search input + filtered scene summary and deterministic filtered dropdown behavior for saved-scene selection workflows
+- Scene metadata duplicate-name conflict resolution affordances added:
+  - `web/src/app/components/AvbRouting/utils/sceneValidation.ts`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds optional auto-suffix duplicate handling (`Name (2)`, `Name (3)`, etc.), operator-facing duplicate hints, and deterministic save/update naming behavior
+- Pre-recall impact drilldown depth expanded in scene controls:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds expandable impact details, route labeling with endpoint-name mapping, and paged/truncated detail controls (`Show More`/`Reset`) for large diffs
+- Operator documentation expanded for scene validation and confirmation workflow:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents validation limits, normalization behavior, duplicate-name policy toggle, impact detail controls, and recall/delete confirmation semantics
+- Scene-diff preset + quick-swap workflows added across TopBar and preview:
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/types/scene.ts`
+  - `web/src/app/components/AvbRouting/types/state.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/SceneDiffPreview.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/SceneDiffPreview.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - adds save/apply/delete preset flows, quick baseline/compare swap actions, and preview-level preset chips for rapid re-compare workflows
+- Scene-operation audit surfacing added to TopBar scene management controls:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - displays latest save/update/recall/delete summaries with validation outcome badges in the scene popover
+- Scene-diff preview refresh while controls remain open added:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - keeps generated diff previews synchronized with active scene inventory/endpoint label changes during open scene-diff workflow sessions
+- Scene-diff preset import/export path added for deterministic team-sharing workflows:
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds JSON export and JSON import (`array` or `{ presets: [...] }`), reducer-level deterministic upsert-by-name behavior, and import skip accounting for invalid or non-resolvable entries
+- Scene-operation audit filtering controls added for high-volume sessions:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds audit search-text and outcome filtering (`all|success|warning|error`) with matching summary counts in scene management popover
+- Scene-diff preview lifecycle audit entries surfaced in scene-audit quick filters:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds `Diff Preview` quick filter preset that isolates `SCENE_DIFF` preview lifecycle audit entries (`preset_import_preview_*`) without changing existing scene-operation counter semantics
+- Stale scene-diff preset remediation coverage expanded:
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - invalid preset apply paths now remove stale preset references, clear active stale preset IDs, and emit warning-outcome audit entries
+- Preset metadata depth expanded with notes/version import-export support:
+  - `web/src/app/components/AvbRouting/types/scene.ts`
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds optional per-preset `notes` + `preset_version` fields with deterministic upsert behavior through save/import flows
+- Provider-level stale-preset remediation coverage added for open scene-diff controls under scene churn:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates stale preset inventories are remediated while scene-diff controls remain open across scene delete churn windows
+- Quick scene-audit filter chips added for operator triage:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds one-click audit filter presets (`All`, `Errors`, `Warnings`, `Deletes`) layered on top of text/outcome filter controls
+- Scene-diff preset import preview + conflict visualization added before dispatch:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds explicit `Preview JSON` step, accepted/conflict/skipped summary chips, row-level validation reasons, and existing-vs-incoming conflict detail rendering before upsert import
+- Compact scene-audit counters added to TopBar status strip:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - surfaces current-session scene-operation `Errors`, `Warnings`, and `Deletes` as always-visible status chips for fast triage
+- Strict wrapper-schema validation added for scene-diff preset import preview:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - rejects wrapped payloads with unsupported `schema_version` or invalid `compatibility_hint` type before import dispatch
+- Status-strip audit counters now open pre-filtered scene audit views:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - clicking `Errors`/`Warnings`/`Deletes` opens scene controls anchored from status strip with matching quick filters applied
+- Status-strip diff-preview warning counter added with prefiltered open behavior:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds `Diff Preview Warnings` counter chip that opens scene controls with combined `Diff Preview` + `warning` filters for rapid lifecycle-cancel triage
+- Paged scene-diff import preview rows added for large payload determinism:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds bounded preview-page rendering (`Prev`/`Next`) with explicit row-range summary to avoid rendering entire import payloads in one pass
+- Per-row conflict action controls added for scene-diff preset import:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - conflict rows now support `Upsert`, `Rename`, and `Skip`; import dispatch resolves selections deterministically and blocks invalid rename actions
+- Optional scene-audit filter persistence added across popover reopen cycles:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds `Remember Audit Filters` toggle so search/outcome filters persist between `Scene` popover close/open sessions when enabled
+- Conflict-row sorting/grouping + live import-plan summary chips added:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - preview rows render in triage order (`conflict`, `accepted`, `skipped`) with group headers, and planned conflict action totals (`upsert`/`rename`/`skip`) update live as row actions change
+- Scene-diff import conflict ergonomics expanded for large payload operations:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds per-group collapse/expand controls, bulk conflict actions (`All Conflicts -> Upsert/Rename/Skip`), and inline rename validation feedback before import dispatch
+  - preview page summaries now report `visible` rows versus `total` rows to keep operator pagination context clear while groups are collapsed
+- Scene-diff preset preview lifecycle audit events added with reducer + UI coverage:
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - logs preview `opened`/`refreshed`/`cancelled` lifecycle audit entries (cancel reasons include draft edit, popover close, export reset) without mutating undo/redo history
+- Keyboard-first activation paths added for grouped preview controls:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - preview group toggles and bulk conflict action buttons now support explicit Enter/Space activation handlers with deterministic behavior
+- Export-side advisory conflict-policy metadata hints added:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - exported wrappers now include `preferred_conflict_action` (advisory-only), preview parsing validates allowed values, and preview defaults/plans honor the hint while remaining operator-overridable
+- Reducer actor attribution TODOs resolved with runtime override support:
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - audit entries, `locked_by`, and `created_by` now resolve from optional runtime actor (`__MAP2_AVB_ACTOR__`) with deterministic fallback to `user`
+  - adds targeted lock-route and scene-save attribution coverage for runtime override and blank-override fallback behavior
+- TopBar checkbox test-id wiring made strict-build compatible:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - scene/audit/filter checkbox selectors now use component-level `data-testid` bindings compatible with current MUI+TypeScript build typing
+- Scene-diff preview controls now render explicit keyboard focus rings for grouped triage controls:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - applies shared `:focus-visible` styling to preview group-toggle and bulk-action buttons for clearer tab-path visibility
+- Scene-audit quick-filter chips now support keyboard-first activation:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - `All`/`Errors`/`Warnings`/`Deletes`/`Diff Preview` chips now handle explicit Enter/Space activation
+- Per-row advisory conflict-policy hint support added for scene-diff preset transfer payloads:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - `web/src/app/components/AvbRouting/types/scene.ts`
+  - `web/src/app/components/AvbRouting/types/actions.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.ts`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - row-level `preferred_conflict_action` hints now override wrapper defaults during preview planning, render per-row advisory labels, and persist through import/export round-trips
+- Scene-diff preset authoring now includes explicit operator conflict-policy controls:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - adds `Conflict Policy` preset field (`Upsert`/`Rename`/`Skip`) in TopBar scene-diff controls and persists chosen policy through preset save/update flows
+- Provider/reducer integration coverage added for per-row conflict-policy import/export round-trip:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates wrapper + row-level `preferred_conflict_action` import preview, reducer persistence into saved presets, and export payload re-serialization of row-level overrides
+- Status-strip scene-audit counter chips now support keyboard-first activation with explicit focus treatment:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - adds Enter/Space activation for `Errors`/`Warnings`/`Deletes`/`Diff Preview Warnings` counters and shared `:focus-visible` ring styling for keyboard tab-path clarity
+- Saved scene-diff preset conflict-policy metadata is now visible in the preset management list/summary area:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - adds saved-preset policy summary chips plus selected-preset policy status text so advisory defaults are visible without opening import/export payloads
+- Scene-diff preset conflict-policy draft now has explicit reset affordance for handoff normalization:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - adds `Use Default Upsert` action that resets draft policy to `upsert` before save/export, with provider-level coverage validating persisted reset behavior
+- Preset-switch/delete/reimport churn side-effect coverage expanded for policy-sync stability:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates rapid saved-preset switches (`rename` <-> `skip`), selected-preset deletion, and JSON reimport keep policy summary chips + draft `Conflict Policy` aligned with reducer state
+- Operator documentation updated for new scene-audit counter keyboard paths and preset policy summary/reset controls:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents `Diff Preview Warnings` status-strip counter behavior, Enter/Space counter activation, saved-preset policy summary chips, and `Use Default Upsert` reset workflow in scene-diff operations
+- Accessibility semantics asserted for preset-policy chips and reset affordance:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds explicit ARIA labels for saved policy chips + reset action and coverage for reset-button enabled/disabled state transitions
+- Draft conflict-policy state retention coverage added for scene-diff popover lifecycle:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - validates draft policy/reset edits persist through scene-diff popover close/reopen while persisted selected-preset policy summary remains unchanged until save
+- Scene-diff preset policy summary now includes persisted-vs-draft helper guidance:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.tsx`
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx`
+  - adds explicit helper text that distinguishes persisted selected-preset policy state from unsaved draft edits (with warning treatment while diverged)
+- Provider-level parity coverage added for status-strip counter pointer vs keyboard activation:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates `Warnings` and `Diff Preview Warnings` counters open identical filtered audit views under click and Enter/Space activation paths
+- Provider-level deterministic policy-summary coverage added for mixed wrapper/row import hints:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates imports with wrapper-level `preferred_conflict_action` plus mixed row-level overrides persist saved-policy summaries deterministically (`row override` retains explicit policy, wrapper-only rows default to `Upsert`)
+- Operator docs now include a complete mixed-hint import payload example:
+  - `docs/OPERATIONS_GUIDE.md`
+  - adds ready-to-copy JSON showing wrapper-level + row-level `preferred_conflict_action` semantics and expected persisted policy outcomes
+- Operator docs now explicitly clarify wrapper-level advisory semantics:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents that wrapper-level `preferred_conflict_action` is preview-advisory and does not persist per-row policy unless the row explicitly sets it
+- Helper-text policy guidance transitions now covered through provider save/update path:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates scene-diff helper messaging transitions from `dirty draft` to `persisted sync` when `Use Default Upsert` is applied and saved
+- Export payload determinism coverage added for mixed explicit/default saved policies:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates exported wrappers remain `preferred_conflict_action: upsert` while only explicit `rename` presets serialize row-level `preferred_conflict_action`
+- Reducer coverage expanded for mixed valid/invalid policy hints and preview cancellation reasons:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates invalid row-level policy hints fall back deterministically (existing preset fallback or unset on new presets) and cancellation reasons (`transfer_draft_changed`, `popover_closed`, `exported_payload_reset`) all log warning-outcome preview lifecycle audit entries
+- Operations guide troubleshooting now maps preview cancellation reasons to operator actions:
+  - `docs/OPERATIONS_GUIDE.md`
+  - documents remediation paths for `transfer_draft_changed`, `popover_closed`, and `exported_payload_reset` preview lifecycle audit entries
+- Status-strip counter regression coverage added for remembered-filter override behavior:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx`
+  - validates all counters (`Errors`, `Warnings`, `Deletes`, `Diff Preview Warnings`) override stale remembered audit filters and deterministically apply each counter preset in one mixed pointer/keyboard flow
+- Reducer coverage now asserts duplicate-name normalization collapse with conflicting hints:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - validates duplicate normalized import names upsert into one canonical preset, keep deterministic last-write route fields, and retain valid prior `preferred_conflict_action` when a later conflicting hint is invalid
+- Reducer/provider coverage now asserts deterministic precedence for conflicting valid duplicate-name hints:
+  - `web/src/app/components/AvbRouting/context/routingReducer.test.ts`
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates duplicate normalized imports with explicit `rename` then `skip` hints collapse to one canonical preset and apply last-row valid policy precedence (`skip`) with deterministic import audit counts
+- Provider-level preview cancellation sequencing coverage added for multi-trigger sessions:
+  - `web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx`
+  - validates ordered preview lifecycle audit events (`opened`, `refreshed`, then `cancelled` reasons `transfer_draft_changed`/`exported_payload_reset`/`popover_closed`) without mutating undo/redo history
+- UI-handler integration coverage added for rapid cancellation-trigger sequencing:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates deterministic cancellation reason ordering (`transfer_draft_changed` -> `exported_payload_reset` -> `popover_closed`) when users rapidly chain `Preview JSON`, transfer edits, export reset, and popover close flows in one session
+- Status-strip counter prefilter determinism coverage now spans live scene-inventory churn while controls remain open:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates `Errors`/`Warnings`/`Deletes`/`Diff Preview Warnings` counters retain deterministic filter behavior after in-session save/update/delete churn without closing scene controls
+- Import preview duplicate-name rejection determinism now covered for mixed advisory policy metadata:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates wrapper-level + row-level `preferred_conflict_action` hints still produce deterministic duplicate-name row rejection (`Duplicate preset name within import payload`) and persist only the accepted canonical row policy outcome
 
 ---
 
 ## Current Validation
 
-- `npm run typecheck` (in `web/`) passes.
-- `npm run build` (in `web/`) passes.
-- `npm run test:avb-routing` (repo root) passes for AVB routing smoke + reducer + keyboard + history + notification suites.
+- `npm --prefix web run typecheck` passes (2026-02-18).
+- `npm --prefix web run build` passes (2026-02-18).
+- `npm run test:avb-routing` (repo root) passes (2026-02-18): `18` suites, `194` tests.
 
 ---
 
 ## Remaining Work
 
 ### Phase 4+
-- Search/filter panel enhancements.
-- Scene management dialogs and diff UX.
+- Scene management dialogs and diff UX depth.
 - WebSocket real-time sync hooks.
 - Reducer/component test coverage.
 - Documentation/user guide for operators.
@@ -377,6 +605,6 @@
 
 ## Next Recommended Slice
 
-1. Add scene metadata conflict-resolution affordances (explicit duplicate-name disambiguation hints and optional auto-suffix naming) in TopBar save/update workflows.
-2. Add richer pre-recall impact drilldown (expandable route list with talker/listener names and truncation controls for large diffs).
-3. Add operator docs updates in `docs/OPERATIONS_GUIDE.md` for scene validation limits, normalization behavior, and recall/delete confirmation semantics.
+1. Add provider/integration coverage that rapid alternation between preview group collapse toggles and page navigation preserves deterministic visible-row ordering and import-plan counts.
+2. Add integration coverage that status-strip counter keyboard activation remains deterministic after churn-driven counter value changes in the same open scene-controls session.
+3. Add integration coverage that mixed pointer/keyboard conflict bulk-action changes preserve deterministic import-plan totals when preview rows are partially hidden by group-collapse filters.

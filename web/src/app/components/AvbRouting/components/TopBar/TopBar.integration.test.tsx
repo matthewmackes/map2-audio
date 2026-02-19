@@ -162,6 +162,34 @@ function TopBarFilterProbe() {
   )
 }
 
+function TopBarSceneDiffPreviewLifecycleProbe() {
+  const state = useRoutingState()
+  const previewLifecycleEntries = state.auditLog.filter((entry) => (
+    entry.event_type === 'SCENE_DIFF' &&
+    typeof entry.payload.mode === 'string' &&
+    entry.payload.mode.startsWith('preset_import_preview_')
+  ))
+  const previewLifecycleSummary = previewLifecycleEntries
+    .map((entry) => {
+      const phase = typeof entry.payload.phase === 'string' ? entry.payload.phase : 'unknown'
+      const reason = typeof entry.payload.reason === 'string' ? entry.payload.reason : 'none'
+      return `${phase}:${reason}`
+    })
+    .join('|') || 'none'
+  const cancelledReasons = previewLifecycleEntries
+    .filter((entry) => entry.payload.phase === 'cancelled')
+    .map((entry) => (typeof entry.payload.reason === 'string' ? entry.payload.reason : 'none'))
+    .join('|') || 'none'
+
+  return (
+    <div>
+      <span data-testid="probe-scene-diff-preview-lifecycle-count">{String(previewLifecycleEntries.length)}</span>
+      <span data-testid="probe-scene-diff-preview-lifecycle-summary">{previewLifecycleSummary}</span>
+      <span data-testid="probe-scene-diff-preview-cancelled-reasons">{cancelledReasons}</span>
+    </div>
+  )
+}
+
 describe('TopBar filter controls provider integration', () => {
   beforeEach(() => {
     mockEndpointsData = undefined
@@ -489,6 +517,605 @@ describe('TopBar filter controls provider integration', () => {
     })
   })
 
+  it('supports scene diff preset save/apply and swap controls with provider state', async () => {
+    const talkerOne = makeEndpoint({
+      endpoint_id: 'talker-1',
+      direction: 'talker',
+      unique_id: 111,
+      device_name: 'Talker One',
+    })
+    const listenerOne = makeEndpoint({
+      endpoint_id: 'listener-1',
+      direction: 'listener',
+      unique_id: 112,
+      device_name: 'Listener One',
+    })
+    const talkerTwo = makeEndpoint({
+      endpoint_id: 'talker-2',
+      direction: 'talker',
+      unique_id: 113,
+      device_name: 'Talker Two',
+    })
+    const listenerTwo = makeEndpoint({
+      endpoint_id: 'listener-2',
+      direction: 'listener',
+      unique_id: 114,
+      device_name: 'Listener Two',
+    })
+
+    const baselineRoute = makeSceneRoute('talker-1', 'listener-1')
+    const compareOnlyRoute = makeSceneRoute('talker-2', 'listener-2')
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [talkerOne.endpoint_id]: talkerOne,
+        [listenerOne.endpoint_id]: listenerOne,
+        [talkerTwo.endpoint_id]: talkerTwo,
+        [listenerTwo.endpoint_id]: listenerTwo,
+      },
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [baselineRoute],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [baselineRoute, compareOnlyRoute],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-name-input'), {
+      target: { value: 'Ops Compare Pair' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-save'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-summary').textContent).toContain('1 preset')
+      expect(screen.getByTestId('topbar-scene-diff-active-preset').textContent).toContain('Ops Compare Pair')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-swap'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-baseline').textContent).toContain('Compare Scene')
+      expect(screen.getByTestId('topbar-scene-status-compare').textContent).toContain('Baseline Scene')
+    })
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Ops Compare Pair' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-apply'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-baseline').textContent).toContain('Baseline Scene')
+      expect(screen.getByTestId('topbar-scene-status-compare').textContent).toContain('Compare Scene')
+      expect(screen.getByTestId('scene-diff-preview-scope').textContent).toContain('Baseline Scene vs Compare Scene')
+    })
+  })
+
+  it('round-trips imported per-row conflict-policy hints and supports policy reset before export', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: {
+        value: JSON.stringify({
+          schema_version: 1,
+          preferred_conflict_action: 'upsert',
+          presets: [
+            {
+              name: 'Imported Policy Preset',
+              baseline_scene_id: 'scene-a',
+              compare_scene_id: 'scene-b',
+              preferred_conflict_action: 'rename',
+            },
+          ],
+        }),
+      },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-summary').textContent).toContain('1 source')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-row-conflict-policy-hint-row-1').textContent).toContain(
+        'Conflict policy hint: rename (row override; wrapper default upsert)'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-import'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-summary').textContent).toContain('1 preset')
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).toContain(
+        'Imported Policy Preset: Rename'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+        'Selected preset policy: none'
+      )
+    })
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Imported Policy Preset' }))
+    expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
+    expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+      'Selected preset policy: Rename'
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-apply'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-readiness').textContent).toContain('Diff selection ready')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-conflict-policy-reset'))
+    expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Upsert')
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-save'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).toContain(
+        'Imported Policy Preset: Upsert'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+        'Selected preset policy: Upsert'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-export'))
+    const transferField = screen.getByTestId('topbar-scene-diff-preset-transfer-input') as HTMLInputElement
+    expect(transferField.value).toContain('"schema_version": 1')
+    expect(transferField.value).toContain('"preferred_conflict_action": "upsert"')
+    expect(transferField.value).toContain('"name": "Imported Policy Preset"')
+    expect(transferField.value).not.toContain('"preferred_conflict_action": "rename"')
+  })
+
+  it('keeps policy summary and draft conflict policy aligned through rapid preset switch/delete/reimport churn', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: null,
+        presets: [
+          {
+            id: 'preset-rename',
+            name: 'Preset Rename',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preferred_conflict_action: 'rename',
+          },
+          {
+            id: 'preset-skip',
+            name: 'Preset Skip',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preferred_conflict_action: 'skip',
+          },
+        ],
+        active_preset_id: null,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Preset Rename' }))
+    expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
+    expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+      'Selected preset policy: Rename'
+    )
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Preset Skip' }))
+    expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Skip')
+    expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+      'Selected preset policy: Skip'
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-delete'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).not.toContain(
+        'Preset Skip: Skip'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+        'Selected preset policy: none'
+      )
+    })
+
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: {
+        value: JSON.stringify([
+          {
+            name: 'Preset Skip',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            preferred_conflict_action: 'rename',
+          },
+        ]),
+      },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-import'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).toContain(
+        'Preset Skip: Rename'
+      )
+    })
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Preset Skip' }))
+    expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
+    expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+      'Selected preset policy: Rename'
+    )
+  })
+
+  it('keeps saved policy summaries deterministic when import payload mixes wrapper and row-level hints', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: {
+        value: JSON.stringify({
+          schema_version: 1,
+          preferred_conflict_action: 'skip',
+          presets: [
+            {
+              name: 'Preset Explicit Rename',
+              baseline_scene_id: 'scene-a',
+              compare_scene_id: 'scene-b',
+              preferred_conflict_action: 'rename',
+            },
+            {
+              name: 'Preset Wrapper Only',
+              baseline_scene_id: 'scene-a',
+              compare_scene_id: 'scene-b',
+            },
+          ],
+        }),
+      },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-import'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).toContain(
+        'Preset Explicit Rename: Rename'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).toContain(
+        'Preset Wrapper Only: Upsert'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+        'Selected preset policy: none'
+      )
+    })
+  })
+
+  it('keeps duplicate-name preview rejections deterministic with wrapper and row policy hints', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: {
+        value: JSON.stringify({
+          schema_version: 1,
+          preferred_conflict_action: 'upsert',
+          presets: [
+            {
+              name: 'Preset Duplicate Hint',
+              baseline_scene_id: 'scene-a',
+              compare_scene_id: 'scene-b',
+              preferred_conflict_action: 'rename',
+            },
+            {
+              name: '  preset duplicate hint  ',
+              baseline_scene_id: 'scene-a',
+              compare_scene_id: 'scene-b',
+              preferred_conflict_action: 'skip',
+            },
+          ],
+        }),
+      },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-summary').textContent).toContain('2 source')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-accepted-count').textContent).toContain('1 accepted')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-conflict-count').textContent).toContain('0 conflict')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-skipped-count').textContent).toContain('1 skipped')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-row-conflict-policy-hint-row-1').textContent).toContain(
+        'Conflict policy hint: rename (row override; wrapper default upsert)'
+      )
+      expect(screen.getByText('Duplicate preset name within import payload')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-import'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-preset-summary').textContent).toContain('1 preset')
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).toContain(
+        'Preset Duplicate Hint: Rename'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-preset-policy-summary').textContent).not.toContain(
+        'Preset Duplicate Hint: Skip'
+      )
+    })
+  })
+
+  it('updates policy helper text from dirty draft to persisted sync after preset save', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: null,
+        presets: [
+          {
+            id: 'preset-a',
+            name: 'Preset A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preferred_conflict_action: 'rename',
+          },
+        ],
+        active_preset_id: null,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Preset A' }))
+
+    expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy-sync').textContent).toContain(
+      'Draft conflict policy matches persisted preset metadata.'
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-conflict-policy-reset'))
+    expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy-sync').textContent).toContain(
+      'Draft conflict policy differs (draft: Upsert). Save Preset to persist.'
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-save'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
+        'Selected preset policy: Upsert'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy-sync').textContent).toContain(
+        'Draft conflict policy matches persisted preset metadata.'
+      )
+    })
+  })
+
+  it('exports deterministic mixed-policy payloads with explicit rename rows only', () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: null,
+        presets: [
+          {
+            id: 'preset-default',
+            name: 'Preset Default',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-rename',
+            name: 'Preset Rename',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preferred_conflict_action: 'rename',
+          },
+        ],
+        active_preset_id: null,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-export'))
+
+    const transferField = screen.getByTestId('topbar-scene-diff-preset-transfer-input') as HTMLInputElement
+    const payload = JSON.parse(transferField.value) as {
+      schema_version: number;
+      preferred_conflict_action?: string;
+      presets: Array<{
+        name: string;
+        preferred_conflict_action?: string;
+      }>;
+    }
+
+    expect(payload.schema_version).toBe(1)
+    expect(payload.preferred_conflict_action).toBe('upsert')
+
+    const renamePreset = payload.presets.find((preset) => preset.name === 'Preset Rename')
+    const defaultPreset = payload.presets.find((preset) => preset.name === 'Preset Default')
+    expect(renamePreset?.preferred_conflict_action).toBe('rename')
+    expect(defaultPreset && 'preferred_conflict_action' in defaultPreset).toBe(false)
+  })
+
   it('replaces active diff selections with newly saved scenes after lifecycle churn', async () => {
     const talker = makeEndpoint({
       endpoint_id: 'talker-1',
@@ -690,6 +1317,354 @@ describe('TopBar filter controls provider integration', () => {
       expect(screen.getByTestId('scene-diff-preview-add-count').textContent).toContain('1 add')
       expect(screen.getByTestId('scene-diff-preview-remove-count').textContent).toContain('0 remove')
       expect(screen.getByTestId('scene-diff-preview-add-routes').textContent).toContain('Talker Two -> Listener Two')
+    })
+  })
+
+  it('keeps status-strip counter keyboard activation aligned with pointer-filtered scene-audit views', async () => {
+    const initialState = {
+      ...initialRoutingState,
+      auditLog: [
+        {
+          id: 'audit-1',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'SAVE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Saved scene: Baseline Scene (1 routes)',
+          validation_outcome: 'success' as const,
+        },
+        {
+          id: 'audit-2',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'UPDATE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Updated scene metadata: Baseline Scene -> Baseline Scene v2',
+          validation_outcome: 'warning' as const,
+        },
+        {
+          id: 'audit-3',
+          timestamp: '2026-02-17T00:02:00Z',
+          event_type: 'DELETE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Baseline Scene',
+          validation_outcome: 'error' as const,
+        },
+        {
+          id: 'audit-4',
+          timestamp: '2026-02-17T00:03:00Z',
+          event_type: 'SCENE_DIFF' as const,
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (3 rows)',
+          validation_outcome: 'warning' as const,
+        },
+      ],
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-warnings'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-warnings'), { key: ' ' })
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Updated scene metadata: Baseline Scene -> Baseline Scene v2')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-diff-preview-warnings'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Cancelled scene diff preset import preview (3 rows)')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-diff-preview-warnings'), { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Cancelled scene diff preset import preview (3 rows)')).toBeTruthy()
+    })
+  })
+
+  it('keeps status-strip counter prefilters deterministic during save/update/delete scene churn with controls open', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      auditLog: [
+        {
+          id: 'audit-legacy-delete-error',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'DELETE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Legacy Scene',
+          validation_outcome: 'error' as const,
+        },
+        {
+          id: 'audit-preview-warning',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'SCENE_DIFF' as const,
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (2 rows)',
+          validation_outcome: 'warning' as const,
+        },
+      ],
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.click(screen.getByTestId('topbar-scene-autosuffix-toggle'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'Ops Snapshot' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+    fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
+      target: { value: 'Compare Scene' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-update'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene (scene-b)' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-errors').textContent).toContain('Errors: 1')
+      expect(screen.getByTestId('topbar-scene-status-warnings').textContent).toContain('Warnings: 1')
+      expect(screen.getByTestId('topbar-scene-status-deletes').textContent).toContain('Deletes: 2')
+      expect(screen.getByTestId('topbar-scene-status-diff-preview-warnings').textContent).toContain('Diff Preview Warnings: 1')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-warnings'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Updated scene metadata: Baseline Scene -> Compare Scene')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (4 total)')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-errors'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (4 total)')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-deletes'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(2)
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Compare Scene')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (4 total)')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-diff-preview-warnings'))
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+    })
+  })
+
+  it('remediates stale scene-diff presets while scene-diff controls remain open during scene churn', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: null,
+        presets: [
+          {
+            id: 'preset-live',
+            name: 'A to B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preset_version: 1,
+            notes: '',
+          },
+        ],
+        active_preset_id: 'preset-live',
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    expect(screen.getByTestId('topbar-scene-diff-preset-summary').textContent).toContain('1 preset')
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-count').textContent).toContain('1 scene')
+      expect(screen.getByTestId('topbar-scene-diff-preset-summary').textContent).toContain('No saved compare presets')
+      expect(screen.getByTestId('topbar-scene-diff-active-preset').textContent).toContain('Active preset: none')
+    })
+  })
+
+  it('preserves deterministic cancellation reason ordering under rapid transfer edit, export, and close handlers', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: null,
+        presets: [
+          {
+            id: 'preset-ops',
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preset_version: 1,
+            notes: '',
+          },
+        ],
+        active_preset_id: null,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarSceneDiffPreviewLifecycleProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: {
+        value: JSON.stringify([
+          {
+            name: 'Imported One',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+          },
+        ]),
+      },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: {
+        value: JSON.stringify([
+          {
+            name: 'Imported Two',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+          },
+        ]),
+      },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-export'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-close'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('6')
+      expect(screen.getByTestId('probe-scene-diff-preview-cancelled-reasons').textContent).toBe(
+        'transfer_draft_changed|exported_payload_reset|popover_closed'
+      )
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe(
+        'opened:none|cancelled:transfer_draft_changed|opened:none|cancelled:exported_payload_reset|opened:none|cancelled:popover_closed'
+      )
     })
   })
 })

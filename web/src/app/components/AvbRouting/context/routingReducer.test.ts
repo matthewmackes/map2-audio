@@ -607,6 +607,76 @@ describe('routingReducer multi-node route updates', () => {
     expect(next.network.crossNodeRoutes[staleRoute.route_id]).toBeUndefined()
     expect(next.network.crossNodeRoutes[freshRoute.route_id]).toEqual(freshRoute)
   })
+
+  it('uses runtime actor override when locking routes', () => {
+    const runtime = globalThis as typeof globalThis & {
+      __MAP2_AVB_ACTOR__?: unknown
+    }
+    const previousActor = runtime.__MAP2_AVB_ACTOR__
+    runtime.__MAP2_AVB_ACTOR__ = 'ops@foh'
+
+    try {
+      const routeId = 'talker-1→listener-1'
+      const state = {
+        ...cloneState(),
+        liveRoutes: {
+          [routeId]: makeConnectedRoute(routeId),
+        },
+      }
+
+      const next = routingReducer(state, {
+        type: 'LOCK_ROUTE',
+        payload: {
+          route_id: routeId,
+          reason: 'operator-lock',
+        },
+      })
+
+      expect(next.liveRoutes[routeId]?.locked_by).toBe('ops@foh')
+      expect(next.auditLog[next.auditLog.length - 1]?.actor).toBe('ops@foh')
+    } finally {
+      if (previousActor === undefined) {
+        delete runtime.__MAP2_AVB_ACTOR__
+      } else {
+        runtime.__MAP2_AVB_ACTOR__ = previousActor
+      }
+    }
+  })
+
+  it('falls back to default actor when runtime actor override is blank', () => {
+    const runtime = globalThis as typeof globalThis & {
+      __MAP2_AVB_ACTOR__?: unknown
+    }
+    const previousActor = runtime.__MAP2_AVB_ACTOR__
+    runtime.__MAP2_AVB_ACTOR__ = '   '
+
+    try {
+      const routeId = 'talker-1→listener-1'
+      const state = {
+        ...cloneState(),
+        liveRoutes: {
+          [routeId]: makeConnectedRoute(routeId),
+        },
+      }
+
+      const next = routingReducer(state, {
+        type: 'LOCK_ROUTE',
+        payload: {
+          route_id: routeId,
+          reason: 'operator-lock',
+        },
+      })
+
+      expect(next.liveRoutes[routeId]?.locked_by).toBe('user')
+      expect(next.auditLog[next.auditLog.length - 1]?.actor).toBe('user')
+    } finally {
+      if (previousActor === undefined) {
+        delete runtime.__MAP2_AVB_ACTOR__
+      } else {
+        runtime.__MAP2_AVB_ACTOR__ = previousActor
+      }
+    }
+  })
 })
 
 describe('routingReducer node filter selection retention', () => {
@@ -830,6 +900,8 @@ describe('routingReducer scene diff foundations', () => {
       baseline_scene_id: null,
       compare_scene_id: null,
       preview: null,
+      presets: [],
+      active_preset_id: null,
     })
   })
 
@@ -911,6 +983,523 @@ describe('routingReducer scene diff foundations', () => {
     expect(updated.history.past.length).toBe(1)
   })
 
+  it('saves, applies, and deletes scene diff presets deterministically', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+        'scene-c': makeScene('scene-c', 'Scene C', [route]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+    }
+
+    const saved = routingReducer(state, {
+      type: 'SAVE_SCENE_DIFF_PRESET',
+      payload: { name: 'Ops Pair' },
+    })
+    expect(saved.sceneDiff.presets).toHaveLength(1)
+    const presetId = saved.sceneDiff.presets?.[0]?.id || ''
+    expect(saved.sceneDiff.active_preset_id).toBe(presetId)
+    expect(saved.sceneDiff.presets?.[0]?.baseline_scene_id).toBe('scene-a')
+    expect(saved.sceneDiff.presets?.[0]?.compare_scene_id).toBe('scene-b')
+    expect(saved.sceneDiff.presets?.[0]?.preset_version).toBe(1)
+    expect(saved.sceneDiff.presets?.[0]?.notes).toBeUndefined()
+
+    const withChangedCompare = routingReducer(saved, {
+      type: 'SET_SCENE_DIFF_COMPARE',
+      payload: 'scene-c',
+    })
+    const updated = routingReducer(withChangedCompare, {
+      type: 'SAVE_SCENE_DIFF_PRESET',
+      payload: {
+        name: 'Ops Pair',
+        notes: 'Revised compare pair',
+        preset_version: 5,
+        preferred_conflict_action: 'rename',
+      },
+    })
+    expect(updated.sceneDiff.presets).toHaveLength(1)
+    expect(updated.sceneDiff.presets?.[0]?.id).toBe(presetId)
+    expect(updated.sceneDiff.presets?.[0]?.compare_scene_id).toBe('scene-c')
+    expect(updated.sceneDiff.presets?.[0]?.notes).toBe('Revised compare pair')
+    expect(updated.sceneDiff.presets?.[0]?.preset_version).toBe(5)
+    expect(updated.sceneDiff.presets?.[0]?.preferred_conflict_action).toBe('rename')
+
+    const applied = routingReducer(updated, {
+      type: 'APPLY_SCENE_DIFF_PRESET',
+      payload: { preset_id: presetId },
+    })
+    expect(applied.sceneDiff.baseline_scene_id).toBe('scene-a')
+    expect(applied.sceneDiff.compare_scene_id).toBe('scene-c')
+    expect(applied.sceneDiff.preview).toBeNull()
+    expect(applied.sceneDiff.active_preset_id).toBe(presetId)
+
+    const deleted = routingReducer(applied, {
+      type: 'DELETE_SCENE_DIFF_PRESET',
+      payload: { preset_id: presetId },
+    })
+    expect(deleted.sceneDiff.presets).toEqual([])
+    expect(deleted.sceneDiff.active_preset_id).toBeNull()
+  })
+
+  it('swaps scene diff selections and clears preview context', () => {
+    const state = {
+      ...cloneState(),
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        preview: {
+          scene_id: 'scene-b',
+          scene_name: 'Scene B',
+          to_add: [],
+          to_remove: [],
+          unchanged: [],
+          total_changes: 0,
+        },
+        presets: [
+          {
+            id: 'preset-a',
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+        active_preset_id: 'preset-a',
+      },
+    }
+
+    const swapped = routingReducer(state, { type: 'SWAP_SCENE_DIFF_SELECTION' })
+    expect(swapped.sceneDiff.baseline_scene_id).toBe('scene-b')
+    expect(swapped.sceneDiff.compare_scene_id).toBe('scene-a')
+    expect(swapped.sceneDiff.preview).toBeNull()
+    expect(swapped.sceneDiff.active_preset_id).toBeNull()
+    expect(swapped.error).toBeNull()
+  })
+
+  it('drops scene diff presets that reference deleted scenes', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+        'scene-c': makeScene('scene-c', 'Scene C', [route]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+        presets: [
+          {
+            id: 'preset-ab',
+            name: 'A/B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-ac',
+            name: 'A/C',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-c',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+        active_preset_id: 'preset-ab',
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'DELETE_SCENE',
+      payload: { scene_id: 'scene-b' },
+    })
+    expect(next.sceneDiff.presets).toEqual([
+      {
+        id: 'preset-ac',
+        name: 'A/C',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-c',
+        updated_at: '2026-02-17T00:00:00Z',
+      },
+    ])
+    expect(next.sceneDiff.active_preset_id).toBeNull()
+  })
+
+  it('remediates stale scene diff presets on apply when referenced scenes are missing', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        presets: [
+          {
+            id: 'preset-stale',
+            name: 'Stale Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-missing',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+        active_preset_id: 'preset-stale',
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'APPLY_SCENE_DIFF_PRESET',
+      payload: { preset_id: 'preset-stale' },
+    })
+
+    expect(next.error).toContain('references missing scenes and was removed')
+    expect(next.sceneDiff.presets).toEqual([])
+    expect(next.sceneDiff.active_preset_id).toBeNull()
+    expect(next.auditLog[next.auditLog.length - 1]?.event_type).toBe('SCENE_DIFF')
+    expect(next.auditLog[next.auditLog.length - 1]?.validation_outcome).toBe('warning')
+    expect(next.history.past.length).toBe(1)
+  })
+
+  it('imports scene diff presets with deterministic upsert and skip behavior', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+        'scene-c': makeScene('scene-c', 'Scene C', [route]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing',
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'IMPORT_SCENE_DIFF_PRESETS',
+      payload: {
+        presets: [
+          {
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-c',
+            notes: 'Updated note',
+            preset_version: 4,
+            preferred_conflict_action: 'rename',
+          },
+          {
+            name: ' New Imported Pair ',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            notes: 'Imported note',
+            preset_version: 2,
+            preferred_conflict_action: 'skip',
+          },
+          {
+            name: 'Missing Scene Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-missing',
+          },
+        ],
+      },
+    })
+
+    expect(next.error).toBeNull()
+    expect(next.sceneDiff.presets).toHaveLength(2)
+    const updatedPreset = next.sceneDiff.presets?.find((preset) => preset.id === 'preset-existing')
+    expect(updatedPreset?.compare_scene_id).toBe('scene-c')
+    expect(updatedPreset?.notes).toBe('Updated note')
+    expect(updatedPreset?.preset_version).toBe(4)
+    expect(updatedPreset?.preferred_conflict_action).toBe('rename')
+    const importedPreset = next.sceneDiff.presets?.find((preset) => preset.name === 'New Imported Pair')
+    expect(importedPreset?.baseline_scene_id).toBe('scene-a')
+    expect(importedPreset?.compare_scene_id).toBe('scene-b')
+    expect(importedPreset?.notes).toBe('Imported note')
+    expect(importedPreset?.preset_version).toBe(2)
+    expect(importedPreset?.preferred_conflict_action).toBe('skip')
+    expect(next.auditLog[next.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'import',
+      imported_count: 2,
+      skipped_count: 1,
+    })
+  })
+
+  it('imports mixed valid/invalid conflict-policy hints with deterministic fallback behavior', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+        'scene-c': makeScene('scene-c', 'Scene C', [route]),
+      },
+      sceneDiff: {
+        ...cloneState().sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing',
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+            preferred_conflict_action: 'skip',
+          },
+        ],
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'IMPORT_SCENE_DIFF_PRESETS',
+      payload: {
+        presets: [
+          {
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-c',
+            notes: 'Existing updated',
+            // invalid hint should deterministically fall back to existing preset policy
+            preferred_conflict_action: 'force-merge' as unknown as 'upsert',
+          },
+          {
+            name: 'Explicit Rename',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            preferred_conflict_action: 'rename',
+          },
+          {
+            name: 'Invalid Hint New',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            // invalid hint on new preset should not persist any explicit policy
+            preferred_conflict_action: 'not-a-policy' as unknown as 'upsert',
+          },
+          {
+            name: 'Missing Scene',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-missing',
+            preferred_conflict_action: 'rename',
+          },
+        ],
+      },
+    })
+
+    expect(next.error).toBeNull()
+    expect(next.sceneDiff.presets).toHaveLength(3)
+
+    const existingPreset = next.sceneDiff.presets?.find((preset) => preset.id === 'preset-existing')
+    expect(existingPreset?.compare_scene_id).toBe('scene-c')
+    expect(existingPreset?.preferred_conflict_action).toBe('skip')
+
+    const explicitRenamePreset = next.sceneDiff.presets?.find((preset) => preset.name === 'Explicit Rename')
+    expect(explicitRenamePreset?.preferred_conflict_action).toBe('rename')
+
+    const invalidHintNewPreset = next.sceneDiff.presets?.find((preset) => preset.name === 'Invalid Hint New')
+    expect(invalidHintNewPreset?.preferred_conflict_action).toBeUndefined()
+
+    expect(next.auditLog[next.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'import',
+      imported_count: 3,
+      skipped_count: 1,
+    })
+  })
+
+  it('collapses duplicate normalized import names and resolves conflicting policy hints deterministically', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+        'scene-c': makeScene('scene-c', 'Scene C', [route]),
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'IMPORT_SCENE_DIFF_PRESETS',
+      payload: {
+        presets: [
+          {
+            name: '  Ops   Pair  ',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            preferred_conflict_action: 'rename',
+          },
+          {
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-c',
+            preferred_conflict_action: 'force-merge' as unknown as 'upsert',
+          },
+        ],
+      },
+    })
+
+    expect(next.error).toBeNull()
+    expect(next.sceneDiff.presets).toHaveLength(1)
+    expect(next.sceneDiff.presets?.[0]).toMatchObject({
+      name: 'Ops Pair',
+      baseline_scene_id: 'scene-a',
+      compare_scene_id: 'scene-c',
+      preferred_conflict_action: 'rename',
+    })
+    expect(next.auditLog[next.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'import',
+      imported_count: 2,
+      skipped_count: 0,
+    })
+  })
+
+  it('applies last-row precedence for duplicate normalized names with conflicting valid policy hints', () => {
+    const route = makeConnectedRoute('talker-1→listener-1')
+    const state = {
+      ...cloneState(),
+      scenes: {
+        'scene-a': makeScene('scene-a', 'Scene A', [route]),
+        'scene-b': makeScene('scene-b', 'Scene B', [route]),
+        'scene-c': makeScene('scene-c', 'Scene C', [route]),
+      },
+    }
+
+    const next = routingReducer(state, {
+      type: 'IMPORT_SCENE_DIFF_PRESETS',
+      payload: {
+        presets: [
+          {
+            name: 'Ops Pair',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            preferred_conflict_action: 'rename',
+          },
+          {
+            name: '  Ops Pair  ',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-c',
+            preferred_conflict_action: 'skip',
+          },
+        ],
+      },
+    })
+
+    expect(next.error).toBeNull()
+    expect(next.sceneDiff.presets).toHaveLength(1)
+    expect(next.sceneDiff.presets?.[0]).toMatchObject({
+      name: 'Ops Pair',
+      baseline_scene_id: 'scene-a',
+      compare_scene_id: 'scene-c',
+      preferred_conflict_action: 'skip',
+    })
+    expect(next.auditLog[next.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'import',
+      imported_count: 2,
+      skipped_count: 0,
+    })
+  })
+
+  it('records scene-diff preset preview lifecycle audit events without mutating history', () => {
+    const state = cloneState()
+
+    const opened = routingReducer(state, {
+      type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+      payload: {
+        phase: 'opened',
+        source_count: 4,
+        accepted_count: 2,
+        conflict_count: 1,
+        skipped_count: 1,
+        preferred_conflict_action: 'rename',
+      },
+    })
+    expect(opened.history.past).toHaveLength(0)
+    expect(opened.auditLog[opened.auditLog.length - 1]?.event_type).toBe('SCENE_DIFF')
+    expect(opened.auditLog[opened.auditLog.length - 1]?.validation_outcome).toBe('success')
+    expect(opened.auditLog[opened.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'preset_import_preview_opened',
+      phase: 'opened',
+      source_count: 4,
+      preferred_conflict_action: 'rename',
+    })
+
+    const refreshed = routingReducer(opened, {
+      type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+      payload: {
+        phase: 'refreshed',
+        source_count: 3,
+        accepted_count: 1,
+        conflict_count: 1,
+        skipped_count: 1,
+      },
+    })
+    expect(refreshed.history.past).toHaveLength(0)
+    expect(refreshed.auditLog[refreshed.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'preset_import_preview_refreshed',
+      phase: 'refreshed',
+      source_count: 3,
+    })
+
+    const cancelled = routingReducer(refreshed, {
+      type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+      payload: {
+        phase: 'cancelled',
+        reason: 'transfer_draft_changed',
+        source_count: 3,
+        accepted_count: 1,
+        conflict_count: 1,
+        skipped_count: 1,
+      },
+    })
+    expect(cancelled.history.past).toHaveLength(0)
+    expect(cancelled.auditLog[cancelled.auditLog.length - 1]?.validation_outcome).toBe('warning')
+    expect(cancelled.auditLog[cancelled.auditLog.length - 1]?.payload).toMatchObject({
+      mode: 'preset_import_preview_cancelled',
+      phase: 'cancelled',
+      reason: 'transfer_draft_changed',
+    })
+  })
+
+  it('records all supported preview cancellation reasons as warning audit entries', () => {
+    const state = cloneState()
+    const reasons = ['transfer_draft_changed', 'popover_closed', 'exported_payload_reset'] as const
+
+    const cancelledStates = reasons.map((reason) => routingReducer(state, {
+      type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
+      payload: {
+        phase: 'cancelled',
+        reason,
+        source_count: 2,
+        accepted_count: 1,
+        conflict_count: 1,
+        skipped_count: 0,
+      },
+    }))
+
+    cancelledStates.forEach((next, index) => {
+      expect(next.history.past).toHaveLength(0)
+      expect(next.auditLog[next.auditLog.length - 1]?.event_type).toBe('SCENE_DIFF')
+      expect(next.auditLog[next.auditLog.length - 1]?.validation_outcome).toBe('warning')
+      expect(next.auditLog[next.auditLog.length - 1]?.payload).toMatchObject({
+        mode: 'preset_import_preview_cancelled',
+        phase: 'cancelled',
+        reason: reasons[index],
+      })
+    })
+  })
+
   it('returns a scene-not-found error when updating missing scene metadata', () => {
     const state = {
       ...cloneState(),
@@ -984,5 +1573,44 @@ describe('routingReducer scene diff foundations', () => {
 
     expect(next.error).toBe('Scene name cannot exceed 64 characters.')
     expect(next.scenes['scene-a'].name).toBe('Scene A')
+  })
+
+  it('uses runtime actor override for audit and scene metadata attribution', () => {
+    const runtime = globalThis as typeof globalThis & {
+      __MAP2_AVB_ACTOR__?: unknown
+    }
+    const previousActor = runtime.__MAP2_AVB_ACTOR__
+    runtime.__MAP2_AVB_ACTOR__ = 'ops@foh'
+
+    try {
+      const state = {
+        ...cloneState(),
+        scenes: {
+          'scene-existing': makeScene('scene-existing', 'Baseline Scene', []),
+        },
+        liveRoutes: {
+          'talker-1→listener-1': makeConnectedRoute('talker-1→listener-1'),
+        },
+      }
+
+      const next = routingReducer(state, {
+        type: 'SAVE_SCENE',
+        payload: {
+          name: 'Operator Snapshot',
+          description: '',
+          tags: [],
+        },
+      })
+
+      const createdScene = Object.values(next.scenes).find((scene) => scene.id !== 'scene-existing')
+      expect(createdScene?.created_by).toBe('ops@foh')
+      expect(next.auditLog[next.auditLog.length - 1]?.actor).toBe('ops@foh')
+    } finally {
+      if (previousActor === undefined) {
+        delete runtime.__MAP2_AVB_ACTOR__
+      } else {
+        runtime.__MAP2_AVB_ACTOR__ = previousActor
+      }
+    }
   })
 })

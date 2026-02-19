@@ -1,0 +1,12 @@
+-- Copied pre-built juceaide to build directory
+-- Using existing JUCE from: /home/mm/map2-audio/juce-engine/Peavey5150Plugin/../build/_deps/juce-src
+-- Checking for modules 'webkit2gtk-4.0;gtk+-x11-3.0'
+--   Package 'webkit2gtk-4.0' not found
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (4.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/mm/map2-audio/juce-engine/Peavey5150Plugin/build
