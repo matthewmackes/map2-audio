@@ -4128,6 +4128,287 @@ CMakeFiles/WDFAmpPlugin.dir/Source/WDF/WDFTriode.cpp.obj: /home/mm/map2-audio/ju
   /usr/x86_64-w64-mingw32/sys-root/mingw/include/vadefs.h \
   /usr/x86_64-w64-mingw32/sys-root/mingw/include/wchar.h
 
+CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/cmake/mingw_juce_shim.cpp.obj: /home/mm/map2-audio/cmake/mingw_juce_shim.cpp \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/adxintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/ammintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxavx512intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxbf16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxcomplexintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxfp16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxfp8intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxint8intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxmovrsintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxtf32intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxtileintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxtransposeintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2-512bf16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2-512convertintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2-512mediaintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2-512minmaxintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2-512satcvtintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2bf16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2convertintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2copyintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2mediaintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2minmaxintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2satcvtintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx2intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bf16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bf16vlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bitalgintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bitalgvlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bwintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512cdintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512dqintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512fintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512fp16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512fp16vlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512ifmaintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512ifmavlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vbmi2intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vbmi2vlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vbmiintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vbmivlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vlbwintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vldqintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vnniintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vnnivlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vp2intersectintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vp2intersectvlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vpopcntdqintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vpopcntdqvlintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxifmaintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxneconvertintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxvnniint16intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxvnniint8intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxvnniintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/bmi2intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/bmiintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/cetintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/cldemoteintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/clflushoptintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/clwbintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/clzerointrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/cmpccxaddintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/emmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/enqcmdintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/f16cintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/fma4intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/fmaintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/fxsrintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/gfniintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/hresetintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/ia32intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/immintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/keylockerintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/limits.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/lwpintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/lzcntintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/mm3dnow.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/mm_malloc.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/mmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/movdirintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/movrsintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/mwaitintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/mwaitxintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/pconfigintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/pkuintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/pmmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/popcntintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/prfchiintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/prfchwintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/raointintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/rdseedintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/rtmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/serializeintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sgxintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sha512intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/shaintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sm3intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sm4intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/smmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/stdarg.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/stddef.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/syslimits.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/tbmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/tmmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/tsxldtrkintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/uintrintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/usermsrintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/vaesintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/vpclmulqdqintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/waitpkgintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/wbnoinvdintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/wmmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/x86gprintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/x86intrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xmmintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xopintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xsavecintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xsaveintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xsaveoptintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xsavesintrin.h \
+  /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xtestintrin.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_mac.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_secapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_stdarg.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_unicode.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/apiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/apisetcconv.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/basetsd.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/bemapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/std_abs.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cstdlib \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/pstl/pstl_config.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/stdlib.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/c++config.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/cguid.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/combaseapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/concurrencysal.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/consoleapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/consoleapi2.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/consoleapi3.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/corecrt.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/corecrt_wctype.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/corecrt_wstdlib.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/crtdefs.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/ctype.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_1.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_1helper.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1effects.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1helper.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2dbasetypes.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2derr.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10_1.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10_1shader.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10effect.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10misc.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10sdklayers.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10shader.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d9types.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3dcommon.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/datetimeapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dcommon.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dcompanimation.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomptypes.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/debugapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/driverspecs.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi1_2.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgicommon.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgiformat.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgitype.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/errhandlingapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/errno.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/excpt.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/fibersapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/fileapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/fltwinerror.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/guiddef.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/handleapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/heapapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/imm.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/interlockedapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/ioapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/jobapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/ktmtypes.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/libloaderapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/limits.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/malloc.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/mcx.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/memoryapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/minwinbase.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/minwindef.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/msxml.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/namedpipeapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/namespaceapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/oaidl.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/objbase.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/objidl.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/objidlbase.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/ocidl.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/ole2.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/oleauto.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/oleidl.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/poppack.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/processenv.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/processthreadsapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/processtopologyapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/profileapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/propidl.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/psdk_inc/intrin-impl.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack1.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack2.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack4.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack8.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/realtimeapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/reason.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpc.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcasync.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcdce.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcdcep.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcndr.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnsi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnsip.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnterr.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcsal.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sal.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sdkddkver.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sdks/_mingw_ddk.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/stdlib_s.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/stralign_s.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/string_s.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/securityappcontainer.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/securitybaseapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/servprov.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/specstrings.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/stdarg.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/stddef.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/stdlib.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/stralign.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/string.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/stringapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/synchapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sysinfoapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/systemtopologyapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/threadpoolapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/threadpoollegacyapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/timezoneapi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/tvout.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/unknwn.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/unknwnbase.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/urlmon.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/utilapiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/vadefs.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/virtdisk.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winapifamily.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winbase.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wincon.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wincontypes.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/windows.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winerror.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wingdi.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winnetwk.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winnls.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winnt.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winreg.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winsvc.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winuser.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/winver.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wnnc.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wow64apiset.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wtypes.h \
+  /usr/x86_64-w64-mingw32/sys-root/mingw/include/wtypesbase.h
+
 CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.obj: /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp \
   /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.cpp \
   /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h \
@@ -15689,43 +15970,17 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint.hh:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgitype.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgiformat.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgicommon.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi1_3.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/intrin.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/dwrite_2.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcompanimation.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_TableListBox.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_ComponentMovementWatcher.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3dcommon.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d9types.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/detail/juce_ComponentHelpers.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-aat-map.hh:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d11_2.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10sdklayers.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10_1.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2derr.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2dbasetypes.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/code_editor/juce_CPlusPlusCodeTokeniser.cpp:
 
@@ -15738,8 +15993,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-shape-plan.hh:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_3helper.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_1.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/unicode/juce_UnicodeUtils.cpp:
 
@@ -15804,12 +16057,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-var-hvar-table.hh:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/juce_JPEGLoader.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-outline.hh:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1effects.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/transupp.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jquant2.c:
 
@@ -16203,10 +16450,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_RangedAudioParameter.cpp:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10_1shader.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioProcessorParameterWithID.cpp:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AAXClientExtensions.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/ARA/juce_ARA_utils.cpp:
@@ -16409,10 +16652,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/juce_LAMEEncoderAudioFormat.cpp:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/window_flac.c:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/stream_encoder_framing.c:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/memory.c:
@@ -16469,10 +16708,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/private.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/alloc.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/format.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/callback.h:
@@ -16481,79 +16716,17 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/colour/juce_ColourGradient.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wtypes.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/ws2tcpip.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wow64apiset.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/juce_ScopedThreadDPIAwarenessSetter_windows.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winver.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jutils.c:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winuser.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-layout.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/interprocess/juce_InterprocessConnection.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winsvc.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winreg.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winnt.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d11.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/sys/utime.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winnls.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winnetwk.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-blob.hh:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/winioctl.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GSUB/ChainContextSubst.hh:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winerror.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/juce_FlacAudioFormat.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/windot11.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_ArrayBase.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/wincrypt.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wincon.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/widgets/juce_NoiseGate.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/winapifamily.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DImage_windows.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/utilapiset.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/urlmon.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebBrowserComponent.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/code_editor/juce_CodeEditorComponent.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/unknwnbase.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/unknwn.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cstdarg:
 
@@ -16562,8 +16735,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/udpmib.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/timeapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/threadpoollegacyapiset.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/system/juce_SystemStats.cpp:
 
@@ -16574,26 +16745,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/colour/juce_FillType.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/tchar.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/systemtopologyapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIATextProvider_windows.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/sysinfoapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/logging/juce_FileLogger.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/synchapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/pnglib/pngdebug.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/stringapiset.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/stralign.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/stdarg.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/specstrings.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/shtypes.h:
 
@@ -16607,36 +16758,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/sherrors.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wincontypes.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/shellapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/servprov.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_Label.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_FontOptions.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/securityappcontainer.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/sal.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcsal.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnsip.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/native/juce_PlatformTimer_windows.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_ParameterAttachments.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnsi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcasync.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/reason.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/realtimeapiset.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/images/juce_ImageCache.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/ras.h:
@@ -16644,14 +16765,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/include/private/fixed.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/qos.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack8.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack4.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack2.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack1.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-vector.hh:
 
@@ -16663,21 +16776,173 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/psdk_inc/_fd_types.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/processtopologyapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/documents/juce_FileBasedDocument.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/CursivePos.hh:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/processenv.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/poppack.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/playsoundapi.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/pciprop.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/objidlbase.h:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/objectarray.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/netioapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ncrypt.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/nb30.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/unicode/juce_UnicodeScript.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mstcpip.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmsystem.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmsyscom.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmreg.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmiscapi2.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_BallisticsFilter.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmiscapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmeapi.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mciapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/lmcons.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/isguids.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_AudioSubsectionReader.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/iptypes.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/iprtrmib.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ipifcons.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/buttons/juce_DrawableButton.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/iphlpapi.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_RangedDirectoryIterator.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ipexport.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/inaddr.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/float.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer.cc:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dpapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/devpkey.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/detail/juce_ToolbarItemDragAndDropOverlayComponent.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/comcat.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_BubbleMessageComponent.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FileSearchPathListComponent.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/bcrypt.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/basetyps.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/aclapi.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format/juce_AudioPluginFormat.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/_bsd_types.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/float.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/native/juce_HiddenMessageWindow_windows.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/sources/juce_AudioTransportSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/positioning/juce_RelativePoint.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/sources/juce_AudioSourcePlayer.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/native/juce_Midi_windows.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/native/juce_DirectSound_windows.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/ContextPos.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/os.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/midi_io/juce_MidiDevices.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-metrics.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_SampleRateHelpers.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODevice.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODevice.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_WindowedSincInterpolator.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-shaper-arabic-fallback.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_Interpolators.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/shlguid.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_ReverbAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_PositionableAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_MixerAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_ChannelRemappingAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_BufferingAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEZoneLayout.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPESynthesiserBase.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPESynthesiser.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPENote.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ucd.cc:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEMessages.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/PairPosFormat2.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEInstrument.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_Socket.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPackets.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPacket.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/application/juce_Application.h:
 
@@ -16711,9 +16976,11 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DMetrics_windows.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcndr.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_BorderedComponentBoundsConstrainer.cpp:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/images/juce_ImageConvolutionKernel.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_AudioWorkgroup.cpp:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vlintrin.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/tr1/ell_integral.tcc:
 
@@ -16731,17 +16998,7 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_pair.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10shader.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/modes/residue_16.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_PathIterator.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_Path.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi1_2.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/enable_special_members.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_Line.h:
 
@@ -16771,7 +17028,9 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/colour/juce_Colours.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/iprtrmib.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/window_flac.c:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/colour/juce_Colour.h:
 
@@ -16809,6 +17068,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/logging/juce_FileLogger.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/urlmon.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/pnglib/pngtrans.c:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/broadcasters/juce_ChangeBroadcaster.h:
@@ -16821,19 +17082,9 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/invoke.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/securitybaseapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_Process.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-map.hh:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/broadcasters/juce_ActionBroadcaster.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/fcntl.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/windows.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/juce_OggVorbisAudioFormat.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/widgets/juce_WaveShaper.h:
 
@@ -16887,7 +17138,9 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_DryWetMixer.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmreg.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/images/juce_ImageConvolutionKernel.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcndr.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_DelayLine.h:
 
@@ -16904,8 +17157,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/colour/juce_ColourGradient.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/bmi2intrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPESynthesiser.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/native/juce_ActiveXComponent_windows.cpp:
 
@@ -16925,7 +17176,17 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/containers/juce_SIMDRegister.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomp.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/containers/juce_AudioBlock.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-layout.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-map.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/interprocess/juce_InterprocessConnection.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winsvc.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/filter_design/juce_FilterDesign.cpp:
 
@@ -16935,13 +17196,7 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_FileOutputStream.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/buttons/juce_DrawableButton.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/iphlpapi.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/juce_data_structures.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/app_properties/juce_ApplicationProperties.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/psdk_inc/_socket_types.h:
 
@@ -16960,6 +17215,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-aat-layout-feat-table.hh:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/xml/juce_XmlElement.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/threadpoollegacyapiset.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/time/juce_RelativeTime.h:
 
@@ -16991,10 +17248,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_ScopedReadLock.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/oleidl.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/lzcntintrin.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/frequency/juce_FFT.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_ScopedLock.h:
@@ -17023,7 +17276,11 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/images/juce_ScaledImage.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODevice.cpp:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/documents/juce_FileBasedDocument.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/CursivePos.hh:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/processenv.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_StringRef.h:
 
@@ -17060,6 +17317,14 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_AbstractFifo.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_MemoryAudioSource.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_ComponentDragger.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/compat.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_SystemAudioVolume.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/drawables/juce_DrawableComposite.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_tree.h:
 
@@ -17101,6 +17366,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/sstream.tcc:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ifdef.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/streams/juce_OutputStream.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/metadata.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/containers/juce_SIMDRegister_Impl.h:
@@ -17113,12 +17382,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/xml/juce_XmlDocument.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_BorderedComponentBoundsConstrainer.cpp:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vlintrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_AudioWorkgroup.cpp:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_DryWetMixer.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_LruCache.h:
@@ -17128,8 +17391,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/maths/juce_SpecialFunctions.cpp:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xmmintrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_ChannelRemappingAudioSource.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-aat.h:
 
@@ -17143,8 +17404,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/buttons/juce_ImageButton.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioParameterFloat.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_MACAddress.h:
@@ -17157,15 +17416,13 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/misc/juce_Uuid.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/in6addr.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_SparseSet.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/memoryfwd.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_BubbleMessageComponent.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FileSearchPathListComponent.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/bcrypt.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/propsys.h:
 
@@ -17196,6 +17453,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/type_traits:
 
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/Amps/Peavey5150.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/sal.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/memory/juce_OptionalScopedPointer.h:
 
@@ -17259,11 +17518,21 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/streams/juce_BufferedInputStream.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/devpropdef.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_FileInputStream.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/effects/juce_DropShadowEffect.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_FileFilter.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/buffers/juce_AudioProcessLoadMeasurer.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIAValueProvider_windows.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/native/juce_BasicNativeHeaders.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_File.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioParameterInt.cpp:
 
@@ -17274,6 +17543,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_Variant.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_Span.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winreg.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_StringPool.cpp:
 
@@ -17286,6 +17557,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/pthread_time.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_Optional.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/juce_ScopedThreadDPIAwarenessSetter_windows.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winver.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/native/juce_SIMDNativeOps_fallback.h:
 
@@ -17307,8 +17582,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_secapi.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_MixerAudioSource.cpp:
-
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/stdarg.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_DynamicObject.h:
@@ -17326,10 +17599,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/pkuintrin.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_RangedAudioParameter.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/sdkddkver.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_ParameterAttachments.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.h:
 
@@ -17373,7 +17642,13 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/basic_string.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/stralign.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_AndroidDocument.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/naptypes.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/swprintf.inl:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_StateVariableFilter.h:
 
@@ -17429,6 +17704,12 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_FirstOrderTPTFilter.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/sharedbook.c:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_IIRFilterAudioSource.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/array:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/buttons/juce_ShapeButton.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_DirectoryContentsList.cpp:
@@ -17438,14 +17719,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cctype:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/sstream:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1helper.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/javascript/choc/text/choc_StringUtilities.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_LinkwitzRileyFilter.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/scanning/juce_PluginListComponent.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/ext/type_traits.h:
 
@@ -17501,11 +17774,11 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEMessages.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/alloc.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1.h:
+
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/debug/assertions.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ucd.cc:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEMessages.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_OwnedArray.h:
 
@@ -17555,6 +17828,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/stdint.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/logging/juce_FileLogger.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/synchapi.h:
+
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stringfwd.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_uninitialized.h:
@@ -17589,11 +17866,17 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.cpp:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_Reverb.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessorListener.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_Toolbar.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/detail/juce_ScopedContentSharerImpl.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_LagrangeInterpolator.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_CriticalSection.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/drawables/juce_DrawableImage.h:
 
@@ -17627,27 +17910,19 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/corecrt.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/native/juce_DirectSound_windows.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_1helper.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ipmib.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/cpp_type_traits.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10effect.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/include/private/bitreader.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/frequency/juce_FFT.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_KeyMappingEditorComponent.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/functional:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/juce_GIFLoader.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ntddndis.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_NamedPipe.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_NamedValueSet.cpp:
 
@@ -17673,15 +17948,11 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/std_abs.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmiscapi2.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/ext/alloc_traits.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_InterProcessLock.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/sdks/_mingw_ddk.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-hhea-table.hh:
 
@@ -17713,6 +17984,20 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/move.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_ShapedText.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/players/juce_SoundPlayer.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/nldef.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioProcessorParameterWithID.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_BufferingAudioFormatReader.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jutils.c:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winuser.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/bitwriter.c:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/messages/juce_NotificationType.h:
@@ -17743,10 +18028,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/maths/juce_FastMathApproximations.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnterr.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_algobase.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/maths/juce_BigInteger.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/stddef.h:
@@ -17765,6 +18046,12 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_TextDiff.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPESynthesiserVoice.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_AnimatedPositionBehaviours.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_SingleThreadedAbstractFifo.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPMidi1ToMidi2DefaultTranslator.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/refwrap.h:
@@ -17778,10 +18065,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/gui/juce_AudioDeviceSelectorComponent.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/c++allocator.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/detail/juce_ToolbarItemDragAndDropOverlayComponent.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/comcat.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_VBlankAttachment.cpp:
 
@@ -17825,14 +18108,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_NamedValueSet.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_Toolbar.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/detail/juce_ScopedContentSharerImpl.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_CriticalSection.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_LagrangeInterpolator.cpp:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/sys/timeb.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jcomapi.c:
@@ -17861,6 +18136,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_ARAHosting.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/commctrl.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/messages/juce_CallbackMessage.h:
+
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/concepts:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/adxintrin.h:
@@ -17874,10 +18153,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/include/private/memory.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_tempbuf.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_BallisticsFilter.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmiscapi.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/window.c:
 
@@ -17927,10 +18202,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/new:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wingdi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ptr_traits.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_GridItem.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-deprecated.h:
@@ -17949,7 +18220,7 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/juce_core.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_ReverbAudioSource.cpp:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winnetwk.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/atomic_base.h:
 
@@ -17993,6 +18264,12 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_SortedSet.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jchuff.c:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/exdisp.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_iterator_base_funcs.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIAGridProvider_windows.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2-512convertintrin.h:
@@ -18014,6 +18291,14 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_BallisticsFilter.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/nested_exception.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/juce_graphics.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/include/private/bitreader.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/frequency/juce_FFT.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10effect.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/stdlib.h:
 
@@ -18071,10 +18356,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sgxintrin.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/oleauto.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/align.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioParameterBool.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_NewLine.h:
@@ -18104,6 +18385,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/contexts/juce_GraphicsContext.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/mm3dnow.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/docobj.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/backward/auto_ptr.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_MixerAudioSource.h:
 
@@ -18163,8 +18448,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/errno.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/objectarray.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/gthr.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/pnglib/pngrio.c:
@@ -18180,6 +18463,12 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/atomic_word.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cstdint:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIARangeValueProvider_windows.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEValue.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/ARA/juce_ARA_utils.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/placement/juce_Justification.h:
 
@@ -18214,8 +18503,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormatManager.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/pthread.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPENote.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/native/juce_SIMDNativeOps_sse.h:
 
@@ -18289,6 +18576,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/javascript/juce_Javascript.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/widgets/juce_NoiseGate.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winapifamily.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_VST3ClientExtensions.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/tuple:
@@ -18312,20 +18603,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/shobjidl.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_ComponentBuilder.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer-verify.cc:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/sources/juce_AudioTransportSource.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/PairValueRecord.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioProcessorValueTreeState.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/propidl.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/gthr-default.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPENote.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/system/juce_TargetPlatform.h:
 
@@ -18355,6 +18632,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/images/juce_Image.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack2.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/glyf/composite-iter.hh:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEInstrument.h:
@@ -18367,19 +18646,9 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/emmintrin.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/processtopologyapi.h:
+
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/time.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GSUB/Common.hh:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomptypes.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format/juce_AudioPluginFormatManager.cpp:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/vaesintrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_DirectoryContentsList.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxint8intrin.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/detail/juce_PointerState.h:
 
@@ -18435,12 +18704,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPIterator.cpp:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_AnimatedPositionBehaviours.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_SingleThreadedAbstractFifo.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPESynthesiserVoice.cpp:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_PositionableAudioSource.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/memory/juce_Singleton.h:
@@ -18479,10 +18742,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vldqintrin.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpc.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/memory/juce_Memory.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/modes/setup_8.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/c++config.h:
@@ -18514,6 +18773,14 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/widgets/juce_Compressor.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-bit-set.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_ToneGeneratorAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/buffers/juce_AudioDataConverters.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/math.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_TextDragAndDropTarget.h:
 
@@ -18548,6 +18815,12 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/localefwd.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_Parallelogram.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/native/juce_PlatformTimer_windows.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_ParameterAttachments.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnsi.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_MouseCursor.h:
 
@@ -18593,11 +18866,13 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_ComponentMovementWatcher.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/ContextPos.hh:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/gui/juce_KeyboardComponentBase.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/os.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_SmoothedValue.cpp:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormatReaderSource.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format/juce_AudioPluginFormatManager.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_ARACommon.h:
 
@@ -18629,6 +18904,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/systemtopologyapi.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-subset.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/audio_cd/juce_AudioCDReader.h:
@@ -18653,11 +18930,15 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessorGraph.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10sdklayers.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/native/juce_Messaging_windows.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/ktmtypes.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_ProcessorDuplicator.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/reason.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_ThreadPool.h:
 
@@ -18666,6 +18947,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessorParameterGroup.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/scanning/juce_KnownPluginList.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_1.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_AffineTransform.h:
 
@@ -18765,41 +19048,15 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FileChooser.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_ShapedText.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/players/juce_SoundPlayer.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioProcessorParameterWithID.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_BufferingAudioFormatReader.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/nldef.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/c++locale.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FileTreeComponent.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/threadpoolapiset.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bitalgvlintrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FilenameComponent.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/native/juce_BluetoothMidiDevicePairingDialogue_windows.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/virtdisk.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/stralign_s.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/menus/juce_MenuBarModel.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_WebInputStream.cpp:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_TextLayout.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEUtils.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_TextLayout.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.h:
 
@@ -18819,7 +19076,7 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/keyboard/juce_KeyboardFocusTraverser.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/aclapi.h:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2derr.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/frequency/juce_Convolution.h:
 
@@ -18827,19 +19084,15 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/keyboard/juce_TextEditorKeyMapper.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-shaper-arabic-fallback.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_Interpolators.cpp:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/keyboard/juce_TextInputTarget.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_AnimatedPosition.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_BorderedComponentBoundsConstrainer.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/juce_MidiBuffer.cpp:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/apiset.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/juce_MidiBuffer.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FileChooserDialogBox.h:
 
@@ -18884,6 +19137,14 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_IPAddress.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_Viewport.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_EdgeTable.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_MemoryAudioSource.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/maths/juce_Polynomial.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel_V1.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel_V3.h:
 
@@ -19011,23 +19272,15 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxbf16intrin.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcdce.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/prsht.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_DirectoryIterator.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_CallOutBox.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/stream_decoder.c:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/ocidl.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_ComponentPeer.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wnnc.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_Decibels.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wnnc.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_DialogWindow.h:
 
@@ -19075,6 +19328,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/documents/juce_FileBasedDocument.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcsal.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/commands/juce_ApplicationCommandInfo.cpp:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxfp16intrin.h:
@@ -19107,6 +19362,8 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_LiveConstantEditor.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10_1.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_PushNotifications.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/jobapi.h:
@@ -19131,9 +19388,7 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebControlParameterIndexReceiver.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_AudioSubsectionReader.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/iptypes.h:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/specstrings.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebControlRelays.h:
 
@@ -19153,6 +19408,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxmovrsintrin.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_IIRFilter.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/juce_MidiMessage.cpp:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/memory/juce_MemoryBlock.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/juce_OggVorbisAudioFormat.cpp:
@@ -19171,8 +19430,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2copyintrin.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/native/juce_HiddenMessageWindow_windows.h:
-
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx10_2minmaxintrin.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_SelectedItemSet.h:
@@ -19183,11 +19440,19 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxneconvertintrin.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/midi_io/juce_MidiDevices.cpp:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GSUB/ChainContextSubst.hh:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winerror.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/assert.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx2intrin.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-outline.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/transupp.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1effects.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-bit-page.hh:
 
@@ -19203,9 +19468,9 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-unicode.cc:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/processthreadsapi.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_ThreadLocalValue.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/processthreadsapi.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512ifmaintrin.h:
 
@@ -19247,6 +19512,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512vpopcntdqintrin.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/enable_special_members.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgi1_2.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/positioning/juce_RelativeCoordinate.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avxvnniint16intrin.h:
@@ -19270,6 +19539,10 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/fmaintrin.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/gfniintrin.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIATextProvider_windows.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/sysinfoapi.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/bitrate.h:
 
@@ -19299,7 +19572,19 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/movdirintrin.h:
 
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/app_properties/juce_ApplicationProperties.h:
+
+/home/mm/map2-audio/cmake/mingw_juce_shim.cpp:
+
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/movrsintrin.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/prsht.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_DirectoryIterator.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_CallOutBox.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcdce.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/components/juce_CachedComponentImage.h:
 
@@ -19309,15 +19594,19 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/prfchiintrin.h:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/joystickapi.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_data_structures/undomanager/juce_UndoManager.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_CharacterFunctions.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/joystickapi.h:
-
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/prfchwintrin.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/raointintrin.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mprapi.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/rdseedintrin.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/serializeintrin.h:
 
@@ -19327,13 +19616,15 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/istream.tcc:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ole2.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/smmintrin.h:
-
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_Point.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/stdint.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/native/juce_ComSmartPtr_windows.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_DocumentWindow.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/tbmintrin.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/fibersapi.h:
 
@@ -19348,14 +19639,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/menus/juce_MenuBarComponent.h:
 
 /usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/xtestintrin.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/objidl.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/basic_ios.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/PairPosFormat2.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEInstrument.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessorEditorHostContext.h:
 
@@ -19377,14 +19660,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/cxxabi_forced.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-bit-set.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/buffers/juce_AudioDataConverters.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/math.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_ToneGeneratorAudioSource.cpp:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_numeric.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/deque.tcc:
@@ -19399,13 +19674,13 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/hashtable_policy.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/juce_MidiMessage.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_IIRFilter.cpp:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/vector:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ios_base.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_ParameterAttachments.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/sdkddkver.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/deque:
 
@@ -19431,33 +19706,29 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/monostate.h:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10misc.h:
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_TableListBox.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_ComponentMovementWatcher.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3dcommon.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/functexcept.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10misc.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ostream.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ostream.tcc:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcdcep.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/signal.h:
-
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/UI/AmpSelector.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioDeviceManager.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ostream_insert.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/zip/zlib/crc32.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioDeviceManager.cpp:
 
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/PluginProcessor.cpp:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/quoted_string.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/lzcntintrin.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/oleidl.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/layout/juce_StretchableLayoutResizerBar.cpp:
 
@@ -19505,17 +19776,15 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/iostream:
 
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winnt.h:
+
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_DynamicObject.cpp:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/smallft.c:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/set:
 
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/float.h:
-
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/stdexcept:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ipifcons.h:
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/psdk_inc/_ip_mreq1.h:
 
@@ -19545,14 +19814,6 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/stdio_s.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_WindowedSincInterpolator.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/nb30.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/wtypesbase.h:
-
-/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/UI/AmpSelector.cpp:
-
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFElements.cpp:
 
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFToneStack.cpp:
@@ -19561,9 +19822,265 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 
 /home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/WDF/WDFTriode.cpp:
 
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/shlguid.h:
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/ammintrin.h:
 
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_unicode.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Font.cpp:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sha512intrin.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/basetsd.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioProcessorParameterWithID.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10_1shader.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/basic_ios.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/objidl.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/concurrencysal.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/include/private/bitwriter.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/consoleapi3.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ipmib.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1_1helper.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/javascript/choc/text/choc_StringUtilities.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/processors/juce_LinkwitzRileyFilter.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/scanning/juce_PluginListComponent.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2d1helper.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d2dbasetypes.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/zip/zlib/crc32.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioDeviceManager.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/modes/residue_16.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_PathIterator.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d10shader.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d9types.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint-extents.cc:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jdapimin.c:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/clwbintrin.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/datetimeapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcompanimation.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GSUB/Common.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format/juce_AudioPluginFormatManager.cpp:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/vaesintrin.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_DirectoryContentsList.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/amxint8intrin.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dcomptypes.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgicommon.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgiformat.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/dxgitype.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_ProgressBar.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/errhandlingapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/excpt.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/fileapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/imm.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/interlockedapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack1.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_Path.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ioapiset.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-subset-cff-common.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jcparam.c:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/stream_encoder.c:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_MouseInactivityDetector.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/mcx.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/minwinbase.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/msxml.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/pthread_compat.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/namespaceapi.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_Base64.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/codecvt.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/objbase.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/objidlbase.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/smmintrin.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/ole2.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/align.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/oleauto.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/poppack.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/OT/Layout/GPOS/PairValueRecord.hh:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/juce_AudioProcessorValueTreeState.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/gthr-default.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPENote.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/propidl.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack4.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/pshpack8.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/realtimeapiset.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/memory/juce_Memory.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpc.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcasync.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioDeviceManager.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/signal.h:
+
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/UI/AmpSelector.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcdcep.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnsip.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_algobase.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/rpcnterr.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_Label.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_FontOptions.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/securityappcontainer.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/threads/juce_Process.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/securitybaseapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/servprov.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/stdarg.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/pnglib/pngdebug.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/stringapiset.h:
+
+/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/avx512bitalgvlintrin.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/filebrowser/juce_FilenameComponent.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/threadpoolapiset.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/unknwn.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/misc/juce_WebBrowserComponent.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_extra/code_editor/juce_CodeEditorComponent.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/unknwnbase.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DImage_windows.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/utilapiset.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/native/juce_BluetoothMidiDevicePairingDialogue_windows.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/menus/juce_MenuBarModel.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/stralign_s.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/virtdisk.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wincon.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/shellapi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wincontypes.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_ArrayBase.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/fcntl.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/juce_OggVorbisAudioFormat.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/windows.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ptr_traits.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wingdi.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/d3d11.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/sys/utime.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/winnls.h:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wow64apiset.h:
+
+/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/colour/juce_ColourGradient.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wtypes.h:
+
+/home/mm/map2-audio/juce-engine/WDFAmpPlugin/Source/UI/AmpSelector.cpp:
+
+/usr/x86_64-w64-mingw32/sys-root/mingw/include/wtypesbase.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp:
 
@@ -19600,237 +20117,3 @@ CMakeFiles/WDFAmpPlugin.dir/home/mm/map2-audio/juce-engine/build/_deps/juce-src/
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/juce_MidiKeyboardState.h:
 
 /home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPView.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPacket.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_Socket.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/midi/ump/juce_UMPackets.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPESynthesiserBase.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIARangeValueProvider_windows.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/utilities/ARA/juce_ARA_utils.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEValue.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_BufferingAudioSource.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/mpe/juce_MPEZoneLayout.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7/lib/sharedbook.c:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/array:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_IIRFilterAudioSource.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_EdgeTable.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_dsp/maths/juce_Polynomial.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/lookandfeel/juce_LookAndFeel_V1.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_MemoryAudioSource.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/sources/juce_PositionableAudioSource.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_utils/gui/juce_KeyboardComponentBase.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormatReaderSource.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format/juce_AudioPluginFormatManager.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_basics/utilities/juce_SmoothedValue.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODevice.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-ot-metrics.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_SampleRateHelpers.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_ComponentDragger.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/compat.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/drawables/juce_DrawableComposite.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/audio_io/juce_SystemAudioVolume.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/native/juce_Midi_windows.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/positioning/juce_RelativePoint.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_devices/sources/juce_AudioSourcePlayer.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/native/accessibility/juce_UIAValueProvider_windows.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_File.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/native/juce_BasicNativeHeaders.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/windows/juce_DocumentWindow.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/tbmintrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/native/juce_ComSmartPtr_windows.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/format/juce_AudioPluginFormat.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/_bsd_types.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/ammintrin.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/_mingw_unicode.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/juce_Font.cpp:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/sha512intrin.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_processors/processors/juce_AudioProcessor.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/basetsd.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/basetyps.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_events/messages/juce_CallbackMessage.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/commctrl.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/concurrencysal.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/include/private/bitwriter.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/consoleapi3.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-paint-extents.cc:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/native/juce_Direct2DGraphicsContext_windows.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jdapimin.c:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/clwbintrin.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/datetimeapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/devpkey.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_FileInputStream.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/devpropdef.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/backward/auto_ptr.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/docobj.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-buffer.cc:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/dpapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/widgets/juce_ProgressBar.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-font.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/errhandlingapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/excpt.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jchuff.c:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_iterator_base_funcs.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/exdisp.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/fileapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/float.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/streams/juce_OutputStream.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ifdef.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/imm.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/containers/juce_SparseSet.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/in6addr.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/inaddr.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/interlockedapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/geometry/juce_Path.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ioapiset.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/files/juce_RangedDirectoryIterator.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ipexport.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/isguids.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mciapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/lmcons.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-face.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/fonts/harfbuzz/hb-subset-cff-common.hh:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/jpglib/jcparam.c:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_audio_formats/codecs/flac/libFLAC/stream_encoder.c:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_gui_basics/mouse/juce_MouseInactivityDetector.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mcx.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/minwinbase.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmeapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmsyscom.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mmsystem.h:
-
-/usr/lib/gcc/x86_64-w64-mingw32/15.2.1/include/rdseedintrin.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mprapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/unicode/juce_UnicodeScript.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/mstcpip.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/msxml.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/pthread_compat.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/namespaceapi.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/swprintf.inl:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/naptypes.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ncrypt.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/netioapi.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_graphics/image_formats/juce_GIFLoader.cpp:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/network/juce_NamedPipe.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/ntddndis.h:
-
-/home/mm/map2-audio/juce-engine/build/_deps/juce-src/modules/juce_core/text/juce_Base64.cpp:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/codecvt.h:
-
-/usr/x86_64-w64-mingw32/sys-root/mingw/include/objbase.h:
