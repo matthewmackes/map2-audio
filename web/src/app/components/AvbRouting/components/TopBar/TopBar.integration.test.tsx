@@ -176,6 +176,17 @@ function TopBarSceneDiffPreviewLifecycleProbe() {
       return `${phase}:${reason}`
     })
     .join('|') || 'none'
+  const previewLifecycleCountSummary = previewLifecycleEntries
+    .map((entry) => {
+      const phase = typeof entry.payload.phase === 'string' ? entry.payload.phase : 'unknown'
+      const reason = typeof entry.payload.reason === 'string' ? entry.payload.reason : 'none'
+      const sourceCount = typeof entry.payload.source_count === 'number' ? entry.payload.source_count : 'none'
+      const acceptedCount = typeof entry.payload.accepted_count === 'number' ? entry.payload.accepted_count : 'none'
+      const conflictCount = typeof entry.payload.conflict_count === 'number' ? entry.payload.conflict_count : 'none'
+      const skippedCount = typeof entry.payload.skipped_count === 'number' ? entry.payload.skipped_count : 'none'
+      return `${phase}:${reason}:${sourceCount}:${acceptedCount}:${conflictCount}:${skippedCount}`
+    })
+    .join('|') || 'none'
   const cancelledReasons = previewLifecycleEntries
     .filter((entry) => entry.payload.phase === 'cancelled')
     .map((entry) => (typeof entry.payload.reason === 'string' ? entry.payload.reason : 'none'))
@@ -185,6 +196,7 @@ function TopBarSceneDiffPreviewLifecycleProbe() {
     <div>
       <span data-testid="probe-scene-diff-preview-lifecycle-count">{String(previewLifecycleEntries.length)}</span>
       <span data-testid="probe-scene-diff-preview-lifecycle-summary">{previewLifecycleSummary}</span>
+      <span data-testid="probe-scene-diff-preview-lifecycle-count-summary">{previewLifecycleCountSummary}</span>
       <span data-testid="probe-scene-diff-preview-cancelled-reasons">{cancelledReasons}</span>
     </div>
   )
@@ -971,6 +983,427 @@ describe('TopBar filter controls provider integration', () => {
     })
   })
 
+  it('keeps preview row ordering and import-plan totals deterministic during rapid page/toggle alternation', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        ...initialRoutingState.sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing-a',
+            name: 'Ops Existing A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-b',
+            name: 'Ops Existing B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const payload = JSON.stringify([
+      {
+        name: 'Ops Existing A',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing B',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      ...Array.from({ length: 10 }, (_, index) => ({
+        name: `Valid Preset ${index + 1}`,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      })),
+      {
+        name: 'Missing Compare 1',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+      {
+        name: 'Missing Compare 2',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+    ])
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: { value: payload },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 14 visible rows (14 total)'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-page-next'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 13-14 of 14 visible rows (14 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['skipped', 'skipped'])
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-conflict'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 12 visible rows (14 total)'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-skipped'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-10 of 10 visible rows (14 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(Array.from({ length: 10 }, () => 'accepted'))
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-conflict'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 12 visible rows (14 total)'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-skipped'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 14 visible rows (14 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['conflict', 'conflict', ...Array.from({ length: 10 }, () => 'accepted')])
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-page-next'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 13-14 of 14 visible rows (14 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['skipped', 'skipped'])
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+    })
+  })
+
+  it('keeps mixed pointer/keyboard bulk conflict actions deterministic while non-conflict groups are hidden', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        ...initialRoutingState.sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing-a',
+            name: 'Ops Existing A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-b',
+            name: 'Ops Existing B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const payload = JSON.stringify([
+      {
+        name: 'Ops Existing A',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing B',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Valid New',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Missing Compare 1',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+      {
+        name: 'Missing Compare 2',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+    ])
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: { value: payload },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-5 of 5 visible rows (5 total)'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-accepted'))
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-skipped'), { key: ' ' })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-2 of 2 visible rows (5 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['conflict', 'conflict'])
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-bulk-skip'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 2')
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-diff-import-preview-conflict-bulk-rename'), { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-diff-import-preview-conflict-bulk-upsert'), { key: ' ' })
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 2')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 0')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 0')
+    })
+  })
+
+  it('keeps conflict-action plan totals deterministic while paging between preview slices', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        ...initialRoutingState.sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing-a',
+            name: 'Ops Existing A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-b',
+            name: 'Ops Existing B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-c',
+            name: 'Ops Existing C',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const payload = JSON.stringify([
+      {
+        name: 'Ops Existing A',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing B',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing C',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      ...Array.from({ length: 10 }, (_, index) => ({
+        name: `Accepted Preset ${index + 1}`,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      })),
+      {
+        name: 'Missing Compare 1',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+      {
+        name: 'Missing Compare 2',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+    ])
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: { value: payload },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 15 visible rows (15 total)'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 3')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-rename-row-1'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-skip-row-2'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-conflict-action-upsert-row-3'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 1')
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['conflict', 'conflict', 'conflict', ...Array.from({ length: 9 }, () => 'accepted')])
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-page-next'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 13-15 of 15 visible rows (15 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['accepted', 'skipped', 'skipped'])
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 1')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-page-prev'))
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 15 visible rows (15 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['conflict', 'conflict', 'conflict', ...Array.from({ length: 9 }, () => 'accepted')])
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-upserts').textContent).toContain('Planned upsert: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-renames').textContent).toContain('Planned rename: 1')
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-plan-skips').textContent).toContain('Planned skip: 1')
+    })
+  })
+
   it('updates policy helper text from dirty draft to persisted sync after preset save', async () => {
     const route = makeSceneRoute('talker-1', 'listener-1')
     const initialState = {
@@ -1515,6 +1948,117 @@ describe('TopBar filter controls provider integration', () => {
     })
   })
 
+  it('keeps status-strip counter keyboard activation deterministic after churn-driven counter value changes in-session', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      auditLog: [
+        {
+          id: 'audit-legacy-delete-error',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'DELETE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Legacy Scene',
+          validation_outcome: 'error' as const,
+        },
+        {
+          id: 'audit-preview-warning',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'SCENE_DIFF' as const,
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (2 rows)',
+          validation_outcome: 'warning' as const,
+        },
+      ],
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.click(screen.getByTestId('topbar-scene-autosuffix-toggle'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'Ops Snapshot' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+    fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
+      target: { value: 'Compare Scene' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-update'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene (scene-b)' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-errors').textContent).toContain('Errors: 1')
+      expect(screen.getByTestId('topbar-scene-status-warnings').textContent).toContain('Warnings: 1')
+      expect(screen.getByTestId('topbar-scene-status-deletes').textContent).toContain('Deletes: 2')
+      expect(screen.getByTestId('topbar-scene-status-diff-preview-warnings').textContent).toContain('Diff Preview Warnings: 1')
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-warnings'), { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Updated scene metadata: Baseline Scene -> Compare Scene')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (4 total)')
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-errors'), { key: ' ' })
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (4 total)')
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-deletes'), { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(2)
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Compare Scene')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (4 total)')
+    })
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-diff-preview-warnings'), { key: ' ' })
+    await waitFor(() => {
+      expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+    })
+  })
+
   it('remediates stale scene-diff presets while scene-diff controls remain open during scene churn', async () => {
     const route = makeSceneRoute('talker-1', 'listener-1')
     const initialState = {
@@ -1665,6 +2209,277 @@ describe('TopBar filter controls provider integration', () => {
       expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe(
         'opened:none|cancelled:transfer_draft_changed|opened:none|cancelled:exported_payload_reset|opened:none|cancelled:popover_closed'
       )
+    })
+  })
+
+  it('keeps preview lifecycle audit counts deterministic when refreshing from non-default collapse and page state', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      sceneDiff: {
+        ...initialRoutingState.sceneDiff,
+        presets: [
+          {
+            id: 'preset-existing-a',
+            name: 'Ops Existing A',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-b',
+            name: 'Ops Existing B',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+          {
+            id: 'preset-existing-c',
+            name: 'Ops Existing C',
+            baseline_scene_id: 'scene-a',
+            compare_scene_id: 'scene-b',
+            updated_at: '2026-02-17T00:00:00Z',
+          },
+        ],
+      },
+    }
+
+    const payload = JSON.stringify([
+      {
+        name: 'Ops Existing A',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing B',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      {
+        name: 'Ops Existing C',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      },
+      ...Array.from({ length: 10 }, (_, index) => ({
+        name: `Accepted Preset ${index + 1}`,
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-b',
+      })),
+      {
+        name: 'Missing Compare 1',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+      {
+        name: 'Missing Compare 2',
+        baseline_scene_id: 'scene-a',
+        compare_scene_id: 'scene-missing',
+      },
+    ])
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarSceneDiffPreviewLifecycleProbe />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
+    fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-transfer-input'), {
+      target: { value: payload },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('1')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe('opened:none')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count-summary').textContent).toBe(
+        'opened:none:15:13:3:2'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 15 visible rows (15 total)'
+      )
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-group-toggle-skipped'))
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-import-preview-page-next'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 13-13 of 13 visible rows (15 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['accepted'])
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-preview'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count').textContent).toBe('2')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-summary').textContent).toBe('opened:none|refreshed:none')
+      expect(screen.getByTestId('probe-scene-diff-preview-lifecycle-count-summary').textContent).toBe(
+        'opened:none:15:13:3:2|refreshed:none:15:13:3:2'
+      )
+      expect(screen.getByTestId('topbar-scene-diff-import-preview-page-summary').textContent).toContain(
+        'Showing 1-12 of 15 visible rows (15 total)'
+      )
+      expect(
+        screen.getAllByTestId('topbar-scene-diff-import-preview-row-status').map((entry) => (entry.textContent || '').trim())
+      ).toEqual(['conflict', 'conflict', 'conflict', ...Array.from({ length: 9 }, () => 'accepted')])
+    })
+  })
+
+  it('keeps mixed remember-filter toggles and status-counter activation deterministic during scene churn', async () => {
+    const route = makeSceneRoute('talker-1', 'listener-1')
+    const initialState = {
+      ...initialRoutingState,
+      scenes: {
+        'scene-a': {
+          id: 'scene-a',
+          name: 'Baseline Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+        'scene-b': {
+          id: 'scene-b',
+          name: 'Compare Scene',
+          description: '',
+          routes: [route],
+          timestamp: '2026-02-17T00:00:00Z',
+          tags: [],
+        },
+      },
+      auditLog: [
+        {
+          id: 'audit-legacy-delete-error',
+          timestamp: '2026-02-17T00:00:00Z',
+          event_type: 'DELETE_SCENE' as const,
+          actor: 'user',
+          payload: {},
+          diff_summary: 'Deleted scene: Legacy Scene',
+          validation_outcome: 'error' as const,
+        },
+        {
+          id: 'audit-preview-warning',
+          timestamp: '2026-02-17T00:01:00Z',
+          event_type: 'SCENE_DIFF' as const,
+          actor: 'user',
+          payload: {
+            mode: 'preset_import_preview_cancelled',
+            phase: 'cancelled',
+            reason: 'transfer_draft_changed',
+          },
+          diff_summary: 'Cancelled scene diff preset import preview (2 rows)',
+          validation_outcome: 'warning' as const,
+        },
+      ],
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    fireEvent.click(screen.getByTestId('topbar-scenes-button'))
+    fireEvent.click(screen.getByTestId('topbar-scene-autosuffix-toggle'))
+
+    fireEvent.change(screen.getByTestId('topbar-scene-name-input'), {
+      target: { value: 'Ops Snapshot' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-save'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
+    fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
+      target: { value: 'Compare Scene' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-update'))
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene (scene-b)' }))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+    fireEvent.click(screen.getByTestId('topbar-scene-delete'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-scene-status-errors').textContent).toContain('Errors: 1')
+      expect(screen.getByTestId('topbar-scene-status-warnings').textContent).toContain('Warnings: 1')
+      expect(screen.getByTestId('topbar-scene-status-deletes').textContent).toContain('Deletes: 2')
+      expect(screen.getByTestId('topbar-scene-status-diff-preview-warnings').textContent).toContain('Diff Preview Warnings: 1')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-warnings'), { key: 'Enter' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (4 total)')
+      expect(screen.getByText('Updated scene metadata: Baseline Scene -> Compare Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-errors'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (4 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.keyDown(screen.getByTestId('topbar-scene-status-deletes'), { key: ' ' })
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('delete')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('2 of 2 matching (4 total)')
+      expect(screen.getByText('Deleted scene: Legacy Scene')).toBeTruthy()
+      expect(screen.getByText('Deleted scene: Compare Scene')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-scene-audit-remember-filters-toggle'))
+    fireEvent.change(screen.getByTestId('topbar-scene-audit-search-input'), {
+      target: { value: 'saved' },
+    })
+    fireEvent.click(screen.getByTestId('topbar-scene-close'))
+
+    fireEvent.click(screen.getByTestId('topbar-scene-status-diff-preview-warnings'))
+    await waitFor(() => {
+      expect((screen.getByTestId('topbar-scene-audit-search-input') as HTMLInputElement).value).toBe('')
+      expect(screen.getByTestId('topbar-scene-audit-summary').textContent).toContain('1 of 1 matching (1 total)')
+      expect(screen.getByText('Cancelled scene diff preset import preview (2 rows)')).toBeTruthy()
     })
   })
 })

@@ -582,14 +582,32 @@
 - Import preview duplicate-name rejection determinism now covered for mixed advisory policy metadata:
   - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
   - validates wrapper-level + row-level `preferred_conflict_action` hints still produce deterministic duplicate-name row rejection (`Duplicate preset name within import payload`) and persist only the accepted canonical row policy outcome
+- Provider/integration coverage now asserts deterministic preview ordering under rapid group-toggle + pagination alternation:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates rapid alternation between preview group collapse toggles and `Prev`/`Next` navigation preserves deterministic visible-row status ordering and stable import-plan totals (`Planned upsert/rename/skip`) independent of hidden-row state
+- Integration coverage now asserts churn-driven status-strip keyboard determinism in-session:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates status-strip counter keyboard activation (`Enter`/`Space`) remains deterministic after save/update/delete churn changes counter values without closing scene controls
+- Integration coverage now asserts mixed pointer/keyboard bulk-action determinism under partial row visibility:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates bulk conflict actions (`Upsert`/`Rename`/`Skip`) via mixed pointer + keyboard input keep import-plan totals deterministic while accepted/skipped groups are collapsed
+- Provider/integration coverage now asserts conflict-action edit determinism during paging:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates rapid conflict action edits (`rename`/`skip`/`upsert`) retain deterministic import-plan totals and row-status ordering across `Prev`/`Next` page alternation
+- Provider/integration coverage now asserts preview lifecycle audit-count determinism through refreshes from non-default preview state:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates `opened` + `refreshed` preview lifecycle audit entries retain stable `source/accepted/conflict/skipped` counts even when refresh triggers from non-default group-collapse + pagination state
+- Integration coverage now asserts deterministic scene-audit summaries under repeated remember-filter + status-counter toggles during churn:
+  - `web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx`
+  - validates repeated `Remember Audit Filters` toggling with mixed pointer/keyboard status-counter activation preserves deterministic `Errors`/`Warnings`/`Deletes`/`Diff Preview Warnings` summaries after in-session save/update/delete churn
 
 ---
 
 ## Current Validation
 
-- `npm --prefix web run typecheck` passes (2026-02-18).
+- `npm --prefix web run typecheck` passes (2026-02-19).
 - `npm --prefix web run build` passes (2026-02-18).
-- `npm run test:avb-routing` (repo root) passes (2026-02-18): `18` suites, `194` tests.
+- `npm run test:avb-routing` (repo root) passes (2026-02-19): `18` suites, `200` tests.
 
 ---
 
@@ -605,6 +623,6 @@
 
 ## Next Recommended Slice
 
-1. Add provider/integration coverage that rapid alternation between preview group collapse toggles and page navigation preserves deterministic visible-row ordering and import-plan counts.
-2. Add integration coverage that status-strip counter keyboard activation remains deterministic after churn-driven counter value changes in the same open scene-controls session.
-3. Add integration coverage that mixed pointer/keyboard conflict bulk-action changes preserve deterministic import-plan totals when preview rows are partially hidden by group-collapse filters.
+1. Add integration coverage that preview refreshes after manual conflict-action overrides (row-level `upsert`/`rename`/`skip`) deterministically reset per-row controls, collapse state, and page index without stale rename drafts leaking between refresh cycles.
+2. Add provider/reducer coverage for future WebSocket scene-sync hooks to ensure remote scene add/update/delete events preserve deterministic scene-diff baseline/compare validity and audit counter totals.
+3. Extend operator documentation with an explicit troubleshooting flow for scene-audit counter precedence versus remembered filters (`Remember Audit Filters`) during active scene churn sessions.
