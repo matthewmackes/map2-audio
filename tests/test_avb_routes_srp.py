@@ -117,6 +117,191 @@ def test_router_connect_returns_409_when_admission_denied(monkeypatch):
     assert exc.value.detail["code"] == "SRP_ADMISSION_DENIED"
 
 
+def test_router_connect_returns_srp_admission_on_allowed(monkeypatch):
+    _enable_strict_srp(monkeypatch)
+
+    class _Endpoint:
+        def __init__(self, mac_address, device_type):
+            self.mac_address = mac_address
+            self.device_type = device_type
+
+    class _Router:
+        endpoints = {
+            "0011223344556677:0": _Endpoint("00:11:22:33:44:55", "map2"),
+            "8899aabbccddeeff:1": _Endpoint("66:77:88:99:aa:bb", "map2"),
+        }
+
+        async def connect(self, *_args, **_kwargs):
+            return True
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+    monkeypatch.setattr(
+        srp_admission_module,
+        "get_srp_admission_service",
+        lambda: _DummySrpService(_Admission(decision="allowed", reservation_id="res-1")),
+    )
+
+    result = asyncio.run(
+        avb_routes.connect_streams(
+            {"talker_id": "0011223344556677:0", "listener_id": "8899aabbccddeeff:1"}
+        )
+    )
+
+    assert result["success"] is True
+    assert result["srp_admission"]["reservation_id"] == "res-1"
+    assert result["connection_id"] == "0011223344556677:0→8899aabbccddeeff:1"
+
+
+def test_router_connect_strict_srp_fails_when_allowed_without_reservation(monkeypatch):
+    _enable_strict_srp(monkeypatch)
+
+    class _Endpoint:
+        def __init__(self, mac_address, device_type):
+            self.mac_address = mac_address
+            self.device_type = device_type
+
+    class _Router:
+        endpoints = {
+            "0011223344556677:0": _Endpoint("00:11:22:33:44:55", "map2"),
+            "8899aabbccddeeff:1": _Endpoint("66:77:88:99:aa:bb", "map2"),
+        }
+
+        async def connect(self, *_args, **_kwargs):
+            raise AssertionError("connect must not be invoked without reservation in strict SRP mode")
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+    monkeypatch.setattr(
+        srp_admission_module,
+        "get_srp_admission_service",
+        lambda: _DummySrpService(_Admission(decision="allowed", reservation_id=None)),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            avb_routes.connect_streams(
+                {"talker_id": "0011223344556677:0", "listener_id": "8899aabbccddeeff:1"}
+            )
+        )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail["code"] == "SRP_ADMISSION_INVALID"
+
+
+def test_router_connect_rolls_back_reservation_on_connect_exception(monkeypatch):
+    _enable_strict_srp(monkeypatch)
+
+    class _Endpoint:
+        def __init__(self, mac_address, device_type):
+            self.mac_address = mac_address
+            self.device_type = device_type
+
+    class _Router:
+        endpoints = {
+            "0011223344556677:0": _Endpoint("00:11:22:33:44:55", "map2"),
+            "8899aabbccddeeff:1": _Endpoint("66:77:88:99:aa:bb", "map2"),
+        }
+
+        async def connect(self, *_args, **_kwargs):
+            raise RuntimeError("router connect boom")
+
+    releases = []
+
+    class _SrpService(_DummySrpService):
+        async def release(self, **kwargs):
+            releases.append(kwargs)
+            return await super().release(**kwargs)
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+    monkeypatch.setattr(
+        srp_admission_module,
+        "get_srp_admission_service",
+        lambda: _SrpService(_Admission(decision="allowed", reservation_id="res-rollback")),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            avb_routes.connect_streams(
+                {"talker_id": "0011223344556677:0", "listener_id": "8899aabbccddeeff:1"}
+            )
+        )
+
+    assert exc.value.status_code == 500
+    assert any(r.get("reservation_id") == "res-rollback" for r in releases)
+
+
+def test_router_connect_allows_srp_bypass_when_not_required(monkeypatch):
+    _enable_optional_srp(monkeypatch)
+
+    class _Endpoint:
+        def __init__(self, mac_address, device_type):
+            self.mac_address = mac_address
+            self.device_type = device_type
+
+    class _Router:
+        endpoints = {
+            "0011223344556677:0": _Endpoint("00:11:22:33:44:55", "map2"),
+            "8899aabbccddeeff:1": _Endpoint("66:77:88:99:aa:bb", "map2"),
+        }
+
+        async def connect(self, *_args, **_kwargs):
+            return True
+
+    bypass_admission = _Admission(decision="bypass", reservation_id=None)
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+    monkeypatch.setattr(
+        srp_admission_module,
+        "get_srp_admission_service",
+        lambda: _DummySrpService(bypass_admission),
+    )
+
+    result = asyncio.run(
+        avb_routes.connect_streams(
+            {"talker_id": "0011223344556677:0", "listener_id": "8899aabbccddeeff:1"}
+        )
+    )
+
+    assert result["success"] is True
+    assert result["connection_id"] == "0011223344556677:0→8899aabbccddeeff:1"
+    # For bypass we still return admission payload; ensure decision propagated.
+    assert result["srp_admission"]["decision"] == "bypass"
+
+
+def test_router_connect_returns_500_on_srp_admission_exception(monkeypatch):
+    _enable_strict_srp(monkeypatch)
+
+    class _Endpoint:
+        def __init__(self, mac_address, device_type):
+            self.mac_address = mac_address
+            self.device_type = device_type
+
+    class _Router:
+        endpoints = {
+            "0011223344556677:0": _Endpoint("00:11:22:33:44:55", "map2"),
+            "8899aabbccddeeff:1": _Endpoint("66:77:88:99:aa:bb", "map2"),
+        }
+
+        async def connect(self, *_args, **_kwargs):
+            return True
+
+    class _SrpService:
+        async def admit(self, _request):
+            raise RuntimeError("srp daemon unreachable")
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+    monkeypatch.setattr(srp_admission_module, "get_srp_admission_service", lambda: _SrpService())
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            avb_routes.connect_streams(
+                {"talker_id": "0011223344556677:0", "listener_id": "8899aabbccddeeff:1"}
+            )
+        )
+
+    assert exc.value.status_code == 500
+    assert "srp daemon unreachable" in str(exc.value.detail)
+
+
 def test_router_connect_passes_reservation_to_router(monkeypatch):
     _enable_strict_srp(monkeypatch)
 
@@ -1659,6 +1844,60 @@ def test_get_srp_status_returns_service_payload(monkeypatch):
     assert result["enabled"] is True
     assert result["daemon_type"] == "mrpd"
     assert result["running"] is True
+
+
+def test_get_srp_admissions_applies_limit_and_endpoint(monkeypatch):
+    captured = {}
+
+    class _Store:
+        async def list_admissions(self, **kwargs):
+            captured.update(kwargs)
+            return [
+                {"admission_id": "adm-1"},
+                {"admission_id": "adm-2"},
+                {"admission_id": "adm-3"},
+            ]
+
+    monkeypatch.setattr(srp_log_store_module, "SrpAdmissionLogStore", lambda: _Store())
+
+    result = asyncio.run(
+        avb_routes.get_srp_admissions(decision="allowed", limit=2, endpoint="router.connect")
+    )
+
+    assert result["count"] == 3  # route returns all rows from store
+    assert result["filters"]["limit"] == 2
+    assert result["filters"]["endpoint"] == "router.connect"
+    assert captured["limit"] == 2
+    assert captured["endpoint"] == "router.connect"
+
+
+def test_get_srp_admissions_clamps_limit_to_500(monkeypatch):
+    class _Store:
+        async def list_admissions(self, **kwargs):
+            return [{"admission_id": f"adm-{i}"} for i in range(3)]
+
+    monkeypatch.setattr(srp_log_store_module, "SrpAdmissionLogStore", lambda: _Store())
+
+    result = asyncio.run(avb_routes.get_srp_admissions(limit=999))
+
+    assert result["filters"]["limit"] == 500
+
+
+def test_get_srp_admissions_supports_offset(monkeypatch):
+    captured = {}
+
+    class _Store:
+        async def list_admissions(self, **kwargs):
+            captured.update(kwargs)
+            return [{"admission_id": f"adm-{i}"} for i in range(5)]
+
+    monkeypatch.setattr(srp_log_store_module, "SrpAdmissionLogStore", lambda: _Store())
+
+    result = asyncio.run(avb_routes.get_srp_admissions(limit=2, decision=None, endpoint=None, since=None, offset=4))
+
+    assert result["filters"]["limit"] == 2
+    assert result["filters"]["endpoint"] is None
+    assert captured["offset"] == 4
 
 
 def test_get_srp_admission_returns_404_when_missing(monkeypatch):

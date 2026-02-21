@@ -14,6 +14,7 @@
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <memory>
 #include <vector>
+#include <cstdint>
 
 namespace Map2Audio {
 
@@ -115,14 +116,23 @@ private:
     /**
      * Get configuration for local AVB device.
      *
-     * Reads from ~/.map2/config.json:
-     * - avb.interface
-     * - avb.stream_id
-     * - avb.dest_mac (for talker)
+     * Resolved from runtime environment/config:
+     * - interface
+     * - stream_id seed
+     * - destination MAC
+     * - presentation offset
+     * - 802.1Q priority
      */
     bool getLocalDeviceConfig(juce::String& interface,
                                uint64_t& streamId,
-                               juce::String& destMac) const;
+                               juce::String& destMac,
+                               uint32_t& presentationOffsetUs,
+                               uint8_t& priority) const;
+
+    /**
+     * Build deterministic local device display name for a direction.
+     */
+    juce::String buildLocalDeviceName(bool forTalker, const juce::String& interface) const;
 
     // Device lists (populated by scanForDevices)
     juce::StringArray inputDeviceNames_;   // Listener devices

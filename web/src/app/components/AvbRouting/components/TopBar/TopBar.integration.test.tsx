@@ -9,6 +9,8 @@ let mockEndpointsData: EndpointsResponse | undefined
 let mockConnectionsData: ConnectionsResponse | undefined
 let mockNodesData: AvbNode[] | undefined
 let mockLocalNodeId = 'node-a'
+let mockAvbDevicesData: any
+let mockAvbStreamsData: any
 
 const mockBatchMutate = jest.fn()
 const mockNotify = {
@@ -33,6 +35,12 @@ jest.mock('../../hooks/useAvbApi', () => ({
   useBatchPatchMutation: () => ({
     mutate: mockBatchMutate,
     isPending: false,
+  }),
+  useAvbDevices: () => ({
+    data: mockAvbDevicesData,
+  }),
+  useAvbStreams: () => ({
+    data: mockAvbStreamsData,
   }),
 }))
 
@@ -275,6 +283,197 @@ describe('TopBar filter controls provider integration', () => {
     mockNotify.warning.mockReset()
     mockNotify.info.mockReset()
     topBarSceneSyncDispatch = null
+    mockAvbDevicesData = {
+      available: true,
+      count: 2,
+      device_names: ['AVB Listener [eth0]', 'AVB Talker [eth0]'],
+      discovered_count: 2,
+      discovered_devices: [],
+    }
+    mockAvbStreamsData = {
+      available: true,
+      streams: [],
+    }
+  })
+
+  it('renders AVB engine/cache/transport chips from backend inventory hooks', async () => {
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      direction: 'talker',
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      direction: 'listener',
+    })
+
+    mockAvbDevicesData = {
+      available: true,
+      count: 4,
+      device_names: [
+        'AVB Listener [eth0]',
+        'AVB Talker [eth0]',
+        'AVB Talker [node-a::endpoint-a]',
+        'AVB Listener [node-b::endpoint-b]',
+      ],
+      discovered_count: 3,
+      discovered_devices: [
+        {
+          endpoint_id: 'endpoint-a',
+          device_name: 'AVB Talker [node-a::endpoint-a]',
+          direction: 'talker',
+          device_type: 'map2',
+          node_address: 'http://127.0.0.1:8080',
+          audio_format: '24-bit PCM',
+          channels: 2,
+          sample_rate: 48000,
+          available: true,
+        },
+        {
+          endpoint_id: 'endpoint-z',
+          device_name: 'AVB Listener [node-z::endpoint-z]',
+          direction: 'listener',
+          device_type: 'map2',
+          node_address: 'http://127.0.0.1:8081',
+          audio_format: '24-bit PCM',
+          channels: 2,
+          sample_rate: 48000,
+          available: true,
+        },
+        {
+          endpoint_id: 'endpoint-b',
+          device_name: 'AVB Listener [node-b::endpoint-b]',
+          direction: 'listener',
+          device_type: 'map2',
+          node_address: 'http://127.0.0.1:8082',
+          audio_format: '24-bit PCM',
+          channels: 2,
+          sample_rate: 48000,
+          available: true,
+        },
+      ],
+    }
+    mockAvbStreamsData = {
+      available: true,
+      streams: [
+        {
+          stream_id: 'stream-ready',
+          state: 'running',
+          health: { ready: true },
+          diagnostics: {
+            effective_config: {
+              stream_id: 'stream-ready',
+              direction: 'talker',
+              interface: 'eth0',
+              channels: 2,
+              sample_rate: 48000,
+              buffer_size: 256,
+              presentation_offset_us: 2000,
+              priority: 3,
+              dest_mac: null,
+              failover_policy: 'none',
+              interface_candidates: ['eth0'],
+            },
+            ptp_lock: {
+              locked: true,
+              state: 'SLAVE',
+              reason: null,
+              offset_ns: 10,
+              mean_path_delay_ns: 20,
+              last_update: '2026-02-20T00:00:00Z',
+            },
+            tsn_qdisc: {
+              available: true,
+              interface: 'eth0',
+              mqprio_configured: true,
+              cbs_configured: true,
+              etf_configured: true,
+              vlan_configured: true,
+              error: null,
+            },
+            srp: {
+              enabled: true,
+              required: true,
+              bound: true,
+              reservation_id: 'res-1',
+              admission_id: 'adm-1',
+              metadata: {},
+            },
+          },
+        },
+        {
+          stream_id: 'stream-issue',
+          state: 'running',
+          health: { ready: false },
+          diagnostics: {
+            effective_config: {
+              stream_id: 'stream-issue',
+              direction: 'listener',
+              interface: 'eth0',
+              channels: 2,
+              sample_rate: 48000,
+              buffer_size: 256,
+              presentation_offset_us: 2000,
+              priority: 3,
+              dest_mac: null,
+              failover_policy: 'none',
+              interface_candidates: ['eth0'],
+            },
+            ptp_lock: {
+              locked: false,
+              state: 'LISTENING',
+              reason: 'PTP_STATE_LISTENING',
+              offset_ns: null,
+              mean_path_delay_ns: null,
+              last_update: null,
+            },
+            tsn_qdisc: {
+              available: false,
+              interface: 'eth0',
+              mqprio_configured: false,
+              cbs_configured: false,
+              etf_configured: false,
+              vlan_configured: false,
+              error: 'TSN unavailable',
+            },
+            srp: {
+              enabled: true,
+              required: true,
+              bound: false,
+              reservation_id: null,
+              admission_id: null,
+              metadata: {},
+            },
+          },
+        },
+      ],
+    }
+
+    const initialState = {
+      ...initialRoutingState,
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-avb-engine-summary').textContent).toBe('Engine: 4/3')
+      expect(screen.getByTestId('topbar-avb-cache-drift').textContent).toBe('Cache Drift: 0|1')
+      expect(screen.getByTestId('topbar-avb-transport-summary').textContent).toBe('Transport: 1/2')
+      expect(screen.getByTestId('topbar-avb-transport-issues').textContent).toBe('Issues: 1')
+      expect(screen.getByTestId('topbar-avb-diagnostics-summary').textContent).toBe('Diag: 2/2')
+      expect(screen.getByTestId('topbar-avb-ptp-lock-summary').textContent).toBe('PTP Lock: 1/2')
+      expect(screen.getByTestId('topbar-avb-srp-summary').textContent).toBe('SRP: 1/2')
+      expect(screen.getByTestId('topbar-avb-failover-summary').textContent).toBe('Failover: none (2)')
+    })
   })
 
   it('updates filtered endpoint output under multi-select node context when TopBar filters change', async () => {
@@ -376,6 +575,76 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-filters-clear-all'))
     await waitFor(() => {
       expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+    })
+  })
+
+  it('toggles endpoint-issues quick chip and keeps filtered endpoint output aligned', async () => {
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', name: 'Node A', type: 'map2_local', status: 'online' }),
+      makeNode({ node_id: 'node-b', name: 'Node B', type: 'map2_remote', status: 'degraded' }),
+      makeNode({ node_id: 'node-c', name: 'Node C', type: 'map2_remote', status: 'online' }),
+    ]
+
+    const endpointA = makeEndpoint({
+      endpoint_id: 'endpoint-a',
+      node_id: 'node-a',
+      available: true,
+      locked: false,
+    })
+    const endpointB = makeEndpoint({
+      endpoint_id: 'endpoint-b',
+      node_id: 'node-b',
+      available: true,
+      locked: false,
+    })
+    const endpointC = makeEndpoint({
+      endpoint_id: 'endpoint-c',
+      node_id: 'node-c',
+      available: true,
+      locked: false,
+    })
+
+    const initialState = {
+      ...initialRoutingState,
+      network: {
+        ...initialRoutingState.network,
+        nodeSelection: {
+          ...initialRoutingState.network.nodeSelection,
+          view_mode: 'multi_select' as const,
+          selected_node_ids: ['node-a', 'node-b'],
+          show_offline: true,
+        },
+      },
+      endpoints: {
+        [endpointA.endpoint_id]: endpointA,
+        [endpointB.endpoint_id]: endpointB,
+        [endpointC.endpoint_id]: endpointC,
+      },
+    }
+
+    render(
+      <RoutingProvider initialState={initialState}>
+        <TopBar />
+        <TopBarFilterProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('topbar-endpoint-issues-filter-chip').textContent).toBe('Endpoint Issues: 1')
+      expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('topbar-filter-summary').textContent).toContain('No filters')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-endpoint-issues-filter-chip'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-b')
+      expect(screen.getByTestId('topbar-filter-summary').textContent).toContain('1 filter')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-endpoint-issues-filter-chip'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-a|endpoint-b')
+      expect(screen.getByTestId('topbar-filter-summary').textContent).toContain('No filters')
     })
   })
 

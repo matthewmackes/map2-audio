@@ -1,0 +1,3 @@
+/usr/bin/cmake -E rm -f CMakeFiles/juce_vst3_helper.dir/objects.a
+x86_64-w64-mingw32-ar qc CMakeFiles/juce_vst3_helper.dir/objects.a @CMakeFiles/juce_vst3_helper.dir/objects1.rsp
+/usr/lib64/ccache/x86_64-w64-mingw32-g++ -O3 -DNDEBUG -municode -Wl,--whole-archive CMakeFiles/juce_vst3_helper.dir/objects.a -Wl,--no-whole-archive -o juce_vst3_helper.exe -Wl,--out-implib,libjuce_vst3_helper.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/juce_vst3_helper.dir/linkLibs.rsp

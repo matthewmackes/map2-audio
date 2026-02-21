@@ -20,8 +20,9 @@ import React, { createContext, useContext, useReducer, useEffect, type ReactNode
 import { routingReducer } from './routingReducer';
 import { useEndpoints, useConnections } from '../hooks/useAvbApi';
 import { useNodes, usePtpStatus, useLocalNodeId } from '../hooks/useNodeApi';
-import type { RoutingState, RoutingAction, Endpoint, Route, CrossNodeRoute } from '../types';
+import type { RoutingState, RoutingAction, Endpoint, Route, CrossNodeRoute, AvbNode } from '../types';
 import { initialRoutingState } from '../types';
+import { hasEndpointOperationalIssue } from '../utils/endpointIssues';
 
 /**
  * Context value shape
@@ -45,6 +46,85 @@ interface RoutingProviderProps {
    * Initial state override (useful for testing)
    */
   initialState?: RoutingState;
+}
+
+type EndpointNodeResolutionCandidate = Pick<Endpoint, 'node_id' | 'node_address'>;
+
+function normalizeAddressKey(raw: string | null | undefined): string | null {
+  if (typeof raw !== 'string') {
+    return null;
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.replace(/\/+$/, '').toLowerCase();
+}
+
+function collectNodeAddressKeys(raw: string | null | undefined): string[] {
+  const normalized = normalizeAddressKey(raw);
+  if (!normalized) {
+    return [];
+  }
+
+  const keys = new Set<string>([normalized]);
+
+  try {
+    const parsed = new URL(normalized);
+    keys.add(parsed.origin.toLowerCase());
+    keys.add(parsed.host.toLowerCase());
+    keys.add(parsed.hostname.toLowerCase());
+  } catch (_error) {
+    // Node addresses are not guaranteed to be valid URLs; keep normalized raw key.
+  }
+
+  return Array.from(keys);
+}
+
+function buildNodeAddressLookup(nodes: AvbNode[] | undefined): Map<string, string> {
+  const lookup = new Map<string, string>();
+
+  if (!nodes) {
+    return lookup;
+  }
+
+  nodes.forEach((node) => {
+    const register = (raw: string | null | undefined) => {
+      collectNodeAddressKeys(raw).forEach((key) => {
+        if (!lookup.has(key)) {
+          lookup.set(key, node.node_id);
+        }
+      });
+    };
+
+    register(node.api_url);
+    register(node.address);
+  });
+
+  return lookup;
+}
+
+function resolveEndpointNodeId(
+  endpoint: EndpointNodeResolutionCandidate,
+  nodeAddressLookup: Map<string, string>,
+  localNodeId: string | null
+): string {
+  const endpointNodeId = endpoint.node_id?.trim();
+  if (endpointNodeId) {
+    return endpointNodeId;
+  }
+
+  const fromAddress = collectNodeAddressKeys(endpoint.node_address)
+    .map((key) => nodeAddressLookup.get(key))
+    .find((nodeId): nodeId is string => typeof nodeId === 'string' && nodeId.length > 0);
+
+  if (fromAddress) {
+    return fromAddress;
+  }
+
+  return localNodeId || 'local';
 }
 
 /**
@@ -119,7 +199,7 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
   useEffect(() => {
     if (!endpointsData) return;
 
-    // Infer node_id from endpoint data (use entity_id or node_address as fallback)
+    const nodeAddressLookup = buildNodeAddressLookup(nodesData);
     const endpoints: Endpoint[] = endpointsData.endpoints.map((ep) => ({
       ...ep,
       // Add default UI metadata (will be overlaid with localStorage later)
@@ -129,15 +209,15 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
       bank: 0,
       pinned: false,
       locked: false,
-      // Assign node_id (for now, use local until we have multi-node backend support)
-      node_id: localNodeId || 'local',
+      // Preserve backend node ownership when present, then resolve by node address, then local.
+      node_id: resolveEndpointNodeId(ep, nodeAddressLookup, localNodeId),
     }));
 
     dispatch({
       type: 'ENDPOINTS_UPDATED',
       payload: endpoints,
     });
-  }, [endpointsData, localNodeId]);
+  }, [endpointsData, localNodeId, nodesData]);
 
   // Sync connections with reducer state
   useEffect(() => {
@@ -323,6 +403,10 @@ export function useFilteredEndpoints(direction?: 'talker' | 'listener'): Endpoin
 
   if (state.filters.availableOnly) {
     endpoints = endpoints.filter((ep) => ep.available);
+  }
+
+  if (state.filters.issuesOnly) {
+    endpoints = endpoints.filter((ep) => hasEndpointOperationalIssue(ep, state.network.nodes));
   }
 
   if (!state.filters.showLocked) {

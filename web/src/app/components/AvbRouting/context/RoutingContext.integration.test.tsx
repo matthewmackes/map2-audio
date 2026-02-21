@@ -17,6 +17,7 @@ let mockConnectionsData: ConnectionsResponse | undefined
 let mockNodesData: AvbNode[] | undefined
 let mockPtpStatus: NetworkSyncStatus | undefined
 let mockLocalNodeId = 'local'
+let mockAvbDevicesData: any
 
 jest.mock('../hooks/useAvbApi', () => ({
   useEndpoints: () => ({
@@ -28,6 +29,9 @@ jest.mock('../hooks/useAvbApi', () => ({
     data: mockConnectionsData,
     isLoading: false,
     error: null,
+  }),
+  useAvbDevices: () => ({
+    data: mockAvbDevicesData,
   }),
 }))
 
@@ -687,6 +691,135 @@ describe('RoutingContext API/reducer integration', () => {
     mockNodesData = undefined
     mockPtpStatus = undefined
     mockLocalNodeId = 'local'
+    mockAvbDevicesData = {
+      available: true,
+      count: 0,
+      device_names: [],
+      discovered_count: 0,
+      discovered_devices: [],
+    }
+  })
+
+  it('applies issues-only filtering to endpoint results', async () => {
+    mockLocalNodeId = 'node-a'
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', status: 'online' }),
+      makeNode({ node_id: 'node-b', status: 'degraded' }),
+    ]
+    mockEndpointsData = {
+      count: 3,
+      endpoints: [
+        makeEndpoint({
+          endpoint_id: 'talker-good',
+          direction: 'talker',
+          unique_id: 1,
+          device_name: 'Talker Good',
+          available: true,
+        }),
+        makeEndpoint({
+          endpoint_id: 'talker-issue',
+          direction: 'talker',
+          unique_id: 2,
+          device_name: 'Talker Issue',
+          available: false,
+        }),
+        makeEndpoint({
+          endpoint_id: 'listener-good',
+          direction: 'listener',
+          unique_id: 3,
+          device_name: 'Listener Good',
+          available: true,
+        }),
+      ],
+    }
+
+    render(
+      <RoutingProvider
+        initialState={{
+          ...initialRoutingState,
+          filters: {
+            ...initialRoutingState.filters,
+            issuesOnly: true,
+          },
+        }}
+      >
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('talker-issue')
+    })
+  })
+
+  it('preserves endpoint node ownership from API payload and falls back by node address', async () => {
+    mockLocalNodeId = 'node-a'
+    mockNodesData = [
+      makeNode({
+        node_id: 'node-a',
+        status: 'online',
+        api_url: 'http://192.168.1.10:8080',
+        address: '192.168.1.10',
+      }),
+      makeNode({
+        node_id: 'node-b',
+        status: 'online',
+        api_url: 'http://192.168.1.20:8080',
+        address: '192.168.1.20',
+      }),
+    ]
+    mockEndpointsData = {
+      count: 3,
+      endpoints: [
+        makeEndpoint({
+          endpoint_id: 'endpoint-node-a',
+          direction: 'talker',
+          unique_id: 1,
+          device_name: 'Endpoint Node A',
+          node_id: 'node-a',
+          node_address: 'http://192.168.1.10:8080',
+        }),
+        makeEndpoint({
+          endpoint_id: 'endpoint-node-b',
+          direction: 'listener',
+          unique_id: 2,
+          device_name: 'Endpoint Node B',
+          node_id: 'node-b',
+          node_address: 'http://192.168.1.20:8080',
+        }),
+        makeEndpoint({
+          endpoint_id: 'endpoint-resolved-by-address',
+          direction: 'listener',
+          unique_id: 3,
+          device_name: 'Endpoint Resolved By Address',
+          node_id: '',
+          node_address: 'http://192.168.1.20:8080',
+        }),
+      ],
+    }
+
+    render(
+      <RoutingProvider
+        initialState={{
+          ...initialRoutingState,
+          network: {
+            ...initialRoutingState.network,
+            nodeSelection: {
+              ...initialRoutingState.network.nodeSelection,
+              view_mode: 'multi_select',
+              selected_node_ids: ['node-b'],
+              show_offline: true,
+            },
+          },
+        }}
+      >
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('endpoint-node-b|endpoint-resolved-by-address')
+    })
   })
 
   it('syncs cross-node route lifecycle from API payloads into reducer state', async () => {

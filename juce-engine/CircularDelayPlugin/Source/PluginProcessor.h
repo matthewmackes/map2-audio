@@ -4,7 +4,8 @@
 
 #include "CircularDelayProcessor.h"
 
-class CircularDelayAudioProcessor : public juce::AudioProcessor
+class CircularDelayAudioProcessor : public juce::AudioProcessor,
+                                    public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     CircularDelayAudioProcessor();
@@ -33,8 +34,14 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
 private:
     map2::CircularDelayProcessor processor;
+    juce::AudioProcessorValueTreeState apvts;
+
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void syncParameters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CircularDelayAudioProcessor)
 };

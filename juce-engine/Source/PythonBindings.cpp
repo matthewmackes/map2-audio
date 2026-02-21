@@ -1739,6 +1739,381 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Get number of output channels")
 
         // ========================================
+        // AVB Stream Lifecycle (Phase 0 Contract)
+        // ========================================
+
+        .def("is_avb_available", &Map2AudioEngine::isAvbAvailable,
+             "Check AVB runtime availability")
+        .def("isAvbAvailable", &Map2AudioEngine::isAvbAvailable,
+             "Check AVB runtime availability (camelCase alias)")
+
+        .def("create_avb_stream", [](Map2AudioEngine& self, const py::dict& config) {
+            Map2AudioEngine::AvbStreamRuntimeConfig runtime;
+
+            auto getStr = [&](const char* key, const std::string& fallback = std::string()) -> std::string {
+                try {
+                    if (config.contains(py::str(key))) {
+                        return py::str(config[py::str(key)]).cast<std::string>();
+                    }
+                } catch (...) {
+                }
+                return fallback;
+            };
+
+            auto getInt = [&](const char* key, int fallback) -> int {
+                try {
+                    if (config.contains(py::str(key))) {
+                        return py::int_(config[py::str(key)]).cast<int>();
+                    }
+                } catch (...) {
+                }
+                return fallback;
+            };
+
+            runtime.streamId = getStr("stream_id");
+            runtime.direction = getStr("direction");
+            runtime.channels = getInt("channels", 2);
+            runtime.sampleRate = getInt("sample_rate", 48000);
+            runtime.bufferSize = getInt("buffer_size", 256);
+            runtime.interfaceName = getStr("interface");
+            runtime.destMac = getStr("dest_mac");
+            runtime.presentationOffsetUs = getInt("presentation_offset_us", 2000);
+            runtime.priority = getInt("priority", 3);
+
+            std::string error;
+            const bool ok = self.createAvbStream(runtime, &error);
+            py::dict result;
+            result["success"] = ok;
+            if (!ok) {
+                result["error"] = error;
+            }
+            return result;
+        }, py::arg("config"), "Create AVB stream from dict config")
+
+        .def("start_avb_stream", [](Map2AudioEngine& self, const std::string& streamId) {
+            std::string error;
+            const bool ok = self.startAvbStream(streamId, &error);
+            py::dict result;
+            result["success"] = ok;
+            if (!ok) {
+                result["error"] = error;
+            }
+            return result;
+        }, py::arg("stream_id"), "Start AVB stream by ID")
+
+        .def("stop_avb_stream", [](Map2AudioEngine& self, const std::string& streamId) {
+            std::string error;
+            const bool ok = self.stopAvbStream(streamId, &error);
+            py::dict result;
+            result["success"] = ok;
+            if (!ok) {
+                result["error"] = error;
+            }
+            return result;
+        }, py::arg("stream_id"), "Stop AVB stream by ID")
+
+        .def("delete_avb_stream", [](Map2AudioEngine& self, const std::string& streamId) {
+            std::string error;
+            const bool ok = self.deleteAvbStream(streamId, &error);
+            py::dict result;
+            result["success"] = ok;
+            if (!ok) {
+                result["error"] = error;
+            }
+            return result;
+        }, py::arg("stream_id"), "Delete AVB stream by ID")
+
+        .def("get_avb_stream_stats", [](Map2AudioEngine& self, const std::string& streamId) {
+            std::string error;
+            auto stats = self.getAvbStreamStats(streamId, &error);
+            if (!stats) {
+                throw std::runtime_error(error.empty() ? "Stream not found" : error);
+            }
+
+            py::dict result;
+            result["frames_sent"] = stats->framesSent;
+            result["frames_received"] = stats->framesReceived;
+            result["send_errors"] = stats->sendErrors;
+            result["receive_errors"] = stats->receiveErrors;
+            result["underruns"] = stats->underruns;
+            result["overruns"] = stats->overruns;
+            result["timestamp_errors"] = stats->timestampErrors;
+            result["sequence_errors"] = stats->sequenceErrors;
+            result["bytes_transferred"] = stats->bytesTransferred;
+            result["max_latency_ns"] = stats->maxLatencyNs;
+            result["min_latency_ns"] = stats->minLatencyNs;
+
+            // Backward-compatible camelCase aliases.
+            result["framesSent"] = stats->framesSent;
+            result["framesReceived"] = stats->framesReceived;
+            result["sendErrors"] = stats->sendErrors;
+            result["receiveErrors"] = stats->receiveErrors;
+            result["timestampErrors"] = stats->timestampErrors;
+            result["sequenceErrors"] = stats->sequenceErrors;
+            result["bytesTransferred"] = stats->bytesTransferred;
+            result["maxLatencyNs"] = stats->maxLatencyNs;
+            result["minLatencyNs"] = stats->minLatencyNs;
+            return result;
+        }, py::arg("stream_id"), "Get AVB stream statistics by ID")
+
+        .def("reset_avb_stream_stats", [](Map2AudioEngine& self, const std::string& streamId) {
+            std::string error;
+            const bool ok = self.resetAvbStreamStats(streamId, &error);
+            if (!ok && !error.empty()) {
+                throw std::runtime_error(error);
+            }
+            return ok;
+        }, py::arg("stream_id"), "Reset AVB stream statistics by ID")
+
+        .def("list_avb_streams", &Map2AudioEngine::listAvbStreams,
+             "List managed AVB stream IDs")
+        .def("listAvbStreams", &Map2AudioEngine::listAvbStreams,
+             "List managed AVB stream IDs (camelCase alias)")
+
+        .def("get_avb_device_names", &Map2AudioEngine::getAvbDeviceNames,
+             "Get available AVB device names")
+        .def("getAvbDeviceNames", &Map2AudioEngine::getAvbDeviceNames,
+             "Get available AVB device names (camelCase alias)")
+        .def("get_avb_device_count", &Map2AudioEngine::getAvbDeviceCount,
+             "Get available AVB device count")
+        .def("getAvbDeviceCount", &Map2AudioEngine::getAvbDeviceCount,
+             "Get available AVB device count (camelCase alias)")
+
+        .def("set_avb_discovered_devices", [](Map2AudioEngine& self, const py::list& devices) {
+            std::vector<Map2AudioEngine::AvbDiscoveredDeviceInfo> parsedDevices;
+            parsedDevices.reserve(devices.size());
+
+            auto readStr = [](const py::dict& source, const char* snake, const char* camel = nullptr) -> std::string {
+                try {
+                    const py::str snakeKey(snake);
+                    if (source.contains(snakeKey)) {
+                        return py::str(source[snakeKey]).cast<std::string>();
+                    }
+                    if (camel != nullptr) {
+                        const py::str camelKey(camel);
+                        if (source.contains(camelKey)) {
+                            return py::str(source[camelKey]).cast<std::string>();
+                        }
+                    }
+                } catch (...) {
+                }
+                return {};
+            };
+
+            auto readInt = [](const py::dict& source, const char* snake, int fallback, const char* camel = nullptr) -> int {
+                try {
+                    const py::str snakeKey(snake);
+                    if (source.contains(snakeKey)) {
+                        return py::int_(source[snakeKey]).cast<int>();
+                    }
+                    if (camel != nullptr) {
+                        const py::str camelKey(camel);
+                        if (source.contains(camelKey)) {
+                            return py::int_(source[camelKey]).cast<int>();
+                        }
+                    }
+                } catch (...) {
+                }
+                return fallback;
+            };
+
+            auto readBool = [](const py::dict& source, const char* snake, bool fallback, const char* camel = nullptr) -> bool {
+                try {
+                    const py::str snakeKey(snake);
+                    if (source.contains(snakeKey)) {
+                        return py::bool_(source[snakeKey]).cast<bool>();
+                    }
+                    if (camel != nullptr) {
+                        const py::str camelKey(camel);
+                        if (source.contains(camelKey)) {
+                            return py::bool_(source[camelKey]).cast<bool>();
+                        }
+                    }
+                } catch (...) {
+                }
+                return fallback;
+            };
+
+            for (const auto& item : devices) {
+                const py::dict entry = py::reinterpret_borrow<py::dict>(item);
+
+                Map2AudioEngine::AvbDiscoveredDeviceInfo device;
+                device.endpointId = readStr(entry, "endpoint_id", "endpointId");
+                device.deviceName = readStr(entry, "device_name", "deviceName");
+                device.direction = readStr(entry, "direction");
+                device.deviceType = readStr(entry, "device_type", "deviceType");
+                device.nodeAddress = readStr(entry, "node_address", "nodeAddress");
+                device.audioFormat = readStr(entry, "audio_format", "audioFormat");
+                device.channels = readInt(entry, "channels", 2);
+                device.sampleRate = readInt(entry, "sample_rate", 48000, "sampleRate");
+                device.available = readBool(entry, "available", true);
+                parsedDevices.push_back(std::move(device));
+            }
+
+            std::string error;
+            const bool ok = self.setAvbDiscoveredDevices(parsedDevices, &error);
+            py::dict result;
+            result["success"] = ok;
+            result["count"] = ok ? static_cast<int>(parsedDevices.size()) : 0;
+            if (!ok) {
+                result["error"] = error;
+            }
+            return result;
+        }, py::arg("devices"), "Set discovered AVB endpoints for device enumeration")
+        .def("setAvbDiscoveredDevices", [](Map2AudioEngine& self, const py::list& devices) {
+            std::vector<Map2AudioEngine::AvbDiscoveredDeviceInfo> parsedDevices;
+            parsedDevices.reserve(devices.size());
+
+            auto readStr = [](const py::dict& source, const char* snake, const char* camel = nullptr) -> std::string {
+                try {
+                    const py::str snakeKey(snake);
+                    if (source.contains(snakeKey)) {
+                        return py::str(source[snakeKey]).cast<std::string>();
+                    }
+                    if (camel != nullptr) {
+                        const py::str camelKey(camel);
+                        if (source.contains(camelKey)) {
+                            return py::str(source[camelKey]).cast<std::string>();
+                        }
+                    }
+                } catch (...) {
+                }
+                return {};
+            };
+
+            auto readInt = [](const py::dict& source, const char* snake, int fallback, const char* camel = nullptr) -> int {
+                try {
+                    const py::str snakeKey(snake);
+                    if (source.contains(snakeKey)) {
+                        return py::int_(source[snakeKey]).cast<int>();
+                    }
+                    if (camel != nullptr) {
+                        const py::str camelKey(camel);
+                        if (source.contains(camelKey)) {
+                            return py::int_(source[camelKey]).cast<int>();
+                        }
+                    }
+                } catch (...) {
+                }
+                return fallback;
+            };
+
+            auto readBool = [](const py::dict& source, const char* snake, bool fallback, const char* camel = nullptr) -> bool {
+                try {
+                    const py::str snakeKey(snake);
+                    if (source.contains(snakeKey)) {
+                        return py::bool_(source[snakeKey]).cast<bool>();
+                    }
+                    if (camel != nullptr) {
+                        const py::str camelKey(camel);
+                        if (source.contains(camelKey)) {
+                            return py::bool_(source[camelKey]).cast<bool>();
+                        }
+                    }
+                } catch (...) {
+                }
+                return fallback;
+            };
+
+            for (const auto& item : devices) {
+                const py::dict entry = py::reinterpret_borrow<py::dict>(item);
+
+                Map2AudioEngine::AvbDiscoveredDeviceInfo device;
+                device.endpointId = readStr(entry, "endpoint_id", "endpointId");
+                device.deviceName = readStr(entry, "device_name", "deviceName");
+                device.direction = readStr(entry, "direction");
+                device.deviceType = readStr(entry, "device_type", "deviceType");
+                device.nodeAddress = readStr(entry, "node_address", "nodeAddress");
+                device.audioFormat = readStr(entry, "audio_format", "audioFormat");
+                device.channels = readInt(entry, "channels", 2);
+                device.sampleRate = readInt(entry, "sample_rate", 48000, "sampleRate");
+                device.available = readBool(entry, "available", true);
+                parsedDevices.push_back(std::move(device));
+            }
+
+            std::string error;
+            const bool ok = self.setAvbDiscoveredDevices(parsedDevices, &error);
+            py::dict result;
+            result["success"] = ok;
+            result["count"] = ok ? static_cast<int>(parsedDevices.size()) : 0;
+            if (!ok) {
+                result["error"] = error;
+            }
+            return result;
+        }, py::arg("devices"), "Set discovered AVB endpoints (camelCase alias)")
+
+        .def("get_avb_discovered_devices", [](Map2AudioEngine& self) {
+            const auto devices = self.getAvbDiscoveredDevices();
+            py::list result;
+            for (const auto& device : devices) {
+                py::dict row;
+                row["endpoint_id"] = device.endpointId;
+                row["device_name"] = device.deviceName;
+                row["direction"] = device.direction;
+                row["device_type"] = device.deviceType;
+                row["node_address"] = device.nodeAddress;
+                row["audio_format"] = device.audioFormat;
+                row["channels"] = device.channels;
+                row["sample_rate"] = device.sampleRate;
+                row["available"] = device.available;
+
+                // Backward-compatible camelCase aliases.
+                row["endpointId"] = device.endpointId;
+                row["deviceName"] = device.deviceName;
+                row["deviceType"] = device.deviceType;
+                row["nodeAddress"] = device.nodeAddress;
+                row["audioFormat"] = device.audioFormat;
+                row["sampleRate"] = device.sampleRate;
+
+                result.append(std::move(row));
+            }
+            return result;
+        }, "Get discovered AVB endpoints used for device enumeration")
+        .def("getAvbDiscoveredDevices", [](Map2AudioEngine& self) {
+            const auto devices = self.getAvbDiscoveredDevices();
+            py::list result;
+            for (const auto& device : devices) {
+                py::dict row;
+                row["endpoint_id"] = device.endpointId;
+                row["device_name"] = device.deviceName;
+                row["direction"] = device.direction;
+                row["device_type"] = device.deviceType;
+                row["node_address"] = device.nodeAddress;
+                row["audio_format"] = device.audioFormat;
+                row["channels"] = device.channels;
+                row["sample_rate"] = device.sampleRate;
+                row["available"] = device.available;
+                row["endpointId"] = device.endpointId;
+                row["deviceName"] = device.deviceName;
+                row["deviceType"] = device.deviceType;
+                row["nodeAddress"] = device.nodeAddress;
+                row["audioFormat"] = device.audioFormat;
+                row["sampleRate"] = device.sampleRate;
+                result.append(std::move(row));
+            }
+            return result;
+        }, "Get discovered AVB endpoints (camelCase alias)")
+
+        .def("clear_avb_discovered_devices", &Map2AudioEngine::clearAvbDiscoveredDevices,
+             "Clear discovered AVB endpoints")
+        .def("clearAvbDiscoveredDevices", &Map2AudioEngine::clearAvbDiscoveredDevices,
+             "Clear discovered AVB endpoints (camelCase alias)")
+
+        .def("get_avb_interface_info", [](Map2AudioEngine& self, const std::string& interfaceName) {
+            auto info = self.getAvbInterfaceInfo(interfaceName);
+            py::dict result;
+            result["interface"] = info.interfaceName;
+            result["available"] = info.available;
+            result["avb_enabled"] = info.avbEnabled;
+            result["interface_exists"] = info.interfaceExists;
+            result["ptp_ready"] = info.ptpReady;
+            if (!info.error.empty()) {
+                result["error"] = info.error;
+            }
+            return result;
+        }, py::arg("interface_name"), "Get AVB interface capability info")
+
+        // ========================================
         // Plugin Management (Multi-Format)
         // ========================================
 

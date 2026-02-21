@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+cde6f351fb2ae9d83bde1101bee87b7d MAP2ThePlugins_artefacts/JuceLibraryCode/MAP2ThePlugins_resources.rc

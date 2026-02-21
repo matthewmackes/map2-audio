@@ -534,6 +534,8 @@ Full AVB configuration in `~/.map2/config.json`:
 - `tsn.vlan_id`: VLAN for AVB traffic (standard: 2 for Class A)
 - `tsn.pcp`: Priority Code Point (standard: 5 for Class A)
 - `streams.presentation_time_offset_us`: Buffer time before playback (2000μs typical)
+- `avb.failover_policy`: Interface failover mode (`none`, `prefer_primary`, `round_robin`, `manual`)
+- `avb.failover_interfaces`: Ordered fallback interface candidates (comma or JSON list)
 - `discovery.avdecc_enabled`: Set `true` for third-party AVB device interop (Phase 8)
 
 ### Environment Variables
@@ -545,7 +547,31 @@ export MAP2_AVB_ENABLED=true
 export MAP2_AVB_INTERFACE=enp2s0
 export MAP2_AVB_PTP_DOMAIN=0
 export MAP2_AVB_MAX_STREAMS=16
+export MAP2_AVB_FAILOVER_POLICY=prefer_primary
+export MAP2_AVB_FAILOVER_INTERFACES='["enp2s0","enp5s0"]'
 ```
+
+### Configuration Compatibility Matrix
+
+Use this matrix to align runtime behavior with deployment goals:
+
+| Profile | Required flags | Typical use | Key checks |
+|---------|----------------|-------------|------------|
+| `default` | `avb.srp.required=false`, `avb.avdecc_enabled=false` | MAP2-only AVB deployments | `GET /api/avb/status`, `GET /api/avb/streams` |
+| `strict_srp` | `avb.srp.enabled=true`, `avb.srp.required=true` | Deterministic admission-controlled transport | `GET /api/avb/srp/status`, stream create/start includes SRP metadata |
+| `avdecc_enabled` | `avb.avdecc_enabled=true` | Third-party AVDECC endpoint interop | `GET /api/avb/avdecc/entities`, AVDECC connect/disconnect routes |
+| `strict_srp_avdecc` | strict SRP + AVDECC enabled | Mixed-vendor fabrics with strict reservation policy | SRP + AVDECC checks above plus diagnostics endpoint |
+
+Runtime introspection:
+
+```bash
+curl -s http://localhost:8080/api/avb/config/compatibility | jq
+```
+
+The response includes:
+- `active_profile`
+- resolved failover policy/interface list
+- profile matrix with required feature flags
 
 ### Kernel Parameters
 
@@ -643,9 +669,10 @@ curl -X POST http://localhost:8080/api/avb/streams \
   -d '{
     "stream_id": "test-stream-1",
     "direction": "talker",
+    "interface": "enp2s0",
     "channels": 2,
     "sample_rate": 48000,
-    "destination_mac": "91:e0:f0:00:fe:01"
+    "dest_mac": "91:e0:f0:00:fe:01"
   }'
 ```
 
@@ -654,17 +681,22 @@ curl -X POST http://localhost:8080/api/avb/streams \
 curl -X POST http://localhost:8080/api/avb/streams \
   -H "Content-Type: application/json" \
   -d '{
-    "stream_id": "test-stream-1",
+    "stream_id": "test-stream-2",
     "direction": "listener",
+    "interface": "enp2s0",
     "channels": 2,
-    "sample_rate": 48000,
-    "source_mac": "00:11:22:33:44:55"
+    "sample_rate": 48000
   }'
 ```
 
 **Monitor stream:**
 ```bash
 curl -s http://localhost:8080/api/avb/streams/test-stream-1/stats | jq
+```
+
+**Inspect runtime diagnostics (effective config + PTP/TSN/SRP):**
+```bash
+curl -s http://localhost:8080/api/avb/streams/test-stream-1/diagnostics | jq
 ```
 
 **Expected:**

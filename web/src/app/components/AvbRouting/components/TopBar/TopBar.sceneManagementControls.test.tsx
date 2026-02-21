@@ -28,6 +28,21 @@ jest.mock('../../hooks/useAvbApi', () => ({
     mutate: mockMutate,
     isPending: false,
   }),
+  useAvbDevices: () => ({
+    data: {
+      available: true,
+      count: 0,
+      device_names: [],
+      discovered_count: 0,
+      discovered_devices: [],
+    },
+  }),
+  useAvbStreams: () => ({
+    data: {
+      available: true,
+      streams: [],
+    },
+  }),
 }))
 
 jest.mock('../../hooks/useNotifications', () => ({

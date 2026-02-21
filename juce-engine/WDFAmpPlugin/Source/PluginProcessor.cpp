@@ -275,7 +275,8 @@ void WDFAmpAudioProcessor::setOversampleFactor(int factor)
 //==============================================================================
 juce::AudioProcessorEditor* WDFAmpAudioProcessor::createEditor()
 {
-    return new WDFAmpAudioProcessorEditor(*this);
+    // Generic editor surfaces all parameters without custom UI
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 bool WDFAmpAudioProcessor::hasEditor() const

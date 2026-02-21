@@ -185,6 +185,15 @@ img {
   color: #60a5fa;
 }
 
+.nav-tab-special {
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
 .nav-tab-active {
   background: rgba(37, 99, 235, 0.08);
   border-color: rgba(37, 99, 235, 0.2);

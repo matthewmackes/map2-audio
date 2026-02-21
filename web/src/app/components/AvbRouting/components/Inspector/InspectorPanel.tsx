@@ -22,6 +22,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { useRoutingState } from '../../context/RoutingContext';
+import { useAvbDevices, useAvbStreams } from '../../hooks/useAvbApi';
+import type { AvbDiscoveredDevice, AvbStreamPayload } from '../../types';
+import { getRouteStreams } from '../../utils/avbRouteStreams';
 
 const PANEL_WIDTH = 300;
 
@@ -30,6 +33,8 @@ const PANEL_WIDTH = 300;
  */
 export function InspectorPanel() {
   const state = useRoutingState();
+  const { data: avbDevicesData } = useAvbDevices();
+  const { data: avbStreamsData } = useAvbStreams();
   const { view_mode, current_node_id, selected_node_ids } = state.network.nodeSelection;
 
   const selectedEndpointIds = state.selection.selectedEndpoints;
@@ -99,6 +104,68 @@ export function InspectorPanel() {
     : null;
 
   const displayRoute = selectedRoute || hoveredRoute;
+  const discoveredDevices = avbDevicesData?.discovered_devices || [];
+  const discoveredDevicesByEndpointId = new Map<string, AvbDiscoveredDevice>(
+    discoveredDevices.map((device) => [device.endpoint_id, device])
+  );
+  const selectedEndpointDiscoveredDevice = selectedEndpoint
+    ? discoveredDevicesByEndpointId.get(selectedEndpoint.endpoint_id)
+    : null;
+  const endpointIds = Object.keys(state.endpoints);
+  const missingFromEngineCache = endpointIds.filter(
+    (endpointId) => !discoveredDevicesByEndpointId.has(endpointId)
+  ).length;
+  const engineCacheOrphans = discoveredDevices.filter(
+    (device) => !state.endpoints[device.endpoint_id]
+  ).length;
+  const streamPayloads = avbStreamsData?.streams || [];
+  const transportReadyStreams = streamPayloads.filter((stream) => stream.health?.ready).length;
+  const transportIssueStreams = streamPayloads.filter((stream) => (
+    stream.state === 'error' || (stream.health ? !stream.health.ready : false)
+  )).length;
+  const diagnosticsReadyStreams = streamPayloads.filter((stream) => Boolean(stream.diagnostics)).length;
+  const ptpLockedStreams = streamPayloads.filter((stream) => stream.diagnostics?.ptp_lock.locked).length;
+  const tsnFullyConfiguredStreams = streamPayloads.filter((stream) => {
+    const tsn = stream.diagnostics?.tsn_qdisc;
+    return Boolean(
+      tsn &&
+      tsn.available &&
+      tsn.mqprio_configured &&
+      tsn.cbs_configured &&
+      tsn.etf_configured &&
+      tsn.vlan_configured
+    );
+  }).length;
+  const srpBoundStreams = streamPayloads.filter((stream) => stream.diagnostics?.srp.bound).length;
+  const failoverCandidateStreams = streamPayloads.filter((stream) => (
+    (stream.diagnostics?.effective_config.interface_candidates.length || 0) > 1
+  )).length;
+
+  const failoverPolicyCounts = streamPayloads.reduce<Record<string, number>>((acc, stream) => {
+    const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
+    acc[policy] = (acc[policy] || 0) + 1;
+    return acc;
+  }, {});
+
+  const failoverInterfaceCounts = streamPayloads.reduce<Record<string, number>>((acc, stream) => {
+    const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+    candidates.forEach((iface) => {
+      acc[iface] = (acc[iface] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const topFailoverInterfaces = Object.entries(failoverInterfaceCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([iface, count]) => `${iface} (${count})`)
+    .join(', ') || '—';
+
+  const failoverPolicySummary = Object.entries(failoverPolicyCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([policy, count]) => `${policy} (${count})`)
+    .join(', ') || '—';
+  const routeFailoverStreams: AvbStreamPayload[] = displayRoute ? getRouteStreams(displayRoute, streamPayloads) : [];
 
   return (
     <Paper
@@ -126,7 +193,10 @@ export function InspectorPanel() {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Selected Endpoint
             </Typography>
-            <EndpointInfo endpoint={selectedEndpoint} />
+            <EndpointInfo
+              endpoint={selectedEndpoint}
+              discoveredDevice={selectedEndpointDiscoveredDevice || null}
+            />
           </>
         )}
 
@@ -137,7 +207,11 @@ export function InspectorPanel() {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               {selectedRoute ? 'Selected Route' : 'Hovered Route'}
             </Typography>
-            <RouteInfo route={displayRoute} endpoints={state.endpoints} />
+            <RouteInfo
+              route={displayRoute}
+              endpoints={state.endpoints}
+              failoverStreams={routeFailoverStreams}
+            />
           </>
         )}
 
@@ -174,6 +248,78 @@ export function InspectorPanel() {
               secondary={Object.keys(state.pendingRoutes).length}
             />
           </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Engine AVB Devices"
+              secondary={avbDevicesData?.count ?? 0}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Engine Cached Endpoints"
+              secondary={avbDevicesData?.discovered_count ?? 0}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Cache Drift"
+              secondary={`${missingFromEngineCache} missing, ${engineCacheOrphans} orphaned`}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Transport Ready Streams"
+              secondary={transportReadyStreams}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Streams With Issues"
+              secondary={transportIssueStreams}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Diagnostics Coverage"
+              secondary={`${diagnosticsReadyStreams}/${streamPayloads.length}`}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="PTP Locked Streams"
+              secondary={ptpLockedStreams}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="TSN Fully Configured Streams"
+              secondary={tsnFullyConfiguredStreams}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="SRP Bound Streams"
+              secondary={srpBoundStreams}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Failover Candidate Streams"
+              secondary={failoverCandidateStreams}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Failover Policies"
+              secondary={failoverPolicySummary}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemText
+              primary="Failover Interfaces"
+              secondary={topFailoverInterfaces}
+            />
+          </ListItem>
         </List>
       </Box>
     </Paper>
@@ -183,7 +329,13 @@ export function InspectorPanel() {
 /**
  * Endpoint information display
  */
-function EndpointInfo({ endpoint }: { endpoint: any }) {
+function EndpointInfo({
+  endpoint,
+  discoveredDevice,
+}: {
+  endpoint: any;
+  discoveredDevice: AvbDiscoveredDevice | null;
+}) {
   return (
     <List dense>
       <ListItem>
@@ -216,6 +368,29 @@ function EndpointInfo({ endpoint }: { endpoint: any }) {
           }}
         />
       </ListItem>
+      <ListItem>
+        <ListItemText
+          primary="Engine Cache"
+          secondary={
+            <Chip
+              label={discoveredDevice ? 'Synced' : 'Not Indexed'}
+              size="small"
+              color={discoveredDevice ? 'success' : 'warning'}
+            />
+          }
+          secondaryTypographyProps={{
+            component: 'div',
+          }}
+        />
+      </ListItem>
+      {discoveredDevice && (
+        <ListItem>
+          <ListItemText
+            primary="Cached Format"
+            secondary={`${discoveredDevice.channels}ch @ ${discoveredDevice.sample_rate / 1000}kHz • ${discoveredDevice.audio_format}`}
+          />
+        </ListItem>
+      )}
       {endpoint.mac_address && (
         <ListItem>
           <ListItemText primary="MAC Address" secondary={endpoint.mac_address} />
@@ -236,9 +411,40 @@ function EndpointInfo({ endpoint }: { endpoint: any }) {
 /**
  * Route information display
  */
-function RouteInfo({ route, endpoints }: { route: any; endpoints: Record<string, any> }) {
+function RouteInfo({
+  route,
+  endpoints,
+  failoverStreams,
+}: {
+  route: any;
+  endpoints: Record<string, any>;
+  failoverStreams: AvbStreamPayload[];
+}) {
   const talker = endpoints[route.talker_id];
   const listener = endpoints[route.listener_id];
+
+  const failoverPolicyCounts = failoverStreams.reduce<Record<string, number>>((acc, stream) => {
+    const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
+    acc[policy] = (acc[policy] || 0) + 1;
+    return acc;
+  }, {});
+
+  const failoverPolicySummary = Object.entries(failoverPolicyCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([policy, count]) => `${policy} (${count})`)
+    .join(', ') || 'No policy data';
+
+  const failoverInterfaceCounts = failoverStreams.reduce<Record<string, number>>((acc, stream) => {
+    const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+    candidates.forEach((iface) => {
+      acc[iface] = (acc[iface] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const failoverInterfaceSummary = Object.entries(failoverInterfaceCounts)
+    .map(([iface, count]) => `${iface} (${count})`)
+    .join(', ') || 'None';
 
   const getStateColor = (state: string) => {
     switch (state) {
@@ -310,6 +516,59 @@ function RouteInfo({ route, endpoints }: { route: any; endpoints: Record<string,
           <ListItemText
             primary="SRP Reservation"
             secondary={route.srp_reservation_id}
+          />
+        </ListItem>
+      )}
+      <ListItem>
+        <ListItemText
+          primary="Failover Policies"
+          secondary={failoverStreams.length > 0 ? failoverPolicySummary : 'No stream diagnostics available'}
+        />
+      </ListItem>
+      {failoverStreams.length > 0 && (
+        <ListItem>
+          <ListItemText
+            primary="Failover Interfaces"
+            secondary={failoverInterfaceSummary}
+          />
+        </ListItem>
+      )}
+      {failoverStreams.length > 0 && (
+        <ListItem>
+          <ListItemText
+            primary="Failover Stream(s)"
+            secondary={(
+              <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                {failoverStreams.map((stream) => {
+                  const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
+                  const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+                  const direction = stream.diagnostics?.effective_config.direction || stream.direction || 'unknown';
+
+                  return (
+                    <Box key={stream.stream_id} component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                      <Typography component="span" variant="caption" color="text.secondary">
+                        {stream.stream_id} ({direction})
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                        <Chip
+                          size="small"
+                          color={policy === 'none' ? 'default' : 'info'}
+                          label={`Policy: ${policy}`}
+                        />
+                        <Chip
+                          size="small"
+                          color="primary"
+                          label={`Candidates: ${candidates.length > 0 ? candidates.join(', ') : 'none'}`}
+                        />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+            secondaryTypographyProps={{
+              component: 'div',
+            }}
           />
         </ListItem>
       )}

@@ -9,10 +9,75 @@
 #include "AvbAudioIODeviceType.h"
 #include "AvbAudioIODevice.h"
 
-#include <fstream>
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
+#include <filesystem>
+#include <string>
 
 namespace Map2Audio {
+
+namespace {
+
+bool isTruthy(const char* value) {
+    if (value == nullptr) {
+        return false;
+    }
+
+    std::string normalized(value);
+    std::transform(
+        normalized.begin(),
+        normalized.end(),
+        normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+}
+
+uint64_t deriveStreamIdFromInterface(const juce::String& interface) {
+    const std::string source = interface.toStdString();
+    uint64_t hash = 1469598103934665603ULL;  // FNV-1a 64-bit offset basis
+    for (const unsigned char ch : source) {
+        hash ^= static_cast<uint64_t>(ch);
+        hash *= 1099511628211ULL;
+    }
+    hash &= 0x00FFFFFFFFFFFFFFULL;
+    hash |= 0xA500000000000000ULL;
+    return hash;
+}
+
+uint64_t parseStreamIdOrDefault(const char* value, uint64_t fallback) {
+    if (value == nullptr || *value == '\0') {
+        return fallback;
+    }
+
+    try {
+        size_t parsed = 0;
+        const uint64_t parsedValue = std::stoull(value, &parsed, 0);
+        if (parsed == std::string(value).size() && parsedValue != 0) {
+            return parsedValue;
+        }
+    } catch (...) {
+    }
+
+    return fallback;
+}
+
+int parseIntOrDefault(const char* value, int fallback) {
+    if (value == nullptr || *value == '\0') {
+        return fallback;
+    }
+    try {
+        size_t parsed = 0;
+        const int parsedValue = std::stoi(value, &parsed, 10);
+        if (parsed == std::string(value).size()) {
+            return parsedValue;
+        }
+    } catch (...) {
+    }
+    return fallback;
+}
+
+}  // namespace
 
 // ============================================================================
 // Constructor / Destructor
@@ -42,15 +107,28 @@ void AvbAudioIODeviceType::scanForDevices() {
     inputDeviceNames_.clear();
     outputDeviceNames_.clear();
 
+    avbAvailable_ = isAvbAvailable();
     if (!avbAvailable_) {
         return; // Empty lists
     }
 
+    juce::String interface;
+    uint64_t streamId = 0;
+    juce::String destMac;
+    uint32_t presentationOffsetUs = 2000;
+    uint8_t priority = 3;
+    if (!getLocalDeviceConfig(interface, streamId, destMac, presentationOffsetUs, priority)) {
+        juce::ignoreUnused(streamId, destMac, presentationOffsetUs, priority);
+        juce::Logger::writeToLog("AVB/TSN: Failed to resolve local AVB configuration");
+        return;
+    }
+    juce::ignoreUnused(streamId, destMac, presentationOffsetUs, priority);
+
     // Local talker device (sends audio to network)
-    outputDeviceNames_.add("AVB Talker (Local)");
+    outputDeviceNames_.add(buildLocalDeviceName(true, interface));
 
     // Local listener device (receives audio from network)
-    inputDeviceNames_.add("AVB Listener (Local)");
+    inputDeviceNames_.add(buildLocalDeviceName(false, interface));
 
     // Discover remote MAP2 nodes via mDNS
     juce::StringArray remoteDevices = discoverDevicesViaMdns();
@@ -92,6 +170,7 @@ juce::AudioIODevice* AvbAudioIODeviceType::createDevice(
     const juce::String& outputDeviceName,
     const juce::String& inputDeviceName)
 {
+    avbAvailable_ = isAvbAvailable();
     if (!avbAvailable_) {
         juce::Logger::writeToLog("AVB/TSN: Cannot create device - AVB not available");
         return nullptr;
@@ -115,11 +194,30 @@ juce::AudioIODevice* AvbAudioIODeviceType::createDevice(
     juce::String interface;
     uint64_t streamId = 0;
     juce::String destMac;
+    uint32_t presentationOffsetUs = 2000;
+    uint8_t priority = 3;
 
-    if (!getLocalDeviceConfig(interface, streamId, destMac)) {
+    if (!getLocalDeviceConfig(interface, streamId, destMac, presentationOffsetUs, priority)) {
         juce::Logger::writeToLog("AVB/TSN: Failed to read device configuration");
         return nullptr;
     }
+
+    const juce::String localTalkerName = buildLocalDeviceName(true, interface);
+    const juce::String localListenerName = buildLocalDeviceName(false, interface);
+    const bool isLocalTalkerSelection = (deviceName == localTalkerName) || (deviceName == "AVB Talker (Local)");
+    const bool isLocalListenerSelection =
+        (deviceName == localListenerName) || (deviceName == "AVB Listener (Local)");
+
+    if ((direction == AvbDirection::Talker && !isLocalTalkerSelection) ||
+        (direction == AvbDirection::Listener && !isLocalListenerSelection)) {
+        juce::Logger::writeToLog("AVB/TSN: Unsupported device selection: " + deviceName);
+        return nullptr;
+    }
+
+    const uint64_t directionSalt = (direction == AvbDirection::Talker)
+        ? 0x1000000000000000ULL
+        : 0x2000000000000000ULL;
+    const uint64_t directionScopedStreamId = streamId ^ directionSalt;
 
     try {
         // Create AVB audio device
@@ -127,9 +225,11 @@ juce::AudioIODevice* AvbAudioIODeviceType::createDevice(
         return new AvbAudioIODevice(
             deviceName,
             interface.toStdString(),
-            streamId,
+            directionScopedStreamId,
             destMac.toStdString(),
-            direction
+            direction,
+            presentationOffsetUs,
+            priority
         );
     } catch (const std::exception& e) {
         juce::Logger::writeToLog("AVB/TSN: Device creation failed: " + juce::String(e.what()));
@@ -142,10 +242,10 @@ juce::AudioIODevice* AvbAudioIODeviceType::createDevice(
 // ============================================================================
 
 bool AvbAudioIODeviceType::isAvbAvailable() const {
-    // Check 1: AVB enabled in config
-    // (In real implementation, would read ~/.map2/config.json)
-    const char* avbEnabled = std::getenv("MAP2_AVB_ENABLED");
-    if (avbEnabled == nullptr || std::string(avbEnabled) != "true") {
+    // Check 1: AVB enabled by runtime config marker or environment.
+    const bool enabledByEnv = isTruthy(std::getenv("MAP2_AVB_ENABLED"));
+    const bool enabledByMarker = std::filesystem::exists("/etc/map2/avb-enabled");
+    if (!enabledByEnv && !enabledByMarker) {
         return false;
     }
 
@@ -153,18 +253,21 @@ bool AvbAudioIODeviceType::isAvbAvailable() const {
     juce::String interface;
     uint64_t streamId;
     juce::String destMac;
-    if (!getLocalDeviceConfig(interface, streamId, destMac)) {
+    uint32_t presentationOffsetUs = 2000;
+    uint8_t priority = 3;
+    if (!getLocalDeviceConfig(interface, streamId, destMac, presentationOffsetUs, priority)) {
+        juce::ignoreUnused(streamId, destMac, presentationOffsetUs, priority);
         return false;
     }
+    juce::ignoreUnused(streamId, destMac, presentationOffsetUs, priority);
 
-    juce::File sysInterface("/sys/class/net/" + interface);
-    if (!sysInterface.exists()) {
+    if (!std::filesystem::exists("/sys/class/net/" + interface.toStdString())) {
         return false;
     }
 
     // Check 3: ptp4l running (check for PID file or systemd status)
     // Simple check: look for /run/ptp4l.pid
-    if (!juce::File("/run/ptp4l.pid").existsAsFile()) {
+    if (!std::filesystem::exists("/run/ptp4l.pid")) {
         // Not running
         return false;
     }
@@ -186,35 +289,43 @@ juce::StringArray AvbAudioIODeviceType::discoverDevicesViaMdns() const {
     return devices;
 }
 
+juce::String AvbAudioIODeviceType::buildLocalDeviceName(bool forTalker, const juce::String& interface) const {
+    const juce::String role = forTalker ? "Talker" : "Listener";
+    return "AVB " + role + " [" + interface + "]";
+}
+
 bool AvbAudioIODeviceType::getLocalDeviceConfig(
     juce::String& interface,
     uint64_t& streamId,
-    juce::String& destMac) const
+    juce::String& destMac,
+    uint32_t& presentationOffsetUs,
+    uint8_t& priority) const
 {
-    // Read configuration from environment variables
-    // (In real implementation, would use Python config service)
+    // Resolve configuration from environment and runtime defaults.
 
     const char* ifaceEnv = std::getenv("MAP2_AVB_INTERFACE");
-    if (ifaceEnv == nullptr) {
+    if (ifaceEnv == nullptr || *ifaceEnv == '\0') {
         return false;
     }
     interface = juce::String(ifaceEnv);
 
-    // Stream ID (default: MAC-based unique ID)
-    const char* streamIdEnv = std::getenv("MAP2_AVB_STREAM_ID");
-    if (streamIdEnv != nullptr) {
-        streamId = std::stoull(streamIdEnv, nullptr, 16);
-    } else {
-        streamId = 0x001122334455667788ULL; // Default placeholder
-    }
+    // Stream ID defaults deterministically from interface name.
+    const uint64_t derivedStreamId = deriveStreamIdFromInterface(interface);
+    streamId = parseStreamIdOrDefault(std::getenv("MAP2_AVB_STREAM_ID"), derivedStreamId);
 
-    // Destination MAC (for talker)
+    // Destination MAC (for talkers) defaults to IEEE 1722 multicast base.
     const char* destMacEnv = std::getenv("MAP2_AVB_DEST_MAC");
     if (destMacEnv != nullptr) {
         destMac = juce::String(destMacEnv);
     } else {
-        destMac = "01:AA:BB:CC:DD:EE"; // Default AVB multicast
+        destMac = "91:e0:f0:00:0e:80";
     }
+
+    const int parsedOffsetUs = parseIntOrDefault(std::getenv("MAP2_AVB_PRESENTATION_OFFSET_US"), 2000);
+    presentationOffsetUs = static_cast<uint32_t>(std::clamp(parsedOffsetUs, 500, 10000));
+
+    const int parsedPriority = parseIntOrDefault(std::getenv("MAP2_AVB_PRIORITY"), 3);
+    priority = static_cast<uint8_t>(std::clamp(parsedPriority, 0, 7));
 
     return true;
 }

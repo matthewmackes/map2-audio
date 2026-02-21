@@ -1,10 +1,12 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <string>
 
 #include "TweedBassmanProcessor.h"
 
-class TweedBassmanAudioProcessor : public juce::AudioProcessor
+class TweedBassmanAudioProcessor : public juce::AudioProcessor,
+                                  public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     TweedBassmanAudioProcessor();
@@ -32,9 +34,14 @@ public:
 
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
 private:
     map2::TweedBassmanProcessor processor;
+    juce::AudioProcessorValueTreeState apvts;
+
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void syncParameters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TweedBassmanAudioProcessor)
 };

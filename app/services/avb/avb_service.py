@@ -43,6 +43,8 @@ class AvbStreamConfig:
     dest_mac: Optional[str] = None  # For talkers
     presentation_offset_us: int = 2000
     priority: int = 3  # 802.1Q SR Class A
+    failover_policy: str = "none"
+    failover_interfaces: List[str] = field(default_factory=list)
     srp_reservation_id: Optional[str] = None
     srp_admission_id: Optional[str] = None
     srp_metadata: Dict[str, Any] = field(default_factory=dict)
@@ -123,11 +125,13 @@ class AvbService:
             return False
 
         try:
-            # Check if engine has AVB support (compiled with USE_AVB=ON)
-            if not hasattr(self._engine, 'isAvbAvailable'):
-                return False
-
-            return self._engine.isAvbAvailable()
+            # Check if engine has AVB support (compiled with USE_AVB=ON).
+            # Prefer snake_case contract, keep camelCase for compatibility.
+            for method_name in ("is_avb_available", "isAvbAvailable"):
+                method = getattr(self._engine, method_name, None)
+                if callable(method):
+                    return bool(method())
+            return False
         except Exception as e:
             logger.debug(f"AVB availability check failed: {e}")
             return False
@@ -210,6 +214,14 @@ class AvbService:
         return {
             "error": f"Engine AVB stream {operation} API unavailable",
             "code": "ENGINE_METHOD_UNAVAILABLE",
+        }
+
+    @staticmethod
+    def _engine_not_ready_error(message: Optional[str]) -> Dict[str, Any]:
+        """Standardized error payload when JUCE engine is not ready."""
+        return {
+            "error": message or "Engine not initialized",
+            "code": "ENGINE_NOT_READY",
         }
 
     @staticmethod
@@ -307,12 +319,12 @@ class AvbService:
                 [
                     "create_avb_stream",
                     "createAvbStream",
-                    "add_avb_stream",
-                    "addAvbStream",
                 ],
                 engine_config,
             )
             if not found:
+                if error:
+                    return self._engine_not_ready_error(error)
                 return self._missing_engine_stream_api_error("create")
             if found and not success:
                 return {"error": error or "Engine create_stream failed", "code": "CREATION_FAILED"}
@@ -363,18 +375,23 @@ class AvbService:
 
             # Stop if running
             if stream.state == StreamState.RUNNING:
-                await self.stop_stream(stream_id)
+                stop_result = await self.stop_stream(stream_id)
+                if stop_result.get("error"):
+                    return {
+                        "error": stop_result.get("error", "Failed to stop stream before delete"),
+                        "code": "DELETE_FAILED",
+                    }
 
             found, success, error = self._call_engine_stream_api(
                 [
                     "delete_avb_stream",
                     "deleteAvbStream",
-                    "remove_avb_stream",
-                    "removeAvbStream",
                 ],
                 stream_id,
             )
             if not found:
+                if error:
+                    return self._engine_not_ready_error(error)
                 return self._missing_engine_stream_api_error("delete")
             if found and not success:
                 return {"error": error or "Engine delete_stream failed", "code": "DELETE_FAILED"}
@@ -419,6 +436,10 @@ class AvbService:
                 stream_id,
             )
             if not found:
+                if error:
+                    stream.state = StreamState.ERROR
+                    stream.error = error
+                    return self._engine_not_ready_error(error)
                 stream.state = StreamState.ERROR
                 stream.error = self._missing_engine_stream_api_error("start")["error"]
                 return self._missing_engine_stream_api_error("start")
@@ -428,6 +449,7 @@ class AvbService:
                 return {"error": stream.error, "code": "START_FAILED"}
 
             stream.state = StreamState.RUNNING
+            stream.error = None
 
             logger.info(f"Started AVB stream: {stream_id}")
 
@@ -470,6 +492,10 @@ class AvbService:
                 stream_id,
             )
             if not found:
+                if error:
+                    stream.state = StreamState.ERROR
+                    stream.error = error
+                    return self._engine_not_ready_error(error)
                 stream.state = StreamState.ERROR
                 stream.error = self._missing_engine_stream_api_error("stop")["error"]
                 return self._missing_engine_stream_api_error("stop")
@@ -479,6 +505,7 @@ class AvbService:
                 return {"error": stream.error, "code": "STOP_FAILED"}
 
             stream.state = StreamState.STOPPED
+            stream.error = None
 
             logger.info(f"Stopped AVB stream: {stream_id}")
 
@@ -486,6 +513,10 @@ class AvbService:
 
         except Exception as e:
             logger.error(f"Failed to stop AVB stream: {e}", exc_info=True)
+            stream = self.streams.get(stream_id)
+            if stream:
+                stream.state = StreamState.ERROR
+                stream.error = str(e)
             return {"error": str(e), "code": "STOP_FAILED"}
 
     def get_stream(self, stream_id: str) -> Optional[Dict[str, Any]]:
@@ -540,6 +571,83 @@ class AvbService:
         """Get all streams"""
         return [self._stream_to_dict(s) for s in self.streams.values()]
 
+    def get_device_names(self) -> List[str]:
+        """Get JUCE-visible AVB device names from engine."""
+        found, payload, _error = self._call_engine_stream_data_api(
+            [
+                "get_avb_device_names",
+                "getAvbDeviceNames",
+            ]
+        )
+        if not found or not isinstance(payload, list):
+            return []
+
+        names: List[str] = []
+        for item in payload:
+            value = str(item).strip()
+            if value:
+                names.append(value)
+        return sorted(set(names))
+
+    def get_discovered_devices(self) -> List[Dict[str, Any]]:
+        """Get normalized discovered AVB endpoint cache from engine, if supported."""
+        found, payload, _error = self._call_engine_stream_data_api(
+            [
+                "get_avb_discovered_devices",
+                "getAvbDiscoveredDevices",
+            ]
+        )
+        if not found or not isinstance(payload, list):
+            return []
+
+        normalized: List[Dict[str, Any]] = []
+        for item in payload:
+            if not isinstance(item, dict):
+                continue
+
+            endpoint_id = str(item.get("endpoint_id") or item.get("endpointId") or "").strip()
+            device_name = str(item.get("device_name") or item.get("deviceName") or "").strip()
+            direction = str(item.get("direction") or "listener").strip().lower()
+            device_type = str(item.get("device_type") or item.get("deviceType") or "unknown").strip().lower()
+            node_address = str(item.get("node_address") or item.get("nodeAddress") or "").strip()
+            audio_format = str(item.get("audio_format") or item.get("audioFormat") or "24-bit PCM").strip()
+            available = bool(item.get("available", True))
+
+            try:
+                channels = max(1, int(item.get("channels", 2)))
+            except Exception:
+                channels = 2
+
+            try:
+                sample_rate = max(1, int(item.get("sample_rate", item.get("sampleRate", 48000))))
+            except Exception:
+                sample_rate = 48000
+
+            if not endpoint_id or not device_name:
+                continue
+
+            if direction not in {"talker", "listener"}:
+                direction = "listener"
+            if device_type not in {"map2", "avdecc", "unknown"}:
+                device_type = "unknown"
+
+            normalized.append(
+                {
+                    "endpoint_id": endpoint_id,
+                    "device_name": device_name,
+                    "direction": direction,
+                    "device_type": device_type,
+                    "node_address": node_address,
+                    "audio_format": audio_format or "24-bit PCM",
+                    "channels": channels,
+                    "sample_rate": sample_rate,
+                    "available": available,
+                }
+            )
+
+        normalized.sort(key=lambda row: (row["endpoint_id"], row["device_name"]))
+        return normalized
+
     def get_stream_stats(self, stream_id: str) -> Optional[Dict[str, Any]]:
         """Get stream statistics"""
         stream = self.streams.get(stream_id)
@@ -559,6 +667,8 @@ class AvbService:
             elif raw_stats is not None:
                 stream.stats = self._normalize_stream_stats(raw_stats, stream.stats)
                 stream.error = None
+        elif error:
+            stream.error = error
 
         return asdict(stream.stats)
 
@@ -575,6 +685,12 @@ class AvbService:
             ],
             stream_id,
         )
+        if not found:
+            if error:
+                stream.error = error
+                return False
+            stream.error = self._missing_engine_stream_api_error("reset")["error"]
+            return False
         if found and not success:
             stream.error = error or "Engine reset_stream_stats failed"
             return False

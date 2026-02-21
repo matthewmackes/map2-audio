@@ -48,6 +48,8 @@ public:
      * @param streamId Unique 64-bit stream identifier
      * @param destMac Destination MAC address (talker only)
      * @param direction Talker or Listener
+     * @param presentationOffsetUs Presentation offset in microseconds
+     * @param priority 802.1Q priority (0-7)
      *
      * Throws AvbException if AVB initialization fails.
      */
@@ -55,7 +57,9 @@ public:
                       const std::string& interface,
                       uint64_t streamId,
                       const std::string& destMac,
-                      AvbDirection direction);
+                      AvbDirection direction,
+                      uint32_t presentationOffsetUs = 2000,
+                      uint8_t priority = 3);
 
     ~AvbAudioIODevice() override;
 
@@ -185,6 +189,18 @@ public:
      */
     bool showControlPanel() override;
 
+    /**
+     * Get a lock-free snapshot of underlying AVB stream stats.
+     * Returns default-initialized stats if stream is not open.
+     */
+    AvbStreamStatsSnapshot getAvbStreamStatsSnapshot() const;
+
+    /**
+     * Reset underlying AVB stream counters.
+     * No-op when stream is not open.
+     */
+    void resetAvbStreamStats();
+
 private:
     /**
      * Network thread main loop.
@@ -229,6 +245,8 @@ private:
     uint64_t streamId_;
     std::string destMac_;
     AvbDirection direction_;
+    uint32_t presentationOffsetUs_{2000};
+    uint8_t priority_{3};
 
     // JUCE audio state
     std::atomic<bool> isOpen_{false};

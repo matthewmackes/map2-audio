@@ -9,8 +9,17 @@
  */
 
 #include "Map2AudioEngine.h"
+#ifdef HAS_AVB
+#include "AvbAudioIODevice.h"
+#endif
 #include <sys/mman.h>
 #include <errno.h>
+#include <cstdlib>
+#include <cctype>
+#include <cstdio>
+#include <filesystem>
+#include <limits>
+#include <unordered_set>
 
 // RT-SAFE: Disable logging in release builds and production
 // Logging to console acquires mutex and can block the audio thread
@@ -24,6 +33,116 @@
 #endif
 
 namespace map2 {
+
+namespace {
+
+bool isTruthy(const char* value) {
+    if (value == nullptr) {
+        return false;
+    }
+
+    std::string normalized(value);
+    std::transform(
+        normalized.begin(),
+        normalized.end(),
+        normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+}
+
+std::string normalizeDirection(const std::string& direction) {
+    std::string normalized(direction);
+    std::transform(
+        normalized.begin(),
+        normalized.end(),
+        normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return normalized;
+}
+
+bool containsInsensitive(const std::string& text, const std::string& token) {
+    std::string lhs(text);
+    std::string rhs(token);
+    std::transform(lhs.begin(), lhs.end(), lhs.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    std::transform(rhs.begin(), rhs.end(), rhs.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    return lhs.find(rhs) != std::string::npos;
+}
+
+std::string normalizeDeviceType(const std::string& deviceType) {
+    std::string normalized(deviceType);
+    std::transform(
+        normalized.begin(),
+        normalized.end(),
+        normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    if (normalized.empty()) {
+        return "unknown";
+    }
+    return normalized;
+}
+
+uint64_t deriveNumericStreamId(const std::string& streamId) {
+    if (!streamId.empty()) {
+        try {
+            size_t parsed = 0;
+            const uint64_t value = std::stoull(streamId, &parsed, 0);
+            if (parsed == streamId.size() && value != 0) {
+                return value;
+            }
+        } catch (...) {
+        }
+    }
+
+    uint64_t hash = 1469598103934665603ULL;  // FNV-1a 64-bit offset basis
+    for (const unsigned char ch : streamId) {
+        hash ^= static_cast<uint64_t>(ch);
+        hash *= 1099511628211ULL;
+    }
+
+    // Keep deterministic but avoid trivial all-zero IDs.
+    hash &= 0x00FFFFFFFFFFFFFFULL;
+    hash |= 0xA500000000000000ULL;
+    return hash;
+}
+
+juce::BigInteger buildChannelMask(int channels) {
+    juce::BigInteger mask;
+    if (channels > 0) {
+        mask.setRange(0, channels, true);
+    }
+    return mask;
+}
+
+std::string defaultTalkerDestMac() {
+    // IEEE 1722 multicast range base address.
+    return "91:e0:f0:00:0e:80";
+}
+
+bool isValidMacAddress(const std::string& value) {
+    if (value.empty()) {
+        return false;
+    }
+
+    unsigned int bytes[6] = {};
+    char extra = '\0';
+    const int parsed = std::sscanf(
+        value.c_str(),
+        "%2x:%2x:%2x:%2x:%2x:%2x%c",
+        &bytes[0],
+        &bytes[1],
+        &bytes[2],
+        &bytes[3],
+        &bytes[4],
+        &bytes[5],
+        &extra);
+    return parsed == 6;
+}
+
+}  // namespace
 
 Map2AudioEngine::Map2AudioEngine() {
     audioGraph_ = std::make_unique<JuceAudioGraph>(pluginHost_);
@@ -208,6 +327,27 @@ void Map2AudioEngine::shutdown() {
     std::cout << "Shutting down MAP2 Audio Engine" << std::endl;
 
     stopAudio();
+
+    {
+        std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+        for (auto& [streamId, stream] : avbStreams_) {
+            (void)streamId;
+#ifdef HAS_AVB
+            if (stream.device != nullptr) {
+                if (stream.device->isPlaying()) {
+                    stream.device->stop();
+                }
+                stream.device->close();
+            }
+#endif
+            stream.running = false;
+        }
+        avbStreams_.clear();
+    }
+    {
+        std::lock_guard<std::mutex> guard(avbDiscoveredDevicesMutex_);
+        avbDiscoveredDevices_.clear();
+    }
     
     // Stop metering thread (Option 3 - lock-free ring buffer)
     meteringRunning_.store(false);
@@ -269,6 +409,534 @@ bool Map2AudioEngine::stopAudio() {
 
     std::cout << "Audio processing stopped" << std::endl;
     return true;
+}
+
+bool Map2AudioEngine::isAvbAvailable() const {
+#ifdef HAS_AVB
+    const bool enabledByEnv = isTruthy(std::getenv("MAP2_AVB_ENABLED"));
+    const bool enabledByMarker = std::filesystem::exists("/etc/map2/avb-enabled");
+    if (!enabledByEnv && !enabledByMarker) {
+        return false;
+    }
+
+    const char* ifaceEnv = std::getenv("MAP2_AVB_INTERFACE");
+    const std::string interfaceName = ifaceEnv ? ifaceEnv : "";
+    if (interfaceName.empty()) {
+        return false;
+    }
+
+    if (!std::filesystem::exists("/sys/class/net/" + interfaceName)) {
+        return false;
+    }
+
+    if (!std::filesystem::exists("/run/ptp4l.pid")) {
+        return false;
+    }
+
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool Map2AudioEngine::createAvbStream(const AvbStreamRuntimeConfig& config, std::string* error) {
+#ifndef HAS_AVB
+    if (error != nullptr) {
+        *error = "AVB not compiled (USE_AVB=OFF)";
+    }
+    return false;
+#else
+    AvbStreamRuntimeConfig normalized = config;
+    normalized.direction = normalizeDirection(config.direction);
+    normalized.channels = std::clamp(config.channels, 1, MAX_CHANNELS);
+    normalized.sampleRate = std::max(1, config.sampleRate);
+    normalized.bufferSize = std::max(1, config.bufferSize);
+    normalized.presentationOffsetUs = std::max(0, config.presentationOffsetUs);
+    normalized.priority = std::clamp(config.priority, 0, 7);
+
+    if (normalized.streamId.empty()) {
+        if (error != nullptr) {
+            *error = "stream_id is required";
+        }
+        return false;
+    }
+
+    if (normalized.direction != "talker" && normalized.direction != "listener") {
+        if (error != nullptr) {
+            *error = "direction must be 'talker' or 'listener'";
+        }
+        return false;
+    }
+
+    if (normalized.interfaceName.empty()) {
+        if (const char* ifaceEnv = std::getenv("MAP2_AVB_INTERFACE")) {
+            normalized.interfaceName = ifaceEnv;
+        }
+    }
+
+    if (normalized.interfaceName.empty()) {
+        if (error != nullptr) {
+            *error = "AVB interface is required";
+        }
+        return false;
+    }
+
+    if (!std::filesystem::exists("/sys/class/net/" + normalized.interfaceName)) {
+        if (error != nullptr) {
+            *error = "Configured AVB interface not found: " + normalized.interfaceName;
+        }
+        return false;
+    }
+
+    const auto ifaceInfo = getAvbInterfaceInfo(normalized.interfaceName);
+    if (!ifaceInfo.available) {
+        if (error != nullptr) {
+            *error = ifaceInfo.error.empty() ? "AVB interface unavailable" : ifaceInfo.error;
+        }
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+        if (avbStreams_.find(normalized.streamId) != avbStreams_.end()) {
+            if (error != nullptr) {
+                *error = "Stream already exists";
+            }
+            return false;
+        }
+    }
+
+    const bool talker = normalized.direction == "talker";
+    std::string effectiveDestMac = normalized.destMac;
+    if (talker && effectiveDestMac.empty()) {
+        if (const char* envMac = std::getenv("MAP2_AVB_DEST_MAC")) {
+            effectiveDestMac = envMac;
+        }
+        if (effectiveDestMac.empty()) {
+            effectiveDestMac = defaultTalkerDestMac();
+        }
+    }
+
+    if (talker && !isValidMacAddress(effectiveDestMac)) {
+        if (error != nullptr) {
+            *error = "Invalid destination MAC address";
+        }
+        return false;
+    }
+
+    std::unique_ptr<Map2Audio::AvbAudioIODevice> device;
+    try {
+        const auto direction = talker ? Map2Audio::AvbDirection::Talker : Map2Audio::AvbDirection::Listener;
+        const juce::String deviceName = talker
+            ? "AVB Talker (" + juce::String(normalized.streamId) + ")"
+            : "AVB Listener (" + juce::String(normalized.streamId) + ")";
+
+        device = std::make_unique<Map2Audio::AvbAudioIODevice>(
+            deviceName,
+            normalized.interfaceName,
+            deriveNumericStreamId(normalized.streamId),
+            effectiveDestMac,
+            direction,
+            static_cast<uint32_t>(normalized.presentationOffsetUs),
+            static_cast<uint8_t>(normalized.priority));
+    } catch (const std::exception& e) {
+        if (error != nullptr) {
+            *error = "Failed to allocate AVB device: " + std::string(e.what());
+        }
+        return false;
+    }
+
+    const juce::BigInteger inputMask = talker ? juce::BigInteger() : buildChannelMask(normalized.channels);
+    const juce::BigInteger outputMask = talker ? buildChannelMask(normalized.channels) : juce::BigInteger();
+    const juce::String openError = device->open(inputMask, outputMask, normalized.sampleRate, normalized.bufferSize);
+    if (openError.isNotEmpty()) {
+        if (error != nullptr) {
+            *error = openError.toStdString();
+        }
+        return false;
+    }
+
+    normalized.destMac = effectiveDestMac;
+
+    AvbManagedStream stream;
+    stream.config = normalized;
+    stream.running = false;
+    stream.lastError.clear();
+    stream.device = std::move(device);
+
+    {
+        std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+        if (avbStreams_.find(normalized.streamId) != avbStreams_.end()) {
+            if (error != nullptr) {
+                *error = "Stream already exists";
+            }
+            return false;
+        }
+        avbStreams_.emplace(normalized.streamId, std::move(stream));
+    }
+
+    if (error != nullptr) {
+        error->clear();
+    }
+    return true;
+#endif
+}
+
+bool Map2AudioEngine::startAvbStream(const std::string& streamId, std::string* error) {
+#ifndef HAS_AVB
+    if (error != nullptr) {
+        *error = "AVB not compiled (USE_AVB=OFF)";
+    }
+    return false;
+#else
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    auto it = avbStreams_.find(streamId);
+    if (it == avbStreams_.end()) {
+        if (error != nullptr) {
+            *error = "Stream not found";
+        }
+        return false;
+    }
+
+    if (it->second.running) {
+        if (error != nullptr) {
+            error->clear();
+        }
+        return true;
+    }
+
+    if (it->second.device == nullptr || !it->second.device->isOpen()) {
+        it->second.lastError = "Stream device is not initialized";
+        if (error != nullptr) {
+            *error = it->second.lastError;
+        }
+        return false;
+    }
+
+    it->second.device->start(nullptr);
+    if (!it->second.device->isPlaying()) {
+        const std::string deviceError = it->second.device->getLastError().toStdString();
+        it->second.lastError = deviceError.empty() ? "Failed to start AVB stream device" : deviceError;
+        if (error != nullptr) {
+            *error = it->second.lastError;
+        }
+        return false;
+    }
+
+    it->second.running = true;
+    it->second.stats = AvbStreamRuntimeStats{};
+    it->second.startedAt = std::chrono::steady_clock::now();
+    it->second.lastError.clear();
+    if (error != nullptr) {
+        error->clear();
+    }
+    return true;
+#endif
+}
+
+bool Map2AudioEngine::stopAvbStream(const std::string& streamId, std::string* error) {
+#ifndef HAS_AVB
+    if (error != nullptr) {
+        *error = "AVB not compiled (USE_AVB=OFF)";
+    }
+    return false;
+#else
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    auto it = avbStreams_.find(streamId);
+    if (it == avbStreams_.end()) {
+        if (error != nullptr) {
+            *error = "Stream not found";
+        }
+        return false;
+    }
+
+    if (it->second.device != nullptr && it->second.device->isPlaying()) {
+        it->second.device->stop();
+        if (it->second.device->isPlaying()) {
+            it->second.lastError = "Failed to stop AVB stream device";
+            if (error != nullptr) {
+                *error = it->second.lastError;
+            }
+            return false;
+        }
+    }
+
+    if (it->second.device != nullptr) {
+        const auto snapshot = it->second.device->getAvbStreamStatsSnapshot();
+        it->second.stats.framesSent = snapshot.framesSent;
+        it->second.stats.framesReceived = snapshot.framesReceived;
+        it->second.stats.sendErrors = snapshot.sendErrors;
+        it->second.stats.receiveErrors = snapshot.receiveErrors;
+        it->second.stats.underruns = snapshot.underruns;
+        it->second.stats.overruns = snapshot.overruns;
+        it->second.stats.timestampErrors = snapshot.timestampErrors;
+        it->second.stats.sequenceErrors = snapshot.sequenceErrors;
+        it->second.stats.bytesTransferred = snapshot.bytesTransferred;
+        it->second.stats.maxLatencyNs = snapshot.maxLatencyNs;
+        it->second.stats.minLatencyNs =
+            (snapshot.minLatencyNs == std::numeric_limits<int64_t>::max()) ? 0 : snapshot.minLatencyNs;
+    }
+
+    it->second.running = false;
+    it->second.lastError.clear();
+    if (error != nullptr) {
+        error->clear();
+    }
+    return true;
+#endif
+}
+
+bool Map2AudioEngine::deleteAvbStream(const std::string& streamId, std::string* error) {
+#ifndef HAS_AVB
+    if (error != nullptr) {
+        *error = "AVB not compiled (USE_AVB=OFF)";
+    }
+    return false;
+#else
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    auto it = avbStreams_.find(streamId);
+    if (it == avbStreams_.end()) {
+        if (error != nullptr) {
+            *error = "Stream not found";
+        }
+        return false;
+    }
+
+    if (it->second.device != nullptr) {
+        if (it->second.device->isPlaying()) {
+            it->second.device->stop();
+            if (it->second.device->isPlaying()) {
+                if (error != nullptr) {
+                    *error = "Failed to stop AVB stream before delete";
+                }
+                return false;
+            }
+        }
+        it->second.device->close();
+    }
+
+    avbStreams_.erase(it);
+    if (error != nullptr) {
+        error->clear();
+    }
+    return true;
+#endif
+}
+
+std::optional<Map2AudioEngine::AvbStreamRuntimeStats> Map2AudioEngine::getAvbStreamStats(
+    const std::string& streamId,
+    std::string* error) const {
+#ifndef HAS_AVB
+    if (error != nullptr) {
+        *error = "AVB not compiled (USE_AVB=OFF)";
+    }
+    return std::nullopt;
+#else
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    auto it = avbStreams_.find(streamId);
+    if (it == avbStreams_.end()) {
+        if (error != nullptr) {
+            *error = "Stream not found";
+        }
+        return std::nullopt;
+    }
+
+    AvbStreamRuntimeStats stats = it->second.stats;
+    if (it->second.device != nullptr) {
+        const auto snapshot = it->second.device->getAvbStreamStatsSnapshot();
+        stats.framesSent = snapshot.framesSent;
+        stats.framesReceived = snapshot.framesReceived;
+        stats.sendErrors = snapshot.sendErrors;
+        stats.receiveErrors = snapshot.receiveErrors;
+        stats.underruns = snapshot.underruns;
+        stats.overruns = snapshot.overruns;
+        stats.timestampErrors = snapshot.timestampErrors;
+        stats.sequenceErrors = snapshot.sequenceErrors;
+        stats.bytesTransferred = snapshot.bytesTransferred;
+        stats.maxLatencyNs = snapshot.maxLatencyNs;
+        stats.minLatencyNs =
+            (snapshot.minLatencyNs == std::numeric_limits<int64_t>::max()) ? 0 : snapshot.minLatencyNs;
+    }
+
+    if (error != nullptr) {
+        error->clear();
+    }
+    return stats;
+#endif
+}
+
+bool Map2AudioEngine::resetAvbStreamStats(const std::string& streamId, std::string* error) {
+#ifndef HAS_AVB
+    if (error != nullptr) {
+        *error = "AVB not compiled (USE_AVB=OFF)";
+    }
+    return false;
+#else
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    auto it = avbStreams_.find(streamId);
+    if (it == avbStreams_.end()) {
+        if (error != nullptr) {
+            *error = "Stream not found";
+        }
+        return false;
+    }
+
+    if (it->second.device != nullptr) {
+        it->second.device->resetAvbStreamStats();
+    }
+
+    it->second.stats = AvbStreamRuntimeStats{};
+    if (error != nullptr) {
+        error->clear();
+    }
+    return true;
+#endif
+}
+
+std::vector<std::string> Map2AudioEngine::listAvbStreams() const {
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    std::vector<std::string> streamIds;
+    streamIds.reserve(avbStreams_.size());
+    for (const auto& [streamId, _stream] : avbStreams_) {
+        (void)_stream;
+        streamIds.push_back(streamId);
+    }
+    return streamIds;
+}
+
+std::vector<std::string> Map2AudioEngine::getAvbDeviceNames() {
+    std::vector<std::string> names;
+#ifdef HAS_AVB
+    for (const auto& device : audioIO_.getAvailableDevices()) {
+        if (containsInsensitive(device.name, "avb")) {
+            names.push_back(device.name);
+        }
+    }
+
+    if (names.empty() && isAvbAvailable()) {
+        names.push_back("AVB Talker (Local)");
+        names.push_back("AVB Listener (Local)");
+    }
+#endif
+
+    {
+        std::lock_guard<std::mutex> guard(avbDiscoveredDevicesMutex_);
+        for (const auto& device : avbDiscoveredDevices_) {
+            if (!device.available || device.deviceName.empty()) {
+                continue;
+            }
+            names.push_back(device.deviceName);
+        }
+    }
+
+    std::sort(names.begin(), names.end());
+    names.erase(std::unique(names.begin(), names.end()), names.end());
+    return names;
+}
+
+int Map2AudioEngine::getAvbDeviceCount() {
+    return static_cast<int>(getAvbDeviceNames().size());
+}
+
+Map2AudioEngine::AvbInterfaceInfo Map2AudioEngine::getAvbInterfaceInfo(const std::string& interfaceName) {
+    AvbInterfaceInfo info;
+    info.interfaceName = interfaceName;
+#ifdef HAS_AVB
+    info.avbEnabled = isTruthy(std::getenv("MAP2_AVB_ENABLED"))
+        || std::filesystem::exists("/etc/map2/avb-enabled");
+
+    if (info.interfaceName.empty()) {
+        if (const char* ifaceEnv = std::getenv("MAP2_AVB_INTERFACE")) {
+            info.interfaceName = ifaceEnv;
+        }
+    }
+
+    if (info.interfaceName.empty()) {
+        info.error = "No AVB interface configured";
+        info.available = false;
+        return info;
+    }
+
+    info.interfaceExists = std::filesystem::exists("/sys/class/net/" + info.interfaceName);
+    info.ptpReady = std::filesystem::exists("/run/ptp4l.pid");
+    info.available = info.avbEnabled && info.interfaceExists && info.ptpReady;
+    if (!info.available) {
+        if (!info.avbEnabled) {
+            info.error = "AVB disabled";
+        } else if (!info.interfaceExists) {
+            info.error = "Interface not found";
+        } else if (!info.ptpReady) {
+            info.error = "ptp4l not running";
+        } else {
+            info.error = "AVB unavailable";
+        }
+    }
+#else
+    info.error = "AVB not compiled (USE_AVB=OFF)";
+#endif
+    return info;
+}
+
+bool Map2AudioEngine::setAvbDiscoveredDevices(
+    const std::vector<AvbDiscoveredDeviceInfo>& devices,
+    std::string* error) {
+    std::vector<AvbDiscoveredDeviceInfo> normalized;
+    normalized.reserve(devices.size());
+    std::unordered_set<std::string> endpointIds;
+
+    for (const auto& device : devices) {
+        if (device.endpointId.empty()) {
+            if (error != nullptr) {
+                *error = "endpoint_id is required";
+            }
+            return false;
+        }
+        if (device.deviceName.empty()) {
+            if (error != nullptr) {
+                *error = "device_name is required";
+            }
+            return false;
+        }
+        if (!endpointIds.insert(device.endpointId).second) {
+            if (error != nullptr) {
+                *error = "duplicate endpoint_id: " + device.endpointId;
+            }
+            return false;
+        }
+
+        AvbDiscoveredDeviceInfo entry = device;
+        entry.direction = normalizeDirection(entry.direction);
+        if (entry.direction != "talker" && entry.direction != "listener") {
+            entry.direction = "listener";
+        }
+        entry.deviceType = normalizeDeviceType(entry.deviceType);
+        entry.channels = std::clamp(entry.channels, 1, MAX_CHANNELS);
+        entry.sampleRate = std::max(1, entry.sampleRate);
+        if (entry.audioFormat.empty()) {
+            entry.audioFormat = "24-bit PCM";
+        }
+        normalized.push_back(std::move(entry));
+    }
+
+    {
+        std::lock_guard<std::mutex> guard(avbDiscoveredDevicesMutex_);
+        avbDiscoveredDevices_ = std::move(normalized);
+    }
+
+    if (error != nullptr) {
+        error->clear();
+    }
+    return true;
+}
+
+std::vector<Map2AudioEngine::AvbDiscoveredDeviceInfo> Map2AudioEngine::getAvbDiscoveredDevices() const {
+    std::lock_guard<std::mutex> guard(avbDiscoveredDevicesMutex_);
+    return avbDiscoveredDevices_;
+}
+
+void Map2AudioEngine::clearAvbDiscoveredDevices() {
+    std::lock_guard<std::mutex> guard(avbDiscoveredDevicesMutex_);
+    avbDiscoveredDevices_.clear();
 }
 
 void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,

@@ -1,9 +1,0 @@
-[ 75%] Built target WDFAmpPlugin
-[ 78%] Linking CXX shared module "WDFAmpPlugin_artefacts/Release/VST3/WDF Amp Simulator.vst3/Contents/x86_64-linux/WDF Amp Simulator.so"
-removing moduleinfo.json
--- Installing: /home/mm/.vst3/WDF Amp Simulator.vst3
--- Installing: /home/mm/.vst3/WDF Amp Simulator.vst3/Contents
--- Installing: /home/mm/.vst3/WDF Amp Simulator.vst3/Contents/x86_64-linux
--- Installing: /home/mm/.vst3/WDF Amp Simulator.vst3/Contents/x86_64-linux/WDF Amp Simulator.so
--- Installing: /home/mm/.vst3/WDF Amp Simulator.vst3/Contents/Resources
-[100%] Built target WDFAmpPlugin_VST3

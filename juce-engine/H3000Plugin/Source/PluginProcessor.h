@@ -4,7 +4,8 @@
 
 #include "H3000Processor.h"
 
-class H3000AudioProcessor : public juce::AudioProcessor
+class H3000AudioProcessor : public juce::AudioProcessor,
+                            public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     H3000AudioProcessor();
@@ -33,8 +34,14 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
 private:
     map2::H3000Processor processor;
+    juce::AudioProcessorValueTreeState apvts;
+
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void syncParameters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(H3000AudioProcessor)
 };

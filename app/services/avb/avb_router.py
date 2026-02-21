@@ -189,6 +189,10 @@ class AvbRouter:
             except asyncio.CancelledError:
                 pass
 
+        self.endpoints.clear()
+        self.connections.clear()
+        await self._sync_engine_discovered_devices()
+
         logger.info("AVB Router stopped")
 
     # ========================================================================
@@ -229,12 +233,66 @@ class AvbRouter:
         except Exception:
             return fallback
 
+    def _build_engine_discovered_devices_payload(self) -> List[Dict[str, Any]]:
+        """Build normalized discovered endpoint payload for the JUCE engine cache."""
+        payload: List[Dict[str, Any]] = []
+        for endpoint in self.endpoints.values():
+            endpoint_id = endpoint.endpoint_id()
+            direction = endpoint.direction.value
+            source = str(endpoint.device_type or "unknown")
+            host = self._parse_host(endpoint.node_address)
+            label_source = endpoint.device_name or source or "endpoint"
+            display_name = f"AVB {direction.title()} [{label_source}::{endpoint_id}]"
+
+            payload.append(
+                {
+                    "endpoint_id": endpoint_id,
+                    "device_name": display_name,
+                    "direction": direction,
+                    "device_type": source,
+                    "node_address": endpoint.node_address or "",
+                    "audio_format": endpoint.format or "24-bit PCM",
+                    "channels": max(1, int(endpoint.channels)),
+                    "sample_rate": max(1, int(endpoint.sample_rate)),
+                    "available": bool(endpoint.available),
+                    "host": host,
+                }
+            )
+
+        payload.sort(key=lambda item: str(item.get("endpoint_id", "")))
+        return payload
+
+    async def _sync_engine_discovered_devices(self) -> None:
+        """Best-effort sync of discovered endpoints into engine AVB device cache."""
+        if self.engine_service is None:
+            return
+
+        engine = getattr(self.engine_service, "_engine", None)
+        if engine is None:
+            return
+
+        setter = getattr(engine, "set_avb_discovered_devices", None)
+        if not callable(setter):
+            setter = getattr(engine, "setAvbDiscoveredDevices", None)
+        if not callable(setter):
+            return
+
+        payload = self._build_engine_discovered_devices_payload()
+
+        try:
+            result = await asyncio.to_thread(setter, payload)
+            if isinstance(result, dict) and result.get("error"):
+                logger.debug("Engine discovered-device sync error: %s", result.get("error"))
+        except Exception as exc:
+            logger.debug("Engine discovered-device sync skipped: %s", exc)
+
     async def _discovery_loop(self):
         """Periodically discover endpoints"""
         while self._running:
             try:
                 await self._discover_map2_endpoints()
                 await self._discover_avdecc_endpoints()
+                await self._sync_engine_discovered_devices()
             except Exception as e:
                 logger.error(f"Discovery error: {e}")
 
@@ -377,6 +435,8 @@ class AvbRouter:
                 for endpoint_id in stale_endpoints:
                     logger.info(f"Removing stale endpoint: {endpoint_id}")
                     del self.endpoints[endpoint_id]
+                if stale_endpoints:
+                    await self._sync_engine_discovered_devices()
 
             except Exception as e:
                 logger.error(f"Cleanup error: {e}")

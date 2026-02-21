@@ -516,6 +516,21 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         min_value=500,
         max_value=10000,
     ),
+    "avb.failover_policy": ConfigOption(
+        key="avb.failover_policy",
+        default="none",
+        description="Stream interface failover policy (none, prefer_primary, round_robin, manual)",
+        value_type=str,
+        choices=["none", "prefer_primary", "round_robin", "manual"],
+        env_var="MAP2_AVB_FAILOVER_POLICY",
+    ),
+    "avb.failover_interfaces": ConfigOption(
+        key="avb.failover_interfaces",
+        default=[],
+        description="Ordered interface candidates for AVB stream failover",
+        value_type=list,
+        env_var="MAP2_AVB_FAILOVER_INTERFACES",
+    ),
     "avb.srp.enabled": ConfigOption(
         key="avb.srp.enabled",
         default=True,

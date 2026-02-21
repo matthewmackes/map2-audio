@@ -94,9 +94,11 @@ class SrpAdmissionLogStore:
         since: Optional[datetime] = None,
         limit: int = 100,
         endpoint: Optional[str] = None,
+        offset: int = 0,
     ) -> List[Dict[str, Any]]:
         """Query admission logs with optional filters."""
         capped_limit = max(1, min(int(limit), 500))
+        safe_offset = max(0, int(offset))
 
         async with get_session() as session:
             stmt = select(SrpAdmissionLog)
@@ -108,7 +110,11 @@ class SrpAdmissionLogStore:
             if endpoint:
                 stmt = stmt.where(SrpAdmissionLog.endpoint == endpoint)
 
-            stmt = stmt.order_by(SrpAdmissionLog.created_at.desc()).limit(capped_limit)
+            stmt = (
+                stmt.order_by(SrpAdmissionLog.created_at.desc())
+                .offset(safe_offset)
+                .limit(capped_limit)
+            )
             result = await session.execute(stmt)
             rows = result.scalars().all()
             return [self._row_to_dict(row) for row in rows]

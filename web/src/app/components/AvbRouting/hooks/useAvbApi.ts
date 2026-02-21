@@ -22,6 +22,8 @@ import type {
   RoutingMatrix,
   RoutingMatrixResponse,
   StreamDirection,
+  AvbDevicesResponse,
+  AvbStreamsResponse,
 } from '../types';
 
 const API_BASE = '/api/avb';
@@ -183,6 +185,46 @@ export function useRouterStats() {
       return response.json();
     },
     refetchInterval: 5000,
+  });
+}
+
+/**
+ * Fetch AVB stream inventory and transport health snapshots.
+ */
+export function useAvbStreams() {
+  return useQuery<AvbStreamsResponse>({
+    queryKey: ['avb', 'streams'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/streams`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AVB streams: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    refetchInterval: 5000,
+    staleTime: 2000,
+  });
+}
+
+/**
+ * Fetch AVB device inventory exposed by JUCE engine.
+ */
+export function useAvbDevices() {
+  return useQuery<AvbDevicesResponse>({
+    queryKey: ['avb', 'devices'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/devices`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AVB devices: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    refetchInterval: 5000,
+    staleTime: 2000,
   });
 }
 

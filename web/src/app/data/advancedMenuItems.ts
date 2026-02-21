@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Stack, Cpu } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Cpu } from '@phosphor-icons/react'
 
 export interface AdvancedMenuItem {
   to: string
@@ -9,10 +9,20 @@ export interface AdvancedMenuItem {
   color: string
   dividerBefore?: boolean
   group?: string
+  popupMenu?: 'hardware-interfaces'
+}
+
+export interface HardwareInterfaceMenuItem {
+  to: string
+  label: string
+  icon: ComponentType<any>
+  description: string
+  color: string
 }
 
 // Shared advanced-navigation items used by the shell and About page menu.
-// Keep this list route-valid and in sync with App route registrations.
+// Route entries should stay in sync with App route registrations.
+// Popup entries use `popupMenu` and are handled by the renderers.
 export const advancedMenuItems: AdvancedMenuItem[] = [
   // ── System ──
   {
@@ -84,28 +94,13 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     group: 'Hardware & Interfaces',
   },
   {
-    to: '/edirol-ua1000',
-    label: 'Edirol UA-1000',
+    to: '#hardware-interfaces',
+    label: 'Audio Interfaces',
     icon: Usb,
-    description: 'USB audio interface control',
-    color: '#0066cc',
+    description: 'Edirol, HoTone, generic model, and expansion slots',
+    color: '#0ea5e9',
     group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/motu-rme',
-    label: 'MOTU + RME ADAT',
-    icon: Stack,
-    description: 'MOTU UltraLite-mk5 + RME ADI-8 QS monitoring',
-    color: '#00D4FF',
-    group: 'Hardware & Interfaces',
-  },
-  {
-    to: '/hotone-jogg',
-    label: 'HoTone JoGG',
-    icon: Waveform,
-    description: 'HoTone audio interface',
-    color: '#e53935',
-    group: 'Hardware & Interfaces',
+    popupMenu: 'hardware-interfaces',
   },
 
   // ── Infrastructure ──
@@ -141,5 +136,29 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Side-by-side multi-host metrics & comparison',
     color: '#38bdf8',
     group: 'Infrastructure',
+  },
+]
+
+export const hardwareInterfaceMenuItems: HardwareInterfaceMenuItem[] = [
+  {
+    to: '/edirol-ua1000',
+    label: 'Edirol UA-1000',
+    icon: Usb,
+    description: 'USB audio interface control',
+    color: '#0066cc',
+  },
+  {
+    to: '/hotone-jogg',
+    label: 'HoTone JoGG',
+    icon: Waveform,
+    description: 'HoTone audio interface',
+    color: '#e53935',
+  },
+  {
+    to: '/hotone-jogg',
+    label: 'Generic',
+    icon: Waveform,
+    description: 'Generic model based on the HoTone interface',
+    color: '#94a3b8',
   },
 ]

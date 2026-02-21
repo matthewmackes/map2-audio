@@ -599,3 +599,73 @@ events:
         
       exitCode: 2
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_vs7Vz7P3sXgtnXW9/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_vs7Vz7P3sXgtnXW9/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_vs7Vz7P3sXgtnXW9/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_4cf39/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_4cf39.dir/build.make CMakeFiles/cmTC_4cf39.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_vs7Vz7P3sXgtnXW9/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_4cf39.dir/check_atomic_SCnDq5bOFReVlI8J.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_4cf39.dir/check_atomic_SCnDq5bOFReVlI8J.cpp.o -c /home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_SCnDq5bOFReVlI8J.cpp
+        Linking CXX executable cmTC_4cf39
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4cf39.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_4cf39.dir/check_atomic_SCnDq5bOFReVlI8J.cpp.o -o cmTC_4cf39
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_vs7Vz7P3sXgtnXW9/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_Ez08Pd63zJZGgVYf/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_Ez08Pd63zJZGgVYf/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_Ez08Pd63zJZGgVYf/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c6a74/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_c6a74.dir/build.make CMakeFiles/cmTC_c6a74.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_Ez08Pd63zJZGgVYf/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_c6a74.dir/check_atomic_8V79seYSfL29i9uU.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_c6a74.dir/check_atomic_8V79seYSfL29i9uU.cpp.o -c /home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_8V79seYSfL29i9uU.cpp
+        Linking CXX executable cmTC_c6a74
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c6a74.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_c6a74.dir/check_atomic_8V79seYSfL29i9uU.cpp.o -o cmTC_c6a74
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/EventideH9Plugin/build-win/juce/tools/check_atomic_dir_Ez08Pd63zJZGgVYf/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...

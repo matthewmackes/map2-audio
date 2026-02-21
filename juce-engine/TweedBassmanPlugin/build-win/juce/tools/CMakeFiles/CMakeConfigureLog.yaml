@@ -599,3 +599,73 @@ events:
         
       exitCode: 2
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_gJEx1VYaY9jF3pcm/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_gJEx1VYaY9jF3pcm/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_gJEx1VYaY9jF3pcm/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_501bf/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_501bf.dir/build.make CMakeFiles/cmTC_501bf.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_gJEx1VYaY9jF3pcm/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_501bf.dir/check_atomic_Un9oAk8NGRRQJUaT.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_501bf.dir/check_atomic_Un9oAk8NGRRQJUaT.cpp.o -c /home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_Un9oAk8NGRRQJUaT.cpp
+        Linking CXX executable cmTC_501bf
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_501bf.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_501bf.dir/check_atomic_Un9oAk8NGRRQJUaT.cpp.o -o cmTC_501bf
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_gJEx1VYaY9jF3pcm/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_rO0MLcJnoP5q1irX/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_rO0MLcJnoP5q1irX/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_rO0MLcJnoP5q1irX/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_57df9/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_57df9.dir/build.make CMakeFiles/cmTC_57df9.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_rO0MLcJnoP5q1irX/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_57df9.dir/check_atomic_3ykQwM9g9G8x2IF6.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_57df9.dir/check_atomic_3ykQwM9g9G8x2IF6.cpp.o -c /home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_3ykQwM9g9G8x2IF6.cpp
+        Linking CXX executable cmTC_57df9
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_57df9.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_57df9.dir/check_atomic_3ykQwM9g9G8x2IF6.cpp.o -o cmTC_57df9
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/TweedBassmanPlugin/build-win/juce/tools/check_atomic_dir_rO0MLcJnoP5q1irX/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...

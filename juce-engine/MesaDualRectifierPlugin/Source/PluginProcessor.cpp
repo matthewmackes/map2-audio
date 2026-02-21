@@ -205,7 +205,8 @@ void MesaDualRectifierAudioProcessor::setOversampleFactor(int factor)
 
 juce::AudioProcessorEditor* MesaDualRectifierAudioProcessor::createEditor()
 {
-    return new MesaDualRectifierAudioProcessorEditor(*this);
+    // Generic editor surfaces all parameters without a custom UI
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 bool MesaDualRectifierAudioProcessor::hasEditor() const { return true; }

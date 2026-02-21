@@ -28,7 +28,6 @@ import {
   Chip,
   Tooltip,
   Divider,
-  Badge,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -38,12 +37,175 @@ import OutputIcon from '@mui/icons-material/Output';
 import RouterIcon from '@mui/icons-material/Router';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { useAvbDevices, useAvbStreams } from '../../hooks/useAvbApi';
 import { useNodes, useLocalNodeId } from '../../hooks/useNodeApi';
 import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
-import type { AvbNode, Endpoint } from '../../types';
+import type { AvbDiscoveredDevice, AvbNode, Endpoint, AvbStreamPayload } from '../../types';
 import { sortNodesForNavigation } from '../../utils/nodeSorting';
+import { getMap2StreamEndpointIds } from '../../utils/avbRouteStreams';
 
 const DRAWER_WIDTH = 280;
+
+type NodeAvbHealthSummary = {
+  totalEndpoints: number;
+  syncedEndpoints: number;
+  missingCacheEndpoints: number;
+  unavailableEndpoints: number;
+  cachedUnavailableEndpoints: number;
+  issueEndpoints: number;
+};
+
+const EMPTY_NODE_HEALTH: NodeAvbHealthSummary = {
+  totalEndpoints: 0,
+  syncedEndpoints: 0,
+  missingCacheEndpoints: 0,
+  unavailableEndpoints: 0,
+  cachedUnavailableEndpoints: 0,
+  issueEndpoints: 0,
+};
+
+type NodeAvbFailoverSummary = {
+  streamCount: number;
+  policySummary: string;
+  interfaceSummary: string;
+  topPolicy: string;
+};
+
+const EMPTY_NODE_FAILOVER: NodeAvbFailoverSummary = {
+  streamCount: 0,
+  policySummary: 'No failover data',
+  interfaceSummary: 'No interface candidates',
+  topPolicy: 'none',
+};
+
+function summarizeFailoverCounts(counts: Record<string, number>): string {
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, count]) => `${key} (${count})`)
+    .join(', ') || 'No data';
+}
+
+function buildNodeAvbFailoverById(
+  nodes: AvbNode[],
+  endpoints: Endpoint[],
+  streams: AvbStreamPayload[]
+): Record<string, NodeAvbFailoverSummary> {
+  const nodeIdsByEndpointId = new Map<string, string>();
+  for (const endpoint of endpoints) {
+    nodeIdsByEndpointId.set(endpoint.endpoint_id, endpoint.node_id);
+  }
+
+  const streamIdsByNodeId = new Map<string, AvbStreamPayload[]>();
+  for (const stream of streams) {
+    const endpointIds = getMap2StreamEndpointIds(stream.stream_id);
+    const matchedNodeIds = new Set<string>();
+
+    for (const endpointId of endpointIds) {
+      const nodeId = nodeIdsByEndpointId.get(endpointId);
+      if (nodeId) {
+        matchedNodeIds.add(nodeId);
+      }
+    }
+
+    for (const nodeId of matchedNodeIds) {
+      const nodeStreams = streamIdsByNodeId.get(nodeId) || [];
+      nodeStreams.push(stream);
+      streamIdsByNodeId.set(nodeId, nodeStreams);
+    }
+  }
+
+  const byNodeId: Record<string, NodeAvbFailoverSummary> = {};
+
+  for (const node of nodes) {
+    const nodeStreams = streamIdsByNodeId.get(node.node_id) || [];
+
+    if (nodeStreams.length === 0) {
+      continue;
+    }
+
+    const policyCounts: Record<string, number> = {};
+    const interfaceCounts: Record<string, number> = {};
+
+    for (const stream of nodeStreams) {
+      const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
+      policyCounts[policy] = (policyCounts[policy] || 0) + 1;
+
+      const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+      for (const candidate of candidates) {
+        interfaceCounts[candidate] = (interfaceCounts[candidate] || 0) + 1;
+      }
+    }
+
+    const topPolicy = Object.entries(policyCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';
+
+    byNodeId[node.node_id] = {
+      streamCount: nodeStreams.length,
+      policySummary: summarizeFailoverCounts(policyCounts),
+      interfaceSummary: summarizeFailoverCounts(interfaceCounts),
+      topPolicy,
+    };
+  }
+
+  return byNodeId;
+}
+
+function buildNodeAvbHealthById(
+  nodes: AvbNode[],
+  endpoints: Endpoint[],
+  discoveredDevices: AvbDiscoveredDevice[]
+): Record<string, NodeAvbHealthSummary> {
+  const discoveredByEndpointId = new Map<string, AvbDiscoveredDevice>();
+  for (const device of discoveredDevices) {
+    if (!device.endpoint_id) {
+      continue;
+    }
+    discoveredByEndpointId.set(device.endpoint_id, device);
+  }
+
+  const byNodeId: Record<string, NodeAvbHealthSummary> = {};
+
+  for (const node of nodes) {
+    const nodeEndpoints = endpoints.filter((endpoint) => endpoint.node_id === node.node_id);
+    let syncedEndpoints = 0;
+    let missingCacheEndpoints = 0;
+    let unavailableEndpoints = 0;
+    let cachedUnavailableEndpoints = 0;
+    let issueEndpoints = 0;
+
+    for (const endpoint of nodeEndpoints) {
+      const cachedDevice = discoveredByEndpointId.get(endpoint.endpoint_id);
+      const missingFromCache = cachedDevice === undefined;
+      const endpointUnavailable = !endpoint.available;
+      const cachedUnavailable = cachedDevice ? !cachedDevice.available : false;
+
+      if (cachedDevice) {
+        syncedEndpoints += 1;
+      } else {
+        missingCacheEndpoints += 1;
+      }
+      if (endpointUnavailable) {
+        unavailableEndpoints += 1;
+      }
+      if (cachedUnavailable) {
+        cachedUnavailableEndpoints += 1;
+      }
+      if (missingFromCache || endpointUnavailable || cachedUnavailable) {
+        issueEndpoints += 1;
+      }
+    }
+
+    byNodeId[node.node_id] = {
+      totalEndpoints: nodeEndpoints.length,
+      syncedEndpoints,
+      missingCacheEndpoints,
+      unavailableEndpoints,
+      cachedUnavailableEndpoints,
+      issueEndpoints,
+    };
+  }
+
+  return byNodeId;
+}
 
 function isActivationKey(key: string): boolean {
   return key === 'Enter' || key === ' ' || key === 'Spacebar';
@@ -64,30 +226,34 @@ function handleKeyboardActivation(
 /**
  * Node status indicator
  */
-function NodeStatusBadge({ node }: { node: AvbNode }) {
+function NodeStatusBadge({ node, avbHealth }: { node: AvbNode; avbHealth: NodeAvbHealthSummary }) {
   const ptpSynced = node.ptp?.state === 'master' || node.ptp?.state === 'slave';
+  const hasAvbIssues = avbHealth.issueEndpoints > 0;
 
   let color = '#4caf50'; // Green - online + synced
-  let label = '●';
 
   if (node.status === 'offline') {
     color = '#f44336'; // Red
-    label = '●';
-  } else if (node.status === 'degraded' || !ptpSynced) {
+  } else if (node.status === 'degraded' || !ptpSynced || hasAvbIssues) {
     color = '#ff9800'; // Orange
-    label = '◐';
   }
 
+  const tooltipLabel = (() => {
+    if (node.status === 'offline') {
+      return 'Offline';
+    }
+
+    const statusParts = [
+      ptpSynced ? `PTP ${node.ptp?.state}` : 'No PTP sync',
+    ];
+    if (hasAvbIssues) {
+      statusParts.push(`AVB issues ${avbHealth.issueEndpoints}`);
+    }
+    return `Online • ${statusParts.join(' • ')}`;
+  })();
+
   return (
-    <Tooltip
-      title={
-        node.status === 'offline'
-          ? 'Offline'
-          : ptpSynced
-            ? `Online • PTP ${node.ptp?.state}`
-            : 'Online • No PTP sync'
-      }
-    >
+    <Tooltip title={tooltipLabel}>
       <FiberManualRecordIcon sx={{ fontSize: 12, color, mr: 0.5 }} />
     </Tooltip>
   );
@@ -146,10 +312,19 @@ interface NodeTreeItemProps {
   node: AvbNode;
   isLocal: boolean;
   isSelected: boolean;
+  avbHealth: NodeAvbHealthSummary;
+  avbFailover: NodeAvbFailoverSummary;
   onSelect: () => void;
 }
 
-function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps) {
+function NodeTreeItem({
+  node,
+  isLocal,
+  isSelected,
+  avbHealth,
+  avbFailover,
+  onSelect,
+}: NodeTreeItemProps) {
   const [expanded, setExpanded] = useState(false);
   const endpoints = useFilteredEndpoints();
   const endpointListId = `node-tree-endpoints-${node.node_id}`;
@@ -211,7 +386,7 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
         {/* Device icon + status */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
           <span style={{ fontSize: 18 }}>{deviceIcon}</span>
-          <NodeStatusBadge node={node} />
+          <NodeStatusBadge node={node} avbHealth={avbHealth} />
         </Box>
 
         {/* Node name */}
@@ -255,6 +430,45 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
                   sx={{ height: 18, fontSize: 10, borderColor: node.color }}
                 />
               </Tooltip>
+              <Tooltip title={`${avbHealth.syncedEndpoints}/${avbHealth.totalEndpoints} endpoints synced to engine cache`}>
+                <Chip
+                  label={`Sync ${avbHealth.syncedEndpoints}/${avbHealth.totalEndpoints}`}
+                  size="small"
+                  variant="outlined"
+                  sx={{ height: 18, fontSize: 10, borderColor: node.color }}
+                  data-testid={`node-tree-sync-chip-${node.node_id}`}
+                />
+              </Tooltip>
+              <Tooltip
+                title={(
+                  avbHealth.issueEndpoints === 0
+                    ? 'No AVB endpoint issues detected'
+                    : `Issues ${avbHealth.issueEndpoints}: missing cache ${avbHealth.missingCacheEndpoints}, endpoint unavailable ${avbHealth.unavailableEndpoints}, cache unavailable ${avbHealth.cachedUnavailableEndpoints}`
+                )}
+              >
+                <Chip
+                  label={`Issues ${avbHealth.issueEndpoints}`}
+                  size="small"
+                  color={avbHealth.issueEndpoints > 0 ? 'warning' : 'default'}
+                  variant="outlined"
+                  sx={{ height: 18, fontSize: 10, borderColor: node.color }}
+                  data-testid={`node-tree-issues-chip-${node.node_id}`}
+                />
+              </Tooltip>
+              {avbFailover.streamCount > 0 && (
+                <Tooltip
+                  title={`Failover policies: ${avbFailover.policySummary} | Interfaces: ${avbFailover.interfaceSummary}`}
+                >
+                  <Chip
+                    label={`Failover ${avbFailover.streamCount}`}
+                    size="small"
+                    color={avbFailover.topPolicy === 'none' ? 'default' : 'info'}
+                    variant="outlined"
+                    sx={{ height: 18, fontSize: 10, borderColor: node.color }}
+                    data-testid={`node-tree-failover-chip-${node.node_id}`}
+                  />
+                </Tooltip>
+              )}
             </Box>
           }
           secondaryTypographyProps={{
@@ -313,6 +527,8 @@ function NodeTreeItem({ node, isLocal, isSelected, onSelect }: NodeTreeItemProps
 export function NodeTree() {
   const { state, dispatch } = useRouting();
   const { data: nodes = [] } = useNodes();
+  const { data: avbDevicesData } = useAvbDevices();
+  const { data: avbStreamsData } = useAvbStreams();
   const localNodeId = useLocalNodeId();
 
   const {
@@ -322,6 +538,15 @@ export function NodeTree() {
     selected_node_ids: selectedNodeIds,
   } = state.network.nodeSelection;
   const visibleNodes = showOfflineNodes ? nodes : nodes.filter((node) => node.status === 'online');
+  const allEndpoints = Object.values((state.endpoints || {}) as Record<string, Endpoint>);
+  const nodeAvbHealthById = React.useMemo(
+    () => buildNodeAvbHealthById(nodes, allEndpoints, avbDevicesData?.discovered_devices || []),
+    [nodes, allEndpoints, avbDevicesData?.discovered_devices]
+  );
+  const nodeAvbFailoverById = React.useMemo(
+    () => buildNodeAvbFailoverById(nodes, allEndpoints, avbStreamsData?.streams || []),
+    [nodes, allEndpoints, avbStreamsData?.streams]
+  );
 
   const sortedNodes = sortNodesForNavigation(visibleNodes, localNodeId);
 
@@ -383,6 +608,8 @@ export function NodeTree() {
             key={node.node_id}
             node={node}
             isLocal={node.node_id === localNodeId}
+            avbHealth={nodeAvbHealthById[node.node_id] || EMPTY_NODE_HEALTH}
+            avbFailover={nodeAvbFailoverById[node.node_id] || EMPTY_NODE_FAILOVER}
             isSelected={
               viewMode === 'single_node'
                 ? currentNodeId === node.node_id

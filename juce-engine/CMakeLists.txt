@@ -527,6 +527,37 @@ install(TARGETS map2_audio_engine
 )
 
 # ========================================
+# AVB Tests (opt-in)
+# ========================================
+include(CTest)
+option(BUILD_AVB_TESTS "Build AVB/Catch2 unit tests" OFF)
+
+if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
+    FetchContent_Declare(
+        catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(catch2)
+
+    add_executable(avb_tests
+        tests/AvbStreamManagerTests.cpp
+    )
+    target_compile_definitions(avb_tests PRIVATE HAS_AVB)
+    target_include_directories(avb_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source)
+    target_link_libraries(avb_tests PRIVATE Catch2::Catch2WithMain)
+    add_test(NAME avb_tests COMMAND avb_tests)
+
+    add_custom_target(check-avb
+        COMMAND ${CMAKE_CTEST_COMMAND} -R avb_tests --output-on-failure
+        DEPENDS avb_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running AVB Catch2 tests"
+    )
+endif()
+
+# ========================================
 # Print configuration summary
 # ========================================
 message(STATUS "")

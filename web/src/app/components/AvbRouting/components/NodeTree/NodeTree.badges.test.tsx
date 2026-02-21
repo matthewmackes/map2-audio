@@ -1,12 +1,27 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { NodeTree } from './NodeTree'
-import type { AvbNode, Endpoint } from '../../types'
+import type { AvbNode, Endpoint, AvbDevicesResponse, AvbStreamsResponse } from '../../types'
+
+interface RoutingStateMock {
+  endpoints?: Record<string, Endpoint>;
+  network: {
+    nodeSelection: {
+      current_node_id: string | null;
+      local_node_id: string;
+      view_mode: 'single_node' | 'multi_select' | 'all_nodes';
+      selected_node_ids: string[];
+      show_offline: boolean;
+    };
+  };
+}
 
 let mockNodes: AvbNode[] = []
 let mockLocalNodeId = 'node-local'
-let mockState: any
+let mockState: RoutingStateMock
 let mockFilteredEndpoints: Endpoint[] = []
+let mockAvbDevicesData: AvbDevicesResponse
+let mockAvbStreamsData: AvbStreamsResponse
 const mockDispatch = jest.fn()
 
 jest.mock('../../hooks/useNodeApi', () => ({
@@ -17,6 +32,15 @@ jest.mock('../../hooks/useNodeApi', () => ({
 jest.mock('../../context/RoutingContext', () => ({
   useRouting: () => ({ state: mockState, dispatch: mockDispatch }),
   useFilteredEndpoints: () => mockFilteredEndpoints,
+}))
+
+jest.mock('../../hooks/useAvbApi', () => ({
+  useAvbDevices: () => ({
+    data: mockAvbDevicesData,
+  }),
+  useAvbStreams: () => ({
+    data: mockAvbStreamsData,
+  }),
 }))
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {
@@ -101,7 +125,19 @@ describe('NodeTree status badge behavior', () => {
     mockDispatch.mockReset()
     mockLocalNodeId = 'node-local'
     mockFilteredEndpoints = []
+    mockAvbDevicesData = {
+      available: true,
+      count: 0,
+      device_names: [],
+      discovered_count: 0,
+      discovered_devices: [],
+    }
+    mockAvbStreamsData = {
+      available: true,
+      streams: [],
+    }
     mockState = {
+      endpoints: {},
       network: {
         nodeSelection: {
           current_node_id: null,
@@ -155,6 +191,147 @@ describe('NodeTree status badge behavior', () => {
     expect(screen.getByLabelText('Online • PTP master')).toBeTruthy()
     expect(screen.getByLabelText('Online • No PTP sync')).toBeTruthy()
     expect(screen.getByLabelText('Offline')).toBeTruthy()
+  })
+
+  it('renders per-node AVB sync and issue chips from engine discovered cache', () => {
+    const localEndpoint = makeEndpoint({
+      endpoint_id: 'local-talker',
+      node_id: 'node-local',
+      direction: 'talker',
+      available: true,
+    })
+    const degradedEndpoint = makeEndpoint({
+      endpoint_id: 'degraded-listener',
+      node_id: 'node-degraded',
+      direction: 'listener',
+      available: false,
+    })
+
+    mockFilteredEndpoints = [localEndpoint, degradedEndpoint]
+    mockState = {
+      endpoints: {
+        [localEndpoint.endpoint_id]: localEndpoint,
+        [degradedEndpoint.endpoint_id]: degradedEndpoint,
+      },
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+    mockAvbDevicesData = {
+      available: true,
+      count: 3,
+      device_names: ['AVB Talker [eth0]', 'AVB Listener [eth0]', 'AVB Talker [node-local::local-talker]'],
+      discovered_count: 1,
+      discovered_devices: [
+        {
+          endpoint_id: 'local-talker',
+          device_name: 'AVB Talker [node-local::local-talker]',
+          direction: 'talker',
+          device_type: 'map2',
+          node_address: 'http://127.0.0.1:8080',
+          audio_format: '24-bit PCM',
+          channels: 2,
+          sample_rate: 48000,
+          available: true,
+        },
+      ],
+    }
+
+    render(<NodeTree />)
+
+    expect(screen.getByTestId('node-tree-sync-chip-node-local').textContent).toContain('Sync 1/1')
+    expect(screen.getByTestId('node-tree-issues-chip-node-local').textContent).toContain('Issues 0')
+    expect(screen.getByTestId('node-tree-sync-chip-node-degraded').textContent).toContain('Sync 0/1')
+    expect(screen.getByTestId('node-tree-issues-chip-node-degraded').textContent).toContain('Issues 1')
+  })
+
+  it('renders per-node AVB failover chips when stream diagnostics include candidate endpoints', () => {
+    const localTalker = makeEndpoint({
+      endpoint_id: '001122fffe334455:1',
+      unique_id: 1,
+      entity_id: '001122fffe334455',
+      node_id: 'node-local',
+      direction: 'talker',
+      available: true,
+    })
+    const degradedListener = makeEndpoint({
+      endpoint_id: '667788fffe99aabb:2',
+      unique_id: 2,
+      entity_id: '667788fffe99aabb',
+      node_id: 'node-degraded',
+      direction: 'listener',
+      available: true,
+    })
+
+    mockFilteredEndpoints = [localTalker, degradedListener]
+    mockState = {
+      endpoints: {
+        [localTalker.endpoint_id]: localTalker,
+        [degradedListener.endpoint_id]: degradedListener,
+      },
+      network: {
+        nodeSelection: {
+          current_node_id: null,
+          local_node_id: 'node-local',
+          view_mode: 'all_nodes',
+          selected_node_ids: [],
+          show_offline: true,
+        },
+      },
+    }
+    mockAvbStreamsData = {
+      available: true,
+      streams: [
+        {
+          stream_id: 'map2-talker-001122fffe334455-1-667788fffe99aabb-2',
+          direction: 'talker',
+          state: 'running',
+          effective_config: {
+            stream_id: 'map2-talker-001122fffe334455-1-667788fffe99aabb-2',
+            direction: 'talker',
+            interface: 'eth0',
+            channels: 2,
+            sample_rate: 48000,
+            buffer_size: 512,
+            presentation_offset_us: 0,
+            priority: 2,
+            dest_mac: null,
+            failover_policy: 'prefer_primary',
+            interface_candidates: ['eth0', 'eth1'],
+          },
+          health: { ready: true },
+          diagnostics: {
+            effective_config: {
+              stream_id: 'map2-talker-001122fffe334455-1-667788fffe99aabb-2',
+              direction: 'talker',
+              interface: 'eth0',
+              channels: 2,
+              sample_rate: 48000,
+              buffer_size: 512,
+              presentation_offset_us: 0,
+              priority: 2,
+              dest_mac: null,
+              failover_policy: 'prefer_primary',
+              interface_candidates: ['eth0', 'eth1'],
+            },
+            ptp_lock: { locked: true },
+            tsn_qdisc: {},
+            srp: {},
+          },
+        },
+      ],
+    }
+
+    render(<NodeTree />)
+
+    expect(screen.getByTestId('node-tree-failover-chip-node-local').textContent).toContain('Failover 1')
+    expect(screen.getByTestId('node-tree-failover-chip-node-degraded').textContent).toContain('Failover 1')
   })
 
   it('dispatches node selection actions when a node is clicked', () => {

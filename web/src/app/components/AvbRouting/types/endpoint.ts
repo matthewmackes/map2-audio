@@ -67,3 +67,143 @@ export interface EndpointStatus {
   sync: boolean;            // Clock sync status (PTP)
   active: boolean;          // Currently streaming
 }
+
+/**
+ * Engine-discovered AVB endpoint metadata cache entry.
+ */
+export interface AvbDiscoveredDevice {
+  endpoint_id: string;
+  device_name: string;
+  direction: StreamDirection;
+  device_type: DeviceType;
+  node_address: string;
+  audio_format: string;
+  channels: number;
+  sample_rate: number;
+  available: boolean;
+}
+
+/**
+ * Backend API response for AVB device inventory.
+ */
+export interface AvbDevicesResponse {
+  available: boolean;
+  count: number;
+  device_names: string[];
+  discovered_count: number;
+  discovered_devices: AvbDiscoveredDevice[];
+  error?: string;
+}
+
+/**
+ * Stream transport health details derived from PTP + TSN snapshots.
+ */
+export interface AvbStreamHealth {
+  ready: boolean;
+  issues: string[];
+  interface: string;
+  ptp: {
+    available: boolean;
+    state: string | null;
+    offset_ns: number | null;
+    mean_path_delay_ns: number | null;
+    last_update: string | null;
+    error: string | null;
+  };
+  tsn: {
+    available: boolean;
+    interface: string | null;
+    mqprio_configured: boolean;
+    cbs_configured: boolean;
+    etf_configured: boolean;
+    vlan_configured: boolean;
+    error: string | null;
+  };
+}
+
+/**
+ * Effective runtime config for an AVB stream after backend fallback resolution.
+ */
+export interface AvbStreamEffectiveConfig {
+  stream_id: string;
+  direction: StreamDirection;
+  interface: string;
+  channels: number;
+  sample_rate: number;
+  buffer_size: number;
+  presentation_offset_us: number;
+  priority: number;
+  dest_mac: string | null;
+  failover_policy: string;
+  interface_candidates: string[];
+}
+
+/**
+ * PTP lock diagnostics snapshot for one stream.
+ */
+export interface AvbStreamPtpLockDiagnostics {
+  locked: boolean;
+  state: string | null;
+  reason: string | null;
+  offset_ns: number | null;
+  mean_path_delay_ns: number | null;
+  last_update: string | null;
+}
+
+/**
+ * TSN/qdisc diagnostics snapshot for one stream.
+ */
+export interface AvbStreamTsnDiagnostics {
+  available: boolean;
+  interface: string | null;
+  mqprio_configured: boolean;
+  cbs_configured: boolean;
+  etf_configured: boolean;
+  vlan_configured: boolean;
+  error: string | null;
+}
+
+/**
+ * SRP diagnostics for one stream binding.
+ */
+export interface AvbStreamSrpDiagnostics {
+  enabled: boolean;
+  required: boolean;
+  bound: boolean;
+  reservation_id: string | null;
+  admission_id: string | null;
+  metadata: Record<string, unknown>;
+}
+
+/**
+ * Stream diagnostics payload returned by backend routes.
+ */
+export interface AvbStreamDiagnostics {
+  effective_config: AvbStreamEffectiveConfig;
+  ptp_lock: AvbStreamPtpLockDiagnostics;
+  tsn_qdisc: AvbStreamTsnDiagnostics;
+  srp: AvbStreamSrpDiagnostics;
+}
+
+/**
+ * AVB stream payload returned by /api/avb/streams.
+ */
+export interface AvbStreamPayload {
+  stream_id: string;
+  direction: StreamDirection;
+  state: string;
+  config?: Record<string, unknown>;
+  stats?: Record<string, unknown>;
+  error?: string | null;
+  health?: AvbStreamHealth;
+  diagnostics?: AvbStreamDiagnostics;
+}
+
+/**
+ * Backend API response for AVB stream inventory.
+ */
+export interface AvbStreamsResponse {
+  available: boolean;
+  streams: AvbStreamPayload[];
+  error?: string;
+}

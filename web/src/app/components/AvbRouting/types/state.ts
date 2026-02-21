@@ -27,6 +27,7 @@ export interface FilterState {
   sampleRates: number[];
   channelCounts: number[];
   availableOnly: boolean;
+  issuesOnly: boolean;
   showLocked: boolean;
   groups: string[];
 }
@@ -167,6 +168,7 @@ export const initialRoutingState: RoutingState = {
     sampleRates: [],
     channelCounts: [],
     availableOnly: false,
+    issuesOnly: false,
     showLocked: true,
     groups: [],
   },

@@ -11,6 +11,13 @@ jest.mock('../../context/RoutingContext', () => ({
     dispatch: jest.fn(),
   }),
 }))
+jest.mock('../../hooks/useAvbApi', () => ({
+  useAvbStreams: () => ({
+    data: {
+      streams: [],
+    },
+  }),
+}))
 
 function makeEndpoint(overrides: Partial<Endpoint>): Endpoint {
   return {

@@ -5,7 +5,7 @@
  * Contains search, filters, safe patch toggle, and undo/redo controls.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -39,10 +39,11 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
-import { useBatchPatchMutation } from '../../hooks/useAvbApi';
+import { useAvbDevices, useAvbStreams, useBatchPatchMutation } from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
 import { initialRoutingState } from '../../types';
 import type { AuditLogEntry } from '../../types';
+import { countEndpointsWithOperationalIssues } from '../../utils/endpointIssues';
 import {
   generateUniqueSceneName,
   hasDuplicateSceneName,
@@ -582,6 +583,8 @@ export function TopBar() {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
   const batchPatchMutation = useBatchPatchMutation();
+  const { data: avbDevicesData } = useAvbDevices();
+  const { data: avbStreamsData } = useAvbStreams();
   const notify = useNotifications();
   const [topologyModalOpen, setTopologyModalOpen] = useState(false);
   const [filtersAnchor, setFiltersAnchor] = useState<HTMLElement | null>(null);
@@ -692,6 +695,24 @@ export function TopBar() {
     });
   };
 
+  const handleToggleIssuesOnly = (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        issuesOnly: checked,
+      },
+    });
+  };
+
+  const handleToggleIssuesOnlyChip = () => {
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        issuesOnly: !state.filters.issuesOnly,
+      },
+    });
+  };
+
   const handleToggleShowLocked = (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
     dispatch({
       type: 'SET_FILTERS',
@@ -782,6 +803,7 @@ export function TopBar() {
         sampleRates: [],
         channelCounts: [],
         availableOnly: false,
+        issuesOnly: false,
         showLocked: true,
         groups: [],
       },
@@ -1588,19 +1610,57 @@ export function TopBar() {
   const pendingCount = Object.keys(state.pendingRoutes).length;
   const connectedCount = Object.values(state.liveRoutes).filter(r => r.state === 'connected').length;
   const endpointCount = Object.keys(state.endpoints).length;
+  const endpointValues = Object.values(state.endpoints);
+  const endpointIssueCount = countEndpointsWithOperationalIssues(endpointValues, state.network.nodes);
+  const avbDeviceCount = avbDevicesData?.count ?? 0;
+  const avbDiscoveredCount = avbDevicesData?.discovered_count ?? 0;
+  const avbDiscoveredDevices = avbDevicesData?.discovered_devices || [];
+  const avbEndpointIds = Object.keys(state.endpoints);
+  const avbEndpointIdSet = new Set(avbEndpointIds);
+  const avbDiscoveredEndpointIdSet = new Set(avbDiscoveredDevices.map((device) => device.endpoint_id));
+  const avbCacheMissingCount = avbEndpointIds.filter((endpointId) => !avbDiscoveredEndpointIdSet.has(endpointId)).length;
+  const avbCacheOrphanCount = avbDiscoveredDevices.filter((device) => !avbEndpointIdSet.has(device.endpoint_id)).length;
+  const avbStreamPayloads = avbStreamsData?.streams || [];
+  const avbTransportReadyCount = avbStreamPayloads.filter((stream) => stream.health?.ready).length;
+  const avbTransportIssueCount = avbStreamPayloads.filter((stream) => (
+    stream.state === 'error' || (stream.health ? !stream.health.ready : false)
+  )).length;
+  const avbDiagnosticsCoverageCount = avbStreamPayloads.filter((stream) => Boolean(stream.diagnostics)).length;
+  const avbPtpLockedCount = avbStreamPayloads.filter((stream) => stream.diagnostics?.ptp_lock.locked).length;
+  const avbSrpBoundCount = avbStreamPayloads.filter((stream) => stream.diagnostics?.srp.bound).length;
+  const avbFailoverPolicyCounts = useMemo(() => avbStreamPayloads.reduce<Record<string, number>>((acc, stream) => {
+    const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
+    acc[policy] = (acc[policy] || 0) + 1;
+    return acc;
+  }, {}), [avbStreamPayloads]);
+  const avbTopFailoverPolicy = useMemo(() => Object.entries(avbFailoverPolicyCounts)
+    .sort((a, b) => b[1] - a[1])
+    .find(([, count]) => count > 0), [avbFailoverPolicyCounts]);
+  const avbFailoverInterfaceCounts = useMemo(() => avbStreamPayloads.reduce<Record<string, number>>((acc, stream) => {
+    const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+    candidates.forEach((iface: string) => {
+      acc[iface] = (acc[iface] || 0) + 1;
+    });
+    return acc;
+  }, {}), [avbStreamPayloads]);
+  const avbTopFailoverInterfaces = useMemo(() => Object.entries(avbFailoverInterfaceCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([iface, count]) => `${iface} (${count})`)
+    .join(', ') || '—', [avbFailoverInterfaceCounts]);
   const filtersOpen = Boolean(filtersAnchor);
   const scenesOpen = Boolean(scenesAnchor);
   const sceneDiffOpen = Boolean(sceneDiffAnchor);
   const defaultFilters = initialRoutingState.filters;
   const activeFilterCount = [
     state.filters.availableOnly !== defaultFilters.availableOnly,
+    state.filters.issuesOnly !== defaultFilters.issuesOnly,
     state.filters.showLocked !== defaultFilters.showLocked,
     [...state.filters.deviceTypes].sort().join('|') !== [...defaultFilters.deviceTypes].sort().join('|'),
     state.filters.sampleRates.length !== defaultFilters.sampleRates.length,
     state.filters.channelCounts.length !== defaultFilters.channelCounts.length,
     state.filters.groups.length !== defaultFilters.groups.length,
   ].filter(Boolean).length;
-  const endpointValues = Object.values(state.endpoints);
   const sampleRateOptions = Array.from(new Set(endpointValues.map((endpoint) => endpoint.sample_rate))).sort((a, b) => a - b);
   const channelCountOptions = Array.from(new Set(endpointValues.map((endpoint) => endpoint.channels))).sort((a, b) => a - b);
   const groupOptions = Array.from(
@@ -1978,6 +2038,85 @@ export function TopBar() {
             variant="outlined"
             data-testid="topbar-filter-summary"
           />
+          <Chip
+            label={`Endpoint Issues: ${endpointIssueCount}`}
+            size="small"
+            color={state.filters.issuesOnly ? 'primary' : endpointIssueCount > 0 ? 'warning' : 'default'}
+            variant={state.filters.issuesOnly ? 'filled' : 'outlined'}
+            clickable
+            onClick={handleToggleIssuesOnlyChip}
+            data-testid="topbar-endpoint-issues-filter-chip"
+          />
+          <Chip
+            label={`Engine: ${avbDeviceCount}/${avbDiscoveredCount}`}
+            size="small"
+            color={avbDeviceCount > 0 ? 'info' : 'default'}
+            variant="outlined"
+            data-testid="topbar-avb-engine-summary"
+          />
+          <Chip
+            label={`Cache Drift: ${avbCacheMissingCount}|${avbCacheOrphanCount}`}
+            size="small"
+            color={(avbCacheMissingCount > 0 || avbCacheOrphanCount > 0) ? 'warning' : 'success'}
+            variant="outlined"
+            data-testid="topbar-avb-cache-drift"
+          />
+          <Chip
+            label={`Transport: ${avbTransportReadyCount}/${avbStreamPayloads.length}`}
+            size="small"
+            color={avbTransportIssueCount > 0 ? 'warning' : 'success'}
+            variant="outlined"
+            data-testid="topbar-avb-transport-summary"
+          />
+          <Chip
+            label={`Issues: ${avbTransportIssueCount}`}
+            size="small"
+            color={avbTransportIssueCount > 0 ? 'error' : 'default'}
+            variant="outlined"
+            data-testid="topbar-avb-transport-issues"
+          />
+          <Chip
+            label={`Diag: ${avbDiagnosticsCoverageCount}/${avbStreamPayloads.length}`}
+            size="small"
+            color={
+              avbStreamPayloads.length === 0
+                ? 'default'
+                : avbDiagnosticsCoverageCount === avbStreamPayloads.length
+                  ? 'success'
+                  : 'warning'
+            }
+            variant="outlined"
+            data-testid="topbar-avb-diagnostics-summary"
+          />
+          <Chip
+            label={`PTP Lock: ${avbPtpLockedCount}/${avbStreamPayloads.length}`}
+            size="small"
+            color={avbPtpLockedCount === avbStreamPayloads.length && avbStreamPayloads.length > 0 ? 'success' : 'warning'}
+            variant="outlined"
+            data-testid="topbar-avb-ptp-lock-summary"
+          />
+          <Chip
+            label={`SRP: ${avbSrpBoundCount}/${avbStreamPayloads.length}`}
+            size="small"
+            color={avbSrpBoundCount > 0 ? 'info' : 'default'}
+            variant="outlined"
+            data-testid="topbar-avb-srp-summary"
+          />
+          {avbTopFailoverPolicy && (
+            <Tooltip
+              title={`Top interfaces: ${avbTopFailoverInterfaces}`}
+              placement="bottom"
+              arrow
+            >
+              <Chip
+                label={`Failover: ${avbTopFailoverPolicy[0]} (${avbTopFailoverPolicy[1]})`}
+                size="small"
+                color={avbTopFailoverPolicy[0] === 'none' ? 'default' : 'info'}
+                variant="outlined"
+                data-testid="topbar-avb-failover-summary"
+              />
+            </Tooltip>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }} data-testid="topbar-scene-status-strip">
@@ -2583,6 +2722,16 @@ export function TopBar() {
                 />
               )}
               label="Available only"
+            />
+            <FormControlLabel
+              control={(
+                <Checkbox
+                  checked={state.filters.issuesOnly}
+                  onChange={handleToggleIssuesOnly}
+                  data-testid="topbar-filter-issues-only"
+                />
+              )}
+              label="Issues only"
             />
             <FormControlLabel
               control={(

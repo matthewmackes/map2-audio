@@ -599,3 +599,73 @@ events:
         
       exitCode: 2
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_R5GEYXwJd1p2hMXZ/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_R5GEYXwJd1p2hMXZ/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_R5GEYXwJd1p2hMXZ/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_25409/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_25409.dir/build.make CMakeFiles/cmTC_25409.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_R5GEYXwJd1p2hMXZ/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_25409.dir/check_atomic_Rnl2r8DTpsPrfect.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_25409.dir/check_atomic_Rnl2r8DTpsPrfect.cpp.o -c /home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_Rnl2r8DTpsPrfect.cpp
+        Linking CXX executable cmTC_25409
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_25409.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_25409.dir/check_atomic_Rnl2r8DTpsPrfect.cpp.o -o cmTC_25409
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_R5GEYXwJd1p2hMXZ/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_6EI7A8nVqeQyuJdd/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_6EI7A8nVqeQyuJdd/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_6EI7A8nVqeQyuJdd/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f3119/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f3119.dir/build.make CMakeFiles/cmTC_f3119.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_6EI7A8nVqeQyuJdd/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_f3119.dir/check_atomic_ywO0CN9j0g7cIGxP.cpp.o
+        /usr/lib64/ccache/c++   -std=c++17 -o CMakeFiles/cmTC_f3119.dir/check_atomic_ywO0CN9j0g7cIGxP.cpp.o -c /home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_ywO0CN9j0g7cIGxP.cpp
+        Linking CXX executable cmTC_f3119
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f3119.dir/link.txt --verbose=1
+        /usr/lib64/ccache/c++ CMakeFiles/cmTC_f3119.dir/check_atomic_ywO0CN9j0g7cIGxP.cpp.o -o cmTC_f3119
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/LexiLovePlugin/build-win/juce/tools/check_atomic_dir_6EI7A8nVqeQyuJdd/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...

@@ -7,6 +7,7 @@ import type { AvbNode } from '../../types'
 let mockNodes: AvbNode[] = []
 let mockLocalNodeId = 'node-local'
 let mockState: any
+let mockAvbDevicesData: any
 const mockDispatch = jest.fn()
 
 jest.mock('../../hooks/useNodeApi', () => ({
@@ -17,6 +18,12 @@ jest.mock('../../hooks/useNodeApi', () => ({
 jest.mock('../../context/RoutingContext', () => ({
   useRouting: () => ({ state: mockState, dispatch: mockDispatch }),
   useFilteredEndpoints: () => [],
+}))
+
+jest.mock('../../hooks/useAvbApi', () => ({
+  useAvbDevices: () => ({
+    data: mockAvbDevicesData,
+  }),
 }))
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {
@@ -74,6 +81,13 @@ describe('NodeSelector degraded/offline badge visibility', () => {
   beforeEach(() => {
     mockDispatch.mockReset()
     mockLocalNodeId = 'node-local'
+    mockAvbDevicesData = {
+      available: true,
+      count: 0,
+      device_names: [],
+      discovered_count: 0,
+      discovered_devices: [],
+    }
     mockNodes = [
       makeNode({
         node_id: 'node-local',

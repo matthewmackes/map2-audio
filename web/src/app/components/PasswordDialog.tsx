@@ -23,8 +23,10 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!password.trim()) {
+
+    const submittedPassword = password.trim()
+
+    if (!submittedPassword) {
       setError('Please enter a password')
       return
     }
@@ -38,7 +40,7 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: submittedPassword }),
       })
 
       const data = await response.json()
@@ -121,7 +123,7 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
             lineHeight: '1.5',
           }}>
             Access to special features requires authentication.
-            Enter the backdoor password to continue.
+            Enter the password to continue.
           </p>
 
           {/* Password Input */}

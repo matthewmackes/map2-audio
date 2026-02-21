@@ -176,7 +176,8 @@ void Peavey5150AudioProcessor::setOversampleFactor(int factor)
 
 juce::AudioProcessorEditor* Peavey5150AudioProcessor::createEditor()
 {
-    return new Peavey5150AudioProcessorEditor(*this);
+    // Generic editor ensures all parameters are visible
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 bool Peavey5150AudioProcessor::hasEditor() const { return true; }

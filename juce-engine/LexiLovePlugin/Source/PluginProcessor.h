@@ -1,10 +1,12 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <string>
 
 #include "LexiLoveProcessor.h"
 
-class LexiLoveAudioProcessor : public juce::AudioProcessor
+class LexiLoveAudioProcessor : public juce::AudioProcessor,
+                               public juce::AudioProcessorValueTreeState::Listener
 {
 public:
     LexiLoveAudioProcessor();
@@ -33,8 +35,14 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
+
 private:
     map2::LexiLoveProcessor processor;
+    juce::AudioProcessorValueTreeState apvts;
+
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    void syncParameters();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LexiLoveAudioProcessor)
 };

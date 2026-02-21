@@ -27,6 +27,21 @@ jest.mock('../../hooks/useAvbApi', () => ({
     mutate: mockMutate,
     isPending: false,
   }),
+  useAvbDevices: () => ({
+    data: {
+      available: true,
+      count: 0,
+      device_names: [],
+      discovered_count: 0,
+      discovered_devices: [],
+    },
+  }),
+  useAvbStreams: () => ({
+    data: {
+      available: true,
+      streams: [],
+    },
+  }),
 }))
 
 jest.mock('../../hooks/useNotifications', () => ({
@@ -68,11 +83,15 @@ describe('TopBar filter and search wiring', () => {
           sample_rate: 48000,
           channels: 2,
           group: 'Stage',
+          available: true,
+          node_id: 'local',
         },
         'endpoint-b': {
           sample_rate: 96000,
           channels: 8,
           group: 'FOH',
+          available: true,
+          node_id: 'local',
         },
       },
       liveRoutes: {},
@@ -93,7 +112,7 @@ describe('TopBar filter and search wiring', () => {
     })
   })
 
-  it('dispatches SET_FILTERS for available-only and show-locked toggles', () => {
+  it('dispatches SET_FILTERS for availability, issue, and lock toggles', () => {
     render(<TopBar />)
 
     fireEvent.click(screen.getByTestId('topbar-filters-button'))
@@ -102,6 +121,13 @@ describe('TopBar filter and search wiring', () => {
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'SET_FILTERS',
       payload: { availableOnly: true },
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-issues-only'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { issuesOnly: true },
     })
 
     fireEvent.click(screen.getByTestId('topbar-filter-show-locked'))
@@ -157,6 +183,36 @@ describe('TopBar filter and search wiring', () => {
     })
   })
 
+  it('toggles issues-only filter from the endpoint-issues status chip', () => {
+    render(<TopBar />)
+
+    fireEvent.click(screen.getByTestId('topbar-endpoint-issues-filter-chip'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { issuesOnly: true },
+    })
+  })
+
+  it('clears issues-only filter from the endpoint-issues status chip when already active', () => {
+    mockState = {
+      ...mockState,
+      filters: {
+        ...mockState.filters,
+        issuesOnly: true,
+      },
+    }
+
+    render(<TopBar />)
+
+    fireEvent.click(screen.getByTestId('topbar-endpoint-issues-filter-chip'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { issuesOnly: false },
+    })
+  })
+
   it('clears all filter constraints in one action', () => {
     mockState = {
       ...mockState,
@@ -165,6 +221,7 @@ describe('TopBar filter and search wiring', () => {
         sampleRates: [96000],
         channelCounts: [8],
         availableOnly: true,
+        issuesOnly: true,
         showLocked: false,
         groups: ['FOH'],
       },
@@ -182,6 +239,7 @@ describe('TopBar filter and search wiring', () => {
         sampleRates: [],
         channelCounts: [],
         availableOnly: false,
+        issuesOnly: false,
         showLocked: true,
         groups: [],
       },
@@ -196,6 +254,7 @@ describe('TopBar filter and search wiring', () => {
         sampleRates: [48000],
         channelCounts: [2],
         availableOnly: true,
+        issuesOnly: true,
         showLocked: false,
         groups: ['Stage'],
       },

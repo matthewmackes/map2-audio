@@ -223,9 +223,10 @@ int AvbStream::sendFrame(const float* samples, size_t frameSize, uint64_t timest
     // Send PDU via raw socket
     ssize_t sent = send(socketFd_, pduBuffer_.data(), pduSize, MSG_DONTWAIT);
     if (sent < 0) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            stats_.sendErrors.fetch_add(1, std::memory_order_relaxed);
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 1; // Transient backpressure (not a hard error)
         }
+        stats_.sendErrors.fetch_add(1, std::memory_order_relaxed);
         return -3; // Send failed
     }
 
@@ -249,10 +250,11 @@ int AvbStream::receiveFrame(float* samples, size_t maxFrameSize,
     // Receive PDU from raw socket
     ssize_t received = recv(socketFd_, pduBuffer_.data(), maxPduSize_, MSG_DONTWAIT);
     if (received < 0) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            stats_.receiveErrors.fetch_add(1, std::memory_order_relaxed);
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return 1; // No packet available yet
         }
-        return -2; // Receive failed (or would block)
+        stats_.receiveErrors.fetch_add(1, std::memory_order_relaxed);
+        return -2; // Receive failed
     }
 
     // Convert AVTP AAF PDU to samples

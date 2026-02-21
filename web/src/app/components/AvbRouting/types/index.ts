@@ -27,6 +27,16 @@ export type {
   DeviceType,
   EndpointsResponse,
   EndpointStatus,
+  AvbDiscoveredDevice,
+  AvbDevicesResponse,
+  AvbStreamHealth,
+  AvbStreamEffectiveConfig,
+  AvbStreamPtpLockDiagnostics,
+  AvbStreamTsnDiagnostics,
+  AvbStreamSrpDiagnostics,
+  AvbStreamDiagnostics,
+  AvbStreamPayload,
+  AvbStreamsResponse,
 } from './endpoint';
 
 // Route types

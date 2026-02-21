@@ -414,6 +414,44 @@ AdpPdu AvdeccEntity::buildAdpEntityDeparting() {
     return pdu;
 }
 
+AcmpPdu AvdeccEntity::buildAcmpConnectResponse(const AcmpPdu& command, Avdecc::AcmpStatus status) {
+    AcmpPdu response;
+    std::memset(&response, 0, sizeof(response));
+
+    // Preserve AVDECC subtype/version bits from command.
+    response.header.cd_subtype = command.header.cd_subtype;
+    response.header.sv_version = command.header.sv_version;
+
+    // Default response type for CONNECT_TX_COMMAND handling.
+    writeU16(
+        reinterpret_cast<uint8_t*>(&response.header.message_type),
+        static_cast<uint16_t>(Avdecc::AcmpMessageType::CONNECT_TX_RESPONSE));
+
+    // ACMP header packs status (bits 15:11) + control data length (bits 10:0).
+    constexpr uint16_t kAcmpControlDataLength = 44;
+    const uint16_t statusAndLength =
+        (static_cast<uint16_t>(status) << 11) | kAcmpControlDataLength;
+    writeU16(response.header.valid_time_control_data_length, statusAndLength);
+
+    // Entity ID in responses is the responder entity.
+    writeU64(response.header.entity_id, entity_id_);
+
+    // Echo command fields required by ACMP transaction matching.
+    std::memcpy(response.controller_entity_id, command.controller_entity_id, sizeof(response.controller_entity_id));
+    std::memcpy(response.talker_entity_id, command.talker_entity_id, sizeof(response.talker_entity_id));
+    std::memcpy(response.listener_entity_id, command.listener_entity_id, sizeof(response.listener_entity_id));
+    response.talker_unique_id = command.talker_unique_id;
+    response.listener_unique_id = command.listener_unique_id;
+    std::memcpy(response.stream_dest_mac, command.stream_dest_mac, sizeof(response.stream_dest_mac));
+    response.connection_count = command.connection_count;
+    response.sequence_id = command.sequence_id;
+    response.flags = command.flags;
+    response.stream_vlan_id = command.stream_vlan_id;
+    response.reserved = 0;
+
+    return response;
+}
+
 // ============================================================================
 // ACMP Thread (Connection Management)
 // ============================================================================

@@ -30,6 +30,12 @@
 #include "AvdeccEntity.h"
 #endif
 
+#ifdef HAS_AVB
+namespace Map2Audio {
+class AvbAudioIODevice;
+}
+#endif
+
 #include "ChorusProcessor.h"
 #include "PhaserProcessor.h"
 #include "PitchShifterProcessor.h"
@@ -46,6 +52,7 @@
 #include <thread>
 #include <atomic>
 #include <array>
+#include <chrono>
 #include <cstring>
 
 namespace map2 {
@@ -94,6 +101,76 @@ public:
     bool startAudio();
     bool stopAudio();
     bool isAudioRunning() const { return audioRunning_; }
+
+    // ========================================
+    // AVB Stream Lifecycle (Phase 0 Contract)
+    // ========================================
+
+    struct AvbStreamRuntimeConfig {
+        std::string streamId;
+        std::string direction;  // "talker" | "listener"
+        int channels = 2;
+        int sampleRate = 48000;
+        int bufferSize = 256;
+        std::string interfaceName;
+        std::string destMac;
+        int presentationOffsetUs = 2000;
+        int priority = 3;
+    };
+
+    struct AvbStreamRuntimeStats {
+        uint64_t framesSent = 0;
+        uint64_t framesReceived = 0;
+        uint64_t sendErrors = 0;
+        uint64_t receiveErrors = 0;
+        uint64_t underruns = 0;
+        uint64_t overruns = 0;
+        uint64_t timestampErrors = 0;
+        uint64_t sequenceErrors = 0;
+        uint64_t bytesTransferred = 0;
+        int64_t maxLatencyNs = 0;
+        int64_t minLatencyNs = 0;
+    };
+
+    struct AvbInterfaceInfo {
+        std::string interfaceName;
+        bool available = false;
+        bool avbEnabled = false;
+        bool interfaceExists = false;
+        bool ptpReady = false;
+        std::string error;
+    };
+
+    struct AvbDiscoveredDeviceInfo {
+        std::string endpointId;
+        std::string deviceName;
+        std::string direction;   // "talker" | "listener"
+        std::string deviceType;  // "map2" | "avdecc" | "unknown"
+        std::string nodeAddress;
+        std::string audioFormat = "24-bit PCM";
+        int channels = 2;
+        int sampleRate = 48000;
+        bool available = true;
+    };
+
+    bool isAvbAvailable() const;
+    bool createAvbStream(const AvbStreamRuntimeConfig& config, std::string* error = nullptr);
+    bool startAvbStream(const std::string& streamId, std::string* error = nullptr);
+    bool stopAvbStream(const std::string& streamId, std::string* error = nullptr);
+    bool deleteAvbStream(const std::string& streamId, std::string* error = nullptr);
+    std::optional<AvbStreamRuntimeStats> getAvbStreamStats(
+        const std::string& streamId,
+        std::string* error = nullptr) const;
+    bool resetAvbStreamStats(const std::string& streamId, std::string* error = nullptr);
+    std::vector<std::string> listAvbStreams() const;
+    std::vector<std::string> getAvbDeviceNames();
+    int getAvbDeviceCount();
+    AvbInterfaceInfo getAvbInterfaceInfo(const std::string& interfaceName);
+    bool setAvbDiscoveredDevices(
+        const std::vector<AvbDiscoveredDeviceInfo>& devices,
+        std::string* error = nullptr);
+    std::vector<AvbDiscoveredDeviceInfo> getAvbDiscoveredDevices() const;
+    void clearAvbDiscoveredDevices();
 
     // ========================================
     // Configuration
@@ -1133,6 +1210,21 @@ private:
     // State
     bool initialized_ = false;
     std::atomic<bool> audioRunning_{false};
+
+    struct AvbManagedStream {
+        AvbStreamRuntimeConfig config;
+        bool running = false;
+        AvbStreamRuntimeStats stats;
+        std::string lastError;
+        std::chrono::steady_clock::time_point startedAt{};
+#ifdef HAS_AVB
+        std::unique_ptr<Map2Audio::AvbAudioIODevice> device;
+#endif
+    };
+    mutable std::mutex avbStreamsMutex_;
+    std::map<std::string, AvbManagedStream> avbStreams_;
+    mutable std::mutex avbDiscoveredDevicesMutex_;
+    std::vector<AvbDiscoveredDeviceInfo> avbDiscoveredDevices_;
 
     // Configuration
     double sampleRate_ = DEFAULT_SAMPLE_RATE;

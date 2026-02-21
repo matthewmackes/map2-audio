@@ -1,0 +1,12 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mm/map2-audio/juce-engine/MAP2ThePlugins/build-win/MAP2ThePlugins_artefacts/JuceLibraryCode/MAP2ThePlugins_resources.rc
+windows.h
+-
+

@@ -10,6 +10,7 @@ All endpoints return available=false gracefully when AVB is disabled or hardware
 """
 
 import asyncio
+import json
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/avb", tags=["AVB/TSN"])
 _acmp_srp_reservations: Dict[str, Dict[str, Optional[str]]] = {}
+_ALLOWED_FAILOVER_POLICIES = {"none", "prefer_primary", "round_robin", "manual"}
 
 
 def _srp_enabled() -> bool:
@@ -232,6 +234,446 @@ def _entity_supports_gptp(entity: Any) -> bool:
         return False
 
 
+def _status_to_dict(status: Any) -> Dict[str, Any]:
+    """Best-effort conversion for status payload objects."""
+    if isinstance(status, dict):
+        return dict(status)
+
+    to_dict = getattr(status, "to_dict", None)
+    if callable(to_dict):
+        try:
+            data = to_dict()
+            if isinstance(data, dict):
+                return dict(data)
+        except Exception:
+            return {}
+    return {}
+
+
+def _stream_interface_name(stream: Dict[str, Any]) -> str:
+    """Resolve stream interface from payload, falling back to global config."""
+    config = stream.get("config") if isinstance(stream.get("config"), dict) else {}
+    interface = str(config.get("interface", "")).strip()
+    if interface:
+        return interface
+    return str(config_get("avb.interface", "") or "").strip()
+
+
+def _build_stream_health(
+    stream: Dict[str, Any],
+    *,
+    ptp_status: Dict[str, Any],
+    tsn_status: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Compose stream health from lifecycle state + transport sync snapshots."""
+    stream_state = str(stream.get("state", "") or "").lower()
+    stream_error = stream.get("error")
+    interface = _stream_interface_name(stream)
+
+    ptp_available = bool(ptp_status.get("available"))
+    tsn_available = bool(tsn_status.get("available"))
+    tsn_interface = str(tsn_status.get("interface", "") or "").strip()
+    interface_matches = not interface or not tsn_interface or interface == tsn_interface
+
+    issues: List[str] = []
+    if not ptp_available:
+        issues.append("PTP_UNAVAILABLE")
+    if not tsn_available:
+        issues.append("TSN_UNAVAILABLE")
+    if not interface_matches:
+        issues.append("TSN_INTERFACE_MISMATCH")
+    if stream_state == "error" or stream_error:
+        issues.append("STREAM_ERROR")
+
+    ready = ptp_available and tsn_available and interface_matches and stream_state != "error"
+
+    return {
+        "ready": ready,
+        "issues": issues,
+        "interface": interface,
+        "ptp": {
+            "available": ptp_available,
+            "state": ptp_status.get("state"),
+            "offset_ns": ptp_status.get("offset_ns"),
+            "mean_path_delay_ns": ptp_status.get("mean_path_delay_ns"),
+            "last_update": ptp_status.get("last_update"),
+            "error": ptp_status.get("error"),
+        },
+        "tsn": {
+            "available": tsn_available,
+            "interface": tsn_status.get("interface"),
+            "mqprio_configured": bool(tsn_status.get("mqprio_configured")),
+            "cbs_configured": bool(tsn_status.get("cbs_configured")),
+            "etf_configured": bool(tsn_status.get("etf_configured")),
+            "vlan_configured": bool(tsn_status.get("vlan_configured")),
+            "error": tsn_status.get("error"),
+        },
+    }
+
+
+async def _collect_transport_health_snapshots(streams: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Collect one PTP snapshot and TSN snapshots keyed by interface."""
+    try:
+        ptp_raw = await get_ptp_monitor().get_status()
+        ptp_status = _status_to_dict(ptp_raw)
+    except Exception as exc:
+        ptp_status = {"available": False, "error": str(exc)}
+
+    if "available" not in ptp_status:
+        ptp_status["available"] = False
+
+    interfaces = {
+        _stream_interface_name(stream)
+        for stream in streams
+        if isinstance(stream, dict)
+    }
+    interfaces = {iface for iface in interfaces if iface}
+    if not interfaces:
+        fallback_interface = str(config_get("avb.interface", "") or "").strip()
+        if fallback_interface:
+            interfaces.add(fallback_interface)
+
+    tsn_by_interface: Dict[str, Dict[str, Any]] = {}
+    if interfaces:
+        tasks = [
+            get_tsn_qdisc_manager().get_status(interface=interface)
+            for interface in sorted(interfaces)
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for interface, result in zip(sorted(interfaces), results):
+            if isinstance(result, Exception):
+                tsn_by_interface[interface] = {"available": False, "interface": interface, "error": str(result)}
+                continue
+
+            payload = _status_to_dict(result)
+            if "available" not in payload:
+                payload["available"] = False
+            payload.setdefault("interface", interface)
+            tsn_by_interface[interface] = payload
+    else:
+        tsn_by_interface[""] = {"available": False, "error": "No AVB interface configured"}
+
+    return {
+        "ptp": ptp_status,
+        "tsn_by_interface": tsn_by_interface,
+    }
+
+
+def _coerce_positive_int(raw: Any, default: int) -> int:
+    """Convert values to positive integers, preserving default on invalid input."""
+    try:
+        value = int(raw)
+    except Exception:
+        return default
+    return value if value > 0 else default
+
+
+def _normalize_string_list(raw: Any) -> List[str]:
+    """Normalize list-ish payloads into unique non-empty strings preserving order."""
+    if isinstance(raw, (list, tuple, set)):
+        source = list(raw)
+    elif isinstance(raw, str):
+        text = raw.strip()
+        if text.startswith("[") and text.endswith("]"):
+            try:
+                decoded = json.loads(text)
+                if isinstance(decoded, list):
+                    source = decoded
+                else:
+                    source = [part for part in text.split(",")]
+            except Exception:
+                source = [part for part in text.split(",")]
+        else:
+            source = [part for part in text.split(",")]
+    else:
+        return []
+
+    normalized: List[str] = []
+    for item in source:
+        value = str(item or "").strip()
+        if value and value not in normalized:
+            normalized.append(value)
+    return normalized
+
+
+def _sanitize_failover_policy(raw: Any) -> str:
+    """Coerce configured failover policy into canonical value with safe fallback."""
+    value = str(raw or "").strip().lower()
+    if value in _ALLOWED_FAILOVER_POLICIES:
+        return value
+    return "none"
+
+
+def _parse_failover_policy(raw: Any, *, default: str) -> str:
+    """Parse request failover policy and fail-fast on invalid values."""
+    value = str(raw or "").strip().lower()
+    if not value:
+        return default
+    if value not in _ALLOWED_FAILOVER_POLICIES:
+        allowed = ", ".join(sorted(_ALLOWED_FAILOVER_POLICIES))
+        raise HTTPException(status_code=400, detail=f"failover_policy must be one of: {allowed}")
+    return value
+
+
+def _parse_failover_interfaces(raw: Any) -> List[str]:
+    """Parse request/global failover interfaces into normalized unique list."""
+    if raw is None:
+        return []
+    if not isinstance(raw, (list, tuple, set, str)):
+        raise HTTPException(
+            status_code=400,
+            detail="failover_interfaces must be a list, CSV string, or JSON array string",
+        )
+    return _normalize_string_list(raw)
+
+
+def _build_config_compatibility_matrix() -> Dict[str, Any]:
+    """Build compatibility profile summary for operational validation."""
+    enabled = bool(config_get("avb.enabled", False))
+    srp_enabled = _srp_enabled()
+    srp_required = _srp_required()
+    avdecc_enabled = _is_avdecc_enabled()
+    failover_policy = _sanitize_failover_policy(config_get("avb.failover_policy", "none"))
+    failover_interfaces = _normalize_string_list(config_get("avb.failover_interfaces", []))
+    interface = str(config_get("avb.interface", "") or "").strip()
+
+    active_profile = "default"
+    if srp_required and avdecc_enabled:
+        active_profile = "strict_srp_avdecc"
+    elif srp_required:
+        active_profile = "strict_srp"
+    elif avdecc_enabled:
+        active_profile = "avdecc_enabled"
+
+    profiles: List[Dict[str, Any]] = [
+        {
+            "profile": "default",
+            "description": "Baseline MAP2-only AVB operation with optional SRP enforcement.",
+            "flags": {
+                "srp_required": False,
+                "avdecc_enabled": False,
+            },
+        },
+        {
+            "profile": "strict_srp",
+            "description": "Enforces SRP reservation IDs for admission-controlled stream setup.",
+            "flags": {
+                "srp_required": True,
+                "avdecc_enabled": False,
+            },
+        },
+        {
+            "profile": "avdecc_enabled",
+            "description": "Enables third-party AVDECC endpoint discovery and connection APIs.",
+            "flags": {
+                "srp_required": False,
+                "avdecc_enabled": True,
+            },
+        },
+        {
+            "profile": "strict_srp_avdecc",
+            "description": "Combines strict SRP admission enforcement with AVDECC interoperability.",
+            "flags": {
+                "srp_required": True,
+                "avdecc_enabled": True,
+            },
+        },
+    ]
+
+    return {
+        "active_profile": active_profile,
+        "enabled": enabled,
+        "interface": interface,
+        "failover": {
+            "policy": failover_policy,
+            "interfaces": failover_interfaces,
+        },
+        "flags": {
+            "srp_enabled": srp_enabled,
+            "srp_required": srp_required,
+            "avdecc_enabled": avdecc_enabled,
+        },
+        "profiles": profiles,
+    }
+
+
+def _extract_stream_config(stream: Dict[str, Any]) -> Dict[str, Any]:
+    config = stream.get("config")
+    return dict(config) if isinstance(config, dict) else {}
+
+
+def _build_effective_stream_config(stream: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build operator-visible runtime config after stream + global fallback resolution.
+
+    This exposes the exact values used by diagnostics and health synthesis.
+    """
+    stream_config = _extract_stream_config(stream)
+    global_interface = str(config_get("avb.interface", "") or "").strip()
+    global_presentation_offset = _coerce_positive_int(config_get("avb.presentation_offset_us", 2000), 2000)
+    global_buffer_size = _coerce_positive_int(config_get("audio.buffer_size", 256), 256)
+    global_failover_policy = _sanitize_failover_policy(config_get("avb.failover_policy", "none"))
+    global_failover_interfaces = _normalize_string_list(config_get("avb.failover_interfaces", []))
+
+    interface = str(stream_config.get("interface", "") or "").strip() or global_interface
+    channels = _coerce_positive_int(stream_config.get("channels", 2), 2)
+    sample_rate = _coerce_positive_int(stream_config.get("sample_rate", 48000), 48000)
+    buffer_size = _coerce_positive_int(stream_config.get("buffer_size", global_buffer_size), global_buffer_size)
+    presentation_offset_us = _coerce_positive_int(
+        stream_config.get("presentation_offset_us", global_presentation_offset),
+        global_presentation_offset,
+    )
+    priority = _coerce_positive_int(stream_config.get("priority", 3), 3)
+    dest_mac = stream_config.get("dest_mac")
+    if dest_mac is not None:
+        dest_mac = str(dest_mac).strip() or None
+
+    stream_failover_policy = str(stream_config.get("failover_policy", "") or "").strip()
+    if stream_failover_policy:
+        failover_policy = _sanitize_failover_policy(stream_failover_policy)
+    else:
+        failover_policy = global_failover_policy
+    failover_interfaces = _normalize_string_list(
+        stream_config.get("failover_interfaces", global_failover_interfaces)
+    )
+    interface_candidates = [iface for iface in failover_interfaces if iface]
+    if interface and interface not in interface_candidates:
+        interface_candidates.insert(0, interface)
+
+    return {
+        "stream_id": str(stream.get("stream_id", "") or ""),
+        "direction": str(stream.get("direction", "") or "").lower(),
+        "interface": interface,
+        "channels": channels,
+        "sample_rate": sample_rate,
+        "buffer_size": buffer_size,
+        "presentation_offset_us": presentation_offset_us,
+        "priority": priority,
+        "dest_mac": dest_mac,
+        "failover_policy": failover_policy or "none",
+        "interface_candidates": interface_candidates,
+    }
+
+
+def _build_ptp_lock_state(ptp_status: Dict[str, Any]) -> Dict[str, Any]:
+    """Derive explicit lock-state diagnostics from ptp monitor payload."""
+    state = str(ptp_status.get("state", "") or "").strip()
+    normalized_state = state.upper()
+    available = bool(ptp_status.get("available"))
+    error = ptp_status.get("error")
+    lock_states = {"MASTER", "SLAVE", "PASSIVE", "UNCALIBRATED", "LOCKED", "SYNCED"}
+    locked = available and not error and normalized_state in lock_states
+
+    reason: Optional[str] = None
+    if not available:
+        reason = "PTP_UNAVAILABLE"
+    elif error:
+        reason = str(error)
+    elif not normalized_state:
+        reason = "PTP_STATE_UNKNOWN"
+    elif normalized_state not in lock_states:
+        reason = f"PTP_STATE_{normalized_state}"
+
+    return {
+        "locked": locked,
+        "state": ptp_status.get("state"),
+        "reason": reason,
+        "offset_ns": ptp_status.get("offset_ns"),
+        "mean_path_delay_ns": ptp_status.get("mean_path_delay_ns"),
+        "last_update": ptp_status.get("last_update"),
+    }
+
+
+def _resolve_srp_binding(
+    stream: Dict[str, Any],
+    *,
+    avb_service: Any,
+) -> Optional[Dict[str, Any]]:
+    payload_binding = stream.get("srp_binding")
+    if isinstance(payload_binding, dict):
+        return dict(payload_binding)
+
+    stream_id = str(stream.get("stream_id", "") or "").strip()
+    if not stream_id:
+        return None
+
+    get_binding = getattr(avb_service, "get_srp_binding", None)
+    if callable(get_binding):
+        binding = get_binding(stream_id)
+        if isinstance(binding, dict):
+            return dict(binding)
+    return None
+
+
+def _build_stream_diagnostics(
+    stream: Dict[str, Any],
+    *,
+    avb_service: Any,
+    ptp_status: Dict[str, Any],
+    tsn_status: Dict[str, Any],
+) -> Dict[str, Any]:
+    srp_binding = _resolve_srp_binding(stream, avb_service=avb_service) or {}
+    reservation_id = str(srp_binding.get("reservation_id") or "").strip() or None
+    admission_id = str(srp_binding.get("admission_id") or "").strip() or None
+    metadata = srp_binding.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    return {
+        "effective_config": _build_effective_stream_config(stream),
+        "ptp_lock": _build_ptp_lock_state(ptp_status),
+        "tsn_qdisc": {
+            "available": bool(tsn_status.get("available")),
+            "interface": tsn_status.get("interface"),
+            "mqprio_configured": bool(tsn_status.get("mqprio_configured")),
+            "cbs_configured": bool(tsn_status.get("cbs_configured")),
+            "etf_configured": bool(tsn_status.get("etf_configured")),
+            "vlan_configured": bool(tsn_status.get("vlan_configured")),
+            "error": tsn_status.get("error"),
+        },
+        "srp": {
+            "enabled": _srp_enabled(),
+            "required": _srp_required(),
+            "bound": reservation_id is not None,
+            "reservation_id": reservation_id,
+            "admission_id": admission_id,
+            "metadata": dict(metadata),
+        },
+    }
+
+
+def _require_positive_int_field(
+    payload: Dict[str, Any],
+    key: str,
+    *,
+    default: int,
+) -> int:
+    """Parse request field as a positive integer or raise HTTP 400."""
+    raw_value = payload.get(key, default)
+    try:
+        parsed = int(raw_value)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"{key} must be a positive integer") from exc
+    if parsed <= 0:
+        raise HTTPException(status_code=400, detail=f"{key} must be a positive integer")
+    return parsed
+
+
+def _resolve_stream_interface(config_payload: Dict[str, Any]) -> str:
+    """Resolve stream interface from request or global config, failing closed when missing."""
+    interface = str(config_payload.get("interface", "") or "").strip()
+    if interface:
+        return interface
+    fallback_interface = str(config_get("avb.interface", "") or "").strip()
+    if fallback_interface:
+        return fallback_interface
+    raise HTTPException(
+        status_code=400,
+        detail="interface is required (set request.interface or avb.interface config)",
+    )
+
+
 @router.get("/ptp/status")
 async def get_ptp_status() -> Dict[str, Any]:
     """
@@ -313,6 +755,7 @@ async def get_avb_status() -> Dict[str, Any]:
             "interface": interface,
             "ptp": ptp_status,
             "reason": reason,
+            "compatibility": _build_config_compatibility_matrix(),
             "config": {
                 "ptp_domain": config_get("avb.ptp_domain", 0),
                 "ptp_priority1": config_get("avb.ptp_priority1", 128),
@@ -323,6 +766,18 @@ async def get_avb_status() -> Dict[str, Any]:
 
     except Exception as e:
         logger.error(f"Error getting AVB status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/config/compatibility")
+async def get_avb_config_compatibility() -> Dict[str, Any]:
+    """Get compatibility profile matrix for AVB runtime configuration."""
+    try:
+        return _build_config_compatibility_matrix()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting AVB compatibility matrix: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -345,6 +800,7 @@ async def get_srp_admissions(
     since: Optional[str] = None,
     limit: int = 100,
     endpoint: Optional[str] = None,
+    offset: int = 0,
 ) -> Dict[str, Any]:
     """Query persistent SRP admission audit log entries."""
     try:
@@ -358,6 +814,7 @@ async def get_srp_admissions(
             since=since_dt,
             limit=limit,
             endpoint=endpoint,
+            offset=offset,
         )
         return {
             "count": len(rows),
@@ -366,6 +823,7 @@ async def get_srp_admissions(
                 "since": since_dt.isoformat() if since_dt else None,
                 "limit": max(1, min(int(limit), 500)),
                 "endpoint": endpoint,
+                "offset": max(0, int(offset)),
             },
             "admissions": rows,
         }
@@ -505,10 +963,35 @@ async def get_streams() -> Dict[str, Any]:
             }
 
         streams = avb_service.get_all_streams()
+        snapshots = await _collect_transport_health_snapshots(streams)
+        ptp_status = snapshots["ptp"]
+        tsn_by_interface = snapshots["tsn_by_interface"]
+
+        enriched_streams: List[Dict[str, Any]] = []
+        for stream in streams:
+            if not isinstance(stream, dict):
+                continue
+            stream_payload = dict(stream)
+            stream_interface = _stream_interface_name(stream_payload)
+            tsn_status = tsn_by_interface.get(stream_interface)
+            if tsn_status is None:
+                tsn_status = {"available": False, "interface": stream_interface, "error": "TSN status unavailable"}
+            stream_payload["health"] = _build_stream_health(
+                stream_payload,
+                ptp_status=ptp_status,
+                tsn_status=tsn_status,
+            )
+            stream_payload["diagnostics"] = _build_stream_diagnostics(
+                stream_payload,
+                avb_service=avb_service,
+                ptp_status=ptp_status,
+                tsn_status=tsn_status,
+            )
+            enriched_streams.append(stream_payload)
 
         return {
             "available": True,
-            "streams": streams
+            "streams": enriched_streams
         }
 
     except Exception as e:
@@ -536,12 +1019,84 @@ async def get_stream(stream_id: str) -> Dict[str, Any]:
         if stream is None:
             raise HTTPException(status_code=404, detail="Stream not found")
 
-        return stream
+        if not isinstance(stream, dict):
+            raise HTTPException(status_code=500, detail="Invalid stream payload")
+
+        snapshots = await _collect_transport_health_snapshots([stream])
+        ptp_status = snapshots["ptp"]
+        stream_interface = _stream_interface_name(stream)
+        tsn_status = snapshots["tsn_by_interface"].get(stream_interface)
+        if tsn_status is None:
+            tsn_status = {"available": False, "interface": stream_interface, "error": "TSN status unavailable"}
+
+        stream_payload = dict(stream)
+        stream_payload["health"] = _build_stream_health(
+            stream_payload,
+            ptp_status=ptp_status,
+            tsn_status=tsn_status,
+        )
+        stream_payload["diagnostics"] = _build_stream_diagnostics(
+            stream_payload,
+            avb_service=avb_service,
+            ptp_status=ptp_status,
+            tsn_status=tsn_status,
+        )
+        return stream_payload
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting AVB stream: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/streams/{stream_id}/diagnostics")
+async def get_stream_diagnostics(stream_id: str) -> Dict[str, Any]:
+    """Get one stream with consolidated runtime diagnostics."""
+    try:
+        from app.services.avb.avb_service import get_avb_service
+
+        avb_service = get_avb_service()
+
+        if not avb_service.is_available():
+            raise HTTPException(status_code=503, detail="AVB not available")
+
+        stream = avb_service.get_stream(stream_id)
+        if stream is None:
+            raise HTTPException(status_code=404, detail="Stream not found")
+        if not isinstance(stream, dict):
+            raise HTTPException(status_code=500, detail="Invalid stream payload")
+
+        snapshots = await _collect_transport_health_snapshots([stream])
+        ptp_status = snapshots["ptp"]
+        stream_interface = _stream_interface_name(stream)
+        tsn_status = snapshots["tsn_by_interface"].get(stream_interface)
+        if tsn_status is None:
+            tsn_status = {"available": False, "interface": stream_interface, "error": "TSN status unavailable"}
+
+        stream_payload = dict(stream)
+        health = _build_stream_health(
+            stream_payload,
+            ptp_status=ptp_status,
+            tsn_status=tsn_status,
+        )
+        diagnostics = _build_stream_diagnostics(
+            stream_payload,
+            avb_service=avb_service,
+            ptp_status=ptp_status,
+            tsn_status=tsn_status,
+        )
+
+        return {
+            "stream_id": stream_payload.get("stream_id"),
+            "state": stream_payload.get("state"),
+            "health": health,
+            "diagnostics": diagnostics,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting AVB stream diagnostics: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -620,17 +1175,42 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
                     detail="Strict SRP mode requires srp.reservation_id when SRP metadata is provided",
                 )
 
+        channels = _require_positive_int_field(config, "channels", default=2)
+        sample_rate = _require_positive_int_field(config, "sample_rate", default=48000)
+        buffer_size = _require_positive_int_field(config, "buffer_size", default=256)
+        presentation_offset_us = _require_positive_int_field(config, "presentation_offset_us", default=2000)
+
+        try:
+            priority = int(config.get("priority", 3))
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="priority must be an integer between 0 and 7") from exc
+        if priority < 0 or priority > 7:
+            raise HTTPException(status_code=400, detail="priority must be an integer between 0 and 7")
+
+        interface = _resolve_stream_interface(config)
+        global_failover_policy = _sanitize_failover_policy(config_get("avb.failover_policy", "none"))
+        failover_policy = _parse_failover_policy(
+            config.get("failover_policy"),
+            default=global_failover_policy,
+        )
+        failover_raw = config.get("failover_interfaces", config_get("avb.failover_interfaces", []))
+        failover_interfaces = _parse_failover_interfaces(failover_raw)
+        if interface and interface not in failover_interfaces:
+            failover_interfaces.insert(0, interface)
+
         # Parse config
         stream_config = AvbStreamConfig(
             stream_id=stream_id,
             direction=direction,
-            channels=config.get("channels", 2),
-            sample_rate=config.get("sample_rate", 48000),
-            buffer_size=config.get("buffer_size", 256),
-            interface=config.get("interface", ""),
+            channels=channels,
+            sample_rate=sample_rate,
+            buffer_size=buffer_size,
+            interface=interface,
             dest_mac=config.get("dest_mac"),
-            presentation_offset_us=config.get("presentation_offset_us", 2000),
-            priority=config.get("priority", 3),
+            presentation_offset_us=presentation_offset_us,
+            priority=priority,
+            failover_policy=failover_policy,
+            failover_interfaces=failover_interfaces,
             srp_reservation_id=srp_reservation_id,
             srp_admission_id=srp_admission_id,
             srp_metadata=srp_metadata,
@@ -972,6 +1552,44 @@ async def reset_stream_stats(stream_id: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error resetting AVB stream stats: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/devices")
+async def get_avb_devices() -> Dict[str, Any]:
+    """
+    Get AVB device inventory exposed by JUCE engine.
+
+    Returns:
+        - available: AVB runtime availability
+        - count: number of AVB device names
+        - device_names: JUCE-selectable AVB device names
+        - discovered_count: number of discovered endpoint cache entries
+        - discovered_devices: normalized discovered endpoint metadata
+    """
+    try:
+        from app.services.avb.avb_service import get_avb_service
+
+        avb_service = get_avb_service()
+        device_names = avb_service.get_device_names()
+        discovered_devices = avb_service.get_discovered_devices()
+
+        return {
+            "available": avb_service.is_available(),
+            "count": len(device_names),
+            "device_names": device_names,
+            "discovered_count": len(discovered_devices),
+            "discovered_devices": discovered_devices,
+        }
+    except Exception as e:
+        logger.error(f"Error getting AVB device inventory: {e}", exc_info=True)
+        return {
+            "available": False,
+            "count": 0,
+            "device_names": [],
+            "discovered_count": 0,
+            "discovered_devices": [],
+            "error": f"Internal error: {str(e)}",
+        }
 
 
 # ============================================================================

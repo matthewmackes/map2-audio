@@ -1,15 +1,12 @@
-import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, Package, Pulse, Sliders, Palette, CaretDown, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, TrendUp } from '@phosphor-icons/react'
+import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, Package, Pulse, Palette, CaretDown, CaretRight, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, TrendUp } from '@phosphor-icons/react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
 import { themes, themeOrder, applyTheme, getSavedThemeId, saveCustomTheme, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
-import { PasswordDialog } from '../components/PasswordDialog'
-import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
-import { useSpecialSettings } from '../hooks/useSpecialSettings'
-import { advancedMenuItems } from '../data/advancedMenuItems'
+import { advancedMenuItems, hardwareInterfaceMenuItems } from '../data/advancedMenuItems'
 
 // Dragon icon for "hic sunt dracones" menu
 const DragonIcon = ({ size = 16 }: { size?: number }) => (
@@ -518,16 +515,8 @@ export function AboutPage() {
   const [showThemeCreator, setShowThemeCreator] = useState(false)
   const [customThemes, setCustomThemes] = useState<Record<string, Theme>>({})
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
+  const [hardwarePopupOpen, setHardwarePopupOpen] = useState(false)
   
-  // Special settings state
-  const {
-    settings: specialSettings,
-    isLoading: specialSettingsLoading,
-    updateSettings: updateSpecialSettings,
-  } = useSpecialSettings()
-  const [specialActionLoading, setSpecialActionLoading] = useState(false)
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
-  const [showSpecialSettings, setShowSpecialSettings] = useState(false)
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
   const [isPageLoaded, setIsPageLoaded] = useState(
@@ -648,43 +637,6 @@ export function AboutPage() {
       setRateLimitingLoading(false)
     }
   }
-
-  // Special mode handlers
-  const handleSpecialClick = async () => {
-    if (!specialSettings || specialSettingsLoading || specialActionLoading) return
-
-    if (specialSettings?.enabled) {
-      // Unchecking - disable immediately
-      setSpecialActionLoading(true)
-      try {
-        await updateSpecialSettings({ enabled: false })
-      } catch (error) {
-        console.error('Failed to disable special mode:', error)
-      } finally {
-        setSpecialActionLoading(false)
-      }
-    } else {
-      // Checking - require password first
-      setShowPasswordDialog(true)
-    }
-  }
-
-  const handlePasswordSuccess = () => {
-    setShowPasswordDialog(false)
-    setShowSpecialSettings(true)
-  }
-
-  const handleSettingsSave = async (settings: { enabled: boolean; hiddenPlugins: string[]; menuLocation: 'top-nav' | 'mobile-only' | 'hidden' }) => {
-    await updateSpecialSettings(settings)
-    setShowSpecialSettings(false)
-  }
-
-  const openSpecialSettings = () => {
-    if (specialSettings?.enabled) {
-      setShowSpecialSettings(true)
-    }
-  }
-
 
   return (
     <div style={{
@@ -1639,6 +1591,7 @@ export function AboutPage() {
               e.currentTarget.style.background = 'rgba(220, 38, 38, 0.05)'
               e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.3)'
             }}
+            onClick={() => setHardwarePopupOpen(false)}
             title="Advanced settings & configuration"
           >
             <DragonIcon size={16} />
@@ -1669,16 +1622,90 @@ export function AboutPage() {
                     )}
                   </>
                 )}
-                <MenuItem
-                  className="menu-item"
-                  render={<NavLink to={item.to} />}
-                >
-                  <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
-                  <div className="menu-item-content">
-                    <span className="menu-item-label">{item.label}</span>
-                    <span className="menu-item-desc">{item.description}</span>
+                {item.popupMenu === 'hardware-interfaces' ? (
+                  <div
+                    style={{ position: 'relative' }}
+                    onMouseEnter={() => setHardwarePopupOpen(true)}
+                    onMouseLeave={() => setHardwarePopupOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      className="menu-item"
+                      onClick={() => setHardwarePopupOpen(open => !open)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        background: 'transparent',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
+                        <div className="menu-item-content">
+                          <span className="menu-item-label">{item.label}</span>
+                          <span className="menu-item-desc">{item.description}</span>
+                        </div>
+                      </div>
+                      <CaretRight size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                    </button>
+                    {hardwarePopupOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: 'calc(100% + 8px)',
+                          top: 0,
+                          minWidth: 300,
+                          borderRadius: 12,
+                          border: '2px solid var(--primary)',
+                          background: 'var(--surface-2)',
+                          boxShadow: 'var(--shadow-strong)',
+                          padding: 6,
+                          zIndex: 1100,
+                        }}
+                      >
+                        {hardwareInterfaceMenuItems.map((hardwareItem) => (
+                          <NavLink
+                            key={`${hardwareItem.label}-${hardwareItem.to}-about`}
+                            to={hardwareItem.to}
+                            className="menu-item"
+                            style={{ textDecoration: 'none', color: '#ffffff' }}
+                            onClick={() => setHardwarePopupOpen(false)}
+                          >
+                            <hardwareItem.icon size={16} style={{ color: hardwareItem.color, flexShrink: 0 }} />
+                            <div className="menu-item-content">
+                              <span className="menu-item-label">{hardwareItem.label}</span>
+                              <span className="menu-item-desc">{hardwareItem.description}</span>
+                            </div>
+                          </NavLink>
+                        ))}
+                        <div
+                          style={{
+                            margin: '8px 10px 10px',
+                            border: '1px dashed rgba(96, 165, 250, 0.35)',
+                            borderRadius: 8,
+                            padding: '10px 12px',
+                            fontSize: 11,
+                            color: '#6b7280',
+                          }}
+                        >
+                          Reserved space for new hardware profiles.
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </MenuItem>
+                ) : (
+                  <MenuItem
+                    className="menu-item"
+                    render={<NavLink to={item.to} />}
+                  >
+                    <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
+                    <div className="menu-item-content">
+                      <span className="menu-item-label">{item.label}</span>
+                      <span className="menu-item-desc">{item.description}</span>
+                    </div>
+                  </MenuItem>
+                )}
               </div>
             ))}
             {rateLimiting && (
@@ -1720,60 +1747,6 @@ export function AboutPage() {
                 </MenuItem>
               </>
             )}
-            {specialSettings !== null && (
-              <>
-                <div style={{
-                  height: '1px',
-                  background: 'var(--border)',
-                  margin: '8px 0'
-                }} />
-                <MenuItem
-                  className="menu-item"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    cursor: specialSettingsLoading || specialActionLoading ? 'wait' : 'pointer',
-                    opacity: specialSettingsLoading || specialActionLoading ? 0.7 : 1,
-                  }}
-                  onClick={() => { void handleSpecialClick() }}
-                  disabled={specialSettingsLoading || specialActionLoading}
-                >
-                  <span style={{ fontSize: 12, fontWeight: 500 }}>✨ Special</span>
-                  <input
-                    type="checkbox"
-                    checked={specialSettings.enabled}
-                    readOnly
-                    style={{
-                      cursor: specialSettingsLoading || specialActionLoading ? 'wait' : 'pointer',
-                      width: 16,
-                      height: 16
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      void handleSpecialClick()
-                    }}
-                  />
-                </MenuItem>
-                {specialSettings.enabled && (
-                  <MenuItem
-                    className="menu-item"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '12px 16px',
-                    }}
-                    onClick={openSpecialSettings}
-                  >
-                    <Sliders size={14} style={{ color: '#60a5fa', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 500 }}>Configure Special Mode</span>
-                  </MenuItem>
-                )}
-              </>
-            )}
           </Menu>
         </MenuProvider>
         ) : (
@@ -1801,20 +1774,6 @@ export function AboutPage() {
           </button>
         )}
       </div>
-
-      {/* Password Dialog */}
-      <PasswordDialog
-        isOpen={showPasswordDialog}
-        onClose={() => setShowPasswordDialog(false)}
-        onSuccess={handlePasswordSuccess}
-      />
-
-      {/* Special Settings Dialog */}
-      <SpecialSettingsDialog
-        isOpen={showSpecialSettings}
-        onClose={() => setShowSpecialSettings(false)}
-        onSave={handleSettingsSave}
-      />
 
       {/* Shopping Search Dialog */}
       <ShoppingSearchDialog

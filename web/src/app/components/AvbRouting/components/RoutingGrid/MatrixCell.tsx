@@ -24,6 +24,8 @@ import ErrorIcon from '@mui/icons-material/Error';
 import LockIcon from '@mui/icons-material/Lock';
 import LinkIcon from '@mui/icons-material/Link';
 import { useRouting } from '../../context/RoutingContext';
+import { useAvbStreams } from '../../hooks/useAvbApi';
+import { getRouteStreams } from '../../utils/avbRouteStreams';
 import type { Endpoint, Route } from '../../types';
 
 interface MatrixCellProps {
@@ -57,6 +59,8 @@ export function MatrixCell({
   onMouseMove,
 }: MatrixCellProps) {
   const { state } = useRouting();
+  const { data: avbStreamsData } = useAvbStreams();
+  const routeFailoverStreams = route ? getRouteStreams(route, avbStreamsData?.streams || []) : [];
 
   const isConnected = route?.state === 'connected';
   const isConnecting = route?.state === 'connecting';
@@ -100,6 +104,25 @@ export function MatrixCell({
           SRP: {route.srp_reservation_id.slice(0, 8)}...
         </div>
       )}
+      {routeFailoverStreams.length > 0 && (
+        <div style={{ color: '#bbf7d0', marginTop: 4 }}>
+          AVB failover streams: {routeFailoverStreams.length}
+        </div>
+      )}
+      {routeFailoverStreams.map((stream) => {
+        const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
+        const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+
+        return (
+          <div key={stream.stream_id} style={{ marginTop: 4, color: '#e2e8f0' }}>
+            <div style={{ fontSize: '0.78em', fontWeight: 600 }}>{stream.stream_id}</div>
+            <div style={{ fontSize: '0.75em', opacity: 0.85 }}>Policy: {policy}</div>
+            <div style={{ fontSize: '0.75em', opacity: 0.85 }}>
+              Candidates: {candidates.length > 0 ? candidates.join(', ') : 'none'}
+            </div>
+          </div>
+        );
+      })}
     </div>
   ) : hasWarning ? (
     <div>

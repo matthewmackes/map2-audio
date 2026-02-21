@@ -99,6 +99,20 @@ struct AvbStreamStats {
             minLatencyNs.load(std::memory_order_relaxed)
         };
     }
+
+    void reset() {
+        framesSent.store(0, std::memory_order_relaxed);
+        framesReceived.store(0, std::memory_order_relaxed);
+        sendErrors.store(0, std::memory_order_relaxed);
+        receiveErrors.store(0, std::memory_order_relaxed);
+        underruns.store(0, std::memory_order_relaxed);
+        overruns.store(0, std::memory_order_relaxed);
+        timestampErrors.store(0, std::memory_order_relaxed);
+        sequenceErrors.store(0, std::memory_order_relaxed);
+        bytesTransferred.store(0, std::memory_order_relaxed);
+        maxLatencyNs.store(0, std::memory_order_relaxed);
+        minLatencyNs.store(INT64_MAX, std::memory_order_relaxed);
+    }
 };
 
 /**
@@ -144,7 +158,7 @@ public:
      * @param samples Interleaved audio samples (frameSize elements)
      * @param frameSize Number of samples (channels * samplesPerFrame)
      * @param timestamp PTP timestamp (nanoseconds)
-     * @return 0 on success, negative error code on failure
+     * @return 0 on success, 1 on transient backpressure, negative on hard failure
      */
     int sendFrame(const float* samples, size_t frameSize, uint64_t timestamp);
 
@@ -157,7 +171,7 @@ public:
      * @param maxFrameSize Maximum samples to read
      * @param actualFrameSize Output: actual samples received
      * @param timestamp Output: PTP timestamp (nanoseconds)
-     * @return 0 on success, negative error code on failure
+     * @return 0 on success, 1 when no frame is currently available, negative on hard failure
      */
     int receiveFrame(float* samples, size_t maxFrameSize,
                       size_t* actualFrameSize, uint64_t* timestamp);

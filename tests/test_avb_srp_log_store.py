@@ -252,3 +252,55 @@ def test_mark_release_returns_false_for_empty_or_missing_reservation(srp_store_d
 
     assert empty is False
     assert missing is False
+
+
+def test_list_admissions_paginates_across_pages(srp_store_db):
+    store = srp_store_db.store
+    base = datetime(2026, 2, 17, 0, 0, 0)
+
+    for idx in range(30):
+        _record_admission(
+            store,
+            admission_id=f"adm-{idx}",
+            decision="denied" if idx % 2 == 0 else "allowed",
+            endpoint="router.connect" if idx % 3 == 0 else "streams.start",
+            created_at=base + timedelta(seconds=idx),
+        )
+
+    page1 = asyncio.run(store.list_admissions(limit=10))
+    page2 = asyncio.run(store.list_admissions(limit=10, offset=10))
+    page3 = asyncio.run(store.list_admissions(limit=10, offset=20))
+
+    assert len(page1) == 10
+    assert len(page2) == 10
+    assert len(page3) == 10
+    assert page1[0]["admission_id"] == "adm-29"
+    assert page3[-1]["admission_id"] == "adm-0"
+
+
+def test_list_admissions_filters_and_paginates_combined(srp_store_db):
+    store = srp_store_db.store
+    base = datetime(2026, 2, 18, 0, 0, 0)
+
+    for idx in range(15):
+        _record_admission(
+            store,
+            admission_id=f"adm-filter-{idx}",
+            decision="denied" if idx % 2 == 0 else "allowed",
+            endpoint="router.connect" if idx % 2 == 0 else "streams.start",
+            created_at=base + timedelta(seconds=idx),
+        )
+
+    rows = asyncio.run(
+        store.list_admissions(
+            decision="denied",
+            endpoint="router.connect",
+            since=base - timedelta(seconds=5),
+            limit=3,
+            offset=2,
+        )
+    )
+
+    assert len(rows) == 3
+    assert all(r["decision"] == "denied" for r in rows)
+    assert all(r["endpoint"] == "router.connect" for r in rows)

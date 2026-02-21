@@ -9,6 +9,7 @@
 #include "AvbAudioIODevice.h"
 #include <cstring>
 #include <chrono>
+#include <ctime>
 
 namespace Map2Audio {
 
@@ -21,13 +22,17 @@ AvbAudioIODevice::AvbAudioIODevice(
     const std::string& interface,
     uint64_t streamId,
     const std::string& destMac,
-    AvbDirection direction)
+    AvbDirection direction,
+    uint32_t presentationOffsetUs,
+    uint8_t priority)
     : juce::AudioIODevice(deviceName, "AVB/TSN")
     , deviceName_(deviceName)
     , interface_(interface)
     , streamId_(streamId)
     , destMac_(destMac)
     , direction_(direction)
+    , presentationOffsetUs_(presentationOffsetUs)
+    , priority_(priority <= 7 ? priority : 7)
 {
     // Ring buffers created on-demand in open()
 }
@@ -136,8 +141,8 @@ juce::String AvbAudioIODevice::open(
         );
         config.bitDepth = 32; // Float is 32-bit
         config.samplesPerFrame = AVB_SAMPLES_PER_FRAME;
-        config.presentationOffsetUs = 2000; // 2ms presentation offset
-        config.priority = 3; // 802.1Q SR Class A
+        config.presentationOffsetUs = presentationOffsetUs_;
+        config.priority = priority_;
         config.enableTimestamping = true;
 
         avbStream_ = std::make_unique<AvbStream>(config);
@@ -271,7 +276,7 @@ juce::StringArray AvbAudioIODevice::getInputChannelNames() {
 
 int AvbAudioIODevice::getOutputLatencyInSamples() {
     // AVB presentation offset + buffer depth
-    return static_cast<int>((2000.0 / 1000000.0) * sampleRate_) + bufferSize_;
+    return static_cast<int>((static_cast<double>(presentationOffsetUs_) / 1000000.0) * sampleRate_) + bufferSize_;
 }
 
 int AvbAudioIODevice::getInputLatencyInSamples() {
@@ -293,6 +298,19 @@ bool AvbAudioIODevice::hasControlPanel() const {
 
 bool AvbAudioIODevice::showControlPanel() {
     return false;
+}
+
+AvbStreamStatsSnapshot AvbAudioIODevice::getAvbStreamStatsSnapshot() const {
+    if (!avbStream_) {
+        return {};
+    }
+    return avbStream_->getStats();
+}
+
+void AvbAudioIODevice::resetAvbStreamStats() {
+    if (avbStream_) {
+        avbStream_->resetStats();
+    }
 }
 
 // ============================================================================
@@ -398,9 +416,10 @@ void AvbAudioIODevice::networkThreadMain() {
                     // Ring buffer full - overrun
                     avbStream_->getMutableStats().overruns.fetch_add(1, std::memory_order_relaxed);
                 }
+            } else {
+                // receiveFrame() is currently non-blocking; avoid busy-spin when no packet is available.
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
             }
-
-            // No sleep needed - receiveFrame() blocks with timeout
         }
     }
 }
@@ -410,8 +429,16 @@ void AvbAudioIODevice::networkThreadMain() {
 // ============================================================================
 
 uint64_t AvbAudioIODevice::getPtpTimestamp() const {
-    // Get PTP time (nanoseconds since epoch)
-    // In real implementation, would read from PTP clock via clock_gettime(CLOCK_TAI)
+    // Prefer TAI time when available (aligned with PTP/gPTP domain).
+    struct timespec ts {};
+#ifdef CLOCK_TAI
+    if (clock_gettime(CLOCK_TAI, &ts) == 0) {
+        return (static_cast<uint64_t>(ts.tv_sec) * 1000000000ULL)
+            + static_cast<uint64_t>(ts.tv_nsec);
+    }
+#endif
+
+    // Fallback to system clock when TAI is unavailable.
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
