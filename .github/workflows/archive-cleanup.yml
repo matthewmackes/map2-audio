@@ -1,0 +1,70 @@
+name: Cleanup Archived Artifacts
+
+on:
+  schedule:
+    # Nightly at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prune archive artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const archivePrefix = "map2-audio-";
+            const keepRecentMs = 72 * 60 * 60 * 1000; // Keep all artifacts from last 72 hours.
+            const nowMs = Date.now();
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+              }
+            );
+
+            const archiveArtifacts = artifacts
+              .filter((artifact) => !artifact.expired && artifact.name.startsWith(archivePrefix))
+              .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+
+            const keepIds = new Set();
+            const keptByDay = new Map();
+
+            for (const artifact of archiveArtifacts) {
+              const createdMs = Date.parse(artifact.created_at);
+              const artifactAgeMs = nowMs - createdMs;
+
+              if (artifactAgeMs <= keepRecentMs) {
+                keepIds.add(artifact.id);
+                continue;
+              }
+
+              const utcDay = new Date(createdMs).toISOString().slice(0, 10);
+              if (!keptByDay.has(utcDay)) {
+                keptByDay.set(utcDay, artifact.id);
+                keepIds.add(artifact.id);
+              }
+            }
+
+            const artifactsToDelete = archiveArtifacts.filter((artifact) => !keepIds.has(artifact.id));
+
+            core.info(`Archive artifacts found: ${archiveArtifacts.length}`);
+            core.info(`Keeping: ${keepIds.size}`);
+            core.info(`Deleting: ${artifactsToDelete.length}`);
+
+            for (const artifact of artifactsToDelete) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+              core.info(`Deleted ${artifact.name} (${artifact.created_at})`);
+            }
