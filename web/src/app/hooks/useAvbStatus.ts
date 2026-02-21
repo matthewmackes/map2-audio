@@ -39,11 +39,81 @@ export interface AVBStream {
   stream_id: string;
   direction: 'talker' | 'listener';
   state: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
-  channels: number;
-  sample_rate: number;
+  channels?: number;
+  sample_rate?: number;
   buffer_size?: number;
   interface?: string;
   dest_mac?: string;
+  config?: Record<string, unknown>;
+  stats?: Record<string, unknown>;
+  error?: string | null;
+  health?: {
+    ready: boolean;
+    issues: string[];
+    interface: string;
+    ptp: {
+      available: boolean;
+      state: string | null;
+      offset_ns: number | null;
+      mean_path_delay_ns: number | null;
+      last_update: string | null;
+      error: string | null;
+    };
+    tsn: {
+      available: boolean;
+      interface: string | null;
+      mqprio_configured: boolean;
+      cbs_configured: boolean;
+      etf_configured: boolean;
+      vlan_configured: boolean;
+      error: string | null;
+    };
+  };
+  diagnostics?: {
+    effective_config: {
+      stream_id: string;
+      direction: 'talker' | 'listener';
+      interface: string;
+      channels: number;
+      sample_rate: number;
+      buffer_size: number;
+      presentation_offset_us: number;
+      priority: number;
+      dest_mac: string | null;
+      failover_policy: string;
+      interface_candidates: string[];
+    };
+    ptp_lock: {
+      locked: boolean;
+      state: string | null;
+      reason: string | null;
+      offset_ns: number | null;
+      mean_path_delay_ns: number | null;
+      last_update: string | null;
+    };
+    tsn_qdisc: {
+      available: boolean;
+      interface: string | null;
+      mqprio_configured: boolean;
+      cbs_configured: boolean;
+      etf_configured: boolean;
+      vlan_configured: boolean;
+      error: string | null;
+    };
+    srp: {
+      enabled: boolean;
+      required: boolean;
+      bound: boolean;
+      reservation_id: string | null;
+      admission_id: string | null;
+      metadata: Record<string, unknown>;
+    };
+  };
+  srp_binding?: {
+    reservation_id?: string | null;
+    admission_id?: string | null;
+    metadata?: Record<string, unknown>;
+  };
 }
 
 export interface AVBStreamsResponse {

@@ -24,6 +24,9 @@ jest.mock('../../hooks/useAvbApi', () => ({
   useAvbDevices: () => ({
     data: mockAvbDevicesData,
   }),
+  useAvbStreams: () => ({
+    data: { streams: [] },
+  }),
 }))
 
 function makeNode(overrides: Partial<AvbNode>): AvbNode {

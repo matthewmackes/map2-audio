@@ -11,19 +11,22 @@
  * - POST /api/avb/router/connect
  * - POST /api/avb/router/disconnect
  * - GET  /api/avb/router/stats
+ * - GET  /api/avb/devices
+ * - GET  /api/avb/avdecc/entities
+ * - GET  /api/avb/avdecc/stats
  */
 
 import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type {
   Endpoint,
   EndpointsResponse,
-  Route,
   ConnectionsResponse,
-  RoutingMatrix,
   RoutingMatrixResponse,
   StreamDirection,
   AvbDevicesResponse,
   AvbStreamsResponse,
+  AvbAvdeccEntitiesResponse,
+  AvbAvdeccStats,
 } from '../types';
 
 const API_BASE = '/api/avb';
@@ -225,6 +228,46 @@ export function useAvbDevices() {
     },
     refetchInterval: 5000,
     staleTime: 2000,
+  });
+}
+
+/**
+ * Fetch discovered AVDECC entities (third-party AVB devices).
+ */
+export function useAvdeccEntities() {
+  return useQuery<AvbAvdeccEntitiesResponse>({
+    queryKey: ['avb', 'avdecc', 'entities'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/avdecc/entities`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AVDECC entities: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    refetchInterval: 10000,
+    staleTime: 5000,
+  });
+}
+
+/**
+ * Fetch AVDECC protocol statistics.
+ */
+export function useAvdeccStats() {
+  return useQuery<AvbAvdeccStats>({
+    queryKey: ['avb', 'avdecc', 'stats'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/avdecc/stats`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AVDECC stats: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    refetchInterval: 10000,
+    staleTime: 5000,
   });
 }
 

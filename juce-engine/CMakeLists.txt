@@ -543,10 +543,17 @@ if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
 
     add_executable(avb_tests
         tests/AvbStreamManagerTests.cpp
+        Source/AvbStream.cpp
     )
-    target_compile_definitions(avb_tests PRIVATE HAS_AVB)
+    target_compile_definitions(avb_tests PRIVATE
+        HAS_AVB=1
+        BUILD_AVB_TESTS=1
+    )
     target_include_directories(avb_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source)
-    target_link_libraries(avb_tests PRIVATE Catch2::Catch2WithMain)
+    target_link_libraries(avb_tests PRIVATE
+        Catch2::Catch2WithMain
+        ${LIBCAP_LIBRARIES}
+    )
     add_test(NAME avb_tests COMMAND avb_tests)
 
     add_custom_target(check-avb

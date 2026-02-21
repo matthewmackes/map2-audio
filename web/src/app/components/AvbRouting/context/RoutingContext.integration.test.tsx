@@ -33,6 +33,9 @@ jest.mock('../hooks/useAvbApi', () => ({
   useAvbDevices: () => ({
     data: mockAvbDevicesData,
   }),
+  useAvbStreams: () => ({
+    data: { streams: [] },
+  }),
 }))
 
 jest.mock('../hooks/useNodeApi', () => ({

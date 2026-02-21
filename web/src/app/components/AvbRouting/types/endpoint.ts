@@ -96,6 +96,57 @@ export interface AvbDevicesResponse {
 }
 
 /**
+ * Runtime AVDECC entity discovery cache entry.
+ */
+export interface AvbAvdeccEntity {
+  entity_id: string;
+  entity_model_id: string;
+  entity_name: string;
+  firmware_version: string;
+  mac_address: string;
+  capabilities: {
+    talker_streams: number;
+    listener_streams: number;
+    is_audio_talker: boolean;
+    is_audio_listener: boolean;
+    gptp_supported: boolean;
+  };
+  ptp: {
+    grandmaster_id: string;
+    domain: number;
+  };
+  available: boolean;
+  last_seen: string;
+}
+
+/**
+ * AVDECC entity inventory response.
+ */
+export interface AvbAvdeccEntitiesResponse {
+  enabled: boolean;
+  entities: AvbAvdeccEntity[];
+  error?: string;
+}
+
+export interface AvbAvdeccProtocolStats {
+  messages_sent: number;
+  messages_received: number;
+}
+
+/**
+ * AVDECC protocol statistics.
+ */
+export interface AvbAvdeccStats {
+  enabled: boolean;
+  adp: AvbAvdeccProtocolStats;
+  acmp: AvbAvdeccProtocolStats;
+  aecp: AvbAvdeccProtocolStats;
+  entities_discovered: number;
+  connections_active: number;
+  error?: string;
+}
+
+/**
  * Stream transport health details derived from PTP + TSN snapshots.
  */
 export interface AvbStreamHealth {

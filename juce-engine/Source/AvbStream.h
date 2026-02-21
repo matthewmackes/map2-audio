@@ -140,6 +140,9 @@ public:
      * - libavtp initialization fails
      */
     explicit AvbStream(const AvbStreamConfig& config);
+#ifdef BUILD_AVB_TESTS
+    explicit AvbStream(const AvbStreamConfig& config, int testModeMarker);
+#endif
 
     /**
      * Destructor closes socket and frees resources.
@@ -175,6 +178,16 @@ public:
      */
     int receiveFrame(float* samples, size_t maxFrameSize,
                       size_t* actualFrameSize, uint64_t* timestamp);
+#ifdef BUILD_AVB_TESTS
+    size_t buildAvtpPacketForTest(const float* samples, size_t frameSize,
+                                  uint64_t timestamp, uint8_t sequenceOverride,
+                                  uint8_t* buffer, size_t bufferSize);
+    size_t decodeAvtpPacketForTest(const uint8_t* packet, size_t packetSize,
+                                   float* samples, size_t maxSamples,
+                                   uint64_t* timestamp);
+    uint8_t getNextSequenceForTest() const { return sequenceNum_; }
+    uint8_t getExpectedSequenceForTest() const { return expectedSequenceNum_; }
+#endif
 
     /**
      * Get stream statistics (lock-free, safe from any thread).

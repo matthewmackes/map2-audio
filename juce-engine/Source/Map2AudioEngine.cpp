@@ -561,6 +561,9 @@ bool Map2AudioEngine::createAvbStream(const AvbStreamRuntimeConfig& config, std:
     AvbManagedStream stream;
     stream.config = normalized;
     stream.running = false;
+#ifdef BUILD_AVB_TESTS
+    stream.lifecycleState = AvbStreamLifecycleState::Created;
+#endif
     stream.lastError.clear();
     stream.device = std::move(device);
 
@@ -582,6 +585,35 @@ bool Map2AudioEngine::createAvbStream(const AvbStreamRuntimeConfig& config, std:
 #endif
 }
 
+#ifdef BUILD_AVB_TESTS
+bool Map2AudioEngine::createAvbStreamForTest(const std::string& streamId) {
+#ifndef HAS_AVB
+    return false;
+#else
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    if (avbStreams_.count(streamId) > 0) {
+        return false;
+    }
+
+    AvbManagedStream stream;
+    stream.config.streamId = streamId;
+    stream.config.direction = "talker";
+    stream.config.channels = 2;
+    stream.config.sampleRate = 48000;
+    stream.config.bufferSize = 256;
+    stream.config.interfaceName = "lo";
+    stream.config.destMac = "91:e0:f0:00:0e:80";
+    stream.config.presentationOffsetUs = 2000;
+    stream.config.priority = 3;
+    stream.running = false;
+    stream.lifecycleState = AvbStreamLifecycleState::Created;
+    stream.isTestStream = true;
+    avbStreams_.emplace(streamId, std::move(stream));
+    return true;
+#endif
+}
+#endif
+
 bool Map2AudioEngine::startAvbStream(const std::string& streamId, std::string* error) {
 #ifndef HAS_AVB
     if (error != nullptr) {
@@ -599,6 +631,9 @@ bool Map2AudioEngine::startAvbStream(const std::string& streamId, std::string* e
     }
 
     if (it->second.running) {
+#ifdef BUILD_AVB_TESTS
+        it->second.lifecycleState = AvbStreamLifecycleState::Running;
+#endif
         if (error != nullptr) {
             error->clear();
         }
@@ -607,6 +642,17 @@ bool Map2AudioEngine::startAvbStream(const std::string& streamId, std::string* e
 
     if (it->second.device == nullptr || !it->second.device->isOpen()) {
         it->second.lastError = "Stream device is not initialized";
+#ifdef BUILD_AVB_TESTS
+        if (it->second.isTestStream) {
+            it->second.running = true;
+            it->second.lifecycleState = AvbStreamLifecycleState::Running;
+            it->second.lastError.clear();
+            if (error != nullptr) {
+                error->clear();
+            }
+            return true;
+        }
+#endif
         if (error != nullptr) {
             *error = it->second.lastError;
         }
@@ -617,6 +663,9 @@ bool Map2AudioEngine::startAvbStream(const std::string& streamId, std::string* e
     if (!it->second.device->isPlaying()) {
         const std::string deviceError = it->second.device->getLastError().toStdString();
         it->second.lastError = deviceError.empty() ? "Failed to start AVB stream device" : deviceError;
+#ifdef BUILD_AVB_TESTS
+        it->second.lifecycleState = AvbStreamLifecycleState::Error;
+#endif
         if (error != nullptr) {
             *error = it->second.lastError;
         }
@@ -624,6 +673,9 @@ bool Map2AudioEngine::startAvbStream(const std::string& streamId, std::string* e
     }
 
     it->second.running = true;
+#ifdef BUILD_AVB_TESTS
+    it->second.lifecycleState = AvbStreamLifecycleState::Running;
+#endif
     it->second.stats = AvbStreamRuntimeStats{};
     it->second.startedAt = std::chrono::steady_clock::now();
     it->second.lastError.clear();
@@ -654,6 +706,9 @@ bool Map2AudioEngine::stopAvbStream(const std::string& streamId, std::string* er
         it->second.device->stop();
         if (it->second.device->isPlaying()) {
             it->second.lastError = "Failed to stop AVB stream device";
+#ifdef BUILD_AVB_TESTS
+            it->second.lifecycleState = AvbStreamLifecycleState::Error;
+#endif
             if (error != nullptr) {
                 *error = it->second.lastError;
             }
@@ -678,6 +733,9 @@ bool Map2AudioEngine::stopAvbStream(const std::string& streamId, std::string* er
     }
 
     it->second.running = false;
+#ifdef BUILD_AVB_TESTS
+    it->second.lifecycleState = AvbStreamLifecycleState::Stopped;
+#endif
     it->second.lastError.clear();
     if (error != nullptr) {
         error->clear();
@@ -803,6 +861,18 @@ std::vector<std::string> Map2AudioEngine::listAvbStreams() const {
     }
     return streamIds;
 }
+
+#ifdef BUILD_AVB_TESTS
+std::optional<Map2AudioEngine::AvbStreamLifecycleState> Map2AudioEngine::getAvbStreamStateForTest(
+    const std::string& streamId) const {
+    std::lock_guard<std::mutex> guard(avbStreamsMutex_);
+    auto it = avbStreams_.find(streamId);
+    if (it == avbStreams_.end()) {
+        return std::nullopt;
+    }
+    return it->second.lifecycleState;
+}
+#endif
 
 std::vector<std::string> Map2AudioEngine::getAvbDeviceNames() {
     std::vector<std::string> names;

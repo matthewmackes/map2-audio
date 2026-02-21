@@ -521,7 +521,7 @@ function RouteInfo({
       )}
       <ListItem>
         <ListItemText
-          primary="Failover Policies"
+          primary="Route Failover Policies"
           secondary={failoverStreams.length > 0 ? failoverPolicySummary : 'No stream diagnostics available'}
         />
       </ListItem>

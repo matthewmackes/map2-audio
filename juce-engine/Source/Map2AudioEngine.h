@@ -131,6 +131,15 @@ public:
         int64_t maxLatencyNs = 0;
         int64_t minLatencyNs = 0;
     };
+#ifdef BUILD_AVB_TESTS
+    enum class AvbStreamLifecycleState {
+        Unknown = 0,
+        Created,
+        Running,
+        Stopped,
+        Error
+    };
+#endif
 
     struct AvbInterfaceInfo {
         std::string interfaceName;
@@ -155,6 +164,9 @@ public:
 
     bool isAvbAvailable() const;
     bool createAvbStream(const AvbStreamRuntimeConfig& config, std::string* error = nullptr);
+#ifdef BUILD_AVB_TESTS
+    bool createAvbStreamForTest(const std::string& streamId);
+#endif
     bool startAvbStream(const std::string& streamId, std::string* error = nullptr);
     bool stopAvbStream(const std::string& streamId, std::string* error = nullptr);
     bool deleteAvbStream(const std::string& streamId, std::string* error = nullptr);
@@ -163,6 +175,10 @@ public:
         std::string* error = nullptr) const;
     bool resetAvbStreamStats(const std::string& streamId, std::string* error = nullptr);
     std::vector<std::string> listAvbStreams() const;
+#ifdef BUILD_AVB_TESTS
+    std::optional<AvbStreamLifecycleState> getAvbStreamStateForTest(
+        const std::string& streamId) const;
+#endif
     std::vector<std::string> getAvbDeviceNames();
     int getAvbDeviceCount();
     AvbInterfaceInfo getAvbInterfaceInfo(const std::string& interfaceName);
@@ -1213,10 +1229,14 @@ private:
 
     struct AvbManagedStream {
         AvbStreamRuntimeConfig config;
+        bool isTestStream = false;
         bool running = false;
         AvbStreamRuntimeStats stats;
         std::string lastError;
         std::chrono::steady_clock::time_point startedAt{};
+#ifdef BUILD_AVB_TESTS
+        AvbStreamLifecycleState lifecycleState = AvbStreamLifecycleState::Unknown;
+#endif
 #ifdef HAS_AVB
         std::unique_ptr<Map2Audio::AvbAudioIODevice> device;
 #endif

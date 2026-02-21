@@ -23,8 +23,68 @@
 
 #include <cstring>
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 
 namespace Map2Audio {
+
+namespace {
+
+constexpr size_t kAvtpHeaderSize = 24;
+constexpr size_t kAvtpTimestampOffset = 16;
+constexpr size_t kAvtpSequenceOffset = 15;
+constexpr size_t kAvtpTimestampValidOffset = 14;
+constexpr uint8_t kAvtpTimestampValidBit = 0x80;
+constexpr uint8_t kTestModeEnabled = 1;
+
+void writeU64BE(uint8_t* destination, uint64_t value) {
+    for (size_t index = 0; index < 8; ++index) {
+        destination[index] = static_cast<uint8_t>(value >> (56 - (index * 8)));
+    }
+}
+
+uint64_t readU64BE(const uint8_t* source) {
+    uint64_t value = 0;
+    for (size_t index = 0; index < 8; ++index) {
+        value = (value << 8) | static_cast<uint64_t>(source[index]);
+    }
+    return value;
+}
+
+uint64_t getCurrentPtpTimestampNs() {
+#ifdef CLOCK_TAI
+    struct timespec ts {};
+    if (clock_gettime(CLOCK_TAI, &ts) == 0) {
+        return (static_cast<uint64_t>(ts.tv_sec) * 1000000000ULL) +
+               static_cast<uint64_t>(ts.tv_nsec);
+    }
+#endif
+
+    const auto now = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
+}
+
+void updateLatencyCounters(std::atomic<int64_t>& maxLatencyNs,
+                          std::atomic<int64_t>& minLatencyNs,
+                          int64_t latencyNs) {
+    if (latencyNs < 0) {
+        return;
+    }
+
+    int64_t currentMax = maxLatencyNs.load(std::memory_order_relaxed);
+    while (latencyNs > currentMax &&
+           !maxLatencyNs.compare_exchange_weak(currentMax, latencyNs, std::memory_order_release, std::memory_order_relaxed)) {
+        // keep retrying
+    }
+
+    int64_t currentMin = minLatencyNs.load(std::memory_order_relaxed);
+    while (latencyNs < currentMin &&
+           !minLatencyNs.compare_exchange_weak(currentMin, latencyNs, std::memory_order_release, std::memory_order_relaxed)) {
+        // keep retrying
+    }
+}
+
+} // namespace
 
 // ============================================================================
 // Constructor / Destructor
@@ -70,6 +130,37 @@ AvbStream::AvbStream(const AvbStreamConfig& config)
         }
     }
 }
+
+#ifdef BUILD_AVB_TESTS
+AvbStream::AvbStream(const AvbStreamConfig& config, int testModeMarker)
+    : config_(config)
+    , socketFd_(-1)
+    , ifIndex_(-1)
+    , maxPduSize_(MAX_PDU_SIZE)
+    , avtpStream_(nullptr)
+    , sequenceNum_(0)
+    , expectedSequenceNum_(0)
+{
+    if (testModeMarker != kTestModeEnabled) {
+        throw AvbConfigException("Invalid test mode marker");
+    }
+
+    if (config_.interface.empty()) {
+        throw AvbConfigException("Interface not specified");
+    }
+    if (config_.channels == 0 || config_.channels > MAX_CHANNELS) {
+        throw AvbConfigException("Invalid channel count: " + std::to_string(config_.channels));
+    }
+    if (config_.samplesPerFrame == 0 || config_.samplesPerFrame > MAX_SAMPLES_PER_FRAME) {
+        throw AvbConfigException("Invalid samples per frame: " + std::to_string(config_.samplesPerFrame));
+    }
+    if (config_.bitDepth != 16 && config_.bitDepth != 24 && config_.bitDepth != 32) {
+        throw AvbConfigException("Invalid bit depth (must be 16, 24, or 32): " + std::to_string(config_.bitDepth));
+    }
+
+    pduBuffer_.resize(maxPduSize_);
+}
+#endif
 
 AvbStream::~AvbStream() {
     if (socketFd_ >= 0) {
@@ -213,6 +304,10 @@ int AvbStream::sendFrame(const float* samples, size_t frameSize, uint64_t timest
         return -1; // Not a talker stream
     }
 
+    if (timestamp == 0) {
+        stats_.timestampErrors.fetch_add(1, std::memory_order_relaxed);
+    }
+
     // Convert samples to AVTP AAF PDU
     size_t pduSize = convertToAvtp(samples, frameSize, timestamp);
     if (pduSize == 0) {
@@ -287,13 +382,16 @@ size_t AvbStream::convertToAvtp(const float* samples, size_t frameSize, uint64_t
     // Convert float samples to integer format
     const size_t bytesPerSample = config_.bitDepth / 8;
     const size_t payloadSize = frameSize * bytesPerSample;
-    const size_t avtpHeaderSize = 24; // AVTP AAF header size
+    const size_t avtpHeaderSize = kAvtpHeaderSize; // AVTP AAF header size
 
     if (avtpHeaderSize + payloadSize > maxPduSize_) {
         return 0; // PDU too large
     }
 
+    uint8_t* header = pduBuffer_.data();
     uint8_t* payload = pduBuffer_.data() + avtpHeaderSize;
+
+    std::memset(header, 0, avtpHeaderSize);
 
     // Convert based on bit depth
     if (config_.bitDepth == 32) {
@@ -322,29 +420,40 @@ size_t AvbStream::convertToAvtp(const float* samples, size_t frameSize, uint64_t
         }
     }
 
+    header[kAvtpTimestampValidOffset] = kAvtpTimestampValidBit;
+    writeU64BE(header + kAvtpTimestampOffset, timestamp);
+    header[kAvtpSequenceOffset] = sequenceNum_;
+
     return avtpHeaderSize + payloadSize;
 }
 
 size_t AvbStream::convertFromAvtp(const uint8_t* pdu, size_t pduSize,
                                    float* samples, uint64_t* timestamp) {
-    // Parse AVTP AAF header
-    // In real implementation, use libavtp:
-    // uint64_t streamId, ts;
-    // uint8_t seqNum;
-    // avtp_aaf_pdu_get(pdu, AVTP_AAF_FIELD_STREAM_ID, &streamId);
-    // avtp_aaf_pdu_get(pdu, AVTP_AAF_FIELD_TIMESTAMP, &ts);
-    // avtp_aaf_pdu_get(pdu, AVTP_AAF_FIELD_SEQ_NUM, &seqNum);
-    // *timestamp = ts;
-
-    // Check sequence number (detect packet loss)
-    // if (seqNum != expectedSequenceNum_) {
-    //     stats_.sequenceErrors.fetch_add(1, std::memory_order_relaxed);
-    // }
-    // expectedSequenceNum_ = (seqNum + 1) & 0xFF;
-
-    const size_t avtpHeaderSize = 24;
+    const size_t avtpHeaderSize = kAvtpHeaderSize;
     if (pduSize < avtpHeaderSize) {
         return 0; // PDU too small
+    }
+
+    const uint8_t packetFlags = pdu[kAvtpTimestampValidOffset];
+    const uint8_t packetSequence = pdu[kAvtpSequenceOffset];
+    const uint64_t packetTimestamp = readU64BE(pdu + kAvtpTimestampOffset);
+    if (timestamp != nullptr) {
+        *timestamp = packetTimestamp;
+    }
+
+    if ((packetFlags & kAvtpTimestampValidBit) == 0 || packetTimestamp == 0) {
+        stats_.timestampErrors.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    if (packetSequence != expectedSequenceNum_) {
+        stats_.sequenceErrors.fetch_add(1, std::memory_order_relaxed);
+    }
+    expectedSequenceNum_ = static_cast<uint8_t>(packetSequence + 1);
+
+    if (packetTimestamp != 0) {
+        const uint64_t nowNs = getCurrentPtpTimestampNs();
+        const int64_t packetLatencyNs = static_cast<int64_t>(nowNs - packetTimestamp);
+        updateLatencyCounters(stats_.maxLatencyNs, stats_.minLatencyNs, packetLatencyNs);
     }
 
     const uint8_t* payload = pdu + avtpHeaderSize;
@@ -379,6 +488,38 @@ size_t AvbStream::convertFromAvtp(const uint8_t* pdu, size_t pduSize,
 
     return numSamples;
 }
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+#ifdef BUILD_AVB_TESTS
+size_t AvbStream::buildAvtpPacketForTest(const float* samples, size_t frameSize, uint64_t timestamp,
+                                        uint8_t sequenceOverride, uint8_t* buffer, size_t bufferSize) {
+    const uint8_t previousSequence = sequenceNum_;
+    sequenceNum_ = sequenceOverride;
+
+    const size_t packedSize = convertToAvtp(samples, frameSize, timestamp);
+    sequenceNum_ = previousSequence;
+
+    if (packedSize == 0 || packedSize > bufferSize || buffer == nullptr) {
+        return 0;
+    }
+
+    std::memcpy(buffer, pduBuffer_.data(), packedSize);
+    return packedSize;
+}
+
+size_t AvbStream::decodeAvtpPacketForTest(const uint8_t* packet, size_t packetSize,
+                                         float* samples, size_t maxSamples, uint64_t* timestamp) {
+    if (packet == nullptr || samples == nullptr || maxSamples == 0) {
+        return 0;
+    }
+
+    const size_t samplesRead = convertFromAvtp(packet, packetSize, samples, timestamp);
+    return std::min(samplesRead, maxSamples);
+}
+#endif
 
 // ============================================================================
 // Statistics Methods
