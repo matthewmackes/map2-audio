@@ -1,21 +1,41 @@
-[Why? It started as a digital pedal board]
-Most modern bands are already operating in a digital signal chain. Guitar modelers digital mixers drum triggers MIDI controllers resulting in
-in-ear systems, Front-Of-House Mix, Multitrack, or ReAmpable Signals.
-Every modern capture of a musical instrument, everything, converts to digital almost immediately. So, With A LOT of help from AI I have used open-source technologies to extend that idea to its logical conclusion:
-[What? Effects Processor that scales in all directions. Open-source. Headless Appliance]
-Imagine a centralized digital audio backbone with sufficient I/O to handle the entire band simultaneously-microphones, line inputs, MIDI keyboards, drum triggers, amp modelers-everything. Every performer plugs into the same system. All routing, monitoring, processing, and recording happen inside a shared digital environment.
-No redundant interfaces. No repeated A/D and D/A conversions. No audio leaving and re-entering the digital domain.
-The signal path remains coherent, clocked, and lossless from input to archive. That's technically optimal.
-However, placing a full desktop DAW in every rehearsal room, studio, or performance space is expensive, fragile, and operationally heavy. A general-purpose Desktop PC introduces unnecessary overhead: OS maintenance, UI complexity, background processes, and failure points that have nothing to do with audio. Musicians love an appliance. 
-
-[How: This is where Mackes Audio Platform 2 (MAP2) (A platform installed on Fedora Server OS) fits.
-Use a SFF PC to place two NODEs in one Audio Rack Space. Supercomputer Audio Superpowers.
-MAP2 provides the core advantages of a unified digital environment-centralized I/O, shared routing, synchronized processing, direct capture-without the bulk and instability of a full computer-based DAW at every node. Every node auto-connects over AVB (over Ethernet) if the NIC is available, and/or creates a full clustered API experience for management at all levels. 
-Think of it as a purpose-built digital audio infrastructure rather than a workstation. It's not "a DAW in every room." It's a shared, deterministic audio platform (1 Node, or 100 Nodes) that every member of the band uses as a personal Digital Signal Chain or 10, and these live in real-time on, or accost nodes. One universal platform to rule them all. LV2 (VST3 Windows and Linux Capable) , NAM, Convolution Reverb, Modulation, Filter, and Time effects are all native and built. 
-One SFF PC, Gen 7 I5, 16GB RAM, 40GB Disk = 25+ real-time effects in a stereo stream (Lab, Educational Testing Only). 
-Then Multiply by faster machines, more ram, more machines.  
-It is a fun project, maintained by one person. 
-It continues to allow me to train on DevSecOps principles and AI methods, while building something I enjoy tinkering with. Thank you - Matt
+> [!IMPORTANT]
+> **Why? It started as a digital pedal board**
+>
+> Most modern bands are already operating in a digital signal chain. Guitar modelers, digital mixers, drum triggers, MIDI controllers, resulting in in-ear systems, Front-Of-House Mix, Multitrack, or ReAmpable Signals.
+>
+> Every modern capture of a musical instrument, everything, converts to digital almost immediately.
+>
+> So, With A LOT of help from AI I have used open-source technologies to extend that idea to its logical conclusion:
+>
+> **What? Effects Processor that scales in all directions. Open-source. Headless Appliance**
+>
+> Imagine a centralized digital audio backbone with sufficient I/O to handle the entire band simultaneously-microphones, line inputs, MIDI keyboards, drum triggers, amp modelers-everything. Every performer plugs into the same system. All routing, monitoring, processing, and recording happen inside a shared digital environment.
+>
+> No redundant interfaces. No repeated A/D and D/A conversions. No audio leaving and re-entering the digital domain.
+>
+> The signal path remains coherent, clocked, and lossless from input to archive. That's technically optimal.
+>
+> However, placing a full desktop DAW in every rehearsal room, studio, or performance space is expensive, fragile, and operationally heavy. A general-purpose Desktop PC introduces unnecessary overhead: OS maintenance, UI complexity, background processes, and failure points that have nothing to do with audio. Musicians love an appliance.
+>
+> **How: This is where Mackes Audio Platform 2 (MAP2) (A platform installed on Fedora Server OS) fits.**
+>
+> Use a SFF PC to place two NODEs in one Audio Rack Space. Supercomputer Audio Superpowers.
+>
+> MAP2 provides the core advantages of a unified digital environment-centralized I/O, shared routing, synchronized processing, direct capture-without the bulk and instability of a full computer-based DAW at every node. Every node auto-connects over AVB (over Ethernet) if the NIC is available, and/or creates a full clustered API experience for management at all levels.
+>
+> Think of it as a purpose-built digital audio infrastructure rather than a workstation. It's not "a DAW in every room." It's a shared, deterministic audio platform (1 Node, or 100 Nodes) that every member of the band uses as a personal Digital Signal Chain or 10, and these live in real-time on, or accost nodes.
+>
+> One universal platform to rule them all. LV2 (VST3 Windows and Linux Capable), NAM, Convolution Reverb, Modulation, Filter, and Time effects are all native and built.
+>
+> One SFF PC, Gen 7 I5, 16GB RAM, 40GB Disk = 25+ real-time effects in a stereo stream (Lab, Educational Testing Only).
+>
+> Then Multiply by faster machines, more ram, more machines.
+>
+> It is a fun project, maintained by one person.
+>
+> It continues to allow me to train on DevSecOps principles and AI methods, while building something I enjoy tinkering with.
+>
+> Thank you - Matt
 
 
 <p align="center">
