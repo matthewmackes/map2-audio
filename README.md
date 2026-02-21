@@ -47,7 +47,18 @@ It continues to allow me to train on DevSecOps principles and AI methods, while 
   <img src="docs/images/10000FOOT-MAP2.png" alt="MAP2 10,000-foot overview" width="900">
 </p>
 
-## What is MAP2?
+## Quick Navigation
+
+- [Platform Overview](#platform-overview)
+- [Architecture and Stack](#architecture-and-stack)
+- [Setup and Launch](#setup-and-launch)
+- [Repository Snapshot](#repository-snapshot)
+- [Contributing](#contributing)
+- [Legal](#legal)
+
+---
+
+## Platform Overview
 
 **MAP2** (Mackes Audio Platform 2) is an enterprise-grade, real-time audio processing system that transforms commodity Linux hardware into a professional-grade guitar/audio processor. It combines a **C++ JUCE audio engine**, **Python FastAPI backend**, and **React web dashboard** into a unified platform.
 
@@ -70,7 +81,7 @@ All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, 
 
 ---
 
-## Tech Stack
+## Architecture and Stack
 
 | Layer | Technology |
 |:------|:-----------|
@@ -85,7 +96,7 @@ All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, 
 
 ---
 
-## Quick Start
+## Setup and Launch
 
 ```bash
 # Clone the repo
@@ -116,7 +127,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 
 ---
 
-## Project Stats
+## Repository Snapshot
+
+> [!NOTE]
+> The sections below are updated automatically by repository workflows.
+
+### Project Stats
 
 <!-- PROJECT-STATS:START -->
 **550** Python | **774** TypeScript | **250** C++/H | **94** Docs | **311** total commits | **0** stars | **0** forks | **0** open issues
@@ -124,7 +140,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 
 ---
 
-## Recent Documentation
+### Recent Documentation
 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
@@ -141,7 +157,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 
 ---
 
-## Gallery
+### Gallery
 
 <!-- GALLERY:START -->
 |  |  |  |
@@ -155,7 +171,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 
 ---
 
-## Recent Activity
+### Recent Activity
 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
@@ -172,7 +188,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 
 ---
 
-## Built With
+### Built With
 
 <!-- CREDITS:START -->
 | Project | Role |
@@ -209,7 +225,7 @@ cd juce-engine && cmake -B build      # C++ engine
 
 ---
 
-## Legal Disclaimer
+## Legal
 
 This project is a **strictly non-commercial, educational, source-available resource** created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes. It is not affiliated with, endorsed by, or connected to any commercial manufacturer or brand owner in the professional audio industry. All trademarks and product names are the property of their respective owners and are referenced solely for educational and descriptive purposes.
 

@@ -223,6 +223,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Right: Advanced Menu (conditional) + About + Hamburger Menu */}
         <div className="nav-tabs-right-container">
           <nav className="nav-tabs-right" aria-label="Settings navigation">
+            {rightNavItems.map(renderNavItem)}
             {/* Advanced Menu - only shown when Special is enabled and location is top-nav */}
             {showAdvancedMenu && showInTopNav && (
               <div style={{ position: 'relative' }} ref={advancedMenuRef}>
@@ -430,8 +431,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </div>
             )}
-            
-            {rightNavItems.map(renderNavItem)}
+
             <button
               type="button"
               className="nav-tab-item nav-tab-special"

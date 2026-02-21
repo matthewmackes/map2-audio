@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAP2 Gemini Guide"
+  short_description: "MAP2 Audio engineering standards and workflow reference"
+  default_prompt: "Apply MAP2 Gemini repository guidance to this MAP2 task, including commands and architecture conventions."

@@ -77,6 +77,7 @@ export interface AvbDiscoveredDevice {
   direction: StreamDirection;
   device_type: DeviceType;
   node_address: string;
+  host?: string;
   audio_format: string;
   channels: number;
   sample_rate: number;

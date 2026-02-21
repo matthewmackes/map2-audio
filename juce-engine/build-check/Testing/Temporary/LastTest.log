@@ -1,0 +1,22 @@
+Start testing: Feb 20 22:42 EST
+----------------------------------------------------------
+1/1 Testing: avb_tests
+1/1 Test: avb_tests
+Command: "/home/mm/map2-audio/juce-engine/build-check/avb_tests"
+Directory: /home/mm/map2-audio/juce-engine/build-check
+"avb_tests" start time: Feb 20 22:42 EST
+Output:
+----------------------------------------------------------
+Randomness seeded to: 3956000933
+===============================================================================
+All tests passed (37 assertions in 7 test cases)
+
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"avb_tests" end time: Feb 20 22:42 EST
+"avb_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Feb 20 22:42 EST

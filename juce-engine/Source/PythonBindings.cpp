@@ -1943,6 +1943,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 device.direction = readStr(entry, "direction");
                 device.deviceType = readStr(entry, "device_type", "deviceType");
                 device.nodeAddress = readStr(entry, "node_address", "nodeAddress");
+                device.host = readStr(entry, "host");
                 device.audioFormat = readStr(entry, "audio_format", "audioFormat");
                 device.channels = readInt(entry, "channels", 2);
                 device.sampleRate = readInt(entry, "sample_rate", 48000, "sampleRate");
@@ -2024,6 +2025,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 device.direction = readStr(entry, "direction");
                 device.deviceType = readStr(entry, "device_type", "deviceType");
                 device.nodeAddress = readStr(entry, "node_address", "nodeAddress");
+                device.host = readStr(entry, "host");
                 device.audioFormat = readStr(entry, "audio_format", "audioFormat");
                 device.channels = readInt(entry, "channels", 2);
                 device.sampleRate = readInt(entry, "sample_rate", 48000, "sampleRate");
@@ -2052,6 +2054,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 row["direction"] = device.direction;
                 row["device_type"] = device.deviceType;
                 row["node_address"] = device.nodeAddress;
+                row["host"] = device.host;
                 row["audio_format"] = device.audioFormat;
                 row["channels"] = device.channels;
                 row["sample_rate"] = device.sampleRate;
@@ -2062,6 +2065,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 row["deviceName"] = device.deviceName;
                 row["deviceType"] = device.deviceType;
                 row["nodeAddress"] = device.nodeAddress;
+                row["host"] = device.host;
                 row["audioFormat"] = device.audioFormat;
                 row["sampleRate"] = device.sampleRate;
 
@@ -2079,6 +2083,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 row["direction"] = device.direction;
                 row["device_type"] = device.deviceType;
                 row["node_address"] = device.nodeAddress;
+                row["host"] = device.host;
                 row["audio_format"] = device.audioFormat;
                 row["channels"] = device.channels;
                 row["sample_rate"] = device.sampleRate;
@@ -2087,6 +2092,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                 row["deviceName"] = device.deviceName;
                 row["deviceType"] = device.deviceType;
                 row["nodeAddress"] = device.nodeAddress;
+                row["host"] = device.host;
                 row["audioFormat"] = device.audioFormat;
                 row["sampleRate"] = device.sampleRate;
                 result.append(std::move(row));

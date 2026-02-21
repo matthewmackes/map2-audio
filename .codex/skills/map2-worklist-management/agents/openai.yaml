@@ -1,0 +1,4 @@
+interface:
+  display_name: "MAP2 Worklist Manager"
+  short_description: "Single-source canonical task list protocol for Cortex AL"
+  default_prompt: "Enforce the MAP2 canonical worklist rule: show top tasks, update statuses, and keep all work in one list."

@@ -10,6 +10,7 @@ Manages AVB/TSN audio streams:
 
 import logging
 from typing import Dict, List, Optional, Any, Tuple
+from urllib.parse import urlparse
 from dataclasses import dataclass, asdict, field
 from enum import Enum
 
@@ -589,6 +590,22 @@ class AvbService:
                 names.append(value)
         return sorted(set(names))
 
+    @staticmethod
+    def _parse_host(node_address: Optional[str]) -> str:
+        """Best-effort host extraction from an endpoint node address."""
+        if not node_address:
+            return ""
+        try:
+            parsed = urlparse(str(node_address))
+            host = (parsed.hostname or "").strip()
+            if host:
+                return host
+        except Exception:
+            pass
+
+        normalized = str(node_address).strip().split("/", 1)[0].split("@")[-1]
+        return normalized.split(":", 1)[0].strip()
+
     def get_discovered_devices(self) -> List[Dict[str, Any]]:
         """Get normalized discovered AVB endpoint cache from engine, if supported."""
         found, payload, _error = self._call_engine_stream_data_api(
@@ -611,6 +628,9 @@ class AvbService:
             device_type = str(item.get("device_type") or item.get("deviceType") or "unknown").strip().lower()
             node_address = str(item.get("node_address") or item.get("nodeAddress") or "").strip()
             audio_format = str(item.get("audio_format") or item.get("audioFormat") or "24-bit PCM").strip()
+            host = str(item.get("host") or item.get("hostname") or "").strip()
+            if not host:
+                host = self._parse_host(node_address)
             available = bool(item.get("available", True))
 
             try:
@@ -639,6 +659,7 @@ class AvbService:
                     "device_type": device_type,
                     "node_address": node_address,
                     "audio_format": audio_format or "24-bit PCM",
+                    "host": host,
                     "channels": channels,
                     "sample_rate": sample_rate,
                     "available": available,

@@ -465,9 +465,14 @@ class AvbRouter:
             return ""
         try:
             parsed = urlparse(node_address)
-            return (parsed.hostname or "").strip()
+            host = (parsed.hostname or "").strip()
+            if host:
+                return host
         except Exception:
-            return ""
+            pass
+
+        normalized = str(node_address).strip().split("/", 1)[0].split("@")[-1]
+        return normalized.split(":", 1)[0].strip()
 
     def _is_local_node_address(self, node_address: Optional[str]) -> bool:
         """Best-effort check whether a node address points to this host."""

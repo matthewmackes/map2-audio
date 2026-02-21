@@ -43,6 +43,7 @@ import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
 import type { AvbDiscoveredDevice, AvbNode, Endpoint, AvbStreamPayload } from '../../types';
 import { sortNodesForNavigation } from '../../utils/nodeSorting';
 import { getMap2StreamEndpointIds } from '../../utils/avbRouteStreams';
+import { resolveAvbHostLabel } from '../../utils/avbHost';
 
 const DRAWER_WIDTH = 280;
 
@@ -265,10 +266,12 @@ function NodeStatusBadge({ node, avbHealth }: { node: AvbNode; avbHealth: NodeAv
 interface EndpointItemProps {
   endpoint: Endpoint;
   nodeColor: string;
+  hostLabel?: string;
 }
 
-function EndpointItem({ endpoint, nodeColor }: EndpointItemProps) {
+function EndpointItem({ endpoint, nodeColor, hostLabel }: EndpointItemProps) {
   const isTalker = endpoint.direction === 'talker';
+  const hostText = hostLabel || '';
 
   return (
     <ListItem
@@ -290,7 +293,9 @@ function EndpointItem({ endpoint, nodeColor }: EndpointItemProps) {
       </ListItemIcon>
       <ListItemText
         primary={endpoint.device_name}
-        secondary={`${endpoint.channels}ch @ ${endpoint.sample_rate / 1000}k`}
+        secondary={hostText
+          ? `${endpoint.channels}ch @ ${endpoint.sample_rate / 1000}k • ${hostText}`
+          : `${endpoint.channels}ch @ ${endpoint.sample_rate / 1000}k`}
         primaryTypographyProps={{
           fontSize: 12,
           noWrap: true,
@@ -314,6 +319,7 @@ interface NodeTreeItemProps {
   isSelected: boolean;
   avbHealth: NodeAvbHealthSummary;
   avbFailover: NodeAvbFailoverSummary;
+  discoveredHostByEndpointId: Map<string, string>;
   onSelect: () => void;
 }
 
@@ -323,6 +329,7 @@ function NodeTreeItem({
   isSelected,
   avbHealth,
   avbFailover,
+  discoveredHostByEndpointId,
   onSelect,
 }: NodeTreeItemProps) {
   const [expanded, setExpanded] = useState(false);
@@ -481,15 +488,20 @@ function NodeTreeItem({
       <Collapse id={endpointListId} in={expanded} timeout="auto" unmountOnExit>
         <List dense disablePadding>
           {/* Talkers */}
-          {talkers.length > 0 && (
-            <>
-              <ListItem sx={{ pl: 4, py: 0.5, bgcolor: 'action.hover' }}>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
-                  Talkers ({talkers.length})
+              {talkers.length > 0 && (
+                <>
+                  <ListItem sx={{ pl: 4, py: 0.5, bgcolor: 'action.hover' }}>
+                    <Typography variant="caption" fontWeight={600} color="text.secondary">
+                      Talkers ({talkers.length})
                 </Typography>
               </ListItem>
               {talkers.map((ep) => (
-                <EndpointItem key={ep.endpoint_id} endpoint={ep} nodeColor={node.color} />
+                <EndpointItem
+                  key={ep.endpoint_id}
+                  endpoint={ep}
+                  hostLabel={discoveredHostByEndpointId.get(ep.endpoint_id) || resolveAvbHostLabel(ep)}
+                  nodeColor={node.color}
+                />
               ))}
             </>
           )}
@@ -503,7 +515,12 @@ function NodeTreeItem({
                 </Typography>
               </ListItem>
               {listeners.map((ep) => (
-                <EndpointItem key={ep.endpoint_id} endpoint={ep} nodeColor={node.color} />
+                <EndpointItem
+                  key={ep.endpoint_id}
+                  endpoint={ep}
+                  hostLabel={discoveredHostByEndpointId.get(ep.endpoint_id) || resolveAvbHostLabel(ep)}
+                  nodeColor={node.color}
+                />
               ))}
             </>
           )}
@@ -539,6 +556,19 @@ export function NodeTree() {
   } = state.network.nodeSelection;
   const visibleNodes = showOfflineNodes ? nodes : nodes.filter((node) => node.status === 'online');
   const allEndpoints = Object.values((state.endpoints || {}) as Record<string, Endpoint>);
+  const discoveredHostByEndpointId = React.useMemo(() => {
+    const hostByEndpointId = new Map<string, string>();
+    const discovered = avbDevicesData?.discovered_devices || [];
+
+    discovered.forEach((device) => {
+      const hostLabel = resolveAvbHostLabel(device);
+      if (hostLabel) {
+        hostByEndpointId.set(device.endpoint_id, hostLabel);
+      }
+    });
+
+    return hostByEndpointId;
+  }, [avbDevicesData?.discovered_devices]);
   const nodeAvbHealthById = React.useMemo(
     () => buildNodeAvbHealthById(nodes, allEndpoints, avbDevicesData?.discovered_devices || []),
     [nodes, allEndpoints, avbDevicesData?.discovered_devices]
@@ -610,6 +640,7 @@ export function NodeTree() {
             isLocal={node.node_id === localNodeId}
             avbHealth={nodeAvbHealthById[node.node_id] || EMPTY_NODE_HEALTH}
             avbFailover={nodeAvbFailoverById[node.node_id] || EMPTY_NODE_FAILOVER}
+            discoveredHostByEndpointId={discoveredHostByEndpointId}
             isSelected={
               viewMode === 'single_node'
                 ? currentNodeId === node.node_id

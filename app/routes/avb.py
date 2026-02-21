@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
+from urllib.parse import urlparse
 
 from app.config import config_get
 from app.services.avb import is_avb_available
@@ -35,6 +36,22 @@ def _srp_enabled() -> bool:
 
 def _srp_required() -> bool:
     return _srp_enabled() and bool(config_get("avb.srp.required", True))
+
+
+def _extract_host_from_node_address(node_address: Optional[str]) -> str:
+    """Best-effort host extraction for endpoint-to-host display."""
+    if not node_address:
+        return ""
+
+    try:
+        parsed = urlparse(node_address)
+        host = (parsed.hostname or "").strip()
+        if host:
+            return host
+    except Exception:
+        pass
+
+    return node_address.strip().split("/", 1)[0].split("@")[-1].split(":")[0].strip()
 
 
 def _parse_since_timestamp(since: Optional[str]) -> Optional[datetime]:
@@ -1907,6 +1924,7 @@ async def get_router_endpoints(direction: Optional[str] = None) -> Dict[str, Any
                 "format": ep.format,
                 "mac_address": ep.mac_address,
                 "node_address": ep.node_address,
+                "host": _extract_host_from_node_address(ep.node_address),
                 "available": ep.available,
                 "last_seen": ep.last_seen.isoformat()
             }

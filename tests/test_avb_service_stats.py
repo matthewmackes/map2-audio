@@ -529,6 +529,7 @@ def test_get_device_inventory_normalizes_engine_payloads():
                     "deviceName": "Device-B",
                     "direction": "talker",
                     "deviceType": "map2",
+                    "host": "talker-node.local",
                     "channels": "2",
                     "sampleRate": "48000",
                     "available": True,
@@ -538,6 +539,7 @@ def test_get_device_inventory_normalizes_engine_payloads():
                     "device_name": "Device-A",
                     "direction": "invalid",
                     "device_type": "unexpected",
+                    "node_address": "http://listener-node.local:8080",
                     "channels": 0,
                     "sample_rate": -1,
                     "available": False,
@@ -557,6 +559,8 @@ def test_get_device_inventory_normalizes_engine_payloads():
     assert discovered[1]["direction"] == "talker"
     assert discovered[1]["device_type"] == "map2"
     assert discovered[1]["sample_rate"] == 48000
+    assert discovered[0]["host"] == "listener-node.local"
+    assert discovered[1]["host"] == "talker-node.local"
 
 
 def test_route_get_avb_devices_returns_inventory(monkeypatch):

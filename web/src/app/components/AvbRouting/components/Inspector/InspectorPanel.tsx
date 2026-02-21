@@ -25,6 +25,7 @@ import { useRoutingState } from '../../context/RoutingContext';
 import { useAvbDevices, useAvbStreams } from '../../hooks/useAvbApi';
 import type { AvbDiscoveredDevice, AvbStreamPayload } from '../../types';
 import { getRouteStreams } from '../../utils/avbRouteStreams';
+import { resolveAvbHostLabel } from '../../utils/avbHost';
 
 const PANEL_WIDTH = 300;
 
@@ -336,11 +337,21 @@ function EndpointInfo({
   endpoint: any;
   discoveredDevice: AvbDiscoveredDevice | null;
 }) {
+  const hostLabel = resolveAvbHostLabel(discoveredDevice || { node_address: endpoint.node_address });
+
   return (
     <List dense>
       <ListItem>
         <ListItemText primary="Name" secondary={endpoint.device_name} />
       </ListItem>
+      {hostLabel && (
+        <ListItem>
+          <ListItemText
+            primary="Host"
+            secondary={hostLabel}
+          />
+        </ListItem>
+      )}
       <ListItem>
         <ListItemText primary="Type" secondary={endpoint.device_type.toUpperCase()} />
       </ListItem>
@@ -388,6 +399,14 @@ function EndpointInfo({
           <ListItemText
             primary="Cached Format"
             secondary={`${discoveredDevice.channels}ch @ ${discoveredDevice.sample_rate / 1000}kHz • ${discoveredDevice.audio_format}`}
+          />
+        </ListItem>
+      )}
+      {discoveredDevice && discoveredDevice.host && (
+        <ListItem>
+          <ListItemText
+            primary="Cached Host"
+            secondary={discoveredDevice.host}
           />
         </ListItem>
       )}

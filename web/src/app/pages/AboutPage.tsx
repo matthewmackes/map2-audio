@@ -1,28 +1,10 @@
-import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, Package, Pulse, Palette, CaretDown, CaretRight, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, TrendUp } from '@phosphor-icons/react'
+import { GithubLogo, ArrowSquareOut, Info, MusicNote, Code, Lightning, DesktopTower, PenNib, Cpu, Package, Pulse, Palette, CaretDown, Scales, Database, Globe, Stack, Cube, Terminal, FileCode, Headphones, Broadcast, BookOpen, Shield, Heart, TrendUp } from '@phosphor-icons/react'
 import { useEffect, useState, useCallback } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Menu, MenuButton, MenuItem, MenuProvider } from '@ariakit/react'
 import { themes, themeOrder, applyTheme, getSavedThemeId, saveCustomTheme, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
 import type { Theme } from '../theme'
 import { ThemeCreatorDialog } from '../components/ThemeCreatorDialog'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
-import { advancedMenuItems, hardwareInterfaceMenuItems } from '../data/advancedMenuItems'
-
-// Dragon icon for "hic sunt dracones" menu
-const DragonIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M12 2C10.5 2 9 3 8.5 4.5C8 6 8.5 7.5 9.5 8.5L7 11C6 10.5 4.5 10.5 3.5 11.5C2.5 12.5 2.5 14 3 15L2 16L3 17L4 16C5 16.5 6.5 16.5 7.5 15.5L10 18C9 19 9 20.5 9.5 21.5C10 22.5 11.5 23 13 22.5C14.5 22 15.5 20.5 15.5 19L18.5 16C19.5 17 21 17 22 16C22 14.5 21.5 13 20 12.5L21 10L19.5 9.5L18.5 11C17.5 10.5 16 11 15 12L12.5 9.5C13.5 8.5 14 7 13.5 5.5C13 4 11.5 3 10 3"
-      stroke="#dc2626"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="#dc2626"
-      fillOpacity="0.2"
-    />
-    <circle cx="10" cy="5" r="1" fill="#dc2626" />
-  </svg>
-)
 
 interface VersionInfo {
   version?: string
@@ -41,10 +23,6 @@ interface BootSplashStatus {
   plymouth_installed?: boolean
   current_theme?: string
   is_active?: boolean
-}
-
-interface RateLimitingStatus {
-  enabled: boolean
 }
 
 interface ProjectCredit {
@@ -510,30 +488,15 @@ export function AboutPage() {
   const [bannerLoading, setBannerLoading] = useState(false)
   const [bootSplash, setBootSplash] = useState<BootSplashStatus | null>(null)
   const [splashLoading, setSplashLoading] = useState(false)
-  const [rateLimiting, setRateLimiting] = useState<RateLimitingStatus | null>(null)
-  const [rateLimitingLoading, setRateLimitingLoading] = useState(false)
   const [showThemeCreator, setShowThemeCreator] = useState(false)
   const [customThemes, setCustomThemes] = useState<Record<string, Theme>>({})
   const [currentTheme, setCurrentTheme] = useState(getSavedThemeId())
-  const [hardwarePopupOpen, setHardwarePopupOpen] = useState(false)
-  
   const [showShoppingDialog, setShowShoppingDialog] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
-  const [isPageLoaded, setIsPageLoaded] = useState(
-    () => typeof document !== 'undefined' && document.readyState === 'complete'
-  )
 
   const refreshCustomThemes = useCallback(() => {
     setCustomThemes(getCustomThemes())
   }, [])
-
-  useEffect(() => {
-    if (isPageLoaded) return
-
-    const onLoad = () => setIsPageLoaded(true)
-    window.addEventListener('load', onLoad, { once: true })
-    return () => window.removeEventListener('load', onLoad)
-  }, [isPageLoaded])
 
   useEffect(() => {
     fetch('/api/version')
@@ -552,12 +515,6 @@ export function AboutPage() {
       .then(r => r.json())
       .then(setBootSplash)
       .catch(() => setBootSplash({ installed: false }))
-
-    // Check rate limiting status
-    fetch('/api/system/rate-limiting')
-      .then(r => r.json())
-      .then(setRateLimiting)
-      .catch(() => setRateLimiting({ enabled: true }))
 
     // Load custom themes
     refreshCustomThemes()
@@ -617,24 +574,6 @@ export function AboutPage() {
       console.error('Failed to toggle boot splash:', e)
     } finally {
       setSplashLoading(false)
-    }
-  }
-
-  const toggleRateLimiting = async () => {
-    if (!rateLimiting || rateLimitingLoading) return
-    setRateLimitingLoading(true)
-    try {
-      const response = await fetch(`/api/system/rate-limiting?enabled=${!rateLimiting.enabled}`, {
-        method: 'POST'
-      })
-      const result = await response.json()
-      if (result.success) {
-        setRateLimiting({ enabled: result.enabled })
-      }
-    } catch (e) {
-      console.error('Failed to toggle rate limiting:', e)
-    } finally {
-      setRateLimitingLoading(false)
     }
   }
 
@@ -1558,221 +1497,6 @@ export function AboutPage() {
             </div>
           </NavLink>
         </div>
-      </div>
-
-      {/* Advanced Settings Menu (hic sunt dracones) - Bottom Button */}
-      <div style={{
-        marginTop: 32,
-        display: 'flex',
-        justifyContent: 'center'
-      }}>
-        {isPageLoaded ? (
-        <MenuProvider>
-          <MenuButton
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '12px 20px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-              border: '1px solid rgba(220, 38, 38, 0.3)',
-              background: 'rgba(220, 38, 38, 0.05)',
-              color: '#dc2626',
-              transition: 'all 150ms'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(220, 38, 38, 0.1)'
-              e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.5)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(220, 38, 38, 0.05)'
-              e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.3)'
-            }}
-            onClick={() => setHardwarePopupOpen(false)}
-            title="Advanced settings & configuration"
-          >
-            <DragonIcon size={16} />
-            <span>hic sunt dracones</span>
-            <CaretDown weight="bold" size={14} />
-          </MenuButton>
-          <Menu className="menu" gutter={8} style={{ minWidth: 260 }}>
-            {advancedMenuItems.map((item) => (
-              <div key={item.to}>
-                {item.dividerBefore && (
-                  <>
-                    <div style={{
-                      height: '1px',
-                      background: 'var(--border)',
-                      margin: '8px 0 0 0'
-                    }} />
-                    {item.group && (
-                      <div style={{
-                        padding: '6px 16px 2px',
-                        fontSize: '10px',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        color: '#71717a',
-                      }}>
-                        {item.group}
-                      </div>
-                    )}
-                  </>
-                )}
-                {item.popupMenu === 'hardware-interfaces' ? (
-                  <div
-                    style={{ position: 'relative' }}
-                    onMouseEnter={() => setHardwarePopupOpen(true)}
-                    onMouseLeave={() => setHardwarePopupOpen(false)}
-                  >
-                    <button
-                      type="button"
-                      className="menu-item"
-                      onClick={() => setHardwarePopupOpen(open => !open)}
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        background: 'transparent',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
-                        <div className="menu-item-content">
-                          <span className="menu-item-label">{item.label}</span>
-                          <span className="menu-item-desc">{item.description}</span>
-                        </div>
-                      </div>
-                      <CaretRight size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
-                    </button>
-                    {hardwarePopupOpen && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: 'calc(100% + 8px)',
-                          top: 0,
-                          minWidth: 300,
-                          borderRadius: 12,
-                          border: '2px solid var(--primary)',
-                          background: 'var(--surface-2)',
-                          boxShadow: 'var(--shadow-strong)',
-                          padding: 6,
-                          zIndex: 1100,
-                        }}
-                      >
-                        {hardwareInterfaceMenuItems.map((hardwareItem) => (
-                          <NavLink
-                            key={`${hardwareItem.label}-${hardwareItem.to}-about`}
-                            to={hardwareItem.to}
-                            className="menu-item"
-                            style={{ textDecoration: 'none', color: '#ffffff' }}
-                            onClick={() => setHardwarePopupOpen(false)}
-                          >
-                            <hardwareItem.icon size={16} style={{ color: hardwareItem.color, flexShrink: 0 }} />
-                            <div className="menu-item-content">
-                              <span className="menu-item-label">{hardwareItem.label}</span>
-                              <span className="menu-item-desc">{hardwareItem.description}</span>
-                            </div>
-                          </NavLink>
-                        ))}
-                        <div
-                          style={{
-                            margin: '8px 10px 10px',
-                            border: '1px dashed rgba(96, 165, 250, 0.35)',
-                            borderRadius: 8,
-                            padding: '10px 12px',
-                            fontSize: 11,
-                            color: '#6b7280',
-                          }}
-                        >
-                          Reserved space for new hardware profiles.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <MenuItem
-                    className="menu-item"
-                    render={<NavLink to={item.to} />}
-                  >
-                    <item.icon size={16} style={{ color: item.color, flexShrink: 0 }} />
-                    <div className="menu-item-content">
-                      <span className="menu-item-label">{item.label}</span>
-                      <span className="menu-item-desc">{item.description}</span>
-                    </div>
-                  </MenuItem>
-                )}
-              </div>
-            ))}
-            {rateLimiting && (
-              <>
-                <div style={{
-                  height: '1px',
-                  background: 'var(--border)',
-                  margin: '8px 0'
-                }} />
-                <MenuItem
-                  className="menu-item"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    cursor: rateLimitingLoading ? 'wait' : 'pointer',
-                    opacity: rateLimitingLoading ? 0.7 : 1
-                  }}
-                  onClick={() => { void toggleRateLimiting() }}
-                  disabled={rateLimitingLoading}
-                >
-                  <span style={{ fontSize: 12, fontWeight: 500 }}>🛡️ Rate Limiting</span>
-                  <input
-                    type="checkbox"
-                    checked={rateLimiting.enabled}
-                    readOnly
-                    style={{
-                      cursor: rateLimitingLoading ? 'wait' : 'pointer',
-                      width: 16,
-                      height: 16
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      void toggleRateLimiting()
-                    }}
-                  />
-                </MenuItem>
-              </>
-            )}
-          </Menu>
-        </MenuProvider>
-        ) : (
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '12px 20px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              border: '1px solid rgba(220, 38, 38, 0.3)',
-              background: 'rgba(220, 38, 38, 0.05)',
-              color: '#dc2626',
-              opacity: 0.7,
-              cursor: 'wait'
-            }}
-            disabled
-            aria-label="Loading advanced settings menu"
-          >
-            <DragonIcon size={16} />
-            <span>hic sunt dracones</span>
-            <CaretDown weight="bold" size={14} />
-          </button>
-        )}
       </div>
 
       {/* Shopping Search Dialog */}

@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { apiUrl, wsUrl } from '../utils/apiTarget'
 
 export interface SpecialSettings {
   enabled: boolean
@@ -37,7 +38,7 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
     setError(null)
     
     try {
-      const response = await fetch('/api/settings/special')
+      const response = await fetch(apiUrl('/api/settings/special'))
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -72,7 +73,7 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         menu_location: newSettings.menuLocation ?? settings?.menuLocation ?? 'top-nav',
       }
       
-      let response = await fetch('/api/settings/special', {
+      let response = await fetch(apiUrl('/api/settings/special'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,14 +134,13 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
   // When a node in the cluster updates special settings, all connected clients
   // are notified and reload settings automatically
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws/events`
+    const eventsWsUrl = wsUrl('/ws/events')
     let ws: WebSocket | null = null
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
     function connect() {
       try {
-        ws = new WebSocket(wsUrl)
+        ws = new WebSocket(eventsWsUrl)
 
         ws.onmessage = (event) => {
           try {

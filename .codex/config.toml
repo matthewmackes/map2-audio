@@ -1,0 +1,9 @@
+instructions = """
+MAP2 Audio project defaults:
+- Use skill `map2-gemini-instructions` for MAP2 engineering standards, commands, architecture rules, and memory/update protocol.
+- Use skill `map2-copilot-instructions` for user collaboration preferences, especially git push/sync behavior.
+- Use skill `map2-worklist-management` as the canonical project task protocol; keep one single source-of-truth worklist and enforce its response format unless the user says `DISABLE WORKLIST RULE`.
+- Treat `.gemini/instructions.md` and `.github/copilot-instructions.md` as canonical and update them when the user asks to remember durable fixes or patterns.
+"""
+
+project_root_markers = [".git", ".codex"]

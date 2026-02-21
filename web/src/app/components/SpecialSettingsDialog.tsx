@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, GearSix, Eye, EyeSlash, List, Monitor, DeviceMobile } from '@phosphor-icons/react'
+import { apiUrl } from '../utils/apiTarget'
 
 interface Plugin {
   uri: string
@@ -46,7 +47,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
 
   const loadCurrentSettings = async () => {
     try {
-      const response = await fetch('/api/settings/special')
+      const response = await fetch(apiUrl('/api/settings/special'))
       const data = await response.json()
       setHiddenPlugins(new Set(data.hidden_plugins || []))
       setMenuLocation(data.menu_location || 'top-nav')
@@ -60,7 +61,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
     setError('')
     
     try {
-      const response = await fetch('/api/plugins/discover')
+      const response = await fetch(apiUrl('/api/plugins/discover'))
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }

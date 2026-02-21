@@ -156,6 +156,7 @@ public:
         std::string direction;   // "talker" | "listener"
         std::string deviceType;  // "map2" | "avdecc" | "unknown"
         std::string nodeAddress;
+        std::string host;
         std::string audioFormat = "24-bit PCM";
         int channels = 2;
         int sampleRate = 48000;

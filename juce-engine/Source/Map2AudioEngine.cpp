@@ -895,7 +895,16 @@ std::vector<std::string> Map2AudioEngine::getAvbDeviceNames() {
             if (!device.available || device.deviceName.empty()) {
                 continue;
             }
-            names.push_back(device.deviceName);
+            if (device.host.empty()) {
+                names.push_back(device.deviceName);
+                continue;
+            }
+
+            const std::string host = device.host;
+            const std::string displayName = device.deviceName.find(host) == std::string::npos
+                ? device.deviceName + " [" + host + "]"
+                : device.deviceName;
+            names.push_back(displayName);
         }
     }
 
