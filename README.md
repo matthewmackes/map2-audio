@@ -120,7 +120,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ## Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **765** TypeScript | **243** C++/H | **90** Docs | **306** total commits | **0** stars | **0** forks | **0** open issues
+**550** Python | **774** TypeScript | **250** C++/H | **93** Docs | **309** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -130,12 +130,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [AVB-JUCE Plan 3 Implementation Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_JUCE_PLAN3_IMPLEMENTATION_PLAN.md) | 2026-02-20 |
+| [AVB Plan 3 Qualification – 2026-02-20](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_PLAN3_QUALIFICATION_2026-02-20.md) | 2026-02-20 |
+| [Full Build Checklist (Plan 3 AVB)](https://github.com/matthewmackes/map2-audio/blob/master/docs/BUILD_AVB_FULL.md) | 2026-02-20 |
 | [CENTRALIZED-BUG-FIX](https://github.com/matthewmackes/map2-audio/blob/master/docs/CENTRALIZED-BUG-FIX.md) | 2026-02-20 |
 | [MACKES AUDIO PLATFORM](https://github.com/matthewmackes/map2-audio/blob/master/docs/README_PLUGINS.md) | 2026-02-20 |
 | [VST3 Build Instructions for MAP2 Native Processors](https://github.com/matthewmackes/map2-audio/blob/master/docs/VST3-BUILD-INSTRUCTIONS-IMPROVED.md) | 2026-02-20 |
-| [AVB Routing Matrix - Implementation Status](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ROUTING_IMPLEMENTATION_STATUS.md) | 2026-02-19 |
-| [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-02-19 |
-| [Real-Time Safety Fixes - 2026-02-17](https://github.com/matthewmackes/map2-audio/blob/master/docs/RT_SAFETY_FIXES_2026-02-17.md) | 2026-02-19 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -161,14 +161,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bc732f3f`](https://github.com/matthewmackes/map2-audio/commit/bc732f3f19a726229b4df6bfb994c7190b4cac40) | Fix special auth unlock and advanced UI gating | Map2 Audio | 2026-02-20 |
+| [`1d6fc5be`](https://github.com/matthewmackes/map2-audio/commit/1d6fc5bec4bf0f925be86a11c7e4d1ffd33d65af) | New All-In-One Educational Use Only. | Matthew Mackes | 2026-02-20 |
+| [`1e9fa322`](https://github.com/matthewmackes/map2-audio/commit/1e9fa322e3ea0b14ff721c3034c3732db8d7d945) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-20 |
 | [`8f87f3c3`](https://github.com/matthewmackes/map2-audio/commit/8f87f3c379230acd36bdaa76cec1a8783e24d3f5) | docs: move 3 root markdown file(s) to docs/ | github-actions[bot] | 2026-02-20 |
 | [`b74763ae`](https://github.com/matthewmackes/map2-audio/commit/b74763aef8d26dfcfa117a778b6092e7ad5571ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`7e0b99a2`](https://github.com/matthewmackes/map2-audio/commit/7e0b99a261ae28047b06f22035308aa7bb6aeea4) | test: extend remote sync parity and preview lifecycle cov... | Map2 Audio | 2026-02-19 |
 | [`ddc5359b`](https://github.com/matthewmackes/map2-audio/commit/ddc5359bcb671f61a73420fbddab335776c71511) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 | [`bcbdb287`](https://github.com/matthewmackes/map2-audio/commit/bcbdb287296671222c2f9be90979e9da6ec190cc) | test: cover remote scene-sync race and quick-filter deter... | Map2 Audio | 2026-02-19 |
-| [`334b4b12`](https://github.com/matthewmackes/map2-audio/commit/334b4b1214e8ad0c70c82f9d57c7557855bca997) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
-| [`6448b0b0`](https://github.com/matthewmackes/map2-audio/commit/6448b0b04fc833b258a1cf5cf3fcbe429608596c) | test: expand remote scene-sync and preview churn coverage | Map2 Audio | 2026-02-19 |
-| [`82972ae4`](https://github.com/matthewmackes/map2-audio/commit/82972ae456b15bc2ae1a734bd968773acd401be2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-19 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
