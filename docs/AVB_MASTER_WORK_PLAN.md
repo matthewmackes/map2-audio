@@ -396,7 +396,7 @@ Assigned to: MAP2 AVB Engine
 Last updated: 2026-02-21 09:00 - Codex  
 
 ID: T011  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Close AVB web-node topology hook placeholders  
 Description:  
 - Goal / acceptance criteria: `useNodeApi` no longer returns hardcoded zero-count nodes/empty edges and resolves local identity from real backend/config inputs.  
@@ -406,7 +406,7 @@ Description:
 - Required outputs: `web/src/app/components/AvbRouting/hooks/useNodeApi.ts`, tests for hook output shape and behavior.  
 Subtasks:  
 - ID: T011-subA  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Compute synchronized/total PTP nodes from real backend state  
   Description:  
   - Replace hardcoded `synced_nodes` and `total_nodes` with values derived from `/api/avb/discovery` payload.  
@@ -414,9 +414,9 @@ Subtasks:
   - Estimated effort: Low (~1-2 hours)  
   - Required outputs: PTP status reflects observed node state.  
   Assigned to: Unassigned  
-  Last updated: 2026-02-21 09:00 - Codex  
+  Last updated: 2026-02-21 13:28 - Codex  
 - ID: T011-subB  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Build topology edges from active router connections  
   Description:  
   - Query active router matrix/connections and derive AVB topology edges instead of returning an empty list.  
@@ -425,9 +425,9 @@ Subtasks:
   - Estimated effort: Medium (~4 hours)  
   - Required outputs: `topology.edges` drives graph and matrix views.  
   Assigned to: Unassigned  
-  Last updated: 2026-02-21 09:00 - Codex  
+  Last updated: 2026-02-21 13:28 - Codex  
 - ID: T011-subC  
-  Status: [ ] Todo  
+  Status: [✓] Done  
   Title: Resolve local node ID from backend/config with safe fallback  
   Description:  
   - Replace backend-placeholder local node logic with backend discovery/config-backed inference and deterministic fallback.  
@@ -435,9 +435,9 @@ Subtasks:
   - Estimated effort: Low (~1-2 hours)  
   - Required outputs: Stable local node identity for operator flows.  
   Assigned to: Unassigned  
-  Last updated: 2026-02-21 09:00 - Codex  
+  Last updated: 2026-02-21 13:28 - Codex  
 Assigned to: MAP2 Web  
-Last updated: 2026-02-21 09:00 - Codex  
+Last updated: 2026-02-21 13:28 - Codex  
 
 ID: T012  
 Status: [ ] Todo  
@@ -876,6 +876,41 @@ Subtasks:
   Last updated: 2026-02-21 11:48 - Codex
 Assigned to: MAP2 Web
 Last updated: 2026-02-21 11:48 - Codex
+
+ID: T022
+Status: [✓] Done
+Title: Add deterministic node ownership fields to router connection payloads
+Description:
+- Goal / acceptance criteria: `/api/avb/router/connections` returns explicit `talker.node_id`/`listener.node_id` and optional `node_address` for every connection.
+- Why it matters: Frontend topology currently falls back to entity/name/host heuristics when node ownership is missing, which can misclassify edges in mixed naming environments.
+- Dependencies: T003
+- Estimated effort: Medium (~3-5 hours)
+- Required outputs: backend payload contract update, frontend type alignment, and route/topology tests updated to rely on deterministic node IDs.
+Subtasks:
+- ID: T022-subA
+  Status: [✓] Done
+  Title: Extend router connection serializer with node ownership metadata
+  Description:
+  - Include `node_id` and `node_address` in talker/listener payloads from `app/routes/avb.py`.
+  - Ensure values are populated for MAP2 and AVDECC endpoint paths.
+  Dependencies: T003
+  Estimated effort: Medium (~2-3 hours)
+  Required outputs: Deterministic payload schema for topology consumers.
+  Assigned to: Unassigned
+  Last updated: 2026-02-21 13:48 - Codex
+- ID: T022-subB
+  Status: [✓] Done
+  Title: Remove frontend fallback heuristics once backend node ownership is authoritative
+  Description:
+  - Simplify topology edge resolution in `useNodeApi` to prefer explicit node ownership fields.
+  - Keep minimal fallback only for backward compatibility during rollout.
+  Dependencies: T022-subA
+  Estimated effort: Low (~1-2 hours)
+  Required outputs: Cleaner edge derivation path and tighter tests.
+  Assigned to: Unassigned
+  Last updated: 2026-02-21 13:48 - Codex
+Assigned to: MAP2 Backend + Web
+Last updated: 2026-02-21 13:48 - Codex
 
 ## Completed Items
 

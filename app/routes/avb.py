@@ -1916,6 +1916,7 @@ async def get_router_endpoints(direction: Optional[str] = None) -> Dict[str, Any
                 "endpoint_id": ep.endpoint_id(),
                 "entity_id": ep.entity_id,
                 "unique_id": ep.unique_id,
+                "node_id": ep.node_id,
                 "direction": ep.direction.value,
                 "device_type": ep.device_type,
                 "device_name": ep.device_name,
@@ -1970,12 +1971,16 @@ async def get_router_connections() -> Dict[str, Any]:
                 "connection_id": conn.connection_id(),
                 "talker": {
                     "endpoint_id": conn.talker.endpoint_id(),
+                    "node_id": conn.talker.node_id,
+                    "node_address": conn.talker.node_address,
                     "device_name": conn.talker.device_name,
                     "channels": conn.talker.channels,
                     "sample_rate": conn.talker.sample_rate
                 },
                 "listener": {
                     "endpoint_id": conn.listener.endpoint_id(),
+                    "node_id": conn.listener.node_id,
+                    "node_address": conn.listener.node_address,
                     "device_name": conn.listener.device_name,
                     "channels": conn.listener.channels,
                     "sample_rate": conn.listener.sample_rate

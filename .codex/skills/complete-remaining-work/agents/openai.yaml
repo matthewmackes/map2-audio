@@ -1,0 +1,4 @@
+interface:
+  display_name: "Complete Remaining Work"
+  short_description: "Run remaining work fast and complete."
+  default_prompt: "Complete remaining project work quickly and thoroughly; parallelize independent steps, avoid stubs, and add all tech debt to the master worklist."

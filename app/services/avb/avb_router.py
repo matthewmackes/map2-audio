@@ -14,6 +14,7 @@ Architecture:
 import asyncio
 import logging
 import hashlib
+import inspect
 import json
 import socket
 from urllib.parse import urlparse
@@ -101,6 +102,7 @@ class AudioEndpoint:
     sample_rate: int
     format: str = "24-bit PCM"  # Audio format
     mac_address: Optional[str] = None  # For AVDECC devices
+    node_id: Optional[str] = None  # Owning node identifier (MAP2 or AVDECC synthetic ID)
     node_address: Optional[str] = None  # For MAP2 nodes (http://...)
     available: bool = True
     last_seen: datetime = field(default_factory=datetime.now)
@@ -280,7 +282,9 @@ class AvbRouter:
         payload = self._build_engine_discovered_devices_payload()
 
         try:
-            result = await asyncio.to_thread(setter, payload)
+            result = setter(payload)
+            if inspect.isawaitable(result):
+                result = await result
             if isinstance(result, dict) and result.get("error"):
                 logger.debug("Engine discovered-device sync error: %s", result.get("error"))
         except Exception as exc:
@@ -359,6 +363,7 @@ class AvbRouter:
                         sample_rate=max(1, sample_rate),
                         format=audio_format,
                         mac_address=mac_address,
+                        node_id=node_id,
                         node_address=node_address,
                         available=True,
                         last_seen=datetime.now(),
@@ -395,6 +400,7 @@ class AvbRouter:
                         channels=2,  # Default, would query via AECP
                         sample_rate=48000,  # Default
                         mac_address=":".join(f"{b:02x}" for b in entity.mac_address),
+                        node_id=f"avdecc-{entity_id_str}",
                         last_seen=datetime.now()
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint
@@ -410,6 +416,7 @@ class AvbRouter:
                         channels=2,
                         sample_rate=48000,
                         mac_address=":".join(f"{b:02x}" for b in entity.mac_address),
+                        node_id=f"avdecc-{entity_id_str}",
                         last_seen=datetime.now()
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint

@@ -82,6 +82,57 @@ def _enable_optional_srp(monkeypatch):
     monkeypatch.setattr(avb_routes, "config_get", lambda key, default=None: values.get(key, default))
 
 
+def test_router_connections_payload_includes_node_ownership_metadata(monkeypatch):
+    class _Endpoint:
+        def __init__(self, endpoint_id, node_id, node_address, device_name):
+            self._endpoint_id = endpoint_id
+            self.node_id = node_id
+            self.node_address = node_address
+            self.device_name = device_name
+            self.channels = 2
+            self.sample_rate = 48000
+
+        def endpoint_id(self):
+            return self._endpoint_id
+
+    class _Connection:
+        def __init__(self):
+            self.talker = _Endpoint(
+                "0011223344556677:0",
+                "node-a",
+                "http://10.0.0.10:8080",
+                "Talker A",
+            )
+            self.listener = _Endpoint(
+                "8899aabbccddeeff:1",
+                "node-b",
+                "http://10.0.0.11:8080",
+                "Listener B",
+            )
+            self.state = SimpleNamespace(value="connected")
+            self.established_time = None
+            self.error_message = None
+            self.srp_reservation_id = None
+            self.srp_admission_id = None
+
+        def connection_id(self):
+            return "0011223344556677:0→8899aabbccddeeff:1"
+
+    class _Router:
+        def get_connections(self):
+            return [_Connection()]
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+
+    payload = asyncio.run(avb_routes.get_router_connections())
+    connection = payload["connections"][0]
+
+    assert connection["talker"]["node_id"] == "node-a"
+    assert connection["talker"]["node_address"] == "http://10.0.0.10:8080"
+    assert connection["listener"]["node_id"] == "node-b"
+    assert connection["listener"]["node_address"] == "http://10.0.0.11:8080"
+
+
 def test_router_connect_returns_409_when_admission_denied(monkeypatch):
     _enable_strict_srp(monkeypatch)
 

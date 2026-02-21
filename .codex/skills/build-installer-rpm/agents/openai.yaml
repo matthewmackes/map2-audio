@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Installer RPM"
+  short_description: "Build a production MAP2 Audio Platform installer RPM without touching the source repo."
+  default_prompt: "Build the MAP2 Audio Platform installer RPM. Work in ~/map2-rpm-build/ outside the source repo. Add .gitattributes export-ignore rules, overwrite packaging artifacts with the improved spec and config files, create the map2-setup wizard, then run rpmbuild and verify the output. Do not delete or restructure anything in /home/mm/map2-audio."
