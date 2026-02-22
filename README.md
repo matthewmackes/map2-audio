@@ -155,7 +155,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**550** Python | **813** TypeScript | **252** C++/H | **90** Docs | **319** total commits | **0** stars | **0** forks | **0** open issues
+**550** Python | **813** TypeScript | **252** C++/H | **90** Docs | **321** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -196,14 +196,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b052b75f`](https://github.com/matthewmackes/map2-audio/commit/b052b75fd43ee4c19f2fe6fd841b30081029cbf6) | Add nightly archive artifact cleanup retention workflow | Map2 Audio | 2026-02-21 |
+| [`b28e4719`](https://github.com/matthewmackes/map2-audio/commit/b28e4719dea779b866c3be920a4593d90071f594) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-21 |
 | [`2455da7d`](https://github.com/matthewmackes/map2-audio/commit/2455da7db31deff840cee77faca7a5a98967dfa6) | chore: commit all current workspace changes | Map2 Audio | 2026-02-21 |
 | [`2f0c56ae`](https://github.com/matthewmackes/map2-audio/commit/2f0c56ae519a251e43063189e03082e3c097a604) | docs: format README intro sections | Map2 Audio | 2026-02-21 |
 | [`30aa4209`](https://github.com/matthewmackes/map2-audio/commit/30aa42098198eb1dd8ad2deb697b7ad3f3d5863a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-21 |
 | [`6aa03491`](https://github.com/matthewmackes/map2-audio/commit/6aa03491fbfb71534314ba7f6c36031c484db20d) | chore: commit all pending changes | Map2 Audio | 2026-02-21 |
 | [`22a8956d`](https://github.com/matthewmackes/map2-audio/commit/22a8956df4980e93423ef958e41b5399b232c360) | avb-plan3-phase7: complete AVTP test harness and routing ... | Map2 Audio | 2026-02-20 |
 | [`345bbddd`](https://github.com/matthewmackes/map2-audio/commit/345bbddd6b76a57690dd4094cc449d9c764f902d) | Update README.md | Matthew Mackes | 2026-02-21 |
-| [`fa46921d`](https://github.com/matthewmackes/map2-audio/commit/fa46921d9f07ced34201eb0d7e3e6f14a9b9cc45) | Add files via upload | Matthew Mackes | 2026-02-21 |
-| [`5783d8c6`](https://github.com/matthewmackes/map2-audio/commit/5783d8c6854d509cc856566a01f732bd8232ce02) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-21 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
