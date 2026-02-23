@@ -1,0 +1,22 @@
+# map2-services SPEC stub
+# Purpose: systemd units, sysusers, tmpfiles, health scripts.
+
+Name:           map2-services
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        MAP2 service units and operational scripts
+License:        AGPL-3.0-only
+Source0:        %{name}-%{version}.tar.gz
+BuildRequires:  systemd-rpm-macros
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
+Requires:       map2-core = %{version}-%{release}
+
+# TODO:
+# - install unit files to %{_unitdir}
+# - install sysusers.d and tmpfiles.d definitions
+# - use systemd macros in scriptlets:
+#   %systemd_post map2-backend.service
+#   %systemd_preun map2-backend.service
+#   %systemd_postun map2-backend.service

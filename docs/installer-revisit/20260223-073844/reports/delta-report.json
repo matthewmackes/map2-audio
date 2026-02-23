@@ -1,0 +1,461 @@
+{
+  "metadata": {
+    "audit_timestamp": "2026-02-23T12:39:10Z",
+    "hostname": "MAP2-TESTBED",
+    "os_release": "Fedora Linux 43 (Server Edition)",
+    "kernel": "6.18.5-200.fc43.x86_64",
+    "arch": "x86_64",
+    "profile": "avb",
+    "audit_root": "/var/tmp/map2-audit-20260223-073844",
+    "baseline_model": "dnf5 comps approximation from installed Fedora Server groups"
+  },
+  "baseline_assumptions": [
+    "No pristine baseline host was available; baseline package set was approximated from installed Fedora comps groups.",
+    "Server baseline proxy used groups: core, server-product, standard, hardware-support, headless-management, networkmanager-submodules.",
+    "Service baseline assumes Fedora preset-enabled defaults and no MAP2-specific units.",
+    "Root-required evidence was supplemented with sudo captures under docs/installer-revisit/20260223-073844/evidence."
+  ],
+  "packages_to_install": [
+    {
+      "name": "map2-core",
+      "reason": "Core MAP2 runtime packaging target",
+      "capability": "core_runtime"
+    },
+    {
+      "name": "map2-config",
+      "reason": "Ship noreplace defaults under /etc/map2",
+      "capability": "core_runtime"
+    },
+    {
+      "name": "map2-services",
+      "reason": "Systemd units, sysusers/tmpfiles, health scripts",
+      "capability": "operations"
+    },
+    {
+      "name": "map2-web",
+      "reason": "Web UI assets for production control plane",
+      "capability": "web_ui_api"
+    },
+    {
+      "name": "map2-avb",
+      "reason": "AVB profile package split",
+      "capability": "avb_tsn"
+    },
+    {
+      "name": "linuxptp",
+      "reason": "ptp4l/phc2sys/pmc stack for AVB timing",
+      "capability": "avb_tsn"
+    },
+    {
+      "name": "iproute-tc",
+      "reason": "tc binary for QoS shaping validation and configuration",
+      "capability": "avb_tsn"
+    }
+  ],
+  "packages_to_remove": [],
+  "repos_to_add": [
+    {
+      "id": "map2-local",
+      "baseurl": "file:///srv/repos/map2",
+      "reason": "Local MAP2 RPM distribution"
+    }
+  ],
+  "repos_to_remove": [],
+  "enabled_modules": [],
+  "disabled_modules": [],
+  "services_enable": [
+    {
+      "name": "map2-backend.service",
+      "reason": "Ensure backend starts at boot consistently"
+    },
+    {
+      "name": "map2-web-prod.service",
+      "reason": "Production UI control plane"
+    },
+    {
+      "name": "firewalld.service",
+      "reason": "Enforce network policy for MAP2 endpoints"
+    },
+    {
+      "name": "ptp4l.service",
+      "reason": "AVB gPTP clock sync (AVB profile)"
+    },
+    {
+      "name": "phc2sys.service",
+      "reason": "Synchronize system clock and PHC (AVB profile)"
+    }
+  ],
+  "services_disable": [
+    {
+      "name": "map2-web-dev.service",
+      "reason": "Avoid development server exposure on production hosts"
+    }
+  ],
+  "config_templates": [
+    {
+      "path": "/etc/map2/environment",
+      "action": "adopt-or-create",
+      "classification": "REQUIRED",
+      "purpose": "Persist deployment mode and runtime environment",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/etc-map2/environment",
+      "rollback": "Restore backup and restart map2-backend.service"
+    },
+    {
+      "path": "/etc/systemd/system/map2-backend.service.d/10-mode.conf",
+      "action": "adopt-drop-in",
+      "classification": "REQUIRED",
+      "purpose": "Profile-specific backend limits and affinity",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/systemd/10-mode.conf",
+      "rollback": "Restore prior drop-in and run systemctl daemon-reload"
+    },
+    {
+      "path": "/etc/security/limits.d/99-map2-audio.conf",
+      "action": "normalize",
+      "classification": "REQUIRED",
+      "purpose": "Real-time and memlock limits for MAP2 audio",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/limits/99-map2-audio.conf",
+      "rollback": "Restore prior limits file and re-login services"
+    },
+    {
+      "path": "/etc/sysctl.d/91-map2-audio-rt.conf",
+      "action": "normalize",
+      "classification": "REQUIRED",
+      "purpose": "Resolve conflicting RT runtime settings",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/sysctl/91-map2-audio-rt.conf",
+      "rollback": "Restore prior sysctl files and run sysctl --system"
+    },
+    {
+      "path": "/etc/linuxptp/ptp4l.conf",
+      "action": "create-if-missing",
+      "classification": "REQUIRED",
+      "purpose": "AVB timing policy",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/linuxptp/ptp4l.conf",
+      "rollback": "Remove generated config and disable ptp4l/phc2sys"
+    },
+    {
+      "path": "/etc/firewalld/services/map2-api.xml",
+      "action": "create-if-missing",
+      "classification": "REQUIRED",
+      "purpose": "Declarative MAP2 API firewall policy",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/firewalld/map2-api.xml",
+      "rollback": "Remove service XML and reload firewalld"
+    },
+    {
+      "path": "/etc/sudoers.d/mm",
+      "action": "review-and-tighten",
+      "classification": "OPTIONAL",
+      "purpose": "Reduce broad NOPASSWD scope for least privilege",
+      "backup_path": "/var/lib/map2/installer/backups/<ts>/sudoers.d/mm",
+      "rollback": "Restore prior sudoers drop-in with visudo -c validation"
+    }
+  ],
+  "sysctl": [
+    {
+      "path": "/etc/sysctl.d/91-map2-audio-rt.conf",
+      "key": "kernel.sched_rt_runtime_us",
+      "value": "profile-managed",
+      "reason": "Current host has conflicting RT runtime values across multiple files"
+    },
+    {
+      "path": "/etc/sysctl.d/91-map2-audio-rt.conf",
+      "key": "kernel.sched_rt_period_us",
+      "value": "profile-managed",
+      "reason": "Keep paired with runtime budget"
+    },
+    {
+      "path": "/etc/sysctl.d/93-map2-audio-swappiness.conf",
+      "key": "vm.swappiness",
+      "value": "profile-managed",
+      "reason": "Current host defines both 0 and 10 in different files"
+    },
+    {
+      "path": "/etc/sysctl.d/99-map2-audio.conf",
+      "key": "vm.max_map_count",
+      "value": "262144",
+      "reason": "Plugin/runtime mapping capacity"
+    }
+  ],
+  "kernel_args": [
+    {
+      "arg": "isolcpus=2,3",
+      "state": "present",
+      "reason": "CPU isolation for low-latency audio cores"
+    },
+    {
+      "arg": "nohz_full=2,3",
+      "state": "present",
+      "reason": "Reduce scheduler noise on isolated cores"
+    },
+    {
+      "arg": "rcu_nocbs=2,3",
+      "state": "present",
+      "reason": "Move RCU callbacks off isolated cores"
+    },
+    {
+      "arg": "threadirqs",
+      "state": "present",
+      "reason": "Threaded IRQ handling for tuning flexibility"
+    }
+  ],
+  "firewalld_rules": [
+    {
+      "zone": "public",
+      "kind": "service",
+      "value": "http",
+      "reason": "MAP2 web UI / port80 proxy"
+    },
+    {
+      "zone": "public",
+      "kind": "port",
+      "value": "3000/tcp",
+      "reason": "MAP2 production web service"
+    },
+    {
+      "zone": "public",
+      "kind": "port",
+      "value": "8080/tcp",
+      "reason": "MAP2 backend API"
+    },
+    {
+      "zone": "public",
+      "kind": "service",
+      "value": "mdns",
+      "reason": "AVB/mDNS discovery path"
+    }
+  ],
+  "selinux_actions": [
+    {
+      "type": "fcontext",
+      "target": "/var/lib/map2(/.*)?",
+      "set_type": "var_lib_t",
+      "reason": "Persistent MAP2 state labeling"
+    },
+    {
+      "type": "fcontext",
+      "target": "/var/log/map2(/.*)?",
+      "set_type": "var_log_t",
+      "reason": "MAP2 log labeling"
+    },
+    {
+      "type": "restorecon",
+      "target": "/var/lib/map2 /var/log/map2",
+      "reason": "Apply fcontext mappings"
+    }
+  ],
+  "verification_commands": [
+    {
+      "command": "systemctl is-active map2-backend.service",
+      "expect": "active"
+    },
+    {
+      "command": "systemctl is-enabled map2-backend.service",
+      "expect": "enabled"
+    },
+    {
+      "command": "systemctl is-active firewalld.service",
+      "expect": "active"
+    },
+    {
+      "command": "firewall-cmd --list-services",
+      "expect": "contains map2-required services"
+    },
+    {
+      "command": "ls -l /dev/ptp*",
+      "expect": "at least one /dev/ptpX"
+    },
+    {
+      "command": "systemctl is-active ptp4l phc2sys",
+      "expect": "active (AVB profile)"
+    },
+    {
+      "command": "pmc -u -b 0 'GET CURRENT_DATA_SET'",
+      "expect": "successful response and stable clock metrics"
+    },
+    {
+      "command": "tc qdisc show dev enp0s25",
+      "expect": "command succeeds and returns expected policy"
+    }
+  ],
+  "capability_matrix": [
+    {
+      "capability": "core_runtime",
+      "required_packages": [
+        "map2-core",
+        "map2-config",
+        "map2-services"
+      ],
+      "required_services": [
+        "map2-backend.service",
+        "map2-boot-manager.service"
+      ],
+      "required_configs": [
+        "/etc/map2/environment",
+        "/etc/systemd/system/map2-backend.service.d/10-mode.conf"
+      ],
+      "required_firewalld": [
+        "8080/tcp"
+      ],
+      "required_selinux": [
+        "fcontext /var/lib/map2(/.*)?"
+      ],
+      "verification": [
+        "systemctl is-active map2-backend.service",
+        "curl -sf http://localhost:8080/api/health"
+      ]
+    },
+    {
+      "capability": "audio_subsystem",
+      "required_packages": [
+        "pipewire",
+        "alsa-lib",
+        "rtkit"
+      ],
+      "required_services": [
+        "pipewire.service (user)",
+        "wireplumber.service (user)"
+      ],
+      "required_configs": [
+        "/etc/security/limits.d/99-map2-audio.conf",
+        "/etc/sysctl.d/91-map2-audio-rt.conf"
+      ],
+      "required_firewalld": [],
+      "required_selinux": [],
+      "verification": [
+        "ulimit -r",
+        "ulimit -l",
+        "systemctl --user is-active pipewire wireplumber"
+      ]
+    },
+    {
+      "capability": "plugin_subsystem",
+      "required_packages": [
+        "lv2",
+        "lilv"
+      ],
+      "required_services": [
+        "map2-backend.service"
+      ],
+      "required_configs": [
+        "/usr/lib64/lv2",
+        "/home/mm/.vst3"
+      ],
+      "required_firewalld": [],
+      "required_selinux": [],
+      "verification": [
+        "ls -la /usr/lib64/lv2",
+        "ls -la /home/mm/.vst3"
+      ]
+    },
+    {
+      "capability": "web_ui_api",
+      "required_packages": [
+        "map2-web"
+      ],
+      "required_services": [
+        "map2-web-prod.service"
+      ],
+      "required_configs": [
+        "/etc/systemd/system/map2-web-prod.service"
+      ],
+      "required_firewalld": [
+        "3000/tcp",
+        "80/tcp",
+        "8080/tcp"
+      ],
+      "required_selinux": [],
+      "verification": [
+        "ss -ltnp | rg ':(80|3000|8080)'",
+        "curl -sf http://localhost:3000"
+      ]
+    },
+    {
+      "capability": "operations",
+      "required_packages": [
+        "map2-services",
+        "logrotate"
+      ],
+      "required_services": [
+        "map2-system-check.service"
+      ],
+      "required_configs": [
+        "/var/lib/map2/installer/state.json",
+        "/var/log/map2"
+      ],
+      "required_firewalld": [],
+      "required_selinux": [
+        "fcontext /var/log/map2(/.*)?"
+      ],
+      "verification": [
+        "test -f /var/lib/map2/installer/state.json",
+        "journalctl -u map2-backend.service -n 50"
+      ]
+    },
+    {
+      "capability": "security_posture",
+      "required_packages": [
+        "firewalld",
+        "policycoreutils-python-utils"
+      ],
+      "required_services": [
+        "firewalld.service"
+      ],
+      "required_configs": [
+        "/etc/sudoers.d/mm"
+      ],
+      "required_firewalld": [
+        "active zone policy"
+      ],
+      "required_selinux": [
+        "enforcing mode"
+      ],
+      "verification": [
+        "getenforce",
+        "systemctl is-active firewalld.service",
+        "sudo visudo -c"
+      ]
+    },
+    {
+      "capability": "avb_tsn",
+      "required_packages": [
+        "linuxptp",
+        "iproute-tc"
+      ],
+      "required_services": [
+        "ptp4l.service",
+        "phc2sys.service"
+      ],
+      "required_configs": [
+        "/etc/linuxptp/ptp4l.conf",
+        "qdisc/profile scripts"
+      ],
+      "required_firewalld": [
+        "mdns service",
+        "PTP/event traffic allowances"
+      ],
+      "required_selinux": [],
+      "verification": [
+        "ethtool -T enp0s25",
+        "pmc -u -b 0 'GET CURRENT_DATA_SET'",
+        "tc qdisc show dev enp0s25"
+      ]
+    }
+  ],
+  "prioritized_actions": {
+    "must": [
+      "Install linuxptp and iproute-tc for AVB profile readiness.",
+      "Enable firewalld and codify MAP2 network policy.",
+      "Normalize conflicting MAP2 sysctl and realtime limits files.",
+      "Reconcile MAP2 service enablement (backend/web-prod) and disable web-dev in production.",
+      "Remove or package missing map2-selinux-disable.service reference."
+    ],
+    "should": [
+      "Tighten /etc/sudoers.d/mm from NOPASSWD:ALL to least-privilege command set.",
+      "Add explicit SELinux fcontext and restorecon steps for MAP2 data/log paths.",
+      "Expand verify output with AVB health checks and expected bounds."
+    ],
+    "could": [
+      "Add plugin cache prewarm for LV2/VST3 discovery.",
+      "Add interface-specific AVB QoS template profiles for mqprio/taprio/cbs where supported."
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+$ sudo -n semanage fcontext -l | rg -i map2
+
+$ sysctl kernel.sched_rt_runtime_us kernel.sched_rt_period_us vm.swappiness vm.nr_hugepages vm.max_map_count
+kernel.sched_rt_runtime_us = -1
+kernel.sched_rt_period_us = 1000000
+vm.swappiness = 10
+vm.nr_hugepages = 256
+vm.max_map_count = 262144
+
+$ systemctl show -p FragmentPath,DropInPaths map2-backend.service
+FragmentPath=/etc/systemd/system/map2-backend.service
+DropInPaths=/etc/systemd/system/map2-backend.service.d/10-mode.conf /usr/lib/systemd/system/service.d/10-timeout-abort.conf /etc/systemd/system/map2-backend.service.d/override.conf
+

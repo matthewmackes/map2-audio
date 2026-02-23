@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "audit_timestamp": "",
+    "hostname": "",
+    "os_release": "",
+    "kernel": "",
+    "arch": "",
+    "profile": "standard"
+  },
+  "baseline_assumptions": [],
+  "packages_to_install": [],
+  "packages_to_remove": [],
+  "repos_to_add": [],
+  "repos_to_remove": [],
+  "enabled_modules": [],
+  "disabled_modules": [],
+  "services_enable": [],
+  "services_disable": [],
+  "config_templates": [],
+  "sysctl": [],
+  "kernel_args": [],
+  "firewalld_rules": [],
+  "selinux_actions": [],
+  "verification_commands": [],
+  "capability_matrix": [],
+  "prioritized_actions": {
+    "must": [],
+    "should": [],
+    "could": []
+  }
+}

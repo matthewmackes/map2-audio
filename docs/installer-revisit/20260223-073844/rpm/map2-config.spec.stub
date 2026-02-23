@@ -1,0 +1,15 @@
+# map2-config SPEC stub
+# Purpose: ship defaults under /etc/map2 as %config(noreplace).
+
+Name:           map2-config
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        MAP2 default configuration
+License:        AGPL-3.0-only
+Source0:        %{name}-%{version}.tar.gz
+Requires:       map2-core = %{version}-%{release}
+
+# TODO:
+# - install default config files under /etc/map2
+# - mark with %config(noreplace)
+# - avoid replacing admin changes

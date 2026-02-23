@@ -1,0 +1,287 @@
+$ dnf --version
+dnf5 version 5.2.17.0
+dnf5 plugin API version 2.0
+libdnf5 version 5.2.17.0
+libdnf5 plugin API version 2.2
+
+Loaded dnf5 plugins:
+  name: builddep
+  version: 1.0.0
+  API version: 2.0
+
+  name: changelog
+  version: 1.0.0
+  API version: 2.0
+
+  name: config-manager
+  version: 0.1.0
+  API version: 2.0
+
+  name: copr
+  version: 0.1.0
+  API version: 2.0
+
+  name: needs_restarting
+  version: 1.0.0
+  API version: 2.0
+
+  name: repoclosure
+  version: 1.0.0
+  API version: 2.0
+
+  name: repomanage
+  version: 1.0.0
+  API version: 2.0
+
+  name: reposync
+  version: 1.0.0
+  API version: 2.0
+
+Loaded libdnf5 plugins:
+  name: notify_packagekit
+  version: 1.3.3
+  API version: 2.2
+
+$ dnf group list --hidden
+Updating and loading repositories:
+Repositories loaded.
+ID                          Name                                        Installed
+network-server              Network Servers                                    no
+mail-server                 Mail Server                                        no
+mate-applications           MATE Applications                                  no
+mate-desktop                MATE                                               no
+milkymist                   Milkymist                                          no
+mingw32                     MinGW cross-compiler                               no
+miraclewm-desktop           Miracle Window Manager Desktop                     no
+multimedia                  Multimedia                                         no
+mysql                       MariaDB (MySQL) Database                           no
+networkmanager-submodules   Common NetworkManager Submodules                  yes
+lxqt-office                 LXQt Office                                        no
+neuron-modelling-simulators Neuron Modelling Simulators                        no
+news-server                 News Server                                        no
+ocaml                       OCaml                                              no
+office                      Office/Productivity                                no
+perl                        Perl Development                                   no
+perl-web                    Perl for Web                                       no
+phosh-desktop               A phone/tablet UX environment                      no
+php                         PHP                                                no
+platform-vmware             VMware Platform Support                            no
+libreoffice-development     LibreOffice Development                            no
+kde-mobile-apps             KDE Mobile Apps                                    no
+kde-office                  KDE Office                                         no
+kde-pim                     KDE PIM                                            no
+kde-software-development    KDE Software Development                           no
+kde-spin-initial-setup      KDE Spin Initial Setup                             no
+kf6-software-development    KDE Frameworks 6 Software Development              no
+legacy-fonts                Legacy Fonts                                       no
+legacy-network-server       Legacy Network Server                              no
+libreoffice                 LibreOffice                                        no
+printing                    Printing Support                                   no
+load-balancer               Load Balancer                                      no
+lxde-apps                   Applications for the LXDE Desktop                  no
+lxde-desktop                LXDE                                               no
+lxde-media                  Multimedia support for LXDE                        no
+lxde-office                 LXDE Office                                        no
+lxqt-apps                   Applications for the LXQt Desktop                  no
+lxqt-desktop                LXQt                                               no
+lxqt-l10n                   Translations of LXQt                               no
+lxqt-media                  Multimedia support for LXQt                        no
+workstation-product         Fedora Workstation product core                    no
+text-internet               Text-based Internet                                no
+tomcat                      Tomcat                                             no
+vagrant                     Vagrant with libvirt support                       no
+virtualization              Virtualization                                     no
+virtualization-headless     Headless Virtualization                            no
+vlc                         VideoLAN Client                                    no
+web-server                  Basic Web Server                                   no
+window-managers             Window Managers                                    no
+workstation-ostree-support  Fedora Workstation ostree support                  no
+system-tools                System Tools                                       no
+x-software-development      X Software Development                             no
+xfce-apps                   Applications for the Xfce Desktop                  no
+xfce-desktop                Xfce                                               no
+xfce-extra-plugins          Extra plugins for the Xfce panel                   no
+xfce-media                  Multimedia support for Xfce                        no
+xfce-office                 Xfce Office                                        no
+xfce-software-development   Xfce Software Development                          no
+xmonad                      XMonad                                             no
+xmonad-mate                 XMonad for MATE                                    no
+server-hardware-support     Hardware Support for Server Systems                no
+python-classroom            Python Classroom                                   no
+python-science              Python Science                                     no
+robotics-suite              Robotics                                           no
+rpm-development-tools       RPM Development Tools                              no
+ruby                        Ruby                                               no
+rubyonrails                 Ruby on Rails                                      no
+security-lab                Security Lab                                       no
+server-cfg                  Server Configuration Tools                         no
+server-product              Fedora Server product core                        yes
+kde-mobile                  KDE Mobile                                         no
+smb-server                  Windows File Server                                no
+sound-and-video             Sound and Video                                    no
+standard                    Standard                                          yes
+sql-server                  PostgreSQL Database                                no
+sugar-apps                  Additional Sugar Activities                        no
+sugar-desktop               Sugar Desktop Environment                          no
+swaywm                      Sway Window Manager                                no
+swaywm-extended             Sway Window Manager (supplemental packages)        no
+critical-path-lxde          Critical Path (LXDE)                               no
+cosmic-desktop-apps         COSMIC Desktop Supplementary Applications          no
+critical-path-anaconda      Critical Path (anaconda)                           no
+critical-path-apps          Critical Path (Applications)                       no
+critical-path-base          Critical Path (Base)                               no
+critical-path-build         Critical Path (Build)                              no
+critical-path-cloud         Critical Path (Cloud)                              no
+critical-path-compose       Critical Path (Compose)                            no
+critical-path-gnome         Critical Path (GNOME)                              no
+critical-path-kde           Critical Path (KDE)                                no
+cosmic-desktop              COSMIC Desktop                                     no
+critical-path-lxqt          Critical Path (LXQt)                               no
+critical-path-server        Critical Path (Server)                             no
+critical-path-standard      Critical Path (standard)                           no
+critical-path-xfce          Critical Path (Xfce)                               no
+d-development               D Development Tools and Libraries                  no
+design-suite                Design Suite                                       no
+desktop-accessibility       Desktop accessibility                              no
+development-libs            Development Libraries                              no
+development-tools           Development Tools                                  no
+buildsys-build              Buildsystem building group                         no
+admin-tools                 Administration Tools                               no
+anaconda-tools              Anaconda tools                                     no
+audio                       Audio Production                                   no
+authoring-and-publishing    Authoring and Publishing                           no
+base-graphical              base-graphical                                     no
+base-x                      base-x                                             no
+basic-desktop               Basic Desktop                                      no
+budgie-desktop              Budgie                                             no
+budgie-desktop-apps         Budgie Desktop Applications                        no
+dial-up                     Dial-up Networking Support                         no
+c-development               C Development Tools and Libraries                  no
+cinnamon-desktop            Cinnamon                                           no
+cloud-bootloader-tools      Bootloader tools for Cloud images                  no
+cloud-infrastructure        Cloud Infrastructure                               no
+cloud-management            Cloud Management Tools                             no
+cloud-server                Cloud Server Tools                                 no
+compiz                      Compiz                                             no
+core                        Core                                              yes
+container-management        Container Management                               no
+i3                          i3 window manager                                  no
+graphical-internet          Graphical Internet                                 no
+graphics                    Graphics                                           no
+guest-agents                Guest Agents                                       no
+guest-desktop-agents        Guest Desktop Agents                               no
+ha                          High Availability                                  no
+hardware-support            Hardware Support                                  yes
+haproxy                     HAProxy                                            no
+headless-management         Headless Management                               yes
+haskell                     Haskell                                            no
+gnome-software-development  GNOME Software Development                         no
+i3-extended                 i3 window manager (supplemental packages)          no
+input-methods               Input Methods                                      no
+java                        Java                                               no
+java-development            Java Development                                   no
+javaenterprise              Java Application Server                            no
+kde-apps                    KDE Applications                                   no
+kde-desktop                 KDE                                                no
+kde-education               KDE Educational applications                       no
+kde-media                   KDE Multimedia support                             no
+fedora-packager             Fedora Packager                                    no
+directory-server            Directory Server                                   no
+dns-server                  DNS Name Server                                    no
+dogtag                      Dogtag Certificate System                          no
+domain-client               Domain Membership                                  no
+editors                     Editors                                            no
+education                   Educational Software                               no
+electronic-lab              Electronic Lab                                     no
+engineering-and-scientific  Engineering and Scientific                         no
+enlightenment-desktop       Enlightenment                                      no
+3d-printing                 3D Printing                                        no
+firefox                     Firefox Web Browser                                no
+font-design                 Font design and packaging                          no
+fonts                       Fonts                                              no
+freeipa-server              FreeIPA Server                                     no
+ftp-server                  FTP Server                                         no
+games                       Games and Entertainment                            no
+gnome-desktop               GNOME                                              no
+gnome-games                 Extra games for the GNOME Desktop                  no
+
+$ dnf group list --installed --hidden
+Updating and loading repositories:
+Repositories loaded.
+ID                        Name                             Installed
+core                      Core                                   yes
+hardware-support          Hardware Support                       yes
+headless-management       Headless Management                    yes
+networkmanager-submodules Common NetworkManager Submodules       yes
+server-product            Fedora Server product core             yes
+standard                  Standard                               yes
+
+$ dnf group info --hidden "Fedora Server Edition"
+Updating and loading repositories:
+Repositories loaded.
+
+$ dnf group info --hidden "Server"
+Updating and loading repositories:
+Repositories loaded.
+
+$ dnf group info --hidden "Minimal Install"
+Updating and loading repositories:
+Repositories loaded.
+
+$ dnf group info --hidden core
+Updating and loading repositories:
+Repositories loaded.
+Id                   : core
+Name                 : Core
+Description          : Smallest possible installation
+Installed            : yes
+Order                : 
+Langonly             : 
+Uservisible          : no
+Repositories         : @System
+Mandatory packages   : audit
+                     : bash
+                     : coreutils
+                     : curl
+                     : dhcp-client
+                     : dnf5
+                     : e2fsprogs
+                     : filesystem
+                     : glibc
+                     : hostname
+                     : iproute
+                     : iputils
+                     : kbd
+                     : less
+                     : man-db
+                     : ncurses
+                     : openssh-clients
+                     : openssh-server
+                     : parted
+                     : policycoreutils
+                     : procps-ng
+                     : rootfiles
+                     : rpm
+                     : selinux-policy-targeted
+                     : setup
+                     : shadow-utils
+                     : sssd-common
+                     : sssd-kcm
+                     : sudo
+                     : systemd
+                     : util-linux
+                     : vim-minimal
+Default packages     : NetworkManager
+                     : dnf5-plugins
+                     : dracut-config-rescue
+                     : firewalld
+                     : fwupd
+                     : plymouth
+                     : prefixdevname
+                     : systemd-resolved
+                     : zram-generator-defaults
+Optional packages    : dracut-config-generic
+                     : initial-setup
+                     : initscripts
+
+

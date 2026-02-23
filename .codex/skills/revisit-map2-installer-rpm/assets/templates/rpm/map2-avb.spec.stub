@@ -1,0 +1,17 @@
+# map2-avb SPEC stub
+# Purpose: AVB/TSN subsystem support (linuxptp, tc helpers, validation tools).
+
+Name:           map2-avb
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        MAP2 AVB/TSN support package
+License:        AGPL-3.0-only
+Source0:        %{name}-%{version}.tar.gz
+Requires:       map2-core = %{version}-%{release}
+Requires:       linuxptp
+Requires:       iproute
+
+# TODO:
+# - ship /etc/linuxptp defaults as %config(noreplace)
+# - install tc/qdisc helper scripts
+# - include AVB health verification commands and docs

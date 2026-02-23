@@ -1,0 +1,209 @@
+$ dnf group info --hidden server-product
+Updating and loading repositories:
+Repositories loaded.
+Id                   : server-product
+Name                 : Fedora Server product core
+Description          : Packages mandatory for the server product.
+Installed            : yes
+Order                : 
+Langonly             : 
+Uservisible          : no
+Repositories         : @System
+Mandatory packages   : PackageKit
+                     : chrony
+                     : polkit
+                     : realmd
+Default packages     : NetworkManager-team
+                     : dhcp-client
+                     : fedora-release-server
+                     : systemd-oomd-defaults
+
+
+$ dnf group info --hidden standard
+Updating and loading repositories:
+Repositories loaded.
+Id                   : standard
+Name                 : Standard
+Description          : Common set of utilities that extend the minimal installation.
+Installed            : yes
+Order                : 
+Langonly             : 
+Uservisible          : no
+Repositories         : @System
+Mandatory packages   : abrt-cli
+                     : acl
+                     : amd-ucode-firmware
+                     : at
+                     : attr
+                     : bash-color-prompt
+                     : bash-completion
+                     : bc
+                     : bind-utils
+                     : btrfs-progs
+                     : bzip2
+                     : cifs-utils
+                     : compsize
+                     : cpio
+                     : crontabs
+                     : cryptsetup
+                     : cyrus-sasl-plain
+                     : dbus
+                     : default-editor
+                     : deltarpm
+                     : dos2unix
+                     : dosfstools
+                     : ed
+                     : ethtool
+                     : exfatprogs
+                     : file
+                     : fpaste
+                     : fprintd-pam
+                     : gnupg2
+                     : hunspell
+                     : iptstate
+                     : irqbalance
+                     : logrotate
+                     : lsof
+                     : mailcap
+                     : man-pages
+                     : mcelog
+                     : mdadm
+                     : microcode_ctl
+                     : mtr
+                     : net-tools
+                     : nfs-utils
+                     : nmap-ncat
+                     : ntfs-3g
+                     : ntfsprogs
+                     : opensc
+                     : passwdqc
+                     : pciutils
+                     : pinfo
+                     : plocate
+                     : psacct
+                     : quota
+                     : realmd
+                     : rsync
+                     : rsyslog
+                     : smartmontools
+                     : sos
+                     : sssd-proxy
+                     : sudo
+                     : symlinks
+                     : systemd-udev
+                     : tar
+                     : tcpdump
+                     : time
+                     : traceroute
+                     : tree
+                     : unzip
+                     : usbutils
+                     : wget2-wget
+                     : which
+                     : whois
+                     : words
+                     : zip
+Conditional packages : chrony
+
+
+$ dnf group info --hidden hardware-support
+Updating and loading repositories:
+Repositories loaded.
+Id                   : hardware-support
+Name                 : Hardware Support
+Description          : This group is a collection of tools for various hardware specific utilities.
+Installed            : yes
+Order                : 
+Langonly             : 
+Uservisible          : no
+Repositories         : @System
+Default packages     : alsa-sof-firmware
+                     : amd-gpu-firmware
+                     : atheros-firmware
+                     : b43-fwcutter
+                     : b43-openfwwf
+                     : brcmfmac-firmware
+                     : cirrus-audio-firmware
+                     : intel-audio-firmware
+                     : intel-gpu-firmware
+                     : intel-vsc-firmware
+                     : iwlegacy-firmware
+                     : iwlwifi-dvm-firmware
+                     : iwlwifi-mvm-firmware
+                     : libertas-firmware
+                     : mt7xxx-firmware
+                     : nvidia-gpu-firmware
+                     : nxpwireless-firmware
+                     : qcom-wwan-firmware
+                     : realtek-firmware
+                     : tiwilink-firmware
+                     : usb_modeswitch
+Optional packages    : acpi
+                     : acpitool
+                     : alsa-firmware
+                     : atmel-firmware
+                     : cmospwd
+                     : dvb-firmware
+                     : gpsd
+                     : gpsd-clients
+                     : hddtemp
+                     : hdparm
+                     : iscan-firmware
+                     : libifp
+                     : liquidio-firmware
+                     : lsscsi
+                     : mlxsw_spectrum-firmware
+                     : mrvlprestera-firmware
+                     : netronome-firmware
+                     : opensc
+                     : pcsc-lite
+                     : pcsc-lite-ccid
+                     : qcom-accel-firmware
+                     : qed-firmware
+                     : radeontop
+                     : wpan-tools
+                     : zd1211-firmware
+
+
+$ dnf group info --hidden headless-management
+Updating and loading repositories:
+Repositories loaded.
+Id                   : headless-management
+Name                 : Headless Management
+Description          : Tools for managing the system without an attached graphical console.
+Installed            : yes
+Order                : 
+Langonly             : 
+Uservisible          : yes
+Repositories         : @System
+Mandatory packages   : PackageKit
+                     : cockpit
+                     : openssh-server
+Default packages     : cockpit-networkmanager
+                     : cockpit-packagekit
+                     : cockpit-selinux
+                     : cockpit-storaged
+                     : udisks2-iscsi
+                     : udisks2-lvm2
+
+
+$ dnf group info --hidden networkmanager-submodules
+Updating and loading repositories:
+Repositories loaded.
+Id                   : networkmanager-submodules
+Name                 : Common NetworkManager Submodules
+Description          : This group contains NetworkManager submodules that are commonly used, but may not be wanted in some streamlined configurations.
+Installed            : yes
+Order                : 
+Langonly             : 
+Uservisible          : no
+Repositories         : @System
+Default packages     : NetworkManager-bluetooth
+                     : NetworkManager-wifi
+                     : NetworkManager-wwan
+                     : dhcp-client
+                     : dnsmasq
+                     : iptables-nft
+                     : wpa_supplicant
+
+

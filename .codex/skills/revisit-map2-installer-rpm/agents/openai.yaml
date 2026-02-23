@@ -1,0 +1,4 @@
+interface:
+  display_name: "Revisit Installer Build"
+  short_description: "Audit Fedora host and refresh MAP2 installer/RPM"
+  default_prompt: "Use $revisit-map2-installer-rpm to audit the MAP2 Fedora host against stock Fedora Server and produce updated installer plus RPM/repo scaffolding with Markdown and JSON deltas."

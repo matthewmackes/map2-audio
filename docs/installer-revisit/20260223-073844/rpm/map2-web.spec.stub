@@ -1,0 +1,14 @@
+# map2-web SPEC stub
+# Purpose: MAP2 web UI assets and runtime glue.
+
+Name:           map2-web
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        MAP2 web user interface assets
+License:        AGPL-3.0-only
+Source0:        %{name}-%{version}.tar.gz
+Requires:       map2-core = %{version}-%{release}
+
+# TODO:
+# - install static assets under %{_datadir}/map2/web
+# - install optional service/env files required by map2-web-prod.service

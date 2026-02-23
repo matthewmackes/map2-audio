@@ -1,0 +1,241 @@
+$ sudo -n grubby --info=ALL
+index=0
+kernel="/boot/vmlinuz-6.18.5-200.fc43.x86_64"
+args="ro rootflags=subvol=root isolcpus=2,3 nohz_full=2,3 rcu_nocbs=2,3 threadirqs"
+root="UUID=1c9c2e24-e10c-459b-b8e7-bc306c24b231"
+initrd="/boot/initramfs-6.18.5-200.fc43.x86_64.img"
+title="Fedora Linux (6.18.5-200.fc43.x86_64) 43 (Server Edition)"
+id="36f122942c6f4ce9ab3a92e5eb3453b4-6.18.5-200.fc43.x86_64"
+index=1
+kernel="/boot/vmlinuz-6.17.1-300.fc43.x86_64"
+args="ro rootflags=subvol=root isolcpus=2,3 nohz_full=2,3 rcu_nocbs=2,3 threadirqs"
+root="UUID=1c9c2e24-e10c-459b-b8e7-bc306c24b231"
+initrd="/boot/initramfs-6.17.1-300.fc43.x86_64.img"
+title="Fedora Linux (6.17.1-300.fc43.x86_64) 43 (Server Edition)"
+id="36f122942c6f4ce9ab3a92e5eb3453b4-6.17.1-300.fc43.x86_64"
+index=2
+kernel="/boot/vmlinuz-0-rescue-36f122942c6f4ce9ab3a92e5eb3453b4"
+args="ro rootflags=subvol=root isolcpus=2,3 nohz_full=2,3 rcu_nocbs=2,3 threadirqs"
+root="UUID=1c9c2e24-e10c-459b-b8e7-bc306c24b231"
+initrd="/boot/initramfs-0-rescue-36f122942c6f4ce9ab3a92e5eb3453b4.img"
+title="Fedora Linux (0-rescue-36f122942c6f4ce9ab3a92e5eb3453b4) 43 (Server Edition)"
+id="36f122942c6f4ce9ab3a92e5eb3453b4-0-rescue"
+
+$ ls -la /etc/sysctl.d
+total 28
+drwxr-xr-x. 1 root root  304 Feb  8 12:13 .
+drwxr-xr-x. 1 root root 3970 Feb 19 06:08 ..
+-rw-r--r--. 1 root root  730 Feb  8 12:13 91-map2-audio-rt.conf
+-rw-r--r--. 1 root root 1060 Feb  8 12:13 92-map2-audio-thp.conf
+-rw-r--r--. 1 root root 1338 Feb  8 12:13 93-map2-audio-swappiness.conf
+-rw-r--r--. 1 root root  860 Feb  8 12:13 94-map2-audio-watchdog.conf
+-rw-r--r--. 1 root root  198 Jan 16 20:08 99-map2-audio.conf
+-rw-r--r--. 1 root root  143 Jan 16 20:08 99-rt-scheduling.conf
+lrwxrwxrwx. 1 root root   14 Dec 16 19:00 99-sysctl.conf -> ../sysctl.conf
+
+$ for f in /etc/sysctl.d/*.conf; do echo "## $f"; cat "$f"; done
+## /etc/sysctl.d/91-map2-audio-rt.conf
+# MAP2 Audio Platform - Realtime Scheduling Budget
+# File: /etc/sysctl.d/91-map2-audio-rt.conf
+#
+# Description:
+#   Configure realtime scheduling budget for low-latency audio processing.
+#   Ensures audio thread gets guaranteed CPU time (2.95 sec out of 3 sec).
+#   
+# Applies to: AUDIO mode, ALL-IN-ONE mode
+# Impact: Prevents starvation of audio thread if other RT threads created
+
+# Realtime scheduling budget (98% of RT CPU time)
+kernel.sched_rt_runtime_us = 2950000
+kernel.sched_rt_period_us = 3000000
+
+# Deadline scheduler tuning (if using SCHED_DEADLINE)
+kernel.sched_deadline_period_us = 3000000
+kernel.sched_deadline_runtime_us = 2950000
+
+# Fair scheduler tuning for housekeeping cores
+kernel.sched_autogroup_enabled = 0
+## /etc/sysctl.d/92-map2-audio-thp.conf
+# MAP2 Audio Platform - Memory & THP Management
+# File: /etc/sysctl.d/92-map2-audio-thp.conf
+#
+# Description:
+#   Disable Transparent Huge Pages (THP) completely for low-latency audio.
+#   THP compaction can cause 1–5 ms latency spikes even when compaction_proactiveness=0.
+#   Fixed page size (4 KB) is more predictable for realtime workloads.
+#
+# Applies to: AUDIO mode, ALL-IN-ONE mode
+# Impact: Eliminates compaction pauses; reduces latency variance by 0.5–1.0 ms
+
+# Disable THP completely
+vm.transparent_hugepage = never
+mm.transparent_hugepage.enabled = never
+mm.transparent_hugepage.defrag = never
+mm.transparent_hugepage.khugepaged.enabled = 0
+
+# Page-level memory tuning
+vm.page-cluster = 0                       # Read 1 page at a time (no readahead)
+vm.overcommit_ratio = 50                  # Conservative memory commitment
+vm.max_map_count = 262144                 # Allow more memory mappings
+
+# Disable KSM (Kernel Samepage Merging) to avoid scanning/merging overhead
+kernel.sched_migration_cost_ns = 500000   # Increase migration threshold
+## /etc/sysctl.d/93-map2-audio-swappiness.conf
+# MAP2 Audio Platform - Memory Swappiness & OOM
+# File: /etc/sysctl.d/93-map2-audio-swappiness.conf
+#
+# Description:
+#   Disable swapping and aggressive memory management for audio nodes.
+#   Swapping to disk causes 10–100+ ms latency spikes (catastrophic for <3ms target).
+#   Configure OOM killer to be predictable.
+#
+# Applies to: AUDIO mode, ALL-IN-ONE mode
+# Impact: Prevents swap-induced latency; guarantees RT execution
+
+# CRITICAL: Disable swap completely
+vm.swappiness = 0                         # Never swap (prefer OOM kill)
+
+# Memory pressure tuning
+vm.oom_kill_allocating_task = 1           # Kill offending task immediately
+vm.oom_dump_tasks = 0                     # Don't dump task list (saves time)
+vm.panic_on_oom = 0                       # Don't panic; let OOM killer work
+
+# Dirty page writeback (async I/O)
+vm.dirty_ratio = 20                       # Bytes → disk at 20% dirtiness
+vm.dirty_background_ratio = 10            # BG writeback at 10%
+vm.dirty_expire_centisecs = 3000          # Expire after 30 sec
+
+# Zone reclaim mode (NUMA-aware, disabled for predictability)
+vm.zone_reclaim_mode = 0                  # Don't reclaim pages from remote NUMA
+
+# Memory compaction
+vm.compact_memory = 0                     # Manual trigger only
+vm.compaction_proactiveness = 0           # Disable proactive compaction
+## /etc/sysctl.d/94-map2-audio-watchdog.conf
+# MAP2 Audio Platform - Kernel Watchdog & NMI Tuning
+# File: /etc/sysctl.d/94-map2-audio-watchdog.conf
+#
+# Description:
+#   Disable NMI watchdog and soft lockup detection.
+#   These can steal ~1% CPU and cause unpredictable latency spikes.
+#
+# Applies to: AUDIO mode
+# Impact: Frees CPU; reduces ~1% NMI overhead
+
+# Disable NMI watchdog (costs ~1% CPU, periodic interrupts)
+kernel.nmi_watchdog = 0
+
+# Disable soft lockup detection
+kernel.softlockup_panic = 0
+kernel.softlockup_panic_all_cpu = 0
+
+# Disable hung task detector
+kernel.hung_task_timeout_secs = 0
+kernel.hung_task_panic = 0
+
+# Disable panic on kernel oops (let system continue)
+kernel.panic_on_oops = 0
+kernel.panic_on_unrecovered_nmi = 0
+
+# Printk settings (reduce logging overhead)
+kernel.printk_ratelimit = 0               # Disable rate limiting (or set high)
+kernel.printk_ratelimit_burst = 1
+## /etc/sysctl.d/99-map2-audio.conf
+# MAP2 Audio Platform - RT Memory Settings
+vm.swappiness = 10
+vm.nr_hugepages = 256
+vm.max_map_count = 262144
+kernel.sched_rt_runtime_us = -1
+kernel.sched_rt_period_us = 1000000
+fs.file-max = 65536
+## /etc/sysctl.d/99-rt-scheduling.conf
+# Enable RT scheduling on standard kernel
+kernel.sched_rt_runtime_us = -1
+kernel.sched_rt_period_us = 1000000
+kernel.sched_rr_timeslice_ms = 5
+## /etc/sysctl.d/99-sysctl.conf
+# sysctl settings are defined through files in
+# /usr/lib/sysctl.d/, /run/sysctl.d/, and /etc/sysctl.d/.
+#
+# Vendors settings live in /usr/lib/sysctl.d/.
+# To override a whole file, create a new file with the same in
+# /etc/sysctl.d/ and put new settings there. To override
+# only specific settings, add a file with a lexically later
+# name in /etc/sysctl.d/ and put new settings there.
+#
+# For more information, see sysctl.conf(5) and sysctl.d(5).
+# MAP2 Audio - Memory optimization
+vm.swappiness = 10
+vm.nr_hugepages = 256
+
+$ find /etc/systemd/system -maxdepth 3 -type f | rg "map2|ptp|avb|linuxptp"
+/etc/systemd/system/map2-rt-verify.service
+/etc/systemd/system/map2-port80-proxy.service
+/etc/systemd/system/map2-lcd.service.backup
+/etc/systemd/system/map2-lcd.service
+/etc/systemd/system/map2-boot-manager.service
+/etc/systemd/system/map2-system-check.service.backup
+/etc/systemd/system/map2-system-check.service
+/etc/systemd/system/map2-backend.service.backup
+/etc/systemd/system/map2-lcd-boot.service
+/etc/systemd/system/map2-backend.service
+/etc/systemd/system/map2-backend.service.d/override.conf
+/etc/systemd/system/map2-backend.service.d/10-mode.conf
+/etc/systemd/system/map2-cpu-governor.service
+/etc/systemd/system/map2-disable-turbo.service
+/etc/systemd/system/map2-verify-isolation.service
+/etc/systemd/system/map2-web-prod.service
+/etc/systemd/system/map2-web-dev.service
+
+$ systemctl list-unit-files | rg "ptp|avb|srp|maap|gptp|map2"
+map2-backend.service                         disabled        disabled
+map2-boot-manager.service                    enabled         disabled
+map2-cpu-governor.service                    enabled         disabled
+map2-disable-turbo.service                   enabled         disabled
+map2-lcd-boot.service                        enabled         disabled
+map2-lcd.service                             disabled        disabled
+map2-port80-proxy.service                    enabled         disabled
+map2-rt-verify.service                       enabled         disabled
+map2-system-check.service                    disabled        disabled
+map2-verify-isolation.service                enabled         disabled
+map2-web-dev.service                         enabled         disabled
+map2-web-prod.service                        enabled         disabled
+
+$ rpm -qa | rg -i "linuxptp|gptp|ptp|srp|maap|openavb|avdecc|tsn"
+rust-srpm-macros-28.4-1.fc43.noarch
+qt6-srpm-macros-6.10.1-1.fc43.noarch
+qt5-srpm-macros-5.15.18-1.fc43.noarch
+pyproject-srpm-macros-1.18.6-1.fc43.noarch
+gnat-srpm-macros-7-1.fc43.noarch
+build-reproducibility-srpm-macros-0.6.0-3.fc43.noarch
+zig-srpm-macros-1-5.fc43.noarch
+tree-sitter-srpm-macros-0.4.2-1.fc43.noarch
+perl-srpm-macros-1-60.fc43.noarch
+package-notes-srpm-macros-0.5-14.fc43.noarch
+openblas-srpm-macros-2-20.fc43.noarch
+ocaml-srpm-macros-11-2.fc43.noarch
+lua-srpm-macros-1-16.fc43.noarch
+kernel-srpm-macros-1.0-27.fc43.noarch
+java-srpm-macros-1-7.fc43.noarch
+ghc-srpm-macros-1.9.2-3.fc43.noarch
+gap-srpm-macros-2-1.fc43.noarch
+fpc-srpm-macros-1.3-15.fc43.noarch
+filesystem-srpm-macros-3.18-50.fc43.noarch
+efi-srpm-macros-6-4.fc43.noarch
+ansible-srpm-macros-1-18.1.fc43.noarch
+forge-srpm-macros-0.4.0-3.fc43.noarch
+fonts-srpm-macros-2.0.5-23.fc43.noarch
+go-srpm-macros-3.8.0-1.fc43.noarch
+python-srpm-macros-3.14-5.fc43.noarch
+
+$ ls -la /etc/map2
+total 8
+drwxr-xr-x. 1 mm   mm     64 Feb 11 13:36 .
+drwxr-xr-x. 1 root root 3970 Feb 19 06:08 ..
+-rw-r--r--. 1 root root   32 Feb 19 11:20 environment
+-rw-r--r--. 1 mm   mm    948 Feb  5 00:50 node-identity.json
+drwx------. 1 mm   mm      0 Feb 11 13:36 ssl
+
+$ cat /etc/map2/environment
+MAP2_DEPLOYMENT_MODE=ALL-IN-ONE
+

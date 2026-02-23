@@ -1,0 +1,14 @@
+# map2-plugins SPEC stub
+# Purpose: optional plugin bundle distributed by MAP2.
+
+Name:           map2-plugins
+Version:        0.1.0
+Release:        1%{?dist}
+Summary:        Optional MAP2 plugin bundle
+License:        AGPL-3.0-only
+Source0:        %{name}-%{version}.tar.gz
+Requires:       map2-core = %{version}-%{release}
+
+# TODO:
+# - install bundled plugins to LV2/VST3 target paths
+# - keep third-party licensing metadata alongside each plugin

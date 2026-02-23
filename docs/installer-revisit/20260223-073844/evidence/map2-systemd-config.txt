@@ -1,0 +1,156 @@
+## /etc/systemd/system/map2-backend.service
+[Unit]
+Description=MAP2 Audio Platform Backend API
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network.target sound.target map2-boot-manager.service
+Wants=sound.target map2-boot-manager.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio
+Environment="PYTHONPATH=/home/mm/map2-audio"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+Environment="MAP2_ENABLE_LCD=false"
+Environment="MAP2_LCD_SIMULATION=false"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="PIPEWIRE_REMOTE=pipewire-0"
+Environment="JACK_DEFAULT_SERVER=pipewire"
+EnvironmentFile=-/etc/map2/environment
+
+# PipeWire configuration for low-latency audio
+Environment="PIPEWIRE_LATENCY=64/48000"
+Environment="PIPEWIRE_FALLBACK_PLAYBACK_DEVICE=alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output"
+Environment="PIPEWIRE_FALLBACK_CAPTURE_DEVICE=alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input"
+
+# Force PipeWire graph quantum/rate in the user session (requires pw-metadata)
+# NOTE: force-rate MUST come before force-quantum (setting rate resets quantum)
+ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
+ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 64
+
+# Start the unified orchestrator via FastAPI
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+# Graceful shutdown - orchestrator handles service shutdown sequence
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+TimeoutStartSec=120
+
+# Readiness validation - check API is responsive (not full service readiness)
+# /api/health returns 200 when FastAPI is up; /api/ready requires all services
+# Use /api/health here so systemd doesn't kill us while services are still initializing
+ExecStartPost=/bin/bash -c 'for i in $(seq 1 30); do curl -sf http://localhost:8080/api/health > /dev/null && exit 0; sleep 2; done; exit 1'
+
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-orchestrator
+
+# Real-time audio optimizations
+Nice=-10
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+# CPU affinity: use isolated cores if available (set in GRUB)
+CPUAffinity=4 5
+# I/O priority - realtime class, high priority
+IOSchedulingClass=realtime
+IOSchedulingPriority=1
+
+# Allow RT scheduling for the audio thread
+AmbientCapabilities=CAP_SYS_NICE
+CapabilityBoundingSet=CAP_SYS_NICE
+
+# Security hardening (NoNewPrivileges removed - RT scheduling via RTKit requires new privileges)
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /home/mm/.map2 /home/mm/.config/pipewire /home/mm/.local/share /home/mm/.cache /tmp /etc/map2 /run/map2-audio
+
+[Install]
+WantedBy=multi-user.target
+
+## /etc/systemd/system/map2-backend.service.d/10-mode.conf
+# MAP2_MODE=all-in-one
+# ──────────────────────────────────────────────────────────────────────
+# ALL-IN-ONE mode systemd drop-in for map2-backend.service
+# Installed by: map2-mode.sh → /etc/systemd/system/map2-backend.service.d/10-mode.conf
+#
+# Compromise tuning for audio + web UI on the same machine.
+# Target latency: 4-5 ms round-trip.
+# ──────────────────────────────────────────────────────────────────────
+
+[Service]
+# CPU Affinity — use all cores, scheduler balances Python vs C++
+CPUAffinity=0-5
+
+# Realtime priorities — conservative
+LimitRTPRIO=50
+LimitMEMLOCK=512M
+
+# Nice priority — elevated but not maximum
+Nice=-10
+
+# I/O scheduling — realtime but lower priority than audio mode
+IOSchedulingClass=realtime
+IOSchedulingPriority=3
+
+# Timeouts
+TimeoutStartSec=120
+TimeoutStopSec=30
+
+# Logging — journal (acceptable overhead in this mode)
+StandardOutput=journal
+StandardError=journal
+
+## /etc/systemd/system/map2-backend.service.d/override.conf
+[Service]
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="PIPEWIRE_REMOTE=pipewire-0"
+Environment="JACK_DEFAULT_SERVER=pipewire"
+Environment="PIPEWIRE_LATENCY=128/48000"
+ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 128
+ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
+CPUAffinity=4 5
+AmbientCapabilities=CAP_SYS_NICE
+CapabilityBoundingSet=CAP_SYS_NICE
+ReadWritePaths=/home/mm/.local/share /home/mm/.cache
+
+## /etc/systemd/system/map2-web-prod.service
+[Unit]
+Description=MAP2 Audio Platform - Production Web Server (Port 3000)
+Documentation=https://github.com/matthewmackes/map2-audio
+After=network.target map2-backend.service
+Wants=map2-backend.service
+
+[Service]
+Type=simple
+User=mm
+Group=mm
+WorkingDirectory=/home/mm/map2-audio/web
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+Environment="NODE_ENV=production"
+
+# Serve pre-built dist/ via Vite preview so /api and /ws proxy rules apply.
+ExecStart=/usr/bin/npm run preview
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-web-prod
+
+# Resource limits
+LimitNOFILE=65536
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+
