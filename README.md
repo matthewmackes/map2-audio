@@ -111,7 +111,7 @@ All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, 
 | TUI Console | Python / Textual (SSH-friendly) |
 | Audio Server | PipeWire via JACK protocol |
 | OS / RT | Fedora Linux, isolated CPU cores, SCHED_FIFO |
-| Clustering | Multi-node with AVB/802.1AS support (optional) |
+| Clustering | Multi-node with AVB/802.1AS support (installed by default; removable) |
 | Hardware | USB audio interfaces (Edirol UA-1000, Hotone Jogg) |
 
 ---
@@ -125,6 +125,10 @@ cd map2-audio
 
 # Full installation on Fedora Server 42+
 sudo bash install_on_new_host.sh
+
+# Optional install variants
+sudo bash install_on_new_host.sh --skip-avb         # Install MAP2 without AVB setup
+sudo bash install_on_new_host.sh --uninstall-avb    # Remove AVB configuration after rebuild
 
 # Or start individual components
 systemctl start map2-backend          # Backend API (port 8080)
@@ -247,9 +251,16 @@ cd juce-engine && cmake -B build      # C++ engine
 
 ## Legal
 
-This project is a **strictly non-commercial, educational, source-available resource** created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes. It is not affiliated with, endorsed by, or connected to any commercial manufacturer or brand owner in the professional audio industry. All trademarks and product names are the property of their respective owners and are referenced solely for educational and descriptive purposes.
+MAP2-owned code in this repository is licensed under the **GNU Affero General Public License v3.0** (`AGPL-3.0-only`). Educational and research framing in this repository describes intent, but does not add restrictions beyond AGPLv3.
 
-License terms for original MAP2 code: see `LICENSE`. Third-party components remain under their original licenses: see `THIRD_PARTY_NOTICES.md`.
+Source availability path for MAP2-owned code is this repository. If you deploy a modified running version, publish the corresponding source for that version in an accessible location for your users.
+
+If you modify and run this software for users over a network, you must provide the corresponding source code for that running version as required by AGPLv3.
+
+Third-party components remain under their original licenses and are not relicensed by MAP2. See:
+
+- `LICENSE`
+- `docs/THIRD_PARTY_NOTICES.md`
 
 See the full [Legal Disclaimer](docs/%23%20LEGAL%20DISCLAIMER%20%E2%80%93%20IMPORTANT%20NOTICE.md) for complete details.
 

@@ -279,6 +279,36 @@ void EntityModel::addStreamOutput(uint16_t config_index, const StreamOutput& str
     stream_outputs_[config_index][stream.stream_index] = stream;
 }
 
+bool EntityModel::setStreamInputFormat(uint16_t config_index, uint16_t stream_index, StreamFormat format) {
+    auto config_it = stream_inputs_.find(config_index);
+    if (config_it == stream_inputs_.end()) {
+        return false;
+    }
+
+    auto stream_it = config_it->second.find(stream_index);
+    if (stream_it == config_it->second.end()) {
+        return false;
+    }
+
+    stream_it->second.current_format = format;
+    return true;
+}
+
+bool EntityModel::setStreamOutputFormat(uint16_t config_index, uint16_t stream_index, StreamFormat format) {
+    auto config_it = stream_outputs_.find(config_index);
+    if (config_it == stream_outputs_.end()) {
+        return false;
+    }
+
+    auto stream_it = config_it->second.find(stream_index);
+    if (stream_it == config_it->second.end()) {
+        return false;
+    }
+
+    stream_it->second.current_format = format;
+    return true;
+}
+
 std::optional<StreamInput> EntityModel::getStreamInput(uint16_t config_index, uint16_t stream_index) const {
     auto config_it = stream_inputs_.find(config_index);
     if (config_it != stream_inputs_.end()) {
@@ -555,6 +585,63 @@ void EntityModel::clear() {
     audio_units_.clear();
 }
 
+namespace {
+
+juce::String toHexString(const std::array<uint8_t, 6>& bytes) {
+    juce::String s;
+    for (auto b : bytes) {
+        s << juce::String::toHexString(static_cast<int>(b)).paddedLeft('0', 2);
+    }
+    return s;
+}
+
+juce::String toHexString(const std::array<uint8_t, 8>& bytes) {
+    juce::String s;
+    for (auto b : bytes) {
+        s << juce::String::toHexString(static_cast<int>(b)).paddedLeft('0', 2);
+    }
+    return s;
+}
+
+uint64_t hexStringToU64(const juce::String& s) {
+    return static_cast<uint64_t>(s.getHexValue64());
+}
+
+std::array<uint8_t, 6> hexStringToMac(const juce::String& s) {
+    std::array<uint8_t, 6> out{};
+    for (size_t i = 0; i < out.size() && i * 2 + 1 < static_cast<size_t>(s.length()); ++i) {
+        out[i] = static_cast<uint8_t>(s.substring(static_cast<int>(i * 2), static_cast<int>(i * 2 + 2)).getHexValue32());
+    }
+    return out;
+}
+
+std::array<uint8_t, 8> hexStringToArray8(const juce::String& s) {
+    std::array<uint8_t, 8> out{};
+    for (size_t i = 0; i < out.size() && i * 2 + 1 < static_cast<size_t>(s.length()); ++i) {
+        out[i] = static_cast<uint8_t>(s.substring(static_cast<int>(i * 2), static_cast<int>(i * 2 + 2)).getHexValue32());
+    }
+    return out;
+}
+
+juce::var samplingRateToVar(const SamplingRate& rate) {
+    juce::var obj(new juce::DynamicObject());
+    obj.getDynamicObject()->setProperty("pull_field", static_cast<int>(rate.pull_field));
+    obj.getDynamicObject()->setProperty("base_frequency", static_cast<int>(rate.base_frequency));
+    return obj;
+}
+
+std::optional<SamplingRate> samplingRateFromVar(const juce::var& v) {
+    if (!v.isObject()) return std::nullopt;
+    const auto* o = v.getDynamicObject();
+    if (o == nullptr) return std::nullopt;
+    SamplingRate r{};
+    r.pull_field = static_cast<uint8_t>(static_cast<int>(o->getProperty("pull_field")));
+    r.base_frequency = static_cast<uint32_t>(static_cast<int>(o->getProperty("base_frequency")));
+    return r;
+}
+
+} // namespace
+
 juce::var EntityModel::toJSON() const {
     juce::var json(new juce::DynamicObject());
     auto* obj = json.getDynamicObject();
@@ -564,6 +651,148 @@ juce::var EntityModel::toJSON() const {
     obj->setProperty("entity_model_id", juce::String::toHexString(static_cast<int64_t>(entity_.entity_model_id)));
     obj->setProperty("entity_name", juce::String(entity_.entity_name.value));
     obj->setProperty("firmware_version", juce::String(entity_.firmware_version.value));
+    obj->setProperty("group_name", juce::String(entity_.group_name.value));
+    obj->setProperty("serial_number", juce::String(entity_.serial_number.value));
+    obj->setProperty("entity_capabilities", static_cast<int>(entity_.entity_capabilities));
+    obj->setProperty("talker_stream_sources", static_cast<int>(entity_.talker_stream_sources));
+    obj->setProperty("talker_capabilities", static_cast<int>(entity_.talker_capabilities));
+    obj->setProperty("listener_stream_sinks", static_cast<int>(entity_.listener_stream_sinks));
+    obj->setProperty("listener_capabilities", static_cast<int>(entity_.listener_capabilities));
+    obj->setProperty("controller_capabilities", static_cast<int>(entity_.controller_capabilities));
+    obj->setProperty("available_index", static_cast<int>(entity_.available_index));
+    obj->setProperty("association_id", juce::String::toHexString(static_cast<int64_t>(entity_.association_id)));
+    obj->setProperty("vendor_name_string_index", static_cast<int>(entity_.vendor_name_string_index));
+    obj->setProperty("model_name_string_index", static_cast<int>(entity_.model_name_string_index));
+    obj->setProperty("configurations_count", static_cast<int>(entity_.configurations_count));
+    obj->setProperty("current_configuration", static_cast<int>(entity_.current_configuration));
+
+    // Configurations
+    juce::Array<juce::var> configs;
+    for (const auto& [idx, cfg] : configurations_) {
+        juce::var cfg_obj(new juce::DynamicObject());
+        cfg_obj.getDynamicObject()->setProperty("configuration_index", static_cast<int>(cfg.configuration_index));
+        cfg_obj.getDynamicObject()->setProperty("object_name", juce::String(cfg.object_name.value));
+        cfg_obj.getDynamicObject()->setProperty("localized_description", static_cast<int>(cfg.localized_description));
+
+        juce::Array<juce::var> counts;
+        for (const auto& c : cfg.descriptor_counts) {
+            juce::var count_obj(new juce::DynamicObject());
+            count_obj.getDynamicObject()->setProperty("descriptor_type", static_cast<int>(c.descriptor_type));
+            count_obj.getDynamicObject()->setProperty("count", static_cast<int>(c.count));
+            counts.add(count_obj);
+        }
+        cfg_obj.getDynamicObject()->setProperty("descriptor_counts", counts);
+        configs.add(cfg_obj);
+    }
+    obj->setProperty("configurations", configs);
+
+    auto streamToVar = [](const auto& stream, uint16_t config_index) {
+        juce::var s(new juce::DynamicObject());
+        auto* o = s.getDynamicObject();
+        o->setProperty("config_index", static_cast<int>(config_index));
+        o->setProperty("stream_index", static_cast<int>(stream.stream_index));
+        o->setProperty("object_name", juce::String(stream.object_name.value));
+        o->setProperty("localized_description", static_cast<int>(stream.localized_description));
+        o->setProperty("clock_domain_index", static_cast<int>(stream.clock_domain_index));
+        o->setProperty("stream_flags", static_cast<int>(stream.stream_flags));
+        o->setProperty("current_format", juce::String::toHexString(static_cast<int64_t>(stream.current_format)));
+        juce::Array<juce::var> formats;
+        for (auto fmt : stream.supported_formats) {
+            formats.add(juce::String::toHexString(static_cast<int64_t>(fmt)));
+        }
+        o->setProperty("supported_formats", formats);
+        o->setProperty("avb_interface_index", static_cast<int>(stream.avb_interface_index));
+        o->setProperty("buffer_length", static_cast<int>(stream.buffer_length));
+        return s;
+    };
+
+    juce::Array<juce::var> stream_inputs;
+    for (const auto& [cfg_idx, streams] : stream_inputs_) {
+        for (const auto& [_, stream] : streams) {
+            stream_inputs.add(streamToVar(stream, cfg_idx));
+        }
+    }
+    obj->setProperty("stream_inputs", stream_inputs);
+
+    juce::Array<juce::var> stream_outputs;
+    for (const auto& [cfg_idx, streams] : stream_outputs_) {
+        for (const auto& [_, stream] : streams) {
+            stream_outputs.add(streamToVar(stream, cfg_idx));
+        }
+    }
+    obj->setProperty("stream_outputs", stream_outputs);
+
+    juce::Array<juce::var> avb_ifaces;
+    for (const auto& [cfg_idx, ifaces] : avb_interfaces_) {
+        for (const auto& [_, iface] : ifaces) {
+            juce::var i(new juce::DynamicObject());
+            auto* o = i.getDynamicObject();
+            o->setProperty("config_index", static_cast<int>(cfg_idx));
+            o->setProperty("interface_index", static_cast<int>(iface.interface_index));
+            o->setProperty("object_name", juce::String(iface.object_name.value));
+            o->setProperty("localized_description", static_cast<int>(iface.localized_description));
+            o->setProperty("mac_address", toHexString(iface.mac_address));
+            o->setProperty("interface_flags", static_cast<int>(iface.interface_flags));
+            o->setProperty("clock_identity", toHexString(iface.clock_identity));
+            o->setProperty("priority1", static_cast<int>(iface.priority1));
+            o->setProperty("clock_class", static_cast<int>(iface.clock_class));
+            o->setProperty("offset_scaled_log_variance", static_cast<int>(iface.offset_scaled_log_variance));
+            o->setProperty("clock_accuracy", static_cast<int>(iface.clock_accuracy));
+            o->setProperty("priority2", static_cast<int>(iface.priority2));
+            o->setProperty("domain_number", static_cast<int>(iface.domain_number));
+            o->setProperty("log_sync_interval", static_cast<int>(iface.log_sync_interval));
+            o->setProperty("log_announce_interval", static_cast<int>(iface.log_announce_interval));
+            o->setProperty("log_pdelay_interval", static_cast<int>(iface.log_pdelay_interval));
+            o->setProperty("port_number", static_cast<int>(iface.port_number));
+            avb_ifaces.add(i);
+        }
+    }
+    obj->setProperty("avb_interfaces", avb_ifaces);
+
+    juce::Array<juce::var> clock_sources;
+    for (const auto& [cfg_idx, clocks] : clock_sources_) {
+        for (const auto& [_, clock] : clocks) {
+            juce::var c(new juce::DynamicObject());
+            auto* o = c.getDynamicObject();
+            o->setProperty("config_index", static_cast<int>(cfg_idx));
+            o->setProperty("clock_source_index", static_cast<int>(clock.clock_source_index));
+            o->setProperty("object_name", juce::String(clock.object_name.value));
+            o->setProperty("localized_description", static_cast<int>(clock.localized_description));
+            o->setProperty("clock_source_flags", static_cast<int>(clock.clock_source_flags));
+            o->setProperty("clock_source_type", static_cast<int>(clock.clock_source_type));
+            o->setProperty("clock_source_identifier", toHexString(clock.clock_source_identifier));
+            o->setProperty("clock_source_location_type", static_cast<int>(clock.clock_source_location_type));
+            o->setProperty("clock_source_location_index", static_cast<int>(clock.clock_source_location_index));
+            clock_sources.add(c);
+        }
+    }
+    obj->setProperty("clock_sources", clock_sources);
+
+    juce::Array<juce::var> audio_units;
+    for (const auto& [cfg_idx, units] : audio_units_) {
+        for (const auto& [_, unit] : units) {
+            juce::var u(new juce::DynamicObject());
+            auto* o = u.getDynamicObject();
+            o->setProperty("config_index", static_cast<int>(cfg_idx));
+            o->setProperty("audio_unit_index", static_cast<int>(unit.audio_unit_index));
+            o->setProperty("object_name", juce::String(unit.object_name.value));
+            o->setProperty("localized_description", static_cast<int>(unit.localized_description));
+            o->setProperty("clock_domain_index", static_cast<int>(unit.clock_domain_index));
+            o->setProperty("number_of_stream_input_ports", static_cast<int>(unit.number_of_stream_input_ports));
+            o->setProperty("base_stream_input_port", static_cast<int>(unit.base_stream_input_port));
+            o->setProperty("number_of_stream_output_ports", static_cast<int>(unit.number_of_stream_output_ports));
+            o->setProperty("base_stream_output_port", static_cast<int>(unit.base_stream_output_port));
+            o->setProperty("current_sampling_rate", static_cast<int>(unit.current_sampling_rate));
+
+            juce::Array<juce::var> rates;
+            for (const auto& rate : unit.sampling_rates) {
+                rates.add(samplingRateToVar(rate));
+            }
+            o->setProperty("sampling_rates", rates);
+            audio_units.add(u);
+        }
+    }
+    obj->setProperty("audio_units", audio_units);
 
     // Stats
     auto stats = getStats();
@@ -679,8 +908,211 @@ juce::var EntityModelCache::toJSON() const {
 
 std::unique_ptr<EntityModelCache> EntityModelCache::fromJSON(const juce::var& json) {
     auto cache = std::make_unique<EntityModelCache>();
-    // TODO: Implement deserialization in Phase 10
+
+    if (!json.isObject()) return cache;
+
+    auto* obj = json.getDynamicObject();
+    if (!obj) return cache;
+
+    const auto modelsVar = obj->getProperty("models");
+    if (!modelsVar.isArray()) return cache;
+
+    const auto* modelsArray = modelsVar.getArray();
+    for (const auto& m : *modelsArray) {
+        auto modelOpt = EntityModel::fromJSON(m);
+        if (modelOpt) {
+            cache->setModel(modelOpt->getEntityId(), std::move(*modelOpt));
+        }
+    }
+
     return cache;
+}
+
+std::optional<EntityModel> EntityModel::fromJSON(const juce::var& json) {
+    if (!json.isObject()) return std::nullopt;
+    const auto* obj = json.getDynamicObject();
+    if (!obj) return std::nullopt;
+
+    Entity entity{};
+    entity.entity_id = hexStringToU64(obj->getProperty("entity_id").toString());
+    entity.entity_model_id = hexStringToU64(obj->getProperty("entity_model_id").toString());
+    entity.entity_name = AvdeccString(obj->getProperty("entity_name").toString().toStdString());
+    entity.firmware_version = AvdeccString(obj->getProperty("firmware_version").toString().toStdString());
+    entity.group_name = AvdeccString(obj->getProperty("group_name").toString().toStdString());
+    entity.serial_number = AvdeccString(obj->getProperty("serial_number").toString().toStdString());
+    entity.entity_capabilities = static_cast<uint32_t>(static_cast<int>(obj->getProperty("entity_capabilities")));
+    entity.talker_stream_sources = static_cast<uint16_t>(static_cast<int>(obj->getProperty("talker_stream_sources")));
+    entity.talker_capabilities = static_cast<uint16_t>(static_cast<int>(obj->getProperty("talker_capabilities")));
+    entity.listener_stream_sinks = static_cast<uint16_t>(static_cast<int>(obj->getProperty("listener_stream_sinks")));
+    entity.listener_capabilities = static_cast<uint16_t>(static_cast<int>(obj->getProperty("listener_capabilities")));
+    entity.controller_capabilities = static_cast<uint32_t>(static_cast<int>(obj->getProperty("controller_capabilities")));
+    entity.available_index = static_cast<uint32_t>(static_cast<int>(obj->getProperty("available_index")));
+    entity.association_id = hexStringToU64(obj->getProperty("association_id").toString());
+    entity.vendor_name_string_index = static_cast<uint16_t>(static_cast<int>(obj->getProperty("vendor_name_string_index")));
+    entity.model_name_string_index = static_cast<uint16_t>(static_cast<int>(obj->getProperty("model_name_string_index")));
+    entity.configurations_count = static_cast<uint16_t>(static_cast<int>(obj->getProperty("configurations_count")));
+    entity.current_configuration = static_cast<uint16_t>(static_cast<int>(obj->getProperty("current_configuration")));
+
+    EntityModel model(entity);
+
+    // Configurations
+    const auto configsVar = obj->getProperty("configurations");
+    if (configsVar.isArray()) {
+        const auto* cfgArray = configsVar.getArray();
+        for (const auto& cVar : *cfgArray) {
+            const auto* cObj = cVar.getDynamicObject();
+            if (!cObj) continue;
+            Configuration cfg{};
+            cfg.configuration_index = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("configuration_index")));
+            cfg.object_name = AvdeccString(cObj->getProperty("object_name").toString().toStdString());
+            cfg.localized_description = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("localized_description")));
+
+            const auto countsVar = cObj->getProperty("descriptor_counts");
+            if (countsVar.isArray()) {
+                const auto* countsArr = countsVar.getArray();
+                for (const auto& cv : *countsArr) {
+                    const auto* countObj = cv.getDynamicObject();
+                    if (!countObj) continue;
+                    DescriptorCount dc{};
+                    dc.descriptor_type = static_cast<uint16_t>(static_cast<int>(countObj->getProperty("descriptor_type")));
+                    dc.count = static_cast<uint16_t>(static_cast<int>(countObj->getProperty("count")));
+                    cfg.descriptor_counts.push_back(dc);
+                }
+            }
+            model.addConfiguration(cfg);
+        }
+    }
+
+    auto loadStreams = [&](const juce::String& key, bool is_input) {
+        const auto streamsVar = obj->getProperty(key);
+        if (!streamsVar.isArray()) return;
+        const auto* arr = streamsVar.getArray();
+        for (const auto& sv : *arr) {
+            const auto* sObj = sv.getDynamicObject();
+            if (!sObj) continue;
+            StreamInput si{};
+            si.stream_index = static_cast<uint16_t>(static_cast<int>(sObj->getProperty("stream_index")));
+            si.object_name = AvdeccString(sObj->getProperty("object_name").toString().toStdString());
+            si.localized_description = static_cast<uint16_t>(static_cast<int>(sObj->getProperty("localized_description")));
+            si.clock_domain_index = static_cast<uint16_t>(static_cast<int>(sObj->getProperty("clock_domain_index")));
+            si.stream_flags = static_cast<uint16_t>(static_cast<int>(sObj->getProperty("stream_flags")));
+            si.current_format = static_cast<StreamFormat>(hexStringToU64(sObj->getProperty("current_format").toString()));
+            si.avb_interface_index = static_cast<uint16_t>(static_cast<int>(sObj->getProperty("avb_interface_index")));
+            si.buffer_length = static_cast<uint32_t>(static_cast<int>(sObj->getProperty("buffer_length")));
+
+            const auto formatsVar = sObj->getProperty("supported_formats");
+            if (formatsVar.isArray()) {
+                const auto* fmtArr = formatsVar.getArray();
+                for (const auto& fv : *fmtArr) {
+                    si.supported_formats.push_back(static_cast<StreamFormat>(hexStringToU64(fv.toString())));
+                }
+            }
+
+            const uint16_t cfg_idx = static_cast<uint16_t>(static_cast<int>(sObj->getProperty("config_index")));
+            if (is_input) {
+                model.addStreamInput(cfg_idx, si);
+            } else {
+                StreamOutput so{};
+                so.stream_index = si.stream_index;
+                so.object_name = si.object_name;
+                so.localized_description = si.localized_description;
+                so.clock_domain_index = si.clock_domain_index;
+                so.stream_flags = si.stream_flags;
+                so.current_format = si.current_format;
+                so.supported_formats = si.supported_formats;
+                so.avb_interface_index = si.avb_interface_index;
+                so.buffer_length = si.buffer_length;
+                model.addStreamOutput(cfg_idx, so);
+            }
+        }
+    };
+
+    loadStreams("stream_inputs", true);
+    loadStreams("stream_outputs", false);
+
+    // AVB Interfaces
+    const auto ifaceVar = obj->getProperty("avb_interfaces");
+    if (ifaceVar.isArray()) {
+        const auto* arr = ifaceVar.getArray();
+        for (const auto& iv : *arr) {
+            const auto* iObj = iv.getDynamicObject();
+            if (!iObj) continue;
+            AvbInterface iface{};
+            iface.interface_index = static_cast<uint16_t>(static_cast<int>(iObj->getProperty("interface_index")));
+            iface.object_name = AvdeccString(iObj->getProperty("object_name").toString().toStdString());
+            iface.localized_description = static_cast<uint16_t>(static_cast<int>(iObj->getProperty("localized_description")));
+            iface.mac_address = hexStringToMac(iObj->getProperty("mac_address").toString());
+            iface.interface_flags = static_cast<uint16_t>(static_cast<int>(iObj->getProperty("interface_flags")));
+            iface.clock_identity = hexStringToArray8(iObj->getProperty("clock_identity").toString());
+            iface.priority1 = static_cast<uint8_t>(static_cast<int>(iObj->getProperty("priority1")));
+            iface.clock_class = static_cast<uint8_t>(static_cast<int>(iObj->getProperty("clock_class")));
+            iface.offset_scaled_log_variance = static_cast<uint16_t>(static_cast<int>(iObj->getProperty("offset_scaled_log_variance")));
+            iface.clock_accuracy = static_cast<uint8_t>(static_cast<int>(iObj->getProperty("clock_accuracy")));
+            iface.priority2 = static_cast<uint8_t>(static_cast<int>(iObj->getProperty("priority2")));
+            iface.domain_number = static_cast<uint8_t>(static_cast<int>(iObj->getProperty("domain_number")));
+            iface.log_sync_interval = static_cast<int8_t>(static_cast<int>(iObj->getProperty("log_sync_interval")));
+            iface.log_announce_interval = static_cast<int8_t>(static_cast<int>(iObj->getProperty("log_announce_interval")));
+            iface.log_pdelay_interval = static_cast<int8_t>(static_cast<int>(iObj->getProperty("log_pdelay_interval")));
+            iface.port_number = static_cast<uint16_t>(static_cast<int>(iObj->getProperty("port_number")));
+            const uint16_t cfg_idx = static_cast<uint16_t>(static_cast<int>(iObj->getProperty("config_index")));
+            model.addAvbInterface(cfg_idx, iface);
+        }
+    }
+
+    // Clock Sources
+    const auto clockVar = obj->getProperty("clock_sources");
+    if (clockVar.isArray()) {
+        const auto* arr = clockVar.getArray();
+        for (const auto& cv : *arr) {
+            const auto* cObj = cv.getDynamicObject();
+            if (!cObj) continue;
+            ClockSource clock{};
+            clock.clock_source_index = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("clock_source_index")));
+            clock.object_name = AvdeccString(cObj->getProperty("object_name").toString().toStdString());
+            clock.localized_description = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("localized_description")));
+            clock.clock_source_flags = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("clock_source_flags")));
+            clock.clock_source_type = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("clock_source_type")));
+            clock.clock_source_identifier = hexStringToArray8(cObj->getProperty("clock_source_identifier").toString());
+            clock.clock_source_location_type = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("clock_source_location_type")));
+            clock.clock_source_location_index = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("clock_source_location_index")));
+            const uint16_t cfg_idx = static_cast<uint16_t>(static_cast<int>(cObj->getProperty("config_index")));
+            model.addClockSource(cfg_idx, clock);
+        }
+    }
+
+    // Audio Units
+    const auto audioVar = obj->getProperty("audio_units");
+    if (audioVar.isArray()) {
+        const auto* arr = audioVar.getArray();
+        for (const auto& av : *arr) {
+            const auto* aObj = av.getDynamicObject();
+            if (!aObj) continue;
+            AudioUnit unit{};
+            unit.audio_unit_index = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("audio_unit_index")));
+            unit.object_name = AvdeccString(aObj->getProperty("object_name").toString().toStdString());
+            unit.localized_description = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("localized_description")));
+            unit.clock_domain_index = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("clock_domain_index")));
+            unit.number_of_stream_input_ports = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("number_of_stream_input_ports")));
+            unit.base_stream_input_port = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("base_stream_input_port")));
+            unit.number_of_stream_output_ports = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("number_of_stream_output_ports")));
+            unit.base_stream_output_port = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("base_stream_output_port")));
+            unit.current_sampling_rate = static_cast<uint32_t>(static_cast<int>(aObj->getProperty("current_sampling_rate")));
+
+            const auto ratesVar = aObj->getProperty("sampling_rates");
+            if (ratesVar.isArray()) {
+                const auto* ratesArr = ratesVar.getArray();
+                for (const auto& rv : *ratesArr) {
+                    auto rateOpt = samplingRateFromVar(rv);
+                    if (rateOpt) unit.sampling_rates.push_back(*rateOpt);
+                }
+            }
+
+            const uint16_t cfg_idx = static_cast<uint16_t>(static_cast<int>(aObj->getProperty("config_index")));
+            model.addAudioUnit(cfg_idx, unit);
+        }
+    }
+
+    return model;
 }
 
 } // namespace Avdecc

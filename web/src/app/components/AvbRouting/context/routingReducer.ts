@@ -27,6 +27,7 @@ import {
   hasDuplicateSceneName,
   normalizeAndValidateSceneMetadata,
 } from '../utils/sceneValidation';
+import { mergeFilterState } from '../utils/filters';
 
 function generateId(): string {
   if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
@@ -1183,10 +1184,7 @@ export function routingReducer(
     case 'SET_FILTERS': {
       return {
         ...state,
-        filters: {
-          ...state.filters,
-          ...action.payload,
-        },
+        filters: mergeFilterState(state.filters, action.payload),
       };
     }
 

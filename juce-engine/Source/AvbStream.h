@@ -13,6 +13,7 @@
 
 #include "AvbException.h"
 #include <atomic>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -63,6 +64,10 @@ struct AvbStreamStatsSnapshot {
     uint64_t overruns{0};
     uint64_t timestampErrors{0};
     uint64_t sequenceErrors{0};
+    uint64_t sequenceGapEvents{0};
+    uint64_t timestampSkewEvents{0};
+    uint64_t decodeErrors{0};
+    int64_t maxTimestampSkewNs{0};
     uint64_t bytesTransferred{0};
     int64_t maxLatencyNs{0};
     int64_t minLatencyNs{INT64_MAX};
@@ -80,6 +85,10 @@ struct AvbStreamStats {
     std::atomic<uint64_t> overruns{0};         // Listener buffer overruns
     std::atomic<uint64_t> timestampErrors{0};
     std::atomic<uint64_t> sequenceErrors{0};   // Out-of-order packets
+    std::atomic<uint64_t> sequenceGapEvents{0};   // Non-sequential packets
+    std::atomic<uint64_t> timestampSkewEvents{0}; // Latency beyond skew threshold
+    std::atomic<uint64_t> decodeErrors{0};        // PDU decode/format errors
+    std::atomic<int64_t> maxTimestampSkewNs{0};
     std::atomic<uint64_t> bytesTransferred{0};
     std::atomic<int64_t> maxLatencyNs{0};      // Maximum observed latency
     std::atomic<int64_t> minLatencyNs{INT64_MAX};
@@ -94,6 +103,10 @@ struct AvbStreamStats {
             overruns.load(std::memory_order_relaxed),
             timestampErrors.load(std::memory_order_relaxed),
             sequenceErrors.load(std::memory_order_relaxed),
+            sequenceGapEvents.load(std::memory_order_relaxed),
+            timestampSkewEvents.load(std::memory_order_relaxed),
+            decodeErrors.load(std::memory_order_relaxed),
+            maxTimestampSkewNs.load(std::memory_order_relaxed),
             bytesTransferred.load(std::memory_order_relaxed),
             maxLatencyNs.load(std::memory_order_relaxed),
             minLatencyNs.load(std::memory_order_relaxed)
@@ -109,6 +122,10 @@ struct AvbStreamStats {
         overruns.store(0, std::memory_order_relaxed);
         timestampErrors.store(0, std::memory_order_relaxed);
         sequenceErrors.store(0, std::memory_order_relaxed);
+        sequenceGapEvents.store(0, std::memory_order_relaxed);
+        timestampSkewEvents.store(0, std::memory_order_relaxed);
+        decodeErrors.store(0, std::memory_order_relaxed);
+        maxTimestampSkewNs.store(0, std::memory_order_relaxed);
         bytesTransferred.store(0, std::memory_order_relaxed);
         maxLatencyNs.store(0, std::memory_order_relaxed);
         minLatencyNs.store(INT64_MAX, std::memory_order_relaxed);
@@ -187,6 +204,12 @@ public:
                                    uint64_t* timestamp);
     uint8_t getNextSequenceForTest() const { return sequenceNum_; }
     uint8_t getExpectedSequenceForTest() const { return expectedSequenceNum_; }
+    bool isAvtpInitializedForTest() const { return avtpStream_ != nullptr && static_cast<bool>(avtpStorage_); }
+    uint8_t getNsrCodeForTest() const { return avtpNsrCode_; }
+    uint8_t getFormatCodeForTest() const { return avtpFormatCode_; }
+    uint16_t getStreamDataLengthForTest() const { return avtpStreamDataLen_; }
+    uint64_t getConfiguredStreamIdForTest() const { return avtpConfiguredStreamId_; }
+    size_t getAvtpStorageSizeForTest() const { return avtpStorageSize_; }
 #endif
 
     /**
@@ -263,6 +286,13 @@ private:
 
     // libavtp state
     struct avtp_stream_pdu* avtpStream_;      // Opaque libavtp handle
+    std::unique_ptr<uint8_t[]> avtpStorage_;  // AVTP stream descriptor/storage ownership
+    size_t avtpStorageSize_{0};
+    std::array<uint8_t, 24> avtpHeaderTemplate_{};
+    uint8_t avtpNsrCode_{0};
+    uint8_t avtpFormatCode_{0};
+    uint16_t avtpStreamDataLen_{0};
+    uint64_t avtpConfiguredStreamId_{0};
 
     // Sequence numbering
     uint8_t sequenceNum_;                     // AVTP sequence counter (0-255)

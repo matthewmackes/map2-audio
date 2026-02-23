@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { InspectorPanel } from './InspectorPanel'
 import { initialRoutingState, type Endpoint, type Route } from '../../types'
 
@@ -18,6 +19,26 @@ jest.mock('../../hooks/useAvbApi', () => ({
   useAvbStreams: () => ({
     data: mockAvbStreamsData,
   }),
+}))
+
+jest.mock('@/map2/api', () => ({
+  audioApi: {
+    getChainRouting: jest.fn(async () => ({
+      available: true,
+      chain_id: 1,
+      input_ports: [],
+      output_ports: [],
+      input_avb_endpoints: [],
+      output_avb_endpoints: [],
+      input_bindings: [],
+      output_bindings: [],
+      is_override: false,
+      chain_exists: true,
+    })),
+  },
+  chainsApi: {
+    list: jest.fn(async () => ({ chains: [] })),
+  },
 }))
 
 function makeEndpoint(overrides: Partial<Endpoint>): Endpoint {
@@ -86,6 +107,23 @@ function makeBaseState() {
   }
 }
 
+function createQueryWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  return function QueryWrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    )
+  }
+}
+
 describe('InspectorPanel node-context filtering', () => {
   beforeEach(() => {
     mockState = makeBaseState()
@@ -140,7 +178,7 @@ describe('InspectorPanel node-context filtering', () => {
       },
     }
 
-    const { rerender } = render(<InspectorPanel />)
+    const { rerender } = render(<InspectorPanel />, { wrapper: createQueryWrapper() })
 
     expect(screen.queryByText('Selected Route')).toBeNull()
     expect(screen.getByText('Click an endpoint or route to see details')).toBeTruthy()
@@ -190,7 +228,7 @@ describe('InspectorPanel node-context filtering', () => {
       },
     }
 
-    const { rerender } = render(<InspectorPanel />)
+    const { rerender } = render(<InspectorPanel />, { wrapper: createQueryWrapper() })
 
     expect(screen.queryByText('Selected Endpoint')).toBeNull()
     expect(screen.getByText('Click an endpoint or route to see details')).toBeTruthy()
@@ -250,7 +288,7 @@ describe('InspectorPanel node-context filtering', () => {
       },
     }
 
-    const { rerender } = render(<InspectorPanel />)
+    const { rerender } = render(<InspectorPanel />, { wrapper: createQueryWrapper() })
 
     expect(screen.queryByText('Selected Route')).toBeNull()
 
@@ -298,7 +336,7 @@ describe('InspectorPanel node-context filtering', () => {
       },
     }
 
-    const { rerender } = render(<InspectorPanel />)
+    const { rerender } = render(<InspectorPanel />, { wrapper: createQueryWrapper() })
 
     expect(screen.queryByText('Selected Endpoint')).toBeNull()
     expect(screen.getByText('Click an endpoint or route to see details')).toBeTruthy()
@@ -455,7 +493,7 @@ describe('InspectorPanel node-context filtering', () => {
       ],
     }
 
-    render(<InspectorPanel />)
+    render(<InspectorPanel />, { wrapper: createQueryWrapper() })
 
     expect(screen.getByText('Engine Cache')).toBeTruthy()
     expect(screen.getByText('Synced')).toBeTruthy()
@@ -470,6 +508,214 @@ describe('InspectorPanel node-context filtering', () => {
     expect(screen.getByText('Failover Candidate Streams')).toBeTruthy()
     expect(screen.getByText('Failover Policies')).toBeTruthy()
     expect(screen.getByText('Failover Interfaces')).toBeTruthy()
+  })
+
+  it('renders AVB health snapshot scoped to the selected node context', () => {
+    const talkerA = makeEndpoint({
+      endpoint_id: 'talker-a',
+      device_name: 'Talker A',
+      direction: 'talker',
+      host: 'stage.local',
+      node_id: 'node-a',
+      available: true,
+    })
+    const listenerB = makeEndpoint({
+      endpoint_id: 'listener-b',
+      device_name: 'Listener B',
+      direction: 'listener',
+      host: 'remote.local',
+      node_id: 'node-b',
+      available: false,
+    })
+    const route = makeRoute({
+      id: 'talker-a→listener-b',
+      talker_id: 'talker-a',
+      listener_id: 'listener-b',
+      talker_node_id: 'node-a',
+      listener_node_id: 'node-b',
+    })
+
+    mockState = {
+      ...makeBaseState(),
+      network: {
+        ...makeBaseState().network,
+        nodes: {
+          'node-a': { node_id: 'node-a', status: 'online' },
+          'node-b': { node_id: 'node-b', status: 'degraded' },
+        },
+        nodeSelection: {
+          ...makeBaseState().network.nodeSelection,
+          view_mode: 'single_node',
+          current_node_id: 'node-a',
+        },
+      },
+      endpoints: {
+        [talkerA.endpoint_id]: talkerA,
+        [listenerB.endpoint_id]: listenerB,
+      },
+      liveRoutes: {
+        [route.id]: route,
+      },
+    }
+
+    mockAvbStreamsData = {
+      available: true,
+      streams: [
+        {
+          stream_id: route.id,
+          state: 'running',
+          ownership: {
+            owner_node_id: 'node-a',
+            peer_node_id: 'node-b',
+            owner_endpoint_id: 'talker-a',
+            peer_endpoint_id: 'listener-b',
+            talker_node_id: 'node-a',
+            listener_node_id: 'node-b',
+            talker_endpoint_id: 'talker-a',
+            listener_endpoint_id: 'listener-b',
+            node_ids: ['node-a', 'node-b'],
+            endpoint_ids: ['listener-b', 'talker-a'],
+          },
+          health: { ready: true },
+          diagnostics: {
+            effective_config: {
+              stream_id: route.id,
+              direction: 'talker',
+              interface: 'eth0',
+              channels: 2,
+              sample_rate: 48000,
+              buffer_size: 256,
+              presentation_offset_us: 2000,
+              priority: 3,
+              dest_mac: null,
+              failover_policy: 'prefer_primary',
+              interface_candidates: ['eth0', 'eth1'],
+            },
+            ptp_lock: {
+              locked: true,
+              state: 'SLAVE',
+              reason: null,
+              offset_ns: 10,
+              mean_path_delay_ns: 20,
+              last_update: '2026-02-21T00:00:00Z',
+            },
+            tsn_qdisc: {
+              available: true,
+              interface: 'eth0',
+              mqprio_configured: true,
+              cbs_configured: true,
+              etf_configured: true,
+              vlan_configured: true,
+              error: null,
+            },
+            srp: {
+              enabled: true,
+              required: true,
+              bound: true,
+              reservation_id: 'res-1',
+              admission_id: 'adm-1',
+              metadata: {},
+            },
+          },
+        },
+      ],
+    }
+
+    render(<InspectorPanel />, { wrapper: createQueryWrapper() })
+
+    expect(screen.getByTestId('inspector-health-snapshot-title').textContent).toBe('AVB Health Snapshot')
+    expect(screen.getByTestId('inspector-health-snapshot-status').textContent).toContain('Healthy')
+    expect(screen.getByTestId('inspector-health-snapshot-context').textContent).toContain('Node node-a')
+    expect(screen.getByTestId('inspector-health-snapshot-scope').textContent).toContain('Ownership-scoped')
+    expect(screen.getByTestId('inspector-health-endpoints').textContent).toContain('1/1 healthy')
+    expect(screen.getByTestId('inspector-health-hosts').textContent).toContain('1 in context')
+    expect(screen.getByTestId('inspector-health-streams').textContent).toContain('1/1 ready')
+    expect(screen.getByTestId('inspector-health-ptp').textContent).toContain('1/1 diagnostics')
+    expect(screen.getByTestId('inspector-health-srp').textContent).toContain('1/1 diagnostics')
+  })
+
+  it('excludes streams without matching ownership in node-scoped health snapshots', () => {
+    const talkerA = makeEndpoint({
+      endpoint_id: 'talker-a',
+      device_name: 'Talker A',
+      direction: 'talker',
+      node_id: 'node-a',
+      available: true,
+    })
+
+    mockState = {
+      ...makeBaseState(),
+      network: {
+        ...makeBaseState().network,
+        nodeSelection: {
+          ...makeBaseState().network.nodeSelection,
+          view_mode: 'single_node',
+          current_node_id: 'node-a',
+        },
+      },
+      endpoints: {
+        [talkerA.endpoint_id]: talkerA,
+      },
+    }
+
+    mockAvbStreamsData = {
+      available: true,
+      streams: [
+        {
+          stream_id: 'stream-unscoped',
+          direction: 'talker',
+          state: 'running',
+          health: { ready: true },
+          diagnostics: {
+            effective_config: {
+              stream_id: 'stream-unscoped',
+              direction: 'talker',
+              interface: 'eth0',
+              channels: 2,
+              sample_rate: 48000,
+              buffer_size: 256,
+              presentation_offset_us: 2000,
+              priority: 3,
+              dest_mac: null,
+              failover_policy: 'none',
+              interface_candidates: ['eth0'],
+            },
+            ptp_lock: {
+              locked: true,
+              state: 'SLAVE',
+              reason: null,
+              offset_ns: 1,
+              mean_path_delay_ns: 2,
+              last_update: '2026-02-21T00:00:00Z',
+            },
+            tsn_qdisc: {
+              available: true,
+              interface: 'eth0',
+              mqprio_configured: true,
+              cbs_configured: true,
+              etf_configured: true,
+              vlan_configured: true,
+              error: null,
+            },
+            srp: {
+              enabled: true,
+              required: true,
+              bound: false,
+              reservation_id: null,
+              admission_id: null,
+              metadata: {},
+            },
+          },
+        },
+      ],
+    }
+
+    render(<InspectorPanel />, { wrapper: createQueryWrapper() })
+
+    expect(screen.getByTestId('inspector-health-snapshot-scope').textContent).toContain('Ownership-scoped')
+    expect(screen.getByTestId('inspector-health-streams').textContent).toContain('0/0 ready')
+    expect(screen.getByTestId('inspector-health-ptp').textContent).toContain('0/0 diagnostics')
+    expect(screen.getByTestId('inspector-health-srp').textContent).toContain('0/0 diagnostics')
   })
 
   it('shows route-specific failover diagnostics when matching stream data exists', () => {
@@ -523,6 +769,18 @@ describe('InspectorPanel node-context filtering', () => {
           stream_id: 'map2-talker-001122fffe334455-1-667788fffe99aabb-2',
           direction: 'talker',
           state: 'running',
+          ownership: {
+            owner_node_id: 'node-b',
+            peer_node_id: 'node-c',
+            owner_endpoint_id: '001122fffe334455:1',
+            peer_endpoint_id: '667788fffe99aabb:2',
+            talker_node_id: 'node-b',
+            listener_node_id: 'node-c',
+            talker_endpoint_id: '001122fffe334455:1',
+            listener_endpoint_id: '667788fffe99aabb:2',
+            node_ids: ['node-b', 'node-c'],
+            endpoint_ids: ['001122fffe334455:1', '667788fffe99aabb:2'],
+          },
           health: { ready: true, issues: [], interface: 'eth0', ptp: null, tsn: null },
           diagnostics: {
             effective_config: {
@@ -568,7 +826,7 @@ describe('InspectorPanel node-context filtering', () => {
       ],
     };
 
-    render(<InspectorPanel />)
+    render(<InspectorPanel />, { wrapper: createQueryWrapper() })
 
     expect(screen.getByText('Selected Route')).toBeTruthy()
     expect(screen.getByText('Talker Stream Map2')).toBeTruthy()

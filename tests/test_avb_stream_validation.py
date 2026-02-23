@@ -312,6 +312,70 @@ def test_route_create_stream_rejects_invalid_failover_interfaces_type(monkeypatc
     assert dummy_service.called is False
 
 
+def test_route_create_stream_accepts_ownership_metadata(monkeypatch):
+    dummy_service = _DummyAvbService()
+    monkeypatch.setattr(avb_service, "get_avb_service", lambda: dummy_service)
+
+    result = asyncio.run(
+        avb_routes.create_stream(
+            {
+                "stream_id": "stream-ownership",
+                "direction": "talker",
+                "channels": 2,
+                "sample_rate": 48000,
+                "buffer_size": 256,
+                "interface": "eth0",
+                "ownership": {
+                    "owner_node_id": "node-a",
+                    "peer_node_id": "node-b",
+                    "owner_endpoint_id": "0011223344556677:1",
+                    "peer_endpoint_id": "8899aabbccddeeff:2",
+                    "talker_node_id": "node-a",
+                    "listener_node_id": "node-b",
+                    "talker_endpoint_id": "0011223344556677:1",
+                    "listener_endpoint_id": "8899aabbccddeeff:2",
+                },
+            }
+        )
+    )
+
+    assert result["status"] == "created"
+    assert dummy_service.called is True
+    assert dummy_service.received_config is not None
+    assert dummy_service.received_config.owner_node_id == "node-a"
+    assert dummy_service.received_config.peer_node_id == "node-b"
+    assert dummy_service.received_config.owner_endpoint_id == "0011223344556677:1"
+    assert dummy_service.received_config.peer_endpoint_id == "8899aabbccddeeff:2"
+    assert dummy_service.received_config.talker_node_id == "node-a"
+    assert dummy_service.received_config.listener_node_id == "node-b"
+    assert dummy_service.received_config.talker_endpoint_id == "0011223344556677:1"
+    assert dummy_service.received_config.listener_endpoint_id == "8899aabbccddeeff:2"
+
+
+def test_route_create_stream_rejects_invalid_ownership_type(monkeypatch):
+    dummy_service = _DummyAvbService()
+    monkeypatch.setattr(avb_service, "get_avb_service", lambda: dummy_service)
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(
+            avb_routes.create_stream(
+                {
+                    "stream_id": "stream-ownership-invalid",
+                    "direction": "talker",
+                    "channels": 2,
+                    "sample_rate": 48000,
+                    "buffer_size": 256,
+                    "interface": "eth0",
+                    "ownership": "node-a",
+                }
+            )
+        )
+
+    assert exc.value.status_code == 400
+    assert exc.value.detail == "ownership must be an object when provided"
+    assert dummy_service.called is False
+
+
 def test_avb_service_stores_srp_binding_when_provided():
     service = AvbService()
     service.is_available = lambda: True

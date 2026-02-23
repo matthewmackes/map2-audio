@@ -9,53 +9,28 @@ available=False when AVB is not configured or hardware is not present.
 """
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
+
+from app.services.avb.readiness import get_avb_readiness as _get_avb_readiness
 
 logger = logging.getLogger(__name__)
+
+
+def get_avb_readiness(engine: Optional[Any] = None) -> Dict[str, Any]:
+    """Return canonical AVB readiness across config/runtime/engine checks."""
+    return _get_avb_readiness(engine=engine)
 
 
 def is_avb_available() -> bool:
     """
     Check if AVB/TSN is available on this system.
 
-    Returns False if:
-    - AVB not enabled in config
-    - No TSN-capable NIC detected
-    - linuxptp (ptp4l) not installed
-    - C++ engine built without USE_AVB=ON
-
-    This is a fast check that doesn't require heavy initialization.
+    Availability is derived from canonical readiness:
+    enabled + configured + operational.
     """
     try:
-        from app.config import config_get
-
-        # First check: config must explicitly enable AVB
-        if not config_get("avb.enabled", False):
-            logger.debug("AVB not enabled in config")
-            return False
-
-        # Second check: interface must be specified
-        avb_interface = config_get("avb.interface", "")
-        if not avb_interface:
-            logger.debug("No AVB interface configured")
-            return False
-
-        # Third check: interface must exist
-        import os
-        if not os.path.exists(f"/sys/class/net/{avb_interface}"):
-            logger.warning(f"AVB interface {avb_interface} does not exist")
-            return False
-
-        # Fourth check: ptp4l must be available (linuxptp installed)
-        import shutil
-        if not shutil.which("ptp4l"):
-            logger.debug("ptp4l not found (linuxptp not installed)")
-            return False
-
-        # All checks passed
-        logger.info(f"AVB available on interface {avb_interface}")
-        return True
-
+        readiness = get_avb_readiness()
+        return bool(readiness.get("available", False))
     except Exception as e:
         logger.error(f"Error checking AVB availability: {e}")
         return False
@@ -63,6 +38,7 @@ def is_avb_available() -> bool:
 
 __all__ = [
     "is_avb_available",
+    "get_avb_readiness",
     "get_srp_admission_service",
 ]
 

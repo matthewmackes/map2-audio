@@ -47,6 +47,8 @@ public:
     // Stream descriptors
     void addStreamInput(uint16_t config_index, const StreamInput& stream);
     void addStreamOutput(uint16_t config_index, const StreamOutput& stream);
+    bool setStreamInputFormat(uint16_t config_index, uint16_t stream_index, StreamFormat format);
+    bool setStreamOutputFormat(uint16_t config_index, uint16_t stream_index, StreamFormat format);
     std::optional<StreamInput> getStreamInput(uint16_t config_index, uint16_t stream_index) const;
     std::optional<StreamOutput> getStreamOutput(uint16_t config_index, uint16_t stream_index) const;
     std::vector<StreamInput> getAllStreamInputs(uint16_t config_index) const;

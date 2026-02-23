@@ -129,8 +129,85 @@ def test_router_connections_payload_includes_node_ownership_metadata(monkeypatch
 
     assert connection["talker"]["node_id"] == "node-a"
     assert connection["talker"]["node_address"] == "http://10.0.0.10:8080"
+    assert connection["talker"]["direction"] == "talker"
+    assert connection["talker"]["device_type"] == "unknown"
+    assert connection["talker"]["host"] == "10.0.0.10"
     assert connection["listener"]["node_id"] == "node-b"
     assert connection["listener"]["node_address"] == "http://10.0.0.11:8080"
+    assert connection["listener"]["direction"] == "listener"
+    assert connection["listener"]["device_type"] == "unknown"
+    assert connection["listener"]["host"] == "10.0.0.11"
+
+
+def test_router_endpoints_payload_uses_canonical_schema_with_fallbacks(monkeypatch):
+    class _Endpoint:
+        def __init__(
+            self,
+            endpoint_id: str,
+            *,
+            direction: str,
+            device_name: str,
+            node_address: str,
+        ):
+            self._endpoint_id = endpoint_id
+            self.entity_id = None
+            self.unique_id = None
+            self.node_id = None
+            self.direction = SimpleNamespace(value=direction)
+            self.device_type = "custom-device-type"
+            self.device_name = device_name
+            self.channels = 0
+            self.sample_rate = -1
+            self.format = ""
+            self.mac_address = None
+            self.node_address = node_address
+            self.available = False
+            self.last_seen = None
+
+        def endpoint_id(self):
+            return self._endpoint_id
+
+    class _Router:
+        def get_endpoints(self, _direction_filter):
+            return [
+                _Endpoint(
+                    "8899aabbccddeeff:9",
+                    direction="listener",
+                    device_name="Listener B",
+                    node_address="http://listener-b.local:8080",
+                ),
+                _Endpoint(
+                    "0011223344556677:1",
+                    direction="talker",
+                    device_name="Talker A",
+                    node_address="http://talker-a.local:8080",
+                ),
+            ]
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+
+    payload = asyncio.run(avb_routes.get_router_endpoints())
+    endpoints = payload["endpoints"]
+
+    assert payload["count"] == 2
+    assert [ep["endpoint_id"] for ep in endpoints] == [
+        "0011223344556677:1",
+        "8899aabbccddeeff:9",
+    ]
+
+    first = endpoints[0]
+    assert first["entity_id"] == "0011223344556677"
+    assert first["unique_id"] == 1
+    assert first["node_id"] == "talker-a.local"
+    assert first["direction"] == "talker"
+    assert first["device_type"] == "unknown"
+    assert first["device_name"] == "Talker A"
+    assert first["channels"] == 2
+    assert first["sample_rate"] == 48000
+    assert first["format"] == "24-bit PCM"
+    assert first["host"] == "talker-a.local"
+    assert first["available"] is False
+    assert isinstance(first["last_seen"], str) and first["last_seen"]
 
 
 def test_router_connect_returns_409_when_admission_denied(monkeypatch):
@@ -201,6 +278,44 @@ def test_router_connect_returns_srp_admission_on_allowed(monkeypatch):
     assert result["success"] is True
     assert result["srp_admission"]["reservation_id"] == "res-1"
     assert result["connection_id"] == "0011223344556677:0→8899aabbccddeeff:1"
+
+
+def test_router_connect_includes_trace_id_and_stages_from_router_payload(monkeypatch):
+    monkeypatch.setattr(avb_routes, "config_get", lambda key, default=None: False if key == "avb.srp.enabled" else default)
+
+    class _Endpoint:
+        def __init__(self, mac_address, device_type):
+            self.mac_address = mac_address
+            self.device_type = device_type
+
+    class _Router:
+        endpoints = {
+            "0011223344556677:0": _Endpoint("00:11:22:33:44:55", "map2"),
+            "8899aabbccddeeff:1": _Endpoint("66:77:88:99:aa:bb", "map2"),
+        }
+
+        async def connect(self, *_args, **_kwargs):
+            return {
+                "success": True,
+                "trace_id": "connect-abc123",
+                "stages": [
+                    {"stage": "connect.start", "status": "ok"},
+                    {"stage": "connect.complete", "status": "ok"},
+                ],
+            }
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+
+    result = asyncio.run(
+        avb_routes.connect_streams(
+            {"talker_id": "0011223344556677:0", "listener_id": "8899aabbccddeeff:1"}
+        )
+    )
+
+    assert result["success"] is True
+    assert result["trace_id"] == "connect-abc123"
+    assert isinstance(result.get("stages"), list)
+    assert result["stages"][-1]["stage"] == "connect.complete"
 
 
 def test_router_connect_strict_srp_fails_when_allowed_without_reservation(monkeypatch):
@@ -799,6 +914,29 @@ def test_router_disconnect_includes_srp_release_payload_from_router(monkeypatch)
     assert result["message"] == "Stream disconnected successfully"
     assert result["srp_release"]["reason_code"] == "SRP_RELEASED"
     assert result["srp_release"]["reservation_id"] == "res-router-disconnect"
+
+
+def test_router_disconnect_includes_trace_id_and_stages_from_router_payload(monkeypatch):
+    class _Router:
+        async def disconnect(self, _talker_id, _listener_id, return_details=False):
+            assert return_details is True
+            return {
+                "success": True,
+                "trace_id": "disconnect-xyz789",
+                "stages": [
+                    {"stage": "disconnect.start", "status": "ok"},
+                    {"stage": "disconnect.complete", "status": "ok"},
+                ],
+            }
+
+    monkeypatch.setattr(avb_router_module, "get_avb_router", lambda: _Router())
+
+    result = asyncio.run(avb_routes.disconnect_streams({"talker_id": "t:0", "listener_id": "l:1"}))
+
+    assert result["success"] is True
+    assert result["trace_id"] == "disconnect-xyz789"
+    assert isinstance(result.get("stages"), list)
+    assert result["stages"][-1]["stage"] == "disconnect.complete"
 
 
 def test_router_disconnect_includes_srp_release_warning_from_router(monkeypatch):
@@ -1468,6 +1606,211 @@ def test_stop_stream_release_failure_returns_warning_and_succeeds(monkeypatch):
     assert result["srp_release_warning"]["reservation_id"] == "res-stop-fail"
     assert "stop release timeout" in result["srp_release_warning"]["detail"]
     assert service.cleared == []
+
+
+def test_patch_stream_format_updates_and_verifies(monkeypatch):
+    async def _to_thread_inline(fn, *args, **kwargs):
+        return fn(*args, **kwargs)
+
+    class _Engine:
+        def __init__(self):
+            self.calls = []
+
+        def set_stream_format(self, entity_id, stream_index, direction, stream_format, configuration_index):
+            self.calls.append(
+                ("set", entity_id, stream_index, direction, stream_format, configuration_index)
+            )
+            return {
+                "success": True,
+                "status_code": 0,
+                "status": "success",
+                "stream_format": stream_format,
+            }
+
+        def get_stream_format(self, entity_id, stream_index, direction, configuration_index):
+            self.calls.append(
+                ("get", entity_id, stream_index, direction, configuration_index)
+            )
+            return {
+                "success": True,
+                "status_code": 0,
+                "status": "success",
+                "stream_format": 0x0200000818000005,
+            }
+
+    engine = _Engine()
+    monkeypatch.setattr(avb_routes, "_get_engine", lambda: engine)
+    monkeypatch.setattr(avb_routes, "_check_acmp_available", lambda _engine: None)
+    monkeypatch.setattr(avb_routes.asyncio, "to_thread", _to_thread_inline)
+
+    req = avb_routes.StreamFormatPatchRequest(
+        direction="listener",
+        channels=8,
+        sample_rate=48000,
+        bits_per_sample=24,
+        configuration_index=0,
+    )
+    result = asyncio.run(avb_routes.patch_stream_format("0011223344556677", 2, req))
+
+    assert result["status"] == "updated"
+    assert result["entity_id"] == "0011223344556677"
+    assert result["direction"] == "listener"
+    assert result["requested"]["stream_format"] == 0x0200000818000005
+    assert result["applied"]["stream_format"] == 0x0200000818000005
+    assert result["applied"]["channels"] == 8
+    assert result["applied"]["sample_rate"] == 48000
+    assert result["applied"]["bits_per_sample"] == 24
+    assert engine.calls[0][0] == "set"
+    assert engine.calls[1][0] == "get"
+
+
+def test_patch_stream_format_rejects_invalid_bits_per_sample(monkeypatch):
+    monkeypatch.setattr(avb_routes, "_get_engine", lambda: object())
+    monkeypatch.setattr(avb_routes, "_check_acmp_available", lambda _engine: None)
+    monkeypatch.setattr(avb_routes, "_stream_format_methods_available", lambda _engine: True)
+
+    req = avb_routes.StreamFormatPatchRequest(
+        direction="listener",
+        channels=2,
+        sample_rate=48000,
+        bits_per_sample=12,
+        configuration_index=0,
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(avb_routes.patch_stream_format("0011223344556677", 0, req))
+
+    assert exc.value.status_code == 400
+    assert "bits_per_sample" in str(exc.value.detail)
+
+
+def test_avdecc_connect_negotiates_stream_format_before_connect(monkeypatch):
+    async def _to_thread_inline(fn, *args, **kwargs):
+        return fn(*args, **kwargs)
+
+    class _Engine:
+        def __init__(self):
+            self.talker_format = 0x0200000818000005
+            self.listener_format = 0x0200000218000005
+            self.set_calls = []
+            self.connect_calls = 0
+
+        def get_stream_format(self, _entity_id, _stream_index, direction, _configuration_index):
+            if direction == "talker":
+                return {
+                    "success": True,
+                    "status_code": 0,
+                    "status": "success",
+                    "stream_format": self.talker_format,
+                }
+            return {
+                "success": True,
+                "status_code": 0,
+                "status": "success",
+                "stream_format": self.listener_format,
+            }
+
+        def set_stream_format(self, _entity_id, _stream_index, direction, stream_format, _configuration_index):
+            assert direction == "listener"
+            self.listener_format = int(stream_format)
+            self.set_calls.append((direction, int(stream_format)))
+            return {
+                "success": True,
+                "status_code": 0,
+                "status": "success",
+                "stream_format": int(stream_format),
+            }
+
+        def connect_stream(self, *_args):
+            self.connect_calls += 1
+            return True
+
+    engine = _Engine()
+    monkeypatch.setattr(avb_routes, "_get_engine", lambda: engine)
+    monkeypatch.setattr(avb_routes, "_check_acmp_available", lambda _engine: None)
+    monkeypatch.setattr(avb_routes.asyncio, "to_thread", _to_thread_inline)
+    monkeypatch.setattr(
+        avb_routes,
+        "config_get",
+        lambda key, default=None: False if key == "avb.srp.enabled" else default,
+    )
+
+    req = avb_routes.StreamConnectionRequest(
+        talker_entity_id="0011223344556677",
+        talker_stream_index=0,
+        listener_entity_id="8899aabbccddeeff",
+        listener_stream_index=1,
+    )
+
+    result = asyncio.run(avb_routes.connect_stream(req))
+
+    assert result["status"] == "connected"
+    assert result["stream_format_validation"]["validated"] is True
+    assert result["stream_format_validation"]["negotiated"] is True
+    assert result["stream_format_validation"]["stream_format"] == 0x0200000818000005
+    assert engine.set_calls == [("listener", 0x0200000818000005)]
+    assert engine.connect_calls == 1
+
+
+def test_avdecc_connect_returns_409_when_stream_format_negotiation_fails(monkeypatch):
+    async def _to_thread_inline(fn, *args, **kwargs):
+        return fn(*args, **kwargs)
+
+    class _Engine:
+        def __init__(self):
+            self.connect_called = False
+
+        def get_stream_format(self, _entity_id, _stream_index, direction, _configuration_index):
+            if direction == "talker":
+                return {
+                    "success": True,
+                    "status_code": 0,
+                    "status": "success",
+                    "stream_format": 0x0200000818000005,
+                }
+            return {
+                "success": True,
+                "status_code": 0,
+                "status": "success",
+                "stream_format": 0x0200000218000005,
+            }
+
+        def set_stream_format(self, *_args):
+            return {
+                "success": False,
+                "status_code": 11,
+                "status": "not_supported",
+                "stream_format": 0,
+            }
+
+        def connect_stream(self, *_args):
+            self.connect_called = True
+            return True
+
+    engine = _Engine()
+    monkeypatch.setattr(avb_routes, "_get_engine", lambda: engine)
+    monkeypatch.setattr(avb_routes, "_check_acmp_available", lambda _engine: None)
+    monkeypatch.setattr(avb_routes.asyncio, "to_thread", _to_thread_inline)
+    monkeypatch.setattr(
+        avb_routes,
+        "config_get",
+        lambda key, default=None: False if key == "avb.srp.enabled" else default,
+    )
+
+    req = avb_routes.StreamConnectionRequest(
+        talker_entity_id="0011223344556677",
+        talker_stream_index=0,
+        listener_entity_id="8899aabbccddeeff",
+        listener_stream_index=1,
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(avb_routes.connect_stream(req))
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail["code"] == "ACMP_STREAM_FORMAT_NEGOTIATION_FAILED"
+    assert exc.value.detail["stream_format"]["stage"] == "listener_set_stream_format"
+    assert engine.connect_called is False
 
 
 def test_avdecc_connect_returns_409_when_admission_denied(monkeypatch):

@@ -17,6 +17,7 @@ import {
   alpha,
   Snackbar,
   Alert,
+  Chip,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -49,6 +50,7 @@ import WWWPanel from './WWWPanel';
 import FeaturesPanel from './FeaturesPanel';
 import { FeatureStatusBar } from './FeaturesPanel';
 import { useWebSocketConnection, useWebSocketStatus } from '../hooks/useWebSocket';
+import { API_BASE } from '../api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -94,6 +96,12 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
     message: '',
     severity: 'info'
   });
+  const [avbStatus, setAvbStatus] = useState<{ state: string; available: boolean; interfaceName: string; reason: string | null }>({
+    state: 'unknown',
+    available: false,
+    interfaceName: '',
+    reason: null,
+  });
   const theme = useTheme();
 
   // Initialize WebSocket connection for real-time updates
@@ -122,11 +130,69 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
     }
   }, [status]);
 
+  useEffect(() => {
+    if (typeof fetch !== 'function') return;
+    let cancelled = false;
+    let timer: number | undefined;
+
+    const pullStatus = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/avb/status`);
+        if (!response.ok && response.status !== 503) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        if (cancelled) return;
+        setAvbStatus({
+          state: String(payload?.state || 'unknown'),
+          available: Boolean(payload?.available),
+          interfaceName: String(payload?.interface || ''),
+          reason: payload?.reason ? String(payload.reason) : null,
+        });
+      } catch {
+        if (cancelled) return;
+        setAvbStatus({
+          state: 'unreachable',
+          available: false,
+          interfaceName: '',
+          reason: 'AVB status API unreachable',
+        });
+      }
+    };
+
+    const poll = async () => {
+      await pullStatus();
+      if (!cancelled) {
+        timer = window.setTimeout(poll, 5000);
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, []);
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
   if (!open) return null;
+
+  const avbChipColor = (
+    avbStatus.state === 'operational'
+      ? 'success'
+      : avbStatus.state === 'degraded'
+        ? 'warning'
+        : avbStatus.state === 'disabled'
+          ? 'default'
+          : 'error'
+  ) as 'default' | 'success' | 'warning' | 'error';
+  const avbChipTitle = avbStatus.reason || (avbStatus.interfaceName ? `Interface ${avbStatus.interfaceName}` : 'AVB interface not configured');
 
   const tabs = [
     { label: 'Quick Access', icon: <FeaturesIcon />, component: <FeaturesPanel /> },
@@ -173,6 +239,13 @@ export default function MAP2Dashboard({ open = true, onClose, initialTab = 0 }: 
           >
             MAP2 Audio Dashboard
           </Typography>
+          <Chip
+            size="small"
+            color={avbChipColor}
+            label={`AVB: ${avbStatus.state}`}
+            title={avbChipTitle}
+            sx={{ mr: 1, fontWeight: 600 }}
+          />
           {onClose && (
             <IconButton onClick={onClose} color="inherit">
               <CloseIcon />

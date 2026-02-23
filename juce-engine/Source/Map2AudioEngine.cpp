@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <cstdio>
+#include <fstream>
 #include <filesystem>
 #include <limits>
 #include <unordered_set>
@@ -48,6 +49,78 @@ bool isTruthy(const char* value) {
         normalized.begin(),
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+}
+
+std::string readAvbMarkerValue(const std::string& key) {
+    constexpr const char* markerPath = "/etc/map2/avb-enabled";
+    if (!std::filesystem::exists(markerPath)) {
+        return {};
+    }
+
+    std::ifstream markerFile(markerPath);
+    if (!markerFile.good()) {
+        return {};
+    }
+
+    std::string line;
+    while (std::getline(markerFile, line)) {
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+
+        const auto separator = line.find('=');
+        if (separator == std::string::npos) {
+            continue;
+        }
+
+        std::string parsedKey = line.substr(0, separator);
+        std::string parsedValue = line.substr(separator + 1);
+
+        auto trim = [](std::string& text) {
+            auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
+            text.erase(text.begin(), std::find_if(text.begin(), text.end(), [&](unsigned char c) { return !isSpace(c); }));
+            text.erase(
+                std::find_if(text.rbegin(), text.rend(), [&](unsigned char c) { return !isSpace(c); }).base(),
+                text.end()
+            );
+        };
+
+        trim(parsedKey);
+        trim(parsedValue);
+        if (parsedKey == key) {
+            return parsedValue;
+        }
+    }
+
+    return {};
+}
+
+bool isPtpPidHealthy() {
+    constexpr const char* pidPath = "/run/ptp4l.pid";
+    if (!std::filesystem::exists(pidPath)) {
+        return false;
+    }
+
+    std::ifstream pidFile(pidPath);
+    if (!pidFile.good()) {
+        return false;
+    }
+
+    std::string pidText;
+    std::getline(pidFile, pidText);
+    if (pidText.empty()) {
+        return false;
+    }
+
+    try {
+        const int pid = std::stoi(pidText);
+        if (pid <= 0) {
+            return false;
+        }
+        return std::filesystem::exists("/proc/" + std::to_string(pid));
+    } catch (...) {
+        return false;
+    }
 }
 
 std::string normalizeDirection(const std::string& direction) {
@@ -288,7 +361,13 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     // Phase 10: Initialize AVDECC entity if enabled
     // Get interface from environment or use default
     const char* avdecc_iface_env = std::getenv("MAP2_AVB_INTERFACE");
-    std::string avdecc_interface = avdecc_iface_env ? avdecc_iface_env : "eth0";
+    std::string avdecc_interface = avdecc_iface_env ? avdecc_iface_env : "";
+    if (avdecc_interface.empty()) {
+        avdecc_interface = readAvbMarkerValue("interface");
+    }
+    if (avdecc_interface.empty()) {
+        avdecc_interface = "eth0";
+    }
 
     try {
         avdeccEntity_ = std::make_unique<Map2Audio::AvdeccEntity>(
@@ -420,7 +499,10 @@ bool Map2AudioEngine::isAvbAvailable() const {
     }
 
     const char* ifaceEnv = std::getenv("MAP2_AVB_INTERFACE");
-    const std::string interfaceName = ifaceEnv ? ifaceEnv : "";
+    std::string interfaceName = ifaceEnv ? ifaceEnv : "";
+    if (interfaceName.empty()) {
+        interfaceName = readAvbMarkerValue("interface");
+    }
     if (interfaceName.empty()) {
         return false;
     }
@@ -429,7 +511,7 @@ bool Map2AudioEngine::isAvbAvailable() const {
         return false;
     }
 
-    if (!std::filesystem::exists("/run/ptp4l.pid")) {
+    if (!isPtpPidHealthy()) {
         return false;
     }
 
@@ -810,6 +892,10 @@ std::optional<Map2AudioEngine::AvbStreamRuntimeStats> Map2AudioEngine::getAvbStr
         stats.overruns = snapshot.overruns;
         stats.timestampErrors = snapshot.timestampErrors;
         stats.sequenceErrors = snapshot.sequenceErrors;
+        stats.sequenceGapEvents = snapshot.sequenceGapEvents;
+        stats.timestampSkewEvents = snapshot.timestampSkewEvents;
+        stats.decodeErrors = snapshot.decodeErrors;
+        stats.maxTimestampSkewNs = snapshot.maxTimestampSkewNs;
         stats.bytesTransferred = snapshot.bytesTransferred;
         stats.maxLatencyNs = snapshot.maxLatencyNs;
         stats.minLatencyNs =
@@ -927,6 +1013,8 @@ Map2AudioEngine::AvbInterfaceInfo Map2AudioEngine::getAvbInterfaceInfo(const std
     if (info.interfaceName.empty()) {
         if (const char* ifaceEnv = std::getenv("MAP2_AVB_INTERFACE")) {
             info.interfaceName = ifaceEnv;
+        } else {
+            info.interfaceName = readAvbMarkerValue("interface");
         }
     }
 
@@ -937,7 +1025,7 @@ Map2AudioEngine::AvbInterfaceInfo Map2AudioEngine::getAvbInterfaceInfo(const std
     }
 
     info.interfaceExists = std::filesystem::exists("/sys/class/net/" + info.interfaceName);
-    info.ptpReady = std::filesystem::exists("/run/ptp4l.pid");
+    info.ptpReady = isPtpPidHealthy();
     info.available = info.avbEnabled && info.interfaceExists && info.ptpReady;
     if (!info.available) {
         if (!info.avbEnabled) {

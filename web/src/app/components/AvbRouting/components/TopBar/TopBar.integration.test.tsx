@@ -484,6 +484,7 @@ describe('TopBar filter controls provider integration', () => {
       sample_rate: 48000,
       channels: 2,
       group: 'Stage',
+      host: 'stage.local',
       available: true,
       locked: false,
     })
@@ -495,6 +496,7 @@ describe('TopBar filter controls provider integration', () => {
       sample_rate: 96000,
       channels: 8,
       group: 'FOH',
+      host: 'foh.local',
       available: false,
       locked: true,
     })
@@ -505,6 +507,7 @@ describe('TopBar filter controls provider integration', () => {
       sample_rate: 48000,
       channels: 2,
       group: 'Aux',
+      host: 'aux.local',
       available: true,
       locked: false,
     })
@@ -563,6 +566,21 @@ describe('TopBar filter controls provider integration', () => {
     })
 
     fireEvent.click(screen.getByTestId('topbar-filter-group-foh'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-host-foh-local'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-direction-listener'))
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-b')
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-quality-critical'))
     await waitFor(() => {
       expect(screen.getByTestId('probe-endpoint-ids').textContent).toBe('endpoint-b')
     })

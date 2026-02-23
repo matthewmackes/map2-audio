@@ -16,10 +16,12 @@
 
 #ifdef HAS_AVDECC
 
+#include "AvdeccDescriptors.h"
 #include <juce_core/juce_core.h>
 #include <atomic>
 #include <array>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -45,6 +47,7 @@ constexpr uint16_t ETHERTYPE_AVTP = 0x22F0;
 // AVDECC Multicast MAC addresses
 constexpr std::array<uint8_t, 6> ADP_MULTICAST_MAC = {0x91, 0xE0, 0xF0, 0x01, 0x00, 0x00};
 constexpr std::array<uint8_t, 6> ACMP_MULTICAST_MAC = {0x91, 0xE0, 0xF0, 0x01, 0x00, 0x01};
+constexpr std::array<uint8_t, 6> AECP_MULTICAST_MAC = {0x91, 0xE0, 0xF0, 0x01, 0x00, 0x02};
 
 // AVDECC message types
 enum class MessageType : uint8_t {
@@ -299,6 +302,42 @@ struct PendingAcmpCommand {
     uint64_t result_stream_id;
 };
 
+enum class AecpAemStatus : uint8_t {
+    SUCCESS = 0,
+    NOT_IMPLEMENTED = 1,
+    NO_SUCH_DESCRIPTOR = 2,
+    ENTITY_LOCKED = 3,
+    ENTITY_ACQUIRED = 4,
+    NOT_AUTHENTICATED = 5,
+    AUTHENTICATION_DISABLED = 6,
+    BAD_ARGUMENTS = 7,
+    NO_RESOURCES = 8,
+    IN_PROGRESS = 9,
+    ENTITY_MISBEHAVING = 10,
+    NOT_SUPPORTED = 11,
+    STREAM_IS_RUNNING = 12
+};
+
+struct StreamFormatOperationResult {
+    bool success = false;
+    AecpAemStatus status = AecpAemStatus::NOT_SUPPORTED;
+    uint64_t stream_format = 0;
+    juce::String message;
+};
+
+struct PendingAecpAemCommand {
+    uint16_t sequence_id = 0;
+    uint64_t target_entity_id = 0;
+    uint16_t command_type = 0;
+    Avdecc::DescriptorType descriptor_type = Avdecc::DescriptorType::INVALID;
+    uint16_t configuration_index = 0;
+    uint16_t descriptor_index = 0;
+    std::chrono::steady_clock::time_point sent_time;
+    bool completed = false;
+    AecpAemStatus status = AecpAemStatus::NOT_SUPPORTED;
+    uint64_t result_stream_format = 0;
+};
+
 // ============================================================================
 // AVDECC Entity Class
 // ============================================================================
@@ -334,6 +373,19 @@ public:
     bool disconnectStream(uint64_t talker_entity_id, uint16_t talker_unique_id,
                          uint64_t listener_entity_id, uint16_t listener_unique_id);
     std::vector<AvdeccConnection> getActiveConnections() const;
+    StreamFormatOperationResult getStreamFormat(
+        uint64_t target_entity_id,
+        Avdecc::DescriptorType descriptor_type,
+        uint16_t stream_index,
+        uint16_t configuration_index = 0,
+        int timeout_ms = 2000);
+    StreamFormatOperationResult setStreamFormat(
+        uint64_t target_entity_id,
+        Avdecc::DescriptorType descriptor_type,
+        uint16_t stream_index,
+        uint64_t stream_format,
+        uint16_t configuration_index = 0,
+        int timeout_ms = 2000);
 
     // Configuration
     void setTalkerStreamCount(uint16_t count) { talker_stream_sources_ = count; }
@@ -367,9 +419,9 @@ private:
     // Message handlers
     void handleAdpMessage(const AdpPdu& pdu, const std::array<uint8_t, 6>& src_mac);
     void handleAcmpMessage(const AcmpPdu& pdu);
-    void handleAecpMessage(const AecpPdu& pdu);
-    void handleAecpAemCommand(const AecpPdu& pdu);
-    void handleAecpAemResponse(const AecpPdu& pdu);
+    void handleAecpMessage(const AecpPdu& pdu, const uint8_t* frame_payload, size_t frame_payload_size);
+    void handleAecpAemCommand(const AecpPdu& pdu, const uint8_t* command_payload, size_t command_payload_size);
+    void handleAecpAemResponse(const AecpPdu& pdu, const uint8_t* command_payload, size_t command_payload_size);
 
     // Message builders
     AdpPdu buildAdpEntityAvailable();
@@ -380,6 +432,7 @@ private:
     uint64_t macToEntityId(const std::array<uint8_t, 6>& mac) const;
     bool sendMessage(const void* data, size_t length,
                     const std::array<uint8_t, 6>& dest_mac);
+    bool sendAecpCommand(const void* data, size_t length, uint64_t target_entity_id);
 
     // Entity configuration
     juce::String interface_name_;
@@ -409,13 +462,26 @@ private:
     // ACMP response matching
     bool waitForAcmpResponse(uint16_t sequence_id, PendingAcmpCommand& result,
                              int timeout_ms = 2000);
+    bool waitForAecpAemResponse(uint16_t sequence_id, PendingAecpAemCommand& result,
+                                int timeout_ms = 2000);
     void expirePendingCommands();
+    bool isStreamDescriptorType(Avdecc::DescriptorType descriptor_type) const;
+    uint64_t getLocalStreamFormat(Avdecc::DescriptorType descriptor_type, uint16_t stream_index) const;
+    void setLocalStreamFormat(Avdecc::DescriptorType descriptor_type, uint16_t stream_index, uint64_t stream_format);
+    void applyStreamFormatToModelCache(uint64_t entity_id,
+                                       Avdecc::DescriptorType descriptor_type,
+                                       uint16_t configuration_index,
+                                       uint16_t stream_index,
+                                       uint64_t stream_format);
 
     // State (protected by mutex)
     mutable juce::CriticalSection state_mutex_;
     std::vector<DiscoveredEntity> discovered_entities_;
     std::vector<AvdeccConnection> active_connections_;
     std::vector<PendingAcmpCommand> pending_acmp_commands_;
+    std::vector<PendingAecpAemCommand> pending_aecp_aem_commands_;
+    std::map<uint16_t, uint64_t> local_stream_input_formats_;
+    std::map<uint16_t, uint64_t> local_stream_output_formats_;
 
     // Statistics (atomic)
     std::atomic<uint64_t> adp_tx_count_{0};
@@ -427,6 +493,7 @@ private:
 
     // Sequence counters
     std::atomic<uint16_t> acmp_sequence_{0};
+    std::atomic<uint16_t> aecp_sequence_{0x8000};
     std::atomic<uint32_t> available_index_{0};
 
     // Entity Model Enumerator (Phase 10)

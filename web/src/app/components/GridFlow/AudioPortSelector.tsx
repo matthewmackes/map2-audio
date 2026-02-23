@@ -25,12 +25,17 @@ import {
   CaretRight,
 } from '@phosphor-icons/react'
 import { audioApi } from '../../../map2/api'
-import type { AudioPort, AudioPortPreset } from '../../../map2/api'
+import type { AudioAvbEndpoint, AudioPort, AudioPortPreset } from '../../../map2/api'
 
 export interface AudioPortSelectorProps {
   open: boolean
   onClose: () => void
-  onPortsChange?: (inputPorts: number[], outputPorts: number[]) => void
+  onPortsChange?: (
+    inputPorts: number[],
+    outputPorts: number[],
+    inputAvbEndpoints: string[],
+    outputAvbEndpoints: string[],
+  ) => void
   /** If set, routes apply to this chain only (per-flow). Otherwise global. */
   chainId?: number | null
   /** Flow label for display, e.g. "A" */
@@ -75,6 +80,8 @@ export function AudioPortSelector({
   const queryClient = useQueryClient()
   const [selectedInputs, setSelectedInputs] = useState<number[]>([])
   const [selectedOutputs, setSelectedOutputs] = useState<number[]>([])
+  const [selectedInputAvbEndpoints, setSelectedInputAvbEndpoints] = useState<string[]>([])
+  const [selectedOutputAvbEndpoints, setSelectedOutputAvbEndpoints] = useState<string[]>([])
   const [linkStereo, setLinkStereo] = useState(true)
   const [activeTab, setActiveTab] = useState<'input' | 'output'>('input')
 
@@ -114,15 +121,24 @@ export function AudioPortSelector({
     if (isPerChain && chainRoutingQuery.data) {
       setSelectedInputs(chainRoutingQuery.data.input_ports)
       setSelectedOutputs(chainRoutingQuery.data.output_ports)
+      setSelectedInputAvbEndpoints(chainRoutingQuery.data.input_avb_endpoints || [])
+      setSelectedOutputAvbEndpoints(chainRoutingQuery.data.output_avb_endpoints || [])
     } else if (routingQuery.data?.available) {
       setSelectedInputs(routingQuery.data.input_ports)
       setSelectedOutputs(routingQuery.data.output_ports)
+      setSelectedInputAvbEndpoints(routingQuery.data.input_avb_endpoints || [])
+      setSelectedOutputAvbEndpoints(routingQuery.data.output_avb_endpoints || [])
     }
   }, [routingQuery.data, chainRoutingQuery.data, isPerChain])
 
   // Mutation for global routing
   const globalRoutingMutation = useMutation({
-    mutationFn: (config: { inputPorts: number[]; outputPorts: number[] }) =>
+    mutationFn: (config: {
+      inputPorts: number[];
+      outputPorts: number[];
+      inputAvbEndpoints: string[];
+      outputAvbEndpoints: string[];
+    }) =>
       audioApi.setRouting(config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
@@ -131,7 +147,12 @@ export function AudioPortSelector({
 
   // Mutation for per-chain routing
   const chainRoutingMutation = useMutation({
-    mutationFn: (config: { inputPorts: number[]; outputPorts: number[] }) =>
+    mutationFn: (config: {
+      inputPorts: number[];
+      outputPorts: number[];
+      inputAvbEndpoints: string[];
+      outputAvbEndpoints: string[];
+    }) =>
       audioApi.setChainRouting(chainId!, config),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['audio', 'routing', 'chain', chainId] })
@@ -150,8 +171,26 @@ export function AudioPortSelector({
 
   const inputPorts = portsQuery.data?.inputs || []
   const outputPorts = portsQuery.data?.outputs || []
+  const avbTalkers = portsQuery.data?.avb_talkers || []
+  const avbListeners = portsQuery.data?.avb_listeners || []
   const presets = presetsQuery.data?.presets || []
   const deviceName = portsQuery.data?.device || 'Audio Interface'
+  const avbReadinessState = useMemo(() => {
+    const readiness = portsQuery.data?.avb_readiness
+    if (!readiness || typeof readiness !== 'object') return 'unknown'
+    const state = (readiness as Record<string, unknown>).state
+    return typeof state === 'string' && state.trim() ? state : 'unknown'
+  }, [portsQuery.data?.avb_readiness])
+
+  const missingInputAvbEndpointIds = useMemo(() => {
+    const discovered = new Set(avbTalkers.map(endpoint => endpoint.endpoint_id))
+    return selectedInputAvbEndpoints.filter(endpointId => !discovered.has(endpointId))
+  }, [avbTalkers, selectedInputAvbEndpoints])
+
+  const missingOutputAvbEndpointIds = useMemo(() => {
+    const discovered = new Set(avbListeners.map(endpoint => endpoint.endpoint_id))
+    return selectedOutputAvbEndpoints.filter(endpointId => !discovered.has(endpointId))
+  }, [avbListeners, selectedOutputAvbEndpoints])
 
   // Group ports by category
   const groupPorts = useCallback((ports: AudioPort[]) => {
@@ -194,23 +233,63 @@ export function AudioPortSelector({
     })
   }, [linkStereo, selectedInputs, selectedOutputs, inputPorts, outputPorts])
 
+  const toggleAvbEndpoint = useCallback((type: 'input' | 'output', endpointId: string) => {
+    if (type === 'input') {
+      setSelectedInputAvbEndpoints(prev => (
+        prev.includes(endpointId)
+          ? prev.filter(id => id !== endpointId)
+          : [...prev, endpointId]
+      ))
+      return
+    }
+    setSelectedOutputAvbEndpoints(prev => (
+      prev.includes(endpointId)
+        ? prev.filter(id => id !== endpointId)
+        : [...prev, endpointId]
+    ))
+  }, [])
+
   const applyPreset = useCallback((preset: AudioPortPreset) => {
     setSelectedInputs(preset.input_ports)
     setSelectedOutputs(preset.output_ports)
+    setSelectedInputAvbEndpoints([])
+    setSelectedOutputAvbEndpoints([])
   }, [])
 
   const handleApply = useCallback(() => {
     const mutation = isPerChain ? chainRoutingMutation : globalRoutingMutation
-    mutation.mutate({ inputPorts: selectedInputs, outputPorts: selectedOutputs })
-    onPortsChange?.(selectedInputs, selectedOutputs)
+    mutation.mutate({
+      inputPorts: selectedInputs,
+      outputPorts: selectedOutputs,
+      inputAvbEndpoints: selectedInputAvbEndpoints,
+      outputAvbEndpoints: selectedOutputAvbEndpoints,
+    })
+    onPortsChange?.(
+      selectedInputs,
+      selectedOutputs,
+      selectedInputAvbEndpoints,
+      selectedOutputAvbEndpoints,
+    )
     onClose()
-  }, [selectedInputs, selectedOutputs, isPerChain, chainRoutingMutation, globalRoutingMutation, onPortsChange, onClose])
+  }, [
+    selectedInputs,
+    selectedOutputs,
+    selectedInputAvbEndpoints,
+    selectedOutputAvbEndpoints,
+    isPerChain,
+    chainRoutingMutation,
+    globalRoutingMutation,
+    onPortsChange,
+    onClose,
+  ])
 
   const handleRevertToGlobal = useCallback(() => {
     clearChainRoutingMutation.mutate()
     if (routingQuery.data) {
       setSelectedInputs(routingQuery.data.input_ports)
       setSelectedOutputs(routingQuery.data.output_ports)
+      setSelectedInputAvbEndpoints(routingQuery.data.input_avb_endpoints || [])
+      setSelectedOutputAvbEndpoints(routingQuery.data.output_avb_endpoints || [])
     }
   }, [clearChainRoutingMutation, routingQuery.data])
 
@@ -218,13 +297,23 @@ export function AudioPortSelector({
 
   const isPending = globalRoutingMutation.isPending || chainRoutingMutation.isPending
   const hasOverride = isPerChain && chainRoutingQuery.data?.is_override
+  const hasAnySelection = (
+    selectedInputs.length > 0 ||
+    selectedOutputs.length > 0 ||
+    selectedInputAvbEndpoints.length > 0 ||
+    selectedOutputAvbEndpoints.length > 0
+  )
 
-  const formatChannelSummary = (ports: number[]) => {
-    if (ports.length === 0) return 'None'
+  const formatChannelSummary = (ports: number[], avbEndpoints: string[]) => {
+    if (ports.length === 0) {
+      if (avbEndpoints.length === 0) return 'None'
+      return `${avbEndpoints.length} AVB`
+    }
     if (ports.length === 1) return 'Mono'
     if (ports.length === 2 && ports[0] + 1 === ports[1]) return 'Stereo'
     if (ports.length === 2) return '2ch'
-    return `${ports.length}ch`
+    const base = `${ports.length}ch`
+    return avbEndpoints.length > 0 ? `${base} + ${avbEndpoints.length} AVB` : base
   }
 
   const renderPortGrid = (
@@ -346,6 +435,104 @@ export function AudioPortSelector({
     )
   }
 
+  const renderAvbEndpointGrid = (
+    type: 'input' | 'output',
+    endpoints: AudioAvbEndpoint[],
+    selectedEndpointIds: string[],
+    missingEndpointIds: string[],
+  ) => {
+    const color = type === 'input' ? '#0891b2' : '#0ea5e9'
+    const emptyMessage = type === 'input'
+      ? 'No AVB talker endpoints discovered'
+      : 'No AVB listener endpoints discovered'
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {missingEndpointIds.map((endpointId) => (
+          <div
+            key={`missing-${type}-${endpointId}`}
+            style={{
+              padding: '8px 10px',
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.2)',
+              borderRadius: 8,
+              color: 'rgba(255,255,255,0.75)',
+              fontSize: 11,
+            }}
+          >
+            Missing AVB endpoint (retained): <strong>{endpointId}</strong>
+          </div>
+        ))}
+
+        {endpoints.length === 0 ? (
+          <div style={{ padding: 14, color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
+            {emptyMessage}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: 8,
+            }}
+          >
+            {endpoints.map((endpoint) => {
+              const isSelected = selectedEndpointIds.includes(endpoint.endpoint_id)
+              const isAvailable = endpoint.available
+              return (
+                <button
+                  key={endpoint.endpoint_id}
+                  onClick={() => toggleAvbEndpoint(type, endpoint.endpoint_id)}
+                  disabled={!isAvailable}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 4,
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                    background: isSelected
+                      ? `linear-gradient(135deg, ${color}22 0%, ${color}11 100%)`
+                      : 'rgba(255,255,255,0.025)',
+                    border: `2px solid ${isSelected ? color : 'rgba(255,255,255,0.06)'}`,
+                    borderRadius: 8,
+                    color: isSelected ? '#fff' : 'rgba(255,255,255,0.65)',
+                    cursor: isAvailable ? 'pointer' : 'not-allowed',
+                    opacity: isAvailable ? 1 : 0.55,
+                  }}
+                  title={endpoint.endpoint_id}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 8 }}>
+                    <div
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        background: isSelected ? color : 'rgba(255,255,255,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isSelected ? <Check size={11} weight="bold" style={{ color: '#fff' }} /> : null}
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                      {endpoint.device_name}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+                    {endpoint.host || 'Unknown host'} · {endpoint.channels}ch @ {endpoint.sample_rate}Hz
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       className="audio-port-selector-overlay"
@@ -413,6 +600,9 @@ export function AudioPortSelector({
                 {inputPorts.length > 0 && (
                   <span> · {inputPorts.length}in / {outputPorts.length}out</span>
                 )}
+                <span style={{ marginLeft: 6 }}>
+                  · AVB {avbReadinessState}
+                </span>
               </p>
             </div>
           </div>
@@ -519,7 +709,9 @@ export function AudioPortSelector({
               {presets.map((preset) => {
                 const isActive =
                   JSON.stringify(selectedInputs) === JSON.stringify(preset.input_ports) &&
-                  JSON.stringify(selectedOutputs) === JSON.stringify(preset.output_ports)
+                  JSON.stringify(selectedOutputs) === JSON.stringify(preset.output_ports) &&
+                  selectedInputAvbEndpoints.length === 0 &&
+                  selectedOutputAvbEndpoints.length === 0
                 return (
                   <button
                     key={preset.id}
@@ -559,8 +751,12 @@ export function AudioPortSelector({
           {(['input', 'output'] as const).map(tab => {
             const isActiveTab = activeTab === tab
             const tabColor = tab === 'input' ? '#22c55e' : '#a855f7'
-            const count = tab === 'input' ? selectedInputs.length : selectedOutputs.length
-            const total = tab === 'input' ? inputPorts.length : outputPorts.length
+            const count = tab === 'input'
+              ? (selectedInputs.length + selectedInputAvbEndpoints.length)
+              : (selectedOutputs.length + selectedOutputAvbEndpoints.length)
+            const total = tab === 'input'
+              ? (inputPorts.length + avbTalkers.length)
+              : (outputPorts.length + avbListeners.length)
             const Icon = tab === 'input' ? Microphone : SpeakerHigh
             return (
               <button
@@ -606,18 +802,87 @@ export function AudioPortSelector({
           padding: '16px 24px',
           minHeight: 180,
         }}>
-          {activeTab === 'input'
-            ? renderPortGrid('input', inputGroups, selectedInputs)
-            : renderPortGrid('output', outputGroups, selectedOutputs)
-          }
-          {activeTab === 'input' && inputPorts.length === 0 && (
-            <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-              No input ports available on this audio node
+          {activeTab === 'input' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.4)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.7px',
+                  marginBottom: 8,
+                }}>
+                  Local Input Ports
+                </div>
+                {inputPorts.length > 0 ? (
+                  renderPortGrid('input', inputGroups, selectedInputs)
+                ) : (
+                  <div style={{ padding: 14, color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
+                    No local input ports available on this audio node
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.4)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.7px',
+                  marginBottom: 8,
+                }}>
+                  AVB Talker Inputs
+                </div>
+                {renderAvbEndpointGrid(
+                  'input',
+                  avbTalkers,
+                  selectedInputAvbEndpoints,
+                  missingInputAvbEndpointIds,
+                )}
+              </div>
             </div>
-          )}
-          {activeTab === 'output' && outputPorts.length === 0 && (
-            <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-              No output ports available on this audio node
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.4)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.7px',
+                  marginBottom: 8,
+                }}>
+                  Local Output Ports
+                </div>
+                {outputPorts.length > 0 ? (
+                  renderPortGrid('output', outputGroups, selectedOutputs)
+                ) : (
+                  <div style={{ padding: 14, color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>
+                    No local output ports available on this audio node
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.4)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.7px',
+                  marginBottom: 8,
+                }}>
+                  AVB Listener Outputs
+                </div>
+                {renderAvbEndpointGrid(
+                  'output',
+                  avbListeners,
+                  selectedOutputAvbEndpoints,
+                  missingOutputAvbEndpointIds,
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -648,11 +913,16 @@ export function AudioPortSelector({
                 </span>
               </div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                {formatChannelSummary(selectedInputs)}
+                {formatChannelSummary(selectedInputs, selectedInputAvbEndpoints)}
               </div>
               {selectedInputs.length > 0 && (
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>
                   Ch {selectedInputs.map(p => p + 1).join(', ')}
+                </div>
+              )}
+              {selectedInputAvbEndpoints.length > 0 && (
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
+                  AVB {selectedInputAvbEndpoints.length} endpoint{selectedInputAvbEndpoints.length === 1 ? '' : 's'}
                 </div>
               )}
             </div>
@@ -671,11 +941,16 @@ export function AudioPortSelector({
                 </span>
               </div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                {formatChannelSummary(selectedOutputs)}
+                {formatChannelSummary(selectedOutputs, selectedOutputAvbEndpoints)}
               </div>
               {selectedOutputs.length > 0 && (
                 <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>
                   Ch {selectedOutputs.map(p => p + 1).join(', ')}
+                </div>
+              )}
+              {selectedOutputAvbEndpoints.length > 0 && (
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
+                  AVB {selectedOutputAvbEndpoints.length} endpoint{selectedOutputAvbEndpoints.length === 1 ? '' : 's'}
                 </div>
               )}
             </div>
@@ -700,12 +975,12 @@ export function AudioPortSelector({
             </button>
             <button
               onClick={handleApply}
-              disabled={(selectedInputs.length === 0 && selectedOutputs.length === 0) || isPending}
+              disabled={!hasAnySelection || isPending}
               style={{
                 flex: 1,
                 padding: '11px 18px',
                 background:
-                  selectedInputs.length > 0 || selectedOutputs.length > 0
+                  hasAnySelection
                     ? `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}bb 100%)`
                     : 'rgba(255,255,255,0.08)',
                 border: 'none',
@@ -713,9 +988,9 @@ export function AudioPortSelector({
                 color: '#fff',
                 fontSize: 13,
                 fontWeight: 700,
-                cursor: selectedInputs.length > 0 || selectedOutputs.length > 0 ? 'pointer' : 'not-allowed',
-                opacity: selectedInputs.length > 0 || selectedOutputs.length > 0 ? 1 : 0.5,
-                boxShadow: selectedInputs.length > 0 || selectedOutputs.length > 0
+                cursor: hasAnySelection ? 'pointer' : 'not-allowed',
+                opacity: hasAnySelection ? 1 : 0.5,
+                boxShadow: hasAnySelection
                   ? `0 4px 16px ${accentColor}40`
                   : 'none',
               }}

@@ -22,7 +22,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 import threading
 
@@ -38,6 +38,13 @@ class AemCache:
 
     MAX_ENTRIES = 100
     CLEANUP_AGE_DAYS = 30
+    _INVALIDATION_REASON_COLUMNS = {
+        "stale": "invalidation_stale_count",
+        "incomplete": "invalidation_incomplete_count",
+        "incompatible": "invalidation_incompatible_count",
+        "corrupt": "invalidation_corrupt_count",
+        "manual": "invalidation_manual_count",
+    }
 
     def __init__(self, db_path: str = "~/.map2/aem_cache.db"):
         """
@@ -97,14 +104,148 @@ class AemCache:
 
                 INSERT OR IGNORE INTO cache_stats (id) VALUES (1);
             """)
+            self._ensure_cache_stats_schema(conn)
 
-    def get(self, entity_model_id: int, firmware_version: str) -> Optional[Dict[str, Any]]:
+    def _ensure_cache_stats_schema(self, conn) -> None:
+        """Backfill newer cache-stats columns for existing databases."""
+        cursor = conn.execute("PRAGMA table_info(cache_stats)")
+        columns = {str(row[1]) for row in cursor.fetchall()}
+        required = {
+            "invalidation_count": "INTEGER NOT NULL DEFAULT 0",
+            "invalidation_stale_count": "INTEGER NOT NULL DEFAULT 0",
+            "invalidation_incomplete_count": "INTEGER NOT NULL DEFAULT 0",
+            "invalidation_incompatible_count": "INTEGER NOT NULL DEFAULT 0",
+            "invalidation_corrupt_count": "INTEGER NOT NULL DEFAULT 0",
+            "invalidation_manual_count": "INTEGER NOT NULL DEFAULT 0",
+        }
+
+        for column_name, definition in required.items():
+            if column_name not in columns:
+                conn.execute(
+                    f"ALTER TABLE cache_stats ADD COLUMN {column_name} {definition}"
+                )
+
+    @staticmethod
+    def _parse_sqlite_timestamp(raw_value: Any) -> Optional[datetime]:
+        if raw_value is None:
+            return None
+        normalized = str(raw_value).strip().replace(" ", "T")
+        if not normalized:
+            return None
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+
+    @staticmethod
+    def _is_model_complete(model_json: Dict[str, Any]) -> bool:
+        complete = bool(model_json.get("complete", True))
+        missing = model_json.get("missing") or model_json.get("missing_descriptors") or []
+        if not isinstance(missing, list):
+            missing = []
+        return complete and not missing
+
+    @staticmethod
+    def _coerce_optional_hex_int(raw_value: Any) -> Optional[int]:
+        if raw_value is None:
+            return None
+        if isinstance(raw_value, int):
+            return raw_value
+        text = str(raw_value).strip().lower()
+        if not text:
+            return None
+        text = text.removeprefix("0x")
+        try:
+            return int(text, 16)
+        except ValueError:
+            return None
+
+    @classmethod
+    def _payload_is_compatible(
+        cls,
+        model_json: Dict[str, Any],
+        entity_model_id: int,
+        firmware_version: str,
+    ) -> bool:
+        payload_model_id = cls._coerce_optional_hex_int(model_json.get("entity_model_id"))
+        if payload_model_id is not None and payload_model_id != int(entity_model_id):
+            return False
+
+        payload_firmware = model_json.get("firmware_version")
+        if payload_firmware is not None and str(payload_firmware) != str(firmware_version):
+            return False
+
+        return True
+
+    def _record_invalidation(self, conn, reason: str) -> None:
+        reason_key = str(reason or "").strip().lower()
+        reason_column = self._INVALIDATION_REASON_COLUMNS.get(reason_key)
+        if reason_column:
+            conn.execute(
+                f"""
+                UPDATE cache_stats
+                SET invalidation_count = invalidation_count + 1,
+                    {reason_column} = {reason_column} + 1
+                WHERE id = 1
+                """
+            )
+            return
+
+        conn.execute(
+            """
+            UPDATE cache_stats
+            SET invalidation_count = invalidation_count + 1
+            WHERE id = 1
+            """
+        )
+
+    def _invalidate_with_connection(
+        self,
+        conn,
+        entity_model_id: int,
+        firmware_version: str,
+        reason: str,
+    ) -> bool:
+        cursor = conn.execute(
+            """
+            DELETE FROM entity_models
+            WHERE entity_model_id = ? AND firmware_version = ?
+            """,
+            (entity_model_id, firmware_version),
+        )
+        removed = int(cursor.rowcount or 0)
+        if removed > 0:
+            self._record_invalidation(conn, reason)
+            logger.warning(
+                "Invalidated cache entry: entity_model_id=0x%016x, firmware=%s, reason=%s",
+                entity_model_id,
+                firmware_version,
+                reason,
+            )
+            return True
+        return False
+
+    def get(
+        self,
+        entity_model_id: int,
+        firmware_version: str,
+        *,
+        max_age_seconds: Optional[int] = None,
+        require_complete: bool = False,
+        require_compatible: bool = False,
+    ) -> Optional[Dict[str, Any]]:
         """
         Get cached entity model if available.
 
         Args:
             entity_model_id: Entity model ID (from ADP)
             firmware_version: Firmware version string
+            max_age_seconds: Optional max cache age; stale entries are invalidated.
+            require_complete: If true, invalidates incomplete descriptor trees.
+            require_compatible: If true, invalidates payloads with incompatible metadata.
 
         Returns:
             Entity model JSON dict if cached, None otherwise
@@ -112,7 +253,7 @@ class AemCache:
         with self._lock, self._get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT json_data
+                SELECT json_data, created_at
                 FROM entity_models
                 WHERE entity_model_id = ? AND firmware_version = ?
                 """,
@@ -121,6 +262,65 @@ class AemCache:
             row = cursor.fetchone()
 
             if row:
+                try:
+                    model_json = json.loads(row[0])
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to decode cached JSON: {e}")
+                    self._invalidate_with_connection(
+                        conn,
+                        entity_model_id,
+                        firmware_version,
+                        reason="corrupt",
+                    )
+                    conn.execute(
+                        "UPDATE cache_stats SET miss_count = miss_count + 1 WHERE id = 1"
+                    )
+                    return None
+
+                if max_age_seconds is not None and int(max_age_seconds) >= 0:
+                    created_at = self._parse_sqlite_timestamp(row[1])
+                    if created_at is not None:
+                        age_seconds = (datetime.now(timezone.utc) - created_at).total_seconds()
+                        if age_seconds > int(max_age_seconds):
+                            self._invalidate_with_connection(
+                                conn,
+                                entity_model_id,
+                                firmware_version,
+                                reason="stale",
+                            )
+                            conn.execute(
+                                "UPDATE cache_stats SET miss_count = miss_count + 1 WHERE id = 1"
+                            )
+                            return None
+
+                if require_complete and not self._is_model_complete(model_json):
+                    self._invalidate_with_connection(
+                        conn,
+                        entity_model_id,
+                        firmware_version,
+                        reason="incomplete",
+                    )
+                    conn.execute(
+                        "UPDATE cache_stats SET miss_count = miss_count + 1 WHERE id = 1"
+                    )
+                    return None
+
+                if require_compatible and not self._payload_is_compatible(
+                    model_json,
+                    entity_model_id,
+                    firmware_version,
+                ):
+                    self._invalidate_with_connection(
+                        conn,
+                        entity_model_id,
+                        firmware_version,
+                        reason="incompatible",
+                    )
+                    conn.execute(
+                        "UPDATE cache_stats SET miss_count = miss_count + 1 WHERE id = 1"
+                    )
+                    return None
+
                 # Cache hit - update last_used timestamp
                 conn.execute(
                     """
@@ -136,18 +336,11 @@ class AemCache:
                     "UPDATE cache_stats SET hit_count = hit_count + 1 WHERE id = 1"
                 )
 
-                try:
-                    model_json = json.loads(row[0])
-                    logger.debug(
-                        f"Cache HIT: entity_model_id=0x{entity_model_id:016x}, "
-                        f"firmware={firmware_version}"
-                    )
-                    return model_json
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to decode cached JSON: {e}")
-                    # Remove corrupted entry
-                    self._remove(entity_model_id, firmware_version)
-                    return None
+                logger.debug(
+                    f"Cache HIT: entity_model_id=0x{entity_model_id:016x}, "
+                    f"firmware={firmware_version}"
+                )
+                return model_json
             else:
                 # Cache miss
                 conn.execute(
@@ -220,17 +413,21 @@ class AemCache:
             entity_model_id: Entity model ID
             firmware_version: Firmware version string
         """
+        self.invalidate(entity_model_id, firmware_version, reason="manual")
+
+    def invalidate(self, entity_model_id: int, firmware_version: str, reason: str = "manual") -> bool:
+        """
+        Invalidate one cache entry and record reason in stats.
+
+        Returns:
+            True when an entry was removed, False when no matching row existed.
+        """
         with self._lock, self._get_connection() as conn:
-            conn.execute(
-                """
-                DELETE FROM entity_models
-                WHERE entity_model_id = ? AND firmware_version = ?
-                """,
-                (entity_model_id, firmware_version)
-            )
-            logger.warning(
-                f"Removed entry: entity_model_id=0x{entity_model_id:016x}, "
-                f"firmware={firmware_version}"
+            return self._invalidate_with_connection(
+                conn,
+                entity_model_id,
+                firmware_version,
+                reason=reason,
             )
 
     def cleanup_old_entries(self) -> int:
@@ -276,7 +473,17 @@ class AemCache:
             # Get stats row
             cursor = conn.execute(
                 """
-                SELECT hit_count, miss_count, enumeration_time_avg_ms, last_cleanup
+                SELECT
+                    hit_count,
+                    miss_count,
+                    enumeration_time_avg_ms,
+                    last_cleanup,
+                    invalidation_count,
+                    invalidation_stale_count,
+                    invalidation_incomplete_count,
+                    invalidation_incompatible_count,
+                    invalidation_corrupt_count,
+                    invalidation_manual_count
                 FROM cache_stats
                 WHERE id = 1
                 """
@@ -303,7 +510,13 @@ class AemCache:
                     "cache_full": entry_count >= self.MAX_ENTRIES,
                     "enumeration_time_avg_ms": stats_row[2],
                     "last_cleanup": stats_row[3],
-                    "cleanup_age_days": self.CLEANUP_AGE_DAYS
+                    "cleanup_age_days": self.CLEANUP_AGE_DAYS,
+                    "invalidation_count": stats_row[4],
+                    "invalidation_stale_count": stats_row[5],
+                    "invalidation_incomplete_count": stats_row[6],
+                    "invalidation_incompatible_count": stats_row[7],
+                    "invalidation_corrupt_count": stats_row[8],
+                    "invalidation_manual_count": stats_row[9],
                 }
             else:
                 return {
@@ -316,7 +529,13 @@ class AemCache:
                     "cache_full": False,
                     "enumeration_time_avg_ms": 0.0,
                     "last_cleanup": None,
-                    "cleanup_age_days": self.CLEANUP_AGE_DAYS
+                    "cleanup_age_days": self.CLEANUP_AGE_DAYS,
+                    "invalidation_count": 0,
+                    "invalidation_stale_count": 0,
+                    "invalidation_incomplete_count": 0,
+                    "invalidation_incompatible_count": 0,
+                    "invalidation_corrupt_count": 0,
+                    "invalidation_manual_count": 0,
                 }
 
     def clear(self) -> int:
@@ -334,7 +553,16 @@ class AemCache:
             conn.execute(
                 """
                 UPDATE cache_stats
-                SET hit_count = 0, miss_count = 0, enumeration_time_avg_ms = 0.0
+                SET
+                    hit_count = 0,
+                    miss_count = 0,
+                    enumeration_time_avg_ms = 0.0,
+                    invalidation_count = 0,
+                    invalidation_stale_count = 0,
+                    invalidation_incomplete_count = 0,
+                    invalidation_incompatible_count = 0,
+                    invalidation_corrupt_count = 0,
+                    invalidation_manual_count = 0
                 WHERE id = 1
                 """
             )

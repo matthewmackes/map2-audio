@@ -6,12 +6,16 @@ Includes new audio health monitoring endpoints.
 """
 
 import asyncio
+import json
+import logging
 import subprocess
 
 try:
     from fastapi import APIRouter, HTTPException, Query
     from typing import Dict, Any, Optional, List
     from app.services.juce_engine_service import get_audio_engine
+
+    logger = logging.getLogger(__name__)
 
     # Import new audio health monitoring
     try:
@@ -1007,14 +1011,335 @@ try:
     # Audio Port Routing Endpoints
     # =========================================================================
 
-    # Store for port routing configuration (persisted in memory, could be extended to DB)
+    _CHAIN_ROUTING_CONFIG_KEY = "audio_routing"
+
+    # Global routing config stays memory-backed; per-chain overrides are persisted in Chain.config.
     _port_routing_config = {
         "input_ports": [0, 1],  # Default: first stereo pair
         "output_ports": [0, 1],  # Default: first stereo pair
+        "input_avb_endpoints": [],
+        "output_avb_endpoints": [],
     }
 
-    # Per-chain port routing overrides: { chain_id: { "input_ports": [...], "output_ports": [...] } }
+    # Legacy in-memory override map retained for backwards compatibility during transition.
     _chain_port_routing: Dict[int, Dict[str, list]] = {}
+
+    def _dedupe_int_list(raw: Optional[List[int]]) -> List[int]:
+        values: List[int] = []
+        seen = set()
+        for item in raw or []:
+            try:
+                value = int(item)
+            except Exception:
+                continue
+            if value < 0 or value in seen:
+                continue
+            seen.add(value)
+            values.append(value)
+        return values
+
+    def _dedupe_string_list(raw: Optional[List[str]]) -> List[str]:
+        values: List[str] = []
+        seen = set()
+        for item in raw or []:
+            value = str(item or "").strip()
+            if not value or value in seen:
+                continue
+            seen.add(value)
+            values.append(value)
+        return values
+
+    def _sanitize_routing_payload(raw: Optional[Dict[str, Any]]) -> Dict[str, List[Any]]:
+        payload = raw if isinstance(raw, dict) else {}
+        return {
+            "input_ports": _dedupe_int_list(payload.get("input_ports")),
+            "output_ports": _dedupe_int_list(payload.get("output_ports")),
+            "input_avb_endpoints": _dedupe_string_list(payload.get("input_avb_endpoints")),
+            "output_avb_endpoints": _dedupe_string_list(payload.get("output_avb_endpoints")),
+        }
+
+    def _parse_chain_config(raw_config: Any) -> Dict[str, Any]:
+        if isinstance(raw_config, dict):
+            return dict(raw_config)
+        if not isinstance(raw_config, str) or not raw_config.strip():
+            return {}
+        try:
+            parsed = json.loads(raw_config)
+            return dict(parsed) if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+
+    def _build_capability_indexes(capabilities: Dict[str, Any]) -> Dict[str, Any]:
+        local_inputs = list(capabilities.get("local_inputs") or [])
+        local_outputs = list(capabilities.get("local_outputs") or [])
+        avb_talkers = list(capabilities.get("avb_talkers") or [])
+        avb_listeners = list(capabilities.get("avb_listeners") or [])
+
+        inputs_by_index = {
+            int(port.get("index")): port
+            for port in local_inputs
+            if isinstance(port, dict) and str(port.get("index", "")).strip() != ""
+        }
+        outputs_by_index = {
+            int(port.get("index")): port
+            for port in local_outputs
+            if isinstance(port, dict) and str(port.get("index", "")).strip() != ""
+        }
+        talkers_by_id = {
+            str(device.get("endpoint_id")).strip(): device
+            for device in avb_talkers
+            if isinstance(device, dict) and str(device.get("endpoint_id", "")).strip()
+        }
+        listeners_by_id = {
+            str(device.get("endpoint_id")).strip(): device
+            for device in avb_listeners
+            if isinstance(device, dict) and str(device.get("endpoint_id", "")).strip()
+        }
+
+        return {
+            "local_input_indices": set(inputs_by_index.keys()),
+            "local_output_indices": set(outputs_by_index.keys()),
+            "inputs_by_index": inputs_by_index,
+            "outputs_by_index": outputs_by_index,
+            "talkers_by_id": talkers_by_id,
+            "listeners_by_id": listeners_by_id,
+        }
+
+    def _validate_local_ports(*, ports: List[int], allowed_indices: set, label: str) -> None:
+        invalid = [port for port in ports if port not in allowed_indices]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid {label} port(s): {invalid}. Valid {label} ports: {sorted(allowed_indices)}",
+            )
+
+    def _validate_endpoint_ids(*, endpoint_ids: List[str], allowed_ids: set, label: str) -> None:
+        invalid = [endpoint_id for endpoint_id in endpoint_ids if endpoint_id not in allowed_ids]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid {label} endpoint(s): {invalid}. Endpoint must be currently discovered and available.",
+            )
+
+    def _build_local_binding(
+        *,
+        direction: str,
+        index: int,
+        port_payload: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        if port_payload:
+            return {
+                "selection_type": "local_port",
+                "index": index,
+                "name": str(port_payload.get("name") or f"{direction.title()} {index + 1}"),
+                "source": str(port_payload.get("source") or "juce_local"),
+                "available": bool(port_payload.get("available", True)),
+            }
+        return {
+            "selection_type": "local_port",
+            "index": index,
+            "name": f"{direction.title()} {index + 1}",
+            "source": "juce_local",
+            "available": False,
+            "missing": True,
+        }
+
+    def _build_avb_binding(
+        *,
+        direction: str,
+        endpoint_id: str,
+        endpoint_payload: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        if endpoint_payload:
+            return {
+                "selection_type": "avb_endpoint",
+                "endpoint_id": endpoint_id,
+                "direction": str(endpoint_payload.get("direction") or direction),
+                "device_name": str(endpoint_payload.get("device_name") or endpoint_id),
+                "host": str(endpoint_payload.get("host") or ""),
+                "channels": int(endpoint_payload.get("channels") or 0),
+                "sample_rate": int(endpoint_payload.get("sample_rate") or 0),
+                "available": bool(endpoint_payload.get("available", True)),
+            }
+        return {
+            "selection_type": "avb_endpoint",
+            "endpoint_id": endpoint_id,
+            "direction": direction,
+            "device_name": endpoint_id,
+            "host": "",
+            "channels": 0,
+            "sample_rate": 0,
+            "available": False,
+            "missing": True,
+        }
+
+    def _build_routing_response(
+        *,
+        routing_payload: Dict[str, List[Any]],
+        capabilities: Dict[str, Any],
+        chain_id: Optional[int] = None,
+        is_override: bool = False,
+    ) -> Dict[str, Any]:
+        indexes = _build_capability_indexes(capabilities)
+
+        input_bindings = [
+            _build_local_binding(
+                direction="input",
+                index=port_index,
+                port_payload=indexes["inputs_by_index"].get(port_index),
+            )
+            for port_index in routing_payload["input_ports"]
+        ] + [
+            _build_avb_binding(
+                direction="talker",
+                endpoint_id=endpoint_id,
+                endpoint_payload=indexes["talkers_by_id"].get(endpoint_id),
+            )
+            for endpoint_id in routing_payload["input_avb_endpoints"]
+        ]
+
+        output_bindings = [
+            _build_local_binding(
+                direction="output",
+                index=port_index,
+                port_payload=indexes["outputs_by_index"].get(port_index),
+            )
+            for port_index in routing_payload["output_ports"]
+        ] + [
+            _build_avb_binding(
+                direction="listener",
+                endpoint_id=endpoint_id,
+                endpoint_payload=indexes["listeners_by_id"].get(endpoint_id),
+            )
+            for endpoint_id in routing_payload["output_avb_endpoints"]
+        ]
+
+        payload = {
+            "available": True,
+            "input_ports": routing_payload["input_ports"],
+            "output_ports": routing_payload["output_ports"],
+            "input_avb_endpoints": routing_payload["input_avb_endpoints"],
+            "output_avb_endpoints": routing_payload["output_avb_endpoints"],
+            "input_bindings": input_bindings,
+            "output_bindings": output_bindings,
+            "is_override": is_override,
+        }
+        if chain_id is not None:
+            payload["chain_id"] = chain_id
+        return payload
+
+    def _get_minimal_capabilities() -> Dict[str, Any]:
+        return {
+            "local_inputs": [],
+            "local_outputs": [],
+            "avb_talkers": [],
+            "avb_listeners": [],
+        }
+
+    def _get_current_capabilities(service: Any) -> Dict[str, Any]:
+        from app.services.avb.avb_service import get_avb_service
+
+        info = service.get_system_info()
+        return get_avb_service().get_channel_capabilities(system_info=info)
+
+    async def _fetch_chain_routing_override(chain_id: int) -> tuple[bool, Optional[Dict[str, List[Any]]]]:
+        from sqlalchemy import select
+        from app.database import get_session, Chain
+
+        async with get_session() as session:
+            result = await session.execute(select(Chain).filter(Chain.id == chain_id))
+            chain = result.scalar_one_or_none()
+            if chain is None:
+                return False, None
+            chain_config = _parse_chain_config(chain.config)
+            raw_routing = chain_config.get(_CHAIN_ROUTING_CONFIG_KEY)
+            if isinstance(raw_routing, dict):
+                return True, _sanitize_routing_payload(raw_routing)
+            return True, None
+
+    async def _persist_chain_routing_override(
+        chain_id: int,
+        routing_payload: Optional[Dict[str, List[Any]]],
+    ) -> bool:
+        from sqlalchemy import select
+        from app.database import get_session, Chain
+
+        async with get_session() as session:
+            result = await session.execute(select(Chain).filter(Chain.id == chain_id))
+            chain = result.scalar_one_or_none()
+            if chain is None:
+                return False
+
+            chain_config = _parse_chain_config(chain.config)
+            if routing_payload is None:
+                chain_config.pop(_CHAIN_ROUTING_CONFIG_KEY, None)
+            else:
+                chain_config[_CHAIN_ROUTING_CONFIG_KEY] = _sanitize_routing_payload(routing_payload)
+
+            chain.config = json.dumps(chain_config)
+            await session.flush()
+            return True
+
+    def _apply_engine_routing(
+        service: Any,
+        *,
+        chain_id: Optional[int] = None,
+        input_ports: Optional[List[int]] = None,
+        output_ports: Optional[List[int]] = None,
+        input_avb_endpoints: Optional[List[str]] = None,
+        output_avb_endpoints: Optional[List[str]] = None,
+    ) -> None:
+        engine = getattr(service, "_engine", None)
+        if engine is None:
+            return
+
+        def _call_first(method_names: List[str], *args: Any) -> bool:
+            for method_name in method_names:
+                method = getattr(engine, method_name, None)
+                if callable(method):
+                    method(*args)
+                    return True
+            return False
+
+        if input_ports is not None:
+            try:
+                _call_first(["set_input_channels"], input_ports)
+            except Exception as exc:
+                logger.warning("Could not apply input routing to engine: %s", exc)
+
+        if output_ports is not None:
+            try:
+                _call_first(["set_output_channels"], output_ports)
+            except Exception as exc:
+                logger.warning("Could not apply output routing to engine: %s", exc)
+
+        if input_avb_endpoints is not None:
+            try:
+                applied = False
+                if chain_id is not None:
+                    applied = _call_first(
+                        ["set_chain_input_avb_endpoints", "setChainInputAvbEndpoints"],
+                        chain_id,
+                        input_avb_endpoints,
+                    )
+                if not applied:
+                    _call_first(["set_input_avb_endpoints", "setAvbInputEndpoints"], input_avb_endpoints)
+            except Exception as exc:
+                logger.warning("Could not apply AVB input routing to engine: %s", exc)
+
+        if output_avb_endpoints is not None:
+            try:
+                applied = False
+                if chain_id is not None:
+                    applied = _call_first(
+                        ["set_chain_output_avb_endpoints", "setChainOutputAvbEndpoints"],
+                        chain_id,
+                        output_avb_endpoints,
+                    )
+                if not applied:
+                    _call_first(["set_output_avb_endpoints", "setAvbOutputEndpoints"], output_avb_endpoints)
+            except Exception as exc:
+                logger.warning("Could not apply AVB output routing to engine: %s", exc)
 
     @router.get("/ports")
     async def get_available_ports() -> Dict[str, Any]:
@@ -1022,9 +1347,10 @@ try:
         Get available audio input/output ports on the connected interface.
 
         Returns:
-            List of input and output ports with their names and indices
+            List of input/output local ports + AVB endpoint capabilities.
         """
         service = get_audio_engine()
+        from app.services.avb.avb_service import get_avb_service
 
         if not service.is_available:
             return {
@@ -1035,63 +1361,12 @@ try:
             }
 
         info = service.get_system_info()
-        input_channels = info.get("input_channels", 2)
-        output_channels = info.get("output_channels", 2)
-        device_name = info.get("alsa_device", "hw:0,0")
-
-        # Generate port lists based on channel counts
-        # For Edirol UA-1000: 10 in, 10 out
-        # For Hotone Jogg: 2 in, 2 out
-        inputs = []
-        outputs = []
-
-        # Define port names for known devices
-        ua1000_inputs = [
-            "Input 1 (Analog)",
-            "Input 2 (Analog)",
-            "Input 3 (Analog)",
-            "Input 4 (Analog)",
-            "S/PDIF L",
-            "S/PDIF R",
-            "ADAT 1",
-            "ADAT 2",
-            "ADAT 3",
-            "ADAT 4",
-        ]
-        ua1000_outputs = [
-            "Output 1 (Main L)",
-            "Output 2 (Main R)",
-            "Output 3",
-            "Output 4",
-            "Output 5",
-            "Output 6",
-            "Output 7",
-            "Output 8",
-            "S/PDIF L",
-            "S/PDIF R",
-        ]
-
-        for i in range(input_channels):
-            if "UA1000" in device_name or input_channels >= 10:
-                name = ua1000_inputs[i] if i < len(ua1000_inputs) else f"Input {i + 1}"
-            else:
-                name = f"Input {i + 1}" if input_channels > 2 else ("Left" if i == 0 else "Right")
-            inputs.append({
-                "index": i,
-                "name": name,
-                "type": "input"
-            })
-
-        for i in range(output_channels):
-            if "UA1000" in device_name or output_channels >= 10:
-                name = ua1000_outputs[i] if i < len(ua1000_outputs) else f"Output {i + 1}"
-            else:
-                name = f"Output {i + 1}" if output_channels > 2 else ("Left" if i == 0 else "Right")
-            outputs.append({
-                "index": i,
-                "name": name,
-                "type": "output"
-            })
+        device_name = str(info.get("audio_device") or info.get("alsa_device") or "hw:0,0")
+        capabilities = get_avb_service().get_channel_capabilities(system_info=info)
+        inputs = list(capabilities.get("local_inputs") or [])
+        outputs = list(capabilities.get("local_outputs") or [])
+        input_channels = len(inputs)
+        output_channels = len(outputs)
 
         return {
             "available": True,
@@ -1099,16 +1374,17 @@ try:
             "inputs": inputs,
             "outputs": outputs,
             "input_count": input_channels,
-            "output_count": output_channels
+            "output_count": output_channels,
+            "avb_readiness": capabilities.get("readiness", {}),
+            "avb_talkers": capabilities.get("avb_talkers", []),
+            "avb_listeners": capabilities.get("avb_listeners", []),
+            "capabilities": capabilities,
         }
 
     @router.get("/routing")
     async def get_port_routing() -> Dict[str, Any]:
         """
-        Get current audio port routing configuration.
-
-        Returns:
-            Currently selected input and output ports
+        Get current global audio port routing configuration.
         """
         service = get_audio_engine()
 
@@ -1117,29 +1393,29 @@ try:
                 "available": False,
                 "input_ports": [],
                 "output_ports": [],
+                "input_avb_endpoints": [],
+                "output_avb_endpoints": [],
+                "input_bindings": [],
+                "output_bindings": [],
                 "error": "Audio engine not available"
             }
 
-        return {
-            "available": True,
-            "input_ports": _port_routing_config["input_ports"],
-            "output_ports": _port_routing_config["output_ports"]
-        }
+        capabilities = _get_current_capabilities(service)
+        return _build_routing_response(
+            routing_payload=_sanitize_routing_payload(_port_routing_config),
+            capabilities=capabilities,
+            is_override=False,
+        )
 
     @router.post("/routing")
     async def set_port_routing(
-        input_ports: List[int] = Query(None, description="Input port indices to use"),
-        output_ports: List[int] = Query(None, description="Output port indices to use")
+        input_ports: List[int] = Query(None, description="Input local port indices to use"),
+        output_ports: List[int] = Query(None, description="Output local port indices to use"),
+        input_avb_endpoints: List[str] = Query(None, description="AVB talker endpoint IDs to map as inputs"),
+        output_avb_endpoints: List[str] = Query(None, description="AVB listener endpoint IDs to map as outputs"),
     ) -> Dict[str, Any]:
         """
-        Set audio port routing configuration.
-
-        Args:
-            input_ports: List of input port indices (e.g., [0, 1] for stereo)
-            output_ports: List of output port indices (e.g., [0, 1] for main outputs)
-
-        Returns:
-            Updated routing configuration
+        Set global audio routing configuration across local and AVB sources/sinks.
         """
         global _port_routing_config
         service = get_audio_engine()
@@ -1147,141 +1423,201 @@ try:
         if not service.is_available:
             raise HTTPException(status_code=503, detail="Audio engine not available")
 
-        info = service.get_system_info()
-        max_inputs = info.get("input_channels", 2)
-        max_outputs = info.get("output_channels", 2)
+        capabilities = _get_current_capabilities(service)
+        indexes = _build_capability_indexes(capabilities)
 
-        # Validate and update input ports
         if input_ports is not None:
-            # Validate port indices
-            for port in input_ports:
-                if port < 0 or port >= max_inputs:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Invalid input port {port}. Valid range: 0-{max_inputs - 1}"
-                    )
-            _port_routing_config["input_ports"] = input_ports
+            normalized_input_ports = _dedupe_int_list(input_ports)
+            _validate_local_ports(
+                ports=normalized_input_ports,
+                allowed_indices=indexes["local_input_indices"],
+                label="input",
+            )
+            _port_routing_config["input_ports"] = normalized_input_ports
+            _apply_engine_routing(service, input_ports=normalized_input_ports)
 
-            # Apply to engine if supported
-            try:
-                if hasattr(service._engine, 'set_input_channels'):
-                    service._engine.set_input_channels(input_ports)
-            except Exception as e:
-                logger.warning(f"Could not apply input routing to engine: {e}")
-
-        # Validate and update output ports
         if output_ports is not None:
-            for port in output_ports:
-                if port < 0 or port >= max_outputs:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Invalid output port {port}. Valid range: 0-{max_outputs - 1}"
-                    )
-            _port_routing_config["output_ports"] = output_ports
+            normalized_output_ports = _dedupe_int_list(output_ports)
+            _validate_local_ports(
+                ports=normalized_output_ports,
+                allowed_indices=indexes["local_output_indices"],
+                label="output",
+            )
+            _port_routing_config["output_ports"] = normalized_output_ports
+            _apply_engine_routing(service, output_ports=normalized_output_ports)
 
-            # Apply to engine if supported
-            try:
-                if hasattr(service._engine, 'set_output_channels'):
-                    service._engine.set_output_channels(output_ports)
-            except Exception as e:
-                logger.warning(f"Could not apply output routing to engine: {e}")
+        if input_avb_endpoints is not None:
+            normalized_input_endpoints = _dedupe_string_list(input_avb_endpoints)
+            _validate_endpoint_ids(
+                endpoint_ids=normalized_input_endpoints,
+                allowed_ids=set(indexes["talkers_by_id"].keys()),
+                label="input AVB",
+            )
+            _port_routing_config["input_avb_endpoints"] = normalized_input_endpoints
+            _apply_engine_routing(service, input_avb_endpoints=normalized_input_endpoints)
 
-        return {
-            "success": True,
-            "message": "Port routing updated",
-            "input_ports": _port_routing_config["input_ports"],
-            "output_ports": _port_routing_config["output_ports"]
-        }
+        if output_avb_endpoints is not None:
+            normalized_output_endpoints = _dedupe_string_list(output_avb_endpoints)
+            _validate_endpoint_ids(
+                endpoint_ids=normalized_output_endpoints,
+                allowed_ids=set(indexes["listeners_by_id"].keys()),
+                label="output AVB",
+            )
+            _port_routing_config["output_avb_endpoints"] = normalized_output_endpoints
+            _apply_engine_routing(service, output_avb_endpoints=normalized_output_endpoints)
+
+        payload = _build_routing_response(
+            routing_payload=_sanitize_routing_payload(_port_routing_config),
+            capabilities=capabilities,
+            is_override=False,
+        )
+        payload["success"] = True
+        payload["message"] = "Port routing updated"
+        return payload
 
     @router.get("/routing/chain/{chain_id}")
     async def get_chain_port_routing(chain_id: int) -> Dict[str, Any]:
         """
-        Get port routing for a specific chain.
-        Falls back to global routing if no per-chain override exists.
+        Get routing for a specific chain, falling back to global routing.
         """
-        if chain_id in _chain_port_routing:
-            return {
-                "available": True,
-                "chain_id": chain_id,
-                "input_ports": _chain_port_routing[chain_id].get("input_ports", _port_routing_config["input_ports"]),
-                "output_ports": _chain_port_routing[chain_id].get("output_ports", _port_routing_config["output_ports"]),
-                "is_override": True,
-            }
-        return {
-            "available": True,
-            "chain_id": chain_id,
-            "input_ports": _port_routing_config["input_ports"],
-            "output_ports": _port_routing_config["output_ports"],
-            "is_override": False,
-        }
+        service = get_audio_engine()
+        capabilities = _get_current_capabilities(service) if service.is_available else _get_minimal_capabilities()
+        chain_exists, persisted_override = await _fetch_chain_routing_override(chain_id)
+
+        legacy_override = _chain_port_routing.get(chain_id)
+        merged_override = persisted_override
+        if merged_override is None and isinstance(legacy_override, dict):
+            merged_override = _sanitize_routing_payload(legacy_override)
+
+        effective_routing = merged_override or _sanitize_routing_payload(_port_routing_config)
+        payload = _build_routing_response(
+            chain_id=chain_id,
+            routing_payload=effective_routing,
+            capabilities=capabilities,
+            is_override=merged_override is not None,
+        )
+        payload["chain_exists"] = chain_exists
+        return payload
 
     @router.post("/routing/chain/{chain_id}")
     async def set_chain_port_routing(
         chain_id: int,
-        input_ports: List[int] = Query(None, description="Input port indices for this chain"),
-        output_ports: List[int] = Query(None, description="Output port indices for this chain"),
+        input_ports: List[int] = Query(None, description="Input local port indices for this chain"),
+        output_ports: List[int] = Query(None, description="Output local port indices for this chain"),
+        input_avb_endpoints: List[str] = Query(None, description="AVB talker endpoint IDs for this chain"),
+        output_avb_endpoints: List[str] = Query(None, description="AVB listener endpoint IDs for this chain"),
     ) -> Dict[str, Any]:
         """
-        Set port routing for a specific chain/flow.
+        Set routing override for a specific chain/flow and persist it in Chain.config.
         """
         service = get_audio_engine()
         if not service.is_available:
             raise HTTPException(status_code=503, detail="Audio engine not available")
 
-        info = service.get_system_info()
-        max_inputs = info.get("input_channels", 2)
-        max_outputs = info.get("output_channels", 2)
+        capabilities = _get_current_capabilities(service)
+        indexes = _build_capability_indexes(capabilities)
+        chain_exists, persisted_override = await _fetch_chain_routing_override(chain_id)
+        if not chain_exists:
+            raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found")
 
-        if chain_id not in _chain_port_routing:
-            _chain_port_routing[chain_id] = {
-                "input_ports": list(_port_routing_config["input_ports"]),
-                "output_ports": list(_port_routing_config["output_ports"]),
-            }
+        if persisted_override is not None:
+            routing_payload = dict(persisted_override)
+        elif chain_id in _chain_port_routing:
+            routing_payload = _sanitize_routing_payload(_chain_port_routing[chain_id])
+        else:
+            routing_payload = _sanitize_routing_payload(_port_routing_config)
 
         if input_ports is not None:
-            for port in input_ports:
-                if port < 0 or port >= max_inputs:
-                    raise HTTPException(status_code=400, detail=f"Invalid input port {port}. Valid range: 0-{max_inputs - 1}")
-            _chain_port_routing[chain_id]["input_ports"] = input_ports
-            try:
-                if hasattr(service._engine, 'set_input_channels'):
-                    service._engine.set_input_channels(input_ports)
-            except Exception as e:
-                logger.warning(f"Could not apply chain input routing to engine: {e}")
+            normalized_input_ports = _dedupe_int_list(input_ports)
+            _validate_local_ports(
+                ports=normalized_input_ports,
+                allowed_indices=indexes["local_input_indices"],
+                label="input",
+            )
+            routing_payload["input_ports"] = normalized_input_ports
+            _apply_engine_routing(service, chain_id=chain_id, input_ports=normalized_input_ports)
 
         if output_ports is not None:
-            for port in output_ports:
-                if port < 0 or port >= max_outputs:
-                    raise HTTPException(status_code=400, detail=f"Invalid output port {port}. Valid range: 0-{max_outputs - 1}")
-            _chain_port_routing[chain_id]["output_ports"] = output_ports
-            try:
-                if hasattr(service._engine, 'set_output_channels'):
-                    service._engine.set_output_channels(output_ports)
-            except Exception as e:
-                logger.warning(f"Could not apply chain output routing to engine: {e}")
+            normalized_output_ports = _dedupe_int_list(output_ports)
+            _validate_local_ports(
+                ports=normalized_output_ports,
+                allowed_indices=indexes["local_output_indices"],
+                label="output",
+            )
+            routing_payload["output_ports"] = normalized_output_ports
+            _apply_engine_routing(service, chain_id=chain_id, output_ports=normalized_output_ports)
 
-        return {
-            "success": True,
-            "message": f"Chain {chain_id} port routing updated",
-            "chain_id": chain_id,
-            "input_ports": _chain_port_routing[chain_id]["input_ports"],
-            "output_ports": _chain_port_routing[chain_id]["output_ports"],
-        }
+        if input_avb_endpoints is not None:
+            normalized_input_endpoints = _dedupe_string_list(input_avb_endpoints)
+            _validate_endpoint_ids(
+                endpoint_ids=normalized_input_endpoints,
+                allowed_ids=set(indexes["talkers_by_id"].keys()),
+                label="input AVB",
+            )
+            routing_payload["input_avb_endpoints"] = normalized_input_endpoints
+            _apply_engine_routing(
+                service,
+                chain_id=chain_id,
+                input_avb_endpoints=normalized_input_endpoints,
+            )
+
+        if output_avb_endpoints is not None:
+            normalized_output_endpoints = _dedupe_string_list(output_avb_endpoints)
+            _validate_endpoint_ids(
+                endpoint_ids=normalized_output_endpoints,
+                allowed_ids=set(indexes["listeners_by_id"].keys()),
+                label="output AVB",
+            )
+            routing_payload["output_avb_endpoints"] = normalized_output_endpoints
+            _apply_engine_routing(
+                service,
+                chain_id=chain_id,
+                output_avb_endpoints=normalized_output_endpoints,
+            )
+
+        routing_payload = _sanitize_routing_payload(routing_payload)
+        persisted = await _persist_chain_routing_override(chain_id, routing_payload)
+        if not persisted:
+            raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found")
+        _chain_port_routing[chain_id] = dict(routing_payload)
+
+        payload = _build_routing_response(
+            chain_id=chain_id,
+            routing_payload=routing_payload,
+            capabilities=capabilities,
+            is_override=True,
+        )
+        payload["success"] = True
+        payload["message"] = f"Chain {chain_id} routing updated"
+        return payload
 
     @router.delete("/routing/chain/{chain_id}")
     async def clear_chain_port_routing(chain_id: int) -> Dict[str, Any]:
         """
-        Remove per-chain port routing override (revert to global).
+        Remove per-chain routing override and revert to global routing.
         """
+        chain_exists, _override = await _fetch_chain_routing_override(chain_id)
+        if not chain_exists:
+            raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found")
+
+        persisted = await _persist_chain_routing_override(chain_id, None)
+        if not persisted:
+            raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found")
+
         if chain_id in _chain_port_routing:
             del _chain_port_routing[chain_id]
-        return {
-            "success": True,
-            "message": f"Chain {chain_id} reverted to global routing",
-            "chain_id": chain_id,
-            "input_ports": _port_routing_config["input_ports"],
-            "output_ports": _port_routing_config["output_ports"],
-        }
+
+        service = get_audio_engine()
+        capabilities = _get_current_capabilities(service) if service.is_available else _get_minimal_capabilities()
+        payload = _build_routing_response(
+            chain_id=chain_id,
+            routing_payload=_sanitize_routing_payload(_port_routing_config),
+            capabilities=capabilities,
+            is_override=False,
+        )
+        payload["success"] = True
+        payload["message"] = f"Chain {chain_id} reverted to global routing"
+        return payload
 
     @router.get("/ports/presets")
     async def get_port_presets() -> Dict[str, Any]:
@@ -1368,7 +1704,9 @@ try:
             "presets": presets,
             "current": {
                 "input_ports": _port_routing_config["input_ports"],
-                "output_ports": _port_routing_config["output_ports"]
+                "output_ports": _port_routing_config["output_ports"],
+                "input_avb_endpoints": _port_routing_config["input_avb_endpoints"],
+                "output_avb_endpoints": _port_routing_config["output_avb_endpoints"],
             }
         }
 

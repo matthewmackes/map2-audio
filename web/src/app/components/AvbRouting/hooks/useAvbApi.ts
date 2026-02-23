@@ -24,12 +24,16 @@ import type {
   RoutingMatrixResponse,
   StreamDirection,
   AvbDevicesResponse,
+  AvbChannelCapabilitiesResponse,
   AvbStreamsResponse,
   AvbAvdeccEntitiesResponse,
   AvbAvdeccStats,
 } from '../types';
+import { normalizeEndpointsResponse, normalizeStreamPayload } from '../utils/endpointSchema';
+import { safeFetchJson } from '../utils/safeJsonFetch';
+import { apiUrl } from '../../../utils/apiTarget';
 
-const API_BASE = '/api/avb';
+const API_BASE = apiUrl('/api/avb');
 
 function extractRemediationHint(detailObj: Record<string, unknown>): string | null {
   const remediation = detailObj.remediation;
@@ -119,13 +123,12 @@ export function useEndpoints(direction?: StreamDirection) {
     queryKey: ['avb', 'endpoints', direction],
     queryFn: async () => {
       const params = direction ? `?direction=${direction}` : '';
-      const response = await fetch(`${API_BASE}/router/endpoints${params}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch endpoints: ${response.statusText}`);
-      }
-
-      return response.json();
+      const json = await safeFetchJson<EndpointsResponse>(
+        `${API_BASE}/router/endpoints${params}`,
+        undefined,
+        { fallbackError: 'Failed to fetch endpoints' }
+      );
+      return normalizeEndpointsResponse(json);
     },
     refetchInterval: 5000, // Poll every 5 seconds for discovery updates
     staleTime: 2000,       // Consider data stale after 2s
@@ -139,13 +142,11 @@ export function useConnections() {
   return useQuery<ConnectionsResponse>({
     queryKey: ['avb', 'connections'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/router/connections`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch connections: ${response.statusText}`);
-      }
-
-      return response.json();
+      return safeFetchJson<ConnectionsResponse>(
+        `${API_BASE}/router/connections`,
+        undefined,
+        { fallbackError: 'Failed to fetch connections' }
+      );
     },
     refetchInterval: 2000, // Poll every 2s for connection state changes
     staleTime: 1000,
@@ -159,13 +160,11 @@ export function useRoutingMatrix() {
   return useQuery<RoutingMatrixResponse>({
     queryKey: ['avb', 'matrix'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/router/matrix`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch routing matrix: ${response.statusText}`);
-      }
-
-      return response.json();
+      return safeFetchJson<RoutingMatrixResponse>(
+        `${API_BASE}/router/matrix`,
+        undefined,
+        { fallbackError: 'Failed to fetch routing matrix' }
+      );
     },
     refetchInterval: 3000,
     staleTime: 1500,
@@ -179,13 +178,11 @@ export function useRouterStats() {
   return useQuery({
     queryKey: ['avb', 'stats'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/router/stats`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch router stats: ${response.statusText}`);
-      }
-
-      return response.json();
+      return safeFetchJson<Record<string, unknown>>(
+        `${API_BASE}/router/stats`,
+        undefined,
+        { fallbackError: 'Failed to fetch router stats' }
+      );
     },
     refetchInterval: 5000,
   });
@@ -198,13 +195,15 @@ export function useAvbStreams() {
   return useQuery<AvbStreamsResponse>({
     queryKey: ['avb', 'streams'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/streams`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch AVB streams: ${response.statusText}`);
+      const json = await safeFetchJson<AvbStreamsResponse>(
+        `${API_BASE}/streams`,
+        undefined,
+        { fallbackError: 'Failed to fetch AVB streams' }
+      );
+      if (json && Array.isArray(json.streams)) {
+        json.streams = json.streams.map((s: unknown) => normalizeStreamPayload(s));
       }
-
-      return response.json();
+      return json;
     },
     refetchInterval: 5000,
     staleTime: 2000,
@@ -218,14 +217,28 @@ export function useAvbDevices() {
   return useQuery<AvbDevicesResponse>({
     queryKey: ['avb', 'devices'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/devices`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch AVB devices: ${response.statusText}`);
-      }
-
-      return response.json();
+      return safeFetchJson<AvbDevicesResponse>(
+        `${API_BASE}/devices`,
+        undefined,
+        { fallbackError: 'Failed to fetch AVB devices' }
+      );
     },
+    refetchInterval: 5000,
+    staleTime: 2000,
+  });
+}
+
+/**
+ * Fetch canonical local + AVB channel capability inventory.
+ */
+export function useAvbChannelCapabilities() {
+  return useQuery<AvbChannelCapabilitiesResponse>({
+    queryKey: ['avb', 'capabilities', 'channels'],
+    queryFn: async () => safeFetchJson<AvbChannelCapabilitiesResponse>(
+      `${API_BASE}/capabilities/channels`,
+      undefined,
+      { fallbackError: 'Failed to fetch AVB channel capabilities' }
+    ),
     refetchInterval: 5000,
     staleTime: 2000,
   });
@@ -238,13 +251,11 @@ export function useAvdeccEntities() {
   return useQuery<AvbAvdeccEntitiesResponse>({
     queryKey: ['avb', 'avdecc', 'entities'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/avdecc/entities`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch AVDECC entities: ${response.statusText}`);
-      }
-
-      return response.json();
+      return safeFetchJson<AvbAvdeccEntitiesResponse>(
+        `${API_BASE}/avdecc/entities`,
+        undefined,
+        { fallbackError: 'Failed to fetch AVDECC entities' }
+      );
     },
     refetchInterval: 10000,
     staleTime: 5000,
@@ -258,13 +269,11 @@ export function useAvdeccStats() {
   return useQuery<AvbAvdeccStats>({
     queryKey: ['avb', 'avdecc', 'stats'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/avdecc/stats`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch AVDECC stats: ${response.statusText}`);
-      }
-
-      return response.json();
+      return safeFetchJson<AvbAvdeccStats>(
+        `${API_BASE}/avdecc/stats`,
+        undefined,
+        { fallbackError: 'Failed to fetch AVDECC stats' }
+      );
     },
     refetchInterval: 10000,
     staleTime: 5000,
@@ -279,20 +288,20 @@ export function usePatchMutation() {
 
   return useMutation({
     mutationFn: async (payload: { talker_id: string; listener_id: string }) => {
-      const response = await fetch(`${API_BASE}/router/connect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      return safeFetchJson<Record<string, unknown>>(
+        `${API_BASE}/router/connect`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(extractErrorMessage(errorData, 'Connection failed'));
-      }
-
-      return response.json();
+        {
+          fallbackError: 'Connection failed',
+          errorMessageExtractor: extractErrorMessage,
+        }
+      );
     },
     onSuccess: () => {
       // Invalidate relevant queries to trigger refetch
@@ -310,20 +319,20 @@ export function useUnpatchMutation() {
 
   return useMutation({
     mutationFn: async (payload: { talker_id: string; listener_id: string }) => {
-      const response = await fetch(`${API_BASE}/router/disconnect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      return safeFetchJson<Record<string, unknown>>(
+        `${API_BASE}/router/disconnect`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(extractErrorMessage(errorData, 'Disconnection failed'));
-      }
-
-      return response.json();
+        {
+          fallbackError: 'Disconnection failed',
+          errorMessageExtractor: extractErrorMessage,
+        }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['avb', 'connections'] });
@@ -345,23 +354,28 @@ export function useBatchPatchMutation() {
 
       for (const op of operations) {
         const endpoint = op.action === 'connect' ? '/router/connect' : '/router/disconnect';
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        const result = await safeFetchJson<Record<string, unknown>>(
+          `${API_BASE}${endpoint}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              talker_id: op.talker_id,
+              listener_id: op.listener_id,
+            }),
           },
-          body: JSON.stringify({
-            talker_id: op.talker_id,
-            listener_id: op.listener_id,
-          }),
+          {
+            fallbackError: 'Batch operation failed',
+            errorMessageExtractor: extractErrorMessage,
+          }
+        ).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : 'Unknown batch operation error';
+          throw new Error(`Batch operation failed: ${message}`);
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: response.statusText }));
-          throw new Error(`Batch operation failed: ${extractErrorMessage(errorData, response.statusText)}`);
-        }
-
-        results.push(await response.json());
+        results.push(result);
       }
 
       return results;
@@ -443,8 +457,12 @@ export function usePrefetchEndpoints() {
     queryClient.prefetchQuery({
       queryKey: ['avb', 'endpoints'],
       queryFn: async () => {
-        const response = await fetch(`${API_BASE}/router/endpoints`);
-        return response.json();
+        const json = await safeFetchJson<EndpointsResponse>(
+          `${API_BASE}/router/endpoints`,
+          undefined,
+          { fallbackError: 'Failed to prefetch AVB endpoints' }
+        );
+        return normalizeEndpointsResponse(json);
       },
     });
   };

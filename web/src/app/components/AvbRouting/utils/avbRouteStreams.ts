@@ -62,8 +62,22 @@ export function getRouteStreams(route: Route, streams: AvbStreamPayload[]): AvbS
   }
 
   const candidateIds = new Set<string>([route.id, ...getRouteExpectedStreamIds(route)]);
+  const routeEndpointIds = new Set<string>([route.talker_id, route.listener_id]);
+  return streams.filter((stream) => {
+    if (candidateIds.has(stream.stream_id)) {
+      return true;
+    }
 
-  return streams.filter((stream) => candidateIds.has(stream.stream_id));
+    const streamEndpointIds = new Set<string>([
+      ...getOwnershipEndpointIds(stream),
+      ...getMap2StreamEndpointIds(stream.stream_id),
+    ]);
+    if (streamEndpointIds.size === 0) {
+      return false;
+    }
+
+    return Array.from(routeEndpointIds).every((endpointId) => streamEndpointIds.has(endpointId));
+  });
 }
 
 /**
@@ -94,4 +108,23 @@ export function getMap2StreamEndpointIds(streamId: string): string[] {
     `${sourceEntity}:${sourceUniqueId}`,
     `${destinationEntity}:${destinationUniqueId}`,
   ];
+}
+
+function getOwnershipEndpointIds(stream: AvbStreamPayload): string[] {
+  const ownership = stream.ownership;
+  if (!ownership) {
+    return [];
+  }
+
+  const explicitEndpointIds = Array.isArray(ownership.endpoint_ids)
+    ? ownership.endpoint_ids
+    : [];
+  const fallbackEndpointIds = [
+    ownership.owner_endpoint_id,
+    ownership.peer_endpoint_id,
+    ownership.talker_endpoint_id,
+    ownership.listener_endpoint_id,
+  ].filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+  return Array.from(new Set([...explicitEndpointIds, ...fallbackEndpointIds]));
 }

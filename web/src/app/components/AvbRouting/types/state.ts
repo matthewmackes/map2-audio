@@ -5,7 +5,7 @@
  * Uses reducer pattern for predictable state updates and time-travel debugging.
  */
 
-import type { Endpoint } from './endpoint';
+import type { DeviceType, Endpoint, StreamDirection } from './endpoint';
 import type { Route } from './route';
 import type { Scene } from './scene';
 import type { SceneDiff } from './scene';
@@ -22,15 +22,47 @@ import type {
 /**
  * Filter state
  */
+export const FILTER_QUALITY_OPTIONS = ['healthy', 'warning', 'critical'] as const;
+export type FilterQuality = typeof FILTER_QUALITY_OPTIONS[number];
+
 export interface FilterState {
-  deviceTypes: ('map2' | 'avdecc' | 'unknown')[];
+  deviceTypes: DeviceType[];
   sampleRates: number[];
   channelCounts: number[];
   availableOnly: boolean;
   issuesOnly: boolean;
   showLocked: boolean;
   groups: string[];
+  hostIds: string[];
+  directions: StreamDirection[];
+  qualities: FilterQuality[];
 }
+
+export const defaultFilterState: FilterState = {
+  deviceTypes: ['map2', 'avdecc'],
+  sampleRates: [],
+  channelCounts: [],
+  availableOnly: false,
+  issuesOnly: false,
+  showLocked: true,
+  groups: [],
+  hostIds: [],
+  directions: [],
+  qualities: [],
+};
+
+export const clearAllFilterState: FilterState = {
+  deviceTypes: [],
+  sampleRates: [],
+  channelCounts: [],
+  availableOnly: false,
+  issuesOnly: false,
+  showLocked: true,
+  groups: [],
+  hostIds: [],
+  directions: [],
+  qualities: [],
+};
 
 /**
  * Selection state
@@ -164,13 +196,7 @@ export const initialRoutingState: RoutingState = {
   },
 
   filters: {
-    deviceTypes: ['map2', 'avdecc'],
-    sampleRates: [],
-    channelCounts: [],
-    availableOnly: false,
-    issuesOnly: false,
-    showLocked: true,
-    groups: [],
+    ...defaultFilterState,
   },
 
   search: '',

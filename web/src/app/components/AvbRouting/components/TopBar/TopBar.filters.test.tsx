@@ -83,6 +83,8 @@ describe('TopBar filter and search wiring', () => {
           sample_rate: 48000,
           channels: 2,
           group: 'Stage',
+          host: 'stage.local',
+          direction: 'talker',
           available: true,
           node_id: 'local',
         },
@@ -90,6 +92,8 @@ describe('TopBar filter and search wiring', () => {
           sample_rate: 96000,
           channels: 8,
           group: 'FOH',
+          host: 'foh.local',
+          direction: 'listener',
           available: true,
           node_id: 'local',
         },
@@ -183,6 +187,32 @@ describe('TopBar filter and search wiring', () => {
     })
   })
 
+  it('dispatches SET_FILTERS for host, direction, and quality toggles', () => {
+    render(<TopBar />)
+
+    fireEvent.click(screen.getByTestId('topbar-filters-button'))
+    fireEvent.click(screen.getByTestId('topbar-filter-host-foh-local'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { hostIds: ['foh.local'] },
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-direction-talker'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { directions: ['talker'] },
+    })
+
+    fireEvent.click(screen.getByTestId('topbar-filter-quality-critical'))
+
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'SET_FILTERS',
+      payload: { qualities: ['critical'] },
+    })
+  })
+
   it('toggles issues-only filter from the endpoint-issues status chip', () => {
     render(<TopBar />)
 
@@ -224,6 +254,9 @@ describe('TopBar filter and search wiring', () => {
         issuesOnly: true,
         showLocked: false,
         groups: ['FOH'],
+        hostIds: ['foh.local'],
+        directions: ['listener'],
+        qualities: ['critical'],
       },
     }
 
@@ -242,6 +275,9 @@ describe('TopBar filter and search wiring', () => {
         issuesOnly: false,
         showLocked: true,
         groups: [],
+        hostIds: [],
+        directions: [],
+        qualities: [],
       },
     })
   })
@@ -257,6 +293,9 @@ describe('TopBar filter and search wiring', () => {
         issuesOnly: true,
         showLocked: false,
         groups: ['Stage'],
+        hostIds: ['stage.local'],
+        directions: ['talker'],
+        qualities: ['warning'],
       },
     }
 

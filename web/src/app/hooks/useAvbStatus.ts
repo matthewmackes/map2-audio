@@ -23,10 +23,17 @@ export interface PTPStatus {
 
 export interface AVBStatus {
   enabled: boolean;
+  configured?: boolean;
+  operational?: boolean;
+  degraded?: boolean;
   available: boolean;
+  state?: string;
   interface: string;
+  interface_source?: string;
   ptp: PTPStatus;
   reason?: string;
+  readiness?: Record<string, unknown>;
+  compatibility?: Record<string, unknown>;
   config: {
     ptp_domain: number;
     ptp_priority1: number;

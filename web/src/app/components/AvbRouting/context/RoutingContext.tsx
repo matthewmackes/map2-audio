@@ -22,7 +22,8 @@ import { useEndpoints, useConnections } from '../hooks/useAvbApi';
 import { useNodes, usePtpStatus, useLocalNodeId } from '../hooks/useNodeApi';
 import type { RoutingState, RoutingAction, Endpoint, Route, CrossNodeRoute, AvbNode } from '../types';
 import { initialRoutingState } from '../types';
-import { hasEndpointOperationalIssue } from '../utils/endpointIssues';
+import { applyEndpointFilters } from '../utils/filters';
+import { useWebSocketTopic } from '../../../../map2/hooks/useWebSocket';
 
 /**
  * Context value shape
@@ -81,6 +82,194 @@ function collectNodeAddressKeys(raw: string | null | undefined): string[] {
   }
 
   return Array.from(keys);
+}
+
+function normalizePayloadArray(payload: unknown, key: 'endpoints' | 'connections'): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+
+  const container = payload as Record<string, unknown>;
+  const raw = container[key];
+  return Array.isArray(raw) ? raw : [];
+}
+
+function buildEndpointPayloadState(
+  payload: unknown,
+  nodesData: AvbNode[] | undefined,
+  localNodeId: string | null
+): Endpoint[] {
+  const nodeAddressLookup = buildNodeAddressLookup(nodesData);
+  const payloadEndpoints = normalizePayloadArray(payload, 'endpoints');
+
+  return payloadEndpoints
+    .map((rawEndpoint) => {
+      if (!rawEndpoint || typeof rawEndpoint !== 'object') {
+        return null;
+      }
+
+      const endpoint = rawEndpoint as Omit<Endpoint, 'tags' | 'color' | 'group' | 'bank' | 'pinned' | 'locked'>;
+      return {
+        ...endpoint,
+        // Add default UI metadata (will be overlaid with localStorage later)
+        tags: [],
+        color: '#ffffff',
+        group: 'Default',
+        bank: 0,
+        pinned: false,
+        locked: false,
+        // Preserve backend node ownership when present, then resolve by node address, then local.
+        node_id: resolveEndpointNodeId(endpoint, nodeAddressLookup, localNodeId),
+      } as Endpoint;
+    })
+    .filter((endpoint): endpoint is Endpoint => endpoint !== null);
+}
+
+type ConnectionPayload = {
+  connection_id?: string;
+  talker?: Partial<Endpoint>;
+  listener?: Partial<Endpoint>;
+  state?: Route['state'];
+  established_time?: string | null;
+  error_message?: string | null;
+  srp_reservation_id?: string | null;
+  srp_admission_id?: string | null;
+};
+
+type ConnectionStatePayload = {
+  route_id: string;
+  state: Route['state'];
+  error_message?: string | null;
+};
+
+function buildConnectionPayloadState(payload: unknown): Route[] {
+  const payloadConnections = normalizePayloadArray(payload, 'connections');
+
+  return payloadConnections
+    .map((rawConnection) => {
+      if (!rawConnection || typeof rawConnection !== 'object') {
+        return null;
+      }
+
+      const connection = rawConnection as ConnectionPayload;
+      const talker = connection.talker || {};
+      const listener = connection.listener || {};
+      const talkerNodeId = talker.node_id || undefined;
+      const listenerNodeId = listener.node_id || undefined;
+
+      return {
+        id: connection.connection_id || `${talker.endpoint_id || ''}→${listener.endpoint_id || ''}`,
+        talker_id: talker.endpoint_id || '',
+        listener_id: listener.endpoint_id || '',
+        state: connection.state || 'disconnected',
+        established_time: connection.established_time || null,
+        error_message: connection.error_message || null,
+        connection_count: 0,
+        srp_reservation_id: connection.srp_reservation_id || null,
+        srp_admission_id: connection.srp_admission_id || null,
+        locked: false,
+        valid: true,
+        messages: [],
+        talker_node_id: talkerNodeId,
+        listener_node_id: listenerNodeId,
+        cross_node: !!talkerNodeId && !!listenerNodeId && talkerNodeId !== listenerNodeId,
+      };
+    })
+    .filter((route): route is Route => route !== null);
+}
+
+function isValidConnectionState(value: unknown): value is Route['state'] {
+  return (
+    value === 'disconnected' ||
+    value === 'connecting' ||
+    value === 'connected' ||
+    value === 'disconnecting' ||
+    value === 'error'
+  );
+}
+
+function buildConnectionStatePayload(payload: unknown): ConnectionStatePayload | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const container = payload as Record<string, unknown>;
+
+  const routeId = typeof container.route_id === 'string' ? container.route_id.trim() : '';
+  const connectionId = typeof container.connection_id === 'string' ? container.connection_id.trim() : '';
+  const talkerId = typeof container.talker_id === 'string' ? container.talker_id.trim() : '';
+  const listenerId = typeof container.listener_id === 'string' ? container.listener_id.trim() : '';
+  const rawState = container.state;
+  if (!routeId && !connectionId && !(talkerId && listenerId)) {
+    return null;
+  }
+
+  if (!isValidConnectionState(rawState)) {
+    return null;
+  }
+
+  const state = rawState;
+  const derivedRouteId = routeId || connectionId || `${talkerId}→${listenerId}`;
+  if (!derivedRouteId) {
+    return null;
+  }
+
+  const rawError = container.error_message;
+  const error_message =
+    typeof rawError === 'string' ? rawError : rawError === null ? null : undefined;
+
+  return error_message === undefined
+    ? { route_id: derivedRouteId, state }
+    : { route_id: derivedRouteId, state, error_message };
+}
+
+function buildCrossNodeRoutes(routes: Route[]): CrossNodeRoute[] {
+  return routes
+    .filter((route) => route.cross_node && route.talker_node_id && route.listener_node_id)
+    .map((route) => {
+      let status: CrossNodeRoute['status'] = 'pending';
+      if (route.state === 'connected') {
+        status = 'active';
+      } else if (route.state === 'connecting') {
+        status = 'establishing';
+      } else if (route.state === 'error') {
+        status = 'failed';
+      }
+
+      return {
+        route_id: route.id,
+        source_node_id: route.talker_node_id as string,
+        dest_node_id: route.listener_node_id as string,
+        talker_id: route.talker_id,
+        listener_id: route.listener_id,
+        status,
+        network_path:
+          route.network_path && route.network_path.length > 0
+            ? route.network_path
+            : [route.talker_node_id as string, route.listener_node_id as string],
+        latency_ms: route.latency_ms ?? null,
+        bandwidth_mbps: route.bandwidth_mbps ?? 0,
+      };
+    });
+}
+
+function syncConnectionsState(
+  dispatch: React.Dispatch<RoutingAction>,
+  payload: unknown
+) {
+  const routes = buildConnectionPayloadState(payload);
+  dispatch({
+    type: 'CONNECTIONS_UPDATED',
+    payload: routes,
+  });
+  dispatch({
+    type: 'CROSS_NODE_ROUTES_SYNCED',
+    payload: buildCrossNodeRoutes(routes),
+  });
 }
 
 function buildNodeAddressLookup(nodes: AvbNode[] | undefined): Map<string, string> {
@@ -199,23 +388,9 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
   useEffect(() => {
     if (!endpointsData) return;
 
-    const nodeAddressLookup = buildNodeAddressLookup(nodesData);
-    const endpoints: Endpoint[] = endpointsData.endpoints.map((ep) => ({
-      ...ep,
-      // Add default UI metadata (will be overlaid with localStorage later)
-      tags: [],
-      color: '#ffffff',
-      group: 'Default',
-      bank: 0,
-      pinned: false,
-      locked: false,
-      // Preserve backend node ownership when present, then resolve by node address, then local.
-      node_id: resolveEndpointNodeId(ep, nodeAddressLookup, localNodeId),
-    }));
-
     dispatch({
       type: 'ENDPOINTS_UPDATED',
-      payload: endpoints,
+      payload: buildEndpointPayloadState(endpointsData, nodesData, localNodeId),
     });
   }, [endpointsData, localNodeId, nodesData]);
 
@@ -223,67 +398,34 @@ export function RoutingProvider({ children, initialState = initialRoutingState }
   useEffect(() => {
     if (!connectionsData) return;
 
-    const routes: Route[] = connectionsData.connections.map((conn) => {
-      const talkerNodeId = conn.talker.node_id || undefined;
-      const listenerNodeId = conn.listener.node_id || undefined;
-
-      return {
-        id: conn.connection_id,
-        talker_id: conn.talker.endpoint_id || '',
-        listener_id: conn.listener.endpoint_id || '',
-        state: conn.state,
-        established_time: conn.established_time,
-        error_message: conn.error_message,
-        connection_count: 0,
-        srp_reservation_id: conn.srp_reservation_id,
-        srp_admission_id: conn.srp_admission_id,
-        locked: false,
-        valid: true,
-        messages: [],
-        talker_node_id: talkerNodeId,
-        listener_node_id: listenerNodeId,
-        cross_node: !!talkerNodeId && !!listenerNodeId && talkerNodeId !== listenerNodeId,
-      };
-    });
-
-    const crossNodeRoutes: CrossNodeRoute[] = routes
-      .filter((route) => route.cross_node && route.talker_node_id && route.listener_node_id)
-      .map((route) => {
-        let status: CrossNodeRoute['status'] = 'pending';
-        if (route.state === 'connected') {
-          status = 'active';
-        } else if (route.state === 'connecting') {
-          status = 'establishing';
-        } else if (route.state === 'error') {
-          status = 'failed';
-        }
-
-        return {
-          route_id: route.id,
-          source_node_id: route.talker_node_id as string,
-          dest_node_id: route.listener_node_id as string,
-          talker_id: route.talker_id,
-          listener_id: route.listener_id,
-          status,
-          network_path:
-            route.network_path && route.network_path.length > 0
-              ? route.network_path
-              : [route.talker_node_id as string, route.listener_node_id as string],
-          latency_ms: route.latency_ms ?? null,
-          bandwidth_mbps: route.bandwidth_mbps ?? 0,
-        };
-      });
-
-    dispatch({
-      type: 'CONNECTIONS_UPDATED',
-      payload: routes,
-    });
-
-    dispatch({
-      type: 'CROSS_NODE_ROUTES_SYNCED',
-      payload: crossNodeRoutes,
-    });
+    syncConnectionsState(dispatch, connectionsData);
   }, [connectionsData]);
+
+  // Sync endpoints from AVB websocket feed for near-real-time updates.
+  useWebSocketTopic('avb:router:endpoints', (data) => {
+    dispatch({
+      type: 'ENDPOINTS_UPDATED',
+      payload: buildEndpointPayloadState(data, nodesData, localNodeId),
+    });
+  });
+
+  // Sync connections from AVB websocket feed for near-real-time updates.
+  useWebSocketTopic('avb:router:connections', (data) => {
+    syncConnectionsState(dispatch, data);
+  });
+
+  // Sync connection state updates from AVB websocket feed for targeted updates.
+  useWebSocketTopic('avb:router:connection_state', (data) => {
+    const payload = buildConnectionStatePayload(data);
+    if (!payload) {
+      return;
+    }
+
+    dispatch({
+      type: 'CONNECTION_STATE_CHANGE',
+      payload,
+    });
+  });
 
   // Handle loading state
   useEffect(() => {
@@ -383,39 +525,8 @@ export function useFilteredEndpoints(direction?: 'talker' | 'listener'): Endpoin
   }
   // view_mode === 'all_nodes' shows all endpoints (no filter)
 
-  // Filter by direction
-  if (direction) {
-    endpoints = endpoints.filter((ep) => ep.direction === direction);
-  }
-
-  // Apply filters
-  if (state.filters.deviceTypes.length > 0) {
-    endpoints = endpoints.filter((ep) => state.filters.deviceTypes.includes(ep.device_type));
-  }
-
-  if (state.filters.sampleRates.length > 0) {
-    endpoints = endpoints.filter((ep) => state.filters.sampleRates.includes(ep.sample_rate));
-  }
-
-  if (state.filters.channelCounts.length > 0) {
-    endpoints = endpoints.filter((ep) => state.filters.channelCounts.includes(ep.channels));
-  }
-
-  if (state.filters.availableOnly) {
-    endpoints = endpoints.filter((ep) => ep.available);
-  }
-
-  if (state.filters.issuesOnly) {
-    endpoints = endpoints.filter((ep) => hasEndpointOperationalIssue(ep, state.network.nodes));
-  }
-
-  if (!state.filters.showLocked) {
-    endpoints = endpoints.filter((ep) => !ep.locked);
-  }
-
-  if (state.filters.groups.length > 0) {
-    endpoints = endpoints.filter((ep) => state.filters.groups.includes(ep.group));
-  }
+  // Apply all endpoint filters from the unified filter model.
+  endpoints = applyEndpointFilters(endpoints, state.filters, state.network.nodes, direction);
 
   // Apply search
   if (state.search) {

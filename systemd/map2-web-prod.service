@@ -12,8 +12,8 @@ WorkingDirectory=/home/mm/map2-audio/web
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
 Environment="NODE_ENV=production"
 
-# Serve the pre-built dist/ directory on port 3000
-ExecStart=/usr/bin/node /home/mm/map2-audio/web/node_modules/serve/build/main.js dist -l 3000 --no-clipboard -s
+# Serve pre-built dist/ via Vite preview so /api and /ws proxy rules apply.
+ExecStart=/usr/bin/npm run preview
 
 Restart=always
 RestartSec=5

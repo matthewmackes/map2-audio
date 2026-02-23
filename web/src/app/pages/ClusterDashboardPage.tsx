@@ -35,6 +35,7 @@ import { OnboardingWizard } from '../components/OnboardingWizard'
 import { UpdateProgressViewer } from '../components/UpdateProgressViewer'
 import { MultiNodeMonitoringTab } from '../components/ClusterDashboard/MultiNodeMonitoringTab'
 import { AVBNetworkTab } from '../components/ClusterDashboard/AVBNetworkTab'
+import { ClusterAdvancedOperationsTab } from '../components/ClusterDashboard/ClusterAdvancedOperationsTab'
 
 interface DashboardTab {
   id: string
@@ -120,6 +121,13 @@ const DASHBOARD_TABS: DashboardTab[] = [
     label: 'Learn',
     icon: <Lightning size={18} weight="duotone" />,
     description: 'Educational content: how clusters work, AVB/TSN fundamentals, RAFT consensus',
+    category: 'advanced'
+  },
+  {
+    id: 'advanced-ops',
+    label: 'Advanced Ops',
+    icon: <GearSix size={18} weight="duotone" />,
+    description: 'Reset cloned node identity to default and rejoin cluster safely',
     category: 'advanced'
   },
 ]
@@ -689,6 +697,7 @@ export function ClusterDashboardPage() {
         {activeTab === 'multi-node' && <MultiNodeMonitoringTab />}
         {activeTab === 'avb-network' && <AVBNetworkTab />}
         {activeTab === 'education' && <ClusterEducationTab />}
+        {activeTab === 'advanced-ops' && <ClusterAdvancedOperationsTab />}
         {activeTab === 'services' && <ServicesHealthTab />}
         {activeTab === 'metrics' && <MetricsDashboardTab />}
         {activeTab === 'events' && <LiveEventsTab />}

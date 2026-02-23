@@ -19,14 +19,16 @@ that file.
 
 | Component | How it is obtained | Notes |
 | --- | --- | --- |
-| JUCE framework | Fetched at build time via CMake FetchContent | See `juce-engine/CMakeLists.txt:45`. JUCE is available under GPLv3 or a commercial license. You are responsible for obtaining and complying with the appropriate JUCE license for your use case. |
+| JUCE framework | Fetched at build time via CMake FetchContent | See `juce-engine/CMakeLists.txt:45`. JUCE is available under GPLv3 or a commercial license. Ensure your JUCE usage terms are compatible with the way you build/distribute MAP2. |
 | Python dependencies (FastAPI, Uvicorn, SQLAlchemy, etc.) | Installed via pip | See `requirements*.txt` and your Python environment metadata. |
 | JavaScript/TypeScript dependencies | Installed via npm | See `package.json`, `package-lock.json`, `web/package.json`, and `web/package-lock.json`. |
 
 ## Summary
 
-- This project is intended for **non-commercial educational use** under the
-  top-level `LICENSE` for original MAP2 code.
+- MAP2-owned code is licensed under AGPLv3 (`AGPL-3.0-only`) as described in
+  the top-level `LICENSE`.
 - Third-party components remain under their original licenses. Compliance is
   your responsibility when copying, modifying, distributing, or shipping any
   combined work.
+- Educational language in repository docs describes project intent and does not
+  replace or narrow the AGPLv3 grant.

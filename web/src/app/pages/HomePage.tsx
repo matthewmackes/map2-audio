@@ -6,6 +6,7 @@ import { CPUStatusOverview } from '../components/CPUStatusOverview'
 import { PlatformCapabilities } from '../components/PlatformCapabilities'
 import { SystemArchitectureFlow } from '../components/SystemArchitectureFlow'
 import { usePipeWire } from '../hooks/usePipeWire'
+import { useAVBStatus } from '../hooks/useAvbStatus'
 
 interface NetworkShareStatus {
   smb_enabled: boolean
@@ -31,6 +32,7 @@ export function HomePage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
   const [cpuBrand, setCpuBrand] = useState<CpuBrandInfo | null>(null)
   const pw = usePipeWire({ useWebSocket: false, pollingInterval: 5000 })
+  const avbStatusQuery = useAVBStatus()
 
   useEffect(() => {
     fetch('/folders/network-shares')
@@ -50,6 +52,27 @@ export function HomePage() {
       setTimeout(() => setCopiedUrl(null), 2000)
     })
   }
+
+  const avbState = avbStatusQuery.data?.state || (avbStatusQuery.data?.available ? 'operational' : 'disabled')
+  const avbStateColor = (
+    avbState === 'operational'
+      ? '#22c55e'
+      : avbState === 'degraded'
+        ? '#f59e0b'
+        : avbState === 'disabled'
+          ? '#9ca3af'
+          : '#ef4444'
+  )
+  const avbSummary = avbStatusQuery.isLoading
+    ? 'Checking'
+    : (avbStatusQuery.data?.available ? avbState : 'Unavailable')
+  const avbHelper = avbStatusQuery.isLoading
+    ? 'Polling AVB status'
+    : (
+      avbStatusQuery.data?.reason ||
+      `${avbStatusQuery.data?.interface || 'interface n/a'} • PTP ${avbStatusQuery.data?.ptp?.state || 'unknown'}`
+    )
+
   return (
     <div className="stack">
       <PageHeader
@@ -148,6 +171,16 @@ export function HomePage() {
           label="Metrics"
           value={<div className="flex" style={{ gap: 8 }}><Gauge size={18} weight="duotone" /><span>Live</span></div>}
           helper="Health"
+        />
+        <StatCard
+          label="AVB Stack"
+          value={(
+            <div className="flex" style={{ gap: 8 }}>
+              <ShareNetwork size={18} weight="duotone" style={{ color: avbStateColor }} />
+              <span>{avbSummary}</span>
+            </div>
+          )}
+          helper={avbHelper}
         />
       </div>
     </div>

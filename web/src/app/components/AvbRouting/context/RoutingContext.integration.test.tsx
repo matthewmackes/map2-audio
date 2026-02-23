@@ -755,6 +755,73 @@ describe('RoutingContext API/reducer integration', () => {
     })
   })
 
+  it('applies host, direction, and quality filters from unified filter state', async () => {
+    mockLocalNodeId = 'node-a'
+    mockNodesData = [
+      makeNode({ node_id: 'node-a', status: 'online' }),
+      makeNode({ node_id: 'node-b', status: 'degraded' }),
+      makeNode({ node_id: 'node-c', status: 'offline' }),
+    ]
+    mockEndpointsData = {
+      count: 3,
+      endpoints: [
+        makeEndpoint({
+          endpoint_id: 'talker-a',
+          direction: 'talker',
+          unique_id: 1,
+          node_id: 'node-a',
+          host: 'stage.local',
+          available: true,
+        }),
+        makeEndpoint({
+          endpoint_id: 'listener-b',
+          direction: 'listener',
+          unique_id: 2,
+          node_id: 'node-b',
+          host: 'foh.local',
+          available: true,
+        }),
+        makeEndpoint({
+          endpoint_id: 'listener-c',
+          direction: 'listener',
+          unique_id: 3,
+          node_id: 'node-c',
+          host: 'truck.local',
+          available: false,
+        }),
+      ],
+    }
+
+    render(
+      <RoutingProvider
+        initialState={{
+          ...initialRoutingState,
+          network: {
+            ...initialRoutingState.network,
+            nodeSelection: {
+              ...initialRoutingState.network.nodeSelection,
+              view_mode: 'multi_select',
+              selected_node_ids: ['node-a', 'node-b', 'node-c'],
+              show_offline: true,
+            },
+          },
+          filters: {
+            ...initialRoutingState.filters,
+            hostIds: ['foh.local'],
+            directions: ['listener'],
+            qualities: ['warning'],
+          },
+        }}
+      >
+        <MultiSelectProbe />
+      </RoutingProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('multi-endpoint-ids').textContent).toBe('listener-b')
+    })
+  })
+
   it('preserves endpoint node ownership from API payload and falls back by node address', async () => {
     mockLocalNodeId = 'node-a'
     mockNodesData = [

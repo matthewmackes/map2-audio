@@ -19,6 +19,9 @@ export type WebSocketTopic =
   | 'chain_updates'
   | 'plugin_params'
   | 'automation'
+  | 'avb:router:endpoints'
+  | 'avb:router:connections'
+  | 'avb:router:connection_state'
   // JUCE metering topics
   | 'spectrum'
   | 'lufs'

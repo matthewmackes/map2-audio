@@ -228,6 +228,7 @@ public:
     // Send function (must be set by AvdeccEntity)
     using SendFunction = std::function<bool(const void* data, size_t length)>;
     void setSendFunction(SendFunction send_fn) { send_fn_ = send_fn; }
+    void setControllerEntityId(uint64_t entity_id) { controller_entity_id_ = entity_id; }
 
     // Periodic update (call from worker thread)
     void update();
@@ -251,7 +252,8 @@ private:
     bool sendReadDescriptor(EnumerationSession& session,
                           uint16_t configuration_index,
                           DescriptorType descriptor_type,
-                          uint16_t descriptor_index);
+                          uint16_t descriptor_index,
+                          uint8_t retry_count = 0);
 
     // Response handlers
     void handleEntityDescriptorResponse(EnumerationSession& session,
@@ -299,6 +301,7 @@ private:
 
     // Sequence ID counter
     std::atomic<uint16_t> sequence_counter_{0};
+    uint64_t controller_entity_id_ = 0;
 
     // Statistics
     std::atomic<size_t> completed_count_{0};

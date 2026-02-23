@@ -4,13 +4,13 @@
  */
 
 import { renderHook, act } from '@testing-library/react'
-import { useHealthMonitoring } from '@/app/hooks/useHealthMonitoring'
+import { useHealthMonitoring } from '../useHealthMonitoring'
 import {
   useHealthSettings,
   useAlertHistory,
   useLocalStorage,
   defaultHealthSettings,
-} from '@/app/hooks/useLocalStorage'
+} from '../useLocalStorage'
 
 describe('useHealthMonitoring', () => {
   it('should initialize with empty metrics', () => {

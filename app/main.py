@@ -1,9 +1,14 @@
 """
 Important Disclaimer
-This educational platform and its associated code, documentation, or examples may inadvertently reference or mention trademarks, product names, brand names, manufacturers, or commercial software/hardware. (various manufacturers)
-Any such references are purely incidental — they are artifacts of the "Vibe Coding" explanatory process used to illustrate general concepts, techniques, or comparisons. This project has no affiliation with, is not endorsed by, and is not connected in any way to those companies, products, or brands.
-This is a free, non-commercial, educational resource only — not for sale, not for resale, and not intended as a product, replacement, substitute, alternative, or competitor to any commercial offering.
-The referenced commercial products are superior in quality, support, features, reliability, and every other respect. We strongly encourage users to purchase legitimate commercial products from their official sources and to support the developers and companies behind them — their work sustains jobs, innovation, and the broader community that benefits everyone, including educational efforts like this one.
+This educational platform and its associated code, documentation, or examples
+may reference trademarks, product names, brand names, manufacturers, or
+commercial software/hardware.
+Any such references are for identification, commentary, comparison, and
+technical explanation only. This project has no affiliation with, endorsement
+from, or official connection to those companies, products, or brands.
+MAP2-owned code is licensed under AGPLv3 (`AGPL-3.0-only`). Educational intent
+statements describe project goals and do not add restrictions beyond AGPLv3.
+Third-party components remain under their original licenses.
 """
 
 """
@@ -115,6 +120,7 @@ async def lifespan(app):
         from app.services.node_identity import NodeIdentity
         from app.database_session import get_session
         from app.routes.lcd_events import init_lcd_routes
+        avb_router = None
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
@@ -211,26 +217,37 @@ async def lifespan(app):
         # Start MIDI broadcast service (real-time MIDI events via WebSocket)
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
 
-        # Start PipeWire crash recovery watchdog
-        try:
-            from app.services.pipewire_recovery import get_pipewire_recovery_service
-            pw_recovery = get_pipewire_recovery_service()
-            # Connect to JUCE engine if available
+        # Start PipeWire crash recovery watchdog (opt-in only).
+        # In current production builds this path can trigger unsafe low-level
+        # engine restarts and destabilize the backend when JACK probes misfire.
+        enable_pw_recovery = os.getenv("MAP2_ENABLE_PIPEWIRE_RECOVERY", "true").lower() in {
+            "1", "true", "yes", "on"
+        }
+        if enable_pw_recovery:
             try:
-                from app.services.juce_engine_service import get_audio_engine
-                from app.services.avb.avb_service import get_avb_service
+                from app.services.pipewire_recovery import get_pipewire_recovery_service
+                pw_recovery = get_pipewire_recovery_service()
+                # Connect to JUCE engine if available
+                try:
+                    from app.services.juce_engine_service import get_audio_engine
+                    from app.services.avb.avb_service import get_avb_service
 
-                engine_svc = get_audio_engine()
-                engine = getattr(engine_svc, "_engine", None)
-                if engine is not None:
-                    pw_recovery.set_engine(engine)
-                    # Share the same low-level engine with AVB service.
-                    get_avb_service().set_engine(engine)
-            except Exception:
-                pass
-            await safe_start_service(logger, "PipeWire recovery watchdog", pw_recovery.start)
-        except Exception as e:
-            logger.warning(f"PipeWire recovery watchdog not started: {e}")
+                    engine_svc = get_audio_engine()
+                    # PipeWire recovery expects service-level controls and can
+                    # safely handle async/sync wrappers.
+                    pw_recovery.set_engine(engine_svc)
+
+                    engine = getattr(engine_svc, "_engine", None)
+                    if engine is not None:
+                        # AVB service still needs the low-level engine object.
+                        get_avb_service().set_engine(engine)
+                except Exception:
+                    pass
+                await safe_start_service(logger, "PipeWire recovery watchdog", pw_recovery.start)
+            except Exception as e:
+                logger.warning(f"PipeWire recovery watchdog not started: {e}")
+        else:
+            logger.info("PipeWire recovery watchdog disabled (MAP2_ENABLE_PIPEWIRE_RECOVERY not enabled)")
 
         # Start cluster monitoring services (only in multi-node modes)
         heartbeat = None
@@ -262,6 +279,15 @@ async def lifespan(app):
         else:
             logger.info("Cluster services disabled (single-node ALL-IN-ONE mode)")
 
+        # Bind AVB router discovery lifecycle to backend startup/shutdown.
+        try:
+            from app.services.avb.avb_router import get_avb_router
+
+            avb_router = get_avb_router()
+            await safe_start_service(logger, "AVB router discovery", avb_router.start)
+        except Exception as e:
+            logger.warning(f"AVB router discovery not started: {e}")
+
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info(f"✅ Startup complete: {running}/{total} services running")
@@ -270,6 +296,9 @@ async def lifespan(app):
 
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
+
+        if avb_router is not None:
+            await safe_stop_service(logger, "AVB router discovery", avb_router.stop)
         
         # Stop configuration distributor
         if cluster_enabled:

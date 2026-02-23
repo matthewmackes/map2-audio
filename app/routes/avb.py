@@ -19,7 +19,7 @@ from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
 
 from app.config import config_get
-from app.services.avb import is_avb_available
+from app.services.avb import is_avb_available, get_avb_readiness
 from app.services.avb.ptp_monitor import get_ptp_monitor
 from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
 
@@ -28,6 +28,30 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/avb", tags=["AVB/TSN"])
 _acmp_srp_reservations: Dict[str, Dict[str, Optional[str]]] = {}
 _ALLOWED_FAILOVER_POLICIES = {"none", "prefer_primary", "round_robin", "manual"}
+_AVDECC_SAMPLE_RATE_TO_CODE = {
+    8000: 0x01,
+    16000: 0x02,
+    32000: 0x03,
+    44100: 0x04,
+    48000: 0x05,
+    88200: 0x06,
+    96000: 0x07,
+    176400: 0x08,
+    192000: 0x09,
+}
+_AVDECC_SAMPLE_RATE_FROM_CODE = {code: rate for rate, code in _AVDECC_SAMPLE_RATE_TO_CODE.items()}
+_AVDECC_ALLOWED_BITS_PER_SAMPLE = {8, 16, 20, 24, 32}
+_AVDECC_STREAM_FORMAT_PREFIX = 0x0200000000000000
+_STREAM_OWNERSHIP_FIELDS = (
+    "owner_node_id",
+    "peer_node_id",
+    "owner_endpoint_id",
+    "peer_endpoint_id",
+    "talker_node_id",
+    "listener_node_id",
+    "talker_endpoint_id",
+    "listener_endpoint_id",
+)
 
 
 def _srp_enabled() -> bool:
@@ -52,6 +76,399 @@ def _extract_host_from_node_address(node_address: Optional[str]) -> str:
         pass
 
     return node_address.strip().split("/", 1)[0].split("@")[-1].split(":")[0].strip()
+
+
+def _coerce_non_negative_int(raw: Any, default: int) -> int:
+    """Convert values to non-negative integers, preserving default on invalid input."""
+    try:
+        value = int(raw)
+    except Exception:
+        return default
+    return value if value >= 0 else default
+
+
+def _normalize_endpoint_direction(raw: Any, fallback: Optional[str] = None) -> str:
+    """Normalize endpoint direction to canonical talker/listener values."""
+    if raw is None and fallback is not None:
+        raw = fallback
+
+    value = raw
+    if hasattr(raw, "value"):
+        value = getattr(raw, "value")
+
+    normalized = str(value or "").strip().lower()
+    return "talker" if normalized == "talker" else "listener"
+
+
+def _normalize_device_type(raw: Any) -> str:
+    """Normalize endpoint device type to canonical map2/avdecc/unknown values."""
+    normalized = str(raw or "").strip().lower()
+    if normalized in {"map2", "avdecc"}:
+        return normalized
+    return "unknown"
+
+
+def _read_avdecc_field(entity: Any, *names: str, default: Any = None) -> Any:
+    """Read a field from object or dict-like AVDECC payloads."""
+    if entity is None:
+        return default
+
+    for name in names:
+        try:
+            if isinstance(entity, dict):
+                if name in entity and entity[name] is not None:
+                    return entity[name]
+            elif hasattr(entity, name):
+                value = getattr(entity, name)
+                if value is not None:
+                    return value
+        except Exception:
+            continue
+
+    return default
+
+
+def _resolve_avdecc_callable(target: Any, names: List[str]) -> Optional[Any]:
+    if target is None:
+        return None
+    for name in names:
+        candidate = getattr(target, name, None)
+        if callable(candidate):
+            return candidate
+    return None
+
+
+def _normalize_avdecc_entity_id(raw: Any) -> Optional[str]:
+    if raw is None:
+        return None
+    try:
+        if isinstance(raw, int):
+            if raw < 0:
+                return None
+            return format(raw, "016x")
+        value = str(raw).strip().lower().replace("0x", "")
+        if value and len(value) <= 16 and all(ch in "0123456789abcdef" for ch in value):
+            return value.zfill(16)
+    except Exception:
+        return None
+    return None
+
+
+def _normalize_avdecc_mac(raw: Any) -> str:
+    if raw is None:
+        return ""
+    if isinstance(raw, str):
+        value = raw.strip().lower().replace("-", ":")
+        parts = [part for part in value.split(":") if part]
+        if len(parts) == 6:
+            try:
+                return ":".join(f"{int(part, 16):02x}" for part in parts)
+            except Exception:
+                return value
+        return value
+    if isinstance(raw, (list, tuple)) and len(raw) == 6:
+        try:
+            return ":".join(f"{int(part) & 0xFF:02x}" for part in raw)
+        except Exception:
+            return ""
+    return ""
+
+
+def _normalize_stream_direction(direction: Any) -> str:
+    normalized = str(direction or "").strip().lower()
+    if normalized in {"talker", "output", "stream_output"}:
+        return "talker"
+    if normalized in {"listener", "input", "stream_input"}:
+        return "listener"
+    raise HTTPException(
+        status_code=400,
+        detail="direction must be one of: talker, listener",
+    )
+
+
+def _decode_avdecc_stream_format(raw_stream_format: Any) -> Optional[Dict[str, int]]:
+    try:
+        stream_format = int(raw_stream_format)
+    except Exception:
+        return None
+
+    if stream_format <= 0:
+        return None
+
+    sample_rate_code = stream_format & 0xFFFF
+    sample_rate = _AVDECC_SAMPLE_RATE_FROM_CODE.get(sample_rate_code)
+    channels = (stream_format >> 32) & 0xFF
+    bits_per_sample = (stream_format >> 24) & 0xFF
+    if sample_rate is None or channels <= 0 or bits_per_sample <= 0:
+        return None
+
+    return {
+        "channels": channels,
+        "sample_rate": sample_rate,
+        "bits_per_sample": bits_per_sample,
+        "stream_format": stream_format,
+    }
+
+
+def _coerce_optional_hex_int(raw_value: Any) -> Optional[int]:
+    if raw_value is None:
+        return None
+    if isinstance(raw_value, int):
+        return raw_value if raw_value >= 0 else None
+
+    normalized = str(raw_value).strip().lower()
+    if not normalized:
+        return None
+    normalized = normalized.removeprefix("0x")
+    try:
+        parsed = int(normalized, 16)
+    except ValueError:
+        return None
+    return parsed if parsed >= 0 else None
+
+
+def _model_payload_is_compatible(
+    model_json: Dict[str, Any],
+    *,
+    entity_model_id: int,
+    firmware_version: str,
+) -> bool:
+    payload_model_id = _coerce_optional_hex_int(model_json.get("entity_model_id"))
+    if payload_model_id is not None and payload_model_id != int(entity_model_id):
+        return False
+
+    payload_firmware = model_json.get("firmware_version")
+    if payload_firmware is not None and str(payload_firmware) != str(firmware_version):
+        return False
+
+    return True
+
+
+def _derive_model_completeness(model_json: Dict[str, Any]) -> tuple[bool, List[str]]:
+    complete = bool(model_json.get("complete", True))
+    missing = model_json.get("missing") or model_json.get("missing_descriptors") or []
+    if not isinstance(missing, list):
+        missing = []
+    if missing and complete:
+        complete = False
+    if not complete and not missing:
+        missing = ["descriptor-tree-incomplete"]
+    return complete, missing
+
+
+def _encode_avdecc_stream_format(
+    *,
+    channels: int,
+    sample_rate: int,
+    bits_per_sample: int,
+) -> int:
+    if channels <= 0 or channels > 0xFF:
+        raise HTTPException(status_code=400, detail="channels must be between 1 and 255")
+
+    if bits_per_sample not in _AVDECC_ALLOWED_BITS_PER_SAMPLE:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "bits_per_sample must be one of: "
+                + ", ".join(str(value) for value in sorted(_AVDECC_ALLOWED_BITS_PER_SAMPLE))
+            ),
+        )
+
+    sample_rate_code = _AVDECC_SAMPLE_RATE_TO_CODE.get(sample_rate)
+    if sample_rate_code is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "sample_rate must be one of: "
+                + ", ".join(str(value) for value in sorted(_AVDECC_SAMPLE_RATE_TO_CODE.keys()))
+            ),
+        )
+
+    return (
+        _AVDECC_STREAM_FORMAT_PREFIX
+        | ((channels & 0xFF) << 32)
+        | ((bits_per_sample & 0xFF) << 24)
+        | (sample_rate_code & 0xFFFF)
+    )
+
+
+def _normalize_engine_stream_format_result(
+    raw: Any,
+    *,
+    default_message: str,
+) -> Dict[str, Any]:
+    if isinstance(raw, dict):
+        payload = dict(raw)
+        payload.setdefault("success", bool(payload.get("success")))
+        payload.setdefault("status_code", 0 if payload.get("success") else 11)
+        payload.setdefault("status", str(payload.get("status") or default_message))
+        if "stream_format" in payload:
+            try:
+                payload["stream_format"] = int(payload["stream_format"])
+            except Exception:
+                payload["stream_format"] = 0
+        else:
+            payload["stream_format"] = 0
+        return payload
+
+    if isinstance(raw, int):
+        return {
+            "success": True,
+            "status_code": 0,
+            "status": "success",
+            "stream_format": int(raw),
+        }
+
+    return {
+        "success": False,
+        "status_code": 11,
+        "status": default_message,
+        "stream_format": 0,
+    }
+
+
+def _format_avdecc_entity_payload(entity: Any) -> Dict[str, Any]:
+    entity_id_raw = _read_avdecc_field(entity, "entity_id", "entityId", default=None)
+    entity_id = _normalize_avdecc_entity_id(entity_id_raw) or "0000000000000000"
+    entity_model_id = _normalize_avdecc_entity_id(
+        _read_avdecc_field(entity, "entity_model_id", "entityModelId", default=None)
+    ) or "0000000000000000"
+
+    capabilities = _read_avdecc_field(entity, "capabilities", default={})
+    if not isinstance(capabilities, dict):
+        capabilities = {}
+
+    talker_streams = _coerce_non_negative_int(
+        _read_avdecc_field(
+            entity,
+            "talker_stream_sources",
+            "talker_streams",
+            "talkerStreams",
+            default=capabilities.get("talker_streams", 0),
+        ),
+        0,
+    )
+    listener_streams = _coerce_non_negative_int(
+        _read_avdecc_field(
+            entity,
+            "listener_stream_sinks",
+            "listener_streams",
+            "listenerStreams",
+            default=capabilities.get("listener_streams", 0),
+        ),
+        0,
+    )
+
+    is_audio_talker = capabilities.get("is_audio_talker")
+    if is_audio_talker is None:
+        method = _read_avdecc_field(entity, "isAudioTalker", default=None)
+        if callable(method):
+            try:
+                is_audio_talker = bool(method())
+            except Exception:
+                is_audio_talker = talker_streams > 0
+        else:
+            is_audio_talker = talker_streams > 0
+
+    is_audio_listener = capabilities.get("is_audio_listener")
+    if is_audio_listener is None:
+        method = _read_avdecc_field(entity, "isAudioListener", default=None)
+        if callable(method):
+            try:
+                is_audio_listener = bool(method())
+            except Exception:
+                is_audio_listener = listener_streams > 0
+        else:
+            is_audio_listener = listener_streams > 0
+
+    gptp_supported = capabilities.get("gptp_supported")
+    if gptp_supported is None:
+        try:
+            gptp_supported = bool(_entity_supports_gptp(entity))
+        except Exception:
+            gptp_supported = False
+
+    last_seen_raw = _read_avdecc_field(entity, "last_seen", "lastSeen", default=None)
+    if hasattr(last_seen_raw, "isoformat"):
+        last_seen = last_seen_raw.isoformat()
+    elif isinstance(last_seen_raw, str) and last_seen_raw.strip():
+        last_seen = last_seen_raw
+    else:
+        last_seen = datetime.now(timezone.utc).isoformat()
+
+    return {
+        "entity_id": entity_id,
+        "entity_model_id": entity_model_id,
+        "entity_name": str(_read_avdecc_field(entity, "entity_name", "device_name", "name", default="") or ""),
+        "firmware_version": str(_read_avdecc_field(entity, "firmware_version", "firmwareVersion", default="") or ""),
+        "mac_address": _normalize_avdecc_mac(_read_avdecc_field(entity, "mac_address", "macAddress", default=None)),
+        "capabilities": {
+            "talker_streams": talker_streams,
+            "listener_streams": listener_streams,
+            "is_audio_talker": bool(is_audio_talker),
+            "is_audio_listener": bool(is_audio_listener),
+            "gptp_supported": bool(gptp_supported),
+        },
+        "ptp": {
+            "grandmaster_id": _normalize_avdecc_entity_id(
+                _read_avdecc_field(entity, "gptp_grandmaster_id", "gptpGrandmasterId", default=None)
+            ) or "0000000000000000",
+            "domain": _coerce_non_negative_int(
+                _read_avdecc_field(entity, "gptp_domain_number", "gptpDomainNumber", default=0),
+                0,
+            ),
+        },
+        "available": bool(_read_avdecc_field(entity, "available", default=True)),
+        "last_seen": last_seen,
+    }
+
+
+def _serialize_router_endpoint(endpoint: Any, *, direction_fallback: Optional[str] = None) -> Dict[str, Any]:
+    """Serialize route endpoint payload into canonical schema with safe fallback values."""
+    endpoint_id_value = getattr(endpoint, "endpoint_id", None)
+    endpoint_id = str(endpoint_id_value() if callable(endpoint_id_value) else endpoint_id_value or "").strip()
+    if not endpoint_id:
+        endpoint_id = "unknown:0"
+
+    entity_id, _, unique_id_raw = endpoint_id.partition(":")
+    entity_id = str(getattr(endpoint, "entity_id", None) or entity_id or "0000000000000000")
+    parsed_unique_id = _coerce_non_negative_int(unique_id_raw, 0)
+    unique_id = _coerce_non_negative_int(getattr(endpoint, "unique_id", parsed_unique_id), parsed_unique_id)
+
+    node_address_raw = getattr(endpoint, "node_address", None)
+    node_address = str(node_address_raw).strip() if node_address_raw not in (None, "") else None
+
+    host_raw = getattr(endpoint, "host", None)
+    host = str(host_raw).strip() if host_raw not in (None, "") else _extract_host_from_node_address(node_address)
+    host = host or ""
+
+    node_id = str(getattr(endpoint, "node_id", None) or "").strip() or host or "local"
+
+    last_seen = getattr(endpoint, "last_seen", None)
+    if hasattr(last_seen, "isoformat"):
+        last_seen_value = last_seen.isoformat()
+    elif isinstance(last_seen, str) and last_seen.strip():
+        last_seen_value = last_seen
+    else:
+        last_seen_value = datetime.now(timezone.utc).isoformat()
+
+    return {
+        "endpoint_id": endpoint_id,
+        "entity_id": entity_id,
+        "unique_id": unique_id,
+        "node_id": node_id,
+        "direction": _normalize_endpoint_direction(getattr(endpoint, "direction", None), direction_fallback),
+        "device_type": _normalize_device_type(getattr(endpoint, "device_type", None)),
+        "device_name": str(getattr(endpoint, "device_name", None) or endpoint_id),
+        "channels": _coerce_positive_int(getattr(endpoint, "channels", 2), 2),
+        "sample_rate": _coerce_positive_int(getattr(endpoint, "sample_rate", 48000), 48000),
+        "format": str(getattr(endpoint, "format", None) or "24-bit PCM"),
+        "mac_address": getattr(endpoint, "mac_address", None),
+        "node_address": node_address,
+        "host": host,
+        "available": bool(getattr(endpoint, "available", True)),
+        "last_seen": last_seen_value,
+    }
 
 
 def _parse_since_timestamp(since: Optional[str]) -> Optional[datetime]:
@@ -445,6 +862,34 @@ def _parse_failover_interfaces(raw: Any) -> List[str]:
     return _normalize_string_list(raw)
 
 
+def _coerce_optional_text(value: Any) -> Optional[str]:
+    """Normalize optional text payload fields."""
+    if value is None:
+        return None
+    parsed = str(value).strip()
+    return parsed or None
+
+
+def _parse_stream_ownership(config_payload: Dict[str, Any]) -> Dict[str, Optional[str]]:
+    """
+    Parse optional stream ownership payload from flat keys and/or ownership object.
+
+    Supports:
+    - ownership.owner_node_id, etc.
+    - top-level owner_node_id, etc. (compatibility for internal callers)
+    """
+    ownership_raw = config_payload.get("ownership")
+    if ownership_raw is not None and not isinstance(ownership_raw, dict):
+        raise HTTPException(status_code=400, detail="ownership must be an object when provided")
+
+    ownership_payload = ownership_raw if isinstance(ownership_raw, dict) else {}
+    normalized: Dict[str, Optional[str]] = {}
+    for field_name in _STREAM_OWNERSHIP_FIELDS:
+        raw_value = ownership_payload.get(field_name, config_payload.get(field_name))
+        normalized[field_name] = _coerce_optional_text(raw_value)
+    return normalized
+
+
 def _build_config_compatibility_matrix() -> Dict[str, Any]:
     """Build compatibility profile summary for operational validation."""
     enabled = bool(config_get("avb.enabled", False))
@@ -709,25 +1154,30 @@ async def get_ptp_status() -> Dict[str, Any]:
     Check the 'available' field to determine if PTP is active.
     """
     try:
-        # Check if AVB is enabled in config
-        if not config_get("avb.enabled", False):
+        readiness = get_avb_readiness()
+
+        # Check if AVB intent/config is present before probing PTP monitor.
+        if not readiness.get("enabled", False):
             return {
                 "available": False,
-                "error": "AVB not enabled in configuration"
+                "error": readiness.get("reason") or "AVB not enabled in configuration",
+                "readiness": readiness,
             }
 
-        # Check if AVB hardware is available
-        if not is_avb_available():
+        if not readiness.get("configured", False):
             return {
                 "available": False,
-                "error": "AVB hardware not available (no TSN NIC or ptp4l not installed)"
+                "error": readiness.get("reason") or "AVB not configured",
+                "readiness": readiness,
             }
 
         # Get PTP status from monitor
         ptp_monitor = get_ptp_monitor()
         status = await ptp_monitor.get_status()
-
-        return status.to_dict()
+        payload = status.to_dict()
+        payload.setdefault("available", False)
+        payload["readiness"] = readiness
+        return payload
 
     except Exception as e:
         logger.error(f"Error getting PTP status: {e}", exc_info=True)
@@ -750,28 +1200,29 @@ async def get_avb_status() -> Dict[str, Any]:
         - reason: str (why unavailable, if applicable)
     """
     try:
-        enabled = config_get("avb.enabled", False)
-        interface = config_get("avb.interface", "")
-        available = is_avb_available()
+        from app.services.avb.avb_service import get_avb_service
+
+        avb_service = get_avb_service()
+        readiness = avb_service.get_readiness()
+        enabled = bool(readiness.get("enabled", False))
+        interface = str(readiness.get("interface", "") or "")
+        available = bool(readiness.get("available", False))
 
         # Get PTP status
         ptp_status = await get_ptp_status()
 
-        # Determine reason if not available
-        reason = None
-        if not enabled:
-            reason = "AVB disabled in configuration"
-        elif not interface:
-            reason = "No AVB interface configured"
-        elif not available:
-            reason = "AVB hardware not available"
-
         return {
             "enabled": enabled,
+            "configured": bool(readiness.get("configured", False)),
+            "operational": bool(readiness.get("operational", False)),
+            "degraded": bool(readiness.get("degraded", False)),
             "available": available,
             "interface": interface,
+            "interface_source": readiness.get("interface_source", "unknown"),
+            "state": readiness.get("state", "unknown"),
             "ptp": ptp_status,
-            "reason": reason,
+            "reason": readiness.get("reason"),
+            "readiness": readiness,
             "compatibility": _build_config_compatibility_matrix(),
             "config": {
                 "ptp_domain": config_get("avb.ptp_domain", 0),
@@ -1214,6 +1665,7 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
         failover_interfaces = _parse_failover_interfaces(failover_raw)
         if interface and interface not in failover_interfaces:
             failover_interfaces.insert(0, interface)
+        ownership = _parse_stream_ownership(config)
 
         # Parse config
         stream_config = AvbStreamConfig(
@@ -1231,6 +1683,14 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
             srp_reservation_id=srp_reservation_id,
             srp_admission_id=srp_admission_id,
             srp_metadata=srp_metadata,
+            owner_node_id=ownership["owner_node_id"],
+            peer_node_id=ownership["peer_node_id"],
+            owner_endpoint_id=ownership["owner_endpoint_id"],
+            peer_endpoint_id=ownership["peer_endpoint_id"],
+            talker_node_id=ownership["talker_node_id"],
+            listener_node_id=ownership["listener_node_id"],
+            talker_endpoint_id=ownership["talker_endpoint_id"],
+            listener_endpoint_id=ownership["listener_endpoint_id"],
         )
 
         result = await avb_service.create_stream(stream_config)
@@ -1535,7 +1995,24 @@ async def get_stream_stats(stream_id: str) -> Dict[str, Any]:
         if stats is None:
             raise HTTPException(status_code=404, detail="Stream not found")
 
-        return stats
+        # Normalize response shape for API clients (snake_case keys)
+        return {
+            "frames_sent": stats.get("frames_sent", 0),
+            "frames_received": stats.get("frames_received", 0),
+            "send_errors": stats.get("send_errors", 0),
+            "receive_errors": stats.get("receive_errors", 0),
+            "underruns": stats.get("underruns", 0),
+            "overruns": stats.get("overruns", 0),
+            "timestamp_errors": stats.get("timestamp_errors", 0),
+            "sequence_errors": stats.get("sequence_errors", 0),
+            "sequence_gap_events": stats.get("sequence_gap_events", 0),
+            "timestamp_skew_events": stats.get("timestamp_skew_events", 0),
+            "decode_errors": stats.get("decode_errors", 0),
+            "max_timestamp_skew_ns": stats.get("max_timestamp_skew_ns", 0),
+            "bytes_transferred": stats.get("bytes_transferred", 0),
+            "max_latency_ns": stats.get("max_latency_ns", 0),
+            "min_latency_ns": stats.get("min_latency_ns", 0),
+        }
 
     except HTTPException:
         raise
@@ -1587,11 +2064,13 @@ async def get_avb_devices() -> Dict[str, Any]:
         from app.services.avb.avb_service import get_avb_service
 
         avb_service = get_avb_service()
+        readiness = avb_service.get_readiness()
         device_names = avb_service.get_device_names()
         discovered_devices = avb_service.get_discovered_devices()
 
         return {
-            "available": avb_service.is_available(),
+            "available": bool(readiness.get("available", False)),
+            "readiness": readiness,
             "count": len(device_names),
             "device_names": device_names,
             "discovered_count": len(discovered_devices),
@@ -1605,6 +2084,45 @@ async def get_avb_devices() -> Dict[str, Any]:
             "device_names": [],
             "discovered_count": 0,
             "discovered_devices": [],
+            "error": f"Internal error: {str(e)}",
+        }
+
+
+@router.get("/capabilities/channels")
+async def get_avb_channel_capabilities() -> Dict[str, Any]:
+    """Get canonical local + AVB channel capability inventory."""
+    try:
+        from app.services.avb.avb_service import get_avb_service
+        from app.services.juce_engine_service import get_audio_engine
+
+        audio_service = get_audio_engine()
+        system_info: Dict[str, Any] = {}
+        if audio_service.is_available:
+            try:
+                system_info = dict(audio_service.get_system_info() or {})
+            except Exception as info_exc:
+                logger.debug("AVB capabilities system_info lookup failed: %s", info_exc)
+
+        avb_service = get_avb_service()
+        capabilities = avb_service.get_channel_capabilities(system_info=system_info)
+        return capabilities
+    except Exception as e:
+        logger.error(f"Error getting AVB channel capabilities: {e}", exc_info=True)
+        return {
+            "available": False,
+            "readiness": get_avb_readiness(),
+            "device": "unknown",
+            "local_inputs": [],
+            "local_outputs": [],
+            "avb_talkers": [],
+            "avb_listeners": [],
+            "sample_rates": [],
+            "summary": {
+                "local_input_count": 0,
+                "local_output_count": 0,
+                "avb_talker_count": 0,
+                "avb_listener_count": 0,
+            },
             "error": f"Internal error: {str(e)}",
         }
 
@@ -1739,34 +2257,26 @@ async def get_avdecc_entities() -> Dict[str, Any]:
                 "error": "AVDECC entity not initialized"
             }
 
-        # Get discovered entities from AVDECC
-        entities = await asyncio.to_thread(
-            router.avdecc_entity.getDiscoveredEntities
+        discover_fn = _resolve_avdecc_callable(
+            router.avdecc_entity,
+            [
+                "getDiscoveredEntities",
+                "get_discovered_entities",
+                "get_avdecc_entities",
+                "getAvdeccEntities",
+            ],
         )
-
-        entities_list = [
-            {
-                "entity_id": format(e.entity_id, '016x'),
-                "entity_model_id": format(e.entity_model_id, '016x'),
-                "entity_name": e.entity_name,
-                "firmware_version": e.firmware_version,
-                "mac_address": ":".join(f"{b:02x}" for b in e.mac_address),
-                "capabilities": {
-                    "talker_streams": e.talker_stream_sources,
-                    "listener_streams": e.listener_stream_sinks,
-                    "is_audio_talker": e.isAudioTalker(),
-                    "is_audio_listener": e.isAudioListener(),
-                    "gptp_supported": _entity_supports_gptp(e)
-                },
-                "ptp": {
-                    "grandmaster_id": format(e.gptp_grandmaster_id, '016x'),
-                    "domain": e.gptp_domain_number
-                },
-                "available": e.available,
-                "last_seen": e.last_seen.isoformat()
+        if discover_fn is None:
+            return {
+                "enabled": False,
+                "entities": [],
+                "error": "AVDECC discovery API unavailable",
             }
-            for e in entities
-        ]
+
+        entities = discover_fn()
+        if inspect.isawaitable(entities):
+            entities = await entities
+        entities_list = [_format_avdecc_entity_payload(entity) for entity in (entities or [])]
 
         return {
             "enabled": True,
@@ -1796,32 +2306,51 @@ async def get_avdecc_entity(entity_id: str) -> Dict[str, Any]:
         if not router or not router.avdecc_entity:
             raise HTTPException(status_code=503, detail="AVDECC entity not initialized")
 
-        # Parse entity ID from hex string
-        entity_id_int = int(entity_id, 16)
+        normalized_id = _normalize_avdecc_entity_id(entity_id)
+        if normalized_id is None:
+            raise HTTPException(status_code=400, detail="Invalid entity ID format")
 
-        # Find entity
-        entity = await asyncio.to_thread(
-            router.avdecc_entity.findEntity,
-            entity_id_int
-        )
+        entity = None
+        find_fn = _resolve_avdecc_callable(router.avdecc_entity, ["findEntity", "find_entity"])
+        if find_fn is not None:
+            entity_id_int = int(normalized_id, 16)
+            entity = find_fn(entity_id_int)
+            if inspect.isawaitable(entity):
+                entity = await entity
+            if hasattr(entity, "value"):
+                try:
+                    entity = entity.value()
+                except Exception:
+                    pass
+
+        if not entity:
+            discover_fn = _resolve_avdecc_callable(
+                router.avdecc_entity,
+                [
+                    "getDiscoveredEntities",
+                    "get_discovered_entities",
+                    "get_avdecc_entities",
+                    "getAvdeccEntities",
+                ],
+            )
+            if discover_fn is None:
+                raise HTTPException(status_code=503, detail="AVDECC discovery API unavailable")
+
+            entities = discover_fn()
+            if inspect.isawaitable(entities):
+                entities = await entities
+            for candidate in entities or []:
+                candidate_id = _normalize_avdecc_entity_id(
+                    _read_avdecc_field(candidate, "entity_id", "entityId", default=None)
+                )
+                if candidate_id == normalized_id:
+                    entity = candidate
+                    break
 
         if not entity:
             raise HTTPException(status_code=404, detail="Entity not found")
 
-        return {
-            "entity_id": format(entity.entity_id, '016x'),
-            "entity_model_id": format(entity.entity_model_id, '016x'),
-            "entity_name": entity.entity_name,
-            "firmware_version": entity.firmware_version,
-            "mac_address": ":".join(f"{b:02x}" for b in entity.mac_address),
-            "capabilities": {
-                "talker_streams": entity.talker_stream_sources,
-                "listener_streams": entity.listener_stream_sinks,
-                "is_audio_talker": entity.isAudioTalker(),
-                "is_audio_listener": entity.isAudioListener()
-            },
-            "available": entity.available
-        }
+        return _format_avdecc_entity_payload(entity)
 
     except HTTPException:
         raise
@@ -1911,26 +2440,8 @@ async def get_router_endpoints(direction: Optional[str] = None) -> Dict[str, Any
 
         endpoints = router.get_endpoints(dir_filter)
 
-        endpoints_list = [
-            {
-                "endpoint_id": ep.endpoint_id(),
-                "entity_id": ep.entity_id,
-                "unique_id": ep.unique_id,
-                "node_id": ep.node_id,
-                "direction": ep.direction.value,
-                "device_type": ep.device_type,
-                "device_name": ep.device_name,
-                "channels": ep.channels,
-                "sample_rate": ep.sample_rate,
-                "format": ep.format,
-                "mac_address": ep.mac_address,
-                "node_address": ep.node_address,
-                "host": _extract_host_from_node_address(ep.node_address),
-                "available": ep.available,
-                "last_seen": ep.last_seen.isoformat()
-            }
-            for ep in endpoints
-        ]
+        endpoints_list = [_serialize_router_endpoint(ep) for ep in endpoints]
+        endpoints_list.sort(key=lambda item: str(item.get("endpoint_id", "")))
 
         return {
             "endpoints": endpoints_list,
@@ -1966,33 +2477,20 @@ async def get_router_connections() -> Dict[str, Any]:
 
         connections = router.get_connections()
 
-        connections_list = [
-            {
-                "connection_id": conn.connection_id(),
-                "talker": {
-                    "endpoint_id": conn.talker.endpoint_id(),
-                    "node_id": conn.talker.node_id,
-                    "node_address": conn.talker.node_address,
-                    "device_name": conn.talker.device_name,
-                    "channels": conn.talker.channels,
-                    "sample_rate": conn.talker.sample_rate
-                },
-                "listener": {
-                    "endpoint_id": conn.listener.endpoint_id(),
-                    "node_id": conn.listener.node_id,
-                    "node_address": conn.listener.node_address,
-                    "device_name": conn.listener.device_name,
-                    "channels": conn.listener.channels,
-                    "sample_rate": conn.listener.sample_rate
-                },
-                "state": conn.state.value,
-                "established_time": conn.established_time.isoformat() if conn.established_time else None,
-                "error_message": conn.error_message,
-                "srp_reservation_id": conn.srp_reservation_id,
-                "srp_admission_id": conn.srp_admission_id,
-            }
-            for conn in connections
-        ]
+        connections_list = []
+        for conn in connections:
+            connections_list.append(
+                {
+                    "connection_id": conn.connection_id(),
+                    "talker": _serialize_router_endpoint(conn.talker, direction_fallback="talker"),
+                    "listener": _serialize_router_endpoint(conn.listener, direction_fallback="listener"),
+                    "state": conn.state.value,
+                    "established_time": conn.established_time.isoformat() if conn.established_time else None,
+                    "error_message": conn.error_message,
+                    "srp_reservation_id": conn.srp_reservation_id,
+                    "srp_admission_id": conn.srp_admission_id,
+                }
+            )
 
         return {
             "connections": connections_list,
@@ -2051,6 +2549,46 @@ async def get_routing_matrix() -> Dict[str, Any]:
         }
 
 
+async def _broadcast_router_state_updates():
+    """Publish AVB routing endpoint/connection snapshots to websocket subscribers."""
+    from app.services.event_publisher import event_publisher, EventType
+
+    try:
+        endpoints_snapshot = await get_router_endpoints()
+        connections_snapshot = await get_router_connections()
+
+        await event_publisher.publish(
+            topic="avb:router:endpoints",
+            event_type=EventType.AVB_ENDPOINTS_UPDATED,
+            data=endpoints_snapshot,
+        )
+        await event_publisher.publish(
+            topic="avb:router:connections",
+            event_type=EventType.AVB_CONNECTIONS_UPDATED,
+            data=connections_snapshot,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to publish AVB router state websocket updates: {e}")
+
+
+async def _broadcast_router_connection_state(route_id: str, state: str, error_message: Optional[str] = None):
+    """Publish a single AVB route state change event."""
+    from app.services.event_publisher import event_publisher, EventType
+
+    try:
+        await event_publisher.publish(
+            topic="avb:router:connection_state",
+            event_type=EventType.AVB_CONNECTION_STATE_CHANGED,
+            data={
+                "route_id": route_id,
+                "state": state,
+                "error_message": error_message,
+            },
+        )
+    except Exception as e:
+        logger.warning(f"Failed to publish AVB connection state websocket update: {e}")
+
+
 @router.post("/router/connect")
 async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -2069,6 +2607,7 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
     listener_id: Optional[str] = None
     admission: Any = None
     route_reservation_id: Optional[str] = None
+    route_id: Optional[str] = None
     connection_succeeded = False
 
     try:
@@ -2180,13 +2719,22 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
 
         connection_succeeded = True
 
+        route_id = f"{talker_id}→{listener_id}"
         response = {
             "success": True,
-            "connection_id": f"{talker_id}→{listener_id}",
+            "connection_id": route_id,
             "message": "Stream connected successfully",
         }
+        if connect_payload.get("trace_id") is not None:
+            response["trace_id"] = connect_payload["trace_id"]
+        if connect_payload.get("stages") is not None:
+            response["stages"] = connect_payload["stages"]
         if admission:
             response["srp_admission"] = admission.to_dict()
+
+        if route_id:
+            await _broadcast_router_connection_state(route_id=route_id, state="connected")
+        await _broadcast_router_state_updates()
 
         return response
 
@@ -2278,12 +2826,23 @@ async def disconnect_streams(disconnection_request: Dict[str, Any]) -> Dict[str,
 
         response: Dict[str, Any] = {
             "success": True,
+            "connection_id": f"{talker_id}→{listener_id}",
             "message": "Stream disconnected successfully"
         }
+        if disconnect_payload.get("trace_id") is not None:
+            response["trace_id"] = disconnect_payload["trace_id"]
+        if disconnect_payload.get("stages") is not None:
+            response["stages"] = disconnect_payload["stages"]
         if disconnect_payload.get("srp_release") is not None:
             response["srp_release"] = disconnect_payload["srp_release"]
         if disconnect_payload.get("srp_release_warning") is not None:
             response["srp_release_warning"] = disconnect_payload["srp_release_warning"]
+
+        await _broadcast_router_connection_state(
+            route_id=f"{talker_id}→{listener_id}",
+            state="disconnected",
+        )
+        await _broadcast_router_state_updates()
 
         return response
 
@@ -2406,17 +2965,73 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                 detail="AVDECC entity model API not available in engine build"
             )
 
-        # Get entity model via engine method (Phase 10 integration complete)
-        model_json = await asyncio.to_thread(
-            engine.get_avdecc_entity_model,
-            entity_id_int
+        entities = await asyncio.to_thread(engine.get_avdecc_entities)
+        entity_info = next(
+            (
+                entity for entity in entities
+                if _coerce_optional_hex_int(entity.get("entity_id")) == entity_id_int
+            ),
+            None,
         )
+
+        cache = None
+        entity_model_id_int: Optional[int] = None
+        firmware_version = ""
+        if entity_info:
+            entity_model_id_int = _coerce_optional_hex_int(entity_info.get("entity_model_id"))
+            firmware_version = str(entity_info.get("firmware_version", "")).strip()
+
+        # Read-through cache (if cache key metadata is available).
+        if entity_model_id_int is not None and firmware_version:
+            try:
+                from app.services.avb.aem_cache import get_aem_cache
+
+                cache = get_aem_cache()
+                max_age_seconds = _coerce_non_negative_int(
+                    config_get("avb.avdecc.aem_cache_max_age_seconds", 86400),
+                    86400,
+                )
+                cached_model = await asyncio.to_thread(
+                    cache.get,
+                    entity_model_id_int,
+                    firmware_version,
+                    max_age_seconds=max_age_seconds,
+                    require_complete=True,
+                    require_compatible=True,
+                )
+                if cached_model is not None:
+                    cached_complete, cached_missing = _derive_model_completeness(cached_model)
+                    if not _model_payload_is_compatible(
+                        cached_model,
+                        entity_model_id=entity_model_id_int,
+                        firmware_version=firmware_version,
+                    ):
+                        await asyncio.to_thread(
+                            cache.invalidate,
+                            entity_model_id_int,
+                            firmware_version,
+                            "incompatible",
+                        )
+                    else:
+                        return {
+                            "entity_id": entity_id,
+                            "model": cached_model,
+                            "complete": cached_complete,
+                            "missing": cached_missing,
+                            "cached": True,
+                        }
+            except Exception as cache_exc:
+                logger.warning(
+                    "AEM cache lookup failed for entity %s: %s",
+                    entity_id,
+                    cache_exc,
+                )
+
+        # Cache miss or invalid cache; enumerate via engine.
+        model_json = await asyncio.to_thread(engine.get_avdecc_entity_model, entity_id_int)
 
         if model_json is None:
             # Entity not found or not enumerated yet
-            # Check if entity exists in discovered list
-            entities = await asyncio.to_thread(engine.get_avdecc_entities)
-
             # Return detailed error
             raise HTTPException(
                 status_code=404,
@@ -2424,40 +3039,33 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
                        f"Found {len(entities)} total entities."
             )
 
-        # Derive metadata from model payload and cache state.
-        complete = bool(model_json.get("complete", True))
-        missing = model_json.get("missing") or model_json.get("missing_descriptors") or []
-        if not isinstance(missing, list):
-            missing = []
-        if not complete and not missing:
-            missing = ["descriptor-tree-incomplete"]
+        complete, missing = _derive_model_completeness(model_json)
 
-        cached = False
-        try:
-            entities = await asyncio.to_thread(engine.get_avdecc_entities)
-            entity_info = next(
-                (
-                    e for e in entities
-                    if int(str(e.get("entity_id", "0")), 16) == entity_id_int
-                ),
-                None,
-            )
-            if entity_info:
-                entity_model_id_hex = str(entity_info.get("entity_model_id", "0"))
-                firmware_version = str(entity_info.get("firmware_version", ""))
-                entity_model_id_int = int(entity_model_id_hex, 16)
-                if firmware_version:
-                    from app.services.avb.aem_cache import get_aem_cache
-
-                    cache = get_aem_cache()
-                    cached_model = await asyncio.to_thread(
-                        cache.get,
+        if cache is not None and entity_model_id_int is not None and firmware_version:
+            try:
+                if complete:
+                    model_for_cache = dict(model_json)
+                    model_for_cache.setdefault("entity_model_id", f"{entity_model_id_int:016x}")
+                    model_for_cache.setdefault("firmware_version", firmware_version)
+                    await asyncio.to_thread(
+                        cache.set,
                         entity_model_id_int,
                         firmware_version,
+                        model_for_cache,
                     )
-                    cached = cached_model is not None
-        except Exception:
-            cached = False
+                else:
+                    await asyncio.to_thread(
+                        cache.invalidate,
+                        entity_model_id_int,
+                        firmware_version,
+                        "incomplete",
+                    )
+            except Exception as cache_exc:
+                logger.warning(
+                    "AEM cache writeback failed for entity %s: %s",
+                    entity_id,
+                    cache_exc,
+                )
 
         # Return model with metadata
         return {
@@ -2465,7 +3073,7 @@ async def get_entity_model(entity_id: str) -> Dict[str, Any]:
             "model": model_json,
             "complete": complete,
             "missing": missing,
-            "cached": cached,
+            "cached": False,
         }
 
     except HTTPException:
@@ -2522,6 +3130,15 @@ class StreamConnectionRequest(BaseModel):
     listener_stream_index: int  # 0-based stream index
 
 
+class StreamFormatPatchRequest(BaseModel):
+    """Request to set an AVDECC stream format tuple."""
+    direction: str  # talker/listener
+    channels: int
+    sample_rate: int
+    bits_per_sample: int
+    configuration_index: int = 0
+
+
 def _get_engine():
     """Resolve the low-level C++ engine instance."""
     from app.services.juce_engine_service import get_audio_engine
@@ -2548,6 +3165,303 @@ def _check_acmp_available(engine):
                 status_code=503,
                 detail=f"ACMP not available in engine build (missing {method})"
             )
+
+
+def _stream_format_methods_available(engine: Any) -> bool:
+    return hasattr(engine, "get_stream_format") and hasattr(engine, "set_stream_format")
+
+
+async def _validate_and_negotiate_connection_stream_format(
+    *,
+    engine: Any,
+    talker_entity_id: int,
+    talker_stream_index: int,
+    listener_entity_id: int,
+    listener_stream_index: int,
+) -> Dict[str, Any]:
+    if not _stream_format_methods_available(engine):
+        return {
+            "success": True,
+            "validated": False,
+            "negotiated": False,
+            "skipped": True,
+            "reason": "engine_stream_format_api_unavailable",
+        }
+
+    async def _query(entity_id: int, stream_index: int, direction: str, stage: str) -> Dict[str, Any]:
+        raw = await asyncio.to_thread(
+            engine.get_stream_format,
+            entity_id,
+            stream_index,
+            direction,
+            0,
+        )
+        result = _normalize_engine_stream_format_result(raw, default_message=f"{stage}_failed")
+        decoded = _decode_avdecc_stream_format(result.get("stream_format"))
+        return {
+            "result": result,
+            "decoded": decoded,
+            "stage": stage,
+        }
+
+    talker_query = await _query(talker_entity_id, talker_stream_index, "talker", "talker_get_stream_format")
+    talker_result = talker_query["result"]
+    talker_decoded = talker_query["decoded"]
+    if not talker_result.get("success"):
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_QUERY_FAILED",
+            "message": f"Talker stream format query failed: {talker_result.get('status')}",
+            "stage": talker_query["stage"],
+            "result": talker_result,
+        }
+    if talker_decoded is None:
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_INVALID",
+            "message": "Talker stream format is missing or unsupported",
+            "stage": talker_query["stage"],
+            "result": talker_result,
+        }
+
+    listener_query = await _query(listener_entity_id, listener_stream_index, "listener", "listener_get_stream_format")
+    listener_result = listener_query["result"]
+    listener_decoded = listener_query["decoded"]
+    if not listener_result.get("success"):
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_QUERY_FAILED",
+            "message": f"Listener stream format query failed: {listener_result.get('status')}",
+            "stage": listener_query["stage"],
+            "result": listener_result,
+        }
+    if listener_decoded is None:
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_INVALID",
+            "message": "Listener stream format is missing or unsupported",
+            "stage": listener_query["stage"],
+            "result": listener_result,
+        }
+
+    talker_tuple = (
+        int(talker_decoded["channels"]),
+        int(talker_decoded["sample_rate"]),
+        int(talker_decoded["bits_per_sample"]),
+    )
+    listener_tuple = (
+        int(listener_decoded["channels"]),
+        int(listener_decoded["sample_rate"]),
+        int(listener_decoded["bits_per_sample"]),
+    )
+
+    if talker_tuple == listener_tuple:
+        return {
+            "success": True,
+            "validated": True,
+            "negotiated": False,
+            "talker": dict(talker_decoded),
+            "listener": dict(listener_decoded),
+            "stream_format": int(talker_result.get("stream_format", 0)),
+        }
+
+    set_raw = await asyncio.to_thread(
+        engine.set_stream_format,
+        listener_entity_id,
+        listener_stream_index,
+        "listener",
+        int(talker_result.get("stream_format", 0)),
+        0,
+    )
+    set_result = _normalize_engine_stream_format_result(
+        set_raw,
+        default_message="listener_set_stream_format_failed",
+    )
+    if not set_result.get("success"):
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_NEGOTIATION_FAILED",
+            "message": f"Failed to set listener stream format: {set_result.get('status')}",
+            "stage": "listener_set_stream_format",
+            "result": set_result,
+        }
+
+    listener_query_after = await _query(
+        listener_entity_id,
+        listener_stream_index,
+        "listener",
+        "listener_verify_stream_format",
+    )
+    listener_after_result = listener_query_after["result"]
+    listener_after_decoded = listener_query_after["decoded"]
+    if not listener_after_result.get("success") or listener_after_decoded is None:
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_NEGOTIATION_FAILED",
+            "message": "Failed to verify listener stream format after negotiation",
+            "stage": listener_query_after["stage"],
+            "result": listener_after_result,
+        }
+
+    listener_after_tuple = (
+        int(listener_after_decoded["channels"]),
+        int(listener_after_decoded["sample_rate"]),
+        int(listener_after_decoded["bits_per_sample"]),
+    )
+    if listener_after_tuple != talker_tuple:
+        return {
+            "success": False,
+            "code": "ACMP_STREAM_FORMAT_NEGOTIATION_FAILED",
+            "message": "Listener stream format remains incompatible after negotiation",
+            "stage": "listener_verify_stream_format",
+            "result": listener_after_result,
+        }
+
+    return {
+        "success": True,
+        "validated": True,
+        "negotiated": True,
+        "talker": dict(talker_decoded),
+        "listener": dict(listener_after_decoded),
+        "stream_format": int(talker_result.get("stream_format", 0)),
+    }
+
+
+@router.patch("/avdecc/entities/{entity_id}/streams/{stream_index}/format")
+async def patch_stream_format(
+    entity_id: str,
+    stream_index: int,
+    req: StreamFormatPatchRequest,
+) -> Dict[str, Any]:
+    """
+    Set AVDECC stream format tuple via AECP SET_STREAM_FORMAT.
+    """
+    engine = _get_engine()
+    _check_acmp_available(engine)
+
+    if not _stream_format_methods_available(engine):
+        raise HTTPException(
+            status_code=503,
+            detail="Stream format API not available in engine build (missing get_stream_format/set_stream_format)",
+        )
+
+    normalized_entity_id = _normalize_avdecc_entity_id(entity_id)
+    if normalized_entity_id is None:
+        raise HTTPException(status_code=400, detail=f"Invalid entity ID format: {entity_id}")
+
+    if stream_index < 0:
+        raise HTTPException(status_code=400, detail="stream_index must be >= 0")
+    if req.configuration_index < 0:
+        raise HTTPException(status_code=400, detail="configuration_index must be >= 0")
+
+    direction = _normalize_stream_direction(req.direction)
+    stream_format = _encode_avdecc_stream_format(
+        channels=int(req.channels),
+        sample_rate=int(req.sample_rate),
+        bits_per_sample=int(req.bits_per_sample),
+    )
+
+    entity_id_int = int(normalized_entity_id, 16)
+    set_raw = await asyncio.to_thread(
+        engine.set_stream_format,
+        entity_id_int,
+        int(stream_index),
+        direction,
+        int(stream_format),
+        int(req.configuration_index),
+    )
+    set_result = _normalize_engine_stream_format_result(
+        set_raw,
+        default_message="set_stream_format_failed",
+    )
+    if not set_result.get("success"):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "STREAM_FORMAT_UPDATE_FAILED",
+                "message": str(set_result.get("status") or "set_stream_format_failed"),
+                "engine_result": set_result,
+            },
+        )
+
+    get_raw = await asyncio.to_thread(
+        engine.get_stream_format,
+        entity_id_int,
+        int(stream_index),
+        direction,
+        int(req.configuration_index),
+    )
+    get_result = _normalize_engine_stream_format_result(
+        get_raw,
+        default_message="get_stream_format_failed",
+    )
+    if not get_result.get("success"):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "STREAM_FORMAT_VERIFY_FAILED",
+                "message": str(get_result.get("status") or "get_stream_format_failed"),
+                "engine_result": get_result,
+            },
+        )
+
+    applied = _decode_avdecc_stream_format(get_result.get("stream_format"))
+    if applied is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "STREAM_FORMAT_VERIFY_FAILED",
+                "message": "Engine returned an undecodable stream format",
+                "engine_result": get_result,
+            },
+        )
+
+    requested_tuple = (int(req.channels), int(req.sample_rate), int(req.bits_per_sample))
+    applied_tuple = (
+        int(applied["channels"]),
+        int(applied["sample_rate"]),
+        int(applied["bits_per_sample"]),
+    )
+    if requested_tuple != applied_tuple:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "STREAM_FORMAT_MISMATCH",
+                "message": "Requested stream format does not match applied format",
+                "requested": {
+                    "channels": requested_tuple[0],
+                    "sample_rate": requested_tuple[1],
+                    "bits_per_sample": requested_tuple[2],
+                },
+                "applied": dict(applied),
+            },
+        )
+
+    return {
+        "status": "updated",
+        "entity_id": normalized_entity_id,
+        "stream_index": int(stream_index),
+        "direction": direction,
+        "configuration_index": int(req.configuration_index),
+        "requested": {
+            "channels": requested_tuple[0],
+            "sample_rate": requested_tuple[1],
+            "bits_per_sample": requested_tuple[2],
+            "stream_format": int(stream_format),
+            "stream_format_hex": f"0x{int(stream_format):016x}",
+        },
+        "applied": {
+            "channels": applied_tuple[0],
+            "sample_rate": applied_tuple[1],
+            "bits_per_sample": applied_tuple[2],
+            "stream_format": int(applied["stream_format"]),
+            "stream_format_hex": f"0x{int(applied['stream_format']):016x}",
+        },
+        "engine_status": {
+            "set": set_result,
+            "verify": get_result,
+        },
+    }
 
 
 @router.post("/avdecc/connections")
@@ -2580,6 +3494,13 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
 
     admission: Any = None
     connection_succeeded = False
+    format_validation: Dict[str, Any] = {
+        "success": True,
+        "validated": False,
+        "negotiated": False,
+        "skipped": True,
+        "reason": "not_run",
+    }
 
     async def _release_acmp_reservation(endpoint: str) -> Optional[Dict[str, Any]]:
         if not (admission and admission.decision == "allowed" and admission.reservation_id):
@@ -2657,6 +3578,23 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
                     reason="SRP admission acknowledged without reservation_id",
                 )
 
+        format_validation = await _validate_and_negotiate_connection_stream_format(
+            engine=engine,
+            talker_entity_id=talker_id,
+            talker_stream_index=req.talker_stream_index,
+            listener_entity_id=listener_id,
+            listener_stream_index=req.listener_stream_index,
+        )
+        if not format_validation.get("success"):
+            rollback_payload = await _release_acmp_reservation(endpoint="avdecc.connections.rollback")
+            detail = _build_connection_failure_detail(
+                code=str(format_validation.get("code") or "ACMP_STREAM_FORMAT_NEGOTIATION_FAILED"),
+                message=str(format_validation.get("message") or "Stream format validation failed"),
+                payload=rollback_payload,
+            )
+            detail["stream_format"] = format_validation
+            raise HTTPException(status_code=409, detail=detail)
+
         success = await asyncio.to_thread(
             engine.connect_stream,
             talker_id,
@@ -2691,6 +3629,7 @@ async def connect_stream(req: StreamConnectionRequest) -> Dict[str, Any]:
             "listener_entity_id": req.listener_entity_id,
             "listener_stream_index": req.listener_stream_index,
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "stream_format_validation": format_validation,
         }
 
         if admission and admission.decision == "allowed" and admission.reservation_id:

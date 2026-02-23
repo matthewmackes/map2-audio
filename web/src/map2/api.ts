@@ -300,13 +300,24 @@ export const audioApi = {
 
   getRouting: () => fetchJson<AudioRoutingResponse>(`${API_BASE}/audio/routing`),
 
-  setRouting: (config: { inputPorts?: number[]; outputPorts?: number[] }) => {
+  setRouting: (config: {
+    inputPorts?: number[];
+    outputPorts?: number[];
+    inputAvbEndpoints?: string[];
+    outputAvbEndpoints?: string[];
+  }) => {
     const params = new URLSearchParams();
     if (config.inputPorts) {
       config.inputPorts.forEach(p => params.append('input_ports', p.toString()));
     }
     if (config.outputPorts) {
       config.outputPorts.forEach(p => params.append('output_ports', p.toString()));
+    }
+    if (config.inputAvbEndpoints) {
+      config.inputAvbEndpoints.forEach(endpointId => params.append('input_avb_endpoints', endpointId));
+    }
+    if (config.outputAvbEndpoints) {
+      config.outputAvbEndpoints.forEach(endpointId => params.append('output_avb_endpoints', endpointId));
     }
     return fetchJson<AudioRoutingUpdateResponse>(`${API_BASE}/audio/routing?${params.toString()}`, {
       method: 'POST',
@@ -319,7 +330,12 @@ export const audioApi = {
   getChainRouting: (chainId: number) =>
     fetchJson<ChainRoutingResponse>(`${API_BASE}/audio/routing/chain/${chainId}`),
 
-  setChainRouting: (chainId: number, config: { inputPorts?: number[]; outputPorts?: number[] }) => {
+  setChainRouting: (chainId: number, config: {
+    inputPorts?: number[];
+    outputPorts?: number[];
+    inputAvbEndpoints?: string[];
+    outputAvbEndpoints?: string[];
+  }) => {
     const params = new URLSearchParams();
     if (config.inputPorts) {
       config.inputPorts.forEach(p => params.append('input_ports', p.toString()));
@@ -327,13 +343,30 @@ export const audioApi = {
     if (config.outputPorts) {
       config.outputPorts.forEach(p => params.append('output_ports', p.toString()));
     }
+    if (config.inputAvbEndpoints) {
+      config.inputAvbEndpoints.forEach(endpointId => params.append('input_avb_endpoints', endpointId));
+    }
+    if (config.outputAvbEndpoints) {
+      config.outputAvbEndpoints.forEach(endpointId => params.append('output_avb_endpoints', endpointId));
+    }
     return fetchJson<ChainRoutingUpdateResponse>(`${API_BASE}/audio/routing/chain/${chainId}?${params.toString()}`, {
       method: 'POST',
     });
   },
 
   clearChainRouting: (chainId: number) =>
-    fetchJson<{ success: boolean; message: string; chain_id: number; input_ports: number[]; output_ports: number[] }>(
+    fetchJson<{
+      success: boolean;
+      message: string;
+      chain_id: number;
+      input_ports: number[];
+      output_ports: number[];
+      input_avb_endpoints: string[];
+      output_avb_endpoints: string[];
+      input_bindings: AudioRoutingSelectionBinding[];
+      output_bindings: AudioRoutingSelectionBinding[];
+      is_override: boolean;
+    }>(
       `${API_BASE}/audio/routing/chain/${chainId}`,
       { method: 'DELETE' }
     ),
@@ -390,6 +423,34 @@ export interface AudioPort {
   type: 'input' | 'output';
 }
 
+export interface AudioAvbEndpoint {
+  endpoint_id: string;
+  device_name: string;
+  direction: 'talker' | 'listener';
+  host?: string;
+  channels: number;
+  sample_rate: number;
+  available: boolean;
+  audio_format?: string;
+  device_type?: string;
+  node_address?: string;
+}
+
+export interface AudioRoutingSelectionBinding {
+  selection_type: 'local_port' | 'avb_endpoint';
+  available: boolean;
+  missing?: boolean;
+  index?: number;
+  name?: string;
+  source?: string;
+  endpoint_id?: string;
+  direction?: 'talker' | 'listener';
+  device_name?: string;
+  host?: string;
+  channels?: number;
+  sample_rate?: number;
+}
+
 export interface AudioPortsResponse {
   available: boolean;
   device?: string;
@@ -397,6 +458,10 @@ export interface AudioPortsResponse {
   outputs: AudioPort[];
   input_count: number;
   output_count: number;
+  avb_readiness?: Record<string, unknown>;
+  avb_talkers?: AudioAvbEndpoint[];
+  avb_listeners?: AudioAvbEndpoint[];
+  capabilities?: Record<string, unknown>;
   error?: string;
 }
 
@@ -404,6 +469,11 @@ export interface AudioRoutingResponse {
   available: boolean;
   input_ports: number[];
   output_ports: number[];
+  input_avb_endpoints?: string[];
+  output_avb_endpoints?: string[];
+  input_bindings?: AudioRoutingSelectionBinding[];
+  output_bindings?: AudioRoutingSelectionBinding[];
+  is_override?: boolean;
   error?: string;
 }
 
@@ -412,6 +482,11 @@ export interface AudioRoutingUpdateResponse {
   message: string;
   input_ports: number[];
   output_ports: number[];
+  input_avb_endpoints?: string[];
+  output_avb_endpoints?: string[];
+  input_bindings?: AudioRoutingSelectionBinding[];
+  output_bindings?: AudioRoutingSelectionBinding[];
+  is_override?: boolean;
 }
 
 export interface ChainRoutingResponse {
@@ -419,7 +494,12 @@ export interface ChainRoutingResponse {
   chain_id: number;
   input_ports: number[];
   output_ports: number[];
+  input_avb_endpoints?: string[];
+  output_avb_endpoints?: string[];
+  input_bindings?: AudioRoutingSelectionBinding[];
+  output_bindings?: AudioRoutingSelectionBinding[];
   is_override: boolean;
+  chain_exists?: boolean;
 }
 
 export interface ChainRoutingUpdateResponse {
@@ -428,6 +508,11 @@ export interface ChainRoutingUpdateResponse {
   chain_id: number;
   input_ports: number[];
   output_ports: number[];
+  input_avb_endpoints?: string[];
+  output_avb_endpoints?: string[];
+  input_bindings?: AudioRoutingSelectionBinding[];
+  output_bindings?: AudioRoutingSelectionBinding[];
+  is_override: boolean;
 }
 
 export interface AudioPortPreset {
@@ -443,6 +528,8 @@ export interface AudioPortPresetsResponse {
   current: {
     input_ports: number[];
     output_ports: number[];
+    input_avb_endpoints: string[];
+    output_avb_endpoints: string[];
   };
 }
 

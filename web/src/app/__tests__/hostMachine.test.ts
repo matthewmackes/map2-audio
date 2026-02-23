@@ -4,7 +4,6 @@
  */
 
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { HistoricalMetric, HealthThresholds, HealthAlert } from '@/app/hooks/useHealthMonitoring'
 import {
   useHealthMonitoring,
@@ -124,8 +123,9 @@ describe('useHealthAlarms Hook', () => {
     const health = createMockHealthOverview({ cpu_temp_celsius: 50 })
     const disk = createMockDiskHealth({ disks: [{ ...createMockDiskHealth().disks[0], use_percent: 50 }] })
 
-    const alerts = act(() => {
-      return result.current.checkHealth(health, disk)
+    let alerts = [] as HealthAlert[]
+    act(() => {
+      alerts = result.current.checkHealth(health, disk)
     })
 
     expect(alerts).toEqual([])
@@ -221,7 +221,7 @@ describe('useHealthMonitoring Hook', () => {
 describe('usePersistedThresholds Hook', () => {
   beforeEach(() => {
     localStorage.clear()
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {

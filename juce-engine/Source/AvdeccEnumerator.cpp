@@ -138,7 +138,7 @@ void AvdeccEnumerator::handleAemResponse(const AecpPdu& pdu, const uint8_t* payl
     const juce::ScopedLock lock(mutex_);
 
     // Extract sequence ID
-    uint16_t sequence_id = juce::ByteOrder::swapIfBigEndian(pdu.sequence_id);
+    uint16_t sequence_id = juce::ByteOrder::swapIfLittleEndian(pdu.sequence_id);
 
     // Find session waiting for this response
     EnumerationSession* session = nullptr;
@@ -155,68 +155,96 @@ void AvdeccEnumerator::handleAemResponse(const AecpPdu& pdu, const uint8_t* payl
     }
 
     // Get pending request
-    auto& request = session->awaiting_response[sequence_id];
+    auto request_it = session->awaiting_response.find(sequence_id);
+    auto request = request_it->second;
+    session->awaiting_response.erase(request_it);
 
     // Update session activity
     session->last_activity = std::chrono::steady_clock::now();
     session->responses_received++;
-    session->descriptors_received++;
-
-    // Remove from awaiting map
-    session->awaiting_response.erase(sequence_id);
 
     // Parse status from command_type field (upper bit is U flag, bits 14-8 are status)
-    uint16_t command_type_field = juce::ByteOrder::swapIfBigEndian(pdu.command_type);
-    bool is_unsolicited = (command_type_field & 0x8000) != 0;
+    uint16_t command_type_field = juce::ByteOrder::swapIfLittleEndian(pdu.command_type);
+    const bool is_unsolicited = (command_type_field & 0x8000) != 0;
     AecpStatus status = static_cast<AecpStatus>((command_type_field >> 8) & 0x7F);
-    AemCommandType command = static_cast<AemCommandType>(command_type_field & 0x7FFF);
+    const AemCommandType command = static_cast<AemCommandType>(command_type_field & 0x7FFF);
+    (void)is_unsolicited;
+    (void)command;
 
     if (status != AecpStatus::SUCCESS) {
         DBG("AEM response error: status=" << static_cast<int>(status)
-            << " for descriptor type " << static_cast<int>(request.descriptor_type));
+            << " for descriptor type " << static_cast<int>(request.descriptor_type)
+            << " index=" << request.descriptor_index
+            << " retry=" << static_cast<int>(request.retry_count));
 
         // Retry if possible
         if (request.retry_count < PendingDescriptorRequest::MAX_RETRIES) {
             retryRequest(*session, request);
         } else {
-            failEnumeration(session->entity_id, "Too many retries for descriptor");
+            failEnumeration(session->entity_id,
+                            "Too many retries for descriptor type " + juce::String(static_cast<int>(request.descriptor_type)) +
+                                " index " + juce::String(request.descriptor_index));
         }
         return;
     }
 
-    // Parse descriptor data based on type
-    total_descriptors_.fetch_add(1, std::memory_order_relaxed);
+    const auto read_be_u16 = [](const uint8_t* src) -> uint16_t {
+        return (static_cast<uint16_t>(src[0]) << 8) | static_cast<uint16_t>(src[1]);
+    };
 
+    // READ_DESCRIPTOR responses prepend command-specific fields before descriptor bytes:
+    // configuration_index (2) + reserved (2) + descriptor_type (2) + descriptor_index (2).
+    const uint8_t* descriptor_payload = payload;
+    size_t descriptor_payload_size = payload_size;
+    if (payload_size >= 8) {
+        const uint16_t response_descriptor_type = read_be_u16(payload + 4);
+        const uint16_t response_descriptor_index = read_be_u16(payload + 6);
+        if (response_descriptor_type == static_cast<uint16_t>(request.descriptor_type) &&
+            response_descriptor_index == request.descriptor_index) {
+            descriptor_payload = payload + 8;
+            descriptor_payload_size = payload_size - 8;
+        }
+    }
+
+    // Remove from awaiting map once we have a successful response
+    session->awaiting_response.erase(sequence_id);
+
+    // Parse descriptor data based on type
     switch (request.descriptor_type) {
         case DescriptorType::ENTITY:
-            handleEntityDescriptorResponse(*session, payload, payload_size);
+            handleEntityDescriptorResponse(*session, descriptor_payload, descriptor_payload_size);
             break;
 
         case DescriptorType::CONFIGURATION:
-            handleConfigurationDescriptorResponse(*session, payload, payload_size);
+            handleConfigurationDescriptorResponse(*session, descriptor_payload, descriptor_payload_size);
             break;
 
         case DescriptorType::STREAM_INPUT:
         case DescriptorType::STREAM_OUTPUT:
-            handleStreamDescriptorResponse(*session, request.descriptor_type, payload, payload_size);
+            handleStreamDescriptorResponse(*session, request.descriptor_type, descriptor_payload, descriptor_payload_size);
             break;
 
         case DescriptorType::AVB_INTERFACE:
-            handleAvbInterfaceDescriptorResponse(*session, payload, payload_size);
+            handleAvbInterfaceDescriptorResponse(*session, descriptor_payload, descriptor_payload_size);
             break;
 
         case DescriptorType::CLOCK_SOURCE:
-            handleClockSourceDescriptorResponse(*session, payload, payload_size);
+            handleClockSourceDescriptorResponse(*session, descriptor_payload, descriptor_payload_size);
             break;
 
         case DescriptorType::AUDIO_UNIT:
-            handleAudioUnitDescriptorResponse(*session, payload, payload_size);
+            handleAudioUnitDescriptorResponse(*session, descriptor_payload, descriptor_payload_size);
             break;
 
         default:
-            DBG("Unhandled descriptor type: " << static_cast<int>(request.descriptor_type));
+            DBG("Unsupported descriptor type " << static_cast<int>(request.descriptor_type)
+                << " (index " << request.descriptor_index << "); counting as received without parsing");
             break;
     }
+
+    // Count descriptor after handling to avoid masking failures
+    session->descriptors_received++;
+    total_descriptors_.fetch_add(1, std::memory_order_relaxed);
 
     // Check if enumeration is complete
     checkCompletion(*session);
@@ -446,7 +474,8 @@ void AvdeccEnumerator::checkCompletion(EnumerationSession& session) {
 bool AvdeccEnumerator::sendReadDescriptor(EnumerationSession& session,
                                          uint16_t configuration_index,
                                          DescriptorType descriptor_type,
-                                         uint16_t descriptor_index) {
+                                         uint16_t descriptor_index,
+                                         uint8_t retry_count) {
     if (!send_fn_) {
         DBG("No send function set");
         return false;
@@ -468,15 +497,29 @@ bool AvdeccEnumerator::sendReadDescriptor(EnumerationSession& session,
 
     ReadDescriptorCommand cmd{};
 
-    // Fill AECP header (simplified - full implementation would use AvdeccEntity methods)
-    cmd.header.sequence_id = juce::ByteOrder::swapIfBigEndian(sequence_id);
-    cmd.header.command_type = juce::ByteOrder::swapIfBigEndian(static_cast<uint16_t>(AemCommandType::READ_DESCRIPTOR));
+    // Fill AECP header for AEM READ_DESCRIPTOR command.
+    cmd.header.header.cd_subtype = static_cast<uint8_t>(Avdecc::MessageType::AECP);
+    cmd.header.header.sv_version = 0x00;
+    cmd.header.header.message_type =
+        juce::ByteOrder::swapIfLittleEndian(static_cast<uint16_t>(Avdecc::AecpMessageType::AEM_COMMAND));
+    cmd.header.header.valid_time_control_data_length[0] = 0;
+    cmd.header.header.valid_time_control_data_length[1] =
+        static_cast<uint8_t>(sizeof(ReadDescriptorCommand) - sizeof(AvdeccCommonHeader));
+
+    for (int i = 0; i < 8; ++i) {
+        cmd.header.header.entity_id[i] = static_cast<uint8_t>((session.entity_id >> (56 - i * 8)) & 0xFF);
+        cmd.header.controller_entity_id[i] = static_cast<uint8_t>((controller_entity_id_ >> (56 - i * 8)) & 0xFF);
+    }
+
+    cmd.header.sequence_id = juce::ByteOrder::swapIfLittleEndian(sequence_id);
+    cmd.header.command_type =
+        juce::ByteOrder::swapIfLittleEndian(static_cast<uint16_t>(AemCommandType::READ_DESCRIPTOR));
 
     // Fill command data
-    cmd.configuration_index = juce::ByteOrder::swapIfBigEndian(configuration_index);
+    cmd.configuration_index = juce::ByteOrder::swapIfLittleEndian(configuration_index);
     cmd.reserved = 0;
-    cmd.descriptor_type = juce::ByteOrder::swapIfBigEndian(static_cast<uint16_t>(descriptor_type));
-    cmd.descriptor_index = juce::ByteOrder::swapIfBigEndian(descriptor_index);
+    cmd.descriptor_type = juce::ByteOrder::swapIfLittleEndian(static_cast<uint16_t>(descriptor_type));
+    cmd.descriptor_index = juce::ByteOrder::swapIfLittleEndian(descriptor_index);
 
     // Track pending request
     PendingDescriptorRequest request;
@@ -485,14 +528,21 @@ bool AvdeccEnumerator::sendReadDescriptor(EnumerationSession& session,
     request.descriptor_type = descriptor_type;
     request.descriptor_index = descriptor_index;
     request.sent_time = std::chrono::steady_clock::now();
-    request.retry_count = 0;
+    request.retry_count = retry_count;
 
     session.awaiting_response[sequence_id] = request;
-    session.requests_sent++;
+    if (!send_fn_(&cmd, sizeof(cmd))) {
+        session.awaiting_response.erase(sequence_id);
+        DBG("Failed to send READ_DESCRIPTOR: config=" << configuration_index
+            << " type=" << static_cast<int>(descriptor_type)
+            << " index=" << descriptor_index);
+        return false;
+    }
 
-    // Note: Actual AECP sending would be done via AvdeccEntity::sendAecpCommand
-    // This is a simplified placeholder - Phase 10 will integrate with AvdeccEntity properly
-    DBG("Queued READ_DESCRIPTOR: config=" << configuration_index
+    session.requests_sent++;
+    session.last_activity = std::chrono::steady_clock::now();
+
+    DBG("Sent READ_DESCRIPTOR: config=" << configuration_index
         << " type=" << static_cast<int>(descriptor_type)
         << " index=" << descriptor_index);
 
@@ -522,12 +572,17 @@ void AvdeccEnumerator::checkTimeouts() {
             session.timeouts++;
             total_timeouts_.fetch_add(1, std::memory_order_relaxed);
 
-            DBG("Request timeout: seq_id=" << seq_id << " type=" << static_cast<int>(request.descriptor_type));
+            DBG("Request timeout: seq_id=" << seq_id
+                << " type=" << static_cast<int>(request.descriptor_type)
+                << " index=" << request.descriptor_index
+                << " retry=" << static_cast<int>(request.retry_count));
 
             if (request.retry_count < PendingDescriptorRequest::MAX_RETRIES) {
                 retryRequest(session, request);
             } else {
-                failEnumeration(entity_id, "Too many timeouts");
+                failEnumeration(entity_id,
+                                "Too many timeouts for descriptor type " + juce::String(static_cast<int>(request.descriptor_type)) +
+                                    " index " + juce::String(request.descriptor_index));
                 return;
             }
         }
@@ -542,8 +597,13 @@ void AvdeccEnumerator::retryRequest(EnumerationSession& session, const PendingDe
         << " index=" << request.descriptor_index
         << " (attempt " << (request.retry_count + 1) << ")");
 
-    // Re-send with incremented retry count (not fully implemented here - placeholder)
-    sendReadDescriptor(session, request.configuration_index, request.descriptor_type, request.descriptor_index);
+    const uint8_t next_retry = static_cast<uint8_t>(request.retry_count + 1);
+    sendReadDescriptor(
+        session,
+        request.configuration_index,
+        request.descriptor_type,
+        request.descriptor_index,
+        next_retry);
 }
 
 // ============================================================================

@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Box,
   Paper,
@@ -26,6 +27,8 @@ import { useAvbDevices, useAvbStreams } from '../../hooks/useAvbApi';
 import type { AvbDiscoveredDevice, AvbStreamPayload } from '../../types';
 import { getRouteStreams } from '../../utils/avbRouteStreams';
 import { resolveAvbHostLabel } from '../../utils/avbHost';
+import { hasEndpointOperationalIssue } from '../../utils/endpointIssues';
+import { audioApi, chainsApi } from '@/map2/api';
 
 const PANEL_WIDTH = 300;
 
@@ -112,7 +115,8 @@ export function InspectorPanel() {
   const selectedEndpointDiscoveredDevice = selectedEndpoint
     ? discoveredDevicesByEndpointId.get(selectedEndpoint.endpoint_id)
     : null;
-  const endpointIds = Object.keys(state.endpoints);
+  const endpointValues = Object.values(state.endpoints);
+  const endpointIds = endpointValues.map((endpoint) => endpoint.endpoint_id);
   const missingFromEngineCache = endpointIds.filter(
     (endpointId) => !discoveredDevicesByEndpointId.has(endpointId)
   ).length;
@@ -167,6 +171,156 @@ export function InspectorPanel() {
     .map(([policy, count]) => `${policy} (${count})`)
     .join(', ') || '—';
   const routeFailoverStreams: AvbStreamPayload[] = displayRoute ? getRouteStreams(displayRoute, streamPayloads) : [];
+  const isNodeScopedContext = (
+    (view_mode === 'single_node' && Boolean(current_node_id)) ||
+    (view_mode === 'multi_select' && selected_node_ids.length > 0)
+  );
+  const activeContextNodeIds = (() => {
+    if (view_mode === 'single_node' && current_node_id) {
+      return [current_node_id];
+    }
+
+    if (view_mode === 'multi_select' && selected_node_ids.length > 0) {
+      return Array.from(new Set(selected_node_ids)).sort((a, b) => a.localeCompare(b));
+    }
+
+    const nodeIdsFromState = Object.keys(state.network.nodes);
+    if (nodeIdsFromState.length > 0) {
+      return nodeIdsFromState.sort((a, b) => a.localeCompare(b));
+    }
+
+    return Array.from(
+      new Set(
+        endpointValues
+          .map((endpoint) => endpoint.node_id)
+          .filter((nodeId): nodeId is string => typeof nodeId === 'string' && nodeId.length > 0)
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  })();
+  const contextEndpoints = endpointValues.filter((endpoint) => isEndpointInActiveContext(endpoint));
+  const contextHosts = Array.from(
+    new Set(
+      contextEndpoints
+        .map((endpoint) => {
+          const resolvedHost = resolveAvbHostLabel({
+            host: endpoint.host,
+            node_address: endpoint.node_address,
+          }).trim();
+          return resolvedHost || endpoint.node_id;
+        })
+        .filter((hostLabel): hostLabel is string => typeof hostLabel === 'string' && hostLabel.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+  const contextEndpointIssueCount = contextEndpoints.filter(
+    (endpoint) => hasEndpointOperationalIssue(endpoint, state.network.nodes)
+  ).length;
+
+  const activeContextNodeIdSet = new Set(activeContextNodeIds);
+  const streamOwnershipNodeIds = (stream: AvbStreamPayload): string[] => {
+    const ownership = stream.ownership;
+    if (!ownership) {
+      return [];
+    }
+
+    const explicitNodeIds = Array.isArray(ownership.node_ids) ? ownership.node_ids : [];
+    const fallbackNodeIds = [
+      ownership.owner_node_id,
+      ownership.peer_node_id,
+      ownership.talker_node_id,
+      ownership.listener_node_id,
+    ].filter((nodeId): nodeId is string => typeof nodeId === 'string' && nodeId.length > 0);
+
+    return Array.from(new Set([...explicitNodeIds, ...fallbackNodeIds]));
+  };
+  const contextStreams = isNodeScopedContext
+    ? streamPayloads.filter((stream) => {
+        const nodeIds = streamOwnershipNodeIds(stream);
+        return nodeIds.some((nodeId) => activeContextNodeIdSet.has(nodeId));
+      })
+    : streamPayloads;
+  const contextTransportReadyStreams = contextStreams.filter((stream) => stream.health?.ready).length;
+  const contextTransportIssueStreams = contextStreams.filter((stream) => (
+    stream.state === 'error' || (stream.health ? !stream.health.ready : false)
+  )).length;
+  const contextDiagnosticsReadyStreams = contextStreams.filter((stream) => Boolean(stream.diagnostics)).length;
+  const contextPtpLockedStreams = contextStreams.filter((stream) => stream.diagnostics?.ptp_lock.locked).length;
+  const contextSrpBoundStreams = contextStreams.filter((stream) => stream.diagnostics?.srp.bound).length;
+  const contextLabel = view_mode === 'single_node' && current_node_id
+    ? `Node ${current_node_id}`
+    : view_mode === 'multi_select' && selected_node_ids.length > 0
+      ? `${activeContextNodeIds.length} selected node${activeContextNodeIds.length === 1 ? '' : 's'}`
+      : `All nodes (${activeContextNodeIds.length})`;
+  const healthSnapshotStatus: 'healthy' | 'warning' | 'critical' = (
+    contextEndpointIssueCount > 0 || contextTransportIssueStreams > 0
+  )
+    ? (
+      (contextTransportIssueStreams > 0 && contextTransportReadyStreams === 0 && contextStreams.length > 0)
+      || (contextEndpointIssueCount > 0 && contextEndpointIssueCount === contextEndpoints.length && contextEndpoints.length > 0)
+        ? 'critical'
+        : 'warning'
+    )
+    : 'healthy';
+  const healthSnapshotStatusLabel = healthSnapshotStatus === 'healthy'
+    ? 'Healthy'
+    : healthSnapshotStatus === 'critical'
+      ? 'Critical'
+      : 'Attention';
+  const healthSnapshotStatusColor = healthSnapshotStatus === 'healthy'
+    ? 'success'
+    : healthSnapshotStatus === 'critical'
+      ? 'error'
+      : 'warning';
+  const streamScopeLabel = isNodeScopedContext ? 'Ownership-scoped' : 'Global inventory';
+
+  const chainRoutingStudioQuery = useQuery({
+    queryKey: ['audio', 'routing', 'studio'],
+    queryFn: async () => {
+      const chainPayload = await chainsApi.list();
+      const chains = Array.isArray(chainPayload.chains)
+        ? chainPayload.chains as Array<{ id: number; name?: string }>
+        : [];
+
+      const routingRows = await Promise.all(chains.map(async (chain) => {
+        try {
+          const routing = await audioApi.getChainRouting(chain.id);
+          return {
+            chain_id: chain.id,
+            chain_name: chain.name || `Chain ${chain.id}`,
+            is_override: Boolean(routing.is_override),
+            input_local_count: routing.input_ports.length,
+            output_local_count: routing.output_ports.length,
+            input_avb_count: routing.input_avb_endpoints.length,
+            output_avb_count: routing.output_avb_endpoints.length,
+            chain_exists: routing.chain_exists !== false,
+            error: null as string | null,
+          };
+        } catch (error) {
+          return {
+            chain_id: chain.id,
+            chain_name: chain.name || `Chain ${chain.id}`,
+            is_override: false,
+            input_local_count: 0,
+            output_local_count: 0,
+            input_avb_count: 0,
+            output_avb_count: 0,
+            chain_exists: true,
+            error: error instanceof Error ? error.message : 'Failed to load chain routing',
+          };
+        }
+      }));
+
+      return routingRows.sort((a, b) => a.chain_id - b.chain_id);
+    },
+    refetchInterval: 5000,
+    staleTime: 2000,
+  });
+
+  const chainRoutingRows = chainRoutingStudioQuery.data || [];
+  const chainOverrideCount = chainRoutingRows.filter((row) => row.is_override).length;
+  const chainAvbEnabledCount = chainRoutingRows.filter((row) => (
+    row.input_avb_count > 0 || row.output_avb_count > 0
+  )).length;
+  const chainRoutingErrorCount = chainRoutingRows.filter((row) => Boolean(row.error)).length;
 
   return (
     <Paper
@@ -214,6 +368,151 @@ export function InspectorPanel() {
               failoverStreams={routeFailoverStreams}
             />
           </>
+        )}
+
+        <Divider sx={{ my: 1.5 }} />
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          gutterBottom
+          data-testid="inspector-health-snapshot-title"
+        >
+          AVB Health Snapshot
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+          <Chip
+            size="small"
+            color={healthSnapshotStatusColor}
+            label={healthSnapshotStatusLabel}
+            data-testid="inspector-health-snapshot-status"
+          />
+          <Chip
+            size="small"
+            variant="outlined"
+            label={contextLabel}
+            data-testid="inspector-health-snapshot-context"
+          />
+          <Chip
+            size="small"
+            variant="outlined"
+            label={streamScopeLabel}
+            data-testid="inspector-health-snapshot-scope"
+          />
+        </Box>
+        <List dense sx={{ py: 0 }}>
+          <ListItem sx={{ px: 0 }} data-testid="inspector-health-endpoints">
+            <ListItemText
+              primary="Endpoints"
+              secondary={`${contextEndpoints.length - contextEndpointIssueCount}/${contextEndpoints.length} healthy`}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0 }} data-testid="inspector-health-hosts">
+            <ListItemText
+              primary="Hosts"
+              secondary={`${contextHosts.length} in context`}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0 }} data-testid="inspector-health-streams">
+            <ListItemText
+              primary="Streams"
+              secondary={`${contextTransportReadyStreams}/${contextStreams.length} ready • ${contextTransportIssueStreams} issues`}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0 }} data-testid="inspector-health-ptp">
+            <ListItemText
+              primary="PTP Lock"
+              secondary={`${contextPtpLockedStreams}/${contextDiagnosticsReadyStreams} diagnostics`}
+            />
+          </ListItem>
+          <ListItem sx={{ px: 0 }} data-testid="inspector-health-srp">
+            <ListItemText
+              primary="SRP Bound"
+              secondary={`${contextSrpBoundStreams}/${contextDiagnosticsReadyStreams} diagnostics`}
+            />
+          </ListItem>
+        </List>
+
+        <Divider sx={{ my: 1.5 }} />
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          gutterBottom
+          data-testid="inspector-chain-routing-title"
+        >
+          Signal-Chain Routing Studio
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`Chains ${chainRoutingRows.length}`}
+            data-testid="inspector-chain-routing-count"
+          />
+          <Chip
+            size="small"
+            color={chainOverrideCount > 0 ? 'info' : 'default'}
+            label={`Overrides ${chainOverrideCount}`}
+            data-testid="inspector-chain-routing-overrides"
+          />
+          <Chip
+            size="small"
+            color={chainAvbEnabledCount > 0 ? 'success' : 'default'}
+            label={`AVB Mapped ${chainAvbEnabledCount}`}
+            data-testid="inspector-chain-routing-avb"
+          />
+          <Chip
+            size="small"
+            color={chainRoutingErrorCount > 0 ? 'warning' : 'default'}
+            label={`Errors ${chainRoutingErrorCount}`}
+            data-testid="inspector-chain-routing-errors"
+          />
+        </Box>
+        {chainRoutingStudioQuery.isLoading ? (
+          <Typography variant="body2" color="text.disabled" sx={{ py: 1 }}>
+            Loading chain routing map...
+          </Typography>
+        ) : chainRoutingRows.length === 0 ? (
+          <Typography variant="body2" color="text.disabled" sx={{ py: 1 }}>
+            No chains available for routing.
+          </Typography>
+        ) : (
+          <List dense sx={{ py: 0 }}>
+            {chainRoutingRows.slice(0, 8).map((row) => (
+              <ListItem
+                key={`chain-routing-${row.chain_id}`}
+                sx={{ px: 0, alignItems: 'flex-start', flexDirection: 'column' }}
+                data-testid={`inspector-chain-routing-row-${row.chain_id}`}
+              >
+                <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {row.chain_name}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={row.is_override ? 'Override' : 'Global'}
+                    color={row.is_override ? 'info' : 'default'}
+                  />
+                </Box>
+                {row.error ? (
+                  <Typography variant="caption" color="warning.main">
+                    {row.error}
+                  </Typography>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    In {row.input_local_count} local + {row.input_avb_count} AVB · Out {row.output_local_count} local + {row.output_avb_count} AVB
+                  </Typography>
+                )}
+              </ListItem>
+            ))}
+            {chainRoutingRows.length > 8 && (
+              <ListItem sx={{ px: 0 }}>
+                <ListItemText
+                  primary="Additional chains not shown"
+                  secondary={`${chainRoutingRows.length - 8} more chain routing rows available`}
+                />
+              </ListItem>
+            )}
+          </List>
         )}
 
         {/* Empty state */}

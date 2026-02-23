@@ -38,13 +38,16 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "server": "MAP2 Audio Platform",
                 "message": "Connected to MAP2 Audio WebSocket",
                 "supported_topics": [
-                    "meters",           # VU meter levels
-                    "automation",       # Parameter automation updates
-                    "chain_updates",    # Plugin chain changes
-                    "plugin_params",    # Plugin parameter changes
-                    "spectrum",         # FFT spectrum data (30fps)
-                    "lufs",             # LUFS loudness levels (10fps)
-                    "cpu",              # CPU metrics (2fps)
+                "meters",           # VU meter levels
+                "automation",       # Parameter automation updates
+                "chain_updates",    # Plugin chain changes
+                "plugin_params",    # Plugin parameter changes
+                "avb:router:connection_state", # AVB per-route connection state updates
+                "avb:router:endpoints", # AVB endpoint discovery snapshots
+                "avb:router:connections", # AVB routing connection snapshots
+                "spectrum",         # FFT spectrum data (30fps)
+                "lufs",             # LUFS loudness levels (10fps)
+                "cpu",              # CPU metrics (2fps)
                     "phase",            # Stereo phase correlation
                     "latency",          # Latency updates
                     "pipewire"          # PipeWire audio server metrics (2fps)

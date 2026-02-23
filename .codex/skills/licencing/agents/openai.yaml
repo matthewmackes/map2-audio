@@ -1,0 +1,4 @@
+interface:
+  display_name: "Licencing"
+  short_description: "Track full-project AGPLv3 and third-party override compliance."
+  default_prompt: "Use $licencing to audit full-project MAP2 AGPLv3 compliance and third-party license overrides, then add required tasks to docs/AVB_MASTER_WORK_PLAN.md."

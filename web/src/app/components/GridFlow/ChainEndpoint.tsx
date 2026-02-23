@@ -24,6 +24,7 @@ export interface AudioInterfaceStatus {
   xruns?: number
   isRunning?: boolean
   selectedPorts?: number[]
+  selectedAvbEndpoints?: string[]
   totalPorts?: number
 }
 
@@ -52,19 +53,26 @@ export const ChainEndpoint = memo(function ChainEndpoint({
   const xruns = audioStatus?.xruns || 0
   const isRunning = audioStatus?.isRunning ?? true
   const selectedPorts = audioStatus?.selectedPorts || []
+  const selectedAvbEndpoints = audioStatus?.selectedAvbEndpoints || []
   const totalPorts = audioStatus?.totalPorts || channels
+  const totalSelected = selectedPorts.length + selectedAvbEndpoints.length
 
   const latencyColor =
     latencyMs < 10 ? '#22c55e' : latencyMs < 20 ? '#f59e0b' : '#ef4444'
 
   const channelLabel =
-    selectedPorts.length > 0
-      ? selectedPorts.length === 1 ? 'Mono' : selectedPorts.length === 2 ? 'Stereo' : `${selectedPorts.length}ch`
+    totalSelected > 0
+      ? totalSelected === 1 ? 'Mono' : totalSelected === 2 ? 'Stereo' : `${totalSelected}ch`
       : channels === 1 ? 'Mono' : channels === 2 ? 'Stereo' : `${channels}ch`
-  const portDetail =
+  const localPortDetail = (
     selectedPorts.length > 0 && totalPorts > 2
       ? selectedPorts.map(p => p + 1).join(' · ')
       : null
+  )
+  const avbDetail = selectedAvbEndpoints.length > 0
+    ? `AVB ${selectedAvbEndpoints.length}`
+    : null
+  const portDetail = [localPortDetail, avbDetail].filter(Boolean).join(' • ') || null
 
   if (compact) {
     return (

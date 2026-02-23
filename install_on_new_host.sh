@@ -12,6 +12,8 @@
 #   sudo bash install_on_new_host.sh --dry-run     # Preview only
 #   sudo bash install_on_new_host.sh --skip-reboot # No reboot prompt
 #   sudo bash install_on_new_host.sh --mode audio  # Set mode (audio|all-in-one|management)
+#   sudo bash install_on_new_host.sh --skip-avb    # Install without AVB setup
+#   sudo bash install_on_new_host.sh --uninstall-avb # Remove AVB setup after rebuild
 #
 # Safe to run multiple times (idempotent).
 # Creates: /home/mm/map2-audio (if cloned), all system configs, services.
@@ -39,6 +41,10 @@ JUCE_VERSION="8.0.0"
 TARGET_MODE="${MAP2_MODE:-audio}"       # audio | all-in-one | management
 DRY_RUN=0
 SKIP_REBOOT=0
+ENABLE_AVB=1
+UNINSTALL_AVB=0
+AVB_INTERFACE="${MAP2_AVB_INTERFACE:-}"
+TEST_MODE="${MAP2_INSTALL_TEST_MODE:-0}" # 1 = allow non-root dry-run validation in automated tests
 REBOOT_REQUIRED=0
 LOG_FILE="/tmp/map2-install-$(date +%Y%m%d-%H%M%S).log"
 
@@ -68,10 +74,20 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run)     DRY_RUN=1; shift ;;
         --skip-reboot) SKIP_REBOOT=1; shift ;;
+        --skip-avb)    ENABLE_AVB=0; shift ;;
+        --uninstall-avb) UNINSTALL_AVB=1; ENABLE_AVB=0; shift ;;
+        --avb-interface)
+            if [[ -z "${2:-}" ]]; then
+                echo "Missing value for --avb-interface"
+                exit 1
+            fi
+            AVB_INTERFACE="$2"
+            shift 2
+            ;;
         --mode)        TARGET_MODE="${2:-audio}"; shift 2 ;;
         --user)        INSTALL_USER="${2:-mm}"; INSTALL_DIR="/home/${INSTALL_USER}/map2-audio"; CONFIG_DIR="/home/${INSTALL_USER}/.map2"; VENV_DIR="${INSTALL_DIR}/.venv"; shift 2 ;;
         --help|-h)
-            echo "Usage: sudo bash $0 [--dry-run] [--skip-reboot] [--mode audio|all-in-one|management] [--user mm]"
+            echo "Usage: sudo bash $0 [--dry-run] [--skip-reboot] [--mode audio|all-in-one|management] [--user mm] [--skip-avb] [--avb-interface IFACE] [--uninstall-avb]"
             exit 0
             ;;
         *) echo "Unknown option: $1"; exit 1 ;;
@@ -107,10 +123,16 @@ phase "PHASE 0: Pre-Flight Checks"
 
 # Must be root
 if [ "$EUID" -ne 0 ]; then
-    err "This script must be run as root (use sudo)"
-    exit 1
+    if [ "$DRY_RUN" -eq 1 ] && [ "$TEST_MODE" -eq 1 ]; then
+        warn "TEST MODE: skipping root requirement for dry-run validation"
+    else
+        err "This script must be run as root (use sudo)"
+        exit 1
+    fi
 fi
-ok "Running as root"
+if [ "$EUID" -eq 0 ]; then
+    ok "Running as root"
+fi
 
 # Check target user exists
 if ! id "$INSTALL_USER" &>/dev/null; then
@@ -143,6 +165,16 @@ ok "Detected: $DISTRO $DISTRO_VERSION (package manager: $PKG_MGR)"
 log "Target mode: $TARGET_MODE"
 log "Install directory: $INSTALL_DIR"
 log "Log file: $LOG_FILE"
+if [ "$UNINSTALL_AVB" -eq 1 ]; then
+    log "AVB action: uninstall after rebuild"
+elif [ "$ENABLE_AVB" -eq 1 ]; then
+    log "AVB action: install by default"
+else
+    log "AVB action: skipped (--skip-avb)"
+fi
+if [ -n "$AVB_INTERFACE" ]; then
+    log "AVB interface override: $AVB_INTERFACE"
+fi
 
 if [ $DRY_RUN -eq 1 ]; then
     warn "DRY-RUN MODE — no changes will be made"
@@ -157,11 +189,17 @@ fi
 ok "Disk space: ${AVAIL_GB}GB available"
 
 # Check internet
-if ! ping -c 1 -W 3 github.com &>/dev/null; then
+if [ "$DRY_RUN" -eq 1 ] && [ "$TEST_MODE" -eq 1 ]; then
+    warn "TEST MODE: skipping internet connectivity check"
+elif ! ping -c 1 -W 3 github.com &>/dev/null; then
     err "No internet connectivity (cannot reach github.com)"
     exit 1
 fi
-ok "Internet connectivity verified"
+if [ "$DRY_RUN" -eq 1 ] && [ "$TEST_MODE" -eq 1 ]; then
+    ok "Internet connectivity check skipped in test mode"
+else
+    ok "Internet connectivity verified"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PHASE 1: MINIMAL SYSTEM PACKAGES
@@ -234,15 +272,59 @@ ok "Rebuild script generated at $REBUILD_SCRIPT_PATH"
 phase "PHASE 4: Execute Rebuild Script"
 
 log "Executing rebuild script..."
-chmod +x "$REBUILD_SCRIPT_PATH"
-# Pass --dry-run to the rebuild script if it was passed to this script
 if [ $DRY_RUN -eq 1 ]; then
+    # In dry-run mode the rebuild script is not generated on disk.
     run_cmd sudo "$REBUILD_SCRIPT_PATH" --dry-run
 else
+    chmod +x "$REBUILD_SCRIPT_PATH"
     run_cmd sudo "$REBUILD_SCRIPT_PATH"
 fi
 
 ok "Rebuild script execution finished."
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE 5: AVB SETUP / UNINSTALL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+phase "PHASE 5: AVB Configuration"
+
+if [ "$UNINSTALL_AVB" -eq 1 ]; then
+    section "Uninstall AVB/TSN Configuration"
+    if [ -f "$INSTALL_DIR/scripts/uninstall_avb.sh" ]; then
+        if [ $DRY_RUN -eq 1 ]; then
+            run_cmd sudo bash "$INSTALL_DIR/scripts/uninstall_avb.sh" --yes
+            ok "AVB uninstall preview complete."
+        elif ! run_cmd sudo bash "$INSTALL_DIR/scripts/uninstall_avb.sh" --yes; then
+            warn "AVB uninstall failed. Review logs and run scripts/uninstall_avb.sh manually."
+        else
+            ok "AVB uninstall complete."
+        fi
+    else
+        warn "Missing script: $INSTALL_DIR/scripts/uninstall_avb.sh"
+    fi
+elif [ "$ENABLE_AVB" -eq 1 ]; then
+    section "Setup AVB/TSN (Default)"
+    if [ -f "$INSTALL_DIR/scripts/setup_avb.sh" ]; then
+        AVB_SETUP_CMD=(sudo bash "$INSTALL_DIR/scripts/setup_avb.sh" --yes)
+        if [ -n "$AVB_INTERFACE" ]; then
+            AVB_SETUP_CMD+=(--interface "$AVB_INTERFACE")
+        fi
+        if [ $DRY_RUN -eq 1 ]; then
+            AVB_SETUP_CMD+=(--dry-run)
+            run_cmd "${AVB_SETUP_CMD[@]}"
+            ok "AVB setup preview complete."
+        elif ! run_cmd "${AVB_SETUP_CMD[@]}"; then
+            warn "AVB setup did not complete. MAP2 install remains usable; run scripts/setup_avb.sh manually after NIC checks."
+        else
+            ok "AVB setup complete."
+        fi
+    else
+        warn "Missing script: $INSTALL_DIR/scripts/setup_avb.sh"
+    fi
+else
+    section "AVB/TSN Setup Skipped"
+    log "Run 'sudo bash scripts/setup_avb.sh --yes' to enable AVB later."
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SUMMARY
@@ -254,6 +336,13 @@ echo -e "${CYAN}║                    INSTALLATION COMPLETE                    
 echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  ${BOLD}Log File:${NC}    $LOG_FILE"
+if [ "$UNINSTALL_AVB" -eq 1 ]; then
+    echo -e "  ${BOLD}AVB Action:${NC}  Uninstalled (or previewed with --dry-run)"
+elif [ "$ENABLE_AVB" -eq 1 ]; then
+    echo -e "  ${BOLD}AVB Action:${NC}  Installed by default (or previewed with --dry-run)"
+else
+    echo -e "  ${BOLD}AVB Action:${NC}  Skipped (--skip-avb)"
+fi
 echo ""
 echo -e "  ${BOLD}The main installation is complete. Please see the output from the rebuild"
 echo -e "  ${BOLD}script above for more details."

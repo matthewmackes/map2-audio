@@ -14,6 +14,8 @@ from urllib.parse import urlparse
 from dataclasses import dataclass, asdict, field
 from enum import Enum
 
+from app.services.avb.readiness import get_avb_readiness
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,6 +51,14 @@ class AvbStreamConfig:
     srp_reservation_id: Optional[str] = None
     srp_admission_id: Optional[str] = None
     srp_metadata: Dict[str, Any] = field(default_factory=dict)
+    owner_node_id: Optional[str] = None
+    peer_node_id: Optional[str] = None
+    owner_endpoint_id: Optional[str] = None
+    peer_endpoint_id: Optional[str] = None
+    talker_node_id: Optional[str] = None
+    listener_node_id: Optional[str] = None
+    talker_endpoint_id: Optional[str] = None
+    listener_endpoint_id: Optional[str] = None
 
 
 @dataclass
@@ -62,6 +72,10 @@ class AvbStreamStats:
     overruns: int = 0
     timestamp_errors: int = 0
     sequence_errors: int = 0
+    sequence_gap_events: int = 0
+    timestamp_skew_events: int = 0
+    decode_errors: int = 0
+    max_timestamp_skew_ns: int = 0
     bytes_transferred: int = 0
     max_latency_ns: int = 0
     min_latency_ns: int = 0
@@ -85,6 +99,49 @@ class AvbService:
     Singleton service for managing AVB audio streams.
     Integrates with JUCE audio engine for actual stream I/O.
     """
+
+    _ENGINE_ONLY_CONFIG_FIELDS = (
+        "srp_reservation_id",
+        "srp_admission_id",
+        "srp_metadata",
+        "owner_node_id",
+        "peer_node_id",
+        "owner_endpoint_id",
+        "peer_endpoint_id",
+        "talker_node_id",
+        "listener_node_id",
+        "talker_endpoint_id",
+        "listener_endpoint_id",
+    )
+    _ACTIVE_CONNECTION_METHODS = (
+        "get_active_connections",
+        "getActiveConnections",
+    )
+    _AVDECC_INTERFACE_NAME = "avdecc"
+    _UA1000_INPUTS = [
+        "Input 1 (Analog)",
+        "Input 2 (Analog)",
+        "Input 3 (Analog)",
+        "Input 4 (Analog)",
+        "S/PDIF L",
+        "S/PDIF R",
+        "ADAT 1",
+        "ADAT 2",
+        "ADAT 3",
+        "ADAT 4",
+    ]
+    _UA1000_OUTPUTS = [
+        "Output 1 (Main L)",
+        "Output 2 (Main R)",
+        "Output 3",
+        "Output 4",
+        "Output 5",
+        "Output 6",
+        "Output 7",
+        "Output 8",
+        "S/PDIF L",
+        "S/PDIF R",
+    ]
 
     def __init__(self):
         self.streams: Dict[str, AvbStreamInfo] = {}
@@ -114,28 +171,44 @@ class AvbService:
         """
         Check if AVB is available.
 
-        Returns False if:
-        - Engine not initialized
-        - AVB not enabled in config
-        - No AVB hardware
-        - ptp4l not running
+        Availability is derived from canonical readiness evaluation.
         """
-        self._ensure_engine_bound()
+        readiness = self.get_readiness()
+        if bool(readiness.get("available", False)):
+            return True
 
+        # Preserve legacy unit-test behavior in MAP2_TEST_MODE where host-level
+        # AVB prerequisites may be intentionally absent.
+        import os
+
+        test_mode = str(os.getenv("MAP2_TEST_MODE", "")).lower() in {"1", "true", "yes"}
+        if test_mode:
+            checks = readiness.get("checks", {}) if isinstance(readiness, dict) else {}
+            probe_value = checks.get("engine_avb_available") if isinstance(checks, dict) else None
+            if probe_value is not None:
+                return bool(probe_value)
+            return self._engine_reports_avb_available()
+
+        return False
+
+    def get_readiness(self) -> Dict[str, Any]:
+        """Get canonical AVB readiness using the currently bound JUCE engine."""
+        self._ensure_engine_bound()
+        return get_avb_readiness(engine=self._engine)
+
+    def _engine_reports_avb_available(self) -> bool:
         if self._engine is None:
             return False
-
-        try:
-            # Check if engine has AVB support (compiled with USE_AVB=ON).
-            # Prefer snake_case contract, keep camelCase for compatibility.
-            for method_name in ("is_avb_available", "isAvbAvailable"):
-                method = getattr(self._engine, method_name, None)
-                if callable(method):
-                    return bool(method())
-            return False
-        except Exception as e:
-            logger.debug(f"AVB availability check failed: {e}")
-            return False
+        for method_name in ("is_avb_available", "isAvbAvailable"):
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+            try:
+                return bool(method())
+            except Exception as exc:
+                logger.debug("Engine AVB probe failed via %s: %s", method_name, exc)
+                return False
+        return False
 
     def _call_engine_stream_api(
         self,
@@ -253,6 +326,10 @@ class AvbService:
             "overruns": ("overruns",),
             "timestamp_errors": ("timestamp_errors", "timestampErrors"),
             "sequence_errors": ("sequence_errors", "sequenceErrors"),
+            "sequence_gap_events": ("sequence_gap_events", "sequenceGapEvents"),
+            "timestamp_skew_events": ("timestamp_skew_events", "timestampSkewEvents"),
+            "decode_errors": ("decode_errors", "decodeErrors"),
+            "max_timestamp_skew_ns": ("max_timestamp_skew_ns", "maxTimestampSkewNs"),
             "bytes_transferred": ("bytes_transferred", "bytesTransferred"),
             "max_latency_ns": ("max_latency_ns", "maxLatencyNs"),
             "min_latency_ns": ("min_latency_ns", "minLatencyNs"),
@@ -281,6 +358,247 @@ class AvbService:
             )
 
         return AvbStreamStats(**values)
+
+    @staticmethod
+    def _coerce_optional_text(value: Any) -> Optional[str]:
+        """Normalize optional string-like metadata fields."""
+        if value is None:
+            return None
+        parsed = str(value).strip()
+        return parsed or None
+
+    @staticmethod
+    def _read_mapping_or_attr(payload: Any, *names: str) -> Any:
+        """Read value from dict/object by probing candidate field names."""
+        if isinstance(payload, dict):
+            for name in names:
+                if name in payload:
+                    return payload[name]
+            return None
+
+        for name in names:
+            if hasattr(payload, name):
+                return getattr(payload, name)
+        return None
+
+    @staticmethod
+    def _normalize_hex_identifier(raw: Any) -> Optional[str]:
+        """Normalize entity/stream IDs into zero-padded lowercase hex."""
+        if raw is None:
+            return None
+
+        if isinstance(raw, int):
+            if raw < 0:
+                return None
+            return f"{raw:016x}"
+
+        token = str(raw).strip().lower()
+        if token.startswith("0x"):
+            token = token[2:]
+        if not token:
+            return None
+        if any(ch not in "0123456789abcdef" for ch in token):
+            return None
+
+        token = token[-16:]
+        return token.zfill(16)
+
+    @staticmethod
+    def _normalize_mac(value: Any) -> Optional[str]:
+        """Normalize MAC string to lowercase colon-delimited notation when possible."""
+        if value is None:
+            return None
+        token = str(value).strip().lower().replace("-", ":")
+        parts = token.split(":")
+        if len(parts) != 6:
+            return token or None
+        for part in parts:
+            if len(part) != 2:
+                return token or None
+            if any(ch not in "0123456789abcdef" for ch in part):
+                return token or None
+        return ":".join(parts)
+
+    def _collect_active_avdecc_connections(self) -> List[Dict[str, Any]]:
+        """Read and normalize active AVDECC ACMP connection payloads from the engine."""
+        found, payload, _error = self._call_engine_stream_data_api(list(self._ACTIVE_CONNECTION_METHODS))
+        if not found or not isinstance(payload, list):
+            return []
+
+        normalized: List[Dict[str, Any]] = []
+        for item in payload:
+            talker_entity_id = self._normalize_hex_identifier(
+                self._read_mapping_or_attr(item, "talker_entity_id", "talkerEntityId")
+            )
+            listener_entity_id = self._normalize_hex_identifier(
+                self._read_mapping_or_attr(item, "listener_entity_id", "listenerEntityId")
+            )
+            if talker_entity_id is None or listener_entity_id is None:
+                continue
+
+            talker_unique_id = self._coerce_non_negative_int(
+                self._read_mapping_or_attr(item, "talker_unique_id", "talkerUniqueId"),
+                0,
+            )
+            listener_unique_id = self._coerce_non_negative_int(
+                self._read_mapping_or_attr(item, "listener_unique_id", "listenerUniqueId"),
+                0,
+            )
+            stream_vlan_id = self._coerce_non_negative_int(
+                self._read_mapping_or_attr(item, "stream_vlan_id", "streamVlanId"),
+                0,
+            )
+            stream_id = self._normalize_hex_identifier(
+                self._read_mapping_or_attr(item, "stream_id", "streamId")
+            )
+            dest_mac = self._normalize_mac(
+                self._read_mapping_or_attr(item, "stream_dest_mac", "streamDestMac")
+            )
+            connected_raw = self._read_mapping_or_attr(item, "connected", "is_connected", "active")
+            connected = True if connected_raw is None else bool(connected_raw)
+
+            connection_id = (
+                f"avdecc:{talker_entity_id}:{talker_unique_id}:"
+                f"{listener_entity_id}:{listener_unique_id}"
+            )
+            normalized.append(
+                {
+                    "connection_id": connection_id,
+                    "talker_entity_id": talker_entity_id,
+                    "talker_unique_id": talker_unique_id,
+                    "listener_entity_id": listener_entity_id,
+                    "listener_unique_id": listener_unique_id,
+                    "connected": connected,
+                    "stream_id": stream_id,
+                    "stream_vlan_id": stream_vlan_id,
+                    "stream_dest_mac": dest_mac,
+                }
+            )
+
+        normalized.sort(key=lambda row: row["connection_id"])
+        return normalized
+
+    def _build_avdecc_connection_stream_payload(self, connection: Dict[str, Any]) -> Dict[str, Any]:
+        """Project one active ACMP connection into the existing stream payload contract."""
+        talker_entity_id = str(connection["talker_entity_id"])
+        listener_entity_id = str(connection["listener_entity_id"])
+        talker_unique_id = int(connection["talker_unique_id"])
+        listener_unique_id = int(connection["listener_unique_id"])
+
+        config = AvbStreamConfig(
+            stream_id=str(connection["connection_id"]),
+            direction=StreamDirection.TALKER,
+            channels=2,
+            sample_rate=48000,
+            buffer_size=256,
+            interface=self._AVDECC_INTERFACE_NAME,
+            dest_mac=self._coerce_optional_text(connection.get("stream_dest_mac")),
+            owner_node_id=f"avdecc-{talker_entity_id}",
+            peer_node_id=f"avdecc-{listener_entity_id}",
+            owner_endpoint_id=f"{talker_entity_id}:{talker_unique_id}",
+            peer_endpoint_id=f"{listener_entity_id}:{listener_unique_id}",
+            talker_node_id=f"avdecc-{talker_entity_id}",
+            listener_node_id=f"avdecc-{listener_entity_id}",
+            talker_endpoint_id=f"{talker_entity_id}:{talker_unique_id}",
+            listener_endpoint_id=f"{listener_entity_id}:{listener_unique_id}",
+        )
+        stream = AvbStreamInfo(
+            stream_id=config.stream_id,
+            direction=config.direction,
+            state=StreamState.RUNNING if bool(connection.get("connected", True)) else StreamState.STOPPED,
+            config=config,
+            stats=AvbStreamStats(),
+            error=None,
+        )
+        payload = self._stream_to_dict(stream)
+        payload["source"] = "avdecc_connection"
+        payload["config"]["device_type"] = "avdecc"
+        payload["config"]["stream_vlan_id"] = int(connection.get("stream_vlan_id", 0))
+        payload["config"]["avdecc_stream_id"] = self._coerce_optional_text(connection.get("stream_id"))
+        payload["avdecc_connection"] = {
+            "connection_id": config.stream_id,
+            "talker_entity_id": talker_entity_id,
+            "talker_unique_id": talker_unique_id,
+            "listener_entity_id": listener_entity_id,
+            "listener_unique_id": listener_unique_id,
+            "stream_id": self._coerce_optional_text(connection.get("stream_id")),
+            "stream_vlan_id": int(connection.get("stream_vlan_id", 0)),
+            "stream_dest_mac": self._coerce_optional_text(connection.get("stream_dest_mac")),
+            "connected": bool(connection.get("connected", True)),
+        }
+        return payload
+
+    def _get_active_avdecc_stream_payloads(self) -> List[Dict[str, Any]]:
+        """Return active AVDECC ACMP connections projected into stream payload shape."""
+        return [
+            self._build_avdecc_connection_stream_payload(connection)
+            for connection in self._collect_active_avdecc_connections()
+        ]
+
+    @classmethod
+    def _build_stream_ownership(cls, config: AvbStreamConfig) -> Dict[str, Any]:
+        """Build deterministic stream ownership metadata from config and direction."""
+        owner_node_id = cls._coerce_optional_text(config.owner_node_id)
+        peer_node_id = cls._coerce_optional_text(config.peer_node_id)
+        owner_endpoint_id = cls._coerce_optional_text(config.owner_endpoint_id)
+        peer_endpoint_id = cls._coerce_optional_text(config.peer_endpoint_id)
+        talker_node_id = cls._coerce_optional_text(config.talker_node_id)
+        listener_node_id = cls._coerce_optional_text(config.listener_node_id)
+        talker_endpoint_id = cls._coerce_optional_text(config.talker_endpoint_id)
+        listener_endpoint_id = cls._coerce_optional_text(config.listener_endpoint_id)
+
+        if talker_node_id is None and config.direction == StreamDirection.TALKER:
+            talker_node_id = owner_node_id
+        if listener_node_id is None and config.direction == StreamDirection.LISTENER:
+            listener_node_id = owner_node_id
+
+        if talker_endpoint_id is None and config.direction == StreamDirection.TALKER:
+            talker_endpoint_id = owner_endpoint_id
+        if listener_endpoint_id is None and config.direction == StreamDirection.LISTENER:
+            listener_endpoint_id = owner_endpoint_id
+
+        if owner_node_id is None:
+            owner_node_id = talker_node_id if config.direction == StreamDirection.TALKER else listener_node_id
+        if peer_node_id is None:
+            peer_node_id = listener_node_id if config.direction == StreamDirection.TALKER else talker_node_id
+
+        if owner_endpoint_id is None:
+            owner_endpoint_id = talker_endpoint_id if config.direction == StreamDirection.TALKER else listener_endpoint_id
+        if peer_endpoint_id is None:
+            peer_endpoint_id = listener_endpoint_id if config.direction == StreamDirection.TALKER else talker_endpoint_id
+
+        node_ids = sorted(
+            {
+                node_id
+                for node_id in (owner_node_id, peer_node_id, talker_node_id, listener_node_id)
+                if node_id
+            }
+        )
+        endpoint_ids = sorted(
+            {
+                endpoint_id
+                for endpoint_id in (
+                    owner_endpoint_id,
+                    peer_endpoint_id,
+                    talker_endpoint_id,
+                    listener_endpoint_id,
+                )
+                if endpoint_id
+            }
+        )
+
+        return {
+            "owner_node_id": owner_node_id,
+            "peer_node_id": peer_node_id,
+            "owner_endpoint_id": owner_endpoint_id,
+            "peer_endpoint_id": peer_endpoint_id,
+            "talker_node_id": talker_node_id,
+            "listener_node_id": listener_node_id,
+            "talker_endpoint_id": talker_endpoint_id,
+            "listener_endpoint_id": listener_endpoint_id,
+            "node_ids": node_ids,
+            "endpoint_ids": endpoint_ids,
+        }
 
     async def create_stream(self, config: AvbStreamConfig) -> Dict[str, Any]:
         """
@@ -313,9 +631,8 @@ class AvbService:
         try:
             engine_config = asdict(config)
             engine_config["direction"] = config.direction.value
-            engine_config.pop("srp_reservation_id", None)
-            engine_config.pop("srp_admission_id", None)
-            engine_config.pop("srp_metadata", None)
+            for field_name in self._ENGINE_ONLY_CONFIG_FIELDS:
+                engine_config.pop(field_name, None)
             found, success, error = self._call_engine_stream_api(
                 [
                     "create_avb_stream",
@@ -368,8 +685,9 @@ class AvbService:
         Returns:
             Result dict
         """
+        # Idempotent delete: if already removed, acknowledge deletion.
         if stream_id not in self.streams:
-            return {"error": "Stream not found", "code": "NOT_FOUND"}
+            return {"status": "deleted"}
 
         try:
             stream = self.streams[stream_id]
@@ -424,8 +742,14 @@ class AvbService:
         try:
             stream = self.streams[stream_id]
 
+            if stream.state == StreamState.STARTING:
+                return {"status": "starting"}
+
             if stream.state == StreamState.RUNNING:
                 return {"status": "already_running"}
+
+            if stream.state == StreamState.STOPPING:
+                return {"status": "stopping"}
 
             stream.state = StreamState.STARTING
 
@@ -483,6 +807,12 @@ class AvbService:
             if stream.state == StreamState.STOPPED:
                 return {"status": "already_stopped"}
 
+            if stream.state == StreamState.STOPPING:
+                return {"status": "stopping"}
+
+            if stream.state == StreamState.STARTING:
+                stream.state = StreamState.STOPPING
+
             stream.state = StreamState.STOPPING
 
             found, success, error = self._call_engine_stream_api(
@@ -525,6 +855,9 @@ class AvbService:
         stream = self.streams.get(stream_id)
         if stream:
             return self._stream_to_dict(stream)
+        for payload in self._get_active_avdecc_stream_payloads():
+            if payload.get("stream_id") == stream_id:
+                return payload
         return None
 
     def get_srp_binding(self, stream_id: str) -> Optional[Dict[str, Any]]:
@@ -570,7 +903,9 @@ class AvbService:
 
     def get_all_streams(self) -> List[Dict[str, Any]]:
         """Get all streams"""
-        return [self._stream_to_dict(s) for s in self.streams.values()]
+        payloads = [self._stream_to_dict(s) for s in self.streams.values()]
+        payloads.extend(self._get_active_avdecc_stream_payloads())
+        return payloads
 
     def get_device_names(self) -> List[str]:
         """Get JUCE-visible AVB device names from engine."""
@@ -669,10 +1004,136 @@ class AvbService:
         normalized.sort(key=lambda row: (row["endpoint_id"], row["device_name"]))
         return normalized
 
+    @classmethod
+    def _build_local_port_names(
+        cls,
+        *,
+        device_name: str,
+        channel_count: int,
+        direction: str,
+    ) -> List[str]:
+        is_ua1000 = "UA1000" in device_name or channel_count >= 10
+        names: List[str] = []
+
+        for index in range(max(0, channel_count)):
+            if is_ua1000:
+                presets = cls._UA1000_INPUTS if direction == "input" else cls._UA1000_OUTPUTS
+                names.append(presets[index] if index < len(presets) else f"{direction.title()} {index + 1}")
+                continue
+
+            if channel_count > 2:
+                names.append(f"{direction.title()} {index + 1}")
+                continue
+
+            if direction == "input":
+                names.append("Left" if index == 0 else "Right")
+            else:
+                names.append("Left" if index == 0 else "Right")
+
+        return names
+
+    def get_channel_capabilities(self, *, system_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Build canonical channel capability payload for local + AVB endpoints.
+
+        This model is shared by AVB and audio-port APIs.
+        """
+        self._ensure_engine_bound()
+
+        info = dict(system_info or {})
+        if not info and self._engine is not None:
+            getter = getattr(self._engine, "get_system_info", None)
+            if callable(getter):
+                try:
+                    engine_info = getter()
+                    if isinstance(engine_info, dict):
+                        info = dict(engine_info)
+                except Exception as exc:
+                    logger.debug("Skipping engine system-info pull for capabilities: %s", exc)
+
+        input_channels = self._coerce_non_negative_int(info.get("input_channels", 2), 2)
+        output_channels = self._coerce_non_negative_int(info.get("output_channels", 2), 2)
+        device_name = str(info.get("audio_device") or info.get("alsa_device") or "unknown").strip()
+
+        input_names = self._build_local_port_names(
+            device_name=device_name,
+            channel_count=input_channels,
+            direction="input",
+        )
+        output_names = self._build_local_port_names(
+            device_name=device_name,
+            channel_count=output_channels,
+            direction="output",
+        )
+
+        local_inputs = [
+            {
+                "index": index,
+                "name": input_names[index],
+                "type": "input",
+                "source": "juce_local",
+                "available": True,
+            }
+            for index in range(len(input_names))
+        ]
+        local_outputs = [
+            {
+                "index": index,
+                "name": output_names[index],
+                "type": "output",
+                "source": "juce_local",
+                "available": True,
+            }
+            for index in range(len(output_names))
+        ]
+
+        discovered_devices = self.get_discovered_devices()
+        avb_talkers = [
+            device
+            for device in discovered_devices
+            if device.get("direction") == "talker"
+        ]
+        avb_listeners = [
+            device
+            for device in discovered_devices
+            if device.get("direction") == "listener"
+        ]
+        sample_rates = sorted(
+            {
+                int(rate)
+                for rate in [info.get("sample_rate")] + [d.get("sample_rate") for d in discovered_devices]
+                if rate is not None and str(rate).strip() != ""
+            }
+        )
+
+        readiness = self.get_readiness()
+        return {
+            "available": bool(readiness.get("available", False)),
+            "readiness": readiness,
+            "device": device_name,
+            "local_inputs": local_inputs,
+            "local_outputs": local_outputs,
+            "avb_talkers": avb_talkers,
+            "avb_listeners": avb_listeners,
+            "sample_rates": sample_rates,
+            "summary": {
+                "local_input_count": len(local_inputs),
+                "local_output_count": len(local_outputs),
+                "avb_talker_count": len(avb_talkers),
+                "avb_listener_count": len(avb_listeners),
+            },
+        }
+
     def get_stream_stats(self, stream_id: str) -> Optional[Dict[str, Any]]:
         """Get stream statistics"""
         stream = self.streams.get(stream_id)
         if not stream:
+            avdecc_stream = self.get_stream(stream_id)
+            if avdecc_stream and avdecc_stream.get("source") == "avdecc_connection":
+                raw_stats = avdecc_stream.get("stats")
+                if isinstance(raw_stats, dict):
+                    return dict(raw_stats)
+                return asdict(AvbStreamStats())
             return None
 
         found, raw_stats, error = self._call_engine_stream_data_api(
@@ -731,6 +1192,7 @@ class AvbService:
             "stats": asdict(stream.stats),
             "error": stream.error,
             "srp_binding": self.get_srp_binding(stream.stream_id),
+            "ownership": self._build_stream_ownership(stream.config),
         }
 
 

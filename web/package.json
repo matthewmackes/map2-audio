@@ -17,7 +17,8 @@
     "start:prod": "npm run build && npm run serve",
     "start:dev": "npm run dev",
     "start:all": "npm run build && concurrently \"npm run serve\" \"npm run dev\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node ../node_modules/jest/bin/jest.js --config ../package.json"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.21",

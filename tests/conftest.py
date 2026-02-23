@@ -12,6 +12,7 @@ def _enable_test_mode(monkeypatch):
 def pytest_configure(config):
     """Register local markers used by this test suite."""
     config.addinivalue_line("markers", "asyncio: mark test as async")
+    config.addinivalue_line("markers", "avdecc_mock: AVDECC mock-harness integration tests")
 
 
 def pytest_collection_modifyitems(config, items):

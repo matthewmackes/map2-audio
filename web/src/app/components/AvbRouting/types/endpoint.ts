@@ -15,6 +15,26 @@ export type StreamDirection = 'talker' | 'listener';
  */
 export type DeviceType = 'map2' | 'avdecc' | 'unknown';
 
+export const CANONICAL_ENDPOINT_FIELDS = [
+  'endpoint_id',
+  'entity_id',
+  'unique_id',
+  'direction',
+  'device_type',
+  'device_name',
+  'channels',
+  'sample_rate',
+  'format',
+  'mac_address',
+  'node_address',
+  'node_id',
+  'host',
+  'available',
+  'last_seen',
+] as const;
+
+export type CanonicalEndpointField = typeof CANONICAL_ENDPOINT_FIELDS[number];
+
 /**
  * AVB Audio Endpoint
  *
@@ -34,6 +54,7 @@ export interface Endpoint {
   format: string;                // e.g., "24-bit PCM"
   mac_address: string | null;
   node_address: string | null;   // e.g., "http://192.168.1.10:8080"
+  host?: string;                 // Parsed host hint from node_address
   available: boolean;
   last_seen: string;             // ISO 8601 timestamp
 
@@ -52,8 +73,13 @@ export interface Endpoint {
 /**
  * Backend API response format for endpoints
  */
+export type EndpointApiPayload = Omit<
+  Endpoint,
+  'tags' | 'color' | 'group' | 'bank' | 'pinned' | 'locked'
+>;
+
 export interface EndpointsResponse {
-  endpoints: Omit<Endpoint, 'tags' | 'color' | 'group' | 'bank' | 'pinned' | 'locked'>[];
+  endpoints: EndpointApiPayload[];
   count: number;
 }
 
@@ -84,15 +110,47 @@ export interface AvbDiscoveredDevice {
   available: boolean;
 }
 
+export interface AvbReadinessContract {
+  enabled: boolean;
+  configured: boolean;
+  operational: boolean;
+  degraded: boolean;
+  available: boolean;
+  state: string;
+  interface: string;
+  interface_source: string;
+  reason: string | null;
+  checks: Record<string, unknown>;
+}
+
 /**
  * Backend API response for AVB device inventory.
  */
 export interface AvbDevicesResponse {
   available: boolean;
+  readiness?: AvbReadinessContract;
   count: number;
   device_names: string[];
   discovered_count: number;
   discovered_devices: AvbDiscoveredDevice[];
+  error?: string;
+}
+
+export interface AvbChannelCapabilitiesResponse {
+  available: boolean;
+  readiness: AvbReadinessContract;
+  device: string;
+  local_inputs: Array<{ index: number; name: string; type: 'input'; source: string; available: boolean }>;
+  local_outputs: Array<{ index: number; name: string; type: 'output'; source: string; available: boolean }>;
+  avb_talkers: AvbDiscoveredDevice[];
+  avb_listeners: AvbDiscoveredDevice[];
+  sample_rates: number[];
+  summary: {
+    local_input_count: number;
+    local_output_count: number;
+    avb_talker_count: number;
+    avb_listener_count: number;
+  };
   error?: string;
 }
 
@@ -235,6 +293,39 @@ export interface AvbStreamDiagnostics {
   ptp_lock: AvbStreamPtpLockDiagnostics;
   tsn_qdisc: AvbStreamTsnDiagnostics;
   srp: AvbStreamSrpDiagnostics;
+  transport?: {
+    frames_sent: number;
+    frames_received: number;
+    send_errors: number;
+    receive_errors: number;
+    underruns: number;
+    overruns: number;
+    timestamp_errors: number;
+    sequence_errors: number;
+    sequence_gap_events: number;
+    timestamp_skew_events: number;
+    decode_errors: number;
+    max_timestamp_skew_ns: number;
+    bytes_transferred: number;
+    max_latency_ns: number;
+    min_latency_ns: number;
+  };
+}
+
+/**
+ * Deterministic stream ownership metadata returned by backend stream APIs.
+ */
+export interface AvbStreamOwnership {
+  owner_node_id: string | null;
+  peer_node_id: string | null;
+  owner_endpoint_id: string | null;
+  peer_endpoint_id: string | null;
+  talker_node_id: string | null;
+  listener_node_id: string | null;
+  talker_endpoint_id: string | null;
+  listener_endpoint_id: string | null;
+  node_ids: string[];
+  endpoint_ids: string[];
 }
 
 /**
@@ -247,6 +338,7 @@ export interface AvbStreamPayload {
   config?: Record<string, unknown>;
   stats?: Record<string, unknown>;
   error?: string | null;
+  ownership?: AvbStreamOwnership;
   health?: AvbStreamHealth;
   diagnostics?: AvbStreamDiagnostics;
 }

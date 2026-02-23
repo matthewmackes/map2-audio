@@ -1,9 +1,14 @@
 /*
 Important Disclaimer
-This educational platform and its associated code, documentation, or examples may inadvertently reference or mention trademarks, product names, brand names, manufacturers, or commercial software/hardware. (various manufacturers)
-Any such references are purely incidental — they are artifacts of the "Vibe Coding" explanatory process used to illustrate general concepts, techniques, or comparisons. This project has no affiliation with, is not endorsed by, and is not connected in any way to those companies, products, or brands.
-This is a free, non-commercial, educational resource only — not for sale, not for resale, and not intended as a product, replacement, substitute, alternative, or competitor to any commercial offering.
-The referenced commercial products are superior in quality, support, features, reliability, and every other respect. We strongly encourage users to purchase legitimate commercial products from their official sources and to support the developers and companies behind them — their work sustains jobs, innovation, and the broader community that benefits everyone, including educational efforts like this one.
+This educational platform and its associated code, documentation, or examples
+may reference trademarks, product names, brand names, manufacturers, or
+commercial software/hardware.
+Any such references are for identification, commentary, comparison, and
+technical explanation only. This project has no affiliation with, endorsement
+from, or official connection to those companies, products, or brands.
+MAP2-owned code is licensed under AGPLv3 (`AGPL-3.0-only`). Educational intent
+statements describe project goals and do not add restrictions beyond AGPLv3.
+Third-party components remain under their original licenses.
 */
 
 #include "PluginProcessor.h"

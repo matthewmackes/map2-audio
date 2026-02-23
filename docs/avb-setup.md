@@ -1,6 +1,6 @@
 # AVB/TSN Network Audio Setup Guide
 
-Complete guide for enabling IEEE 1722 AVTP network audio with TSN capabilities on MAP2 Audio Platform.
+Complete guide for installing, validating, and removing IEEE 1722 AVTP network audio with TSN capabilities on MAP2 Audio Platform.
 
 ---
 
@@ -40,14 +40,15 @@ AVB (Audio Video Bridging) / TSN (Time-Sensitive Networking) enables determinist
 - **Synchronized**: Sub-microsecond clock sync for phase-coherent audio
 - **Professional**: Industry standard for live sound, broadcast, recording
 
-### Non-Breaking Design
+### Default-On Design With Explicit Opt-Out
 
-AVB is **completely optional** and **disabled by default**:
+AVB is installed by default in the host installer workflow:
 
-- Feature flag: `USE_AVB=OFF` in CMake (no AVB code in binary)
-- Runtime config: `avb.enabled=false` (AVB services don't start)
-- Graceful degradation: Missing hardware results in warnings, not crashes
-- Zero impact on JACK/PipeWire audio when disabled
+- `install_on_new_host.sh` now runs `scripts/setup_avb.sh --yes` by default.
+- Skip AVB during installation with `--skip-avb`.
+- Remove AVB after installation with `--uninstall-avb` or `scripts/uninstall_avb.sh`.
+- AVB remains explicitly disable-able at build/runtime with `-DUSE_AVB=OFF` and `avb.enabled=false`.
+- Graceful degradation remains: missing TSN hardware logs warnings and AVB reports unavailable without crashing core audio services.
 
 ---
 
@@ -148,6 +149,20 @@ dnf install valgrind clang-tools-extra  # ThreadSanitizer
 
 ## Quick Start
 
+### 0. Full Host Install (AVB Enabled by Default)
+
+```bash
+sudo bash install_on_new_host.sh
+```
+
+Common AVB control flags:
+
+```bash
+sudo bash install_on_new_host.sh --skip-avb          # Install MAP2 without AVB setup
+sudo bash install_on_new_host.sh --uninstall-avb     # Remove AVB configuration after rebuild
+sudo bash install_on_new_host.sh --avb-interface enp2s0
+```
+
 ### 1. Pre-flight Check (Dry Run)
 
 Verify hardware compatibility **without making system changes**:
@@ -167,6 +182,8 @@ sudo scripts/setup_avb.sh --dry-run
 ```
 
 ### 2. Automated Setup
+
+This is the same script the installer runs by default.
 
 **Interactive mode** (prompts before changes):
 ```bash
@@ -190,9 +207,11 @@ This script will:
 
 ```bash
 cd juce-engine
-cmake -B build -DUSE_AVB=ON
+cmake -B build
 cmake --build build --config Release -j$(nproc)
 ```
+
+`USE_AVB` defaults to `ON`; pass `-DUSE_AVB=OFF` only when you intentionally want a non-AVB build.
 
 Verify AVB symbols present:
 ```bash
@@ -201,6 +220,8 @@ nm build/libMap2AudioEngine.so | grep -i avb
 ```
 
 ### 4. Enable AVB in Config
+
+`setup_avb.sh` writes AVB runtime config automatically. Use manual edits only for overrides.
 
 Edit `~/.map2/config.json`:
 ```json
@@ -660,6 +681,16 @@ curl -s http://localhost:8080/api/avb/status | jq
 }
 ```
 
+### 2.5 Installer AVB Branch Validation (Dry-Run)
+
+Validate installer AVB branch controls (default/skip/uninstall/interface):
+
+```bash
+pytest tests/test_avb_ops_scripts.py -q
+```
+
+See `docs/AVB_ROLLOUT_BACKOUT_RUNBOOK.md` for staged rollout/backout and no-orphan checks.
+
 ### 3. Create Test Stream
 
 **Talker (source):**
@@ -920,7 +951,13 @@ sudo ausearch -m avc -ts recent
 ### Clean Removal Script
 
 ```bash
-sudo /path/to/scripts/uninstall_avb.sh
+sudo bash scripts/uninstall_avb.sh
+```
+
+Or use the host installer entrypoint:
+
+```bash
+sudo bash install_on_new_host.sh --uninstall-avb
 ```
 
 This script:
@@ -933,13 +970,13 @@ This script:
 
 **Preserve MAP2 config:**
 ```bash
-sudo /path/to/scripts/uninstall_avb.sh --preserve-config
+sudo bash scripts/uninstall_avb.sh --preserve-config
 ```
 
 **Advanced override (restricted test/sandbox environments):**
 ```bash
 MAP2_SRPD_UNINSTALL_ALLOW_PREFIXES="/tmp/my-lab/" \
-  sudo /path/to/scripts/uninstall_avb.sh --yes
+  sudo bash scripts/uninstall_avb.sh --yes
 ```
 Use this only when you intentionally install SRP artifacts outside standard system prefixes.
 

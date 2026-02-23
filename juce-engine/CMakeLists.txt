@@ -156,7 +156,7 @@ endif()
 # ========================================
 # AVB/TSN Network Audio Transport (Optional)
 # ========================================
-option(USE_AVB "Enable AVB/TSN network audio transport" OFF)
+option(USE_AVB "Enable AVB/TSN network audio transport" ON)
 if(USE_AVB)
     pkg_check_modules(AVTP avtp QUIET)
     pkg_check_modules(LIBCAP libcap QUIET)
@@ -533,6 +533,11 @@ include(CTest)
 option(BUILD_AVB_TESTS "Build AVB/Catch2 unit tests" OFF)
 
 if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
+    set(AVTP_TEST_SOURCES
+        tests/AvbStreamManagerTests.cpp
+        Source/AvbStream.cpp
+    )
+
     FetchContent_Declare(
         catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -541,10 +546,9 @@ if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
     )
     FetchContent_MakeAvailable(catch2)
 
-    add_executable(avb_tests
-        tests/AvbStreamManagerTests.cpp
-        Source/AvbStream.cpp
-    )
+    # Keep avb_tests focused on AVTP dataplane behavior so it remains buildable
+    # regardless of AVDECC/JUCE model-layer linkage changes.
+    add_executable(avb_tests ${AVTP_TEST_SOURCES})
     target_compile_definitions(avb_tests PRIVATE
         HAS_AVB=1
         BUILD_AVB_TESTS=1
@@ -552,16 +556,49 @@ if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
     target_include_directories(avb_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source)
     target_link_libraries(avb_tests PRIVATE
         Catch2::Catch2WithMain
+        ${AVTP_LIBRARIES}
         ${LIBCAP_LIBRARIES}
     )
     add_test(NAME avb_tests COMMAND avb_tests)
 
-    add_custom_target(check-avb
-        COMMAND ${CMAKE_CTEST_COMMAND} -R avb_tests --output-on-failure
-        DEPENDS avb_tests
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Running AVB Catch2 tests"
-    )
+    if(AVDECC_AVAILABLE)
+        add_executable(avdecc_model_tests
+            Source/AvdeccEntityModel.cpp
+            Source/AvdeccEnumerator.cpp
+            tests/AvdeccEntityModelTests.cpp
+            tests/AvdeccEnumeratorTests.cpp
+        )
+        target_compile_definitions(avdecc_model_tests PRIVATE
+            HAS_AVDECC=1
+            BUILD_AVB_TESTS=1
+            JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+            JUCE_WEB_BROWSER=0
+            JUCE_USE_CURL=0
+        )
+        target_include_directories(avdecc_model_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source)
+        target_link_libraries(avdecc_model_tests PRIVATE
+            Catch2::Catch2WithMain
+            juce::juce_core
+        )
+        add_test(NAME avdecc_model_tests COMMAND avdecc_model_tests)
+    endif()
+
+    if(AVDECC_AVAILABLE)
+        add_custom_target(check-avb
+            COMMAND ${CMAKE_CTEST_COMMAND} -R "avb_tests" --output-on-failure
+            COMMAND ${CMAKE_CTEST_COMMAND} -R "avdecc_model_tests" --output-on-failure
+            DEPENDS avb_tests avdecc_model_tests
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running AVB Catch2 tests (AVTP and AVDECC model suites)"
+        )
+    else()
+        add_custom_target(check-avb
+            COMMAND ${CMAKE_CTEST_COMMAND} -R "avb_tests" --output-on-failure
+            DEPENDS avb_tests
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running AVB Catch2 tests (AVTP suite)"
+        )
+    endif()
 endif()
 
 # ========================================

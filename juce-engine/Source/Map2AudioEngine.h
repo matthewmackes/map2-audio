@@ -127,6 +127,10 @@ public:
         uint64_t overruns = 0;
         uint64_t timestampErrors = 0;
         uint64_t sequenceErrors = 0;
+        uint64_t sequenceGapEvents = 0;
+        uint64_t timestampSkewEvents = 0;
+        uint64_t decodeErrors = 0;
+        int64_t maxTimestampSkewNs = 0;
         uint64_t bytesTransferred = 0;
         int64_t maxLatencyNs = 0;
         int64_t minLatencyNs = 0;

@@ -77,18 +77,20 @@ export function useLocalStorage<T>(
 
   const setStoredValue = useCallback(
     (newValue: T | ((val: T) => T)) => {
-      try {
-        const valueToStore = newValue instanceof Function ? newValue(value) : newValue
-        setValue(valueToStore)
-        window.localStorage.setItem(
-          key,
-          options?.serialize ? options.serialize(valueToStore) : JSON.stringify(valueToStore)
-        )
-      } catch (error) {
-        console.error(`Error writing to localStorage (${key}):`, error)
-      }
+      setValue((prev) => {
+        const valueToStore = newValue instanceof Function ? newValue(prev) : newValue
+        try {
+          window.localStorage.setItem(
+            key,
+            options?.serialize ? options.serialize(valueToStore) : JSON.stringify(valueToStore)
+          )
+        } catch (error) {
+          console.error(`Error writing to localStorage (${key}):`, error)
+        }
+        return valueToStore
+      })
     },
-    [key, value, options]
+    [key, options]
   )
 
   return [value, setStoredValue] as const

@@ -27,6 +27,8 @@
 #include "LexiLoveProcessor.h"
 #include "H3000Processor.h"
 
+#include <memory>
+
 #ifdef HAS_AVDECC
 #include "AvdeccEntity.h"
 #include "AvdeccEntityModel.h"
@@ -187,6 +189,96 @@ py::dict irInfoToDict(const ConvolutionProcessor::IRInfo& info) {
     d["stereo"] = info.stereo;
     return d;
 }
+
+Map2AudioEngine& getModuleEngine() {
+    static std::shared_ptr<Map2AudioEngine> engine = std::make_shared<Map2AudioEngine>();
+    return *engine;
+}
+
+py::dict avbStreamStatsToDict(
+    const std::string& streamId,
+    const Map2AudioEngine::AvbStreamRuntimeStats& stats) {
+    py::dict result;
+    result["stream_id"] = streamId;
+    result["available"] = true;
+    result["frames_sent"] = stats.framesSent;
+    result["frames_received"] = stats.framesReceived;
+    result["send_errors"] = stats.sendErrors;
+    result["receive_errors"] = stats.receiveErrors;
+    result["underruns"] = stats.underruns;
+    result["overruns"] = stats.overruns;
+    result["timestamp_errors"] = stats.timestampErrors;
+    result["sequence_errors"] = stats.sequenceErrors;
+    result["bytes_transferred"] = stats.bytesTransferred;
+    result["max_latency_ns"] = stats.maxLatencyNs;
+    result["min_latency_ns"] = stats.minLatencyNs;
+
+    // Backward-compatible camelCase aliases.
+    result["framesSent"] = stats.framesSent;
+    result["framesReceived"] = stats.framesReceived;
+    result["sendErrors"] = stats.sendErrors;
+    result["receiveErrors"] = stats.receiveErrors;
+    result["timestampErrors"] = stats.timestampErrors;
+    result["sequenceErrors"] = stats.sequenceErrors;
+    result["bytesTransferred"] = stats.bytesTransferred;
+    result["maxLatencyNs"] = stats.maxLatencyNs;
+    result["minLatencyNs"] = stats.minLatencyNs;
+    return result;
+}
+
+#ifdef HAS_AVDECC
+py::dict avdeccEntityToDict(const Map2Audio::DiscoveredEntity& entity) {
+    py::dict d;
+    d["entity_id"] = py::str(juce::String::toHexString((int64_t)entity.entity_id).toStdString());
+    d["entity_model_id"] = py::str(juce::String::toHexString((int64_t)entity.entity_model_id).toStdString());
+    d["entity_name"] = entity.entity_name;
+    d["firmware_version"] = entity.firmware_version;
+    d["group_name"] = entity.group_name;
+    d["serial_number"] = entity.serial_number;
+    d["mac_address"] = py::str(
+        juce::String::formatted(
+            "%02x:%02x:%02x:%02x:%02x:%02x",
+            entity.mac_address[0],
+            entity.mac_address[1],
+            entity.mac_address[2],
+            entity.mac_address[3],
+            entity.mac_address[4],
+            entity.mac_address[5]
+        ).toStdString()
+    );
+    d["talker_stream_sources"] = entity.talker_stream_sources;
+    d["listener_stream_sinks"] = entity.listener_stream_sinks;
+    d["talker_capabilities"] = entity.talker_capabilities;
+    d["listener_capabilities"] = entity.listener_capabilities;
+    d["gptp_grandmaster_id"] = py::str(juce::String::toHexString((int64_t)entity.gptp_grandmaster_id).toStdString());
+    d["gptp_domain_number"] = entity.gptp_domain_number;
+    d["vendor_id"] = (uint32_t)(entity.entity_model_id >> 40);
+    d["model_id"] = (uint64_t)(entity.entity_model_id & 0xFFFFFFFFFF);
+    d["available"] = entity.available;
+    d["has_model"] = (entity.model_ != nullptr);
+    return d;
+}
+
+std::optional<Map2Audio::Avdecc::DescriptorType> parseStreamDescriptorDirection(const std::string& directionRaw) {
+    auto normalized = juce::String(directionRaw).trim().toLowerCase();
+    if (normalized == "talker" || normalized == "output" || normalized == "stream_output") {
+        return Map2Audio::Avdecc::DescriptorType::STREAM_OUTPUT;
+    }
+    if (normalized == "listener" || normalized == "input" || normalized == "stream_input") {
+        return Map2Audio::Avdecc::DescriptorType::STREAM_INPUT;
+    }
+    return std::nullopt;
+}
+
+py::dict streamFormatResultToDict(const Map2Audio::StreamFormatOperationResult& result) {
+    py::dict payload;
+    payload["success"] = result.success;
+    payload["status_code"] = static_cast<int>(result.status);
+    payload["status"] = result.message.toStdString();
+    payload["stream_format"] = py::int_(result.stream_format);
+    return payload;
+}
+#endif
 
 // Convert DynamicsProcessor::Mode to string
 std::string dynamicsModeToString(DynamicsProcessor::Mode mode) {
@@ -1839,6 +1931,10 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["overruns"] = stats->overruns;
             result["timestamp_errors"] = stats->timestampErrors;
             result["sequence_errors"] = stats->sequenceErrors;
+            result["sequence_gap_events"] = stats->sequenceGapEvents;
+            result["timestamp_skew_events"] = stats->timestampSkewEvents;
+            result["decode_errors"] = stats->decodeErrors;
+            result["max_timestamp_skew_ns"] = stats->maxTimestampSkewNs;
             result["bytes_transferred"] = stats->bytesTransferred;
             result["max_latency_ns"] = stats->maxLatencyNs;
             result["min_latency_ns"] = stats->minLatencyNs;
@@ -1850,6 +1946,10 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result["receiveErrors"] = stats->receiveErrors;
             result["timestampErrors"] = stats->timestampErrors;
             result["sequenceErrors"] = stats->sequenceErrors;
+            result["sequenceGapEvents"] = stats->sequenceGapEvents;
+            result["timestampSkewEvents"] = stats->timestampSkewEvents;
+            result["decodeErrors"] = stats->decodeErrors;
+            result["maxTimestampSkewNs"] = stats->maxTimestampSkewNs;
             result["bytesTransferred"] = stats->bytesTransferred;
             result["maxLatencyNs"] = stats->maxLatencyNs;
             result["minLatencyNs"] = stats->minLatencyNs;
@@ -4249,18 +4349,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
             auto discovered = avdecc->getDiscoveredEntities();
             for (const auto& entity : discovered) {
-                py::dict d;
-                d["entity_id"] = py::str(juce::String::toHexString((int64_t)entity.entity_id).toStdString());
-                d["entity_model_id"] = py::str(juce::String::toHexString((int64_t)entity.entity_model_id).toStdString());
-                d["entity_name"] = entity.entity_name;
-                d["firmware_version"] = entity.firmware_version;
-                d["group_name"] = entity.group_name;
-                d["serial_number"] = entity.serial_number;
-                d["vendor_id"] = (uint32_t)(entity.entity_model_id >> 40);
-                d["model_id"] = (uint64_t)(entity.entity_model_id & 0xFFFFFFFFFF);
-                d["available"] = entity.available;
-                d["has_model"] = (entity.model_ != nullptr);
-                entities.append(d);
+                entities.append(avdeccEntityToDict(entity));
             }
 
             return entities;
@@ -4361,6 +4450,79 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
             return connections;
         }, "Get list of active ACMP stream connections")
+
+        .def("get_stream_format", [](Map2AudioEngine& self,
+                                     uint64_t entity_id,
+                                     uint16_t stream_index,
+                                     const std::string& direction,
+                                     uint16_t configuration_index) -> py::dict {
+            Map2Audio::StreamFormatOperationResult result;
+            result.success = false;
+            result.status = Map2Audio::AecpAemStatus::NOT_SUPPORTED;
+            result.stream_format = 0;
+            result.message = "avdecc_unavailable";
+
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) {
+                return streamFormatResultToDict(result);
+            }
+
+            auto descriptor_type = parseStreamDescriptorDirection(direction);
+            if (!descriptor_type.has_value()) {
+                result.status = Map2Audio::AecpAemStatus::BAD_ARGUMENTS;
+                result.message = "invalid_direction";
+                return streamFormatResultToDict(result);
+            }
+
+            result = avdecc->getStreamFormat(
+                entity_id,
+                *descriptor_type,
+                stream_index,
+                configuration_index);
+            return streamFormatResultToDict(result);
+        }, py::arg("entity_id"),
+           py::arg("stream_index"),
+           py::arg("direction"),
+           py::arg("configuration_index") = 0,
+           "Get AVDECC stream format via AECP GET_STREAM_FORMAT")
+
+        .def("set_stream_format", [](Map2AudioEngine& self,
+                                     uint64_t entity_id,
+                                     uint16_t stream_index,
+                                     const std::string& direction,
+                                     uint64_t stream_format,
+                                     uint16_t configuration_index) -> py::dict {
+            Map2Audio::StreamFormatOperationResult result;
+            result.success = false;
+            result.status = Map2Audio::AecpAemStatus::NOT_SUPPORTED;
+            result.stream_format = stream_format;
+            result.message = "avdecc_unavailable";
+
+            auto* avdecc = self.getAvdeccEntity();
+            if (!avdecc) {
+                return streamFormatResultToDict(result);
+            }
+
+            auto descriptor_type = parseStreamDescriptorDirection(direction);
+            if (!descriptor_type.has_value()) {
+                result.status = Map2Audio::AecpAemStatus::BAD_ARGUMENTS;
+                result.message = "invalid_direction";
+                return streamFormatResultToDict(result);
+            }
+
+            result = avdecc->setStreamFormat(
+                entity_id,
+                *descriptor_type,
+                stream_index,
+                stream_format,
+                configuration_index);
+            return streamFormatResultToDict(result);
+        }, py::arg("entity_id"),
+           py::arg("stream_index"),
+           py::arg("direction"),
+           py::arg("stream_format"),
+           py::arg("configuration_index") = 0,
+           "Set AVDECC stream format via AECP SET_STREAM_FORMAT")
         #endif
         ;
 
@@ -4406,94 +4568,107 @@ PYBIND11_MODULE(map2_audio_engine, m) {
     // ========================================
 
     m.def("is_avb_available", []() {
-        // Check if AVB is available at runtime
-        // Checks: HAS_AVB compile flag, CAP_NET_RAW, interface exists
-        #ifdef HAS_AVB
-            try {
-                // In real implementation, would check:
-                // - CAP_NET_RAW capability
-                // - AVB interface exists
-                // - ptp4l running
-                // For now, return true if compiled with AVB support
-                return true;
-            } catch (...) {
-                return false;
-            }
-        #else
+        try {
+            return getModuleEngine().isAvbAvailable();
+        } catch (...) {
             return false;
-        #endif
+        }
     }, "Check if AVB/TSN network audio is available");
 
     m.def("get_avb_device_count", []() {
-        #ifdef HAS_AVB
-            // In real implementation, would query AudioDeviceManager
-            // for number of AVB devices (talkers + listeners)
-            // For now, return placeholder
+        try {
+            return getModuleEngine().getAvbDeviceCount();
+        } catch (...) {
             return 0;
-        #else
-            return 0;
-        #endif
+        }
     }, "Get number of available AVB audio devices");
 
     m.def("get_avb_device_names", []() {
         py::list devices;
-        #ifdef HAS_AVB
-            // In real implementation, would query AudioDeviceManager
-            // for AVB device names
-            // For now, return empty list
-        #endif
+        try {
+            const auto names = getModuleEngine().getAvbDeviceNames();
+            for (const auto& name : names) {
+                devices.append(name);
+            }
+        } catch (...) {
+        }
         return devices;
     }, "Get list of available AVB device names");
 
     m.def("get_avb_stream_stats", [](const std::string& stream_id) {
-        py::dict stats;
-        #ifdef HAS_AVB
-            // In real implementation, would:
-            // 1. Find AvbAudioIODevice by stream_id
-            // 2. Get AvbStream pointer
-            // 3. Call getStats() and convert to dict
+        std::string error;
+        try {
+            auto stats = getModuleEngine().getAvbStreamStats(stream_id, &error);
+            if (stats) {
+                return avbStreamStatsToDict(stream_id, *stats);
+            }
+        } catch (const std::exception& exc) {
+            error = exc.what();
+        } catch (...) {
+            if (error.empty()) {
+                error = "Unknown AVB stream statistics error";
+            }
+        }
 
-            // Placeholder structure
-            stats["stream_id"] = stream_id;
-            stats["available"] = false;
-            stats["error"] = "AVB stream not found or not implemented";
-        #else
-            stats["available"] = false;
-            stats["error"] = "AVB not compiled (USE_AVB=OFF)";
-        #endif
+        py::dict stats;
+        stats["stream_id"] = stream_id;
+        stats["available"] = false;
+        stats["error"] = error.empty() ? "Stream not found" : error;
         return stats;
     }, py::arg("stream_id"),
        "Get statistics for specific AVB stream");
 
     m.def("get_all_avb_stream_stats", []() {
         py::list streams;
-        #ifdef HAS_AVB
-            // In real implementation, would:
-            // 1. Enumerate all AvbAudioIODevice instances
-            // 2. Collect stats from each AvbStream
-            // 3. Convert to list of dicts
 
-            // For now, return empty list
-        #endif
+        try {
+            auto& engine = getModuleEngine();
+            const auto streamIds = engine.listAvbStreams();
+            for (const auto& streamId : streamIds) {
+                std::string error;
+                auto stats = engine.getAvbStreamStats(streamId, &error);
+                if (stats) {
+                    streams.append(avbStreamStatsToDict(streamId, *stats));
+                    continue;
+                }
+
+                py::dict unavailable;
+                unavailable["stream_id"] = streamId;
+                unavailable["available"] = false;
+                unavailable["error"] = error.empty() ? "Stream not found" : error;
+                streams.append(std::move(unavailable));
+            }
+        } catch (...) {
+        }
+
         return streams;
     }, "Get statistics for all active AVB streams");
 
     m.def("get_avb_interface_info", [](const std::string& interface_name) {
         py::dict info;
-        #ifdef HAS_AVB
-            // In real implementation, would query:
-            // - Interface MAC address
-            // - Link speed
-            // - TSN capabilities (hw timestamping, CBS, ETF)
-            // - Current PTP sync status
-
+        try {
+            const auto ifaceInfo = getModuleEngine().getAvbInterfaceInfo(interface_name);
+            info["interface"] = ifaceInfo.interfaceName;
+            info["available"] = ifaceInfo.available;
+            info["avb_enabled"] = ifaceInfo.avbEnabled;
+            info["interface_exists"] = ifaceInfo.interfaceExists;
+            info["ptp_ready"] = ifaceInfo.ptpReady;
+            info["error"] = ifaceInfo.error;
+        } catch (const std::exception& exc) {
             info["interface"] = interface_name;
             info["available"] = false;
-            info["error"] = "Not implemented";
-        #else
+            info["avb_enabled"] = false;
+            info["interface_exists"] = false;
+            info["ptp_ready"] = false;
+            info["error"] = std::string(exc.what());
+        } catch (...) {
+            info["interface"] = interface_name;
             info["available"] = false;
-            info["error"] = "AVB not compiled (USE_AVB=OFF)";
-        #endif
+            info["avb_enabled"] = false;
+            info["interface_exists"] = false;
+            info["ptp_ready"] = false;
+            info["error"] = std::string("Unknown AVB interface error");
+        }
         return info;
     }, py::arg("interface_name"),
        "Get AVB interface information");
@@ -4503,49 +4678,53 @@ PYBIND11_MODULE(map2_audio_engine, m) {
     // ========================================
 
     #ifdef HAS_AVDECC
-    // Placeholder bindings for AVDECC
-    // Full integration requires:
-    // 1. Adding AvdeccEntity* member to Map2AudioEngine
-    // 2. Exposing getAvdeccEntity() method
-    // 3. Lifecycle management (init/shutdown)
-
     m.def("is_avdecc_available", []() -> bool {
-        // Check if AVDECC is compiled in
-        return true;
+        try {
+            auto* avdecc = getModuleEngine().getAvdeccEntity();
+            return avdecc != nullptr && avdecc->isRunning();
+        } catch (...) {
+            return false;
+        }
     }, "Check if AVDECC is available in this build (compile-time check)");
 
     m.def("get_avdecc_entities", []() -> py::list {
         py::list entities;
+        try {
+            auto* avdecc = getModuleEngine().getAvdeccEntity();
+            if (!avdecc) {
+                return entities;
+            }
 
-        // TODO: Access global/singleton AvdeccEntity instance
-        // For now, return empty list as placeholder
-        // Full implementation:
-        //   auto* avdecc = Map2AudioEngine::getAvdeccEntity();
-        //   if (avdecc) {
-        //       auto discovered = avdecc->getDiscoveredEntities();
-        //       for (const auto& entity : discovered) { ... }
-        //   }
+            auto discovered = avdecc->getDiscoveredEntities();
+            for (const auto& entity : discovered) {
+                entities.append(avdeccEntityToDict(entity));
+            }
+        } catch (...) {
+        }
 
         return entities;
-    }, "Get list of discovered AVDECC entities (placeholder - returns empty)");
+    }, "Get list of discovered AVDECC entities");
 
     m.def("get_avdecc_entity_model", [](uint64_t entity_id) -> py::object {
-        // TODO: Access entity model from global AvdeccEntity instance
-        // For now, return None as placeholder
-        // Full implementation:
-        //   auto* avdecc = Map2AudioEngine::getAvdeccEntity();
-        //   if (avdecc) {
-        //       auto discovered = avdecc->getDiscoveredEntities();
-        //       for (auto& entity : discovered) {
-        //           if (entity.entity_id == entity_id && entity.model_) {
-        //               return py::cast(entity.model_->toJSON());
-        //           }
-        //       }
-        //   }
+        try {
+            auto* avdecc = getModuleEngine().getAvdeccEntity();
+            if (!avdecc) {
+                return py::none();
+            }
+
+            auto discovered = avdecc->getDiscoveredEntities();
+            for (const auto& entity : discovered) {
+                if (entity.entity_id == entity_id && entity.model_) {
+                    py::module_ json_module = py::module_::import("json");
+                    return json_module.attr("loads")(entity.model_->toJSON());
+                }
+            }
+        } catch (...) {
+        }
 
         return py::none();
     }, py::arg("entity_id"),
-       "Get complete entity model as JSON dict (placeholder - returns None)");
+       "Get complete entity model as JSON dict");
 
     #else
     // AVDECC not compiled - provide stub functions

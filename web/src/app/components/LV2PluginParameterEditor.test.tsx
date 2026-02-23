@@ -1,6 +1,30 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import '@testing-library/jest-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LV2PluginParameterEditor from './LV2PluginParameterEditor';
+
+jest.mock('../../map2/api', () => ({
+  getWsBaseUrl: jest.fn(() => 'ws://localhost:8080'),
+  pluginsApi: {
+    setParameterBatched: jest.fn().mockResolvedValue(undefined),
+    flushParameterBatch: jest.fn(),
+  },
+  pluginPresetsApi: {
+    getByPluginUri: jest.fn().mockResolvedValue([]),
+    create: jest.fn().mockResolvedValue({ id: 1, name: 'Test Preset' }),
+    load: jest.fn().mockResolvedValue(undefined),
+    toggleFavorite: jest.fn().mockResolvedValue(undefined),
+  },
+  chainsApi: {
+    list: jest.fn().mockResolvedValue([]),
+    addPlugin: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
+jest.mock('../hooks/usePluginOutputs', () => ({
+  usePluginOutput: () => ({ outputPorts: {} }),
+}));
 
 describe('LV2PluginParameterEditor', () => {
   const queryClient = new QueryClient();
@@ -8,8 +32,28 @@ describe('LV2PluginParameterEditor', () => {
     uri: 'test-lv2-plugin',
     name: 'Test LV2 Plugin',
     parameters: [
-      { index: 0, symbol: 'gain', value: 0.5, default: 0.5 },
-      { index: 1, symbol: 'frequency', value: 440, default: 440 },
+      {
+        index: 0,
+        symbol: 'gain',
+        name: 'gain',
+        value: 0.5,
+        default: 0.5,
+        min: 0,
+        max: 1,
+        is_toggled: false,
+        is_log: false,
+      },
+      {
+        index: 1,
+        symbol: 'frequency',
+        name: 'frequency',
+        value: 440,
+        default: 440,
+        min: 20,
+        max: 20000,
+        is_toggled: false,
+        is_log: true,
+      },
     ],
   };
 
@@ -31,10 +75,11 @@ describe('LV2PluginParameterEditor', () => {
       </QueryClientProvider>
     );
 
-    fireEvent.change(screen.getByPlaceholderText('Preset Name'), {
+    fireEvent.click(screen.getAllByText('Save')[0]);
+    fireEvent.change(screen.getByPlaceholderText('Preset name...'), {
       target: { value: 'Test Preset' },
     });
-    fireEvent.click(screen.getByText('Save Preset'));
+    fireEvent.click(screen.getAllByText('Save')[1]);
 
     expect(await screen.findByText('Preset saved successfully!')).toBeInTheDocument();
   });

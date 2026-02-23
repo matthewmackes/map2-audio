@@ -17,6 +17,7 @@ import hashlib
 import inspect
 import json
 import socket
+import uuid
 from urllib.parse import urlparse
 from typing import Any, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
@@ -104,6 +105,7 @@ class AudioEndpoint:
     mac_address: Optional[str] = None  # For AVDECC devices
     node_id: Optional[str] = None  # Owning node identifier (MAP2 or AVDECC synthetic ID)
     node_address: Optional[str] = None  # For MAP2 nodes (http://...)
+    host: Optional[str] = None  # Source host label for UI and diagnostics
     available: bool = True
     last_seen: datetime = field(default_factory=datetime.now)
 
@@ -123,6 +125,7 @@ class StreamConnection:
     connection_count: int = 0  # ACMP connection count
     srp_reservation_id: Optional[str] = None
     srp_admission_id: Optional[str] = None
+    flow_trace_id: Optional[str] = None
 
     def connection_id(self) -> str:
         """Unique identifier for this connection"""
@@ -136,6 +139,27 @@ class AvbRouter:
     Manages stream connections between talkers and listeners.
     Supports MAP2 nodes and AVDECC third-party devices.
     """
+
+    _AVDECC_SAMPLE_RATE_FROM_CODE: Dict[int, int] = {
+        0x01: 8000,
+        0x02: 16000,
+        0x03: 32000,
+        0x04: 44100,
+        0x05: 48000,
+        0x06: 88200,
+        0x07: 96000,
+        0x08: 176400,
+        0x09: 192000,
+    }
+    _AVDECC_FORMAT_BITS_PER_SAMPLE: Dict[int, str] = {
+        8: "8-bit PCM",
+        16: "16-bit PCM",
+        20: "20-bit PCM",
+        24: "24-bit PCM",
+        32: "32-bit PCM",
+    }
+    _DEFAULT_AVDECC_CHANNELS = 1
+    _DEFAULT_AVDECC_SAMPLE_RATE = 1
 
     def __init__(self, engine_service=None, avdecc_entity=None):
         """
@@ -154,6 +178,11 @@ class AvbRouter:
         self._discovery_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
         self._running = False
+        self._discovery_cycles = 0
+        self._cleanup_cycles = 0
+        self._stale_removed_total = 0
+        self._last_discovery_error: Optional[str] = None
+        self._last_cleanup_error: Optional[str] = None
 
     async def start(self):
         """Start router services"""
@@ -197,6 +226,11 @@ class AvbRouter:
 
         logger.info("AVB Router stopped")
 
+    @property
+    def is_running(self) -> bool:
+        """Return whether router background loops are active."""
+        return self._running
+
     # ========================================================================
     # Discovery
     # ========================================================================
@@ -235,6 +269,457 @@ class AvbRouter:
         except Exception:
             return fallback
 
+    @staticmethod
+    def _coerce_format_int(value: Any, fallback: int) -> int:
+        """Parse int-like values and hex-style strings safely."""
+        if value is None:
+            return fallback
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip()
+            if not normalized:
+                return fallback
+            try:
+                return int(normalized, 0)
+            except Exception:
+                pass
+            if any(ch in "abcdefABCDEF" for ch in normalized):
+                try:
+                    return int(normalized, 16)
+                except Exception:
+                    return fallback
+            return fallback
+        try:
+            return int(value)
+        except Exception:
+            return fallback
+
+    @classmethod
+    def _parse_avdecc_stream_format(cls, current_format: Any) -> Dict[str, int]:
+        """Decode IEEE 1722.1 stream format into key fields."""
+        value = cls._coerce_format_int(current_format, 0)
+        if value <= 0:
+            return {}
+
+        sample_rate_code = value & 0xFFFF
+        return {
+            "channels": (value >> 32) & 0xFF,
+            "sample_rate": cls._AVDECC_SAMPLE_RATE_FROM_CODE.get(sample_rate_code, 0),
+            "bits_per_sample": (value >> 24) & 0xFF,
+        }
+
+    @classmethod
+    def _label_avdecc_format_bits(cls, bits_per_sample: Any) -> str:
+        return cls._AVDECC_FORMAT_BITS_PER_SAMPLE.get(
+            int(bits_per_sample),
+            "Unknown PCM",
+        )
+
+    @staticmethod
+    def _coerce_bool(value: Any, fallback: bool = False) -> bool:
+        """Parse bool-like values safely."""
+        if value is None:
+            return fallback
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on"}:
+                return True
+            if normalized in {"0", "false", "no", "off", ""}:
+                return False
+        return fallback
+
+    @staticmethod
+    def _new_flow_trace_id(prefix: str) -> str:
+        return f"{prefix}-{uuid.uuid4().hex[:12]}"
+
+    def _record_flow_stage(
+        self,
+        *,
+        result: Dict[str, Any],
+        trace_id: str,
+        stage: str,
+        status: str,
+        detail: Optional[str] = None,
+    ) -> None:
+        stages = result.setdefault("stages", [])
+        payload: Dict[str, str] = {"stage": stage, "status": status}
+        if detail:
+            payload["detail"] = detail
+        stages.append(payload)
+
+        detail_text = f" detail={detail}" if detail else ""
+        log_line = f"avb-flow trace={trace_id} stage={stage} status={status}{detail_text}"
+        if status in {"error", "failed"}:
+            logger.error(log_line)
+        elif status in {"warning", "retry"}:
+            logger.warning(log_line)
+        else:
+            logger.info(log_line)
+
+    @staticmethod
+    def _is_transient_operation_error(error: Optional[str]) -> bool:
+        """Best-effort classifier for retryable transport/control-plane failures."""
+        message = str(error or "").lower()
+        if not message:
+            return False
+
+        transient_markers = (
+            "timeout",
+            "timed out",
+            "temporar",
+            "try again",
+            "eagain",
+            "wouldblock",
+            "connection reset",
+            "connection refused",
+            "network",
+            "unavailable",
+            "busy",
+            "503",
+            "502",
+            "504",
+        )
+        return any(marker in message for marker in transient_markers)
+
+    async def _execute_with_backoff_retry(
+        self,
+        *,
+        operation: str,
+        action,
+        trace_id: Optional[str] = None,
+    ) -> Tuple[bool, str]:
+        """Run operation with bounded backoff retries for transient failures."""
+        try:
+            max_attempts = max(1, int(config_get("avb.router.retry.max_attempts", 3)))
+        except Exception:
+            max_attempts = 3
+
+        try:
+            base_delay_ms = max(0, int(config_get("avb.router.retry.base_delay_ms", 100)))
+        except Exception:
+            base_delay_ms = 100
+
+        try:
+            max_delay_ms = max(base_delay_ms, int(config_get("avb.router.retry.max_delay_ms", 1000)))
+        except Exception:
+            max_delay_ms = max(base_delay_ms, 1000)
+
+        last_error = ""
+        for attempt in range(1, max_attempts + 1):
+            ok, err = await action()
+            if ok:
+                return True, ""
+
+            last_error = str(err or f"{operation} failed")
+            should_retry = attempt < max_attempts and self._is_transient_operation_error(last_error)
+            if not should_retry:
+                return False, last_error
+
+            delay_ms = min(base_delay_ms * (2 ** (attempt - 1)), max_delay_ms)
+            if trace_id:
+                logger.warning(
+                    "avb-flow trace=%s stage=%s status=retry attempt=%s/%s detail=%s",
+                    trace_id,
+                    operation,
+                    attempt + 1,
+                    max_attempts,
+                    last_error,
+                )
+            else:
+                logger.warning(
+                    "Retrying %s (%s/%s) after transient failure: %s",
+                    operation,
+                    attempt + 1,
+                    max_attempts,
+                    last_error,
+                )
+            if delay_ms > 0:
+                await asyncio.sleep(delay_ms / 1000.0)
+
+        return False, last_error
+
+    @staticmethod
+    def _read_entity_field(entity: Any, *names: str, default: Any = None) -> Any:
+        """Read a field from object or dict-like AVDECC entity payloads."""
+        if entity is None:
+            return default
+
+        for name in names:
+            try:
+                if isinstance(entity, dict):
+                    if name in entity and entity[name] is not None:
+                        return entity[name]
+                elif hasattr(entity, name):
+                    value = getattr(entity, name)
+                    if value is not None:
+                        return value
+            except Exception:
+                continue
+
+        return default
+
+    def _resolve_avdecc_callable(self, names: Tuple[str, ...]) -> Optional[Any]:
+        """Resolve a callable on avdecc_entity by probing common method names."""
+        if self.avdecc_entity is None:
+            return None
+        for name in names:
+            candidate = getattr(self.avdecc_entity, name, None)
+            if callable(candidate):
+                return candidate
+        return None
+
+    @staticmethod
+    def _normalize_avdecc_entity_id(raw: Any) -> Optional[str]:
+        """Normalize AVDECC entity ID into a 16-char lowercase hex string."""
+        if raw is None:
+            return None
+
+        try:
+            if isinstance(raw, int):
+                if raw < 0:
+                    return None
+                return f"{raw:016x}"
+            text = str(raw).strip().lower().replace("0x", "")
+            if not text:
+                return None
+            if len(text) <= 16 and all(ch in "0123456789abcdef" for ch in text):
+                return text.zfill(16)
+        except Exception:
+            return None
+
+        return None
+
+    @staticmethod
+    def _normalize_mac_address(raw: Any) -> Optional[str]:
+        """Normalize MAC address from bytes/list/string to aa:bb:cc:dd:ee:ff."""
+        if raw is None:
+            return None
+
+        if isinstance(raw, str):
+            normalized = raw.strip().lower().replace("-", ":")
+            parts = [part for part in normalized.split(":") if part]
+            if len(parts) == 6 and all(len(part) <= 2 for part in parts):
+                try:
+                    bytes_parsed = [int(part, 16) for part in parts]
+                    if all(0 <= b <= 255 for b in bytes_parsed):
+                        return ":".join(f"{b:02x}" for b in bytes_parsed)
+                except Exception:
+                    return None
+            return None
+
+        if isinstance(raw, (list, tuple)) and len(raw) == 6:
+            try:
+                bytes_parsed = [int(item) & 0xFF for item in raw]
+                return ":".join(f"{b:02x}" for b in bytes_parsed)
+            except Exception:
+                return None
+
+        return None
+
+    def _resolve_avdecc_host_label(self, entity: Any, entity_id: str) -> str:
+        """Resolve best host label for AVDECC endpoint attribution."""
+        explicit_host = self._read_entity_field(
+            entity,
+            "host",
+            "hostname",
+            "node_host",
+            "nodeHost",
+            default=None,
+        )
+        if explicit_host:
+            host = str(explicit_host).strip()
+            if host:
+                return host
+
+        node_address = self._read_entity_field(entity, "node_address", "nodeAddress", default=None)
+        parsed_host = self._parse_host(str(node_address)) if node_address else ""
+        if parsed_host:
+            return parsed_host
+
+        group_name = self._read_entity_field(entity, "group_name", "groupName", default=None)
+        if group_name:
+            host = str(group_name).strip()
+            if host:
+                return host
+
+        mac_address = self._normalize_mac_address(
+            self._read_entity_field(entity, "mac_address", "macAddress", default=None)
+        )
+        if mac_address:
+            return mac_address
+
+        return f"entity-{entity_id[:8]}"
+
+    def _resolve_avdecc_stream_profiles(
+        self,
+        entity: Any,
+        direction: StreamDirection,
+    ) -> List[Dict[str, Any]]:
+        """Normalize optional AVDECC stream profile metadata when available."""
+        raw_streams = self._read_entity_field(
+            entity,
+            "streams",
+            "avb_streams",
+            "stream_profiles",
+            "streamProfiles",
+        )
+        if not isinstance(raw_streams, list):
+            raw_streams = []
+
+        if not raw_streams:
+            if direction == StreamDirection.TALKER:
+                raw_streams = self._read_entity_field(
+                    entity,
+                    "stream_inputs",
+                    "streamInputs",
+                    default=[],
+                )
+            elif direction == StreamDirection.LISTENER:
+                raw_streams = self._read_entity_field(
+                    entity,
+                    "stream_outputs",
+                    "streamOutputs",
+                    default=[],
+                )
+            else:
+                raw_streams = []
+
+            if not raw_streams:
+                config_like = self._read_entity_field(
+                    entity,
+                    "current_config",
+                    "currentConfig",
+                    default=None,
+                )
+                if isinstance(config_like, dict):
+                    if direction == StreamDirection.TALKER:
+                        raw_streams = self._read_entity_field(
+                            config_like,
+                            "stream_inputs",
+                            "streamInputs",
+                            default=[],
+                        )
+                    elif direction == StreamDirection.LISTENER:
+                        raw_streams = self._read_entity_field(
+                            config_like,
+                            "stream_outputs",
+                            "streamOutputs",
+                            default=[],
+                        )
+
+            if not raw_streams:
+                configurations = self._read_entity_field(
+                    entity,
+                    "configurations",
+                    default=[],
+                )
+                if isinstance(configurations, list) and configurations:
+                    config_like = configurations[0]
+                    if direction == StreamDirection.TALKER:
+                        raw_streams = self._read_entity_field(
+                            config_like,
+                            "stream_inputs",
+                            "streamInputs",
+                            default=[],
+                        )
+                    elif direction == StreamDirection.LISTENER:
+                        raw_streams = self._read_entity_field(
+                            config_like,
+                            "stream_outputs",
+                            "streamOutputs",
+                            default=[],
+                        )
+
+            if not isinstance(raw_streams, list):
+                raw_streams = []
+
+        profiles: List[Dict[str, Any]] = []
+        for stream in raw_streams:
+            if not isinstance(stream, dict):
+                continue
+
+            direction_raw = str(stream.get("direction", "")).strip().lower()
+            if direction_raw and direction_raw != direction.value:
+                continue
+
+            format_metadata = self._parse_avdecc_stream_format(
+                self._read_entity_field(
+                    stream,
+                    "current_format",
+                    "currentFormat",
+                    default=None,
+                )
+            )
+            unique_id = self._coerce_int(
+                self._read_entity_field(
+                    stream,
+                    "unique_id",
+                    "stream_index",
+                    "streamIndex",
+                    default=len(profiles),
+                ),
+                len(profiles),
+            )
+            channels = self._coerce_int(
+                self._read_entity_field(
+                    stream,
+                    "channels",
+                    "channel_count",
+                    "channelCount",
+                    default=self._coerce_int(
+                        format_metadata.get("channels"),
+                        self._DEFAULT_AVDECC_CHANNELS,
+                    ),
+                ),
+                self._DEFAULT_AVDECC_CHANNELS,
+            )
+            sample_rate = self._coerce_int(
+                self._read_entity_field(
+                    stream,
+                    "sample_rate",
+                    "sampleRate",
+                    default=self._coerce_int(
+                        format_metadata.get("sample_rate"),
+                        self._DEFAULT_AVDECC_SAMPLE_RATE,
+                    ),
+                ),
+                self._DEFAULT_AVDECC_SAMPLE_RATE,
+            )
+            bits_per_sample = self._coerce_int(
+                self._read_entity_field(
+                    stream,
+                    "bits_per_sample",
+                    "bitsPerSample",
+                    default=format_metadata.get("bits_per_sample", 0),
+                ),
+                format_metadata.get("bits_per_sample", 0),
+            )
+            audio_format = str(
+                self._read_entity_field(
+                    stream,
+                    "format",
+                    "audio_format",
+                    default=self._label_avdecc_format_bits(bits_per_sample),
+                )
+                or self._label_avdecc_format_bits(bits_per_sample)
+            )
+
+            profiles.append(
+                {
+                    "unique_id": unique_id,
+                    "channels": max(1, channels),
+                    "sample_rate": max(1, sample_rate),
+                    "format": audio_format,
+                }
+            )
+
+        return profiles
+
     def _build_engine_discovered_devices_payload(self) -> List[Dict[str, Any]]:
         """Build normalized discovered endpoint payload for the JUCE engine cache."""
         payload: List[Dict[str, Any]] = []
@@ -242,7 +727,7 @@ class AvbRouter:
             endpoint_id = endpoint.endpoint_id()
             direction = endpoint.direction.value
             source = str(endpoint.device_type or "unknown")
-            host = self._parse_host(endpoint.node_address)
+            host = str(endpoint.host or self._parse_host(endpoint.node_address)).strip()
             label_source = endpoint.device_name or source or "endpoint"
             display_name = f"AVB {direction.title()} [{label_source}::{endpoint_id}]"
 
@@ -293,12 +778,15 @@ class AvbRouter:
     async def _discovery_loop(self):
         """Periodically discover endpoints"""
         while self._running:
+            self._discovery_cycles += 1
             try:
                 await self._discover_map2_endpoints()
                 await self._discover_avdecc_endpoints()
                 await self._sync_engine_discovered_devices()
+                self._last_discovery_error = None
             except Exception as e:
                 logger.error(f"Discovery error: {e}")
+                self._last_discovery_error = str(e)
 
             await asyncio.sleep(5)  # Discovery every 5 seconds
 
@@ -365,6 +853,7 @@ class AvbRouter:
                         mac_address=mac_address,
                         node_id=node_id,
                         node_address=node_address,
+                        host=self._parse_host(node_address),
                         available=True,
                         last_seen=datetime.now(),
                     )
@@ -378,45 +867,180 @@ class AvbRouter:
             return
 
         try:
-            # Get discovered entities from AVDECC
-            entities = await asyncio.to_thread(
-                self.avdecc_entity.getDiscoveredEntities
+            discover_fn = self._resolve_avdecc_callable(
+                (
+                    "getDiscoveredEntities",
+                    "get_discovered_entities",
+                    "get_avdecc_entities",
+                    "getAvdeccEntities",
+                )
             )
+            if discover_fn is None:
+                return
+
+            entities = discover_fn()
+            if inspect.isawaitable(entities):
+                entities = await entities
+            if entities is None:
+                return
 
             for entity in entities:
-                if not entity.available:
+                available = self._coerce_bool(
+                    self._read_entity_field(entity, "available", default=True),
+                    True,
+                )
+                if not available:
                     continue
 
-                entity_id_str = format(entity.entity_id, '016x')
+                entity_id_raw = self._read_entity_field(entity, "entity_id", "entityId", default=None)
+                entity_id_str = self._normalize_avdecc_entity_id(entity_id_raw)
+                if entity_id_str is None:
+                    continue
+
+                entity_name_raw = self._read_entity_field(entity, "entity_name", "device_name", "name", default=None)
+                base_name = str(entity_name_raw).strip() if entity_name_raw else f"AVDECC-{entity_id_str[:8]}"
+
+                host_label = self._resolve_avdecc_host_label(entity, entity_id_str)
+                host_name_for_title = host_label.strip().lower()
+                titled_device_name = (
+                    base_name
+                    if not host_name_for_title or host_name_for_title in base_name.lower()
+                    else f"{base_name} @ {host_label}"
+                )
+
+                mac_address = self._normalize_mac_address(
+                    self._read_entity_field(entity, "mac_address", "macAddress", default=None)
+                )
+                host_token = "".join(
+                    ch.lower() if ch.isalnum() or ch in {"-", "."} else "-"
+                    for ch in host_label
+                ).strip("-")
+                if not host_token:
+                    host_token = f"entity-{entity_id_str[:8]}"
+                node_address = f"avdecc://{host_token}"
+                node_id = f"avdecc-{entity_id_str}"
+
+                talker_stream_count = self._coerce_int(
+                    self._read_entity_field(
+                        entity,
+                        "talker_stream_sources",
+                        "talker_streams",
+                        "talkerStreams",
+                        default=0,
+                    ),
+                    0,
+                )
+                listener_stream_count = self._coerce_int(
+                    self._read_entity_field(
+                        entity,
+                        "listener_stream_sinks",
+                        "listener_streams",
+                        "listenerStreams",
+                        default=0,
+                    ),
+                    0,
+                )
+
+                capabilities = self._read_entity_field(entity, "capabilities", default={})
+                if isinstance(capabilities, dict):
+                    if talker_stream_count <= 0:
+                        talker_stream_count = self._coerce_int(
+                            capabilities.get("talker_streams", capabilities.get("talker_stream_sources", 0)),
+                            0,
+                        )
+                    if listener_stream_count <= 0:
+                        listener_stream_count = self._coerce_int(
+                            capabilities.get("listener_streams", capabilities.get("listener_stream_sinks", 0)),
+                            0,
+                        )
+
+                talker_profiles = self._resolve_avdecc_stream_profiles(entity, StreamDirection.TALKER)
+                listener_profiles = self._resolve_avdecc_stream_profiles(entity, StreamDirection.LISTENER)
+                if talker_stream_count <= 0 and talker_profiles:
+                    talker_stream_count = len(talker_profiles)
+                if listener_stream_count <= 0 and listener_profiles:
+                    listener_stream_count = len(listener_profiles)
 
                 # Register talker endpoints
-                for i in range(entity.talker_stream_sources):
+                for i in range(max(0, talker_stream_count)):
+                    stream_profile = (
+                        talker_profiles[i]
+                        if i < len(talker_profiles)
+                        else {
+                            "unique_id": i,
+                            "channels": self._DEFAULT_AVDECC_CHANNELS,
+                            "sample_rate": self._DEFAULT_AVDECC_SAMPLE_RATE,
+                            "format": "24-bit PCM",
+                        }
+                    )
                     endpoint = AudioEndpoint(
                         entity_id=entity_id_str,
-                        unique_id=i,
+                        unique_id=self._coerce_int(stream_profile.get("unique_id", i), i),
                         direction=StreamDirection.TALKER,
                         device_type="avdecc",
-                        device_name=entity.entity_name or f"AVDECC-{entity_id_str[:8]}",
-                        channels=2,  # Default, would query via AECP
-                        sample_rate=48000,  # Default
-                        mac_address=":".join(f"{b:02x}" for b in entity.mac_address),
-                        node_id=f"avdecc-{entity_id_str}",
+                        device_name=titled_device_name,
+                        channels=max(
+                            1,
+                            self._coerce_int(
+                                stream_profile.get("channels"),
+                                self._DEFAULT_AVDECC_CHANNELS,
+                            ),
+                        ),
+                        sample_rate=max(
+                            1,
+                            self._coerce_int(
+                                stream_profile.get("sample_rate"),
+                                self._DEFAULT_AVDECC_SAMPLE_RATE,
+                            ),
+                        ),
+                        format=str(stream_profile.get("format") or "24-bit PCM"),
+                        mac_address=mac_address,
+                        node_id=node_id,
+                        node_address=node_address,
+                        host=host_label,
+                        available=available,
                         last_seen=datetime.now()
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint
 
                 # Register listener endpoints
-                for i in range(entity.listener_stream_sinks):
+                for i in range(max(0, listener_stream_count)):
+                    stream_profile = (
+                        listener_profiles[i]
+                        if i < len(listener_profiles)
+                        else {
+                            "unique_id": i,
+                            "channels": self._DEFAULT_AVDECC_CHANNELS,
+                            "sample_rate": self._DEFAULT_AVDECC_SAMPLE_RATE,
+                            "format": "24-bit PCM",
+                        }
+                    )
                     endpoint = AudioEndpoint(
                         entity_id=entity_id_str,
-                        unique_id=i,
+                        unique_id=self._coerce_int(stream_profile.get("unique_id", i), i),
                         direction=StreamDirection.LISTENER,
                         device_type="avdecc",
-                        device_name=entity.entity_name or f"AVDECC-{entity_id_str[:8]}",
-                        channels=2,
-                        sample_rate=48000,
-                        mac_address=":".join(f"{b:02x}" for b in entity.mac_address),
-                        node_id=f"avdecc-{entity_id_str}",
+                        device_name=titled_device_name,
+                        channels=max(
+                            1,
+                            self._coerce_int(
+                                stream_profile.get("channels"),
+                                self._DEFAULT_AVDECC_CHANNELS,
+                            ),
+                        ),
+                        sample_rate=max(
+                            1,
+                            self._coerce_int(
+                                stream_profile.get("sample_rate"),
+                                self._DEFAULT_AVDECC_SAMPLE_RATE,
+                            ),
+                        ),
+                        format=str(stream_profile.get("format") or "24-bit PCM"),
+                        mac_address=mac_address,
+                        node_id=node_id,
+                        node_address=node_address,
+                        host=host_label,
+                        available=available,
                         last_seen=datetime.now()
                     )
                     self.endpoints[endpoint.endpoint_id()] = endpoint
@@ -428,6 +1052,7 @@ class AvbRouter:
         """Remove stale endpoints"""
         while self._running:
             await asyncio.sleep(30)  # Cleanup every 30 seconds
+            self._cleanup_cycles += 1
 
             try:
                 now = datetime.now()
@@ -442,11 +1067,14 @@ class AvbRouter:
                 for endpoint_id in stale_endpoints:
                     logger.info(f"Removing stale endpoint: {endpoint_id}")
                     del self.endpoints[endpoint_id]
+                self._stale_removed_total += len(stale_endpoints)
                 if stale_endpoints:
                     await self._sync_engine_discovered_devices()
+                self._last_cleanup_error = None
 
             except Exception as e:
                 logger.error(f"Cleanup error: {e}")
+                self._last_cleanup_error = str(e)
 
     # ========================================================================
     # Connection Management
@@ -480,6 +1108,28 @@ class AvbRouter:
 
         normalized = str(node_address).strip().split("/", 1)[0].split("@")[-1]
         return normalized.split(":", 1)[0].strip()
+
+    @staticmethod
+    def _coerce_optional_text(value: Any) -> Optional[str]:
+        """Normalize optional text fields to non-empty strings."""
+        if value is None:
+            return None
+        parsed = str(value).strip()
+        return parsed or None
+
+    def _resolve_endpoint_node_id(self, endpoint: AudioEndpoint) -> str:
+        """Resolve deterministic endpoint node id from explicit id, host, or address."""
+        node_id = self._coerce_optional_text(endpoint.node_id)
+        if node_id:
+            return node_id
+
+        host = self._coerce_optional_text(endpoint.host) or self._coerce_optional_text(
+            self._parse_host(endpoint.node_address)
+        )
+        if host:
+            return host
+
+        return "local"
 
     def _is_local_node_address(self, node_address: Optional[str]) -> bool:
         """Best-effort check whether a node address points to this host."""
@@ -556,6 +1206,14 @@ class AvbRouter:
                 dest_mac=stream_config.get("dest_mac"),
                 presentation_offset_us=int(stream_config.get("presentation_offset_us", 2000)),
                 priority=int(stream_config.get("priority", 3)),
+                owner_node_id=self._coerce_optional_text(stream_config.get("owner_node_id")),
+                peer_node_id=self._coerce_optional_text(stream_config.get("peer_node_id")),
+                owner_endpoint_id=self._coerce_optional_text(stream_config.get("owner_endpoint_id")),
+                peer_endpoint_id=self._coerce_optional_text(stream_config.get("peer_endpoint_id")),
+                talker_node_id=self._coerce_optional_text(stream_config.get("talker_node_id")),
+                listener_node_id=self._coerce_optional_text(stream_config.get("listener_node_id")),
+                talker_endpoint_id=self._coerce_optional_text(stream_config.get("talker_endpoint_id")),
+                listener_endpoint_id=self._coerce_optional_text(stream_config.get("listener_endpoint_id")),
             )
 
             create_result = await avb_service.create_stream(cfg)
@@ -638,7 +1296,15 @@ class AvbRouter:
             True if connection initiated successfully, or structured result payload
             when return_details=True.
         """
-        result: Dict[str, Any] = {"success": False}
+        trace_id = self._new_flow_trace_id("connect")
+        result: Dict[str, Any] = {"success": False, "trace_id": trace_id}
+        self._record_flow_stage(
+            result=result,
+            trace_id=trace_id,
+            stage="connect.start",
+            status="ok",
+            detail=f"{talker_id}->{listener_id}",
+        )
         talker = self.endpoints.get(talker_id)
         listener = self.endpoints.get(listener_id)
 
@@ -649,6 +1315,13 @@ class AvbRouter:
                     result["srp_release_warning"] = warning
             logger.error(f"Endpoint not found: talker={talker_id}, listener={listener_id}")
             result["reason"] = "Endpoint not found"
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.validate_endpoints",
+                status="error",
+                detail=result["reason"],
+            )
             return result if return_details else False
 
         if talker.direction != StreamDirection.TALKER:
@@ -658,6 +1331,13 @@ class AvbRouter:
                     result["srp_release_warning"] = warning
             logger.error(f"Not a talker: {talker_id}")
             result["reason"] = "Not a talker"
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.validate_talker",
+                status="error",
+                detail=result["reason"],
+            )
             return result if return_details else False
 
         if listener.direction != StreamDirection.LISTENER:
@@ -667,7 +1347,21 @@ class AvbRouter:
                     result["srp_release_warning"] = warning
             logger.error(f"Not a listener: {listener_id}")
             result["reason"] = "Not a listener"
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.validate_listener",
+                status="error",
+                detail=result["reason"],
+            )
             return result if return_details else False
+
+        self._record_flow_stage(
+            result=result,
+            trace_id=trace_id,
+            stage="connect.validate_endpoints",
+            status="ok",
+        )
 
         if reservation_id is None and bool(config_get("avb.srp.enabled", True)):
             try:
@@ -698,27 +1392,91 @@ class AvbRouter:
                         admission.reason,
                     )
                     result["reason"] = f"SRP admission denied: {admission.reason_code}"
+                    self._record_flow_stage(
+                        result=result,
+                        trace_id=trace_id,
+                        stage="connect.srp_admit",
+                        status="error",
+                        detail=result["reason"],
+                    )
                     return result if return_details else False
                 if admission.decision == "allowed":
                     if not admission.reservation_id:
-                        logger.error(
-                            "SRP admission for %s returned allowed without reservation_id",
+                        message = "SRP admission returned allowed without reservation_id"
+                        if bool(config_get("avb.srp.required", True)):
+                            logger.error(
+                                "SRP admission for %s returned allowed without reservation_id",
+                                f"{talker_id}->{listener_id}",
+                            )
+                            result["reason"] = message
+                            self._record_flow_stage(
+                                result=result,
+                                trace_id=trace_id,
+                                stage="connect.srp_admit",
+                                status="error",
+                                detail=result["reason"],
+                            )
+                            return result if return_details else False
+                        logger.warning(
+                            "SRP admission optional for %s returned allowed without reservation_id",
                             f"{talker_id}->{listener_id}",
                         )
-                        if bool(config_get("avb.srp.required", True)):
-                            result["reason"] = "SRP admission returned allowed without reservation_id"
-                            return result if return_details else False
+                        self._record_flow_stage(
+                            result=result,
+                            trace_id=trace_id,
+                            stage="connect.srp_admit",
+                            status="warning",
+                            detail=message,
+                        )
                     else:
                         reservation_id = admission.reservation_id
                         admission_id = admission.admission_id
+                        self._record_flow_stage(
+                            result=result,
+                            trace_id=trace_id,
+                            stage="connect.srp_admit",
+                            status="ok",
+                            detail=f"allowed reservation={reservation_id}",
+                        )
                 elif admission.decision == "bypass":
                     # Preserve optional bypass and prevent redundant re-admission.
                     reservation_id = ""
+                    self._record_flow_stage(
+                        result=result,
+                        trace_id=trace_id,
+                        stage="connect.srp_admit",
+                        status="ok",
+                        detail="bypass",
+                    )
+                else:
+                    result["reason"] = f"Unexpected SRP admission decision: {admission.decision}"
+                    self._record_flow_stage(
+                        result=result,
+                        trace_id=trace_id,
+                        stage="connect.srp_admit",
+                        status="error",
+                        detail=result["reason"],
+                    )
+                    return result if return_details else False
             except Exception as exc:
                 logger.error("SRP admission error for %s: %s", f"{talker_id}->{listener_id}", exc)
                 if bool(config_get("avb.srp.required", True)):
                     result["reason"] = f"SRP admission error: {exc}"
+                    self._record_flow_stage(
+                        result=result,
+                        trace_id=trace_id,
+                        stage="connect.srp_admit",
+                        status="error",
+                        detail=result["reason"],
+                    )
                     return result if return_details else False
+        else:
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.srp_admit",
+                status="skipped",
+            )
 
         # Create connection
         connection = StreamConnection(
@@ -727,12 +1485,20 @@ class AvbRouter:
             state=ConnectionState.CONNECTING,
             srp_reservation_id=reservation_id,
             srp_admission_id=admission_id,
+            flow_trace_id=trace_id,
         )
 
         conn_id = connection.connection_id()
         self.connections[conn_id] = connection
 
         # Dispatch to appropriate handler
+        self._record_flow_stage(
+            result=result,
+            trace_id=trace_id,
+            stage="connect.dispatch",
+            status="ok",
+            detail=f"{talker.device_type}->{listener.device_type}",
+        )
         if talker.device_type == "map2" and listener.device_type == "map2":
             success = await self._connect_map2_to_map2(connection)
         elif talker.device_type == "avdecc" or listener.device_type == "avdecc":
@@ -740,6 +1506,13 @@ class AvbRouter:
         else:
             logger.error(f"Unsupported connection type: {talker.device_type} → {listener.device_type}")
             success = False
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.dispatch",
+                status="error",
+                detail="Unsupported connection type",
+            )
 
         if success:
             connection.state = ConnectionState.CONNECTED
@@ -747,6 +1520,13 @@ class AvbRouter:
             logger.info(f"Connected: {conn_id}")
             result["success"] = True
             result["connection_id"] = conn_id
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.complete",
+                status="ok",
+                detail=conn_id,
+            )
         else:
             if connection.srp_reservation_id:
                 reservation_to_release = connection.srp_reservation_id
@@ -773,6 +1553,21 @@ class AvbRouter:
                                 f" {getattr(release_result, 'reason', None)}"
                             ),
                         )
+                        self._record_flow_stage(
+                            result=result,
+                            trace_id=trace_id,
+                            stage="connect.rollback_release",
+                            status="warning",
+                            detail=reservation_to_release,
+                        )
+                    else:
+                        self._record_flow_stage(
+                            result=result,
+                            trace_id=trace_id,
+                            stage="connect.rollback_release",
+                            status="ok",
+                            detail=reservation_to_release,
+                        )
                 except Exception as exc:
                     logger.warning("SRP rollback release failed for %s: %s", conn_id, exc)
                     result["srp_release_warning"] = _build_srp_release_warning(
@@ -780,10 +1575,31 @@ class AvbRouter:
                         reservation_id=reservation_to_release,
                         detail=exc,
                     )
+                    self._record_flow_stage(
+                        result=result,
+                        trace_id=trace_id,
+                        stage="connect.rollback_release",
+                        status="warning",
+                        detail=str(exc),
+                    )
+            else:
+                self._record_flow_stage(
+                    result=result,
+                    trace_id=trace_id,
+                    stage="connect.rollback_release",
+                    status="skipped",
+                )
             connection.state = ConnectionState.ERROR
             connection.error_message = "Connection failed"
             logger.error(f"Connection failed: {conn_id}")
             result["reason"] = "Connection failed"
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="connect.complete",
+                status="error",
+                detail=result["reason"],
+            )
 
         return result if return_details else success
 
@@ -843,23 +1659,59 @@ class AvbRouter:
             True if disconnection successful, or structured result payload when
             return_details=True.
         """
+        trace_id = self._new_flow_trace_id("disconnect")
         conn_id = f"{talker_id}→{listener_id}"
         connection = self.connections.get(conn_id)
-        result: Dict[str, Any] = {"success": False}
+        result: Dict[str, Any] = {"success": False, "trace_id": trace_id}
+        self._record_flow_stage(
+            result=result,
+            trace_id=trace_id,
+            stage="disconnect.start",
+            status="ok",
+            detail=conn_id,
+        )
 
         if not connection:
             logger.warning(f"Connection not found: {conn_id}")
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="disconnect.lookup",
+                status="error",
+                detail="Connection not found",
+            )
             return result if return_details else False
 
+        self._record_flow_stage(
+            result=result,
+            trace_id=trace_id,
+            stage="disconnect.lookup",
+            status="ok",
+        )
         connection.state = ConnectionState.DISCONNECTING
+        connection.flow_trace_id = trace_id
 
         # Dispatch to appropriate handler
+        self._record_flow_stage(
+            result=result,
+            trace_id=trace_id,
+            stage="disconnect.dispatch",
+            status="ok",
+            detail=f"{connection.talker.device_type}->{connection.listener.device_type}",
+        )
         if connection.talker.device_type == "map2" and connection.listener.device_type == "map2":
             success = await self._disconnect_map2_to_map2(connection)
         elif connection.talker.device_type == "avdecc" or connection.listener.device_type == "avdecc":
             success = await self._disconnect_via_avdecc(connection)
         else:
             success = False
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="disconnect.dispatch",
+                status="error",
+                detail="Unsupported connection type",
+            )
 
         if success:
             if connection.srp_reservation_id:
@@ -893,6 +1745,21 @@ class AvbRouter:
                                 f" {getattr(release_result, 'reason', None)}"
                             ),
                         )
+                        self._record_flow_stage(
+                            result=result,
+                            trace_id=trace_id,
+                            stage="disconnect.release_srp",
+                            status="warning",
+                            detail=reservation_id,
+                        )
+                    else:
+                        self._record_flow_stage(
+                            result=result,
+                            trace_id=trace_id,
+                            stage="disconnect.release_srp",
+                            status="ok",
+                            detail=reservation_id,
+                        )
                 except Exception as exc:
                     logger.warning("SRP release raised for %s: %s", conn_id, exc)
                     result["srp_release_warning"] = _build_srp_release_warning(
@@ -900,13 +1767,41 @@ class AvbRouter:
                         reservation_id=reservation_id,
                         detail=exc,
                     )
+                    self._record_flow_stage(
+                        result=result,
+                        trace_id=trace_id,
+                        stage="disconnect.release_srp",
+                        status="warning",
+                        detail=str(exc),
+                    )
+            else:
+                self._record_flow_stage(
+                    result=result,
+                    trace_id=trace_id,
+                    stage="disconnect.release_srp",
+                    status="skipped",
+                )
             del self.connections[conn_id]
             logger.info(f"Disconnected: {conn_id}")
             result["success"] = True
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="disconnect.complete",
+                status="ok",
+                detail=conn_id,
+            )
         else:
             connection.state = ConnectionState.ERROR
             connection.error_message = "Disconnection failed"
             logger.error(f"Disconnection failed: {conn_id}")
+            self._record_flow_stage(
+                result=result,
+                trace_id=trace_id,
+                stage="disconnect.complete",
+                status="error",
+                detail="Disconnection failed",
+            )
 
         return result if return_details else success
 
@@ -917,9 +1812,14 @@ class AvbRouter:
     async def _connect_map2_to_map2(self, connection: StreamConnection) -> bool:
         """Connect two MAP2 nodes directly"""
         try:
+            trace_id = connection.flow_trace_id
             interface = config_get("avb.interface", "")
             buffer_size = int(config_get("audio.buffer_size", 256))
             priority = int(config_get("avb.stream_priority", 3))
+            talker_endpoint_id = connection.talker.endpoint_id()
+            listener_endpoint_id = connection.listener.endpoint_id()
+            talker_node_id = self._resolve_endpoint_node_id(connection.talker)
+            listener_node_id = self._resolve_endpoint_node_id(connection.listener)
 
             talker_config = {
                 "stream_id": self._build_stream_id(connection.talker, connection.listener, "talker"),
@@ -931,6 +1831,14 @@ class AvbRouter:
                 "dest_mac": connection.listener.mac_address or "91:e0:f0:00:fe:01",
                 "presentation_offset_us": 2000,
                 "priority": priority,
+                "owner_node_id": talker_node_id,
+                "peer_node_id": listener_node_id,
+                "owner_endpoint_id": talker_endpoint_id,
+                "peer_endpoint_id": listener_endpoint_id,
+                "talker_node_id": talker_node_id,
+                "listener_node_id": listener_node_id,
+                "talker_endpoint_id": talker_endpoint_id,
+                "listener_endpoint_id": listener_endpoint_id,
             }
 
             listener_config = {
@@ -942,18 +1850,53 @@ class AvbRouter:
                 "interface": interface,
                 "presentation_offset_us": 2000,
                 "priority": priority,
+                "owner_node_id": listener_node_id,
+                "peer_node_id": talker_node_id,
+                "owner_endpoint_id": listener_endpoint_id,
+                "peer_endpoint_id": talker_endpoint_id,
+                "talker_node_id": talker_node_id,
+                "listener_node_id": listener_node_id,
+                "talker_endpoint_id": talker_endpoint_id,
+                "listener_endpoint_id": listener_endpoint_id,
             }
 
-            talker_ok, talker_error = await self._provision_map2_stream(connection.talker, talker_config)
+            async def _provision_talker() -> Tuple[bool, str]:
+                return await self._provision_map2_stream(connection.talker, talker_config)
+
+            talker_ok, talker_error = await self._execute_with_backoff_retry(
+                operation=f"talker provision {connection.talker.endpoint_id()}",
+                action=_provision_talker,
+                trace_id=trace_id,
+            )
             if not talker_ok:
                 connection.error_message = f"talker provision failed: {talker_error}"
                 return False
 
-            listener_ok, listener_error = await self._provision_map2_stream(connection.listener, listener_config)
+            async def _provision_listener() -> Tuple[bool, str]:
+                return await self._provision_map2_stream(connection.listener, listener_config)
+
+            listener_ok, listener_error = await self._execute_with_backoff_retry(
+                operation=f"listener provision {connection.listener.endpoint_id()}",
+                action=_provision_listener,
+                trace_id=trace_id,
+            )
             if not listener_ok:
                 # Roll back talker if listener provisioning failed.
-                await self._deprovision_map2_stream(connection.talker, str(talker_config["stream_id"]))
-                connection.error_message = f"listener provision failed: {listener_error}"
+                async def _rollback_talker() -> Tuple[bool, str]:
+                    return await self._deprovision_map2_stream(connection.talker, str(talker_config["stream_id"]))
+
+                rollback_ok, rollback_error = await self._execute_with_backoff_retry(
+                    operation=f"talker rollback {connection.talker.endpoint_id()}",
+                    action=_rollback_talker,
+                    trace_id=trace_id,
+                )
+                if rollback_ok:
+                    connection.error_message = f"listener provision failed: {listener_error}"
+                else:
+                    connection.error_message = (
+                        f"listener provision failed: {listener_error}; "
+                        f"talker rollback failed: {rollback_error}"
+                    )
                 return False
 
             return True
@@ -965,11 +1908,27 @@ class AvbRouter:
     async def _disconnect_map2_to_map2(self, connection: StreamConnection) -> bool:
         """Disconnect two MAP2 nodes"""
         try:
+            trace_id = connection.flow_trace_id
             talker_stream_id = self._build_stream_id(connection.talker, connection.listener, "talker")
             listener_stream_id = self._build_stream_id(connection.listener, connection.talker, "listener")
 
-            talker_ok, talker_error = await self._deprovision_map2_stream(connection.talker, talker_stream_id)
-            listener_ok, listener_error = await self._deprovision_map2_stream(connection.listener, listener_stream_id)
+            async def _deprovision_talker() -> Tuple[bool, str]:
+                return await self._deprovision_map2_stream(connection.talker, talker_stream_id)
+
+            async def _deprovision_listener() -> Tuple[bool, str]:
+                return await self._deprovision_map2_stream(connection.listener, listener_stream_id)
+
+            # Attempt both sides even if one fails, so cleanup remains best-effort.
+            talker_ok, talker_error = await self._execute_with_backoff_retry(
+                operation=f"talker deprovision {connection.talker.endpoint_id()}",
+                action=_deprovision_talker,
+                trace_id=trace_id,
+            )
+            listener_ok, listener_error = await self._execute_with_backoff_retry(
+                operation=f"listener deprovision {connection.listener.endpoint_id()}",
+                action=_deprovision_listener,
+                trace_id=trace_id,
+            )
 
             if not talker_ok or not listener_ok:
                 errors = [err for err in [talker_error, listener_error] if err]
@@ -992,19 +1951,24 @@ class AvbRouter:
             return False
 
         try:
+            connect_fn = self._resolve_avdecc_callable(("connectStream", "connect_stream"))
+            if connect_fn is None:
+                return False
+
             talker_entity_id = int(connection.talker.entity_id, 16)
             listener_entity_id = int(connection.listener.entity_id, 16)
 
             # Send ACMP CONNECT_TX_COMMAND
-            success = await asyncio.to_thread(
-                self.avdecc_entity.connectStream,
+            success = connect_fn(
                 talker_entity_id,
                 connection.talker.unique_id,
                 listener_entity_id,
                 connection.listener.unique_id
             )
+            if inspect.isawaitable(success):
+                success = await success
 
-            return success
+            return bool(success)
 
         except Exception as e:
             logger.error(f"AVDECC connection error: {e}")
@@ -1016,19 +1980,24 @@ class AvbRouter:
             return False
 
         try:
+            disconnect_fn = self._resolve_avdecc_callable(("disconnectStream", "disconnect_stream"))
+            if disconnect_fn is None:
+                return False
+
             talker_entity_id = int(connection.talker.entity_id, 16)
             listener_entity_id = int(connection.listener.entity_id, 16)
 
             # Send ACMP DISCONNECT_TX_COMMAND
-            success = await asyncio.to_thread(
-                self.avdecc_entity.disconnectStream,
+            success = disconnect_fn(
                 talker_entity_id,
                 connection.talker.unique_id,
                 listener_entity_id,
                 connection.listener.unique_id
             )
+            if inspect.isawaitable(success):
+                success = await success
 
-            return success
+            return bool(success)
 
         except Exception as e:
             logger.error(f"AVDECC disconnection error: {e}")
@@ -1094,7 +2063,17 @@ class AvbRouter:
                 "connected": len([c for c in self.connections.values() if c.state == ConnectionState.CONNECTED]),
                 "connecting": len([c for c in self.connections.values() if c.state == ConnectionState.CONNECTING]),
                 "error": len([c for c in self.connections.values() if c.state == ConnectionState.ERROR])
-            }
+            },
+            "loops": {
+                "running": self._running,
+                "discovery_running": self._discovery_task is not None and not self._discovery_task.done(),
+                "cleanup_running": self._cleanup_task is not None and not self._cleanup_task.done(),
+                "discovery_cycles": self._discovery_cycles,
+                "cleanup_cycles": self._cleanup_cycles,
+                "stale_removed_total": self._stale_removed_total,
+                "last_discovery_error": self._last_discovery_error,
+                "last_cleanup_error": self._last_cleanup_error,
+            },
         }
 
 
@@ -1131,6 +2110,21 @@ def _extract_avdecc_entity(engine: Any) -> Optional[Any]:
             continue
 
         return value
+
+    # Engine-level AVDECC APIs exposed by pybind bindings.
+    if any(
+        callable(getattr(engine, name, None))
+        for name in (
+            "getDiscoveredEntities",
+            "get_discovered_entities",
+            "get_avdecc_entities",
+            "connectStream",
+            "connect_stream",
+            "disconnectStream",
+            "disconnect_stream",
+        )
+    ):
+        return engine
 
     return None
 

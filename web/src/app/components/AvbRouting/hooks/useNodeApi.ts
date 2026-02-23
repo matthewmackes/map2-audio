@@ -13,6 +13,8 @@ import type {
   NodeStatus,
   PtpState,
 } from '../types';
+import { safeFetchJson } from '../utils/safeJsonFetch';
+import { apiUrl } from '../../../utils/apiTarget';
 
 // ============================================================================
 // API Response Interfaces
@@ -414,11 +416,11 @@ export function useNodes(): UseQueryResult<AvbNode[]> {
   return useQuery({
     queryKey: ['avb', 'nodes'],
     queryFn: async () => {
-      const response = await fetch('/api/avb/discovery/nodes');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      const data: NodesResponse = await response.json();
+      const data = await safeFetchJson<NodesResponse>(
+        apiUrl('/api/avb/discovery/nodes'),
+        undefined,
+        { fallbackError: 'Failed to fetch discovered AVB nodes' }
+      );
 
       if (!data.enabled) {
         return [];
@@ -440,14 +442,20 @@ export function useNode(nodeId: string | null): UseQueryResult<AvbNode | null> {
     queryFn: async () => {
       if (!nodeId) return null;
 
-      const response = await fetch(`/api/avb/discovery/nodes/${nodeId}`);
-      if (!response.ok) {
-        if (response.status === 404) return null;
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      try {
+        const data = await safeFetchJson<NodeResponse>(
+          apiUrl(`/api/avb/discovery/nodes/${nodeId}`),
+          undefined,
+          { fallbackError: `Failed to fetch node ${nodeId}` }
+        );
+        return transformNodeResponse(data, 0);
+      } catch (error) {
+        const message = error instanceof Error ? error.message.toLowerCase() : '';
+        if (message.includes('404') || message.includes('not found')) {
+          return null;
+        }
+        throw error;
       }
-
-      const data: NodeResponse = await response.json();
-      return transformNodeResponse(data, 0);
     },
     enabled: !!nodeId,
     refetchInterval: 3000,
@@ -464,12 +472,11 @@ export function usePtpStatus(): UseQueryResult<NetworkSyncStatus> {
   return useQuery({
     queryKey: ['avb', 'ptp', 'status', nodes.length],
     queryFn: async () => {
-      const response = await fetch('/api/avb/ptp/status');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data: PtpStatusResponse = await response.json();
+      const data = await safeFetchJson<PtpStatusResponse>(
+        apiUrl('/api/avb/ptp/status'),
+        undefined,
+        { fallbackError: 'Failed to fetch AVB PTP status' }
+      );
       return calculateSyncStatus(nodes, data);
     },
     refetchInterval: 5000,
@@ -490,11 +497,12 @@ export function useNetworkTopology(): UseQueryResult<NetworkTopology> {
       let connections: RouterConnectionResponse[] = [];
 
       try {
-        const response = await fetch('/api/avb/router/connections');
-        if (response.ok) {
-          const data: RouterConnectionsResponse = await response.json();
-          connections = Array.isArray(data.connections) ? data.connections : [];
-        }
+        const data = await safeFetchJson<RouterConnectionsResponse>(
+          apiUrl('/api/avb/router/connections'),
+          undefined,
+          { fallbackError: 'Failed to fetch AVB routing connections for topology' }
+        );
+        connections = Array.isArray(data.connections) ? data.connections : [];
       } catch (_error) {
         // Topology can still render nodes/PTP edges when connection snapshot fetch fails.
       }

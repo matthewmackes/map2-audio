@@ -61,7 +61,7 @@ try:
         active_alerts = 0
         try:
             from app.services.performance_metrics import get_metrics_collector
-            collector = get_metrics_collector()
+            collector = await get_metrics_collector()
             buffer_underruns = collector.buffer_underrun_count
             history_samples = collector.max_history
             active_alerts = len(collector.get_alerts())

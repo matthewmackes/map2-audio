@@ -64,9 +64,89 @@ def _format_timestamp(value: Any) -> Optional[str]:
     return str(value)
 
 
+def _coerce_bool(value: Any, default: bool) -> bool:
+    """Parse boolean-like request values safely."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
 # ============================================================================
 # Cluster Setup & Onboarding
 # ============================================================================
+
+
+@router.get("/node/reset-default-rejoin/preview")
+async def preview_reset_default_rejoin() -> Dict[str, Any]:
+    """
+    Preview local clone reset targets and current identity snapshot.
+
+    Returns:
+        - identity: current local identity fields
+        - targets.existing: files that will be removed during reset
+        - targets.missing: files already absent
+    """
+    try:
+        from app.services.cluster.clone_reset import preview_clone_reset
+
+        return {
+            "status": "ok",
+            **preview_clone_reset(),
+        }
+    except Exception as e:
+        logger.error(f"Failed to preview clone reset: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/node/reset-default-rejoin")
+async def reset_default_rejoin(request: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Reset local node clone identity to default state and rejoin cluster.
+
+    Request body (all optional):
+        - management_node_ip: preferred management node IP for registration
+        - rejoin: whether to register with cluster after reset (default: true)
+        - clear_registry_state: remove local registry rows before rejoin (default: true)
+
+    Returns:
+        Structured result payload with pre/post identity, file operations, and
+        rejoin outcome. Endpoint returns HTTP 200 even on partial failure so
+        operators can inspect detailed recovery context.
+    """
+    try:
+        payload = request or {}
+        management_node_ip = payload.get("management_node_ip")
+        if management_node_ip is not None:
+            management_node_ip = str(management_node_ip).strip() or None
+        rejoin = _coerce_bool(payload.get("rejoin"), True)
+        clear_registry_state = _coerce_bool(payload.get("clear_registry_state"), True)
+
+        from app.services.cluster.clone_reset import reset_clone_to_default_and_rejoin
+
+        result = await reset_clone_to_default_and_rejoin(
+            management_node_ip=management_node_ip,
+            rejoin=rejoin,
+            clear_registry_state=clear_registry_state,
+        )
+
+        return {
+            "status": "ok" if result.get("success") else "partial",
+            **result,
+        }
+    except Exception as e:
+        logger.error(f"Failed to execute clone reset/rejoin: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/setup")
 async def setup_cluster(request: dict):

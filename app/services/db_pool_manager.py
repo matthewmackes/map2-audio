@@ -127,64 +127,62 @@ class DatabasePoolManager(Singleton):
         """
         if not self._initialized:
             raise DatabaseConnectionException("Database pool not initialized")
-        
+
         start_time = time.perf_counter()
         retry_count = 0
-        last_error = None
-        
-        while retry_count <= self._config.max_retries:
+
+        while True:
+            yielded = False
             try:
-                # Get session from pool
+                # Acquire a session (retryable if acquisition itself fails).
                 async with self._session_maker() as session:
                     self._stats.total_checkouts += 1
-                    
+                    yielded = True
+
                     try:
                         yield session
                         await session.commit()
-                        
-                        # Update stats
+                        self._stats.total_checkins += 1
                         elapsed_ms = (time.perf_counter() - start_time) * 1000
                         self._update_checkout_time(elapsed_ms)
-                        self._stats.total_checkins += 1
-                        
                         return
-                        
-                    except Exception as e:
+                    except Exception:
                         await session.rollback()
                         raise
-            
+
             except Exception as e:
-                last_error = e
-                retry_count += 1
                 self._stats.total_errors += 1
                 self._stats.last_error = str(e)
                 self._stats.last_error_time = datetime.now()
-                
-                if retry_count <= self._config.max_retries:
-                    # Calculate exponential backoff delay
-                    delay = min(
-                        self._config.retry_base_delay * (
-                            self._config.retry_exponential_base ** (retry_count - 1)
-                        ) + random.uniform(0, 0.1),  # Add jitter
-                        self._config.retry_max_delay
-                    )
-                    
-                    logger.warning(
-                        f"Database operation failed (attempt {retry_count}/"
-                        f"{self._config.max_retries + 1}), "
-                        f"retrying in {delay:.2f}s: {e}"
-                    )
-                    
-                    self._stats.total_retries += 1
-                    await asyncio.sleep(delay)
-                else:
+
+                # If caller code already ran (we yielded), never retry here.
+                # Retrying after a yielded context causes asynccontextmanager
+                # protocol violations ("generator didn't stop after athrow()").
+                if yielded:
+                    raise
+
+                retry_count += 1
+                if retry_count > self._config.max_retries:
                     logger.error(
-                        f"Database operation failed after {retry_count} attempts: {e}"
+                        f"Database session acquisition failed after {retry_count} attempts: {e}"
                     )
                     raise DatabaseException(
-                        f"Database operation failed after {retry_count} retries",
+                        f"Database session acquisition failed after {retry_count} retries",
                         {"error": str(e), "retries": retry_count}
                     )
+
+                delay = min(
+                    self._config.retry_base_delay * (
+                        self._config.retry_exponential_base ** (retry_count - 1)
+                    ) + random.uniform(0, 0.1),
+                    self._config.retry_max_delay
+                )
+                logger.warning(
+                    f"Database session acquisition failed (attempt {retry_count}/"
+                    f"{self._config.max_retries + 1}), retrying in {delay:.2f}s: {e}"
+                )
+                self._stats.total_retries += 1
+                await asyncio.sleep(delay)
     
     async def execute_with_retry(
         self,

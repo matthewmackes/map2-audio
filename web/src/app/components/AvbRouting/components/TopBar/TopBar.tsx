@@ -39,11 +39,21 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
-import { useAvbDevices, useAvbStreams, useBatchPatchMutation } from '../../hooks/useAvbApi';
+import {
+  useAvbDevices,
+  useAvbStreams,
+  useBatchPatchMutation,
+} from '../../hooks/useAvbApi';
 import { useNotifications } from '../../hooks/useNotifications';
-import { initialRoutingState } from '../../types';
-import type { AuditLogEntry } from '../../types';
+import { clearAllFilterState, defaultFilterState, FILTER_QUALITY_OPTIONS, initialRoutingState } from '../../types';
+import type { AuditLogEntry, FilterQuality, StreamDirection } from '../../types';
 import { countEndpointsWithOperationalIssues } from '../../utils/endpointIssues';
+import {
+  countActiveFilters,
+  FILTER_DEVICE_TYPE_OPTIONS,
+  FILTER_DIRECTION_OPTIONS,
+  resolveEndpointHostId,
+} from '../../utils/filters';
 import {
   generateUniqueSceneName,
   hasDuplicateSceneName,
@@ -57,10 +67,18 @@ import { NodeSelector } from './NodeSelector';
 import { SceneDiffPreview } from './SceneDiffPreview';
 import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
 
-const DEVICE_TYPE_OPTIONS = ['map2', 'avdecc', 'unknown'] as const;
 const SCENE_IMPACT_PAGE_SIZE = 5;
 const SCENE_AUDIT_DISPLAY_LIMIT = 8;
 const SCENE_DIFF_IMPORT_PREVIEW_PAGE_SIZE = 12;
+const DIRECTION_LABELS: Record<StreamDirection, string> = {
+  talker: 'Talkers',
+  listener: 'Listeners',
+};
+const QUALITY_LABELS: Record<FilterQuality, string> = {
+  healthy: 'Healthy',
+  warning: 'Warning',
+  critical: 'Critical',
+};
 const SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX = {
   '&:focus-visible': {
     outline: '2px solid',
@@ -722,7 +740,7 @@ export function TopBar() {
     });
   };
 
-  const handleToggleDeviceType = (deviceType: typeof DEVICE_TYPE_OPTIONS[number]) => {
+  const handleToggleDeviceType = (deviceType: typeof FILTER_DEVICE_TYPE_OPTIONS[number]) => {
     const selected = new Set(state.filters.deviceTypes);
     if (selected.has(deviceType)) {
       selected.delete(deviceType);
@@ -733,7 +751,7 @@ export function TopBar() {
     dispatch({
       type: 'SET_FILTERS',
       payload: {
-        deviceTypes: DEVICE_TYPE_OPTIONS.filter((option) => selected.has(option)),
+        deviceTypes: FILTER_DEVICE_TYPE_OPTIONS.filter((option) => selected.has(option)),
       },
     });
   };
@@ -786,6 +804,55 @@ export function TopBar() {
     });
   };
 
+  const handleToggleHost = (hostId: string) => {
+    const selected = new Set(state.filters.hostIds.map((value) => value.toLowerCase()));
+    const normalizedHostId = hostId.toLowerCase();
+    if (selected.has(normalizedHostId)) {
+      selected.delete(normalizedHostId);
+    } else {
+      selected.add(normalizedHostId);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        hostIds: Array.from(selected).sort((a, b) => a.localeCompare(b)),
+      },
+    });
+  };
+
+  const handleToggleDirection = (direction: StreamDirection) => {
+    const selected = new Set(state.filters.directions);
+    if (selected.has(direction)) {
+      selected.delete(direction);
+    } else {
+      selected.add(direction);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        directions: FILTER_DIRECTION_OPTIONS.filter((option) => selected.has(option)),
+      },
+    });
+  };
+
+  const handleToggleQuality = (quality: FilterQuality) => {
+    const selected = new Set(state.filters.qualities);
+    if (selected.has(quality)) {
+      selected.delete(quality);
+    } else {
+      selected.add(quality);
+    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: {
+        qualities: FILTER_QUALITY_OPTIONS.filter((option) => selected.has(option)),
+      },
+    });
+  };
+
   const handleResetFilters = () => {
     dispatch({
       type: 'SET_FILTERS',
@@ -799,13 +866,7 @@ export function TopBar() {
     dispatch({
       type: 'SET_FILTERS',
       payload: {
-        deviceTypes: [],
-        sampleRates: [],
-        channelCounts: [],
-        availableOnly: false,
-        issuesOnly: false,
-        showLocked: true,
-        groups: [],
+        ...clearAllFilterState,
       },
     });
   };
@@ -1621,6 +1682,17 @@ export function TopBar() {
   const avbCacheMissingCount = avbEndpointIds.filter((endpointId) => !avbDiscoveredEndpointIdSet.has(endpointId)).length;
   const avbCacheOrphanCount = avbDiscoveredDevices.filter((device) => !avbEndpointIdSet.has(device.endpoint_id)).length;
   const avbStreamPayloads = avbStreamsData?.streams || [];
+  const avbReadiness = avbDevicesData?.readiness;
+  const avbStackState = avbReadiness?.state || 'unknown';
+  const avbStackChipColor = avbStackState === 'operational'
+    ? 'success'
+    : avbStackState === 'degraded'
+      ? 'warning'
+      : avbStackState === 'disabled'
+        ? 'default'
+        : 'info';
+  const avbTalkerCapabilityCount = avbDiscoveredDevices.filter((device) => device.direction === 'talker').length;
+  const avbListenerCapabilityCount = avbDiscoveredDevices.filter((device) => device.direction === 'listener').length;
   const avbTransportReadyCount = avbStreamPayloads.filter((stream) => stream.health?.ready).length;
   const avbTransportIssueCount = avbStreamPayloads.filter((stream) => (
     stream.state === 'error' || (stream.health ? !stream.health.ready : false)
@@ -1651,23 +1723,34 @@ export function TopBar() {
   const filtersOpen = Boolean(filtersAnchor);
   const scenesOpen = Boolean(scenesAnchor);
   const sceneDiffOpen = Boolean(sceneDiffAnchor);
-  const defaultFilters = initialRoutingState.filters;
-  const activeFilterCount = [
-    state.filters.availableOnly !== defaultFilters.availableOnly,
-    state.filters.issuesOnly !== defaultFilters.issuesOnly,
-    state.filters.showLocked !== defaultFilters.showLocked,
-    [...state.filters.deviceTypes].sort().join('|') !== [...defaultFilters.deviceTypes].sort().join('|'),
-    state.filters.sampleRates.length !== defaultFilters.sampleRates.length,
-    state.filters.channelCounts.length !== defaultFilters.channelCounts.length,
-    state.filters.groups.length !== defaultFilters.groups.length,
-  ].filter(Boolean).length;
-  const sampleRateOptions = Array.from(new Set(endpointValues.map((endpoint) => endpoint.sample_rate))).sort((a, b) => a - b);
-  const channelCountOptions = Array.from(new Set(endpointValues.map((endpoint) => endpoint.channels))).sort((a, b) => a - b);
+  const defaultFilters = defaultFilterState;
+  const activeFilterCount = countActiveFilters(state.filters, defaultFilters);
+  const sampleRateOptions = Array.from(
+    new Set(
+      endpointValues
+        .map((endpoint) => Number(endpoint.sample_rate))
+        .filter((value): value is number => Number.isFinite(value) && value > 0),
+    ),
+  ).sort((a, b) => a - b);
+  const channelCountOptions = Array.from(
+    new Set(
+      endpointValues
+        .map((endpoint) => Number(endpoint.channels))
+        .filter((value): value is number => Number.isFinite(value) && value > 0),
+    ),
+  ).sort((a, b) => a - b);
   const groupOptions = Array.from(
     new Set(
       endpointValues
         .map((endpoint) => endpoint.group)
         .filter((group): group is string => typeof group === 'string' && group.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+  const hostOptions = Array.from(
+    new Set(
+      endpointValues
+        .map((endpoint) => resolveEndpointHostId(endpoint))
+        .filter((hostId): hostId is string => typeof hostId === 'string' && hostId.length > 0)
     )
   ).sort((a, b) => a.localeCompare(b));
   const sceneOptions = Object.values(state.scenes)
@@ -2053,6 +2136,20 @@ export function TopBar() {
             color={avbDeviceCount > 0 ? 'info' : 'default'}
             variant="outlined"
             data-testid="topbar-avb-engine-summary"
+          />
+          <Chip
+            label={`AVB Stack: ${avbStackState}`}
+            size="small"
+            color={avbStackChipColor}
+            variant="outlined"
+            data-testid="topbar-avb-stack-state"
+          />
+          <Chip
+            label={`I/O Cap: N${avbTalkerCapabilityCount}/${avbListenerCapabilityCount}`}
+            size="small"
+            color={(avbTalkerCapabilityCount + avbListenerCapabilityCount) > 0 ? 'info' : 'default'}
+            variant="outlined"
+            data-testid="topbar-avb-io-capabilities"
           />
           <Chip
             label={`Cache Drift: ${avbCacheMissingCount}|${avbCacheOrphanCount}`}
@@ -2751,7 +2848,7 @@ export function TopBar() {
             Device types
           </Typography>
           <FormGroup>
-            {DEVICE_TYPE_OPTIONS.map((deviceType) => (
+            {FILTER_DEVICE_TYPE_OPTIONS.map((deviceType) => (
               <FormControlLabel
                 key={deviceType}
                 control={(
@@ -2815,6 +2912,75 @@ export function TopBar() {
                     />
                   )}
                   label={`${channelCount} channels`}
+                />
+              ))}
+            </FormGroup>
+          )}
+
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Direction
+          </Typography>
+          <FormGroup>
+            {FILTER_DIRECTION_OPTIONS.map((direction) => (
+              <FormControlLabel
+                key={direction}
+                control={(
+                  <Checkbox
+                    checked={state.filters.directions.includes(direction)}
+                    onChange={() => handleToggleDirection(direction)}
+                    data-testid={`topbar-filter-direction-${direction}`}
+                  />
+                )}
+                label={DIRECTION_LABELS[direction]}
+              />
+            ))}
+          </FormGroup>
+
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Health quality
+          </Typography>
+          <FormGroup>
+            {FILTER_QUALITY_OPTIONS.map((quality) => (
+              <FormControlLabel
+                key={quality}
+                control={(
+                  <Checkbox
+                    checked={state.filters.qualities.includes(quality)}
+                    onChange={() => handleToggleQuality(quality)}
+                    data-testid={`topbar-filter-quality-${quality}`}
+                  />
+                )}
+                label={QUALITY_LABELS[quality]}
+              />
+            ))}
+          </FormGroup>
+
+          <Divider />
+
+          <Typography variant="caption" color="text.secondary">
+            Hosts
+          </Typography>
+          {hostOptions.length === 0 ? (
+            <Typography variant="body2" color="text.disabled">
+              No hosts discovered
+            </Typography>
+          ) : (
+            <FormGroup>
+              {hostOptions.map((hostId) => (
+                <FormControlLabel
+                  key={hostId}
+                  control={(
+                    <Checkbox
+                      checked={state.filters.hostIds.includes(hostId)}
+                      onChange={() => handleToggleHost(hostId)}
+                      data-testid={`topbar-filter-host-${sanitizeFilterIdValue(hostId)}`}
+                    />
+                  )}
+                  label={hostId}
                 />
               ))}
             </FormGroup>

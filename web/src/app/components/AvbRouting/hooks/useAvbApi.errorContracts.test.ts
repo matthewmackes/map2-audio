@@ -3,6 +3,10 @@ import { useBatchPatchMutation, usePatchMutation } from './useAvbApi'
 const mockInvalidateQueries = jest.fn()
 const mockUseMutation = jest.fn((options: unknown) => options)
 
+jest.mock('../../../utils/apiTarget', () => ({
+  apiUrl: (path: string) => path,
+}))
+
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
   useMutation: (options: unknown) => mockUseMutation(options),

@@ -92,6 +92,27 @@ class _CamelCaseEngine:
         return {"success": True}
 
 
+class _SnakeCaseEngineWithAvdeccConnections(_SnakeCaseEngine):
+    def __init__(self):
+        super().__init__()
+        self._active_connections = [
+            {
+                "talker_entity_id": "0011223344556677",
+                "talker_unique_id": 1,
+                "listener_entity_id": "8899aabbccddeeff",
+                "listener_unique_id": 2,
+                "stream_id": "00000000000000aa",
+                "stream_vlan_id": 2,
+                "stream_dest_mac": "91:e0:f0:00:fe:01",
+                "connected": True,
+            }
+        ]
+
+    def get_active_connections(self):
+        self.calls.append(("get_active_connections",))
+        return list(self._active_connections)
+
+
 def test_avb_service_lifecycle_uses_snake_case_engine_contract():
     service = AvbService()
     engine = _SnakeCaseEngine()
@@ -108,6 +129,17 @@ def test_avb_service_lifecycle_uses_snake_case_engine_contract():
     assert "srp_reservation_id" not in create_payload
     assert "srp_admission_id" not in create_payload
     assert "srp_metadata" not in create_payload
+    for field_name in (
+        "owner_node_id",
+        "peer_node_id",
+        "owner_endpoint_id",
+        "peer_endpoint_id",
+        "talker_node_id",
+        "listener_node_id",
+        "talker_endpoint_id",
+        "listener_endpoint_id",
+    ):
+        assert field_name not in create_payload
 
     start_result = asyncio.run(service.start_stream("stream-1"))
     assert start_result == {"status": "started"}
@@ -160,6 +192,39 @@ def test_avb_service_lifecycle_uses_camel_case_fallback():
     assert "startAvbStream" in method_names
     assert "stopAvbStream" in method_names
     assert "deleteAvbStream" in method_names
+
+
+def test_avb_service_stream_payload_includes_deterministic_ownership_metadata():
+    service = AvbService()
+    engine = _SnakeCaseEngine()
+    service.set_engine(engine)
+
+    cfg = _stream_config("stream-ownership")
+    cfg.owner_node_id = "node-a"
+    cfg.peer_node_id = "node-b"
+    cfg.owner_endpoint_id = "0011223344556677:1"
+    cfg.peer_endpoint_id = "8899aabbccddeeff:2"
+    cfg.talker_node_id = "node-a"
+    cfg.listener_node_id = "node-b"
+    cfg.talker_endpoint_id = "0011223344556677:1"
+    cfg.listener_endpoint_id = "8899aabbccddeeff:2"
+
+    create_result = asyncio.run(service.create_stream(cfg))
+    assert create_result == {"stream_id": "stream-ownership", "status": "created"}
+
+    payload = service.get_stream("stream-ownership")
+    assert payload is not None
+    ownership = payload["ownership"]
+    assert ownership["owner_node_id"] == "node-a"
+    assert ownership["peer_node_id"] == "node-b"
+    assert ownership["talker_node_id"] == "node-a"
+    assert ownership["listener_node_id"] == "node-b"
+    assert ownership["owner_endpoint_id"] == "0011223344556677:1"
+    assert ownership["peer_endpoint_id"] == "8899aabbccddeeff:2"
+    assert ownership["talker_endpoint_id"] == "0011223344556677:1"
+    assert ownership["listener_endpoint_id"] == "8899aabbccddeeff:2"
+    assert ownership["node_ids"] == ["node-a", "node-b"]
+    assert ownership["endpoint_ids"] == ["0011223344556677:1", "8899aabbccddeeff:2"]
 
 
 def test_start_stream_failure_sets_error_state():
@@ -326,3 +391,95 @@ def test_avb_service_mixed_direction_churn_and_stats_reset():
         assert asyncio.run(service.delete_stream(stream_id))["status"] == "deleted"
 
     assert service.streams == {}
+
+
+def test_stop_stream_is_idempotent_and_avoids_duplicate_engine_calls():
+    service = AvbService()
+    engine = _SnakeCaseEngine()
+    service.set_engine(engine)
+
+    asyncio.run(service.create_stream(_stream_config("stream-idem-stop")))
+    asyncio.run(service.start_stream("stream-idem-stop"))
+
+    first = asyncio.run(service.stop_stream("stream-idem-stop"))
+    second = asyncio.run(service.stop_stream("stream-idem-stop"))
+
+    assert first == {"status": "stopped"}
+    assert second == {"status": "already_stopped"}
+
+    stop_calls = [c for c in engine.calls if c[0] == "stop_avb_stream"]
+    assert len(stop_calls) == 1
+
+
+def test_delete_stream_is_idempotent_after_first_delete():
+    service = AvbService()
+    engine = _SnakeCaseEngine()
+    service.set_engine(engine)
+
+    asyncio.run(service.create_stream(_stream_config("stream-idem-delete")))
+    asyncio.run(service.start_stream("stream-idem-delete"))
+    asyncio.run(service.stop_stream("stream-idem-delete"))
+
+    first = asyncio.run(service.delete_stream("stream-idem-delete"))
+    second = asyncio.run(service.delete_stream("stream-idem-delete"))
+
+    assert first == {"status": "deleted"}
+    assert second == {"status": "deleted"}
+
+    delete_calls = [c for c in engine.calls if c[0] == "delete_avb_stream"]
+    assert len(delete_calls) == 1
+
+
+def test_avb_service_projects_active_avdecc_connections_into_stream_payloads():
+    service = AvbService()
+    engine = _SnakeCaseEngineWithAvdeccConnections()
+    service.set_engine(engine)
+
+    all_streams = service.get_all_streams()
+    assert len(all_streams) == 1
+    projected = all_streams[0]
+
+    assert projected["source"] == "avdecc_connection"
+    assert projected["state"] == "running"
+    assert projected["config"]["interface"] == "avdecc"
+    assert projected["config"]["device_type"] == "avdecc"
+    assert projected["config"]["avdecc_stream_id"] == "00000000000000aa"
+    assert projected["config"]["stream_vlan_id"] == 2
+    assert projected["ownership"]["talker_endpoint_id"] == "0011223344556677:1"
+    assert projected["ownership"]["listener_endpoint_id"] == "8899aabbccddeeff:2"
+    assert projected["avdecc_connection"]["stream_dest_mac"] == "91:e0:f0:00:fe:01"
+
+    stream_id = projected["stream_id"]
+    fetched = service.get_stream(stream_id)
+    assert fetched is not None
+    assert fetched["stream_id"] == stream_id
+    assert fetched["source"] == "avdecc_connection"
+
+    stats = service.get_stream_stats(stream_id)
+    assert stats is not None
+    assert stats["frames_sent"] == 0
+    assert stats["frames_received"] == 0
+    assert stats["sequence_errors"] == 0
+
+
+def test_channel_capabilities_payload_includes_local_and_avb_inventory():
+    service = AvbService()
+    engine = _SnakeCaseEngine()
+    service.set_engine(engine)
+
+    capabilities = service.get_channel_capabilities(
+        system_info={
+            "audio_device": "Jogg USB Audio",
+            "input_channels": 2,
+            "output_channels": 2,
+            "sample_rate": 48000,
+        }
+    )
+
+    assert "readiness" in capabilities
+    assert capabilities["device"] == "Jogg USB Audio"
+    assert len(capabilities["local_inputs"]) == 2
+    assert len(capabilities["local_outputs"]) == 2
+    assert "summary" in capabilities
+    assert capabilities["summary"]["local_input_count"] == 2
+    assert capabilities["summary"]["local_output_count"] == 2

@@ -11,8 +11,13 @@ Execution source of truth: `docs/AVB_MASTER_WORK_PLAN.md`
 ```bash
 cmake -S juce-engine -B juce-engine/build -GNinja -DCMAKE_BUILD_TYPE=Release -DUSE_AVB=ON
 cmake --build juce-engine/build --target map2_audio_engine -j$(nproc)
-# optional C++ AVB unit tests (requires libavtp/libcap): add `-DBUILD_AVB_TESTS=ON` then run `ctest --test-dir juce-engine/build -R avb_tests`
-# convenience: `cmake --build juce-engine/build --target check-avb` (runs `ctest -R avb_tests`)
+# optional C++ AVB unit tests (requires libavtp/libcap): add `-DBUILD_AVB_TESTS=ON`
+# AVTP suite: `cmake --build juce-engine/build --target avb_tests`
+# AVDECC model suite (when `-DUSE_AVDECC=ON`): `cmake --build juce-engine/build --target avdecc_model_tests`
+#   includes descriptor model round-trip and enumerator request/response lifecycle regression tests
+# run all configured AVB C++ suites: `cmake --build juce-engine/build --target check-avb`
+# AVTP stress + fault-injection subset:
+#   juce-engine/build/avb_tests "[avb][avtp][stress]" -r compact
 ```
 
 ## Backend Setup
@@ -29,6 +34,12 @@ pytest tests/test_avb_service_engine_contract.py \
        tests/test_avb_routes_srp.py \
        tests/test_avb_router_map2.py \
        tests/test_avb_router_factory.py -q
+
+# AVDECC mock harness (CI-safe, no AVB hardware required)
+pytest tests/test_avdecc_mock_integration.py -m avdecc_mock -q
+
+# AVDECC AEM cache lifecycle regression
+pytest tests/test_avdecc_aem_cache.py -q
 ```
 
 ## Frontend Setup

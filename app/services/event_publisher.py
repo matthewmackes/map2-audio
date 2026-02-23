@@ -38,6 +38,11 @@ class EventType(str, Enum):
     AUTOMATION_LANE_ADDED = "automation_lane_added"
     AUTOMATION_LANE_DELETED = "automation_lane_deleted"
 
+    # AVB routing events
+    AVB_ENDPOINTS_UPDATED = "avb_endpoints_updated"
+    AVB_CONNECTIONS_UPDATED = "avb_connections_updated"
+    AVB_CONNECTION_STATE_CHANGED = "avb_connection_state_changed"
+
     # System events
     SYSTEM_STATUS = "system_status"
     AUDIO_ENGINE_STATUS = "audio_engine_status"

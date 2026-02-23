@@ -83,4 +83,4 @@
 ---
 
 **Technology Stack:** JUCE 8.0 • PipeWire 1.2+ • Python 3.14 • FastAPI • React 18 • Fedora Linux  
-**License:** Proprietary • Version 2.0.0 • February 2026
+**License:** AGPLv3 (`AGPL-3.0-only`) for MAP2-owned code; third-party components keep original licenses • Version 2.0.0 • February 2026

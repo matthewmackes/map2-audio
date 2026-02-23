@@ -8,7 +8,7 @@ import path from 'path'
 // ============================================================================
 // 
 // PORT CONFIGURATION (IMPORTANT - DO NOT CONFUSE):
-// - Port 3000: PRODUCTION static server (npm run serve) - serves dist/ folder
+// - Port 3000: PRODUCTION preview server (npm run preview) - serves dist/ with proxy
 // - Port 3001: DEVELOPMENT Vite server (npm run dev) - HMR + source maps
 //
 // Common mistake: Thinking port 3000 is the dev server. It's NOT!

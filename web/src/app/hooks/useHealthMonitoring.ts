@@ -294,12 +294,70 @@ export function useHealthAlarms(thresholds: HealthThresholds = DEFAULT_THRESHOLD
 /**
  * Hook combining both history and alarms
  */
-export function useHealthMonitoring(maxHistorySize: number = 360) {
+export function useHealthMonitoring(
+  thresholdsOrMaxHistorySize: HealthThresholds | number = 360,
+  maybeMaxHistorySize?: number
+) {
+  const thresholds =
+    typeof thresholdsOrMaxHistorySize === 'object' && thresholdsOrMaxHistorySize !== null
+      ? thresholdsOrMaxHistorySize
+      : DEFAULT_THRESHOLDS;
+
+  const maxHistorySize =
+    typeof maybeMaxHistorySize === 'number'
+      ? maybeMaxHistorySize
+      : typeof thresholdsOrMaxHistorySize === 'number'
+        ? thresholdsOrMaxHistorySize
+        : 360;
+
   const history = useMetricsHistory(maxHistorySize);
-  const alarms = useHealthAlarms();
+  const alarms = useHealthAlarms(thresholds);
+
+  const getMetricStats = (timeWindow: number | 'all' = 3600000) => {
+    const stats = history.getMetricStats(timeWindow === 'all' ? Infinity : timeWindow);
+    if (!stats) {
+      return stats;
+    }
+
+    return {
+      ...stats,
+      temperature: { ...stats.temperature, count: stats.dataPoints },
+      cpu: { ...stats.cpu, count: stats.dataPoints },
+      memory: { ...stats.memory, count: stats.dataPoints },
+    };
+  };
+
+  const checkHealth = (
+    healthOverview: SystemHealthOverview | undefined,
+    diskHealth: DiskHealthData | { device: string; use_percent: number; overall_health?: string } | undefined
+  ) => {
+    let normalizedDiskHealth: DiskHealthData | undefined;
+    if (diskHealth && typeof diskHealth === 'object' && Array.isArray((diskHealth as DiskHealthData).disks)) {
+      normalizedDiskHealth = diskHealth as DiskHealthData;
+    } else if (
+      diskHealth &&
+      typeof diskHealth === 'object' &&
+      typeof (diskHealth as { device?: unknown }).device === 'string' &&
+      typeof (diskHealth as { use_percent?: unknown }).use_percent === 'number'
+    ) {
+      normalizedDiskHealth = { disks: [diskHealth as DiskHealthData['disks'][number]] };
+    }
+
+    return alarms.checkHealth(healthOverview, normalizedDiskHealth);
+  };
 
   return {
     history,
     alarms,
+    // Backward-compatible flat API for legacy callers/tests.
+    addMetric: history.addMetric,
+    getMetrics: history.getMetrics,
+    getMetricStats,
+    clearHistory: history.clearHistory,
+    checkHealth,
+    getActiveAlerts: alarms.getActiveAlerts,
+    getCriticalAlerts: alarms.getCriticalAlerts,
+    acknowledgeAlert: alarms.acknowledgeAlert,
+    clearAlerts: alarms.clearAlerts,
   };
 }

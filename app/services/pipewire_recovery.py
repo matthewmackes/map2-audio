@@ -10,7 +10,9 @@ into active self-healing.
 """
 
 import asyncio
+import inspect
 import logging
+import os
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -84,6 +86,8 @@ class PipeWireRecoveryService:
     MAX_SOFT_RETRIES = 3
     BACKOFF_BASE_SEC = 2.0
     BACKOFF_MAX_SEC = 60.0
+    STARTUP_GRACE_SEC = 15.0
+    ALLOW_ENGINE_RESTARTS_ENV = "MAP2_PIPEWIRE_RECOVERY_ENABLE_ENGINE_RESTARTS"
 
     def __init__(self):
         self._engine = None  # JUCE engine reference (set later)
@@ -96,10 +100,57 @@ class PipeWireRecoveryService:
         self._last_xrun_count = 0
         self._consecutive_failures = 0
         self._check_interval = 2.0  # seconds
+        self._started_at = 0.0
+        self._allow_engine_restarts = os.getenv(
+            self.ALLOW_ENGINE_RESTARTS_ENV, "false"
+        ).lower() in {"1", "true", "yes", "on"}
 
     def set_engine(self, engine) -> None:
         """Set reference to the JUCE audio engine."""
         self._engine = engine
+
+    async def _call_engine_method(self, method_name: str, *args):
+        """Call engine/service method and await if needed."""
+        if self._engine is None:
+            return None
+        method = getattr(self._engine, method_name, None)
+        if not callable(method):
+            return None
+        try:
+            result = method(*args)
+            if inspect.isawaitable(result):
+                result = await result
+            return result
+        except Exception as e:
+            logger.warning(f"Engine call '{method_name}' failed: {e}")
+            return None
+
+    def _call_engine_method_sync(self, method_name: str, *args):
+        """Call synchronous engine/service method (best effort)."""
+        if self._engine is None:
+            return None
+        method = getattr(self._engine, method_name, None)
+        if not callable(method):
+            return None
+        if inspect.iscoroutinefunction(method):
+            return None
+        try:
+            result = method(*args)
+            # Avoid leaking un-awaited coroutine objects if async methods are wired.
+            if inspect.isawaitable(result):
+                logger.debug(f"Engine sync call '{method_name}' returned awaitable; ignoring in sync context")
+                return None
+            return result
+        except Exception as e:
+            logger.debug(f"Engine sync call '{method_name}' failed: {e}")
+            return None
+
+    def _engine_audio_running(self) -> Optional[bool]:
+        """Best-effort query of engine running state, if available."""
+        running = self._call_engine_method_sync("is_audio_running")
+        if running is None:
+            return None
+        return bool(running)
 
     def register_callback(self, callback: Callable) -> None:
         """Register callback for recovery events."""
@@ -141,22 +192,39 @@ class PipeWireRecoveryService:
 
     def check_jack_server(self) -> bool:
         """Check if JACK server (via PipeWire) is responding."""
+        jack_ok = False
         try:
             result = subprocess.run(
                 ["pw-jack", "jack_lsp"],
                 capture_output=True, timeout=3
             )
-            return result.returncode == 0
+            jack_ok = result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
+            pass
+
+        if not jack_ok:
             # Fallback: try jack_lsp directly
             try:
                 result = subprocess.run(
                     ["jack_lsp"],
                     capture_output=True, timeout=3
                 )
-                return result.returncode == 0
+                jack_ok = result.returncode == 0
             except (subprocess.SubprocessError, FileNotFoundError):
-                return False
+                jack_ok = False
+
+        if jack_ok:
+            return True
+
+        # Last-resort fallback: if low-level JACK probe fails but engine reports
+        # audio running, treat JACK as effectively available to avoid false
+        # recovery loops.
+        engine_running = self._engine_audio_running()
+        if engine_running:
+            logger.debug("JACK probe failed but engine reports running audio")
+            return True
+
+        return False
 
     def get_pipewire_quantum(self) -> tuple:
         """Get current PipeWire quantum and sample rate."""
@@ -200,21 +268,30 @@ class PipeWireRecoveryService:
         health.jack_server_running = self.check_jack_server()
         health.state = self._state
         health.recovery_count = self.recovery_count
+        health.device_connected = bool(self._engine_audio_running())
 
         # Get engine stats if available
         if self._engine is not None:
             try:
-                stats = self._engine.get_audio_stats()
+                stats = self._call_engine_method_sync("get_audio_stats")
                 if stats:
-                    health.device_connected = stats.get("device_connected", False)
+                    health.device_connected = stats.get("device_connected", health.device_connected)
                     health.xrun_count = stats.get("xrun_count", 0)
                     health.latency_ms = stats.get("latency_ms", 0)
                     health.jitter_ms = stats.get("callback_jitter_ms", 0)
                     health.cpu_percent = stats.get("cpu_usage", 0)
                     health.uptime_sec = stats.get("uptime_seconds", 0)
                     health.last_error = stats.get("last_error", "")
+                else:
+                    # Compatibility fallback for JuceEngineService wrapper
+                    xrun_count = self._call_engine_method_sync("get_xrun_count")
+                    if isinstance(xrun_count, (int, float)):
+                        health.xrun_count = int(xrun_count)
+                    latency_ms = self._call_engine_method_sync("get_total_latency_ms")
+                    if isinstance(latency_ms, (int, float)):
+                        health.latency_ms = float(latency_ms)
             except Exception as e:
-                logger.warning(f"Could not get engine stats: {e}")
+                logger.debug(f"Could not get engine stats: {e}")
 
         # Calculate xrun rate
         now = time.time()
@@ -258,16 +335,20 @@ class PipeWireRecoveryService:
         logger.info("[RECOVERY L2] Reconnecting JUCE audio to JACK...")
         if self._engine is None:
             return False
+        if not self._allow_engine_restarts:
+            logger.info("Engine restart recovery disabled; skipping JACK reconnect")
+            return False
         try:
             # Stop audio, wait, restart
-            self._engine.stop_audio()
+            await self._call_engine_method("stop_audio")
             await asyncio.sleep(1)
 
             # Re-initialize audio
-            success = self._engine.start_audio()
+            success = await self._call_engine_method("start_audio")
             if success:
                 await asyncio.sleep(0.5)
-                return self._engine.is_audio_running()
+                running = self._engine_audio_running()
+                return bool(success) and (bool(running) if running is not None else True)
             return False
         except Exception as e:
             logger.warning(f"JACK reconnect failed: {e}")
@@ -280,11 +361,8 @@ class PipeWireRecoveryService:
         logger.info("[RECOVERY L3] Restarting PipeWire daemon...")
         try:
             # Stop audio engine first
-            if self._engine:
-                try:
-                    self._engine.stop_audio()
-                except Exception:
-                    pass
+            if self._engine and self._allow_engine_restarts:
+                await self._call_engine_method("stop_audio")
 
             # Restart PipeWire (user service)
             proc = await asyncio.create_subprocess_exec(
@@ -316,8 +394,12 @@ class PipeWireRecoveryService:
 
             # Reconnect audio engine
             if self._engine:
+                if not self._allow_engine_restarts:
+                    logger.info("Engine restart recovery disabled; skipping audio engine restart")
+                    return self.check_jack_server()
                 await asyncio.sleep(1)
-                return self._engine.start_audio()
+                started = await self._call_engine_method("start_audio")
+                return bool(started) if started is not None else self.check_jack_server()
 
             return True
         except Exception as e:
@@ -332,11 +414,8 @@ class PipeWireRecoveryService:
         logger.info("[RECOVERY L4] Full audio stack restart...")
         try:
             # Stop everything
-            if self._engine:
-                try:
-                    self._engine.stop_audio()
-                except Exception:
-                    pass
+            if self._engine and self._allow_engine_restarts:
+                await self._call_engine_method("stop_audio")
 
             # Restart both services
             for service in ["pipewire.service", "wireplumber.service"]:
@@ -362,11 +441,14 @@ class PipeWireRecoveryService:
 
             # Reconnect engine
             if self._engine:
+                if not self._allow_engine_restarts:
+                    logger.info("Engine restart recovery disabled; skipping audio engine restart")
+                    return self.check_jack_server()
                 await asyncio.sleep(2)
-                success = self._engine.start_audio()
+                success = await self._call_engine_method("start_audio")
                 if success:
                     logger.info("Audio engine reconnected after full restart")
-                return success
+                return bool(success) if success is not None else self.check_jack_server()
 
             return True
         except Exception as e:
@@ -395,10 +477,11 @@ class PipeWireRecoveryService:
         # Escalating recovery levels
         recovery_levels = [
             ("soft_reset", self._soft_recovery),
-            ("jack_reconnect", self._reconnect_jack),
             ("pipewire_restart", self._restart_pipewire),
-            ("full_restart", self._full_restart),
         ]
+        if self._allow_engine_restarts:
+            recovery_levels.insert(1, ("jack_reconnect", self._reconnect_jack))
+            recovery_levels.append(("full_restart", self._full_restart))
 
         for attempt, (level_name, recovery_fn) in enumerate(recovery_levels):
             start = time.time()
@@ -467,6 +550,7 @@ class PipeWireRecoveryService:
             return
         self._running = True
         self._check_interval = check_interval
+        self._started_at = time.monotonic()
         self._task = asyncio.create_task(self._monitor_loop())
         logger.info("PipeWire recovery watchdog started "
                     f"(interval={check_interval}s)")
@@ -497,6 +581,7 @@ class PipeWireRecoveryService:
     async def _check_and_recover(self):
         """Single health check iteration."""
         health = self.get_health()
+        in_startup_grace = (time.monotonic() - self._started_at) < self.STARTUP_GRACE_SEC
 
         # === Critical: PipeWire daemon down ===
         if not health.daemon_running:
@@ -507,13 +592,17 @@ class PipeWireRecoveryService:
 
         # === Critical: JACK server down ===
         if not health.jack_server_running:
+            if in_startup_grace:
+                logger.debug("JACK not ready yet (startup grace window), skipping recovery")
+                self._state = RecoveryState.DEGRADED
+                return
             logger.error("JACK server not responding!")
             self._state = RecoveryState.DISCONNECTED
             await self._execute_recovery("jack_server_down")
             return
 
         # === Critical: Audio device disconnected ===
-        if self._engine and not health.device_connected:
+        if self._engine and not in_startup_grace and not health.device_connected:
             logger.warning("Audio device disconnected")
             self._state = RecoveryState.DISCONNECTED
             await self._execute_recovery("device_disconnected")

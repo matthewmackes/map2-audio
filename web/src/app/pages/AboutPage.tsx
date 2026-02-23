@@ -1231,105 +1231,65 @@ export function AboutPage() {
             borderTop: '1px solid rgba(161, 161, 170, 0.1)'
           }}>
             <p style={{ marginTop: 16, color: '#d4d4d8', fontWeight: 600, fontSize: 13 }}>
-              This project is a strictly non-commercial, educational, open-source resource created exclusively for learning, teaching, training, academic study, experimentation, demonstration, and personal research purposes.
+              MAP2 is maintained as an educational and research-focused project for learning, teaching, experimentation, and technical study in real-time audio systems.
             </p>
 
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Affiliation, Endorsement, Sponsorship or Connection of Any Kind</h4>
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>License</h4>
             <p style={{ margin: '0 0 12px' }}>
-              This software, source code, documentation, presets, examples, impulse responses, user interface text, comments, variable/function names, demo files, and any other materials are <strong style={{ color: '#d4d4d8' }}>in no way affiliated with, endorsed by, approved by, sponsored by, officially connected to, or associated with</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder in the professional audio industry.
+              MAP2-owned code in this repository is licensed under the <strong style={{ color: '#d4d4d8' }}>GNU Affero General Public License v3.0 (AGPL-3.0-only)</strong>. Educational intent statements describe project goals and do not add restrictions beyond AGPLv3.
+            </p>
+            <p style={{ margin: '0 0 12px' }}>
+              Source availability path for MAP2-owned code is this repository. Modified networked deployments should provide corresponding source in an accessible location for their users.
+            </p>
+            <p style={{ margin: '0 0 12px' }}>
+              Third-party components remain under their original licenses and are not relicensed by MAP2.
             </p>
 
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Trademark, Trade Name, Product Name &amp; Intellectual Property Notice</h4>
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Affiliation or Endorsement</h4>
             <p style={{ margin: '0 0 12px' }}>
-              All trademarks, service marks, trade names, brand names, product names, model designations, logos, slogans, distinctive designs, packaging, software titles, plugin names, and other intellectual property (whether registered or unregistered) that may appear in any form within this project are the <strong style={{ color: '#d4d4d8' }}>exclusive property of their respective owners</strong>.
+              This software, source code, documentation, presets, examples, impulse responses, UI text, comments, demo files, and related materials are <strong style={{ color: '#d4d4d8' }}>not affiliated with, endorsed by, sponsored by, or officially connected to</strong> any commercial manufacturer, brand owner, hardware developer, software developer, plugin creator, or rights holder.
+            </p>
+
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Trademarks and Product Names</h4>
+            <p style={{ margin: '0 0 12px' }}>
+              All trademarks, service marks, trade names, brand names, product names, model designations, logos, and related intellectual property are the <strong style={{ color: '#d4d4d8' }}>property of their respective owners</strong>.
             </p>
             <p style={{ margin: '0 0 12px' }}>
-              This project claims <strong style={{ color: '#d4d4d8' }}>no ownership</strong>, license, permission, authorization, sponsorship, or other right to use any such intellectual property.
+              References are used for educational, historical, descriptive, comparative, referential, and interoperability purposes only.
             </p>
             <p style={{ margin: '0 0 8px' }}>
-              References to any brand, product, model, algorithm name, effect name, hardware unit, software title, or related terminology are made <strong style={{ color: '#d4d4d8' }}>solely for educational, historical, descriptive, comparative, and referential purposes</strong> — including (but not limited to):
-            </p>
-            <ul style={{ margin: '0 0 12px', paddingLeft: 24 }}>
-              <li style={{ marginBottom: 4 }}>identifying well-known audio effects processors, algorithms, or sonic characteristics that are widely discussed in public-domain literature, academic papers, textbooks, tutorials, forums, and engineering communities</li>
-              <li style={{ marginBottom: 4 }}>helping learners understand historically significant signal-processing techniques</li>
-              <li>facilitating comparison and study of different approaches to reverb, delay, modulation, pitch/time manipulation, dynamics, distortion, filtering, harmonics, spatial effects, and similar audio processing concepts</li>
-            </ul>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Legal Basis in the United States</h4>
-            <p style={{ margin: '0 0 8px' }}>
-              In the United States, limited referential use of trademarks in non-commercial, educational, descriptive, or comparative contexts is often protected under several legal doctrines, including:
-            </p>
-            <ul style={{ margin: '0 0 12px', paddingLeft: 24, listStyleType: 'none' }}>
-              <li style={{ marginBottom: 10 }}>
-                <strong style={{ color: '#d4d4d8' }}>Nominative fair use</strong><br />
-                <span style={{ fontSize: 11 }}>(New Kids on the Block v. News America Publishing, Inc., 971 F.2d 302 (9th Cir. 1992) and subsequent case law)</span><br />
-                → Allows use of a trademark to identify the actual product/service when there is no practical alternative way to refer to it, no suggestion of sponsorship or endorsement, and no more use than reasonably necessary.
-              </li>
-              <li style={{ marginBottom: 10 }}>
-                <strong style={{ color: '#d4d4d8' }}>Descriptive / informational fair use</strong><br />
-                → Permits use of a mark descriptively (to describe a characteristic, function, or type of product) rather than as a source identifier, particularly when the use is in good faith and does not create a likelihood of confusion.
-              </li>
-              <li style={{ marginBottom: 10 }}>
-                <strong style={{ color: '#d4d4d8' }}>First Amendment / expressive use</strong><br />
-                → Educational commentary, criticism, teaching, scholarship, research, and non-commercial expression receive strong protection under the First Amendment, especially when the use is transformative, non-misleading, and does not compete with the trademark owner's goods or services.
-              </li>
-              <li style={{ marginBottom: 10 }}>
-                <strong style={{ color: '#d4d4d8' }}>Classic / nominative fair use in comparative or referential contexts</strong><br />
-                → Commonly accepted in technical documentation, reviews, academic writing, and open-source educational projects when the mark is used only as necessary to refer to the genuine article.
-              </li>
-            </ul>
-            <p style={{ margin: '0 0 12px' }}>
-              <strong style={{ color: '#d4d4d8' }}>This project is intentionally designed to fall within these principles</strong>: it is non-commercial, does not compete with any commercial product, makes no false claims of affiliation, and uses references only to the extent necessary for genuine educational purposes.
+              No trademark rights are granted by this repository license, documentation, or code.
             </p>
 
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Explicit Restrictions &amp; Prohibitions</h4>
-            <p style={{ margin: '0 0 8px' }}>
-              This project is <strong style={{ color: '#d4d4d8' }}>expressly NOT intended</strong> for, and you are strictly prohibited from using it (or any derivative thereof) in connection with:
-            </p>
-            <ul style={{ margin: '0 0 12px', paddingLeft: 24 }}>
-              <li style={{ marginBottom: 4 }}>any commercial purpose</li>
-              <li style={{ marginBottom: 4 }}>resale, redistribution for profit, or incorporation into any for-profit product</li>
-              <li style={{ marginBottom: 4 }}>inclusion in commercial software, plugins, hardware, apps, services, or subscription offerings</li>
-              <li style={{ marginBottom: 4 }}>any form of direct or indirect monetization</li>
-              <li style={{ marginBottom: 4 }}>retail distribution</li>
-              <li>any use that could reasonably suggest sponsorship, endorsement, affiliation, partnership, or licensing by any trademark owner or rights holder</li>
-            </ul>
-
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No License or Permission Granted</h4>
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Additional IP Permissions</h4>
             <p style={{ margin: '0 0 12px' }}>
-              Nothing contained in this project — including source code, comments, variable names, function names, documentation, presets, impulse responses, demo files, UI text, or any other content — should be construed as granting (explicitly, implicitly, by estoppel, or otherwise) any license, right, permission, or authorization to use any trademark, trade name, product designation, logo, copyrighted material, patented technology, or other intellectual property in a commercial context or in any manner that would suggest source, sponsorship, or endorsement.
+              Nothing in this project grants rights to third-party patented technology, copyrighted brand materials, or proprietary assets beyond what applicable law and third-party licenses permit.
             </p>
             <p style={{ margin: '0 0 12px' }}>
-              If you intend to use any referenced effect, algorithm, impulse response, sound design technique, branding, product name, or similar element in a <strong style={{ color: '#d4d4d8' }}>commercial product, service, plugin, hardware device, or monetized offering</strong>, you <strong style={{ color: '#d4d4d8' }}>must</strong> obtain all necessary licenses, permissions, and clearances directly from the respective rights holders.
+              If your use case requires separate permissions from a third-party rights holder, you are responsible for obtaining them.
             </p>
 
-            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Warranty – Use at Your Own Risk</h4>
+            <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>No Warranty</h4>
             <p style={{ margin: '0 0 12px' }}>
-              This project and all associated materials are provided <strong style={{ color: '#d4d4d8' }}>"AS IS"</strong> and <strong style={{ color: '#d4d4d8' }}>"AS AVAILABLE"</strong>, with <strong style={{ color: '#d4d4d8' }}>no warranties</strong> of any kind — express, implied, statutory, or otherwise — including (without limitation) warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, reliability, or uninterrupted operation.
-            </p>
-            <p style={{ margin: '0 0 12px' }}>
-              The authors, contributors, maintainers, and distributors shall not be liable under any legal theory for any damages (direct, indirect, incidental, special, consequential, punitive, or exemplary) arising from the use, misuse, or inability to use this educational resource, even if advised of the possibility of such damage.
+              This project and all associated materials are provided <strong style={{ color: '#d4d4d8' }}>"AS IS"</strong> and <strong style={{ color: '#d4d4d8' }}>"AS AVAILABLE"</strong>, without warranties of any kind, including merchantability, fitness for a particular purpose, and non-infringement.
             </p>
 
             <h4 style={{ color: '#e4e4e7', marginTop: 20, marginBottom: 8, fontSize: 13 }}>Your Responsibility</h4>
             <p style={{ margin: '0 0 8px' }}>
-              By accessing, studying, compiling, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
+              By accessing, studying, modifying, running, or distributing any part of this project, you acknowledge and agree that you will:
             </p>
             <ol style={{ margin: '0 0 12px', paddingLeft: 24 }}>
-              <li style={{ marginBottom: 6 }}>Not represent or imply that this project is official, endorsed, affiliated with, sponsored by, or produced by any commercial brand, manufacturer, or rights holder</li>
-              <li style={{ marginBottom: 6 }}>Not use any referenced marks in a manner likely to cause confusion, mistake, or deception as to source, sponsorship, or affiliation</li>
-              <li style={{ marginBottom: 6 }}>Comply with all applicable trademark, copyright, unfair competition, and intellectual property laws in your jurisdiction</li>
-              <li>Refrain from creating or distributing derivative works for commercial purposes that prominently feature protected brand names, model designations, logos, or other indicia without express written permission from the rights holders</li>
+              <li style={{ marginBottom: 6 }}>Comply with AGPLv3 requirements for MAP2-owned code.</li>
+              <li style={{ marginBottom: 6 }}>Comply with all applicable third-party licenses for included dependencies.</li>
+              <li style={{ marginBottom: 6 }}>Avoid representing this project as officially affiliated with third-party brands or products.</li>
+              <li>Comply with applicable trademark, copyright, and other IP laws in your jurisdiction.</li>
             </ol>
 
             <p style={{ margin: '16px 0 8px', color: '#d4d4d8', fontStyle: 'italic', fontSize: 12 }}>
-              We respectfully ask all users to honor the intellectual property rights of the many talented engineers, designers, and companies that have advanced the field of audio signal processing.
-            </p>
-            <p style={{ margin: '0 0 0', color: '#d4d4d8', fontStyle: 'italic', fontSize: 12 }}>
-              Thank you for using this educational resource responsibly.
+              This project continues to prioritize education, transparency, and respectful attribution.
             </p>
             <p style={{ margin: '12px 0 0', color: '#71717a', fontSize: 11 }}>
-              Last updated: 2026
+              Last updated: 2026-02-22
             </p>
           </div>
         )}
