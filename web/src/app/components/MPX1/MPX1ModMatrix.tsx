@@ -256,7 +256,11 @@ export function MPX1ModMatrix() {
           {!selectedCell && <div className="mpx1-matrix__empty">Select an assigned cell to edit amount and curve.</div>}
           {selectedCell && (
             <div className="mpx1-matrix__detail-form">
-              <div className="mpx1-matrix__detail-name">{selectedCell.source} -> {selectedCell.destination}</div>
+              <div className="mpx1-matrix__detail-name">
+                {selectedCell.source}
+                {' -> '}
+                {selectedCell.destination}
+              </div>
 
               <label>
                 Amount
