@@ -35,6 +35,8 @@ def _default_snapshot_slot(slot_id: int) -> Dict[str, Any]:
         "name": f"Snapshot {slot_id + 1}",
         "has_data": False,
         "plugin_states": [],
+        "loop_insertions": [],
+        "effects_loops": [],
     }
 
 
@@ -89,7 +91,11 @@ def _load_snapshots_from_disk() -> None:
                 slot["name"] = str(item.get("name", slot["name"]))
                 slot["has_data"] = bool(item.get("has_data", False))
                 plugin_states = item.get("plugin_states", [])
+                loop_insertions = item.get("loop_insertions", [])
+                effects_loops = item.get("effects_loops", [])
                 slot["plugin_states"] = plugin_states if isinstance(plugin_states, list) else []
+                slot["loop_insertions"] = loop_insertions if isinstance(loop_insertions, list) else []
+                slot["effects_loops"] = effects_loops if isinstance(effects_loops, list) else []
                 loaded[slot_id] = slot
 
         current = payload.get("current", 0)
@@ -217,15 +223,25 @@ async def save_snapshot(snapshot_id: int, request: SaveSnapshotRequest) -> Dict[
         from app.database import get_session
         
         plugin_states = []
+        loop_insertions = []
+        effects_loops = []
         async with get_session() as session:
             service = ChainService(session)
-            chains = await service.get_chains()
+            chains = await service.list_chains()
             for chain in chains:
                 chain_data = await service.get_chain(chain["id"])
                 if chain_data:
                     plugin_states.append({
                         "chain_id": chain["id"],
                         "plugins": chain_data.get("plugins", [])
+                    })
+                    loop_insertions.append({
+                        "chain_id": chain["id"],
+                        "insertions": chain_data.get("loop_insertions", []),
+                    })
+                    effects_loops.append({
+                        "chain_id": chain["id"],
+                        "loops": chain_data.get("effects_loops", []),
                     })
         
         with _snapshot_lock:
@@ -234,6 +250,8 @@ async def save_snapshot(snapshot_id: int, request: SaveSnapshotRequest) -> Dict[
                 "name": request.name or f"Snapshot {snapshot_id + 1}",
                 "has_data": True,
                 "plugin_states": plugin_states,
+                "loop_insertions": loop_insertions,
+                "effects_loops": effects_loops,
             }
             _current_snapshot = snapshot_id
         _persist_snapshots_to_disk()
@@ -247,6 +265,8 @@ async def save_snapshot(snapshot_id: int, request: SaveSnapshotRequest) -> Dict[
                 "name": request.name or f"Snapshot {snapshot_id + 1}",
                 "has_data": True,
                 "plugin_states": [],
+                "loop_insertions": [],
+                "effects_loops": [],
             }
             _current_snapshot = snapshot_id
         _persist_snapshots_to_disk()

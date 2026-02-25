@@ -34,6 +34,19 @@ try:
         orchestrator = _get_orchestrator()
         assignments = await orchestrator.get_assignments()
 
+        chain_payloads = {}
+        try:
+            from app.database import get_session
+            from app.services.chain_service import ChainService
+
+            chain_ids = sorted({int(a.chain_id) for a in assignments if getattr(a, "chain_id", None) is not None})
+            async with get_session() as session:
+                chain_service = ChainService(session)
+                for chain_id in chain_ids:
+                    chain_payloads[chain_id] = await chain_service.get_chain(chain_id)
+        except Exception:
+            chain_payloads = {}
+
         return {
             "assignments": [
                 {
@@ -42,6 +55,7 @@ try:
                     "assigned_node_id": a.assigned_node_id,
                     "assignment_type": a.assignment_type,
                     "assignment_strategy": a.assignment_strategy,
+                    "chain": chain_payloads.get(int(a.chain_id)) if getattr(a, "chain_id", None) is not None else None,
                 }
                 for a in assignments
             ],
@@ -93,6 +107,7 @@ try:
             "flow_id": request.flow_id,
             "node_id": request.node_id,
             "chain_id": request.chain_id,
+            "chain": chain,
             "redundancy_enabled": request.redundancy_enabled,
         }
 

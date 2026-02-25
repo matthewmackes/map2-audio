@@ -260,6 +260,7 @@ class Chain(Base):
 
     # Relationships
     chain_plugins = relationship("ChainPlugin", back_populates="chain", cascade="all, delete-orphan")
+    loop_insertions = relationship("EffectsLoopInsertion", back_populates="chain", cascade="all, delete-orphan")
     presets = relationship("Preset", back_populates="chain", cascade="all, delete-orphan")
 
 
@@ -431,6 +432,126 @@ class ChainPlugin(Base):
 
     # Relationships
     chain = relationship("Chain", back_populates="chain_plugins")
+
+
+# =============================================================================
+# EXTERNAL EFFECTS LOOPS (TESIRA AVB SEND/RETURN)
+# =============================================================================
+
+class EffectsLoop(Base):
+    """External effects loop definition mapped to AVB/Tesira topology."""
+    __tablename__ = "effects_loops"
+
+    id = Column(Integer, primary_key=True)
+    loop_id = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    channels = Column(Integer, nullable=False, default=2)  # 1..8 validated in service layer
+    topology = Column(String(64), default="serial_insert")
+
+    tesira_device_id = Column(String(128), nullable=True)
+    template_id = Column(String(128), nullable=True)
+    send_endpoint_id = Column(String(255), nullable=True)
+    return_endpoint_id = Column(String(255), nullable=True)
+
+    state_desired = Column(String(32), default="inactive")
+    state_actual = Column(String(32), default="inactive")
+    health_status = Column(String(32), default="unknown")
+    health_reason = Column(Text, nullable=True)
+
+    target_added_latency_ms = Column(Float, default=0.5)
+    measured_added_latency_ms = Column(Float, nullable=True)
+    compensation_samples = Column(Integer, default=0)
+    calibration_status = Column(String(32), default="uncalibrated")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    insertions = relationship("EffectsLoopInsertion", back_populates="loop", cascade="all, delete-orphan")
+    calibrations = relationship("EffectsLoopCalibration", back_populates="loop", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("idx_effects_loops_device_template", "tesira_device_id", "template_id"),
+        Index("idx_effects_loops_state", "state_actual", "health_status"),
+    )
+
+
+class EffectsLoopInsertion(Base):
+    """Insertion record linking a loop into a chain slot."""
+    __tablename__ = "effects_loop_insertions"
+
+    id = Column(Integer, primary_key=True)
+    insertion_id = Column(String(64), unique=True, nullable=False, index=True)
+    chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=False, index=True)
+    loop_id = Column(String(64), ForeignKey("effects_loops.loop_id", ondelete="CASCADE"), nullable=False, index=True)
+    slot_index = Column(Integer, nullable=False, default=0)
+    enabled = Column(Boolean, default=True)
+
+    mode = Column(String(32), default="serial_insert")
+    blend_pct = Column(Float, default=100.0)
+    send_gain_db = Column(Float, default=0.0)
+    return_gain_db = Column(Float, default=0.0)
+    crossfade_ms = Column(Integer, default=12)
+    band_split_hz = Column(JSON, default=list)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    chain = relationship("Chain", back_populates="loop_insertions")
+    loop = relationship("EffectsLoop", back_populates="insertions")
+
+    __table_args__ = (
+        Index("idx_effects_loop_insertions_chain_slot", "chain_id", "slot_index"),
+        Index("idx_effects_loop_insertions_chain_loop", "chain_id", "loop_id"),
+    )
+
+
+class EffectsLoopCalibration(Base):
+    """Calibration history and compensation records per loop."""
+    __tablename__ = "effects_loop_calibrations"
+
+    id = Column(Integer, primary_key=True)
+    calibration_id = Column(String(64), unique=True, nullable=False, index=True)
+    loop_id = Column(String(64), ForeignKey("effects_loops.loop_id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(32), default="pending")
+    measured_added_latency_ms = Column(Float, nullable=True)
+    compensation_samples = Column(Integer, default=0)
+    notes = Column(JSON, default=dict)
+    measured_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    loop = relationship("EffectsLoop", back_populates="calibrations")
+
+    __table_args__ = (
+        Index("idx_effects_loop_calibrations_loop_created", "loop_id", "created_at"),
+    )
+
+
+class TesiraLoopTemplate(Base):
+    """Tag-mapped Tesira template metadata for loop orchestration."""
+    __tablename__ = "tesira_loop_templates"
+
+    id = Column(Integer, primary_key=True)
+    template_id = Column(String(128), unique=True, nullable=False, index=True)
+    tesira_device_id = Column(String(128), nullable=False, index=True)
+
+    stream_in_tags = Column(JSON, default=list)
+    stream_out_tags = Column(JSON, default=list)
+    crosspoint_tags = Column(JSON, default=list)
+    input_router_tag = Column(String(255), nullable=True)
+    output_router_tag = Column(String(255), nullable=True)
+    meter_tags = Column(JSON, default=list)
+    bypass_tags = Column(JSON, default=list)
+    channel_map_policy = Column(String(64), default="direct")
+
+    validation_status = Column(String(32), default="unknown")
+    validation_error = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_loop_templates_device", "tesira_device_id"),
+    )
 
 
 class MIDIMappingGroup(Base):
@@ -716,6 +837,24 @@ class NAMModel(Base):
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# =============================================================================
+# TESIRA FORTE AVB — PRESET INTERLOCK RULES
+# =============================================================================
+
+class TesiraInterlockRule(Base):
+    """
+    Maps a MAP2 preset ID to a Tesira device preset index.
+    When the MAP2 preset is recalled, the Tesira preset is automatically recalled.
+    """
+    __tablename__ = "tesira_interlock_rules"
+
+    id = Column(Integer, primary_key=True)
+    map2_preset_id = Column(Integer, nullable=False, index=True)
+    tesira_device_id = Column(String(64), nullable=False)
+    tesira_preset_index = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class IRCategory(Base):

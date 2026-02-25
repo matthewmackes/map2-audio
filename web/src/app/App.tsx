@@ -39,6 +39,14 @@ const MultiSystemDashboard  = lazy(() => import('./pages/MultiSystemDashboardPag
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })).catch(() => ({ default: () => <Navigate to="/engine" replace /> })))
 const AvbRoutingPage        = lazy(() => import('./pages/AvbRoutingPage').then(m => ({ default: m.AvbRoutingPage })))
+const TesiraPage            = lazy(() => import('./pages/TesiraPage').then(m => ({ default: m.TesiraPage })))
+const MPX1Page              = lazy(() => import('./pages/MPX1Page').then(m => ({ default: m.MPX1Page })))
+const MPX1PanelView         = lazy(() => import('./pages/MPX1PanelView').then(m => ({ default: m.MPX1PanelView })))
+const MPX1EditorView        = lazy(() => import('./pages/MPX1EditorView').then(m => ({ default: m.MPX1EditorView })))
+const MPX1MidiMapView       = lazy(() => import('./pages/MPX1MidiMapView').then(m => ({ default: m.MPX1MidiMapView })))
+const MPX1MatrixView        = lazy(() => import('./pages/MPX1MatrixView').then(m => ({ default: m.MPX1MatrixView })))
+const MPX1LibraryView       = lazy(() => import('./pages/MPX1LibraryView').then(m => ({ default: m.MPX1LibraryView })))
+const MPX1DiagView          = lazy(() => import('./pages/MPX1DiagView').then(m => ({ default: m.MPX1DiagView })))
 
 /** Lightweight loading fallback — pure CSS, no MUI dependency */
 function PageLoader() {
@@ -51,6 +59,36 @@ function PageLoader() {
       }} />
       <style>{`@keyframes map2spin{to{transform:rotate(360deg)}}`}</style>
       <span style={{ fontSize: 14, color: '#999' }}>Loading…</span>
+    </div>
+  )
+}
+
+function MPX1SubviewPlaceholder({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div
+      style={{
+        height: '100%',
+        minHeight: 360,
+        border: '1px dashed rgba(59, 130, 246, 0.35)',
+        borderRadius: 10,
+        display: 'grid',
+        placeItems: 'center',
+        background: 'linear-gradient(135deg, rgba(15,23,42,0.35), rgba(2,6,23,0.55))',
+      }}
+    >
+      <div style={{ textAlign: 'center', padding: 16 }}>
+        <div
+          style={{
+            color: '#dbeafe',
+            fontSize: 18,
+            fontWeight: 700,
+            letterSpacing: '0.03em',
+          }}
+        >
+          {title}
+        </div>
+        <div style={{ color: '#94a3b8', marginTop: 6, fontSize: 12 }}>{detail}</div>
+      </div>
     </div>
   )
 }
@@ -102,6 +140,16 @@ export function App() {
                   <Route path="/drums" element={<DrumsPage />} />
                   <Route path="/multi-system" element={<MultiSystemDashboard />} />
                   <Route path="/avb-routing" element={<AvbRoutingPage />} />
+                  <Route path="/tesira" element={<TesiraPage />} />
+                  <Route path="/mpx1/*" element={<MPX1Page />}>
+                    <Route index element={<Navigate to="panel" replace />} />
+                    <Route path="panel" element={<MPX1PanelView />} />
+                    <Route path="editor" element={<MPX1EditorView />} />
+                    <Route path="midi-map" element={<MPX1MidiMapView />} />
+                    <Route path="matrix" element={<MPX1MatrixView />} />
+                    <Route path="library" element={<MPX1LibraryView />} />
+                    <Route path="diag" element={<MPX1DiagView />} />
+                  </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>

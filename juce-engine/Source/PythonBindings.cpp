@@ -256,6 +256,24 @@ py::dict synthForgeMeteringToDict(const synthforge::Metering& metering) {
     return d;
 }
 
+py::dict synthForgeSampleLoadStatusToDict(const synthforge::SampleLoadStatus& status) {
+    py::dict d;
+    d["loaded"] = status.loaded;
+    d["sampler_mode"] = status.samplerMode;
+    d["part_index"] = status.partIndex;
+    d["region_count"] = status.regionCount;
+    d["loaded_sample_count"] = status.loadedSampleCount;
+    d["sfz_path"] = status.sfzPath;
+    d["last_error"] = status.lastError;
+
+    py::list warnings;
+    for (const auto& warning : status.warnings) {
+        warnings.append(warning);
+    }
+    d["warnings"] = warnings;
+    return d;
+}
+
 Map2AudioEngine& getModuleEngine() {
     static std::shared_ptr<Map2AudioEngine> engine = std::make_shared<Map2AudioEngine>();
     return *engine;
@@ -290,6 +308,48 @@ py::dict avbStreamStatsToDict(
     result["maxLatencyNs"] = stats.maxLatencyNs;
     result["minLatencyNs"] = stats.minLatencyNs;
     return result;
+}
+
+Map2AudioEngine::ExternalLoopDefinition dictToExternalLoopDefinition(const py::dict& raw) {
+    Map2AudioEngine::ExternalLoopDefinition loop;
+    if (raw.contains("loop_id")) loop.loopId = raw["loop_id"].cast<std::string>();
+    if (raw.contains("name")) loop.name = raw["name"].cast<std::string>();
+    if (raw.contains("channels")) loop.channels = raw["channels"].cast<int>();
+    if (raw.contains("topology")) loop.topology = raw["topology"].cast<std::string>();
+    if (raw.contains("send_endpoint_id")) loop.sendEndpointId = raw["send_endpoint_id"].cast<std::string>();
+    if (raw.contains("return_endpoint_id")) loop.returnEndpointId = raw["return_endpoint_id"].cast<std::string>();
+    if (raw.contains("target_added_latency_ms")) loop.targetAddedLatencyMs = raw["target_added_latency_ms"].cast<double>();
+    if (raw.contains("measured_added_latency_ms")) loop.measuredAddedLatencyMs = raw["measured_added_latency_ms"].cast<double>();
+    if (raw.contains("compensation_samples")) loop.compensationSamples = raw["compensation_samples"].cast<int>();
+    if (raw.contains("bypass")) loop.bypass = raw["bypass"].cast<bool>();
+    return loop;
+}
+
+Map2AudioEngine::ExternalLoopInsertion dictToExternalLoopInsertion(const py::dict& raw) {
+    Map2AudioEngine::ExternalLoopInsertion insertion;
+    if (raw.contains("insertion_id")) insertion.insertionId = raw["insertion_id"].cast<std::string>();
+    if (raw.contains("loop_id")) insertion.loopId = raw["loop_id"].cast<std::string>();
+    if (raw.contains("slot_index")) insertion.slotIndex = raw["slot_index"].cast<int>();
+    if (raw.contains("enabled")) insertion.enabled = raw["enabled"].cast<bool>();
+    if (raw.contains("mode")) insertion.mode = raw["mode"].cast<std::string>();
+    if (raw.contains("blend_pct")) insertion.blendPct = raw["blend_pct"].cast<float>();
+    if (raw.contains("send_gain_db")) insertion.sendGainDb = raw["send_gain_db"].cast<float>();
+    if (raw.contains("return_gain_db")) insertion.returnGainDb = raw["return_gain_db"].cast<float>();
+    if (raw.contains("crossfade_ms")) insertion.crossfadeMs = raw["crossfade_ms"].cast<int>();
+    if (raw.contains("band_split_hz")) insertion.bandSplitHz = raw["band_split_hz"].cast<std::vector<float>>();
+    return insertion;
+}
+
+py::dict externalLoopMetricsToDict(const Map2AudioEngine::ExternalLoopMetrics& metrics) {
+    py::dict payload;
+    payload["loop_id"] = metrics.loopId;
+    payload["active"] = metrics.active;
+    payload["bypass"] = metrics.bypass;
+    payload["channels"] = metrics.channels;
+    payload["target_added_latency_ms"] = metrics.targetAddedLatencyMs;
+    payload["measured_added_latency_ms"] = metrics.measuredAddedLatencyMs;
+    payload["compensation_samples"] = metrics.compensationSamples;
+    return payload;
 }
 
 #ifdef HAS_AVDECC
@@ -2286,6 +2346,51 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, py::arg("interface_name"), "Get AVB interface capability info")
 
         // ========================================
+        // External Effects Loops (Tesira AVB)
+        // ========================================
+
+        .def("set_external_loop_definitions", [](Map2AudioEngine& self, const py::list& loops) {
+            std::vector<Map2AudioEngine::ExternalLoopDefinition> payload;
+            payload.reserve(loops.size());
+            for (const auto& item : loops) {
+                payload.push_back(dictToExternalLoopDefinition(item.cast<py::dict>()));
+            }
+            return self.setExternalLoopDefinitions(payload);
+        }, py::arg("loops"), "Set external effects loop definitions")
+
+        .def("set_chain_loop_insertions", [](Map2AudioEngine& self, int chainId, const py::list& insertions) {
+            std::vector<Map2AudioEngine::ExternalLoopInsertion> payload;
+            payload.reserve(insertions.size());
+            for (const auto& item : insertions) {
+                payload.push_back(dictToExternalLoopInsertion(item.cast<py::dict>()));
+            }
+            return self.setChainLoopInsertions(chainId, payload);
+        }, py::arg("chain_id"), py::arg("insertions"), "Set external loop insertions for a chain")
+
+        .def("set_loop_bypass", &Map2AudioEngine::setLoopBypass,
+             py::arg("loop_id"), py::arg("bypass"),
+             "Set external loop bypass state")
+
+        .def("calibrate_loop", [](Map2AudioEngine& self, const std::string& loopId, const py::dict& options) {
+            int frames = 0;
+            if (options.contains("calibration_frames")) {
+                frames = options["calibration_frames"].cast<int>();
+            } else if (options.contains("frames")) {
+                frames = options["frames"].cast<int>();
+            }
+            return self.calibrateLoop(loopId, frames);
+        }, py::arg("loop_id"), py::arg("options") = py::dict(),
+           "Calibrate external loop and update compensation metrics")
+
+        .def("get_loop_metrics", [](const Map2AudioEngine& self, const std::string& loopId) {
+            py::list result;
+            for (const auto& metrics : self.getLoopMetrics(loopId)) {
+                result.append(externalLoopMetricsToDict(metrics));
+            }
+            return result;
+        }, py::arg("loop_id") = "", "Get external loop metrics (single loop or all)")
+
+        // ========================================
         // Plugin Management (Multi-Format)
         // ========================================
 
@@ -2409,6 +2514,12 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("set_synthforge_parameter", &Map2AudioEngine::setSynthForgeParameter,
              py::arg("part_index"), py::arg("param"), py::arg("value"),
              "Set a single SynthForge parameter")
+        .def("load_synthforge_sfz", &Map2AudioEngine::loadSynthForgeSfz,
+             py::arg("part_index"), py::arg("sfz_path"),
+             "Load SFZ into a SynthForge part sampler")
+        .def("get_synthforge_part_sample_status", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeSampleLoadStatusToDict(self.getSynthForgePartSampleStatus(partIndex));
+        }, py::arg("part_index"), "Get SynthForge sampler load status for a part")
 
         .def("get_synthforge_patches", [](const Map2AudioEngine& self, const std::string& category) {
             py::list result;
@@ -4871,6 +4982,44 @@ PYBIND11_MODULE(map2_audio_engine, m) {
        "Get entity model (always None when USE_AVDECC=OFF)");
 
     #endif // HAS_AVDECC
+
+    // ── Tesira AVB Node bindings ──────────────────────────────────────────────
+    // All five calls are lock-free atomic stores/loads; safe from Python thread.
+
+    m.def("set_tesira_device_level",
+        [](int device_idx, int channel, float level_db) -> bool {
+            return getModuleEngine().setTesiraDeviceLevel(device_idx, channel, level_db);
+        },
+        py::arg("device_idx"), py::arg("channel"), py::arg("level_db"),
+        "Set per-channel dB gain for a Tesira device slot (0 dB = unity)");
+
+    m.def("set_tesira_device_mute",
+        [](int device_idx, int channel, bool muted) -> bool {
+            return getModuleEngine().setTesiraDeviceMute(device_idx, channel, muted);
+        },
+        py::arg("device_idx"), py::arg("channel"), py::arg("muted"),
+        "Mute or unmute a single channel of a Tesira device slot");
+
+    m.def("set_tesira_device_connected",
+        [](int device_idx, bool connected) -> bool {
+            return getModuleEngine().setTesiraDeviceConnected(device_idx, connected);
+        },
+        py::arg("device_idx"), py::arg("connected"),
+        "Mark a Tesira device slot as connected (true) or disconnected (false)");
+
+    m.def("set_tesira_device_preset",
+        [](int device_idx, int preset_index) -> bool {
+            return getModuleEngine().setTesiraDevicePreset(device_idx, preset_index);
+        },
+        py::arg("device_idx"), py::arg("preset_index"),
+        "Set the active preset index for a Tesira device slot (-1 = none)");
+
+    m.def("get_tesira_output_level",
+        [](int device_idx, int channel) -> float {
+            return getModuleEngine().getTesiraOutputLevel(device_idx, channel);
+        },
+        py::arg("device_idx"), py::arg("channel"),
+        "Get the latest peak output level (dBFS) for a Tesira channel; returns -120 if no data");
 
 #endif // HAS_AVB
 }

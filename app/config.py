@@ -584,6 +584,43 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         value_type=str,
         choices=["A", "B"],
     ),
+
+    # ── Tesira Forte AVB ─────────────────────────────────────────────────────
+    "tesira.enabled": ConfigOption(
+        key="tesira.enabled",
+        default=False,
+        description="Enable Biamp Tesira Forte AVB integration (up to 5 units)",
+        value_type=bool,
+        env_var="MAP2_TESIRA_ENABLED",
+        restart_required=True,
+    ),
+    "tesira.devices": ConfigOption(
+        key="tesira.devices",
+        default=[],
+        description=(
+            "List of Tesira device connection configs. "
+            "Each entry: {host, port=23, name='', enabled=true, metering_tags=[]}"
+        ),
+        value_type=list,
+        env_var="MAP2_TESIRA_DEVICES",
+    ),
+    "tesira.metering_interval_ms": ConfigOption(
+        key="tesira.metering_interval_ms",
+        default=100,
+        description="TTP subscription push interval for level metering (ms)",
+        value_type=int,
+        min_value=50,
+        max_value=1000,
+    ),
+    "tesira.ptp_slave_mode": ConfigOption(
+        key="tesira.ptp_slave_mode",
+        default=True,
+        description=(
+            "Automatically demote MAP2 ptp4l to SLAVE when any Tesira unit "
+            "reports itself as PTP MASTER"
+        ),
+        value_type=bool,
+    ),
 }
 
 

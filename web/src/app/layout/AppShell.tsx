@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { Sparkle, Info, GridFour, Cube, BookOpen, List, X, Fire, ShareNetwork, CaretRight } from '@phosphor-icons/react'
+import { Sparkle, Info, GridFour, Cube, BookOpen, List, X, Fire, CaretRight } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
-import { advancedMenuItems, hardwareInterfaceMenuItems } from '../data/advancedMenuItems'
+import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
+import { advancedMenuItems, hardwareInterfaceMenuItems, type AdvancedMenuItem } from '../data/advancedMenuItems'
+import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -24,8 +26,46 @@ const DragonIcon = ({ size = 16, color = '#dc2626' }: { size?: number; color?: s
   </svg>
 )
 
+const LexiconRackIcon = ({
+  size = 16,
+  color = '#3b82f6',
+  className,
+  ...rest
+}: {
+  size?: number
+  color?: string
+  className?: string
+  weight?: string
+} & React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    {...rest}
+  >
+    <rect x="2" y="6" width="20" height="12" rx="2.5" stroke={color} strokeWidth="1.5" fill={`${color}1A`} />
+    <rect x="5.5" y="9" width="7.5" height="6" rx="1" fill={`${color}2F`} stroke={color} strokeWidth="1" />
+    <circle cx="17.5" cy="10" r="1.25" fill={color} />
+    <circle cx="17.5" cy="14" r="1.25" fill={color} />
+    <circle cx="20.5" cy="10" r="0.95" fill={color} opacity="0.7" />
+    <circle cx="20.5" cy="14" r="0.95" fill={color} opacity="0.7" />
+  </svg>
+)
+
+interface TopNavItem {
+  to: string
+  label: string
+  icon: React.ComponentType<any>
+  description: string
+  color: string
+  megaMenu?: boolean
+}
+
 // Main navigation items (left side, top-level)
-const navItemsLeft = [
+const navItemsLeft: TopNavItem[] = [
   {
     to: '/welcome',
     label: 'Guide',
@@ -41,24 +81,25 @@ const navItemsLeft = [
     color: '#2563eb'
   },
   {
-    to: '/avb-routing',
-    label: 'AVB',
-    icon: ShareNetwork,
-    description: 'AVB routing matrix',
-    color: '#06b6d4'
-  },
-  {
     to: '/grid-3d',
     label: '3D Grid',
     icon: Cube,
     description: '3D signal flow visualization',
     color: '#7c3aed'
   },
+  {
+    to: '/mpx1',
+    label: 'Lexicon MPX1',
+    icon: LexiconRackIcon,
+    description: 'Hardware rack editor + MIDI mapping',
+    color: '#3b82f6',
+    megaMenu: true,
+  },
   ...(enableLegacy ? [{ to: '/legacy', label: 'Legacy', icon: Sparkle, description: 'Classic interface', color: '#60a5fa' }] : []),
 ]
 
 // Right-side navigation items (About)
-const navItemsRight = [
+const navItemsRight: TopNavItem[] = [
   {
     to: '/about',
     label: 'About',
@@ -67,6 +108,44 @@ const navItemsRight = [
     color: '#9ca3af'
   },
 ]
+
+interface AdvancedMenuSection {
+  group: string
+  items: AdvancedMenuItem[]
+}
+
+function groupAdvancedMenuItems(items: AdvancedMenuItem[]): AdvancedMenuSection[] {
+  const sections: AdvancedMenuSection[] = []
+
+  for (const item of items) {
+    const group = item.group ?? 'Other'
+    const existingSection = sections.find(section => section.group === group)
+    if (existingSection) {
+      existingSection.items.push(item)
+      continue
+    }
+    sections.push({ group, items: [item] })
+  }
+
+  return sections
+}
+
+const advancedMenuSections = groupAdvancedMenuItems(advancedMenuItems)
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return Math.min(1, Math.max(0, value))
+}
+
+function normalizeMidiValue(value: number, max = 127): number {
+  if (!Number.isFinite(value)) return 0
+  return clamp01(value / max)
+}
+
+function formatProgramName(program: number, fallback?: string): string {
+  if (fallback && fallback.trim().length > 0) return fallback
+  return `Program ${Math.max(0, program).toString().padStart(3, '0')}`
+}
 
 // Check if current path matches a nav item
 function useActiveNavItem() {
@@ -106,6 +185,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [hardwareInterfacesOpen, setHardwareInterfacesOpen] = useState(false)
   const [mobileHardwareInterfacesOpen, setMobileHardwareInterfacesOpen] = useState(false)
   const advancedMenuRef = useRef<HTMLDivElement>(null)
+  const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
+  const mpx1MenuRef = useRef<HTMLDivElement>(null)
+
+  const {
+    state: mpx1State,
+    programs: mpx1Programs,
+    shadow: mpx1Shadow,
+    setProgram: setMpx1Program,
+    refresh: refreshMpx1State,
+  } = useMPX1State({ autoConnectWs: false })
+
+  const currentProgram = mpx1State?.current_program ?? 0
+  const currentProgramEntry = mpx1Programs.find((program) => program.program === currentProgram)
+  const currentProgramName = formatProgramName(currentProgram, currentProgramEntry?.name)
+  const mixMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_mix'] ?? mpx1Shadow['program.mix'] ?? 0))
+  const levelMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_level'] ?? mpx1Shadow['program.level'] ?? 0))
+  const hasMidiMappings = false
   
   // Get special settings to determine if Advanced Menu should be visible
   const {
@@ -131,13 +227,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         setAdvancedMenuOpen(false)
         setHardwareInterfacesOpen(false)
       }
+      if (mpx1MenuRef.current && !mpx1MenuRef.current.contains(event.target as Node)) {
+        setMpx1MenuOpen(false)
+      }
     }
 
-    if (navOpen || advancedMenuOpen) {
+    if (navOpen || advancedMenuOpen || mpx1MenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [navOpen, advancedMenuOpen])
+  }, [navOpen, advancedMenuOpen, mpx1MenuOpen])
 
   // Left nav: main items
   const leftNavItems = [...navItemsLeft]
@@ -145,9 +244,79 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Right nav: About
   const rightNavItems = [...navItemsRight]
 
-  // Helper to render a nav item (regular link)
-  const renderNavItem = (item: typeof rightNavItems[number]) => {
+  const handleMpx1Rescan = async () => {
+    try {
+      await mpx1Api.getMidiPorts()
+      await refreshMpx1State()
+    } catch (err) {
+      console.error('MPX1 MIDI rescan failed:', err)
+    }
+  }
+
+  const handleMpx1Disconnect = async () => {
+    try {
+      await mpx1Api.disconnectMidi()
+      await refreshMpx1State()
+    } catch (err) {
+      console.error('MPX1 disconnect failed:', err)
+    }
+  }
+
+  // Helper to render a nav item (regular link or mega menu trigger)
+  const renderNavItem = (item: TopNavItem) => {
     const Icon = item.icon
+
+    if (item.megaMenu) {
+      return (
+        <div key={item.to} className="mpx1-nav-root" ref={mpx1MenuRef}>
+          <button
+            type="button"
+            className={`nav-tab-item nav-tab-mpx1${mpx1MenuOpen ? ' nav-tab-mpx1--open' : ''}`}
+            onClick={() => {
+              const nextOpen = !mpx1MenuOpen
+              setMpx1MenuOpen(nextOpen)
+              if (nextOpen) {
+                setAdvancedMenuOpen(false)
+                setHardwareInterfacesOpen(false)
+              }
+            }}
+            title={item.description}
+            aria-haspopup="menu"
+            aria-expanded={mpx1MenuOpen}
+            aria-controls="mpx1-mega-menu"
+          >
+            <span className="nav-tab-icon" style={{ '--tab-color': item.color } as React.CSSProperties}>
+              <Icon size={16} weight="duotone" aria-hidden />
+            </span>
+            <span className="nav-tab-label">{item.label}</span>
+            <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${mpx1MenuOpen ? ' is-open' : ''}`} />
+          </button>
+
+          {mpx1MenuOpen && (
+            <MPX1MegaMenu
+              menuId="mpx1-mega-menu"
+              connected={Boolean(mpx1State?.connected)}
+              currentProgram={currentProgram}
+              currentProgramName={currentProgramName}
+              mixMeter={mixMeter}
+              levelMeter={levelMeter}
+              hasMidiMappings={hasMidiMappings}
+              onClose={() => setMpx1MenuOpen(false)}
+              onRescan={handleMpx1Rescan}
+              onDisconnect={handleMpx1Disconnect}
+              onProgramStep={async (delta) => {
+                const nextProgram = Math.max(0, currentProgram + delta)
+                try {
+                  await setMpx1Program(nextProgram)
+                } catch (err) {
+                  console.error('MPX1 program change failed:', err)
+                }
+              }}
+            />
+          )}
+        </div>
+      )
+    }
 
     return (
       <NavLink
@@ -155,6 +324,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         to={item.to}
         className="nav-tab-item"
         title={item.description}
+        onClick={() => setMpx1MenuOpen(false)}
       >
         <span className="nav-tab-icon" style={{ '--tab-color': item.color } as React.CSSProperties}>
           <Icon size={16} weight="duotone" aria-hidden />
@@ -226,207 +396,127 @@ export function AppShell({ children }: { children: ReactNode }) {
             {rightNavItems.map(renderNavItem)}
             {/* Advanced Menu - only shown when Special is enabled and location is top-nav */}
             {showAdvancedMenu && showInTopNav && (
-              <div style={{ position: 'relative' }} ref={advancedMenuRef}>
+              <div className="advanced-menu-root" ref={advancedMenuRef}>
                 <button
-                  className="nav-tab-item"
-                  style={{
-                    background: 'none',
-                    border: '1px solid rgba(37, 99, 235, 0.3)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
-                    borderRadius: '6px',
-                    transition: 'background 150ms, border-color 150ms',
-                  }}
+                  type="button"
+                  className={`nav-tab-item nav-tab-advanced${advancedMenuOpen ? ' nav-tab-advanced--open' : ''}`}
                   onClick={() => {
                     const nextOpen = !advancedMenuOpen
                     setAdvancedMenuOpen(nextOpen)
+                    if (nextOpen) {
+                      setMpx1MenuOpen(false)
+                    }
                     if (!nextOpen) {
                       setHardwareInterfacesOpen(false)
                     }
                   }}
                   title="Advanced settings & configuration"
+                  aria-haspopup="menu"
+                  aria-expanded={advancedMenuOpen}
+                  aria-controls="advanced-nav-menu"
                 >
-                  <Fire size={16} weight="duotone" style={{ color: '#60a5fa' }} />
-                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#60a5fa' }}>Advanced</span>
+                  <Fire size={16} weight="duotone" className="nav-tab-advanced-flame" />
+                  <span className="nav-tab-advanced-label">Advanced</span>
+                  <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${advancedMenuOpen ? ' is-open' : ''}`} />
                 </button>
                 
                 {advancedMenuOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: 'calc(100% + 8px)',
-                      background: '#111111',
-                      border: '1px solid rgba(37, 99, 235, 0.15)',
-                      borderRadius: '8px',
-                      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-                      minWidth: '260px',
-                      zIndex: 1000,
-                      overflow: 'visible',
-                    }}
-                  >
-                    {advancedMenuItems.map((item) => (
-                      <div key={item.to}>
-                        {item.dividerBefore && (
-                          <>
-                            <div style={{
-                              height: '1px',
-                              background: 'rgba(37, 99, 235, 0.1)',
-                              margin: '8px 0 0 0'
-                            }} />
-                            {item.group && (
-                              <div style={{
-                                padding: '6px 16px 2px',
-                                fontSize: '10px',
-                                fontWeight: 600,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.08em',
-                                color: '#6b7280',
-                              }}>
-                                {item.group}
-                              </div>
-                            )}
-                          </>
-                        )}
-                        {item.popupMenu === 'hardware-interfaces' ? (
-                          <div
-                            style={{ position: 'relative' }}
-                            onMouseEnter={() => setHardwareInterfacesOpen(true)}
-                            onMouseLeave={() => setHardwareInterfacesOpen(false)}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setHardwareInterfacesOpen(open => !open)}
-                              style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                padding: '12px 16px',
-                                border: 'none',
-                                background: 'transparent',
-                                textAlign: 'left',
-                                transition: 'background 150ms',
-                                color: '#f3f4f6',
-                                cursor: 'pointer',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(37, 99, 235, 0.08)'
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'transparent'
-                              }}
-                            >
-                              <item.icon size={16} weight="duotone" style={{ color: '#60a5fa', flexShrink: 0 }} />
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '13px', fontWeight: 500 }}>{item.label}</div>
-                                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
-                                  {item.description}
-                                </div>
-                              </div>
-                              <CaretRight size={14} weight="bold" style={{ color: '#9ca3af' }} />
-                            </button>
+                  <div id="advanced-nav-menu" className="advanced-menu-panel" role="menu">
+                    <div className="advanced-menu-header">
+                      <p className="advanced-menu-kicker">Operator Controls</p>
+                      <p className="advanced-menu-title">Advanced Menu</p>
+                      <p className="advanced-menu-subtitle">
+                        System-level routing, interfaces, and infrastructure dashboards.
+                      </p>
+                    </div>
 
-                            {hardwareInterfacesOpen && (
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  left: 'calc(100% - 6px)',
-                                  top: 0,
-                                  background: '#111111',
-                                  border: '1px solid rgba(37, 99, 235, 0.15)',
-                                  borderRadius: '8px',
-                                  boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
-                                  minWidth: '300px',
-                                  zIndex: 1010,
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                {hardwareInterfaceMenuItems.map((hardwareItem) => (
-                                  <NavLink
-                                    key={`${hardwareItem.label}-${hardwareItem.to}`}
-                                    to={hardwareItem.to}
-                                    onClick={() => {
-                                      setHardwareInterfacesOpen(false)
-                                      setAdvancedMenuOpen(false)
-                                    }}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '12px',
-                                      padding: '12px 16px',
-                                      textDecoration: 'none',
-                                      transition: 'background 150ms',
-                                      color: '#f3f4f6',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.background = 'rgba(37, 99, 235, 0.08)'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.background = 'transparent'
-                                    }}
+                    <div className="advanced-menu-sections">
+                      {advancedMenuSections.map((section) => (
+                        <section key={section.group} className="advanced-menu-section" aria-label={section.group}>
+                          <div className="advanced-menu-section-label">{section.group}</div>
+
+                          {section.items.map((item) => {
+                            if (item.popupMenu === 'hardware-interfaces') {
+                              return (
+                                <div
+                                  key={`${section.group}-${item.to}`}
+                                  className="advanced-menu-item-row"
+                                  onMouseEnter={() => setHardwareInterfacesOpen(true)}
+                                  onMouseLeave={() => setHardwareInterfacesOpen(false)}
+                                  style={{ '--advanced-item-color': item.color } as React.CSSProperties}
+                                >
+                                  <button
+                                    type="button"
+                                    className="advanced-menu-item advanced-menu-item--button"
+                                    onClick={() => setHardwareInterfacesOpen(open => !open)}
+                                    aria-haspopup="menu"
+                                    aria-expanded={hardwareInterfacesOpen}
                                   >
-                                    <hardwareItem.icon size={16} weight="duotone" style={{ color: '#60a5fa', flexShrink: 0 }} />
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 500 }}>{hardwareItem.label}</div>
-                                      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
-                                        {hardwareItem.description}
+                                    <item.icon size={16} weight="duotone" className="advanced-menu-item-icon" />
+                                    <div className="advanced-menu-item-content">
+                                      <div className="advanced-menu-item-title">{item.label}</div>
+                                      <div className="advanced-menu-item-description">{item.description}</div>
+                                    </div>
+                                    <CaretRight
+                                      size={14}
+                                      weight="bold"
+                                      className={`advanced-menu-item-caret${hardwareInterfacesOpen ? ' is-open' : ''}`}
+                                    />
+                                  </button>
+
+                                  {hardwareInterfacesOpen && (
+                                    <div className="advanced-submenu-panel" role="menu">
+                                      {hardwareInterfaceMenuItems.map((hardwareItem) => (
+                                        <NavLink
+                                          key={`${hardwareItem.label}-${hardwareItem.to}`}
+                                          to={hardwareItem.to}
+                                          className={({ isActive }) =>
+                                            `advanced-menu-item${isActive ? ' advanced-menu-item--active' : ''}`
+                                          }
+                                          style={{ '--advanced-item-color': hardwareItem.color } as React.CSSProperties}
+                                          onClick={() => {
+                                            setHardwareInterfacesOpen(false)
+                                            setAdvancedMenuOpen(false)
+                                          }}
+                                        >
+                                          <hardwareItem.icon size={16} weight="duotone" className="advanced-menu-item-icon" />
+                                          <div className="advanced-menu-item-content">
+                                            <div className="advanced-menu-item-title">{hardwareItem.label}</div>
+                                            <div className="advanced-menu-item-description">{hardwareItem.description}</div>
+                                          </div>
+                                        </NavLink>
+                                      ))}
+                                      <div className="advanced-submenu-note">
+                                        Reserved space for new hardware profiles.
                                       </div>
                                     </div>
-                                  </NavLink>
-                                ))}
-                                <div
-                                  style={{
-                                    margin: '8px 10px 10px',
-                                    border: '1px dashed rgba(96, 165, 250, 0.3)',
-                                    borderRadius: '6px',
-                                    padding: '10px 12px',
-                                    fontSize: '11px',
-                                    color: '#6b7280',
-                                  }}
-                                >
-                                  Reserved space for new hardware profiles.
+                                  )}
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <NavLink
-                            to={item.to}
-                            onClick={() => {
-                              setHardwareInterfacesOpen(false)
-                              setAdvancedMenuOpen(false)
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '12px',
-                              padding: '12px 16px',
-                              textDecoration: 'none',
-                              transition: 'background 150ms',
-                              color: '#f3f4f6',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(37, 99, 235, 0.08)'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent'
-                            }}
-                          >
-                            <item.icon size={16} weight="duotone" style={{ color: '#60a5fa', flexShrink: 0 }} />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: '13px', fontWeight: 500 }}>{item.label}</div>
-                              <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
-                                {item.description}
-                              </div>
-                            </div>
-                          </NavLink>
-                        )}
-                      </div>
-                    ))}
+                              )
+                            }
+
+                            return (
+                              <NavLink
+                                key={`${section.group}-${item.to}`}
+                                to={item.to}
+                                className={({ isActive }) => `advanced-menu-item${isActive ? ' advanced-menu-item--active' : ''}`}
+                                style={{ '--advanced-item-color': item.color } as React.CSSProperties}
+                                onClick={() => {
+                                  setHardwareInterfacesOpen(false)
+                                  setAdvancedMenuOpen(false)
+                                }}
+                              >
+                                <item.icon size={16} weight="duotone" className="advanced-menu-item-icon" />
+                                <div className="advanced-menu-item-content">
+                                  <div className="advanced-menu-item-title">{item.label}</div>
+                                  <div className="advanced-menu-item-description">{item.description}</div>
+                                </div>
+                              </NavLink>
+                            )
+                          })}
+                        </section>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -460,6 +550,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             onClick={() => {
               const nextOpen = !navOpen
               setNavOpen(nextOpen)
+              if (nextOpen) {
+                setMpx1MenuOpen(false)
+              }
               if (!nextOpen) {
                 setMobileHardwareInterfacesOpen(false)
               }
@@ -476,83 +569,82 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="nav-mobile-menu" ref={navMenuRef}>
             <div className="nav-mobile-menu-content">
               {/* Advanced menu items - shown if Special is enabled and (top-nav or mobile-only) */}
-              {showAdvancedMenu && advancedMenuItems.map((item) => {
-                const Icon = item.icon
+              {showAdvancedMenu && advancedMenuSections.map((section) => (
+                <section key={`mobile-${section.group}`} className="nav-mobile-advanced-group">
+                  <div className="nav-mobile-group-label">{section.group}</div>
+                  <div className="nav-mobile-group-grid">
+                    {section.items.map((item) => {
+                      const Icon = item.icon
 
-                if (item.popupMenu === 'hardware-interfaces') {
-                  return (
-                    <button
-                      key={item.to}
-                      type="button"
-                      className="nav-mobile-item"
-                      onClick={() => setMobileHardwareInterfacesOpen(open => !open)}
-                    >
-                      <Icon size={18} weight="duotone" aria-hidden />
-                      <span>{item.label}</span>
-                    </button>
-                  )
-                }
+                      if (item.popupMenu === 'hardware-interfaces') {
+                        return (
+                          <div key={`mobile-${section.group}-${item.to}`} className="nav-mobile-submenu-wrap">
+                            <button
+                              type="button"
+                              className={`nav-mobile-item nav-mobile-item--submenu${mobileHardwareInterfacesOpen ? ' is-open' : ''}`}
+                              style={{ '--item-color': item.color } as React.CSSProperties}
+                              onClick={() => setMobileHardwareInterfacesOpen(open => !open)}
+                              aria-expanded={mobileHardwareInterfacesOpen}
+                            >
+                              <Icon size={18} weight="duotone" aria-hidden />
+                              <span>{item.label}</span>
+                              <CaretRight
+                                size={14}
+                                weight="bold"
+                                className={`nav-mobile-item-caret${mobileHardwareInterfacesOpen ? ' is-open' : ''}`}
+                              />
+                            </button>
 
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className="nav-mobile-item"
-                    style={{ '--item-color': item.color } as React.CSSProperties}
-                    onClick={() => {
-                      setMobileHardwareInterfacesOpen(false)
-                      setNavOpen(false)
-                    }}
-                  >
-                    <Icon size={18} weight="duotone" aria-hidden />
-                    <span>{item.label}</span>
-                  </NavLink>
-                )
-              })}
+                            {mobileHardwareInterfacesOpen && (
+                              <div className="nav-mobile-submenu-grid">
+                                {hardwareInterfaceMenuItems.map((hardwareItem) => (
+                                  <NavLink
+                                    key={`${hardwareItem.label}-${hardwareItem.to}-mobile`}
+                                    to={hardwareItem.to}
+                                    className="nav-mobile-item nav-mobile-item--child"
+                                    style={{ '--item-color': hardwareItem.color } as React.CSSProperties}
+                                    onClick={() => {
+                                      setMobileHardwareInterfacesOpen(false)
+                                      setNavOpen(false)
+                                    }}
+                                  >
+                                    <hardwareItem.icon size={18} weight="duotone" aria-hidden />
+                                    <span>{hardwareItem.label}</span>
+                                  </NavLink>
+                                ))}
 
-              {showAdvancedMenu && mobileHardwareInterfacesOpen && hardwareInterfaceMenuItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <NavLink
-                    key={`${item.label}-${item.to}-mobile`}
-                    to={item.to}
-                    className="nav-mobile-item"
-                    style={{ '--item-color': item.color } as React.CSSProperties}
-                    onClick={() => {
-                      setMobileHardwareInterfacesOpen(false)
-                      setNavOpen(false)
-                    }}
-                  >
-                    <Icon size={18} weight="duotone" aria-hidden />
-                    <span>{item.label}</span>
-                  </NavLink>
-                )
-              })}
+                                <div className="nav-mobile-submenu-note">
+                                  Reserved space for new hardware profiles.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
 
-              {showAdvancedMenu && mobileHardwareInterfacesOpen && (
-                <div
-                  style={{
-                    gridColumn: '1 / -1',
-                    border: '1px dashed rgba(96, 165, 250, 0.25)',
-                    borderRadius: '8px',
-                    padding: '10px 12px',
-                    fontSize: '11px',
-                    color: '#6b7280',
-                    textAlign: 'center',
-                  }}
-                >
-                  Reserved space for new hardware profiles.
-                </div>
-              )}
+                      return (
+                        <NavLink
+                          key={`mobile-${section.group}-${item.to}`}
+                          to={item.to}
+                          className="nav-mobile-item"
+                          style={{ '--item-color': item.color } as React.CSSProperties}
+                          onClick={() => {
+                            setMobileHardwareInterfacesOpen(false)
+                            setNavOpen(false)
+                          }}
+                        >
+                          <Icon size={18} weight="duotone" aria-hidden />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
               
               {/* Message when Advanced Menu is hidden */}
               {!showAdvancedMenu && (
-                <div style={{
-                  padding: '20px',
-                  textAlign: 'center',
-                  color: '#6b7280',
-                  fontSize: '13px',
-                }}>
+                <div className="nav-mobile-disabled-note">
                   Advanced features not enabled.
                   <br />
                   Enable via dragon icon.

@@ -346,7 +346,12 @@ function NodeTreeItem({
   const talkers = nodeEndpoints.filter((ep) => ep.direction === 'talker');
   const listeners = nodeEndpoints.filter((ep) => ep.direction === 'listener');
 
-  const deviceIcon = node.type.startsWith('map2') ? '🎛️' : '🔌';
+  const deviceIcon = node.type === 'tesira'
+    ? null   // Tesira uses BiampIcon SVG badge below
+    : node.type.startsWith('map2') ? '🎛️' : '🔌';
+
+  // Biamp brand red — used for Tesira node accent
+  const BIAMP_RED = '#E31837';
 
   return (
     <>
@@ -359,10 +364,10 @@ function NodeTreeItem({
         data-node-selected={isSelected ? 'true' : 'false'}
         sx={{
           py: 1,
-          borderLeft: `4px solid ${isSelected ? node.color : 'transparent'}`,
-          bgcolor: isSelected ? `${node.color}11` : 'transparent',
+          borderLeft: `4px solid ${isSelected ? (node.type === 'tesira' ? BIAMP_RED : node.color) : 'transparent'}`,
+          bgcolor: isSelected ? `${node.type === 'tesira' ? BIAMP_RED : node.color}11` : 'transparent',
           '&:hover': {
-            bgcolor: isSelected ? `${node.color}22` : 'action.hover',
+            bgcolor: isSelected ? `${node.type === 'tesira' ? BIAMP_RED : node.color}22` : 'action.hover',
           },
         }}
       >
@@ -392,7 +397,28 @@ function NodeTreeItem({
 
         {/* Device icon + status */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-          <span style={{ fontSize: 18 }}>{deviceIcon}</span>
+          {node.type === 'tesira' ? (
+            /* Biamp Tesira — inline SVG "b" letterform badge */
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-label="Biamp Tesira"
+              style={{ display: 'block' }}
+            >
+              <rect x="5" y="3" width="3" height="18" rx="1.5" fill={BIAMP_RED} />
+              <path
+                d="M8 10 C8 10 18 10 18 14.5 C18 19 8 19 8 19"
+                stroke={BIAMP_RED}
+                strokeWidth="3"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          ) : (
+            <span style={{ fontSize: 18 }}>{deviceIcon}</span>
+          )}
           <NodeStatusBadge node={node} avbHealth={avbHealth} />
         </Box>
 
@@ -405,6 +431,19 @@ function NodeTreeItem({
               </Typography>
               {isLocal && (
                 <Chip label="Local" size="small" sx={{ height: 16, fontSize: 9 }} />
+              )}
+              {node.type === 'tesira' && (
+                <Chip
+                  label="Tesira"
+                  size="small"
+                  sx={{
+                    height: 16,
+                    fontSize: 9,
+                    bgcolor: BIAMP_RED,
+                    color: '#fff',
+                    '& .MuiChip-label': { px: 0.75 },
+                  }}
+                />
               )}
             </Box>
           }

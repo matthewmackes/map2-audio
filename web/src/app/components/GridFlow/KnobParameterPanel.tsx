@@ -6,7 +6,7 @@
  * falls back to Cortex Control inspired knob grid for others.
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { Suspense, useState, useCallback, useMemo } from 'react'
 import { Power, GearSix, ArrowsClockwise, WarningCircle } from '@phosphor-icons/react'
 import { ParameterKnob } from '../Controls/ParameterKnob'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
@@ -105,9 +105,25 @@ export function KnobParameterPanel({
 
   // Check if there's a custom card component for this plugin
   const CardComponent = useMemo(() => {
-    if (useClassicMode || !meta) return null
-    return getPluginCardComponent(meta.uri, meta.category)
-  }, [meta, useClassicMode])
+    if (useClassicMode || !meta || !plugin) return null
+
+    const category = meta.category || 'Instrument'
+    const candidates = [plugin.uri, meta.uri].filter((value): value is string => Boolean(value))
+
+    for (const candidateUri of candidates) {
+      const component = getPluginCardComponent(candidateUri, category)
+      if (component) {
+        return component
+      }
+    }
+
+    const synthforgeHint = `${plugin.uri} ${meta.uri} ${plugin.name || ''} ${meta.name || ''}`.toLowerCase()
+    if (synthforgeHint.includes('synthforge')) {
+      return getPluginCardComponent('map2://juce/synthforge', category)
+    }
+
+    return null
+  }, [meta, plugin, useClassicMode])
 
   // Build parameter values from chain plugin (index-based for card system)
   const parameterValues = useMemo(() => {
@@ -195,7 +211,9 @@ export function KnobParameterPanel({
 
     return (
       <div className="knob-param-panel knob-param-panel-card">
-        <CardComponent {...cardProps} />
+        <Suspense fallback={<div className="knob-param-panel-empty"><p>Loading plugin interface...</p></div>}>
+          <CardComponent {...cardProps} />
+        </Suspense>
       </div>
     )
   }

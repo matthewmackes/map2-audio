@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
+#include <utility>
 
 namespace map2::synthforge {
 
@@ -13,29 +15,18 @@ int clampMidiChannel(int channel) {
 
 }  // namespace
 
-Part::Part() {
-    for (int i = 0; i < kVoicesPerPart; ++i) {
-        synthesiser_.addVoice(new SynthVoice(voiceParameters_));
-    }
-    synthesiser_.addSound(new SynthSound());
-    setPartIndex(0);
-    setParameter("osc1.waveform", 0.0f);
-    setParameter("osc1.level", 0.75f);
-    setParameter("osc1.coarse", 0.0f);
-    setParameter("filter1.cutoff", 12000.0f);
-    setParameter("filter1.resonance", 0.15f);
-    setParameter("amp.attack", 10.0f);
-    setParameter("amp.decay", 120.0f);
-    setParameter("amp.sustain", 0.8f);
-    setParameter("amp.release", 250.0f);
-}
+Part::Part() : Part(0) {}
 
 Part::Part(int partIndex) {
+    audioFormatManager_.registerBasicFormats();
+
     for (int i = 0; i < kVoicesPerPart; ++i) {
         synthesiser_.addVoice(new SynthVoice(voiceParameters_));
     }
     synthesiser_.addSound(new SynthSound());
     setPartIndex(partIndex);
+    setSampleStatus(makeDefaultSampleStatus(partIndex_.load(std::memory_order_relaxed)));
+
     setParameter("osc1.waveform", 0.0f);
     setParameter("osc1.level", 0.75f);
     setParameter("osc1.coarse", 0.0f);
@@ -48,6 +39,8 @@ Part::Part(int partIndex) {
 }
 
 void Part::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
+    sampleRate_.store(sampleRate, std::memory_order_relaxed);
+
     renderBuffer_.setSize(std::max(2, numChannels), std::max(1, samplesPerBlock), false, false, true);
     renderBuffer_.clear();
 
@@ -57,6 +50,11 @@ void Part::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
             voice->setCurrentSampleRate(sampleRate);
         }
     }
+
+    if (auto sampler = std::atomic_load_explicit(&samplerProgram_, std::memory_order_acquire)) {
+        sampler->synthesiser.setCurrentPlaybackSampleRate(sampleRate);
+    }
+
     prepared_.store(true, std::memory_order_release);
 }
 
@@ -143,7 +141,19 @@ void Part::processAudio(juce::AudioBuffer<float>& mixBuffer, const juce::MidiBuf
     }
     renderBuffer_.clear();
 
-    synthesiser_.renderNextBlock(renderBuffer_, midiBuffer, 0, numSamples);
+    bool renderedSampler = false;
+    if (samplerEnabled_.load(std::memory_order_acquire)) {
+        if (auto sampler = std::atomic_load_explicit(&samplerProgram_, std::memory_order_acquire)) {
+            if (sampler->synthesiser.getNumSounds() > 0) {
+                sampler->synthesiser.renderNextBlock(renderBuffer_, midiBuffer, 0, numSamples);
+                renderedSampler = true;
+            }
+        }
+    }
+
+    if (!renderedSampler) {
+        synthesiser_.renderNextBlock(renderBuffer_, midiBuffer, 0, numSamples);
+    }
 
     const float level = clamp(level_.load(std::memory_order_relaxed), 0.0f, 1.0f);
     const float pan = clamp(pan_.load(std::memory_order_relaxed), -1.0f, 1.0f);
@@ -155,6 +165,96 @@ void Part::processAudio(juce::AudioBuffer<float>& mixBuffer, const juce::MidiBuf
     if (mixBuffer.getNumChannels() > 1) {
         mixBuffer.addFrom(1, 0, renderBuffer_, 1, 0, numSamples, rightGain);
     }
+}
+
+bool Part::loadSfz(const std::string& sfzPath) {
+    SampleLoadStatus status = getSampleStatus();
+    status.partIndex = partIndex_.load(std::memory_order_relaxed);
+    status.sfzPath = sfzPath;
+    status.lastError.clear();
+    status.warnings.clear();
+
+    if (sfzPath.empty()) {
+        status.lastError = "SFZ path must not be empty";
+        setSampleStatus(status);
+        return false;
+    }
+
+    const juce::File sfzFile(juce::String::fromUTF8(sfzPath.c_str()));
+    const SfzDocument document = SfzLoader::load(sfzFile);
+    status.warnings = document.warnings;
+
+    if (!document.ok()) {
+        status.lastError = document.error.empty() ? "SFZ parse/load failed" : document.error;
+        setSampleStatus(status);
+        return false;
+    }
+
+    auto samplerProgram = std::make_shared<SamplerProgram>();
+    for (int i = 0; i < kVoicesPerPart; ++i) {
+        samplerProgram->synthesiser.addVoice(new juce::SamplerVoice());
+    }
+    samplerProgram->synthesiser.setCurrentPlaybackSampleRate(sampleRate_.load(std::memory_order_relaxed));
+
+    int loadedSounds = 0;
+    for (const auto& region : document.regions) {
+        if (region.loVelocity != 0 || region.hiVelocity != 127) {
+            status.warnings.push_back(
+                "Velocity layers are currently approximated (region loaded without velocity split)");
+        }
+
+        std::unique_ptr<juce::AudioFormatReader> reader(audioFormatManager_.createReaderFor(region.sampleFile));
+        if (!reader) {
+            status.warnings.push_back(
+                "Failed to open sample: " + region.sampleFile.getFullPathName().toStdString());
+            continue;
+        }
+
+        juce::BigInteger notes;
+        for (int note = region.loKey; note <= region.hiKey; ++note) {
+            notes.setBit(note);
+        }
+
+        auto* sound = new juce::SamplerSound(
+            region.sampleFile.getFileNameWithoutExtension(),
+            *reader,
+            notes,
+            region.rootKey,
+            std::max(0.0f, region.attackSeconds),
+            std::max(0.0f, region.releaseSeconds),
+            600.0);
+
+        samplerProgram->synthesiser.addSound(sound);
+        ++loadedSounds;
+    }
+
+    if (loadedSounds == 0) {
+        status.lastError = "No region samples could be loaded from SFZ";
+        setSampleStatus(status);
+        return false;
+    }
+
+    samplerProgram->regionCount = static_cast<int>(document.regions.size());
+    samplerProgram->loadedSampleCount = loadedSounds;
+
+    std::atomic_store_explicit(&samplerProgram_, std::move(samplerProgram), std::memory_order_release);
+    samplerEnabled_.store(true, std::memory_order_release);
+
+    status.loaded = true;
+    status.samplerMode = true;
+    status.sfzPath = sfzFile.getFullPathName().toStdString();
+    status.regionCount = static_cast<int>(document.regions.size());
+    status.loadedSampleCount = loadedSounds;
+    status.lastError.clear();
+    setSampleStatus(status);
+    return true;
+}
+
+SampleLoadStatus Part::getSampleStatus() const {
+    std::lock_guard<std::mutex> guard(sampleStatusMutex_);
+    SampleLoadStatus copy = sampleStatus_;
+    copy.partIndex = partIndex_.load(std::memory_order_relaxed);
+    return copy;
 }
 
 void Part::resetVoices() {
@@ -209,6 +309,21 @@ float Part::normalizeEnvelopeMs(float value) {
         return clamp(value * 1000.0f, 1.0f, 5000.0f);
     }
     return clamp(value, 1.0f, 5000.0f);
+}
+
+void Part::setSampleStatus(const SampleLoadStatus& status) {
+    std::lock_guard<std::mutex> guard(sampleStatusMutex_);
+    sampleStatus_ = status;
+}
+
+SampleLoadStatus Part::makeDefaultSampleStatus(int partIndex) {
+    SampleLoadStatus status;
+    status.partIndex = partIndex;
+    status.loaded = false;
+    status.samplerMode = false;
+    status.regionCount = 0;
+    status.loadedSampleCount = 0;
+    return status;
 }
 
 }  // namespace map2::synthforge

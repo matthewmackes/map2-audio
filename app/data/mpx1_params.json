@@ -1,0 +1,5429 @@
+{
+  "schema_version": "1.0.0",
+  "device": {
+    "manufacturer": "Lexicon",
+    "model": "MPX1",
+    "transport": "MIDI SysEx"
+  },
+  "source_documents": [
+    {
+      "title": "MPX 1 V1.10 MIDI Implementation Details",
+      "url": "https://www.manualslib.com/manual/382550/Lexicon-Mpx-1-V1-10-Midi-Implementation-Details.html",
+      "notes": "Primary source used for parameter type identifiers and program/system dump structure."
+    },
+    {
+      "title": "MPX 1 MIDI Implementation Details (legacy mirror)",
+      "url": "https://www.manualslib.com/manual/382544/Lexicon-Mpx-1-Midi-Implementation-Details.html",
+      "notes": "Cross-check for shared message semantics and historical type IDs."
+    }
+  ],
+  "coverage": {
+    "status": "bootstrap_partial",
+    "algorithm_slot_coverage": {
+      "pitch": "0..10",
+      "chorus": "0..11",
+      "eq": "0..18",
+      "mod": "0..8",
+      "reverb": "0..5",
+      "delay": "0..8"
+    },
+    "known_gaps": [
+      "Per-algorithm deep parameter catalogs beyond Mix/Level/Bypass are not fully transcribed yet.",
+      "Modifier matrix destination linkage requires full parameter-type dump harvesting.",
+      "Remaining setup/global parameter catalog still needs one-to-one transcription from page-level tables."
+    ]
+  },
+  "modifier_matrix": {
+    "sources": [
+      "ctls.lfo1",
+      "ctls.lfo2",
+      "ctls.adr1",
+      "ctls.adr2",
+      "ctls.env1",
+      "ctls.env2",
+      "ctls.sample_hold",
+      "ctls.meter1",
+      "ctls.meter2",
+      "ctls.pedal",
+      "ctls.tog1",
+      "ctls.tog2",
+      "ctls.tog3",
+      "ctls.sw1",
+      "ctls.sw2",
+      "ctls.sw3",
+      "midi.pitch_bend",
+      "midi.aftertouch",
+      "midi.velocity",
+      "midi.note_number",
+      "midi.cc_001_119"
+    ],
+    "destinations": [
+      "pitch.*.*",
+      "chorus.*.*",
+      "eq.*.*",
+      "mod.*.*",
+      "reverb.*.*",
+      "delay.*.*",
+      "program.master_mix",
+      "program.master_level"
+    ]
+  },
+  "program_management": {
+    "program_slots": 250,
+    "name_length_chars": 12,
+    "supports_current_program_dump": true,
+    "supports_compact_program_dump": true
+  },
+  "params": [
+    {
+      "id": "program.pitch.algorithm",
+      "address_bytes": [
+        3,
+        0,
+        0,
+        255
+      ],
+      "display_name": "Pitch Algorithm",
+      "block": "pitch",
+      "algorithm": "algorithm_selector",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 10
+      },
+      "default": 0,
+      "units": "index",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump / Algorithm Numbers",
+      "realtime_safe": true,
+      "panel_control": "PITCH ALG",
+      "source_ref": "0x014E"
+    },
+    {
+      "id": "program.chorus.algorithm",
+      "address_bytes": [
+        3,
+        0,
+        1,
+        255
+      ],
+      "display_name": "Chorus Algorithm",
+      "block": "chorus",
+      "algorithm": "algorithm_selector",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 11
+      },
+      "default": 0,
+      "units": "index",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump / Algorithm Numbers",
+      "realtime_safe": true,
+      "panel_control": "CHORUS ALG",
+      "source_ref": "0x014F"
+    },
+    {
+      "id": "program.eq.algorithm",
+      "address_bytes": [
+        3,
+        0,
+        2,
+        255
+      ],
+      "display_name": "Eq Algorithm",
+      "block": "eq",
+      "algorithm": "algorithm_selector",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 18
+      },
+      "default": 0,
+      "units": "index",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump / Algorithm Numbers",
+      "realtime_safe": true,
+      "panel_control": "EQ ALG",
+      "source_ref": "0x0150"
+    },
+    {
+      "id": "program.mod.algorithm",
+      "address_bytes": [
+        3,
+        0,
+        3,
+        255
+      ],
+      "display_name": "Mod Algorithm",
+      "block": "mod",
+      "algorithm": "algorithm_selector",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 8
+      },
+      "default": 0,
+      "units": "index",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump / Algorithm Numbers",
+      "realtime_safe": true,
+      "panel_control": "MOD ALG",
+      "source_ref": "0x0151"
+    },
+    {
+      "id": "program.reverb.algorithm",
+      "address_bytes": [
+        3,
+        0,
+        4,
+        255
+      ],
+      "display_name": "Reverb Algorithm",
+      "block": "reverb",
+      "algorithm": "algorithm_selector",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 5
+      },
+      "default": 0,
+      "units": "index",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump / Algorithm Numbers",
+      "realtime_safe": true,
+      "panel_control": "REVERB ALG",
+      "source_ref": "0x0152"
+    },
+    {
+      "id": "program.delay.algorithm",
+      "address_bytes": [
+        3,
+        0,
+        5,
+        255
+      ],
+      "display_name": "Delay Algorithm",
+      "block": "delay",
+      "algorithm": "algorithm_selector",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 8
+      },
+      "default": 0,
+      "units": "index",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump / Algorithm Numbers",
+      "realtime_safe": true,
+      "panel_control": "DELAY ALG",
+      "source_ref": "0x0153"
+    },
+    {
+      "id": "pitch.alg_00.mix",
+      "address_bytes": [
+        3,
+        0,
+        0,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_00",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_00.level",
+      "address_bytes": [
+        3,
+        0,
+        0,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_00",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_00.bypass",
+      "address_bytes": [
+        3,
+        0,
+        0,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_00",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_01.mix",
+      "address_bytes": [
+        3,
+        0,
+        1,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_01",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_01.level",
+      "address_bytes": [
+        3,
+        0,
+        1,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_01",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_01.bypass",
+      "address_bytes": [
+        3,
+        0,
+        1,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_01",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_02.mix",
+      "address_bytes": [
+        3,
+        0,
+        2,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_02",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_02.level",
+      "address_bytes": [
+        3,
+        0,
+        2,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_02",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_02.bypass",
+      "address_bytes": [
+        3,
+        0,
+        2,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_02",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_03.mix",
+      "address_bytes": [
+        3,
+        0,
+        3,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_03",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_03.level",
+      "address_bytes": [
+        3,
+        0,
+        3,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_03",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_03.bypass",
+      "address_bytes": [
+        3,
+        0,
+        3,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_03",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_04.mix",
+      "address_bytes": [
+        3,
+        0,
+        4,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_04",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_04.level",
+      "address_bytes": [
+        3,
+        0,
+        4,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_04",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_04.bypass",
+      "address_bytes": [
+        3,
+        0,
+        4,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_04",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_05.mix",
+      "address_bytes": [
+        3,
+        0,
+        5,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_05",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_05.level",
+      "address_bytes": [
+        3,
+        0,
+        5,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_05",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_05.bypass",
+      "address_bytes": [
+        3,
+        0,
+        5,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_05",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_06.mix",
+      "address_bytes": [
+        3,
+        0,
+        6,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_06",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_06.level",
+      "address_bytes": [
+        3,
+        0,
+        6,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_06",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_06.bypass",
+      "address_bytes": [
+        3,
+        0,
+        6,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_06",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_07.mix",
+      "address_bytes": [
+        3,
+        0,
+        7,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_07",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_07.level",
+      "address_bytes": [
+        3,
+        0,
+        7,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_07",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_07.bypass",
+      "address_bytes": [
+        3,
+        0,
+        7,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_07",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_08.mix",
+      "address_bytes": [
+        3,
+        0,
+        8,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_08",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_08.level",
+      "address_bytes": [
+        3,
+        0,
+        8,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_08",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_08.bypass",
+      "address_bytes": [
+        3,
+        0,
+        8,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_08",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_09.mix",
+      "address_bytes": [
+        3,
+        0,
+        9,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_09",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_09.level",
+      "address_bytes": [
+        3,
+        0,
+        9,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_09",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_09.bypass",
+      "address_bytes": [
+        3,
+        0,
+        9,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_09",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "pitch.alg_10.mix",
+      "address_bytes": [
+        3,
+        0,
+        10,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "pitch",
+      "algorithm": "alg_10",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "pitch.alg_10.level",
+      "address_bytes": [
+        3,
+        0,
+        10,
+        1
+      ],
+      "display_name": "Level",
+      "block": "pitch",
+      "algorithm": "alg_10",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "pitch.alg_10.bypass",
+      "address_bytes": [
+        3,
+        0,
+        10,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "pitch",
+      "algorithm": "alg_10",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_00.mix",
+      "address_bytes": [
+        3,
+        1,
+        0,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_00",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_00.level",
+      "address_bytes": [
+        3,
+        1,
+        0,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_00",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_00.bypass",
+      "address_bytes": [
+        3,
+        1,
+        0,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_00",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_01.mix",
+      "address_bytes": [
+        3,
+        1,
+        1,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_01",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_01.level",
+      "address_bytes": [
+        3,
+        1,
+        1,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_01",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_01.bypass",
+      "address_bytes": [
+        3,
+        1,
+        1,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_01",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_02.mix",
+      "address_bytes": [
+        3,
+        1,
+        2,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_02",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_02.level",
+      "address_bytes": [
+        3,
+        1,
+        2,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_02",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_02.bypass",
+      "address_bytes": [
+        3,
+        1,
+        2,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_02",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_03.mix",
+      "address_bytes": [
+        3,
+        1,
+        3,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_03",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_03.level",
+      "address_bytes": [
+        3,
+        1,
+        3,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_03",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_03.bypass",
+      "address_bytes": [
+        3,
+        1,
+        3,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_03",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_04.mix",
+      "address_bytes": [
+        3,
+        1,
+        4,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_04",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_04.level",
+      "address_bytes": [
+        3,
+        1,
+        4,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_04",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_04.bypass",
+      "address_bytes": [
+        3,
+        1,
+        4,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_04",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_05.mix",
+      "address_bytes": [
+        3,
+        1,
+        5,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_05",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_05.level",
+      "address_bytes": [
+        3,
+        1,
+        5,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_05",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_05.bypass",
+      "address_bytes": [
+        3,
+        1,
+        5,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_05",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_06.mix",
+      "address_bytes": [
+        3,
+        1,
+        6,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_06",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_06.level",
+      "address_bytes": [
+        3,
+        1,
+        6,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_06",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_06.bypass",
+      "address_bytes": [
+        3,
+        1,
+        6,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_06",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_07.mix",
+      "address_bytes": [
+        3,
+        1,
+        7,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_07",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_07.level",
+      "address_bytes": [
+        3,
+        1,
+        7,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_07",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_07.bypass",
+      "address_bytes": [
+        3,
+        1,
+        7,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_07",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_08.mix",
+      "address_bytes": [
+        3,
+        1,
+        8,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_08",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_08.level",
+      "address_bytes": [
+        3,
+        1,
+        8,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_08",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_08.bypass",
+      "address_bytes": [
+        3,
+        1,
+        8,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_08",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_09.mix",
+      "address_bytes": [
+        3,
+        1,
+        9,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_09",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_09.level",
+      "address_bytes": [
+        3,
+        1,
+        9,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_09",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_09.bypass",
+      "address_bytes": [
+        3,
+        1,
+        9,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_09",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_10.mix",
+      "address_bytes": [
+        3,
+        1,
+        10,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_10",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_10.level",
+      "address_bytes": [
+        3,
+        1,
+        10,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_10",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_10.bypass",
+      "address_bytes": [
+        3,
+        1,
+        10,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_10",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "chorus.alg_11.mix",
+      "address_bytes": [
+        3,
+        1,
+        11,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "chorus",
+      "algorithm": "alg_11",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "chorus.alg_11.level",
+      "address_bytes": [
+        3,
+        1,
+        11,
+        1
+      ],
+      "display_name": "Level",
+      "block": "chorus",
+      "algorithm": "alg_11",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "chorus.alg_11.bypass",
+      "address_bytes": [
+        3,
+        1,
+        11,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "chorus",
+      "algorithm": "alg_11",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_00.mix",
+      "address_bytes": [
+        3,
+        2,
+        0,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_00",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_00.level",
+      "address_bytes": [
+        3,
+        2,
+        0,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_00",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_00.bypass",
+      "address_bytes": [
+        3,
+        2,
+        0,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_00",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_01.mix",
+      "address_bytes": [
+        3,
+        2,
+        1,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_01",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_01.level",
+      "address_bytes": [
+        3,
+        2,
+        1,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_01",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_01.bypass",
+      "address_bytes": [
+        3,
+        2,
+        1,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_01",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_02.mix",
+      "address_bytes": [
+        3,
+        2,
+        2,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_02",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_02.level",
+      "address_bytes": [
+        3,
+        2,
+        2,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_02",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_02.bypass",
+      "address_bytes": [
+        3,
+        2,
+        2,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_02",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_03.mix",
+      "address_bytes": [
+        3,
+        2,
+        3,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_03",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_03.level",
+      "address_bytes": [
+        3,
+        2,
+        3,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_03",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_03.bypass",
+      "address_bytes": [
+        3,
+        2,
+        3,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_03",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_04.mix",
+      "address_bytes": [
+        3,
+        2,
+        4,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_04",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_04.level",
+      "address_bytes": [
+        3,
+        2,
+        4,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_04",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_04.bypass",
+      "address_bytes": [
+        3,
+        2,
+        4,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_04",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_05.mix",
+      "address_bytes": [
+        3,
+        2,
+        5,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_05",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_05.level",
+      "address_bytes": [
+        3,
+        2,
+        5,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_05",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_05.bypass",
+      "address_bytes": [
+        3,
+        2,
+        5,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_05",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_06.mix",
+      "address_bytes": [
+        3,
+        2,
+        6,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_06",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_06.level",
+      "address_bytes": [
+        3,
+        2,
+        6,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_06",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_06.bypass",
+      "address_bytes": [
+        3,
+        2,
+        6,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_06",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_07.mix",
+      "address_bytes": [
+        3,
+        2,
+        7,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_07",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_07.level",
+      "address_bytes": [
+        3,
+        2,
+        7,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_07",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_07.bypass",
+      "address_bytes": [
+        3,
+        2,
+        7,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_07",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_08.mix",
+      "address_bytes": [
+        3,
+        2,
+        8,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_08",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_08.level",
+      "address_bytes": [
+        3,
+        2,
+        8,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_08",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_08.bypass",
+      "address_bytes": [
+        3,
+        2,
+        8,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_08",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_09.mix",
+      "address_bytes": [
+        3,
+        2,
+        9,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_09",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_09.level",
+      "address_bytes": [
+        3,
+        2,
+        9,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_09",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_09.bypass",
+      "address_bytes": [
+        3,
+        2,
+        9,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_09",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_10.mix",
+      "address_bytes": [
+        3,
+        2,
+        10,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_10",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_10.level",
+      "address_bytes": [
+        3,
+        2,
+        10,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_10",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_10.bypass",
+      "address_bytes": [
+        3,
+        2,
+        10,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_10",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_11.mix",
+      "address_bytes": [
+        3,
+        2,
+        11,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_11",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_11.level",
+      "address_bytes": [
+        3,
+        2,
+        11,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_11",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_11.bypass",
+      "address_bytes": [
+        3,
+        2,
+        11,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_11",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_12.mix",
+      "address_bytes": [
+        3,
+        2,
+        12,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_12",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_12.level",
+      "address_bytes": [
+        3,
+        2,
+        12,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_12",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_12.bypass",
+      "address_bytes": [
+        3,
+        2,
+        12,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_12",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_13.mix",
+      "address_bytes": [
+        3,
+        2,
+        13,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_13",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_13.level",
+      "address_bytes": [
+        3,
+        2,
+        13,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_13",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_13.bypass",
+      "address_bytes": [
+        3,
+        2,
+        13,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_13",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_14.mix",
+      "address_bytes": [
+        3,
+        2,
+        14,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_14",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_14.level",
+      "address_bytes": [
+        3,
+        2,
+        14,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_14",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_14.bypass",
+      "address_bytes": [
+        3,
+        2,
+        14,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_14",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_15.mix",
+      "address_bytes": [
+        3,
+        2,
+        15,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_15",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_15.level",
+      "address_bytes": [
+        3,
+        2,
+        15,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_15",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_15.bypass",
+      "address_bytes": [
+        3,
+        2,
+        15,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_15",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_16.mix",
+      "address_bytes": [
+        3,
+        2,
+        16,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_16",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_16.level",
+      "address_bytes": [
+        3,
+        2,
+        16,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_16",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_16.bypass",
+      "address_bytes": [
+        3,
+        2,
+        16,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_16",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_17.mix",
+      "address_bytes": [
+        3,
+        2,
+        17,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_17",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_17.level",
+      "address_bytes": [
+        3,
+        2,
+        17,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_17",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_17.bypass",
+      "address_bytes": [
+        3,
+        2,
+        17,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_17",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "eq.alg_18.mix",
+      "address_bytes": [
+        3,
+        2,
+        18,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "eq",
+      "algorithm": "alg_18",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "eq.alg_18.level",
+      "address_bytes": [
+        3,
+        2,
+        18,
+        1
+      ],
+      "display_name": "Level",
+      "block": "eq",
+      "algorithm": "alg_18",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "eq.alg_18.bypass",
+      "address_bytes": [
+        3,
+        2,
+        18,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "eq",
+      "algorithm": "alg_18",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_00.mix",
+      "address_bytes": [
+        3,
+        3,
+        0,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_00",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_00.level",
+      "address_bytes": [
+        3,
+        3,
+        0,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_00",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_00.bypass",
+      "address_bytes": [
+        3,
+        3,
+        0,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_00",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_01.mix",
+      "address_bytes": [
+        3,
+        3,
+        1,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_01",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_01.level",
+      "address_bytes": [
+        3,
+        3,
+        1,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_01",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_01.bypass",
+      "address_bytes": [
+        3,
+        3,
+        1,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_01",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_02.mix",
+      "address_bytes": [
+        3,
+        3,
+        2,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_02",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_02.level",
+      "address_bytes": [
+        3,
+        3,
+        2,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_02",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_02.bypass",
+      "address_bytes": [
+        3,
+        3,
+        2,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_02",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_03.mix",
+      "address_bytes": [
+        3,
+        3,
+        3,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_03",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_03.level",
+      "address_bytes": [
+        3,
+        3,
+        3,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_03",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_03.bypass",
+      "address_bytes": [
+        3,
+        3,
+        3,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_03",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_04.mix",
+      "address_bytes": [
+        3,
+        3,
+        4,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_04",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_04.level",
+      "address_bytes": [
+        3,
+        3,
+        4,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_04",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_04.bypass",
+      "address_bytes": [
+        3,
+        3,
+        4,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_04",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_05.mix",
+      "address_bytes": [
+        3,
+        3,
+        5,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_05",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_05.level",
+      "address_bytes": [
+        3,
+        3,
+        5,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_05",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_05.bypass",
+      "address_bytes": [
+        3,
+        3,
+        5,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_05",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_06.mix",
+      "address_bytes": [
+        3,
+        3,
+        6,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_06",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_06.level",
+      "address_bytes": [
+        3,
+        3,
+        6,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_06",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_06.bypass",
+      "address_bytes": [
+        3,
+        3,
+        6,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_06",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_07.mix",
+      "address_bytes": [
+        3,
+        3,
+        7,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_07",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_07.level",
+      "address_bytes": [
+        3,
+        3,
+        7,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_07",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_07.bypass",
+      "address_bytes": [
+        3,
+        3,
+        7,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_07",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "mod.alg_08.mix",
+      "address_bytes": [
+        3,
+        3,
+        8,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "mod",
+      "algorithm": "alg_08",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "mod.alg_08.level",
+      "address_bytes": [
+        3,
+        3,
+        8,
+        1
+      ],
+      "display_name": "Level",
+      "block": "mod",
+      "algorithm": "alg_08",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "mod.alg_08.bypass",
+      "address_bytes": [
+        3,
+        3,
+        8,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "mod",
+      "algorithm": "alg_08",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "reverb.alg_00.mix",
+      "address_bytes": [
+        3,
+        4,
+        0,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "reverb",
+      "algorithm": "alg_00",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "reverb.alg_00.level",
+      "address_bytes": [
+        3,
+        4,
+        0,
+        1
+      ],
+      "display_name": "Level",
+      "block": "reverb",
+      "algorithm": "alg_00",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "reverb.alg_00.bypass",
+      "address_bytes": [
+        3,
+        4,
+        0,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "reverb",
+      "algorithm": "alg_00",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "reverb.alg_01.mix",
+      "address_bytes": [
+        3,
+        4,
+        1,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "reverb",
+      "algorithm": "alg_01",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "reverb.alg_01.level",
+      "address_bytes": [
+        3,
+        4,
+        1,
+        1
+      ],
+      "display_name": "Level",
+      "block": "reverb",
+      "algorithm": "alg_01",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "reverb.alg_01.bypass",
+      "address_bytes": [
+        3,
+        4,
+        1,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "reverb",
+      "algorithm": "alg_01",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "reverb.alg_02.mix",
+      "address_bytes": [
+        3,
+        4,
+        2,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "reverb",
+      "algorithm": "alg_02",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "reverb.alg_02.level",
+      "address_bytes": [
+        3,
+        4,
+        2,
+        1
+      ],
+      "display_name": "Level",
+      "block": "reverb",
+      "algorithm": "alg_02",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "reverb.alg_02.bypass",
+      "address_bytes": [
+        3,
+        4,
+        2,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "reverb",
+      "algorithm": "alg_02",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "reverb.alg_03.mix",
+      "address_bytes": [
+        3,
+        4,
+        3,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "reverb",
+      "algorithm": "alg_03",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "reverb.alg_03.level",
+      "address_bytes": [
+        3,
+        4,
+        3,
+        1
+      ],
+      "display_name": "Level",
+      "block": "reverb",
+      "algorithm": "alg_03",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "reverb.alg_03.bypass",
+      "address_bytes": [
+        3,
+        4,
+        3,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "reverb",
+      "algorithm": "alg_03",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "reverb.alg_04.mix",
+      "address_bytes": [
+        3,
+        4,
+        4,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "reverb",
+      "algorithm": "alg_04",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "reverb.alg_04.level",
+      "address_bytes": [
+        3,
+        4,
+        4,
+        1
+      ],
+      "display_name": "Level",
+      "block": "reverb",
+      "algorithm": "alg_04",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "reverb.alg_04.bypass",
+      "address_bytes": [
+        3,
+        4,
+        4,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "reverb",
+      "algorithm": "alg_04",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "reverb.alg_05.mix",
+      "address_bytes": [
+        3,
+        4,
+        5,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "reverb",
+      "algorithm": "alg_05",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "reverb.alg_05.level",
+      "address_bytes": [
+        3,
+        4,
+        5,
+        1
+      ],
+      "display_name": "Level",
+      "block": "reverb",
+      "algorithm": "alg_05",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "reverb.alg_05.bypass",
+      "address_bytes": [
+        3,
+        4,
+        5,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "reverb",
+      "algorithm": "alg_05",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_00.mix",
+      "address_bytes": [
+        3,
+        5,
+        0,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_00",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_00.level",
+      "address_bytes": [
+        3,
+        5,
+        0,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_00",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_00.bypass",
+      "address_bytes": [
+        3,
+        5,
+        0,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_00",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_01.mix",
+      "address_bytes": [
+        3,
+        5,
+        1,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_01",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_01.level",
+      "address_bytes": [
+        3,
+        5,
+        1,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_01",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_01.bypass",
+      "address_bytes": [
+        3,
+        5,
+        1,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_01",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_02.mix",
+      "address_bytes": [
+        3,
+        5,
+        2,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_02",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_02.level",
+      "address_bytes": [
+        3,
+        5,
+        2,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_02",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_02.bypass",
+      "address_bytes": [
+        3,
+        5,
+        2,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_02",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_03.mix",
+      "address_bytes": [
+        3,
+        5,
+        3,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_03",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_03.level",
+      "address_bytes": [
+        3,
+        5,
+        3,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_03",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_03.bypass",
+      "address_bytes": [
+        3,
+        5,
+        3,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_03",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_04.mix",
+      "address_bytes": [
+        3,
+        5,
+        4,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_04",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_04.level",
+      "address_bytes": [
+        3,
+        5,
+        4,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_04",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_04.bypass",
+      "address_bytes": [
+        3,
+        5,
+        4,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_04",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_05.mix",
+      "address_bytes": [
+        3,
+        5,
+        5,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_05",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_05.level",
+      "address_bytes": [
+        3,
+        5,
+        5,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_05",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_05.bypass",
+      "address_bytes": [
+        3,
+        5,
+        5,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_05",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_06.mix",
+      "address_bytes": [
+        3,
+        5,
+        6,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_06",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_06.level",
+      "address_bytes": [
+        3,
+        5,
+        6,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_06",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_06.bypass",
+      "address_bytes": [
+        3,
+        5,
+        6,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_06",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_07.mix",
+      "address_bytes": [
+        3,
+        5,
+        7,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_07",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_07.level",
+      "address_bytes": [
+        3,
+        5,
+        7,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_07",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_07.bypass",
+      "address_bytes": [
+        3,
+        5,
+        7,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_07",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "delay.alg_08.mix",
+      "address_bytes": [
+        3,
+        5,
+        8,
+        0
+      ],
+      "display_name": "Mix",
+      "block": "delay",
+      "algorithm": "alg_08",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "MIX",
+      "source_ref": "0x002D"
+    },
+    {
+      "id": "delay.alg_08.level",
+      "address_bytes": [
+        3,
+        5,
+        8,
+        1
+      ],
+      "display_name": "Level",
+      "block": "delay",
+      "algorithm": "alg_08",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 12
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Algorithm Parameters",
+      "realtime_safe": true,
+      "panel_control": "LEVEL",
+      "source_ref": "0x002E"
+    },
+    {
+      "id": "delay.alg_08.bypass",
+      "address_bytes": [
+        3,
+        5,
+        8,
+        2
+      ],
+      "display_name": "Bypass",
+      "block": "delay",
+      "algorithm": "alg_08",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Effect Status",
+      "realtime_safe": true,
+      "panel_control": "BYPASS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "program.name",
+      "address_bytes": [
+        3,
+        7,
+        0,
+        0
+      ],
+      "display_name": "Program Name",
+      "block": "program",
+      "algorithm": "program_meta",
+      "type": "string",
+      "range": {
+        "min": 0,
+        "max": 12
+      },
+      "default": "",
+      "units": "chars",
+      "log_taper": false,
+      "widget": "text",
+      "page": "Program Dump",
+      "realtime_safe": false,
+      "panel_control": "PROGRAM",
+      "source_ref": "0x010C"
+    },
+    {
+      "id": "program.sort_flags",
+      "address_bytes": [
+        3,
+        7,
+        0,
+        1
+      ],
+      "display_name": "Sort Flags",
+      "block": "program",
+      "algorithm": "program_meta",
+      "type": "uint16",
+      "range": {
+        "min": 0,
+        "max": 65535
+      },
+      "default": 0,
+      "units": "bitmask",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Program Dump",
+      "realtime_safe": true,
+      "panel_control": "SORT",
+      "source_ref": "0x0116"
+    },
+    {
+      "id": "program.effect_status",
+      "address_bytes": [
+        3,
+        7,
+        0,
+        2
+      ],
+      "display_name": "Effect Status",
+      "block": "program",
+      "algorithm": "program_meta",
+      "type": "uint8",
+      "range": {
+        "min": 0,
+        "max": 255
+      },
+      "default": 0,
+      "units": "bitmask",
+      "log_taper": false,
+      "widget": "toggle_group",
+      "page": "Program Dump",
+      "realtime_safe": true,
+      "panel_control": "FX STATUS",
+      "source_ref": "0x0114"
+    },
+    {
+      "id": "program.master_mix",
+      "address_bytes": [
+        3,
+        7,
+        0,
+        3
+      ],
+      "display_name": "Master Mix",
+      "block": "program",
+      "algorithm": "program_meta",
+      "type": "uint16",
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "default": 100,
+      "units": "%",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Program Dump",
+      "realtime_safe": true,
+      "panel_control": "MASTER MIX",
+      "source_ref": "0x0148"
+    },
+    {
+      "id": "program.master_level",
+      "address_bytes": [
+        3,
+        7,
+        0,
+        4
+      ],
+      "display_name": "Master Level",
+      "block": "program",
+      "algorithm": "program_meta",
+      "type": "int16",
+      "range": {
+        "min": -96,
+        "max": 0
+      },
+      "default": 0,
+      "units": "dB",
+      "log_taper": false,
+      "widget": "fader",
+      "page": "Program Dump",
+      "realtime_safe": true,
+      "panel_control": "MASTER LEVEL",
+      "source_ref": "0x0149"
+    },
+    {
+      "id": "system.midi_speed",
+      "address_bytes": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "display_name": "MIDI Speed",
+      "block": "system",
+      "algorithm": "system",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 2
+      },
+      "default": 1,
+      "units": "mode",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Unique Parameters",
+      "realtime_safe": false,
+      "panel_control": "MIDI",
+      "source_ref": "0x0130"
+    },
+    {
+      "id": "system.panel_button_message",
+      "address_bytes": [
+        1,
+        0,
+        0,
+        1
+      ],
+      "display_name": "Panel Button Message",
+      "block": "system",
+      "algorithm": "system",
+      "type": "bool",
+      "range": {
+        "min": 0,
+        "max": 1
+      },
+      "default": 0,
+      "units": "on_off",
+      "log_taper": false,
+      "widget": "toggle",
+      "page": "Unique Parameters",
+      "realtime_safe": false,
+      "panel_control": "PANEL MSG",
+      "source_ref": "0x0131"
+    },
+    {
+      "id": "system.global_tempo",
+      "address_bytes": [
+        1,
+        0,
+        0,
+        2
+      ],
+      "display_name": "Global Tempo",
+      "block": "system",
+      "algorithm": "system",
+      "type": "uint16",
+      "range": {
+        "min": 40,
+        "max": 400
+      },
+      "default": 120,
+      "units": "bpm",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Tempo",
+      "realtime_safe": true,
+      "panel_control": "TEMPO",
+      "source_ref": "0x0146"
+    },
+    {
+      "id": "system.tempo_source",
+      "address_bytes": [
+        1,
+        0,
+        0,
+        3
+      ],
+      "display_name": "Tempo Source",
+      "block": "system",
+      "algorithm": "system",
+      "type": "enum",
+      "range": {
+        "min": 0,
+        "max": 3
+      },
+      "default": 0,
+      "units": "source",
+      "log_taper": false,
+      "widget": "select",
+      "page": "Tempo Source",
+      "realtime_safe": true,
+      "panel_control": "TEMPO SRC",
+      "source_ref": "0x0144"
+    },
+    {
+      "id": "system.tap_average",
+      "address_bytes": [
+        1,
+        0,
+        0,
+        4
+      ],
+      "display_name": "Tap Average",
+      "block": "system",
+      "algorithm": "system",
+      "type": "uint8",
+      "range": {
+        "min": 1,
+        "max": 8
+      },
+      "default": 2,
+      "units": "samples",
+      "log_taper": false,
+      "widget": "knob",
+      "page": "Tap",
+      "realtime_safe": true,
+      "panel_control": "TAP AVG",
+      "source_ref": "0x0145"
+    }
+  ]
+}

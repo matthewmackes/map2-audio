@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Cpu } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Cpu, ShareNetwork } from '@phosphor-icons/react'
+import { BiampIcon } from '../components/Tesira/BiampIcon'
 
 export interface AdvancedMenuItem {
   to: string
@@ -101,6 +102,22 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#0ea5e9',
     group: 'Hardware & Interfaces',
     popupMenu: 'hardware-interfaces',
+  },
+  {
+    to: '/avb-routing',
+    label: 'AVB Routing',
+    icon: ShareNetwork,
+    description: 'AVB/TSN routing matrix & network diagnostics',
+    color: '#06b6d4',
+    group: 'Hardware & Interfaces',
+  },
+  {
+    to: '/tesira',
+    label: 'Tesira AVB',
+    icon: BiampIcon as ComponentType<any>,
+    description: 'Biamp Tesira Forte AVB fleet control & metering',
+    color: '#E31837',
+    group: 'Hardware & Interfaces',
   },
 
   // ── Infrastructure ──

@@ -91,6 +91,13 @@ class ConnectionState(str, Enum):
     ERROR = "error"
 
 
+_ALLOWED_CONNECTION_ROLES = {
+    "effects_loop_send",
+    "effects_loop_return",
+    "general_route",
+}
+
+
 @dataclass
 class AudioEndpoint:
     """Represents an AVB audio endpoint (talker or listener)"""
@@ -126,6 +133,8 @@ class StreamConnection:
     srp_reservation_id: Optional[str] = None
     srp_admission_id: Optional[str] = None
     flow_trace_id: Optional[str] = None
+    connection_role: str = "general_route"
+    loop_id: Optional[str] = None
 
     def connection_id(self) -> str:
         """Unique identifier for this connection"""
@@ -350,6 +359,14 @@ class AvbRouter:
             if normalized in {"0", "false", "no", "off", ""}:
                 return False
         return fallback
+
+    @staticmethod
+    def _normalize_connection_role(raw: Any) -> str:
+        """Normalize optional route role metadata for observability."""
+        role = str(raw or "").strip().lower()
+        if role in _ALLOWED_CONNECTION_ROLES:
+            return role
+        return "general_route"
 
     @staticmethod
     def _new_flow_trace_id(prefix: str) -> str:
@@ -1389,6 +1406,8 @@ class AvbRouter:
                 listener_node_id=self._coerce_optional_text(stream_config.get("listener_node_id")),
                 talker_endpoint_id=self._coerce_optional_text(stream_config.get("talker_endpoint_id")),
                 listener_endpoint_id=self._coerce_optional_text(stream_config.get("listener_endpoint_id")),
+                connection_role=self._normalize_connection_role(stream_config.get("connection_role")),
+                loop_id=self._coerce_optional_text(stream_config.get("loop_id")),
             )
 
             create_result = await avb_service.create_stream(cfg)
@@ -1457,6 +1476,8 @@ class AvbRouter:
         listener_id: str,
         reservation_id: Optional[str] = None,
         admission_id: Optional[str] = None,
+        connection_role: str = "general_route",
+        loop_id: Optional[str] = None,
         return_details: bool = False,
     ) -> Any:
         """
@@ -1654,6 +1675,7 @@ class AvbRouter:
             )
 
         # Create connection
+        normalized_role = self._normalize_connection_role(connection_role)
         connection = StreamConnection(
             talker=talker,
             listener=listener,
@@ -1661,6 +1683,8 @@ class AvbRouter:
             srp_reservation_id=reservation_id,
             srp_admission_id=admission_id,
             flow_trace_id=trace_id,
+            connection_role=normalized_role,
+            loop_id=self._coerce_optional_text(loop_id),
         )
 
         conn_id = connection.connection_id()
@@ -1678,6 +1702,8 @@ class AvbRouter:
             success = await self._connect_map2_to_map2(connection)
         elif talker.device_type == "avdecc" or listener.device_type == "avdecc":
             success = await self._connect_via_avdecc(connection)
+        elif "tesira" in (talker.device_type, listener.device_type):
+            success = await self._connect_tesira_route(connection)
         else:
             logger.error(f"Unsupported connection type: {talker.device_type} → {listener.device_type}")
             success = False
@@ -1695,6 +1721,8 @@ class AvbRouter:
             logger.info(f"Connected: {conn_id}")
             result["success"] = True
             result["connection_id"] = conn_id
+            result["connection_role"] = connection.connection_role
+            result["loop_id"] = connection.loop_id
             self._record_flow_stage(
                 result=result,
                 trace_id=trace_id,
@@ -1878,6 +1906,8 @@ class AvbRouter:
             success = await self._disconnect_map2_to_map2(connection)
         elif connection.talker.device_type == "avdecc" or connection.listener.device_type == "avdecc":
             success = await self._disconnect_via_avdecc(connection)
+        elif "tesira" in (connection.talker.device_type, connection.listener.device_type):
+            success = await self._disconnect_tesira_route(connection)
         else:
             success = False
             self._record_flow_stage(
@@ -1959,6 +1989,8 @@ class AvbRouter:
             del self.connections[conn_id]
             logger.info(f"Disconnected: {conn_id}")
             result["success"] = True
+            result["connection_role"] = connection.connection_role
+            result["loop_id"] = connection.loop_id
             self._record_flow_stage(
                 result=result,
                 trace_id=trace_id,
@@ -2014,6 +2046,8 @@ class AvbRouter:
                 "listener_node_id": listener_node_id,
                 "talker_endpoint_id": talker_endpoint_id,
                 "listener_endpoint_id": listener_endpoint_id,
+                "connection_role": connection.connection_role,
+                "loop_id": connection.loop_id,
             }
 
             listener_config = {
@@ -2033,6 +2067,8 @@ class AvbRouter:
                 "listener_node_id": listener_node_id,
                 "talker_endpoint_id": talker_endpoint_id,
                 "listener_endpoint_id": listener_endpoint_id,
+                "connection_role": connection.connection_role,
+                "loop_id": connection.loop_id,
             }
 
             async def _provision_talker() -> Tuple[bool, str]:
@@ -2119,6 +2155,154 @@ class AvbRouter:
     # ========================================================================
     # AVDECC Connections
     # ========================================================================
+
+    async def _connect_tesira_route(self, connection: StreamConnection) -> bool:
+        """
+        Handle an AVB connection where one endpoint is a Tesira device.
+        The Tesira side manages its own stream attach via DSP template tags;
+        MAP2 side still needs explicit stream provisioning.
+        """
+        try:
+            tesira_ep = (
+                connection.talker
+                if connection.talker.device_type == "tesira"
+                else connection.listener
+            )
+            map2_ep = (
+                connection.listener
+                if connection.talker.device_type == "tesira"
+                else connection.talker
+            )
+
+            if map2_ep.device_type != "map2":
+                connection.error_message = "Tesira routing requires one MAP2 endpoint"
+                return False
+
+            if not bool(getattr(connection.talker, "available", True)) or not bool(
+                getattr(connection.listener, "available", True)
+            ):
+                connection.error_message = "Endpoint unavailable"
+                return False
+
+            talker_rate = int(connection.talker.sample_rate or 0)
+            listener_rate = int(connection.listener.sample_rate or 0)
+            if talker_rate <= 0 or listener_rate <= 0 or talker_rate != listener_rate:
+                connection.error_message = "Sample-rate mismatch between Tesira and MAP2 endpoints"
+                return False
+
+            channels = min(int(connection.talker.channels or 0), int(connection.listener.channels or 0))
+            if channels <= 0 or channels > 8:
+                connection.error_message = "Unsupported channel count for Tesira loop route"
+                return False
+
+            try:
+                from app.services.avb import get_avb_readiness
+
+                readiness = get_avb_readiness()
+                checks = readiness.get("checks", {}) if isinstance(readiness, dict) else {}
+                if not bool(checks.get("ptp4l_running", False)):
+                    connection.error_message = "PTP lock prerequisite failed (ptp4l not running)"
+                    return False
+            except Exception as exc:
+                logger.debug("Tesira preflight readiness probe skipped: %s", exc)
+
+            stream_direction = str(getattr(map2_ep.direction, "value", map2_ep.direction))
+            if stream_direction not in {"talker", "listener"}:
+                connection.error_message = "Unsupported MAP2 endpoint direction for Tesira route"
+                return False
+
+            stream_id = self._build_stream_id(
+                map2_ep,
+                tesira_ep,
+                "tesira-listener" if stream_direction == "listener" else "tesira-talker",
+            )
+            stream_config = {
+                "stream_id": stream_id,
+                "direction": stream_direction,
+                "channels": channels,
+                "sample_rate": talker_rate,
+                "buffer_size": int(config_get("audio.buffer_size", 256)),
+                "interface": str(config_get("avb.interface", "") or ""),
+                "dest_mac": tesira_ep.mac_address or "91:e0:f0:00:fe:01",
+                "presentation_offset_us": 2000,
+                "priority": int(config_get("avb.stream_priority", 3)),
+                "owner_node_id": self._resolve_endpoint_node_id(map2_ep),
+                "peer_node_id": self._resolve_endpoint_node_id(tesira_ep),
+                "owner_endpoint_id": map2_ep.endpoint_id(),
+                "peer_endpoint_id": tesira_ep.endpoint_id(),
+                "talker_node_id": self._resolve_endpoint_node_id(connection.talker),
+                "listener_node_id": self._resolve_endpoint_node_id(connection.listener),
+                "talker_endpoint_id": connection.talker.endpoint_id(),
+                "listener_endpoint_id": connection.listener.endpoint_id(),
+                "connection_role": connection.connection_role,
+                "loop_id": connection.loop_id,
+            }
+
+            async def _provision_map2_side() -> Tuple[bool, str]:
+                return await self._provision_map2_stream(map2_ep, stream_config)
+
+            provisioned, error = await self._execute_with_backoff_retry(
+                operation=f"tesira map2 provision {map2_ep.endpoint_id()}",
+                action=_provision_map2_side,
+                trace_id=connection.flow_trace_id,
+            )
+            if not provisioned:
+                connection.error_message = f"MAP2 stream provision failed: {error}"
+                return False
+
+            logger.info(
+                "Tesira AVB bridge provisioned: %s(%s) ↔ map2(%s) role=%s loop_id=%s",
+                tesira_ep.device_name,
+                tesira_ep.direction,
+                map2_ep.device_name,
+                connection.connection_role,
+                connection.loop_id,
+            )
+            return True
+        except Exception as exc:
+            logger.error("_connect_tesira_route error: %s", exc)
+            connection.error_message = str(exc)
+            return False
+
+    async def _disconnect_tesira_route(self, connection: StreamConnection) -> bool:
+        """Disconnect Tesira bridge by deprovisioning MAP2 side stream."""
+        try:
+            tesira_ep = (
+                connection.talker
+                if connection.talker.device_type == "tesira"
+                else connection.listener
+            )
+            map2_ep = (
+                connection.listener
+                if connection.talker.device_type == "tesira"
+                else connection.talker
+            )
+            if map2_ep.device_type != "map2":
+                return True
+
+            stream_direction = str(getattr(map2_ep.direction, "value", map2_ep.direction))
+            stream_id = self._build_stream_id(
+                map2_ep,
+                tesira_ep,
+                "tesira-listener" if stream_direction == "listener" else "tesira-talker",
+            )
+
+            async def _deprovision_map2_side() -> Tuple[bool, str]:
+                return await self._deprovision_map2_stream(map2_ep, stream_id)
+
+            removed, error = await self._execute_with_backoff_retry(
+                operation=f"tesira map2 deprovision {map2_ep.endpoint_id()}",
+                action=_deprovision_map2_side,
+                trace_id=connection.flow_trace_id,
+            )
+            if not removed:
+                connection.error_message = f"MAP2 stream deprovision failed: {error}"
+                return False
+            return True
+        except Exception as exc:
+            connection.error_message = str(exc)
+            logger.error("_disconnect_tesira_route error: %s", exc)
+            return False
 
     async def _connect_via_avdecc(self, connection: StreamConnection) -> bool:
         """Connect using AVDECC ACMP protocol"""
@@ -2231,7 +2415,8 @@ class AvbRouter:
                 "talkers": len(self.get_talkers()),
                 "listeners": len(self.get_listeners()),
                 "map2": len([ep for ep in self.endpoints.values() if ep.device_type == "map2"]),
-                "avdecc": len([ep for ep in self.endpoints.values() if ep.device_type == "avdecc"])
+                "avdecc": len([ep for ep in self.endpoints.values() if ep.device_type == "avdecc"]),
+                "tesira": len([ep for ep in self.endpoints.values() if ep.device_type == "tesira"]),
             },
             "connections": {
                 "total": len(self.connections),
@@ -2357,3 +2542,44 @@ def get_avb_router() -> AvbRouter:
         logger.debug("AVB router late-bind skipped: %s", exc)
 
     return _avb_router
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Tesira AVB endpoint registration helper
+# ──────────────────────────────────────────────────────────────────────────────
+
+def register_tesira_endpoint(router, device_id: str, stream_info) -> None:
+    """
+    Create and register an AudioEndpoint for one Tesira AVB stream.
+
+    Called by TesiraFleet._register_endpoints() for each discovered stream.
+    The endpoint appears in GET /api/avb/router/endpoints as device_type='tesira'
+    and in the AvbRoutingApp NodeTree as a 'tesira' node.
+    """
+    try:
+        direction = (
+            StreamDirection.TALKER
+            if stream_info.direction == 'talker'
+            else StreamDirection.LISTENER
+        )
+        endpoint = AudioEndpoint(
+            entity_id=stream_info.entity_id,
+            unique_id=stream_info.stream_index,
+            direction=direction,
+            device_type="tesira",
+            device_name=stream_info.name,
+            channels=stream_info.channels,
+            sample_rate=48000,
+            node_id=f"tesira_{device_id}",
+            node_address=None,
+            host=device_id,
+            available=True,
+        )
+        router.endpoints[endpoint.endpoint_id()] = endpoint
+        logger.debug(
+            "Registered Tesira endpoint: %s (%s, %dch)",
+            endpoint.device_name, stream_info.direction, stream_info.channels,
+        )
+    except Exception as exc:
+        logger.warning("register_tesira_endpoint error: %s", exc)

@@ -288,6 +288,31 @@ async def lifespan(app):
         except Exception as e:
             logger.warning(f"AVB router discovery not started: {e}")
 
+        # ── Biamp Tesira Forte AVB Fleet ─────────────────────────────────────
+        tesira_fleet = None
+        tesira_ptp = None
+        try:
+            from app.config import config_get as _cfg_get
+            if _cfg_get("tesira.enabled", False):
+                from app.services.tesira import get_tesira_fleet, get_tesira_discovery
+                from app.services.tesira.ptp_coordinator import TesiraPTPCoordinator
+                from app.services.tesira.preset_interlock import TesiraPresetInterlock
+                tesira_fleet = get_tesira_fleet()
+                await safe_start_service(logger, "Tesira Fleet", tesira_fleet.start)
+                tesira_ptp = TesiraPTPCoordinator(tesira_fleet)
+                await safe_start_service(logger, "Tesira PTP Coordinator", tesira_ptp.start)
+                tesira_interlock = TesiraPresetInterlock(tesira_fleet)
+                preset_lifecycle.register_listener(
+                    "preset_loaded", tesira_interlock.on_preset_loaded_event
+                )
+                # Discovery service is stateless — just instantiate the singleton
+                get_tesira_discovery()
+                logger.info("Tesira Forte AVB integration started")
+            else:
+                logger.debug("Tesira integration disabled (tesira.enabled=false)")
+        except Exception as e:
+            logger.warning(f"Tesira fleet not started: {e}")
+
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info(f"✅ Startup complete: {running}/{total} services running")
@@ -296,6 +321,11 @@ async def lifespan(app):
 
         # ===== SHUTDOWN =====
         logger.info("Stopping MAP2 Audio Platform services...")
+
+        if tesira_ptp is not None:
+            await safe_stop_service(logger, "Tesira PTP Coordinator", tesira_ptp.stop)
+        if tesira_fleet is not None:
+            await safe_stop_service(logger, "Tesira Fleet", tesira_fleet.stop)
 
         if avb_router is not None:
             await safe_stop_service(logger, "AVB router discovery", avb_router.stop)
@@ -377,7 +407,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation']
         route_load_failures = []
 
         for route_name in route_modules:
@@ -480,6 +510,13 @@ def create_app():
                 logger.info("AVB/TSN routes registered")
         except Exception as e:
             logger.warning(f"Failed to load AVB routes: {e}")
+
+        try:
+            from app.routes import tesira as tesira_routes
+            app.include_router(tesira_routes.router)
+            logger.info("Tesira Forte AVB routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load Tesira routes: {e}")
 
         # Static files directory - check for web/dist first (Vite build), then static
         project_root = os.path.dirname(os.path.dirname(__file__))

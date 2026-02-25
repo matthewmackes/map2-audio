@@ -34,6 +34,8 @@ public:
 
     std::map<std::string, float> getPartParameters(int partIndex) const;
     bool setPartParameter(int partIndex, const std::string& parameter, float value);
+    bool loadPartSfz(int partIndex, const std::string& sfzPath);
+    SampleLoadStatus getPartSampleStatus(int partIndex) const;
 
     std::vector<PatchInfo> getPatches(const std::string& categoryFilter = "") const;
     bool loadPatch(int partIndex, int bank, int program);

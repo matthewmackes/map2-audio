@@ -108,6 +108,23 @@ bool SynthForgeProcessor::setPartParameter(int partIndex, const std::string& par
     return true;
 }
 
+bool SynthForgeProcessor::loadPartSfz(int partIndex, const std::string& sfzPath) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].loadSfz(sfzPath);
+}
+
+SampleLoadStatus SynthForgeProcessor::getPartSampleStatus(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        SampleLoadStatus status;
+        status.partIndex = partIndex;
+        status.lastError = "part_index must be in range 0..15";
+        return status;
+    }
+    return parts_[static_cast<size_t>(partIndex)].getSampleStatus();
+}
+
 std::vector<PatchInfo> SynthForgeProcessor::getPatches(const std::string& categoryFilter) const {
     std::vector<PatchInfo> patches;
 

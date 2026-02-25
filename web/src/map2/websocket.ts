@@ -29,7 +29,17 @@ export type WebSocketTopic =
   | 'phase'
   | 'latency'
   // PipeWire audio server
-  | 'pipewire';
+  | 'pipewire'
+  // Biamp Tesira Forte AVB fleet
+  | 'tesira:meters'        // {device_id, instance_tag, levels_dbu: number[], timestamp}
+  | 'tesira:device_state'  // {device_id, event: 'connected'|'disconnected'|'fault'|'preset_changed'|'adopted', detail?}
+  | 'tesira:preset_change' // {device_id, preset_index, map2_preset_id, timestamp}
+  | 'tesira:ptp'           // {device_id, state, offset_ns, grandmaster_id, timestamp}
+  | 'tesira:discovery'     // {event: 'device_found'|'scan_complete'|'scan_error', device?, total_found?, error?}
+  // Effects loops (Tesira AVB external send/return)
+  | 'effects_loop_state'
+  | 'effects_loop_metrics'
+  | 'effects_loop_calibration_progress';
 
 export type ConnectionStatus =
   | 'disconnected'

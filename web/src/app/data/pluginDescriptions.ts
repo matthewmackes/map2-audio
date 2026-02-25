@@ -61,6 +61,7 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   'Keyboard Sampler': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
   'Sfizz': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
   'sfizz': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
+  'SynthForge': '16-part multitimbral synth/sampler with SFZ loading, macro performance controls, mapping workflow, and hot-reload focused instrument design.',
 
   // REEV-R Reverb
   'REEV-R': 'Algorithmic reverb with smooth decay, rich modulation, and space presets inspired by FabFilter Pro-R.',

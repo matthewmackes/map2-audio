@@ -38,6 +38,10 @@ class ActionType(str, Enum):
     SET_ROUTING = "set_routing"
     NEXT_PRESET = "next_preset"
     PREV_PRESET = "prev_preset"
+    # Tesira Forte AVB targets
+    TESIRA_RECALL_PRESET = "tesira_recall_preset"
+    TESIRA_SET_LEVEL     = "tesira_set_level"
+    TESIRA_TOGGLE_MUTE   = "tesira_toggle_mute"
 
 
 class CommandType(str, Enum):
@@ -798,10 +802,7 @@ class MIDIService:
     # ==================== Engine Sync ====================
 
     async def _sync_mapping_to_engine(self, mapping_id: int, session: AsyncSession):
-        """Sync a single mapping to the JUCE engine."""
-        if not self._engine:
-            return
-
+        """Sync a single mapping to the JUCE engine (or Tesira if tesira:// URI)."""
         from app.database import MIDIMapping
 
         result = await session.execute(
@@ -809,6 +810,14 @@ class MIDIService:
         )
         m = result.scalar_one_or_none()
         if not m:
+            return
+
+        # Intercept Tesira-targeted mappings before sending to JUCE engine
+        if m.target_plugin_uri and m.target_plugin_uri.startswith("tesira://"):
+            await TesiraMidiDispatcher.dispatch(m.target_plugin_uri)
+            return
+
+        if not self._engine:
             return
 
         await self._engine.set_midi_cc_mapping(
@@ -956,3 +965,81 @@ class MIDIService:
 
 # Global service instance
 midi_service = MIDIService()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Tesira MIDI Dispatcher
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TesiraMidiDispatcher:
+    """
+    Dispatches MIDI CC values to Tesira DSP parameters via the TesiraFleet.
+
+    URI scheme stored in MIDIMapping.target_plugin_uri:
+        tesira://<device_id>/<instance_tag>/level/<channel>
+        tesira://<device_id>/<instance_tag>/mute/<channel>
+        tesira://<device_id>/device/preset/<preset_index>
+
+    This is called from MIDIService._sync_mapping_to_engine() when the
+    target_plugin_uri starts with "tesira://".
+
+    Note: value mapping (CC 0-127 → parameter range) is handled by the
+    JUCE engine in the normal path. For Tesira targets we receive the
+    already-scaled float value from the mapping's min_val/max_val.
+    """
+
+    @staticmethod
+    async def dispatch(uri: str, value: float = 0.0) -> None:
+        """
+        Parse a tesira:// URI and dispatch the control value to the device.
+        value should already be scaled to the parameter range by the caller.
+        """
+        try:
+            parsed = TesiraMidiDispatcher._parse_uri(uri)
+        except ValueError as exc:
+            import logging
+            logging.getLogger(__name__).warning("TesiraMidiDispatcher: bad URI %r: %s", uri, exc)
+            return
+
+        try:
+            from app.services.tesira import get_tesira_fleet
+            fleet = get_tesira_fleet()
+            device = fleet.get_device(parsed['device_id'])
+            if device is None or not device.connected:
+                return
+
+            action = parsed['action']
+            if action == 'level':
+                await device.set_level(parsed['instance_tag'], int(parsed['channel']), value)
+            elif action == 'mute':
+                await device.set_mute(parsed['instance_tag'], int(parsed['channel']), value > 0.5)
+            elif action == 'preset':
+                await device.recall_preset(int(parsed['channel']))
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).error(
+                "TesiraMidiDispatcher: dispatch error for %r: %s", uri, exc
+            )
+
+    @staticmethod
+    def _parse_uri(uri: str) -> dict:
+        """
+        Parse tesira://<device_id>/<instance_tag>/<action>/<channel_or_index>
+
+        Returns: {device_id, instance_tag, action, channel}
+        Raises ValueError on malformed URI.
+        """
+        if not uri.startswith("tesira://"):
+            raise ValueError(f"Not a tesira:// URI: {uri!r}")
+        path = uri[len("tesira://"):]
+        parts = path.split('/')
+        if len(parts) < 4:
+            raise ValueError(
+                f"tesira:// URI requires at least 4 path segments: {uri!r}"
+            )
+        return {
+            'device_id': parts[0],
+            'instance_tag': parts[1],
+            'action': parts[2],         # 'level', 'mute', 'preset'
+            'channel': parts[3],        # channel index or preset index (string)
+        }

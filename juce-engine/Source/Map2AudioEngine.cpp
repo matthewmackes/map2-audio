@@ -20,6 +20,7 @@
 #include <fstream>
 #include <filesystem>
 #include <limits>
+#include <cmath>
 #include <unordered_set>
 
 // RT-SAFE: Disable logging in release builds and production
@@ -1111,6 +1112,185 @@ std::vector<Map2AudioEngine::AvbDiscoveredDeviceInfo> Map2AudioEngine::getAvbDis
 void Map2AudioEngine::clearAvbDiscoveredDevices() {
     std::lock_guard<std::mutex> guard(avbDiscoveredDevicesMutex_);
     avbDiscoveredDevices_.clear();
+}
+
+bool Map2AudioEngine::setExternalLoopDefinitions(const std::vector<ExternalLoopDefinition>& loops) {
+    std::lock_guard<std::mutex> guard(effectsLoopsMutex_);
+
+    std::map<std::string, ExternalLoopDefinition> nextDefinitions;
+    std::map<std::string, ExternalLoopMetrics> nextMetrics;
+    for (const auto& loop : loops) {
+        if (loop.loopId.empty()) {
+            return false;
+        }
+        if (loop.channels < 1 || loop.channels > 8) {
+            return false;
+        }
+
+        ExternalLoopDefinition definition = loop;
+        definition.channels = std::clamp(definition.channels, 1, 8);
+        if (definition.targetAddedLatencyMs <= 0.0) {
+            definition.targetAddedLatencyMs = 0.5;
+        }
+
+        nextDefinitions[definition.loopId] = definition;
+
+        ExternalLoopMetrics metrics;
+        metrics.loopId = definition.loopId;
+        metrics.active = true;
+        metrics.bypass = definition.bypass;
+        metrics.channels = definition.channels;
+        metrics.targetAddedLatencyMs = definition.targetAddedLatencyMs;
+        metrics.measuredAddedLatencyMs = std::max(0.0, definition.measuredAddedLatencyMs);
+        metrics.compensationSamples = std::max(0, definition.compensationSamples);
+        nextMetrics[metrics.loopId] = metrics;
+    }
+
+    externalLoops_ = std::move(nextDefinitions);
+    externalLoopMetrics_ = std::move(nextMetrics);
+    return true;
+}
+
+bool Map2AudioEngine::setChainLoopInsertions(
+    int chainId,
+    const std::vector<ExternalLoopInsertion>& insertions) {
+    if (chainId < 0) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> guard(effectsLoopsMutex_);
+
+    std::vector<ExternalLoopInsertion> normalized;
+    normalized.reserve(insertions.size());
+    for (const auto& insertion : insertions) {
+        if (insertion.loopId.empty()) {
+            return false;
+        }
+        if (externalLoops_.find(insertion.loopId) == externalLoops_.end()) {
+            return false;
+        }
+
+        ExternalLoopInsertion entry = insertion;
+        entry.slotIndex = std::max(0, entry.slotIndex);
+        entry.crossfadeMs = std::max(0, entry.crossfadeMs);
+        normalized.push_back(std::move(entry));
+    }
+
+    std::sort(
+        normalized.begin(),
+        normalized.end(),
+        [](const ExternalLoopInsertion& lhs, const ExternalLoopInsertion& rhs) {
+            if (lhs.slotIndex == rhs.slotIndex) {
+                return lhs.insertionId < rhs.insertionId;
+            }
+            return lhs.slotIndex < rhs.slotIndex;
+        });
+
+    chainLoopInsertions_[chainId] = std::move(normalized);
+    return true;
+}
+
+bool Map2AudioEngine::setLoopBypass(const std::string& loopId, bool bypass) {
+    std::lock_guard<std::mutex> guard(effectsLoopsMutex_);
+    auto defIt = externalLoops_.find(loopId);
+    if (defIt == externalLoops_.end()) {
+        return false;
+    }
+    defIt->second.bypass = bypass;
+
+    auto metricIt = externalLoopMetrics_.find(loopId);
+    if (metricIt != externalLoopMetrics_.end()) {
+        metricIt->second.bypass = bypass;
+    } else {
+        ExternalLoopMetrics metrics;
+        metrics.loopId = loopId;
+        metrics.active = true;
+        metrics.bypass = bypass;
+        metrics.channels = defIt->second.channels;
+        metrics.targetAddedLatencyMs = defIt->second.targetAddedLatencyMs;
+        metrics.measuredAddedLatencyMs = defIt->second.measuredAddedLatencyMs;
+        metrics.compensationSamples = defIt->second.compensationSamples;
+        externalLoopMetrics_[loopId] = metrics;
+    }
+    return true;
+}
+
+bool Map2AudioEngine::calibrateLoop(const std::string& loopId, int calibrationFrames) {
+    std::lock_guard<std::mutex> guard(effectsLoopsMutex_);
+    auto defIt = externalLoops_.find(loopId);
+    if (defIt == externalLoops_.end()) {
+        return false;
+    }
+
+    double measuredMs = defIt->second.targetAddedLatencyMs;
+    if (measuredMs <= 0.0) {
+        measuredMs = 0.5;
+    }
+
+    const double sampleRate = (sampleRate_ > 0.0) ? sampleRate_ : 48000.0;
+    int compensationSamples = static_cast<int>(std::llround((measuredMs / 1000.0) * sampleRate));
+    if (calibrationFrames > 0) {
+        compensationSamples = std::min(compensationSamples, calibrationFrames);
+    }
+    compensationSamples = std::max(0, compensationSamples);
+
+    defIt->second.measuredAddedLatencyMs = measuredMs;
+    defIt->second.compensationSamples = compensationSamples;
+
+    auto metricIt = externalLoopMetrics_.find(loopId);
+    if (metricIt == externalLoopMetrics_.end()) {
+        ExternalLoopMetrics metrics;
+        metrics.loopId = loopId;
+        metrics.active = true;
+        metrics.bypass = defIt->second.bypass;
+        metrics.channels = defIt->second.channels;
+        metrics.targetAddedLatencyMs = defIt->second.targetAddedLatencyMs;
+        metrics.measuredAddedLatencyMs = measuredMs;
+        metrics.compensationSamples = compensationSamples;
+        externalLoopMetrics_[loopId] = metrics;
+    } else {
+        metricIt->second.active = true;
+        metricIt->second.bypass = defIt->second.bypass;
+        metricIt->second.channels = defIt->second.channels;
+        metricIt->second.targetAddedLatencyMs = defIt->second.targetAddedLatencyMs;
+        metricIt->second.measuredAddedLatencyMs = measuredMs;
+        metricIt->second.compensationSamples = compensationSamples;
+    }
+
+    return true;
+}
+
+std::vector<Map2AudioEngine::ExternalLoopMetrics> Map2AudioEngine::getLoopMetrics(
+    const std::string& loopId) const {
+    std::lock_guard<std::mutex> guard(effectsLoopsMutex_);
+
+    std::vector<ExternalLoopMetrics> payload;
+    if (!loopId.empty()) {
+        const auto it = externalLoopMetrics_.find(loopId);
+        if (it != externalLoopMetrics_.end()) {
+            payload.push_back(it->second);
+            return payload;
+        }
+        const auto defIt = externalLoops_.find(loopId);
+        if (defIt != externalLoops_.end()) {
+            ExternalLoopMetrics fallback;
+            fallback.loopId = defIt->second.loopId;
+            fallback.active = true;
+            fallback.bypass = defIt->second.bypass;
+            fallback.channels = defIt->second.channels;
+            fallback.targetAddedLatencyMs = defIt->second.targetAddedLatencyMs;
+            fallback.measuredAddedLatencyMs = defIt->second.measuredAddedLatencyMs;
+            fallback.compensationSamples = defIt->second.compensationSamples;
+            payload.push_back(std::move(fallback));
+        }
+        return payload;
+    }
+
+    payload.reserve(externalLoopMetrics_.size());
+    for (const auto& [_, metrics] : externalLoopMetrics_) {
+        payload.push_back(metrics);
+    }
+    return payload;
 }
 
 void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
@@ -3524,6 +3704,14 @@ bool Map2AudioEngine::setSynthForgeParameter(int partIndex, const std::string& p
     return synthForge_.setPartParameter(partIndex, param, value);
 }
 
+bool Map2AudioEngine::loadSynthForgeSfz(int partIndex, const std::string& sfzPath) {
+    return synthForge_.loadPartSfz(partIndex, sfzPath);
+}
+
+synthforge::SampleLoadStatus Map2AudioEngine::getSynthForgePartSampleStatus(int partIndex) const {
+    return synthForge_.getPartSampleStatus(partIndex);
+}
+
 std::vector<synthforge::PatchInfo> Map2AudioEngine::getSynthForgePatches(
     const std::string& category) const {
     return synthForge_.getPatches(category);
@@ -3631,5 +3819,39 @@ void Map2AudioEngine::meteringThreadFunc() {
                               frame.numSamples);
     }
 }
+
+// ============================================================================
+// Tesira AVB Node — Python bridge methods
+// All five methods delegate to the lock-free TesiraAvbNode helper.
+// Safe to call from any Python/network thread; processDevice() is RT-only.
+// ============================================================================
+
+#ifdef HAS_AVB
+
+bool Map2AudioEngine::setTesiraDeviceLevel(int deviceIdx, int channel, float levelDb) {
+    tesiraNode_.setDeviceLevel(deviceIdx, channel, levelDb);
+    return true;
+}
+
+bool Map2AudioEngine::setTesiraDeviceMute(int deviceIdx, int channel, bool muted) {
+    tesiraNode_.setDeviceMute(deviceIdx, channel, muted);
+    return true;
+}
+
+bool Map2AudioEngine::setTesiraDeviceConnected(int deviceIdx, bool connected) {
+    tesiraNode_.setDeviceConnected(deviceIdx, connected);
+    return true;
+}
+
+bool Map2AudioEngine::setTesiraDevicePreset(int deviceIdx, int presetIndex) {
+    tesiraNode_.setDevicePreset(deviceIdx, presetIndex);
+    return true;
+}
+
+float Map2AudioEngine::getTesiraOutputLevel(int deviceIdx, int channel) const {
+    return tesiraNode_.getOutputLevel(deviceIdx, channel);
+}
+
+#endif // HAS_AVB
 
 } // namespace map2

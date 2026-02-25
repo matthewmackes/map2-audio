@@ -253,6 +253,7 @@ set(SOURCES
     Source/SynthForge/Core/Part.cpp
     Source/SynthForge/Core/VoiceAllocator.cpp
     Source/SynthForge/Core/MidiRouter.cpp
+    Source/SynthForge/Sampler/SfzLoader.cpp
     Source/SynthForge/Sound/SynthVoice.cpp
 
     # Existing components (updated)
@@ -279,6 +280,7 @@ if(AVB_AVAILABLE)
         Source/AvbStream.cpp
         Source/AvbAudioIODeviceType.cpp
         Source/AvbAudioIODevice.cpp
+        Source/TesiraAvbNode.cpp
     )
 endif()
 
@@ -341,6 +343,7 @@ set(HEADERS
     Source/SynthForge/Core/Part.h
     Source/SynthForge/Core/VoiceAllocator.h
     Source/SynthForge/Core/MidiRouter.h
+    Source/SynthForge/Sampler/SfzLoader.h
     Source/SynthForge/Sound/SynthVoice.h
     Source/SynthForge/Common/Types.h
 
@@ -364,6 +367,7 @@ if(AVB_AVAILABLE)
         Source/AvbStream.h
         Source/AvbAudioIODeviceType.h
         Source/AvbAudioIODevice.h
+        Source/TesiraAvbNode.h
     )
 endif()
 

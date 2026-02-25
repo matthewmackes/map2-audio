@@ -56,6 +56,21 @@ class _DummySynthForgeService:
     async def set_synthforge_parameter(self, _part_index, _param, _value):
         return True
 
+    async def load_synthforge_sfz(self, _part_index, _sfz_path):
+        return True
+
+    async def get_synthforge_part_sample_status(self, part_index):
+        return {
+            "loaded": True,
+            "sampler_mode": True,
+            "part_index": part_index,
+            "region_count": 4,
+            "loaded_sample_count": 4,
+            "sfz_path": "/tmp/test.sfz",
+            "last_error": "",
+            "warnings": [],
+        }
+
     async def get_synthforge_metering(self):
         return {
             "voice_metrics": {
@@ -137,3 +152,45 @@ def test_set_part_parameter_success(monkeypatch):
     assert payload["status"] == "ok"
     assert payload["part_index"] == 0
     assert payload["param"] == "osc1.level"
+
+
+def test_load_part_sfz_rejects_non_sfz(monkeypatch):
+    monkeypatch.setattr(
+        synthforge_routes,
+        "get_audio_engine",
+        lambda: _DummySynthForgeService(),
+    )
+
+    request = synthforge_routes.SfzLoadRequest(part_index=0, sfz_path="/tmp/not_sfz.wav")
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(synthforge_routes.load_part_sfz(request))
+
+    assert exc.value.status_code == 400
+    assert ".sfz" in str(exc.value.detail)
+
+
+def test_load_part_sfz_success(monkeypatch):
+    monkeypatch.setattr(
+        synthforge_routes,
+        "get_audio_engine",
+        lambda: _DummySynthForgeService(),
+    )
+
+    request = synthforge_routes.SfzLoadRequest(part_index=2, sfz_path="/tmp/pad.sfz")
+    payload = asyncio.run(synthforge_routes.load_part_sfz(request))
+
+    assert payload["status"] == "ok"
+    assert payload["part_index"] == 2
+    assert payload["sample_status"]["loaded"] is True
+
+
+def test_get_part_sfz_status(monkeypatch):
+    monkeypatch.setattr(
+        synthforge_routes,
+        "get_audio_engine",
+        lambda: _DummySynthForgeService(),
+    )
+
+    payload = asyncio.run(synthforge_routes.get_part_sfz_status(3))
+    assert payload["part_index"] == 3
+    assert payload["loaded"] is True

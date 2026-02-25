@@ -72,6 +72,11 @@ class ParameterUpdateRequest(BaseModel):
     value: float
 
 
+class SfzLoadRequest(BaseModel):
+    part_index: int = Field(..., ge=0, le=15)
+    sfz_path: str = Field(..., min_length=1, max_length=4096)
+
+
 @router.get("/parts")
 async def get_parts() -> List[Dict]:
     """Get configuration for all 16 SynthForge parts."""
@@ -171,6 +176,38 @@ async def set_part_parameter(part_index: int, request: ParameterUpdateRequest) -
         raise HTTPException(status_code=500, detail="Failed to set SynthForge parameter")
 
     return {"status": "ok", "part_index": part_index, "param": request.param, "value": request.value}
+
+
+@router.post("/sfz/load")
+async def load_part_sfz(request: SfzLoadRequest) -> Dict[str, object]:
+    """Load an SFZ file into a SynthForge part sampler."""
+    _validate_part_index(request.part_index)
+
+    sfz_path = request.sfz_path.strip()
+    if not sfz_path.lower().endswith(".sfz"):
+        raise HTTPException(status_code=400, detail="sfz_path must point to a .sfz file")
+
+    engine = get_audio_engine()
+    success = await engine.load_synthforge_sfz(request.part_index, sfz_path)
+    status = await engine.get_synthforge_part_sample_status(request.part_index)
+
+    if not success:
+        detail = status.get("last_error") or "Failed to load SFZ"
+        raise HTTPException(status_code=400, detail=detail)
+
+    return {
+        "status": "ok",
+        "part_index": request.part_index,
+        "sample_status": status,
+    }
+
+
+@router.get("/sfz/status/{part_index}")
+async def get_part_sfz_status(part_index: int) -> Dict[str, object]:
+    """Get SFZ sampler status for a SynthForge part."""
+    _validate_part_index(part_index)
+    engine = get_audio_engine()
+    return await engine.get_synthforge_part_sample_status(part_index)
 
 
 @router.websocket("/ws/metering")

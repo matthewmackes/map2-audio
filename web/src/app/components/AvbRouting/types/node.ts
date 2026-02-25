@@ -7,7 +7,7 @@
 /**
  * Node type classification
  */
-export type NodeType = 'map2_local' | 'map2_remote' | 'avdecc' | 'unknown';
+export type NodeType = 'map2_local' | 'map2_remote' | 'avdecc' | 'tesira' | 'unknown';
 
 /**
  * Node online status

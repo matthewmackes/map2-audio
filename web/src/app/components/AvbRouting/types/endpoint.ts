@@ -13,7 +13,7 @@ export type StreamDirection = 'talker' | 'listener';
 /**
  * Device type classification
  */
-export type DeviceType = 'map2' | 'avdecc' | 'unknown';
+export type DeviceType = 'map2' | 'avdecc' | 'tesira' | 'unknown';
 
 export const CANONICAL_ENDPOINT_FIELDS = [
   'endpoint_id',

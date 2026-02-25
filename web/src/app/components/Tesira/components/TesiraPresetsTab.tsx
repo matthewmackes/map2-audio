@@ -1,0 +1,152 @@
+import React, { useState } from 'react'
+import {
+  Box, Typography, List, ListItem, ListItemText, ListItemSecondaryAction,
+  Button, Divider, TextField, IconButton, Tooltip, CircularProgress,
+  Table, TableHead, TableRow, TableCell, TableBody, Alert,
+} from '@mui/material'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteIcon from '@mui/icons-material/Delete'
+import {
+  useTesiraPresets, useRecallPreset,
+  usePresetInterlockRules, useAddInterlockRule, useDeleteInterlockRule,
+} from '../hooks/useTesiraApi'
+
+interface TesiraPresetsTabProps {
+  deviceId: string
+}
+
+export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
+  const { data: presets, isLoading } = useTesiraPresets(deviceId)
+  const recallPreset = useRecallPreset()
+  const { data: rules } = usePresetInterlockRules()
+  const addRule = useAddInterlockRule()
+  const deleteRule = useDeleteInterlockRule()
+
+  const [newMap2Id, setNewMap2Id] = useState('')
+  const [newPresetIdx, setNewPresetIdx] = useState('')
+
+  function handleAddRule() {
+    if (!newMap2Id || !newPresetIdx) return
+    addRule.mutate({
+      map2_preset_id: parseInt(newMap2Id),
+      tesira_device_id: deviceId,
+      tesira_preset_index: parseInt(newPresetIdx),
+    })
+    setNewMap2Id('')
+    setNewPresetIdx('')
+  }
+
+  return (
+    <Box sx={{ p: 1.5 }}>
+      {/* Preset list */}
+      <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        DEVICE PRESETS
+      </Typography>
+
+      {isLoading ? (
+        <CircularProgress size={20} />
+      ) : !presets || presets.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">No presets found.</Typography>
+      ) : (
+        <List dense disablePadding>
+          {presets.map((p) => (
+            <ListItem key={p.index} divider sx={{ py: 0.25 }}>
+              <ListItemText
+                primary={p.name || `Preset ${p.index}`}
+                secondary={`Index ${p.index}`}
+                primaryTypographyProps={{ variant: 'body2' }}
+                secondaryTypographyProps={{ variant: 'caption' }}
+              />
+              <ListItemSecondaryAction>
+                <Tooltip title="Recall preset">
+                  <IconButton
+                    size="small"
+                    onClick={() => recallPreset.mutate({ deviceId, presetIndex: p.index })}
+                    disabled={recallPreset.isPending}
+                  >
+                    <PlayArrowIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      )}
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Interlock rules */}
+      <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        PRESET INTERLOCK RULES
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+        When a MAP2 preset is recalled, automatically recall the mapped Tesira preset.
+      </Typography>
+
+      {rules && rules.length > 0 ? (
+        <Table size="small" sx={{ mb: 2 }}>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontSize: 11 }}>MAP2 Preset ID</TableCell>
+              <TableCell sx={{ fontSize: 11 }}>Tesira Preset</TableCell>
+              <TableCell sx={{ fontSize: 11 }}></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rules
+              .filter((r) => r.tesira_device_id === deviceId)
+              .map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell sx={{ fontSize: 12 }}>{r.map2_preset_id}</TableCell>
+                  <TableCell sx={{ fontSize: 12 }}>{r.tesira_preset_index}</TableCell>
+                  <TableCell>
+                    <IconButton size="small" onClick={() => deleteRule.mutate(r.id)}>
+                      <DeleteIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>No interlock rules.</Typography>
+      )}
+
+      {/* Add rule */}
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <TextField
+          label="MAP2 Preset ID"
+          size="small"
+          value={newMap2Id}
+          onChange={(e) => setNewMap2Id(e.target.value)}
+          type="number"
+          sx={{ width: 140 }}
+          inputProps={{ min: 0 }}
+        />
+        <TextField
+          label="Tesira Preset #"
+          size="small"
+          value={newPresetIdx}
+          onChange={(e) => setNewPresetIdx(e.target.value)}
+          type="number"
+          sx={{ width: 140 }}
+          inputProps={{ min: 0 }}
+        />
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<AddIcon />}
+          onClick={handleAddRule}
+          disabled={!newMap2Id || !newPresetIdx || addRule.isPending}
+        >
+          Add
+        </Button>
+      </Box>
+
+      {addRule.isError && (
+        <Alert severity="error" sx={{ mt: 1 }}>Failed to add rule</Alert>
+      )}
+    </Box>
+  )
+}

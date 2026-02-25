@@ -1,0 +1,314 @@
+.mpx1-editor {
+  display: grid;
+  gap: 12px;
+  height: 100%;
+  min-height: 520px;
+}
+
+.mpx1-editor__block-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mpx1-editor__block-btn {
+  border-radius: 10px;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  background: rgba(15, 23, 42, 0.6);
+  color: #cbd5e1;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.mpx1-editor__block-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.mpx1-editor__block-btn.is-active {
+  border-color: color-mix(in srgb, var(--block-accent, #f59e0b) 65%, white 35%);
+  background: color-mix(in srgb, var(--block-accent, #f59e0b) 22%, rgba(2, 6, 23, 0.8));
+  color: #f8fafc;
+}
+
+.mpx1-editor__block-btn.is-active .mpx1-editor__block-dot {
+  background: color-mix(in srgb, var(--block-accent, #f59e0b) 72%, white 28%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--block-accent, #f59e0b) 55%, transparent 45%);
+}
+
+.mpx1-editor__block-btn.is-bypassed {
+  opacity: 0.52;
+}
+
+.mpx1-editor__workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.mpx1-editor__algorithms {
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.38);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(2, 6, 23, 0.7));
+  padding: 12px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.mpx1-editor__panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.mpx1-editor__algorithm-list {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.mpx1-editor__algorithm-item {
+  border-radius: 8px;
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.mpx1-editor__algorithm-item input {
+  accent-color: #38bdf8;
+}
+
+.mpx1-editor__algorithm-item.is-active {
+  border-color: rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.16);
+}
+
+.mpx1-editor__algorithm-name {
+  font-size: 11px;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.mpx1-editor__algorithm-meta {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.mpx1-editor__right-column {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.mpx1-editor__visualization {
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.38);
+  background: rgba(15, 23, 42, 0.42);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.mpx1-editor__viz-svg {
+  width: 100%;
+  height: 84px;
+}
+
+.mpx1-editor__viz-line {
+  stroke: #38bdf8;
+  stroke-width: 2.2;
+  fill: none;
+}
+
+.mpx1-editor__viz-line.soft {
+  opacity: 0.4;
+}
+
+.mpx1-editor__viz-bar {
+  fill: rgba(56, 189, 248, 0.75);
+  rx: 2;
+}
+
+.mpx1-editor__viz-key {
+  fill: rgba(226, 232, 240, 0.16);
+  stroke: rgba(148, 163, 184, 0.35);
+  stroke-width: 1;
+}
+
+.mpx1-editor__viz-key.active {
+  fill: rgba(236, 72, 153, 0.52);
+  stroke: rgba(236, 72, 153, 0.82);
+}
+
+.mpx1-editor__pages {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+}
+
+.mpx1-editor__page-group {
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.38);
+  background: rgba(2, 6, 23, 0.48);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.mpx1-editor__page-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f8fafc;
+}
+
+.mpx1-editor__param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.mpx1-editor__toggle {
+  border-radius: 10px;
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  background: rgba(15, 23, 42, 0.5);
+  color: #cbd5e1;
+  min-height: 72px;
+  padding: 10px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.mpx1-editor__toggle.is-active {
+  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(34, 197, 94, 0.16);
+}
+
+.mpx1-editor__toggle-name {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mpx1-editor__toggle-value {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.mpx1-editor__select-wrap,
+.mpx1-editor__slider-wrap {
+  border-radius: 10px;
+  border: 1px solid rgba(100, 116, 139, 0.38);
+  background: rgba(15, 23, 42, 0.5);
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+  align-content: center;
+}
+
+.mpx1-editor__select-wrap select,
+.mpx1-editor__slider-wrap input {
+  width: 100%;
+}
+
+.mpx1-editor__label {
+  font-size: 11px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.mpx1-editor__value {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.mpx1-editor__empty {
+  border: 1px dashed rgba(100, 116, 139, 0.45);
+  border-radius: 10px;
+  padding: 14px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.mpx1-knob {
+  border-radius: 12px;
+  border: 1px solid rgba(100, 116, 139, 0.38);
+  background: rgba(15, 23, 42, 0.55);
+  padding: 8px;
+  min-height: 142px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+}
+
+.mpx1-knob__canvas {
+  cursor: ns-resize;
+}
+
+.mpx1-knob-dragging {
+  cursor: ns-resize !important;
+  user-select: none;
+}
+
+.mpx1-knob__value {
+  font-size: 11px;
+  color: #f8fafc;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mpx1-knob__label {
+  text-align: center;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  max-width: 110px;
+}
+
+.mpx1-knob.is-disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 1080px) {
+  .mpx1-editor__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .mpx1-editor__algorithms {
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 780px) {
+  .mpx1-editor__block-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

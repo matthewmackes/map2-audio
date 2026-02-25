@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "started_at_utc": "2026-02-25T02:26:04+00:00",
+    "sample_rate_hz": 48000,
+    "buffer_size_samples": 64,
+    "note": 60,
+    "channel": 1,
+    "ended_at_utc": "2026-02-25T02:26:04+00:00"
+  },
+  "artifacts": {
+    "generated_wav": "/home/mm/map2-audio/tmp/synthforge-sfz-validation/tone.wav",
+    "generated_sfz": "/home/mm/map2-audio/tmp/synthforge-sfz-validation/tone.sfz"
+  },
+  "checks": {
+    "initialize_ok": true,
+    "start_audio_ok": true,
+    "load_sfz_ok": true,
+    "status_sampler_mode_true": true,
+    "status_loaded_true": true,
+    "note_on_accepted": true,
+    "mid_active_voices_ge_1": true,
+    "post_active_voices_zero": true
+  },
+  "metrics": {
+    "status_after_load": {
+      "loaded": true,
+      "sampler_mode": true,
+      "part_index": 0,
+      "region_count": 1,
+      "loaded_sample_count": 1,
+      "sfz_path": "/home/mm/map2-audio/tmp/synthforge-sfz-validation/tone.sfz",
+      "last_error": "",
+      "warnings": []
+    },
+    "pre_voice_metrics": {
+      "active_voices": 0,
+      "peak_voices": 0,
+      "cpu_percent": 0.0,
+      "voices_per_part": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "mid_voice_metrics": {
+      "active_voices": 1,
+      "peak_voices": 1,
+      "cpu_percent": 0.0,
+      "voices_per_part": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "post_voice_metrics": {
+      "active_voices": 0,
+      "peak_voices": 1,
+      "cpu_percent": 0.0,
+      "voices_per_part": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "note_off_accepted": true
+  },
+  "overall_pass": true,
+  "failure": null
+}

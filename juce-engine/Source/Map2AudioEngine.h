@@ -34,6 +34,7 @@
 namespace Map2Audio {
 class AvbAudioIODevice;
 }
+#include "TesiraAvbNode.h"
 #endif
 
 #include "ChorusProcessor.h"
@@ -193,6 +194,52 @@ public:
         std::string* error = nullptr);
     std::vector<AvbDiscoveredDeviceInfo> getAvbDiscoveredDevices() const;
     void clearAvbDiscoveredDevices();
+
+    // ========================================
+    // External Effects Loops (Tesira AVB)
+    // ========================================
+
+    struct ExternalLoopDefinition {
+        std::string loopId;
+        std::string name;
+        int channels = 2;
+        std::string topology = "serial_insert";
+        std::string sendEndpointId;
+        std::string returnEndpointId;
+        double targetAddedLatencyMs = 0.5;
+        double measuredAddedLatencyMs = 0.0;
+        int compensationSamples = 0;
+        bool bypass = false;
+    };
+
+    struct ExternalLoopInsertion {
+        std::string insertionId;
+        std::string loopId;
+        int slotIndex = 0;
+        bool enabled = true;
+        std::string mode = "serial_insert";
+        float blendPct = 100.0f;
+        float sendGainDb = 0.0f;
+        float returnGainDb = 0.0f;
+        int crossfadeMs = 12;
+        std::vector<float> bandSplitHz;
+    };
+
+    struct ExternalLoopMetrics {
+        std::string loopId;
+        bool active = false;
+        bool bypass = false;
+        int channels = 0;
+        double targetAddedLatencyMs = 0.5;
+        double measuredAddedLatencyMs = 0.0;
+        int compensationSamples = 0;
+    };
+
+    bool setExternalLoopDefinitions(const std::vector<ExternalLoopDefinition>& loops);
+    bool setChainLoopInsertions(int chainId, const std::vector<ExternalLoopInsertion>& insertions);
+    bool setLoopBypass(const std::string& loopId, bool bypass);
+    bool calibrateLoop(const std::string& loopId, int calibrationFrames = 0);
+    std::vector<ExternalLoopMetrics> getLoopMetrics(const std::string& loopId = "") const;
 
     // ========================================
     // Configuration
@@ -1154,6 +1201,8 @@ public:
 
     std::map<std::string, float> getSynthForgePartParameters(int partIndex) const;
     bool setSynthForgeParameter(int partIndex, const std::string& param, float value);
+    bool loadSynthForgeSfz(int partIndex, const std::string& sfzPath);
+    synthforge::SampleLoadStatus getSynthForgePartSampleStatus(int partIndex) const;
 
     std::vector<synthforge::PatchInfo> getSynthForgePatches(
         const std::string& category = "") const;
@@ -1183,6 +1232,29 @@ public:
     // AVDECC Entity accessor (Phase 10)
     Map2Audio::AvdeccEntity* getAvdeccEntity() { return avdeccEntity_.get(); }
     const Map2Audio::AvdeccEntity* getAvdeccEntity() const { return avdeccEntity_.get(); }
+#endif
+
+#ifdef HAS_AVB
+    // ========================================
+    // Tesira AVB Node (per-channel gain/mute bridge for Biamp Tesira Forte AVB)
+    // Thread-safe: set*() calls may come from any Python/network thread;
+    // processDevice() is called from the RT audio thread.
+    // ========================================
+
+    /** Set dB level for one channel of one Tesira device (0 dB = unity). */
+    bool setTesiraDeviceLevel(int deviceIdx, int channel, float levelDb);
+
+    /** Mute/unmute one channel of one Tesira device. */
+    bool setTesiraDeviceMute(int deviceIdx, int channel, bool muted);
+
+    /** Mark a Tesira device slot as connected (true) or disconnected (false). */
+    bool setTesiraDeviceConnected(int deviceIdx, bool connected);
+
+    /** Update the active preset index for a Tesira device (-1 = none). */
+    bool setTesiraDevicePreset(int deviceIdx, int presetIndex);
+
+    /** Read the latest peak output level (dBFS) for a channel. Returns -120 if unavailable. */
+    float getTesiraOutputLevel(int deviceIdx, int channel) const;
 #endif
 
 private:
@@ -1226,6 +1298,11 @@ private:
 #ifdef HAS_AVDECC
     // AVDECC Entity for network audio discovery/enumeration (Phase 10)
     std::unique_ptr<Map2Audio::AvdeccEntity> avdeccEntity_;
+#endif
+
+#ifdef HAS_AVB
+    // Tesira Forte AVB bridge (RT-safe per-channel gain/mute for up to 5 units)
+    TesiraAvbNode tesiraNode_;
 #endif
 
     // Metering (NEW) - OFF AUDIO THREAD (Option 3)
@@ -1282,6 +1359,10 @@ private:
     std::map<std::string, AvbManagedStream> avbStreams_;
     mutable std::mutex avbDiscoveredDevicesMutex_;
     std::vector<AvbDiscoveredDeviceInfo> avbDiscoveredDevices_;
+    mutable std::mutex effectsLoopsMutex_;
+    std::map<std::string, ExternalLoopDefinition> externalLoops_;
+    std::map<int, std::vector<ExternalLoopInsertion>> chainLoopInsertions_;
+    std::map<std::string, ExternalLoopMetrics> externalLoopMetrics_;
 
     // Configuration
     double sampleRate_ = DEFAULT_SAMPLE_RATE;

@@ -88,4 +88,15 @@ struct Metering {
     std::array<float, kNumParts> partLevels{};
 };
 
+struct SampleLoadStatus {
+    bool loaded = false;
+    bool samplerMode = false;
+    int partIndex = 0;
+    int regionCount = 0;
+    int loadedSampleCount = 0;
+    std::string sfzPath;
+    std::string lastError;
+    std::vector<std::string> warnings;
+};
+
 }  // namespace map2::synthforge

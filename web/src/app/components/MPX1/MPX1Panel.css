@@ -1,0 +1,106 @@
+.mpx1-panel-view {
+  display: grid;
+  gap: 10px;
+}
+
+.mpx1-panel-wrapper {
+  position: relative;
+  width: min(100%, 900px);
+  margin: 0 auto;
+  border-radius: 14px;
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  background: radial-gradient(circle at 20% 15%, rgba(59, 130, 246, 0.08), rgba(2, 6, 23, 0.88));
+  padding: 12px;
+  overflow: hidden;
+}
+
+.mpx1-panel-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.mpx1-panel-hit {
+  cursor: pointer;
+}
+
+.mpx1-panel-hit:hover {
+  stroke: rgba(56, 189, 248, 0.7);
+}
+
+.mpx1-panel-overlay {
+  position: absolute;
+  inset: 12px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.mpx1-panel-overlay--offline {
+  color: #fca5a5;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(15, 23, 42, 0.72),
+      rgba(15, 23, 42, 0.72) 3px,
+      rgba(2, 6, 23, 0.66) 3px,
+      rgba(2, 6, 23, 0.66) 6px
+    );
+}
+
+.mpx1-panel-overlay--bypassed {
+  color: #fde68a;
+  background: rgba(127, 29, 29, 0.2);
+}
+
+.mpx1-panel-popover {
+  position: absolute;
+  width: 200px;
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.55);
+  padding: 10px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+.mpx1-panel-popover__title {
+  font-size: 11px;
+  color: #dbeafe;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.mpx1-panel-popover button {
+  border-radius: 8px;
+  border: 1px solid rgba(100, 116, 139, 0.42);
+  background: rgba(15, 23, 42, 0.7);
+  color: #cbd5e1;
+  font-size: 11px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.mpx1-panel-activity {
+  width: min(100%, 900px);
+  margin: 0 auto;
+  border-radius: 10px;
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  background: rgba(2, 6, 23, 0.52);
+  padding: 8px 10px;
+  color: #94a3b8;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

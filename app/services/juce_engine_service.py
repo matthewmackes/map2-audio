@@ -2874,6 +2874,25 @@ class JuceEngineService(Singleton):
             return False
         return bool(self._engine.set_synthforge_parameter(part_index, param, value))
 
+    async def load_synthforge_sfz(self, part_index: int, sfz_path: str) -> bool:
+        if not self._engine:
+            return False
+        return bool(self._engine.load_synthforge_sfz(part_index, sfz_path))
+
+    async def get_synthforge_part_sample_status(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "loaded": False,
+                "sampler_mode": False,
+                "part_index": part_index,
+                "region_count": 0,
+                "loaded_sample_count": 0,
+                "sfz_path": "",
+                "last_error": "Engine not initialized",
+                "warnings": [],
+            }
+        return dict(self._engine.get_synthforge_part_sample_status(part_index))
+
     async def get_synthforge_patches(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self._engine:
             return []
@@ -2918,6 +2937,51 @@ class JuceEngineService(Singleton):
                 "part_levels": [0.0] * 16,
             }
         return dict(self._engine.get_synthforge_metering())
+
+    # ========================================
+    # External Effects Loops (Tesira AVB)
+    # ========================================
+
+    async def set_external_loop_definitions(self, definitions: List[Dict[str, Any]]) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_external_loop_definitions", None)
+        if callable(method):
+            return bool(method(definitions))
+        return False
+
+    async def set_chain_loop_insertions(self, chain_id: int, insertions: List[Dict[str, Any]]) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_chain_loop_insertions", None)
+        if callable(method):
+            return bool(method(chain_id, insertions))
+        return False
+
+    async def set_loop_bypass(self, loop_id: str, bypass: bool) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_loop_bypass", None)
+        if callable(method):
+            return bool(method(loop_id, bypass))
+        return False
+
+    async def calibrate_loop(self, loop_id: str, options: Optional[Dict[str, Any]] = None) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "calibrate_loop", None)
+        if callable(method):
+            payload = dict(options or {})
+            return bool(method(loop_id, payload))
+        return False
+
+    async def get_loop_metrics(self, loop_id: Optional[str] = None) -> Any:
+        if not self._engine:
+            return []
+        method = getattr(self._engine, "get_loop_metrics", None)
+        if callable(method):
+            return method(loop_id or "")
+        return []
 
 
 # Singleton accessor using base class

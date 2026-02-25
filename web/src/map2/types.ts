@@ -34,6 +34,43 @@ export interface PluginLevels {
 
 // ==================== Chain Types ====================
 
+export interface EffectsLoop {
+  loop_id: string;
+  name: string;
+  channels: number;
+  topology: string;
+  tesira_device_id?: string | null;
+  template_id?: string | null;
+  send_endpoint_id?: string | null;
+  return_endpoint_id?: string | null;
+  state_desired: string;
+  state_actual: string;
+  health_status: string;
+  health_reason?: string | null;
+  target_added_latency_ms: number;
+  measured_added_latency_ms?: number | null;
+  compensation_samples: number;
+  calibration_status: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface LoopInsertion {
+  insertion_id: string;
+  chain_id: number;
+  loop_id: string;
+  slot_index: number;
+  enabled: boolean;
+  mode: string;
+  blend_pct: number;
+  send_gain_db: number;
+  return_gain_db: number;
+  crossfade_ms: number;
+  band_split_hz: number[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface Chain {
   id: number;
   name: string;
@@ -41,6 +78,8 @@ export interface Chain {
   created_at: string;
   updated_at: string;
   plugins: ChainPlugin[];
+  loop_insertions?: LoopInsertion[];
+  effects_loops?: EffectsLoop[];
 }
 
 export interface ChainPlugin {
