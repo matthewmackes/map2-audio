@@ -1,0 +1,360 @@
+"""
+Flow Orchestrator Service
+
+Manages flow-to-node assignments for multi-node Grid Flow execution.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+import logging
+import time
+from datetime import datetime
+import asyncio
+
+import aiohttp
+
+from sqlalchemy import select, delete
+
+from app.database import FlowAssignment, FlowDeployment
+from app.database_session import get_session
+from app.services.cluster.registry import get_cluster_registry
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FlowAssignmentInfo:
+    """In-memory representation of a flow assignment."""
+    flow_id: str
+    chain_id: int
+    assigned_node_id: str
+    assignment_type: str  # primary | standby
+    reason: str
+
+
+@dataclass
+class FlowDeploymentInfo:
+    """In-memory representation of flow deployment state."""
+    flow_id: str
+    chain_id: int
+    primary_assignment: FlowAssignmentInfo
+    standby_assignments: List[FlowAssignmentInfo]
+    is_deployed: bool
+    deployment_timestamp: float
+    error_message: Optional[str] = None
+    last_failover_timestamp: Optional[float] = None
+
+
+class FlowOrchestrator:
+    """Manages flow assignments and deployment state across cluster nodes."""
+
+    _instance: Optional["FlowOrchestrator"] = None
+
+    def __init__(self) -> None:
+        self.active_deployments: Dict[str, FlowDeploymentInfo] = {}
+        self.node_flow_map: Dict[str, List[str]] = {}
+        self.registry = get_cluster_registry()
+
+    @staticmethod
+    def _is_node_eligible_for_standby(node: Dict[str, Any]) -> bool:
+        """Best-effort eligibility check for standby placement."""
+        node_id = str(node.get("id", "")).strip()
+        if not node_id:
+            return False
+
+        status = str(node.get("status", "online")).lower()
+        if status in {"offline", "failed", "maintenance", "updating"}:
+            return False
+
+        return True
+
+    @staticmethod
+    def _coerce_float(value: Any, default: float) -> float:
+        """Parse float-like values safely."""
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    def _candidate_standby_nodes(self, excluded_node_ids: set[str]) -> List[Dict[str, Any]]:
+        """Return eligible standby candidate nodes sorted by current CPU load."""
+        candidates: List[Dict[str, Any]] = []
+        for node in self.registry.get_all_nodes():
+            if not self._is_node_eligible_for_standby(node):
+                continue
+
+            node_id = str(node.get("id", "")).strip()
+            if node_id in excluded_node_ids:
+                continue
+
+            candidates.append(node)
+
+        candidates.sort(key=lambda item: self._coerce_float(item.get("cpu_load", 100.0), 100.0))
+        return candidates
+
+    async def _load_chain_for_deployment(self, chain_id: int) -> Optional[Dict[str, Any]]:
+        """Load chain payload used for active/standby deploy actions."""
+        from app.services.chain_service import ChainService
+
+        async with get_session() as session:
+            chain_service = ChainService(session)
+            return await chain_service.get_chain(chain_id)
+
+    async def _ensure_minimum_standby_redundancy(
+        self,
+        deployment: FlowDeploymentInfo,
+        minimum_standby_count: int = 1,
+        excluded_node_ids: Optional[set[str]] = None,
+    ) -> Optional[str]:
+        """
+        Ensure a deployed flow retains at least N standby assignments.
+
+        Returns:
+            Warning string when replenishment is incomplete, otherwise None.
+        """
+        if minimum_standby_count <= 0:
+            return None
+        if len(deployment.standby_assignments) >= minimum_standby_count:
+            return None
+
+        excluded = set(excluded_node_ids or set())
+        excluded.add(deployment.primary_assignment.assigned_node_id)
+        excluded.update(s.assigned_node_id for s in deployment.standby_assignments)
+
+        chain = await self._load_chain_for_deployment(deployment.chain_id)
+        if not chain:
+            return (
+                "Standby replenishment incomplete: "
+                f"chain {deployment.chain_id} unavailable for standby deploy"
+            )
+
+        failed_nodes: List[str] = []
+
+        while len(deployment.standby_assignments) < minimum_standby_count:
+            candidates = self._candidate_standby_nodes(excluded)
+            if not candidates:
+                break
+
+            candidate = candidates[0]
+            candidate_id = str(candidate.get("id", "")).strip()
+            if not candidate_id:
+                continue
+
+            excluded.add(candidate_id)
+            standby_ok = await self._deploy_to_node(candidate_id, chain, mode="standby")
+            if not standby_ok:
+                failed_nodes.append(candidate_id)
+                continue
+
+            deployment.standby_assignments.append(
+                FlowAssignmentInfo(
+                    flow_id=deployment.flow_id,
+                    chain_id=deployment.chain_id,
+                    assigned_node_id=candidate_id,
+                    assignment_type="standby",
+                    reason="standby replenished",
+                )
+            )
+
+        if len(deployment.standby_assignments) >= minimum_standby_count:
+            return None
+
+        current = len(deployment.standby_assignments)
+        if failed_nodes:
+            return (
+                f"Standby replenishment incomplete ({current}/{minimum_standby_count}); "
+                f"failed nodes: {', '.join(sorted(failed_nodes))}"
+            )
+
+        return (
+            f"Standby replenishment incomplete ({current}/{minimum_standby_count}); "
+            "no eligible nodes available"
+        )
+
+    @classmethod
+    def initialize(cls) -> "FlowOrchestrator":
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def get_instance(cls) -> "FlowOrchestrator":
+        if cls._instance is None:
+            raise RuntimeError("FlowOrchestrator not initialized")
+        return cls._instance
+
+    async def assign_flow_to_node(
+        self,
+        flow_id: str,
+        chain_id: int,
+        node_id: str,
+        redundancy_enabled: bool = False,
+        strategy: str = "manual",
+    ) -> Optional[FlowDeploymentInfo]:
+        """Assign a flow to a node and optionally create standby assignments."""
+        node = self.registry.get_node(node_id)
+        if not node:
+            logger.warning(f"Node {node_id} not found in registry")
+            return None
+
+        primary = FlowAssignmentInfo(
+            flow_id=flow_id,
+            chain_id=chain_id,
+            assigned_node_id=node_id,
+            assignment_type="primary",
+            reason=f"{strategy} assignment",
+        )
+
+        standby_assignments: List[FlowAssignmentInfo] = []
+        if redundancy_enabled:
+            all_nodes = self.registry.get_all_nodes()
+            standby_nodes = [n for n in all_nodes if n.get("id") != node_id][:2]
+            for standby in standby_nodes:
+                standby_assignments.append(
+                    FlowAssignmentInfo(
+                        flow_id=flow_id,
+                        chain_id=chain_id,
+                        assigned_node_id=standby.get("id"),
+                        assignment_type="standby",
+                        reason="Redundancy standby",
+                    )
+                )
+
+        deployment = FlowDeploymentInfo(
+            flow_id=flow_id,
+            chain_id=chain_id,
+            primary_assignment=primary,
+            standby_assignments=standby_assignments,
+            is_deployed=False,
+            deployment_timestamp=time.time(),
+        )
+
+        await self._persist_assignments(primary, standby_assignments, strategy)
+        return deployment
+
+    async def _persist_assignments(
+        self,
+        primary: FlowAssignmentInfo,
+        standby: List[FlowAssignmentInfo],
+        strategy: str,
+    ) -> None:
+        async with get_session() as session:
+            # flow_assignments currently stores one row per flow_id (unique constraint).
+            # Replace existing assignment atomically when reassigned.
+            await session.execute(
+                delete(FlowAssignment).where(FlowAssignment.flow_id == primary.flow_id)
+            )
+
+            session.add(
+                FlowAssignment(
+                    flow_id=primary.flow_id,
+                    chain_id=primary.chain_id,
+                    assigned_node_id=primary.assigned_node_id,
+                    assignment_type=primary.assignment_type,
+                    assignment_strategy=strategy,
+                )
+            )
+            if standby:
+                logger.debug(
+                    "Standby assignments for flow %s are tracked in deployment metadata",
+                    primary.flow_id,
+                )
+
+    async def save_deployment(self, deployment: FlowDeploymentInfo) -> None:
+        async with get_session() as session:
+            status = "active" if deployment.is_deployed else "failed"
+            last_failover_time = None
+            if deployment.last_failover_timestamp is not None:
+                try:
+                    last_failover_time = datetime.utcfromtimestamp(
+                        float(deployment.last_failover_timestamp)
+                    )
+                except Exception:
+                    last_failover_time = None
+            # Keep one latest deployment row per flow_id.
+            await session.execute(
+                delete(FlowDeployment).where(FlowDeployment.flow_id == deployment.flow_id)
+            )
+            session.add(
+                FlowDeployment(
+                    flow_id=deployment.flow_id,
+                    primary_node_id=deployment.primary_assignment.assigned_node_id,
+                    standby_node_ids=[
+                        s.assigned_node_id for s in deployment.standby_assignments
+                    ],
+                    deployment_status=status,
+                    deployment_timestamp=datetime.utcnow(),
+                    last_failover_time=last_failover_time,
+                    error_message=deployment.error_message,
+                )
+            )
+
+    async def get_assignments(self) -> List[FlowAssignment]:
+        async with get_session() as session:
+            result = await session.execute(select(FlowAssignment))
+            return list(result.scalars().all())
+
+    async def _get_chain_id_for_flow(self, flow_id: str) -> Optional[int]:
+        """Resolve chain_id for a flow from memory, then persisted assignment."""
+        deployment = self.active_deployments.get(flow_id)
+        if deployment:
+            return deployment.chain_id
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(FlowAssignment).where(FlowAssignment.flow_id == flow_id)
+            )
+            assignment = result.scalar_one_or_none()
+            return assignment.chain_id if assignment else None
+
+    async def _load_deployment_from_db(self, flow_id: str) -> Optional[FlowDeploymentInfo]:
+        """Load deployment state from database when cache is empty."""
+        chain_id = await self._get_chain_id_for_flow(flow_id)
+        if chain_id is None:
+            return None
+
+        async with get_session() as session:
+            result = await session.execute(
+                select(FlowDeployment)
+                .where(FlowDeployment.flow_id == flow_id)
+                .order_by(FlowDeployment.deployment_timestamp.desc())
+            )
+            row = result.scalars().first()
+
+        if row is None:
+            return None
+
+        standby_ids = row.standby_node_ids if isinstance(row.standby_node_ids, list) else []
+        deployment = FlowDeploymentInfo(
+            flow_id=flow_id,
+            chain_id=chain_id,
+            primary_assignment=FlowAssignmentInfo(
+                flow_id=flow_id,
+                chain_id=chain_id,
+                assigned_node_id=row.primary_node_id,
+                assignment_type="primary",
+                reason="rehydrated_from_db",
+            ),
+            standby_assignments=[
+                FlowAssignmentInfo(
+                    flow_id=flow_id,
+                    chain_id=chain_id,
+                    assigned_node_id=standby_id,
+                    assignment_type="standby",
+                    reason="rehydrated_from_db",
+                )
+                for standby_id in standby_ids
+                if isinstance(standby_id, str) and standby_id and standby_id != row.primary_node_id
+            ],
+            is_deployed=row.deployment_status == "active",
+            deployment_timestamp=(
+                row.deployment_timestamp.timestamp()
+                if row.deployment_timestamp
+                else time.time()
+            ),
+            error_message=row.error_message,
+            last_failover_timestamp=(
+                row.last_failover_time.timestamp()
+                if row.last_failover_time

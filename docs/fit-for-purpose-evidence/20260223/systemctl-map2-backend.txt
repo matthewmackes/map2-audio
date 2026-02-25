@@ -1,0 +1,33 @@
+● map2-backend.service - MAP2 Audio Platform Backend API
+     Loaded: loaded (/etc/systemd/system/map2-backend.service; disabled; preset: disabled)
+    Drop-In: /etc/systemd/system/map2-backend.service.d
+             └─10-mode.conf
+             /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+             /etc/systemd/system/map2-backend.service.d
+             └─override.conf
+     Active: active (running) since Sun 2026-02-22 21:43:30 EST; 16h ago
+ Invocation: 7c9d6ad4091a4bdaa30b893e7a18806e
+       Docs: https://github.com/matthewmackes/map2-audio
+    Process: 519361 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000 (code=exited, status=0/SUCCESS)
+    Process: 519363 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 64 (code=exited, status=0/SUCCESS)
+    Process: 519366 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 128 (code=exited, status=0/SUCCESS)
+    Process: 519368 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000 (code=exited, status=0/SUCCESS)
+    Process: 519371 ExecStartPost=/bin/bash -c for i in $(seq 1 30); do curl -sf http://localhost:8080/api/health > /dev/null && exit 0; sleep 2; done; exit 1 (code=exited, status=0/SUCCESS)
+   Main PID: 519370 (python3)
+      Tasks: 30 (limit: 38348)
+     Memory: 495M (peak: 504.7M)
+        CPU: 4h 18min 8.260s
+     CGroup: /system.slice/map2-backend.service
+             └─519370 /usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]:   warnings.warn(message, stacklevel=1)
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]: /home/mm/.local/lib/python3.14/site-packages/fastapi/openapi/utils.py:251: UserWarning: Duplicate Operation ID list_snapshots_api_engine_snapshots_get for function list_snapshots at /home/mm/map2-audio/app/routes/snapshots.py
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]:   warnings.warn(message, stacklevel=1)
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]: /home/mm/.local/lib/python3.14/site-packages/fastapi/openapi/utils.py:251: UserWarning: Duplicate Operation ID get_node_health_api_cluster_health__node_id__get for function get_node_health at /home/mm/map2-audio/app/routes/cluster_admin.py
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]:   warnings.warn(message, stacklevel=1)
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]: /home/mm/.local/lib/python3.14/site-packages/fastapi/openapi/utils.py:251: UserWarning: Duplicate Operation ID get_update_schedule_api_cluster_update_schedule_get for function get_update_schedule at /home/mm/map2-audio/app/routes/cluster_update.py
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]:   warnings.warn(message, stacklevel=1)
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]: /home/mm/.local/lib/python3.14/site-packages/fastapi/openapi/utils.py:251: UserWarning: Duplicate Operation ID get_update_history_api_cluster_update_history_get for function get_update_history at /home/mm/map2-audio/app/routes/cluster_update.py
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]:   warnings.warn(message, stacklevel=1)
+Feb 23 14:42:53 MAP2-TESTBED map2-orchestrator[519370]: INFO:     127.0.0.1:35114 - "GET /openapi.json HTTP/1.1" 200 OK

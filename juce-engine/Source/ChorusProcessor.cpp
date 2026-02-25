@@ -14,13 +14,19 @@ ChorusProcessor::ChorusProcessor() {
 
 void ChorusProcessor::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
     sampleRate_ = sampleRate;
-    blockSize_ = samplesPerBlock;
-    numChannels_ = numChannels;
+    blockSize_ = std::max(1, samplesPerBlock);
+    numChannels_ = std::max(1, numChannels);
+
+    // JUCE chorus keeps internal scratch state sized by ProcessSpec::maximumBlockSize.
+    // Some JACK topologies can surface larger callback chunks than nominal quantum;
+    // provision generously to avoid internal overrun/corruption on backend variance.
+    const auto preparedBlockSize = static_cast<juce::uint32>(
+        std::max(blockSize_, MAX_AUDIO_BUFFER_SIZE));
 
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = static_cast<juce::uint32>(samplesPerBlock);
-    spec.numChannels = static_cast<juce::uint32>(numChannels);
+    spec.maximumBlockSize = preparedBlockSize;
+    spec.numChannels = static_cast<juce::uint32>(numChannels_);
 
     chorus_.prepare(spec);
 

@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: February 13, 2026 (Git Workflow Preferences)
+> **Last Updated**: February 24, 2026 (Audio callback crash hardening + SynthForge validation)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -974,6 +974,14 @@ These files represent best practices and architectural patterns to follow:
 - **Docs**: `docs/MIDI_DEVICE_SELECTION_COMPLETE.md`
 - **Lesson**: ALSA device selection requires explicit `snd_seq_subscribe_port()` calls with proper sender/dest addresses. Device names must match exactly "ClientName:PortName" format from `snd_seq_client_info_get_name()` + `snd_seq_port_info_get_name()`
 
+**16. H3000 Glide=0 Callback Crash (✅ SOLVED - Feb 24, 2026)**
+- **Files**: `juce-engine/Source/H3000Processor.cpp`, `juce-engine/Source/JuceAudioIO.cpp`, `juce-engine/Source/Map2AudioEngine.cpp`, `tests/test_juce_engine_audio_start_stability.py`
+- **Problem**: Engine could segfault shortly after `start_audio()` in the real-time callback thread.
+- **Root Cause**: `glide=0` in H3000 micropitch path produced invalid coefficient/index math, which could trigger undefined read indexing under callback load.
+- **Fix**: Added deterministic glide/pitch/delay bounds in H3000, retained callback channel/sample clamping in JUCE/engine bridge, and added subprocess regression test to catch start/stop callback crashes.
+- **Verification**: `ASAN_OPTIONS='abort_on_error=1:detect_leaks=0' LD_PRELOAD=/usr/lib/clang/21/lib/x86_64-redhat-linux-gnu/libclang_rt.asan.so python3 /tmp/repro_t009_asan.py`; `pytest -q tests/test_juce_engine_audio_start_stability.py`
+- **Lesson**: Under MAP2's `-ffast-math` profile, use deterministic bound guards rather than NaN/Inf-dependent safety checks in RT DSP code.
+
 ---
 
 ## Plan-First Meta Rule
@@ -1194,6 +1202,13 @@ Target: < 5 ms total
 ---
 
 ## Update Log
+
+### [2026-02-24] - Callback-Path Crash Triage + Hardening (COMPLETE)
+- **Section**: Gotchas & Learned Fixes (#16), JUCE/Audio
+- **Change**: Added documented root cause and fix for post-`start_audio()` callback crash in H3000 glide path; added regression coverage command.
+- **Reason**: T009 required a permanent host-side callback stability fix before T008 runtime validation could be trusted.
+- **Impact**: Real callback path is stable in ASAN and Release validation runs; SynthForge runtime evidence now captures non-zero voice/cpu metrics.
+- **Files**: `juce-engine/Source/H3000Processor.cpp`, `juce-engine/Source/JuceAudioIO.cpp`, `juce-engine/Source/Map2AudioEngine.cpp`, `tests/test_juce_engine_audio_start_stability.py`
 
 ### [2026-02-13] - Git Workflow Preferences Added
 - **Section**: User Preferences (new section)

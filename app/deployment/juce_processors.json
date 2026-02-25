@@ -194,6 +194,24 @@
       ]
     },
     {
+      "uri": "map2://juce/synthforge",
+      "name": "SynthForge",
+      "category": "Instrument",
+      "description": "16-part multitimbral module/sampler scaffold integrated with MAP2 JUCE engine",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 0,
+        "outputs": 2
+      },
+      "priority": 12,
+      "is_native": true,
+      "api_base": "/api/synthforge",
+      "features": ["multitimbral-16-part", "midi-routing", "voice-metrics", "patch-management"],
+      "parameters": [
+        {"name": "Master Level", "symbol": "master_level", "min": 0, "max": 1, "default": 1}
+      ]
+    },
+    {
       "uri": "map2://juce/delay",
       "name": "Stereo Delay",
       "category": "Delay",

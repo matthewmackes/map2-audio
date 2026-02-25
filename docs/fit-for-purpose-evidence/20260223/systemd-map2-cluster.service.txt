@@ -1,0 +1,31 @@
+[Unit]
+Description=MAP2 Audio Platform - Cluster Management Service
+After=map2-backend.service
+Wants=map2-backend.service
+
+[Service]
+Type=simple
+User=map2
+Group=map2
+WorkingDirectory=/opt/map2
+ExecStart=/usr/bin/python3 -m app.services.cluster.cluster_daemon
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-cluster
+
+# Security
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/map2 /var/log/map2 /etc/map2
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=32768
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

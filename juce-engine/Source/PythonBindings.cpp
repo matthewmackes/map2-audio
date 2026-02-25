@@ -26,6 +26,7 @@
 #include "ShoeGazeProcessor.h"
 #include "LexiLoveProcessor.h"
 #include "H3000Processor.h"
+#include "SynthForge/Common/Types.h"
 
 #include <memory>
 
@@ -187,6 +188,71 @@ py::dict irInfoToDict(const ConvolutionProcessor::IRInfo& info) {
     d["length_seconds"] = info.lengthSeconds;
     d["sample_rate"] = info.originalSampleRate;
     d["stereo"] = info.stereo;
+    return d;
+}
+
+// Convert SynthForge PartConfig to Python dict
+py::dict synthForgePartConfigToDict(const synthforge::PartConfig& config) {
+    py::dict d;
+    d["part_index"] = config.partIndex;
+    d["midi_channel"] = config.midiChannel;
+    d["output_bus"] = synthforge::outputBusToString(config.outputBus);
+    d["level"] = config.level;
+    d["pan"] = config.pan;
+    d["mute"] = config.mute;
+    d["solo"] = config.solo;
+    return d;
+}
+
+// Convert Python dict to SynthForge PartConfig
+synthforge::PartConfig dictToSynthForgePartConfig(const py::dict& d) {
+    synthforge::PartConfig config;
+    if (d.contains("part_index")) config.partIndex = d["part_index"].cast<int>();
+    if (d.contains("midi_channel")) config.midiChannel = d["midi_channel"].cast<int>();
+    if (d.contains("output_bus")) {
+        config.outputBus = synthforge::outputBusFromString(d["output_bus"].cast<std::string>());
+    }
+    if (d.contains("level")) config.level = d["level"].cast<float>();
+    if (d.contains("pan")) config.pan = d["pan"].cast<float>();
+    if (d.contains("mute")) config.mute = d["mute"].cast<bool>();
+    if (d.contains("solo")) config.solo = d["solo"].cast<bool>();
+    return config;
+}
+
+py::dict synthForgePatchInfoToDict(const synthforge::PatchInfo& patch) {
+    py::dict d;
+    d["bank"] = patch.bank;
+    d["program"] = patch.program;
+    d["name"] = patch.name;
+    d["category"] = patch.category;
+    d["author"] = patch.author;
+    d["description"] = patch.description;
+    return d;
+}
+
+py::dict synthForgeVoiceMetricsToDict(const synthforge::VoiceMetrics& metrics) {
+    py::dict d;
+    d["active_voices"] = metrics.activeVoices;
+    d["peak_voices"] = metrics.peakVoices;
+    d["cpu_percent"] = metrics.cpuPercent;
+
+    py::list voicesPerPart;
+    for (int count : metrics.voicesPerPart) {
+        voicesPerPart.append(count);
+    }
+    d["voices_per_part"] = voicesPerPart;
+    return d;
+}
+
+py::dict synthForgeMeteringToDict(const synthforge::Metering& metering) {
+    py::dict d;
+    d["voice_metrics"] = synthForgeVoiceMetricsToDict(metering.voiceMetrics);
+
+    py::list partLevels;
+    for (float level : metering.partLevels) {
+        partLevels.append(level);
+    }
+    d["part_levels"] = partLevels;
     return d;
 }
 
@@ -2316,6 +2382,58 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "Get all sidechain connections")
 
         // ========================================
+        // SynthForge (Phase 1 scaffold)
+        // ========================================
+
+        .def("get_synthforge_parts_config", [](const Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& config : self.getSynthForgePartsConfig()) {
+                result.append(synthForgePartConfigToDict(config));
+            }
+            return result;
+        }, "Get SynthForge configuration for all 16 parts")
+
+        .def("set_synthforge_part_config", [](Map2AudioEngine& self, int partIndex, const py::dict& configDict) {
+            auto config = dictToSynthForgePartConfig(configDict);
+            config.partIndex = partIndex;
+            return self.setSynthForgePartConfig(partIndex, config);
+        }, py::arg("part_index"), py::arg("config"), "Set SynthForge part configuration")
+
+        .def("set_synthforge_part_channel", &Map2AudioEngine::setSynthForgePartChannel,
+             py::arg("part_index"), py::arg("midi_channel"), "Set SynthForge part MIDI channel")
+        .def("get_synthforge_part_channel", &Map2AudioEngine::getSynthForgePartChannel,
+             py::arg("part_index"), "Get SynthForge part MIDI channel")
+
+        .def("get_synthforge_part_parameters", &Map2AudioEngine::getSynthForgePartParameters,
+             py::arg("part_index"), "Get SynthForge parameters for a part")
+        .def("set_synthforge_parameter", &Map2AudioEngine::setSynthForgeParameter,
+             py::arg("part_index"), py::arg("param"), py::arg("value"),
+             "Set a single SynthForge parameter")
+
+        .def("get_synthforge_patches", [](const Map2AudioEngine& self, const std::string& category) {
+            py::list result;
+            for (const auto& patch : self.getSynthForgePatches(category)) {
+                result.append(synthForgePatchInfoToDict(patch));
+            }
+            return result;
+        }, py::arg("category") = "", "List SynthForge patches")
+
+        .def("load_synthforge_patch", &Map2AudioEngine::loadSynthForgePatch,
+             py::arg("part_index"), py::arg("bank"), py::arg("program"),
+             "Load SynthForge patch into target part")
+        .def("save_synthforge_patch", &Map2AudioEngine::saveSynthForgePatch,
+             py::arg("part_index"), py::arg("bank"), py::arg("program"), py::arg("name"),
+             "Save current SynthForge part state as patch")
+
+        .def("get_synthforge_voice_metrics", [](const Map2AudioEngine& self) {
+            return synthForgeVoiceMetricsToDict(self.getSynthForgeVoiceMetrics());
+        }, "Get SynthForge voice usage metrics")
+
+        .def("get_synthforge_metering", [](const Map2AudioEngine& self) {
+            return synthForgeMeteringToDict(self.getSynthForgeMetering());
+        }, "Get SynthForge metering payload")
+
+        // ========================================
         // Parameters
         // ========================================
 
@@ -2510,6 +2628,14 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return self.getMidiHandler().sendNoteOff(channel, note, velocity);
         }, py::arg("channel"), py::arg("note"), py::arg("velocity") = 0,
            "Send a Note Off message")
+
+        .def("midi_inject_note_on", &Map2AudioEngine::injectMidiNoteOn,
+             py::arg("channel"), py::arg("note"), py::arg("velocity"),
+             "Inject a Note On event into the internal MIDI input path")
+
+        .def("midi_inject_note_off", &Map2AudioEngine::injectMidiNoteOff,
+             py::arg("channel"), py::arg("note"), py::arg("velocity") = 0,
+             "Inject a Note Off event into the internal MIDI input path")
 
         .def("midi_send_parameter_feedback", [](Map2AudioEngine& self, int channel, int cc, float value) {
             self.getMidiHandler().sendParameterFeedback(channel, cc, value);
@@ -2805,6 +2931,9 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
         .def("reset_xrun_counter", &Map2AudioEngine::resetXrunCounter,
              "Reset the xrun counter without resetting other stats")
+
+        .def("reset_audio_io_stats", &Map2AudioEngine::resetAudioIOStats,
+             "Reset full audio I/O runtime stats (xrun/jitter/duration counters)")
 
         .def("set_measured_round_trip_latency", &Map2AudioEngine::setMeasuredRoundTripLatency,
              py::arg("ms"),

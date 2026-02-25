@@ -416,6 +416,24 @@ class JuceEngineService(Singleton):
                 "learning": False,
             }
 
+    async def inject_midi_note_on(self, channel: int, note: int, velocity: int) -> bool:
+        """Inject Note On into internal JUCE MIDI input path."""
+        if not self._engine:
+            return False
+        handler = getattr(self._engine, "midi_inject_note_on", None)
+        if not callable(handler):
+            return False
+        return bool(handler(channel, note, velocity))
+
+    async def inject_midi_note_off(self, channel: int, note: int, velocity: int = 0) -> bool:
+        """Inject Note Off into internal JUCE MIDI input path."""
+        if not self._engine:
+            return False
+        handler = getattr(self._engine, "midi_inject_note_off", None)
+        if not callable(handler):
+            return False
+        return bool(handler(channel, note, velocity))
+
     # MIDI CC Mappings (JUCE)
 
     async def add_midi_cc_mapping(self, channel: int, cc_number: int,
@@ -2808,6 +2826,98 @@ class JuceEngineService(Singleton):
             {"id": "sisters", "name": "Sisters", "track": "Track 13", "description": "Harmonized lead"},
             {"id": "love_secrets", "name": "Love Secrets", "track": "Track 14", "description": "Shredding with tight delay"}
         ]
+
+    # ========================================
+    # SynthForge (Phase 1 scaffold)
+    # ========================================
+
+    async def get_synthforge_parts_config(self) -> List[Dict[str, Any]]:
+        if not self._engine:
+            return [
+                {
+                    "part_index": index,
+                    "midi_channel": index + 1,
+                    "output_bus": "main",
+                    "level": 1.0,
+                    "pan": 0.0,
+                    "mute": False,
+                    "solo": False,
+                }
+                for index in range(16)
+            ]
+        return [dict(part) for part in self._engine.get_synthforge_parts_config()]
+
+    async def set_synthforge_part_config(self, part_index: int, config: Dict[str, Any]) -> bool:
+        if not self._engine:
+            return False
+        payload = dict(config)
+        payload["part_index"] = part_index
+        return bool(self._engine.set_synthforge_part_config(part_index, payload))
+
+    async def set_synthforge_part_channel(self, part_index: int, midi_channel: int) -> bool:
+        if not self._engine:
+            return False
+        return bool(self._engine.set_synthforge_part_channel(part_index, midi_channel))
+
+    async def get_synthforge_part_channel(self, part_index: int) -> int:
+        if not self._engine:
+            return -1
+        return int(self._engine.get_synthforge_part_channel(part_index))
+
+    async def get_synthforge_part_parameters(self, part_index: int) -> Dict[str, float]:
+        if not self._engine:
+            return {}
+        return dict(self._engine.get_synthforge_part_parameters(part_index))
+
+    async def set_synthforge_parameter(self, part_index: int, param: str, value: float) -> bool:
+        if not self._engine:
+            return False
+        return bool(self._engine.set_synthforge_parameter(part_index, param, value))
+
+    async def get_synthforge_patches(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
+        if not self._engine:
+            return []
+        category_filter = category or ""
+        return [dict(patch) for patch in self._engine.get_synthforge_patches(category_filter)]
+
+    async def load_synthforge_patch(self, part_index: int, bank: int, program: int) -> bool:
+        if not self._engine:
+            return False
+        return bool(self._engine.load_synthforge_patch(part_index, bank, program))
+
+    async def save_synthforge_patch(
+        self,
+        part_index: int,
+        bank: int,
+        program: int,
+        name: str,
+    ) -> bool:
+        if not self._engine:
+            return False
+        return bool(self._engine.save_synthforge_patch(part_index, bank, program, name))
+
+    async def get_synthforge_voice_metrics(self) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "active_voices": 0,
+                "peak_voices": 0,
+                "voices_per_part": [0] * 16,
+                "cpu_percent": 0.0,
+            }
+        return dict(self._engine.get_synthforge_voice_metrics())
+
+    async def get_synthforge_metering(self) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "voice_metrics": {
+                    "active_voices": 0,
+                    "peak_voices": 0,
+                    "voices_per_part": [0] * 16,
+                    "cpu_percent": 0.0,
+                },
+                "part_levels": [0.0] * 16,
+            }
+        return dict(self._engine.get_synthforge_metering())
 
 
 # Singleton accessor using base class

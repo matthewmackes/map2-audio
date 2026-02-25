@@ -35,6 +35,9 @@ option(JUCE_PLUGINHOST_VST3 "Enable VST3 plugin hosting" OFF)
 option(JUCE_PLUGINHOST_AU "Enable AudioUnit plugin hosting (macOS)" OFF)
 option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" ON)
 option(JUCE_PLUGINHOST_LADSPA "Enable LADSPA plugin hosting" ON)
+option(MAP2_PYBIND_ENABLE_EXTRAS
+    "Enable pybind11 extras for Python module build (Release stripping/LTO helper behavior)"
+    ON)
 
 # ========================================
 # JUCE Framework Integration
@@ -245,6 +248,13 @@ set(SOURCES
     # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
     Source/PassionFXProcessor.cpp
 
+    # SynthForge (Phase 1 scaffold)
+    Source/SynthForge/SynthForgeProcessor.cpp
+    Source/SynthForge/Core/Part.cpp
+    Source/SynthForge/Core/VoiceAllocator.cpp
+    Source/SynthForge/Core/MidiRouter.cpp
+    Source/SynthForge/Sound/SynthVoice.cpp
+
     # Existing components (updated)
     Source/MidiHandler.cpp
     Source/VuMeter.cpp
@@ -326,6 +336,14 @@ set(HEADERS
     # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
     Source/PassionFXProcessor.h
 
+    # SynthForge (Phase 1 scaffold)
+    Source/SynthForge/SynthForgeProcessor.h
+    Source/SynthForge/Core/Part.h
+    Source/SynthForge/Core/VoiceAllocator.h
+    Source/SynthForge/Core/MidiRouter.h
+    Source/SynthForge/Sound/SynthVoice.h
+    Source/SynthForge/Common/Types.h
+
     # Existing components
     Source/MidiHandler.h
     Source/VuMeter.h
@@ -362,7 +380,12 @@ endif()
 # ========================================
 # Create Python module
 # ========================================
-pybind11_add_module(map2_audio_engine ${SOURCES} ${HEADERS})
+if(MAP2_PYBIND_ENABLE_EXTRAS)
+    pybind11_add_module(map2_audio_engine ${SOURCES} ${HEADERS})
+else()
+    # Disable pybind11 extras for ASAN/gdb triage so symbols are preserved.
+    pybind11_add_module(map2_audio_engine NO_EXTRAS ${SOURCES} ${HEADERS})
+endif()
 
 # ========================================
 # Include directories

@@ -1,0 +1,26 @@
+● map2-web-prod.service - MAP2 Audio Platform - Production Web Server (Port 3000)
+     Loaded: loaded (/etc/systemd/system/map2-web-prod.service; enabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: active (running) since Sun 2026-02-22 20:54:24 EST; 17h ago
+ Invocation: 6aa33ea87a5c4bb98b5023d02c25a530
+       Docs: https://github.com/matthewmackes/map2-audio
+   Main PID: 500039 (npm run preview)
+      Tasks: 31 (limit: 38348)
+     Memory: 80M (peak: 81.9M)
+        CPU: 36.215s
+     CGroup: /system.slice/map2-web-prod.service
+             ├─500039 "npm run preview"
+             ├─500060 node /home/mm/map2-audio/web/node_modules/.bin/vite preview --host 0.0.0.0 --port 3000
+             └─500091 /home/mm/map2-audio/web/node_modules/@esbuild/linux-x64/bin/esbuild --service=0.25.2 --ping
+
+Feb 22 21:43:23 MAP2-TESTBED map2-web-prod[500060]:     at internalConnectMultiple (node:net:1134:18)
+Feb 22 21:43:23 MAP2-TESTBED map2-web-prod[500060]:     at afterConnectMultiple (node:net:1715:7)
+Feb 22 21:43:24 MAP2-TESTBED map2-web-prod[500060]: 9:43:24 PM [vite] http proxy error: /api/midi-learn/mappings
+Feb 22 21:43:24 MAP2-TESTBED map2-web-prod[500060]: AggregateError [ECONNREFUSED]:
+Feb 22 21:43:24 MAP2-TESTBED map2-web-prod[500060]:     at internalConnectMultiple (node:net:1134:18)
+Feb 22 21:43:24 MAP2-TESTBED map2-web-prod[500060]:     at afterConnectMultiple (node:net:1715:7)
+Feb 22 21:43:29 MAP2-TESTBED map2-web-prod[500060]: 9:43:29 PM [vite] http proxy error: /api/midi-learn/mappings
+Feb 22 21:43:29 MAP2-TESTBED map2-web-prod[500060]: AggregateError [ECONNREFUSED]:
+Feb 22 21:43:29 MAP2-TESTBED map2-web-prod[500060]:     at internalConnectMultiple (node:net:1134:18)
+Feb 22 21:43:29 MAP2-TESTBED map2-web-prod[500060]:     at afterConnectMultiple (node:net:1715:7)

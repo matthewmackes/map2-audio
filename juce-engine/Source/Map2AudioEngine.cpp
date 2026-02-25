@@ -300,6 +300,11 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
         setParameterByName(pluginId, param, value);
     });
 
+    // Forward MIDI note/control/program events into the audio callback via lock-free queue.
+    midiHandler_.setMidiCallback([this](const MidiMessage& msg) {
+        enqueueMidiEvent(msg);
+    });
+
     // Initialize metering components
     spectrumAnalyzer_.prepare(sampleRate_);
     lufsMeter_.prepare(sampleRate_, 2);
@@ -344,7 +349,9 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     peavey5150_.prepare(sampleRate_, bufferSize_, 2);
     tweedBassman_.prepare(sampleRate_, bufferSize_, 2);
     passionFX_.prepare(sampleRate_, bufferSize_, 2);
+    synthForge_.prepare(sampleRate_, bufferSize_, 2);
     std::cout << "  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX" << std::endl;
+    std::cout << "  SynthForge: Phase 1 scaffold initialized (16-part MIDI/voice core)" << std::endl;
 
     // Set up audio callback
     audioIO_.setProcessCallback([this](const float* const* inputs, int numInputs,
@@ -1112,29 +1119,56 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // Start CPU measurement
     cpuMonitor_.beginCallback();
 
-    // Create JUCE buffers — pre-allocated in initialize(), no RT allocation here
-    // GUARDED: assert buffer is large enough (setSize only called in non-RT context)
-    jassert(callbackBuffer_.getNumChannels() >= numOutputs && callbackBuffer_.getNumSamples() >= numSamples);
-    auto& buffer = callbackBuffer_;
+    const int safeOutputChannels = std::max(0, numOutputs);
+    const int safeInputChannels = std::max(0, numInputs);
+    const int safeNumSamples = std::max(0, numSamples);
+    const int callbackChannels = callbackBuffer_.getNumChannels();
+    const int callbackCapacitySamples = callbackBuffer_.getNumSamples();
+
+    if (callbackChannels <= 0 || callbackCapacitySamples <= 0 || safeNumSamples <= 0) {
+        for (int ch = 0; ch < safeOutputChannels; ++ch) {
+            if (outputs[ch] != nullptr) {
+                std::fill_n(outputs[ch], safeNumSamples, 0.0f);
+            }
+        }
+        cpuMonitor_.endCallback();
+        return;
+    }
+
+    const int processSamples = std::min(safeNumSamples, callbackCapacitySamples);
+    const int configuredChannels = std::max(1, numOutputChannels_);
+    const int processChannels = std::max(1, std::min(callbackChannels, configuredChannels));
+    const int copyInputChannels = std::min(safeInputChannels, processChannels);
+
+    // Create a non-owning view sized to the current callback frame.
+    juce::AudioBuffer<float> buffer(callbackBuffer_.getArrayOfWritePointers(),
+                                    processChannels,
+                                    processSamples);
     juce::MidiBuffer midiBuffer;
 
     // Copy input to buffer (overwrites all channels — no need to clear first)
-    for (int ch = 0; ch < std::min(numInputs, numOutputs); ++ch) {
+    for (int ch = 0; ch < copyInputChannels; ++ch) {
         if (inputs[ch] != nullptr) {
-            buffer.copyFrom(ch, 0, inputs[ch], numSamples);
+            buffer.copyFrom(ch, 0, inputs[ch], processSamples);
         } else {
-            buffer.clear(ch, 0, numSamples);  // Only clear if input is null
+            buffer.clear(ch, 0, processSamples);  // Only clear if input is null
         }
     }
-    // Clear any extra output channels beyond input count
-    for (int ch = numInputs; ch < numOutputs; ++ch) {
-        buffer.clear(ch, 0, numSamples);
+    // Clear any extra channels beyond input count
+    for (int ch = copyInputChannels; ch < processChannels; ++ch) {
+        buffer.clear(ch, 0, processSamples);
     }
+
+    // Pull pending MIDI events captured by MidiHandler thread.
+    drainMidiEvents(midiBuffer, processSamples);
 
     // Process parameter updates from queue
     parameterBridge_.processQueue([this](const ParameterUpdate& update) {
         pluginHost_.setParameter(update.pluginId, update.paramIndex, update.value);
     });
+
+    // Process SynthForge Phase 1 MIDI/voice tracking.
+    synthForge_.processBlock(buffer, midiBuffer);
 
     // Process through plugin graph (includes automatic PDC)
     audioGraph_->process(buffer, midiBuffer);
@@ -1207,9 +1241,18 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     }
 
     // Copy output
-    for (int ch = 0; ch < numOutputs; ++ch) {
+    const int copyOutputChannels = std::min(safeOutputChannels, processChannels);
+    for (int ch = 0; ch < copyOutputChannels; ++ch) {
         if (outputs[ch] != nullptr) {
-            std::copy_n(buffer.getReadPointer(ch), numSamples, outputs[ch]);
+            std::copy_n(buffer.getReadPointer(ch), processSamples, outputs[ch]);
+            if (processSamples < safeNumSamples) {
+                std::fill_n(outputs[ch] + processSamples, safeNumSamples - processSamples, 0.0f);
+            }
+        }
+    }
+    for (int ch = copyOutputChannels; ch < safeOutputChannels; ++ch) {
+        if (outputs[ch] != nullptr) {
+            std::fill_n(outputs[ch], safeNumSamples, 0.0f);
         }
     }
 
@@ -1219,6 +1262,86 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
 
     // End CPU measurement
     cpuMonitor_.endCallback();
+}
+
+void Map2AudioEngine::enqueueMidiEvent(const MidiMessage& msg) {
+    uint8_t status = 0;
+    const int channel = std::clamp(msg.channel, 1, 16) - 1;
+    uint8_t data1 = static_cast<uint8_t>(std::clamp(msg.data1, 0, 127));
+    uint8_t data2 = static_cast<uint8_t>(std::clamp(msg.data2, 0, 127));
+
+    switch (msg.type) {
+        case MidiMessageType::NoteOn:
+            status = static_cast<uint8_t>(0x90 | channel);
+            break;
+        case MidiMessageType::NoteOff:
+            status = static_cast<uint8_t>(0x80 | channel);
+            break;
+        case MidiMessageType::ControlChange:
+            status = static_cast<uint8_t>(0xB0 | channel);
+            break;
+        case MidiMessageType::ProgramChange:
+            status = static_cast<uint8_t>(0xC0 | channel);
+            data2 = 0;
+            break;
+        case MidiMessageType::ChannelPressure:
+            status = static_cast<uint8_t>(0xD0 | channel);
+            data2 = 0;
+            break;
+        default:
+            return;
+    }
+
+    int start1, size1, start2, size2;
+    midiFifo_.prepareToWrite(1, start1, size1, start2, size2);
+    if (size1 <= 0) {
+        return;
+    }
+
+    auto& slot = midiRing_[static_cast<size_t>(start1)];
+    slot.status = status;
+    slot.data1 = data1;
+    slot.data2 = data2;
+    slot.sampleOffset = 0;
+    midiFifo_.finishedWrite(1);
+    midiDataReady_.store(true, std::memory_order_release);
+}
+
+void Map2AudioEngine::drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSamples) {
+    if (!midiDataReady_.load(std::memory_order_acquire) && midiFifo_.getNumReady() <= 0) {
+        return;
+    }
+
+    const int ready = midiFifo_.getNumReady();
+    if (ready <= 0) {
+        midiDataReady_.store(false, std::memory_order_release);
+        return;
+    }
+
+    int start1, size1, start2, size2;
+    midiFifo_.prepareToRead(ready, start1, size1, start2, size2);
+
+    auto appendEvent = [&](const QueuedMidiEvent& event) {
+        const uint8_t op = static_cast<uint8_t>(event.status & 0xF0);
+        const int offset = std::clamp(event.sampleOffset, 0, std::max(0, numSamples - 1));
+        if (op == 0xC0 || op == 0xD0) {
+            midiBuffer.addEvent(juce::MidiMessage(event.status, event.data1), offset);
+        } else {
+            midiBuffer.addEvent(juce::MidiMessage(event.status, event.data1, event.data2), offset);
+        }
+    };
+
+    for (int i = 0; i < size1; ++i) {
+        appendEvent(midiRing_[static_cast<size_t>(start1 + i)]);
+    }
+    for (int i = 0; i < size2; ++i) {
+        appendEvent(midiRing_[static_cast<size_t>(start2 + i)]);
+    }
+
+    midiFifo_.finishedRead(size1 + size2);
+    if (midiFifo_.getNumReady() <= 0) {
+        midiDataReady_.store(false, std::memory_order_release);
+    }
 }
 
 // ========================================
@@ -1320,6 +1443,7 @@ void Map2AudioEngine::prepareAllProcessors(double sampleRate, int bufferSize, in
     h3000_.prepare(sampleRate, bufferSize, numChannels);
     bossXS1_.prepare(sampleRate, bufferSize, numChannels);
     lexiLove_.prepare(sampleRate, bufferSize, numChannels);
+    synthForge_.prepare(sampleRate, bufferSize, numChannels);
 }
 
 void Map2AudioEngine::setAudioDevice(const std::string& device) {
@@ -1358,11 +1482,9 @@ std::optional<PluginInfo> Map2AudioEngine::getPluginInfo(const std::string& uri)
 }
 
 InstanceId Map2AudioEngine::loadPlugin(const std::string& uri) {
-    InstanceId id = pluginHost_.loadPlugin(uri, sampleRate_, bufferSize_);
-    if (id != INVALID_INSTANCE_ID) {
-        audioGraph_->addPlugin(id);
-    }
-    return id;
+    // Loading and placement are intentionally separate operations.
+    // Callers must explicitly place loaded plugins via addToChain/addToParallelBranch.
+    return pluginHost_.loadPlugin(uri, sampleRate_, bufferSize_);
 }
 
 bool Map2AudioEngine::unloadPlugin(InstanceId instanceId) {
@@ -1476,6 +1598,52 @@ bool Map2AudioEngine::setMidiDevice(const std::string& device) {
     return midiHandler_.openInputDevice(device);
 }
 
+bool Map2AudioEngine::injectMidiNoteOn(int channel, int note, int velocity) {
+    if (!midiHandler_.isEnabled()) {
+        return false;
+    }
+    if (channel < 1 || channel > 16) {
+        return false;
+    }
+    if (note < 0 || note > 127) {
+        return false;
+    }
+    if (velocity < 0 || velocity > 127) {
+        return false;
+    }
+
+    const uint8_t message[3] = {
+        static_cast<uint8_t>(0x90 | ((channel - 1) & 0x0F)),
+        static_cast<uint8_t>(note & 0x7F),
+        static_cast<uint8_t>(velocity & 0x7F),
+    };
+    midiHandler_.processMidiBuffer(message, sizeof(message));
+    return true;
+}
+
+bool Map2AudioEngine::injectMidiNoteOff(int channel, int note, int velocity) {
+    if (!midiHandler_.isEnabled()) {
+        return false;
+    }
+    if (channel < 1 || channel > 16) {
+        return false;
+    }
+    if (note < 0 || note > 127) {
+        return false;
+    }
+    if (velocity < 0 || velocity > 127) {
+        return false;
+    }
+
+    const uint8_t message[3] = {
+        static_cast<uint8_t>(0x80 | ((channel - 1) & 0x0F)),
+        static_cast<uint8_t>(note & 0x7F),
+        static_cast<uint8_t>(velocity & 0x7F),
+    };
+    midiHandler_.processMidiBuffer(message, sizeof(message));
+    return true;
+}
+
 // ========================================
 // VU Meters (Legacy)
 // ========================================
@@ -1578,6 +1746,10 @@ std::vector<int64_t> Map2AudioEngine::getXrunHistory() const {
 
 void Map2AudioEngine::resetXrunCounter() {
     audioIO_.resetXrunCounter();
+}
+
+void Map2AudioEngine::resetAudioIOStats() {
+    audioIO_.resetStats();
 }
 
 void Map2AudioEngine::setMeasuredRoundTripLatency(double ms) {
@@ -3322,6 +3494,59 @@ PassionFXProcessor::PresetInfo Map2AudioEngine::getPassionFXPresetInfo(PassionFX
 
 int Map2AudioEngine::getPassionFXNumPresets() {
     return PassionFXProcessor::getNumPresets();
+}
+
+// ========================================
+// SynthForge (Phase 1 scaffold)
+// ========================================
+
+std::vector<synthforge::PartConfig> Map2AudioEngine::getSynthForgePartsConfig() const {
+    return synthForge_.getPartsConfig();
+}
+
+bool Map2AudioEngine::setSynthForgePartConfig(int partIndex, const synthforge::PartConfig& config) {
+    return synthForge_.setPartConfig(partIndex, config);
+}
+
+bool Map2AudioEngine::setSynthForgePartChannel(int partIndex, int midiChannel) {
+    return synthForge_.setPartChannel(partIndex, midiChannel);
+}
+
+int Map2AudioEngine::getSynthForgePartChannel(int partIndex) const {
+    return synthForge_.getPartChannel(partIndex);
+}
+
+std::map<std::string, float> Map2AudioEngine::getSynthForgePartParameters(int partIndex) const {
+    return synthForge_.getPartParameters(partIndex);
+}
+
+bool Map2AudioEngine::setSynthForgeParameter(int partIndex, const std::string& param, float value) {
+    return synthForge_.setPartParameter(partIndex, param, value);
+}
+
+std::vector<synthforge::PatchInfo> Map2AudioEngine::getSynthForgePatches(
+    const std::string& category) const {
+    return synthForge_.getPatches(category);
+}
+
+bool Map2AudioEngine::loadSynthForgePatch(int partIndex, int bank, int program) {
+    return synthForge_.loadPatch(partIndex, bank, program);
+}
+
+bool Map2AudioEngine::saveSynthForgePatch(
+    int partIndex,
+    int bank,
+    int program,
+    const std::string& name) {
+    return synthForge_.savePatch(partIndex, bank, program, name);
+}
+
+synthforge::VoiceMetrics Map2AudioEngine::getSynthForgeVoiceMetrics() const {
+    return synthForge_.getVoiceMetrics();
+}
+
+synthforge::Metering Map2AudioEngine::getSynthForgeMetering() const {
+    return synthForge_.getMetering();
 }
 
 // ========================================

@@ -1,0 +1,280 @@
+"""
+AVB/TSN Network Audio Transport API Routes
+
+Provides REST endpoints for:
+- PTP synchronization status
+- TSN qdisc configuration (Phase 2)
+- AVB stream management (Phase 5)
+
+All endpoints return available=false gracefully when AVB is disabled or hardware unavailable.
+"""
+
+import asyncio
+import json
+import logging
+from datetime import datetime, timezone
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
+from urllib.parse import urlparse
+
+from app.config import config_get
+from app.services.avb import is_avb_available, get_avb_readiness
+from app.services.avb.ptp_monitor import get_ptp_monitor
+from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/avb", tags=["AVB/TSN"])
+_acmp_srp_reservations: Dict[str, Dict[str, Optional[str]]] = {}
+_ALLOWED_FAILOVER_POLICIES = {"none", "prefer_primary", "round_robin", "manual"}
+_AVDECC_SAMPLE_RATE_TO_CODE = {
+    8000: 0x01,
+    16000: 0x02,
+    32000: 0x03,
+    44100: 0x04,
+    48000: 0x05,
+    88200: 0x06,
+    96000: 0x07,
+    176400: 0x08,
+    192000: 0x09,
+}
+_AVDECC_SAMPLE_RATE_FROM_CODE = {code: rate for rate, code in _AVDECC_SAMPLE_RATE_TO_CODE.items()}
+_AVDECC_ALLOWED_BITS_PER_SAMPLE = {8, 16, 20, 24, 32}
+_AVDECC_STREAM_FORMAT_PREFIX = 0x0200000000000000
+_STREAM_OWNERSHIP_FIELDS = (
+    "owner_node_id",
+    "peer_node_id",
+    "owner_endpoint_id",
+    "peer_endpoint_id",
+    "talker_node_id",
+    "listener_node_id",
+    "talker_endpoint_id",
+    "listener_endpoint_id",
+)
+
+
+def _srp_enabled() -> bool:
+    return bool(config_get("avb.srp.enabled", True))
+
+
+def _srp_required() -> bool:
+    return _srp_enabled() and bool(config_get("avb.srp.required", True))
+
+
+def _extract_host_from_node_address(node_address: Optional[str]) -> str:
+    """Best-effort host extraction for endpoint-to-host display."""
+    if not node_address:
+        return ""
+
+    try:
+        parsed = urlparse(node_address)
+        host = (parsed.hostname or "").strip()
+        if host:
+            return host
+    except Exception:
+        pass
+
+    return node_address.strip().split("/", 1)[0].split("@")[-1].split(":")[0].strip()
+
+
+def _coerce_non_negative_int(raw: Any, default: int) -> int:
+    """Convert values to non-negative integers, preserving default on invalid input."""
+    try:
+        value = int(raw)
+    except Exception:
+        return default
+    return value if value >= 0 else default
+
+
+def _normalize_endpoint_direction(raw: Any, fallback: Optional[str] = None) -> str:
+    """Normalize endpoint direction to canonical talker/listener values."""
+    if raw is None and fallback is not None:
+        raw = fallback
+
+    value = raw
+    if hasattr(raw, "value"):
+        value = getattr(raw, "value")
+
+    normalized = str(value or "").strip().lower()
+    return "talker" if normalized == "talker" else "listener"
+
+
+def _normalize_device_type(raw: Any) -> str:
+    """Normalize endpoint device type to canonical map2/avdecc/unknown values."""
+    normalized = str(raw or "").strip().lower()
+    if normalized in {"map2", "avdecc"}:
+        return normalized
+    return "unknown"
+
+
+def _read_avdecc_field(entity: Any, *names: str, default: Any = None) -> Any:
+    """Read a field from object or dict-like AVDECC payloads."""
+    if entity is None:
+        return default
+
+    for name in names:
+        try:
+            if isinstance(entity, dict):
+                if name in entity and entity[name] is not None:
+                    return entity[name]
+            elif hasattr(entity, name):
+                value = getattr(entity, name)
+                if value is not None:
+                    return value
+        except Exception:
+            continue
+
+    return default
+
+
+def _resolve_avdecc_callable(target: Any, names: List[str]) -> Optional[Any]:
+    if target is None:
+        return None
+    for name in names:
+        candidate = getattr(target, name, None)
+        if callable(candidate):
+            return candidate
+    return None
+
+
+def _normalize_avdecc_entity_id(raw: Any) -> Optional[str]:
+    if raw is None:
+        return None
+    try:
+        if isinstance(raw, int):
+            if raw < 0:
+                return None
+            return format(raw, "016x")
+        value = str(raw).strip().lower().replace("0x", "")
+        if value and len(value) <= 16 and all(ch in "0123456789abcdef" for ch in value):
+            return value.zfill(16)
+    except Exception:
+        return None
+    return None
+
+
+def _normalize_avdecc_mac(raw: Any) -> str:
+    if raw is None:
+        return ""
+    if isinstance(raw, str):
+        value = raw.strip().lower().replace("-", ":")
+        parts = [part for part in value.split(":") if part]
+        if len(parts) == 6:
+            try:
+                return ":".join(f"{int(part, 16):02x}" for part in parts)
+            except Exception:
+                return value
+        return value
+    if isinstance(raw, (list, tuple)) and len(raw) == 6:
+        try:
+            return ":".join(f"{int(part) & 0xFF:02x}" for part in raw)
+        except Exception:
+            return ""
+    return ""
+
+
+def _normalize_stream_direction(direction: Any) -> str:
+    normalized = str(direction or "").strip().lower()
+    if normalized in {"talker", "output", "stream_output"}:
+        return "talker"
+    if normalized in {"listener", "input", "stream_input"}:
+        return "listener"
+    raise HTTPException(
+        status_code=400,
+        detail="direction must be one of: talker, listener",
+    )
+
+
+def _decode_avdecc_stream_format(raw_stream_format: Any) -> Optional[Dict[str, int]]:
+    try:
+        stream_format = int(raw_stream_format)
+    except Exception:
+        return None
+
+    if stream_format <= 0:
+        return None
+
+    sample_rate_code = stream_format & 0xFFFF
+    sample_rate = _AVDECC_SAMPLE_RATE_FROM_CODE.get(sample_rate_code)
+    channels = (stream_format >> 32) & 0xFF
+    bits_per_sample = (stream_format >> 24) & 0xFF
+    if sample_rate is None or channels <= 0 or bits_per_sample <= 0:
+        return None
+
+    return {
+        "channels": channels,
+        "sample_rate": sample_rate,
+        "bits_per_sample": bits_per_sample,
+        "stream_format": stream_format,
+    }
+
+
+def _coerce_optional_hex_int(raw_value: Any) -> Optional[int]:
+    if raw_value is None:
+        return None
+    if isinstance(raw_value, int):
+        return raw_value if raw_value >= 0 else None
+
+    normalized = str(raw_value).strip().lower()
+    if not normalized:
+        return None
+    normalized = normalized.removeprefix("0x")
+    try:
+        parsed = int(normalized, 16)
+    except ValueError:
+        return None
+    return parsed if parsed >= 0 else None
+
+
+def _model_payload_is_compatible(
+    model_json: Dict[str, Any],
+    *,
+    entity_model_id: int,
+    firmware_version: str,
+) -> bool:
+    payload_model_id = _coerce_optional_hex_int(model_json.get("entity_model_id"))
+    if payload_model_id is not None and payload_model_id != int(entity_model_id):
+        return False
+
+    payload_firmware = model_json.get("firmware_version")
+    if payload_firmware is not None and str(payload_firmware) != str(firmware_version):
+        return False
+
+    return True
+
+
+def _derive_model_completeness(model_json: Dict[str, Any]) -> tuple[bool, List[str]]:
+    complete = bool(model_json.get("complete", True))
+    missing = model_json.get("missing") or model_json.get("missing_descriptors") or []
+    if not isinstance(missing, list):
+        missing = []
+    if missing and complete:
+        complete = False
+    if not complete and not missing:
+        missing = ["descriptor-tree-incomplete"]
+    return complete, missing
+
+
+def _encode_avdecc_stream_format(
+    *,
+    channels: int,
+    sample_rate: int,
+    bits_per_sample: int,
+) -> int:
+    if channels <= 0 or channels > 0xFF:
+        raise HTTPException(status_code=400, detail="channels must be between 1 and 255")
+
+    if bits_per_sample not in _AVDECC_ALLOWED_BITS_PER_SAMPLE:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "bits_per_sample must be one of: "
+                + ", ".join(str(value) for value in sorted(_AVDECC_ALLOWED_BITS_PER_SAMPLE))
+            ),
+        )
+
+    sample_rate_code = _AVDECC_SAMPLE_RATE_TO_CODE.get(sample_rate)
+    if sample_rate_code is None:
+        raise HTTPException(
+            status_code=400,

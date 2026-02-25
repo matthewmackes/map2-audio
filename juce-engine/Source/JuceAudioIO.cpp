@@ -22,6 +22,17 @@
 namespace map2 {
 
 namespace {
+    bool envEnabled(const char* value) {
+        if (value == nullptr) {
+            return false;
+        }
+        std::string normalized(value);
+        std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+        return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+    }
+
     // Set CPU affinity for audio thread (Linux only)
     // Detect and use isolated CPUs if available, fall back to core 1
     void setAudioThreadAffinity() {
@@ -113,38 +124,54 @@ bool JuceAudioIO::initialize(const std::string& preferredDeviceName,
         shutdown();
     }
 
+    shutdownRequested_.store(false, std::memory_order_release);
+    recoveryEnabled_ = true;
+    recoveryInProgress_.store(false, std::memory_order_release);
+    joinRecoveryThread();
+
     currentSampleRate_ = sampleRate;
     currentBufferSize_ = bufferSize;
     numInputChannels_ = numInputChannels;
     numOutputChannels_ = numOutputChannels;
 
-    // CRITICAL FIX: Force JACK device type to prevent ALSA fallback
-    // Without this, JUCE may enumerate ALSA devices and bypass PipeWire entirely
-    // This ensures all audio routes through PipeWire's graph, preserving:
-    // - PipeWire MIDI bridging
-    // - PipeWire plugin routing
-    // - PulseAudio compatibility via pipewire-pulse
-    bool jackTypeSet = false;
+    // Register JUCE default device types once (ALSA/JACK/etc.), then MAP2 custom types.
+    // Re-initialize() can be called multiple times on the same engine instance, so avoid
+    // duplicate registration.
+    if (deviceManager_.getAvailableDeviceTypes().isEmpty()) {
+        juce::OwnedArray<juce::AudioIODeviceType> defaultTypes;
+        deviceManager_.createAudioDeviceTypes(defaultTypes);
+        while (defaultTypes.size() > 0) {
+            std::unique_ptr<juce::AudioIODeviceType> type(defaultTypes.removeAndReturn(0));
+            if (type != nullptr) {
+                deviceManager_.addAudioDeviceType(std::move(type));
+            }
+        }
 
-    #ifdef HAS_AVB
-    // Register AVB/TSN device type if available
-    deviceManager_.addAudioDeviceType(std::make_unique<Map2Audio::AvbAudioIODeviceType>());
-    #endif
+#ifdef HAS_AVB
+        // Register AVB/TSN device type if available.
+        deviceManager_.addAudioDeviceType(std::make_unique<Map2Audio::AvbAudioIODeviceType>());
+#endif
+    }
+
+    // Prefer JACK only when explicitly requested. Some multi-channel JACK device
+    // topologies expose unstable callback buffer shapes on this host.
+    const bool preferJack = envEnabled(std::getenv("MAP2_AUDIO_PREFER_JACK"));
+    bool jackTypeSet = false;
 
     // Log available device types for diagnostics
     std::cout << "  Available audio device types:" << std::endl;
     for (auto& deviceType : deviceManager_.getAvailableDeviceTypes()) {
         std::cout << "    - " << deviceType->getTypeName() << std::endl;
-        if (deviceType->getTypeName().containsIgnoreCase("JACK")) {
+        if (preferJack && deviceType->getTypeName().containsIgnoreCase("JACK")) {
             deviceManager_.setCurrentAudioDeviceType(deviceType->getTypeName(), true);
             jackTypeSet = true;
             std::cout << "  >> Selected JACK audio device type (PipeWire JACK)" << std::endl;
         }
     }
-    if (!jackTypeSet) {
-        std::cerr << "  WARNING: JACK device type NOT found! Falling back to ALSA." << std::endl;
-        std::cerr << "  Audio will route through PipeWire ALSA emulation (suboptimal)." << std::endl;
-        std::cerr << "  Ensure JUCE was built with JUCE_JACK=1 and libjack is available." << std::endl;
+    if (preferJack && !jackTypeSet) {
+        std::cerr << "  WARNING: JACK device type requested but not found; using default backend." << std::endl;
+    } else if (!preferJack) {
+        std::cout << "  Using default audio backend/device type (set MAP2_AUDIO_PREFER_JACK=1 to force JACK)." << std::endl;
     }
 
     // Initialize the device manager with the requested channel configuration
@@ -170,18 +197,22 @@ bool JuceAudioIO::initialize(const std::string& preferredDeviceName,
         setup.bufferSize = bufferSize;
 
         error = deviceManager_.setAudioDeviceSetup(setup, true);
-        if (error.isNotEmpty()) {
-            // Not fatal - device may not support the exact settings
-            // Use whatever the device gave us
-            currentSampleRate_ = currentDevice->getCurrentSampleRate();
-            currentBufferSize_ = currentDevice->getCurrentBufferSizeSamples();
-        } else {
-            currentSampleRate_ = setup.sampleRate;
-            currentBufferSize_ = setup.bufferSize;
+        // Re-query actual device values even on success: some backends (e.g. JACK/PipeWire)
+        // may coerce buffer size/rate while still returning no error.
+        currentDevice = deviceManager_.getCurrentAudioDevice();
+        if (currentDevice != nullptr) {
+            const double actualRate = currentDevice->getCurrentSampleRate();
+            const int actualBuffer = currentDevice->getCurrentBufferSizeSamples();
+            if (actualRate > 0.0) {
+                currentSampleRate_ = actualRate;
+            }
+            if (actualBuffer > 0) {
+                currentBufferSize_ = actualBuffer;
+            }
         }
 
-        // Cache last known good setup for recovery
-        lastSetup_ = setup;
+        // Cache actual setup for recovery (not just requested setup).
+        lastSetup_ = deviceManager_.getAudioDeviceSetup();
     }
 
     initialized_ = true;
@@ -192,9 +223,15 @@ bool JuceAudioIO::initialize(const std::string& preferredDeviceName,
 void JuceAudioIO::shutdown() {
     if (!initialized_) return;
 
+    shutdownRequested_.store(true, std::memory_order_release);
+    recoveryEnabled_ = false;
+    joinRecoveryThread();
+
     stopAudio();
     deviceManager_.closeAudioDevice();
     initialized_ = false;
+    recoveryInProgress_.store(false, std::memory_order_release);
+    shutdownRequested_.store(false, std::memory_order_release);
 }
 
 std::vector<AudioDeviceInfo> JuceAudioIO::getAvailableDevices() {
@@ -327,7 +364,17 @@ bool JuceAudioIO::setDevice(const std::string& deviceName) {
         return false;
     }
 
-    lastSetup_ = setup;
+    if (auto* device = deviceManager_.getCurrentAudioDevice()) {
+        const double actualRate = device->getCurrentSampleRate();
+        const int actualBuffer = device->getCurrentBufferSizeSamples();
+        if (actualRate > 0.0) {
+            currentSampleRate_ = actualRate;
+        }
+        if (actualBuffer > 0) {
+            currentBufferSize_ = actualBuffer;
+        }
+    }
+    lastSetup_ = deviceManager_.getAudioDeviceSetup();
     return true;
 }
 
@@ -344,8 +391,13 @@ bool JuceAudioIO::setSampleRate(double sampleRate) {
         return false;
     }
 
-    currentSampleRate_ = sampleRate;
-    lastSetup_ = setup;
+    if (auto* device = deviceManager_.getCurrentAudioDevice()) {
+        const double actualRate = device->getCurrentSampleRate();
+        if (actualRate > 0.0) {
+            currentSampleRate_ = actualRate;
+        }
+    }
+    lastSetup_ = deviceManager_.getAudioDeviceSetup();
     return true;
 }
 
@@ -362,8 +414,13 @@ bool JuceAudioIO::setBufferSize(int bufferSize) {
         return false;
     }
 
-    currentBufferSize_ = bufferSize;
-    lastSetup_ = setup;
+    if (auto* device = deviceManager_.getCurrentAudioDevice()) {
+        const int actualBuffer = device->getCurrentBufferSizeSamples();
+        if (actualBuffer > 0) {
+            currentBufferSize_ = actualBuffer;
+        }
+    }
+    lastSetup_ = deviceManager_.getAudioDeviceSetup();
     return true;
 }
 
@@ -412,6 +469,7 @@ void JuceAudioIO::resetStats() {
     peakJitter_ = 0.0;
     peakCallbackDuration_ = 0.0;
     callbackDurationSmoothed_ = 0.0;
+    callbackSizeWarningLogged_.store(false, std::memory_order_release);
 }
 
 void JuceAudioIO::resetXrunCounter() {
@@ -491,7 +549,7 @@ void JuceAudioIO::audioDeviceIOCallbackWithContext(
     int numSamples,
     const juce::AudioIODeviceCallbackContext& /*context*/) {
 
-    auto startTime = std::chrono::high_resolution_clock::now();
+    auto startTime = std::chrono::steady_clock::now();
 
     // === Callback timing jitter analysis (xrun detection) ===
     if (!firstCallback_) {
@@ -521,23 +579,33 @@ void JuceAudioIO::audioDeviceIOCallbackWithContext(
     }
     lastCallbackTime_ = startTime;
 
-    // Clear output buffers first
-    for (int ch = 0; ch < numOutputChannels; ++ch) {
+    const int safeNumSamples = std::max(0, numSamples);
+    const int safeNumInputs = std::max(0, std::min(numInputChannels, numInputChannels_));
+    const int safeNumOutputs = std::max(0, std::min(numOutputChannels, numOutputChannels_));
+
+    if (safeNumSamples > currentBufferSize_ && !callbackSizeWarningLogged_.exchange(true, std::memory_order_acq_rel)) {
+        std::cerr << "[MAP2-AUDIO] Callback block larger than configured buffer ("
+                  << safeNumSamples << " > " << currentBufferSize_
+                  << "). Backend likely coerced block size." << std::endl;
+    }
+
+    // Clear output buffers first (only channels we intentionally own/process).
+    for (int ch = 0; ch < safeNumOutputs; ++ch) {
         if (outputChannelData[ch] != nullptr) {
-            std::fill_n(outputChannelData[ch], numSamples, 0.0f);
+            std::fill_n(outputChannelData[ch], safeNumSamples, 0.0f);
         }
     }
 
     // RT-SAFE: Load callback pointer atomically, avoiding race condition
     auto callback = std::atomic_load_explicit(&processCallback_, std::memory_order_acquire);
     if (callback && *callback) {
-        (*callback)(inputChannelData, numInputChannels,
-                    outputChannelData, numOutputChannels,
-                    numSamples);
+        (*callback)(inputChannelData, safeNumInputs,
+                    outputChannelData, safeNumOutputs,
+                    safeNumSamples);
     }
 
     // === Processing time measurement ===
-    auto endTime = std::chrono::high_resolution_clock::now();
+    auto endTime = std::chrono::steady_clock::now();
     double processingTimeMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
 
     // Update smoothed duration (lock-free)
@@ -553,7 +621,7 @@ void JuceAudioIO::audioDeviceIOCallbackWithContext(
     }
 
     // Detect budget overrun (processing took longer than available time)
-    double budgetMs = (numSamples / currentSampleRate_) * 1000.0;
+    double budgetMs = (safeNumSamples / currentSampleRate_) * 1000.0;
     if (processingTimeMs > budgetMs) {
         recordXrun();  // Processing overrun = xrun
     }
@@ -565,7 +633,7 @@ void JuceAudioIO::audioDeviceIOCallbackWithContext(
         if (lock.owns_lock()) {
             const double smoothing = 0.1;
             stats_.cpuUsage = stats_.cpuUsage * (1.0 - smoothing) + cpuUsage * smoothing;
-            stats_.samplesProcessed += numSamples;
+            stats_.samplesProcessed += safeNumSamples;
         }
     }
 }
@@ -593,7 +661,7 @@ void JuceAudioIO::audioDeviceAboutToStart(juce::AudioIODevice* device) {
     connectionState_.audioStartTime = std::chrono::steady_clock::now();
     connectionState_.currentBackend = device->getTypeName().toStdString();
 
-    lastCallbackTime_ = std::chrono::high_resolution_clock::now();
+    lastCallbackTime_ = std::chrono::steady_clock::now();
     firstCallback_ = true;
 }
 
@@ -610,17 +678,27 @@ void JuceAudioIO::audioDeviceError(const juce::String& errorMessage) {
     // Record xrun for device error
     recordXrun();
 
+    if (shutdownRequested_.load(std::memory_order_acquire) || !recoveryEnabled_) {
+        return;
+    }
+
     // Attempt auto-recovery with exponential backoff
-    if (recoveryEnabled_ && !recoveryInProgress_.exchange(true)) {
+    if (!recoveryInProgress_.exchange(true, std::memory_order_acq_rel)) {
         connectionState_.recoveryAttempts.fetch_add(1);
-        std::thread([this]() {
+        joinRecoveryThread();
+        std::lock_guard<std::mutex> lock(recoveryThreadMutex_);
+        recoveryThread_ = std::thread([this]() {
             attemptRecovery(0);
-            recoveryInProgress_.store(false);
-        }).detach();
+            recoveryInProgress_.store(false, std::memory_order_release);
+        });
     }
 }
 
 bool JuceAudioIO::attemptRecovery(int attempt) {
+    if (shutdownRequested_.load(std::memory_order_acquire)) {
+        return false;
+    }
+
     if (attempt >= MAX_RECOVERY_ATTEMPTS) {
         std::cerr << "[MAP2-AUDIO] Recovery failed after " << MAX_RECOVERY_ATTEMPTS
                   << " attempts. Audio device unrecoverable." << std::endl;
@@ -637,7 +715,17 @@ bool JuceAudioIO::attemptRecovery(int attempt) {
     stopAudio();
     deviceManager_.closeAudioDevice();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+    // Allow shutdown to pre-empt recovery sleeps.
+    for (int elapsed = 0; elapsed < delayMs; elapsed += 25) {
+        if (shutdownRequested_.load(std::memory_order_acquire)) {
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
+
+    if (shutdownRequested_.load(std::memory_order_acquire)) {
+        return false;
+    }
 
     // Try to restore with last known good setup
     juce::String error = deviceManager_.setAudioDeviceSetup(lastSetup_, true);
@@ -669,6 +757,19 @@ bool JuceAudioIO::attemptRecovery(int attempt) {
 
     std::cerr << "[MAP2-AUDIO] Recovery successful on attempt " << (attempt + 1) << std::endl;
     return true;
+}
+
+void JuceAudioIO::joinRecoveryThread() {
+    std::thread threadToJoin;
+    {
+        std::lock_guard<std::mutex> lock(recoveryThreadMutex_);
+        if (recoveryThread_.joinable()) {
+            threadToJoin = std::move(recoveryThread_);
+        }
+    }
+    if (threadToJoin.joinable()) {
+        threadToJoin.join();
+    }
 }
 
 // ========================================

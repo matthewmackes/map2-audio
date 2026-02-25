@@ -1,0 +1,1 @@
+Usage: sudo bash install_on_new_host.sh [--dry-run] [--skip-reboot] [--mode audio|all-in-one|management] [--user mm] [--skip-avb] [--avb-interface IFACE] [--uninstall-avb]

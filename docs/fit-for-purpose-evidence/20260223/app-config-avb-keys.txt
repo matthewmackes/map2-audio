@@ -1,0 +1,36 @@
+447:    "avb.enabled": ConfigOption(
+448:        key="avb.enabled",
+455:    "avb.interface": ConfigOption(
+456:        key="avb.interface",
+463:    "avb.ptp_domain": ConfigOption(
+464:        key="avb.ptp_domain",
+472:    "avb.ptp_priority1": ConfigOption(
+473:        key="avb.ptp_priority1",
+481:    "avb.auto_connect": ConfigOption(
+482:        key="avb.auto_connect",
+487:    "avb.avdecc_enabled": ConfigOption(
+488:        key="avb.avdecc_enabled",
+495:    "avb.max_streams": ConfigOption(
+496:        key="avb.max_streams",
+503:    "avb.default_buffer_depth": ConfigOption(
+504:        key="avb.default_buffer_depth",
+511:    "avb.presentation_offset_us": ConfigOption(
+512:        key="avb.presentation_offset_us",
+519:    "avb.failover_policy": ConfigOption(
+520:        key="avb.failover_policy",
+527:    "avb.failover_interfaces": ConfigOption(
+528:        key="avb.failover_interfaces",
+534:    "avb.srp.enabled": ConfigOption(
+535:        key="avb.srp.enabled",
+541:    "avb.srp.required": ConfigOption(
+542:        key="avb.srp.required",
+548:    "avb.srp.daemon": ConfigOption(
+549:        key="avb.srp.daemon",
+557:    "avb.srp.control_socket": ConfigOption(
+558:        key="avb.srp.control_socket",
+564:    "avb.srp.timeout_ms": ConfigOption(
+565:        key="avb.srp.timeout_ms",
+572:    "avb.srp.vlan_id": ConfigOption(
+573:        key="avb.srp.vlan_id",
+580:    "avb.srp.class": ConfigOption(
+581:        key="avb.srp.class",

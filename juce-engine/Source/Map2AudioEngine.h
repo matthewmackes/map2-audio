@@ -47,6 +47,7 @@ class AvbAudioIODevice;
 #include "Peavey5150Processor.h"
 #include "TweedBassmanProcessor.h"
 #include "PassionFXProcessor.h"
+#include "SynthForge/SynthForgeProcessor.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
@@ -275,6 +276,8 @@ public:
     bool isMidiEnabled() const;
     std::vector<std::string> getMidiDevices() const;
     bool setMidiDevice(const std::string& device);
+    bool injectMidiNoteOn(int channel, int note, int velocity);
+    bool injectMidiNoteOff(int channel, int note, int velocity = 0);
 
     // ========================================
     // VU Meters (Legacy)
@@ -345,6 +348,11 @@ public:
      * Reset xrun counter without resetting other stats
      */
     void resetXrunCounter();
+
+    /**
+     * Reset full audio I/O runtime stats (xrun/jitter/duration counters)
+     */
+    void resetAudioIOStats();
 
     /**
      * Set measured round-trip latency (from external loopback test)
@@ -1135,6 +1143,29 @@ public:
     PassionFXProcessor& getPassionFX() { return passionFX_; }
 
     // ========================================
+    // SynthForge (Phase 1 scaffold)
+    // ========================================
+
+    std::vector<synthforge::PartConfig> getSynthForgePartsConfig() const;
+    bool setSynthForgePartConfig(int partIndex, const synthforge::PartConfig& config);
+
+    bool setSynthForgePartChannel(int partIndex, int midiChannel);
+    int getSynthForgePartChannel(int partIndex) const;
+
+    std::map<std::string, float> getSynthForgePartParameters(int partIndex) const;
+    bool setSynthForgeParameter(int partIndex, const std::string& param, float value);
+
+    std::vector<synthforge::PatchInfo> getSynthForgePatches(
+        const std::string& category = "") const;
+    bool loadSynthForgePatch(int partIndex, int bank, int program);
+    bool saveSynthForgePatch(int partIndex, int bank, int program, const std::string& name);
+
+    synthforge::VoiceMetrics getSynthForgeVoiceMetrics() const;
+    synthforge::Metering getSynthForgeMetering() const;
+
+    synthforge::SynthForgeProcessor& getSynthForge() { return synthForge_; }
+
+    // ========================================
     // Component Access (for advanced use)
     // ========================================
 
@@ -1185,6 +1216,7 @@ private:
     Peavey5150Processor peavey5150_;
     TweedBassmanProcessor tweedBassman_;
     PassionFXProcessor passionFX_;
+    synthforge::SynthForgeProcessor synthForge_;
 
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)
@@ -1263,8 +1295,21 @@ private:
     void audioCallback(const float* const* inputs, int numInputs,
                       float* const* outputs, int numOutputs,
                       int numSamples);
-    
-    // Fix #4: Unified processor preparation helper\n    void prepareAllProcessors(double sampleRate, int bufferSize, int numChannels);
+
+    // Lock-free MIDI handoff from MIDI thread to audio callback.
+    void enqueueMidiEvent(const MidiMessage& msg);
+    void drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSamples);
+
+    static constexpr int MIDI_RING_SIZE = 512;
+    struct QueuedMidiEvent {
+        uint8_t status = 0;
+        uint8_t data1 = 0;
+        uint8_t data2 = 0;
+        int sampleOffset = 0;
+    };
+    std::array<QueuedMidiEvent, MIDI_RING_SIZE> midiRing_;
+    juce::AbstractFifo midiFifo_{MIDI_RING_SIZE};
+    std::atomic<bool> midiDataReady_{false};
 };
 
 } // namespace map2

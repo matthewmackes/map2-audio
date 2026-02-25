@@ -1,0 +1,13 @@
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_audio_routing_chain_avb.py::test_chain_routing_persists_avb_endpoints
+tests/test_audio_routing_chain_avb.py::test_chain_routing_persists_avb_endpoints
+tests/test_audio_routing_chain_avb.py::test_chain_routing_persists_avb_endpoints
+tests/test_audio_routing_chain_avb.py::test_chain_routing_persists_avb_endpoints
+tests/test_audio_routing_chain_avb.py::test_chain_routing_rejects_unknown_avb_endpoints
+tests/test_audio_routing_chain_avb.py::test_chain_routing_rejects_unknown_avb_endpoints
+  /home/mm/.local/lib/python3.14/site-packages/sqlalchemy/sql/schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 6 warnings in 2.99s

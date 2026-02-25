@@ -1,0 +1,97 @@
+2:Important Disclaimer
+22:    import traceback
+44:import logging
+45:from contextlib import asynccontextmanager
+46:from fastapi.responses import JSONResponse
+48:from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
+49:from app.utils.health_metrics import init_health_metrics
+71:        import os
+74:        from app.database import get_default_database_url
+84:        import os
+89:            from app.services.audio_engine_validator import validate_audio_engine
+99:                logger.error(f"Audio engine validation error: {e}. Continuing with degraded audio support.")
+101:        from app.services.metrics_daemon import start_metrics_daemon, stop_metrics_daemon
+102:        from app.services.service_orchestrator import get_orchestrator
+103:        from app.services.websocket_manager import ws_manager
+104:        from app.services.realtime_parameter_bridge import rt_parameter_bridge
+105:        from app.services.parameter_routing import connect_parameter_routing, disconnect_parameter_routing
+106:        from app.services.plugin_preset_lifecycle import get_preset_lifecycle
+107:        from app.services.metering_broadcast import start_metering_broadcast, stop_metering_broadcast
+108:        from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
+109:        from app.database import checkpoint_database
+110:        from app.services.lcd_manager import LCDManager
+111:        from app.services.event_producers import (
+118:        from app.services.lcd_event_persistence import LCDEventPersistence, set_lcd_persistence
+119:        from app.services.mdns_discovery import MDNSPeerDiscovery
+120:        from app.services.node_identity import NodeIdentity
+121:        from app.database_session import get_session
+122:        from app.routes.lcd_events import init_lcd_routes
+127:        from app.deployment.deployment import initialize_deployment_config, get_deployment_config
+128:        import os
+140:            from app.services.frontend_degradation import initialize_frontend_degradation
+148:        api_port = int(os.getenv("MAP2_API_PORT", "8080"))
+160:        mdns_discovery = MDNSPeerDiscovery(node_id, deployment_mode, port=api_port)
+180:        import asyncio
+184:                peer_http = f"http://{info.get('host')}:{info.get('port')}"
+196:        import time
+197:        boot_time = time.time() - __import__('psutil').boot_time()
+204:        orchestrator.set_websocket_manager(ws_manager)
+228:                from app.services.pipewire_recovery import get_pipewire_recovery_service
+232:                    from app.services.juce_engine_service import get_audio_engine
+233:                    from app.services.avb.avb_service import get_avb_service
+258:            from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+259:            from app.services.cluster.failover_monitor import get_failover_monitor
+260:            from app.services.cluster.raft_consensus import initialize_raft_consensus, get_raft_consensus
+261:            from app.services.cluster.config_distributor import initialize_config_distributor, get_config_distributor
+262:            from app.services.cluster.registry import get_cluster_registry
+284:            from app.services.avb.avb_router import get_avb_router
+306:                from app.services.cluster.config_distributor import get_config_distributor
+309:            except (RuntimeError, ImportError):
+314:                from app.services.cluster.raft_consensus import get_raft_consensus
+317:            except (RuntimeError, ImportError):
+349:        import traceback
+358:        from fastapi import FastAPI
+359:        from fastapi.middleware.cors import CORSMiddleware
+360:        import os
+378:        # Import and register routes individually to avoid cascade failures
+380:        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation']
+385:                route_module = __import__(f'app.routes.{route_name}', fromlist=['router'])
+387:                    app.include_router(route_module.router)
+408:            from app.routes import lcd
+410:                app.include_router(lcd.router)
+412:        except ImportError:
+417:            from app.routes import lcd_events
+419:                app.include_router(lcd_events.router)
+427:        from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+428:        from fastapi.staticfiles import StaticFiles
+432:            from app.routes import monitoring
+434:                app.include_router(monitoring.router)
+441:            from app.routes import deployment
+443:                app.include_router(deployment.router)
+450:            from app.routes import ssh_trust
+452:                app.include_router(ssh_trust.router)
+459:            from app.routes import peer_discovery
+461:                app.include_router(peer_discovery.router)
+468:            from app.routes import deployment_health
+470:                app.include_router(deployment_health.router)
+477:            from app.routes import avb
+479:                app.include_router(avb.router)
+550:    except ImportError:
+558:        import uvicorn
+559:        import socket
+560:        import time
+561:        from app.config import ConfigManager
+567:            host = config.get("backend.host", "0.0.0.0")
+568:            port = config.get("backend.port", 8080)
+571:            # Check if port is available (with better error handling)
+572:            port_available = False
+580:                        result = s.connect_ex(("127.0.0.1", port))
+581:                        if result != 0:  # Connection failed = port is available
+582:                            port_available = True
+585:                            logger_main.warning(f"Port {port} appears to be in use (attempt {attempt+1}/{max_attempts})")
+593:            if not port_available:
+594:                logger_main.error(f"Port {port} is already in use after {max_attempts} attempts. Please free the port or change the configuration.")
+595:                raise RuntimeError(f"Port {port} is already in use. Please free the port or change the configuration.")
+597:            logger_main.info(f"Starting MAP2 Audio Engine on {host}:{port}")
+598:            uvicorn.run(app, host=host, port=port, log_level="info")
+608:    # For uvicorn module loading (e.g., uvicorn app.main:app)

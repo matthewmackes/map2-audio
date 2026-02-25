@@ -1,0 +1,61 @@
+86:# ALSA (Linux) - still needed for MIDI on Linux
+88:    pkg_check_modules(ALSA REQUIRED alsa)
+91:# JACK (optional) - now provided by PipeWire JACK compatibility layer
+92:# PipeWire provides libjack.so.0 in /usr/lib64/pipewire-0.3/jack/
+93:pkg_check_modules(JACK jack QUIET)
+94:if(NOT JACK_FOUND)
+95:    # Try PipeWire JACK libraries - look for both libjack.so and libjack.so.0
+96:    find_library(JACK_LIBRARY NAMES jack
+100:    if(NOT JACK_LIBRARY)
+102:        find_file(JACK_LIBRARY_FILE NAMES libjack.so.0
+106:        if(JACK_LIBRARY_FILE)
+107:            set(JACK_LIBRARY ${JACK_LIBRARY_FILE})
+110:    if(JACK_LIBRARY)
+111:        set(JACK_FOUND TRUE)
+112:        set(JACK_LIBRARIES ${JACK_LIBRARY})
+113:        message(STATUS "JACK: Found PipeWire JACK library: ${JACK_LIBRARY}")
+117:# Find JACK headers
+118:if(JACK_FOUND)
+119:    find_path(JACK_INCLUDE_DIR jack/jack.h PATHS /usr/include)
+120:    if(JACK_INCLUDE_DIR)
+121:        set(JACK_INCLUDE_DIRS ${JACK_INCLUDE_DIR})
+157:# AVB/TSN Network Audio Transport (Optional)
+159:option(USE_AVB "Enable AVB/TSN network audio transport" ON)
+160:if(USE_AVB)
+165:        message(STATUS "AVB/TSN: ENABLED (libavtp ${AVTP_VERSION})")
+168:        message(STATUS "AVB/TSN: DISABLED (dependencies not found)")
+170:            message(STATUS "  Missing: libavtp (install libavtp-dev or build from source)")
+178:    message(STATUS "AVB/TSN: DISABLED (USE_AVB=OFF)")
+185:option(USE_AVDECC "Enable AVDECC for third-party AVB device interop" OFF)
+186:if(USE_AVDECC)
+192:        message(STATUS "  Enable AVB first with: cmake -DUSE_AVB=ON -DUSE_AVDECC=ON")
+196:    message(STATUS "AVDECC: DISABLED (USE_AVDECC=OFF)")
+376:    target_include_directories(map2_audio_engine PRIVATE ${ALSA_INCLUDE_DIRS})
+377:    if(JACK_FOUND AND JACK_INCLUDE_DIRS)
+378:        target_include_directories(map2_audio_engine PRIVATE ${JACK_INCLUDE_DIRS})
+421:    target_link_libraries(map2_audio_engine PRIVATE ${ALSA_LIBRARIES})
+424:if(JACK_FOUND)
+425:    # PipeWire's JACK library lives in a non-standard path
+427:    # Use JACK_LIBRARY_DIRS (from pkg-config) which has the correct PipeWire path
+428:    if(JACK_LIBRARY_DIRS)
+429:        target_link_directories(map2_audio_engine PRIVATE ${JACK_LIBRARY_DIRS})
+431:    # Also add fallback PipeWire JACK paths
+436:    target_link_libraries(map2_audio_engine PRIVATE ${JACK_LIBRARIES})
+463:    # CRITICAL: JUCE_JACK=1 enables JUCE's JACK audio device type.
+464:    # Without this, JUCE only has ALSA and cannot connect to PipeWire via JACK.
+465:    JUCE_JACK=$<BOOL:${JACK_FOUND}>
+477:if(JACK_FOUND)
+478:    target_compile_definitions(map2_audio_engine PRIVATE HAS_JACK=1)
+494:        HAS_AVB=1
+553:        HAS_AVB=1
+624:    message(STATUS "  ALSA: ${ALSA_VERSION}")
+626:message(STATUS "  JACK: ${JACK_FOUND}")
+627:if(JACK_FOUND)
+628:    message(STATUS "  JACK library: ${JACK_LIBRARIES}")
+629:    message(STATUS "  JUCE_JACK: ENABLED (JUCE JACK audio backend)")
+631:    message(WARNING "  JACK: NOT FOUND - JUCE will fall back to ALSA only!")
+639:message(STATUS "  AVB/TSN Transport: ${AVB_AVAILABLE}")
+641:    message(STATUS "  libavtp: ${AVTP_VERSION}")
+642:    message(STATUS "  HAS_AVB: ENABLED")
+644:    if(USE_AVB)
+645:        message(STATUS "  Note: USE_AVB=ON but dependencies not found")

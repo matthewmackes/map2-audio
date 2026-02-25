@@ -1,0 +1,76 @@
+-- SIMD: Enabled native CPU optimizations (-march=native)
+-- Fast math: Enabled
+-- Fetching JUCE framework...
+-- Checking for modules 'webkit2gtk-4.0;gtk+-x11-3.0'
+--   Package 'webkit2gtk-4.0' not found
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Neural Amp Modeler Core: ENABLED
+-- AVB/TSN: ENABLED (libavtp 0.2.0)
+-- AVDECC: ENABLED (IEEE 1722.1 interoperability)
+-- 
+-- ========================================
+-- MAP2 Audio Engine Configuration:
+-- ========================================
+--   Version: 2.0.0
+--   Build type: Release
+--   Python: 3.14.2
+-- 
+-- JUCE Integration:
+--   JUCE Audio I/O: ON
+--   VST3 support: OFF
+--   AudioUnit support: OFF
+--   LV2 support (JUCE): ON
+--   LADSPA support: ON
+-- 
+-- Platform:
+--   ALSA: 1.2.15.3
+--   JACK: 1
+--   JACK library: jack
+--   JUCE_JACK: ENABLED (JUCE JACK audio backend)
+-- 
+-- Neural Processing:
+--   NAM (Neural Amp Modeler): ON
+-- 
+-- Network Audio:
+--   AVB/TSN Transport: TRUE
+--   libavtp: 0.2.0
+--   HAS_AVB: ENABLED
+-- ========================================
+-- 
+-- Configuring done (1.5s)
+-- Generating done (0.1s)
+-- Build files have been written to: /home/mm/map2-audio/juce-engine/build
+[ 89%] Built target Catch2
+[ 90%] Built target Catch2WithMain
+[ 92%] Building CXX object CMakeFiles/avb_tests.dir/tests/AvbStreamManagerTests.cpp.o
+[ 92%] Building CXX object CMakeFiles/avb_tests.dir/Source/AvbStream.cpp.o
+[ 92%] Building CXX object CMakeFiles/avdecc_model_tests.dir/Source/AvdeccEntityModel.cpp.o
+[ 93%] Building CXX object CMakeFiles/avdecc_model_tests.dir/Source/AvdeccEnumerator.cpp.o
+[ 93%] Building CXX object CMakeFiles/avdecc_model_tests.dir/tests/AvdeccEntityModelTests.cpp.o
+[ 95%] Linking CXX executable avb_tests
+[ 95%] Built target avb_tests
+[ 96%] Building CXX object CMakeFiles/avdecc_model_tests.dir/tests/AvdeccEnumeratorTests.cpp.o
+[ 96%] Linking CXX executable avdecc_model_tests
+[ 98%] Built target avdecc_model_tests
+[100%] Running AVB Catch2 tests (AVTP and AVDECC model suites)
+Test project /home/mm/map2-audio/juce-engine/build
+Connected to MAKE jobserver
+    Start 1: avb_tests
+1/1 Test #1: avb_tests ........................   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.00 sec
+Test project /home/mm/map2-audio/juce-engine/build
+Connected to MAKE jobserver
+    Start 2: avdecc_model_tests
+1/1 Test #2: avdecc_model_tests ...............   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.00 sec
+[100%] Built target check-avb

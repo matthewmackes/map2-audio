@@ -14,13 +14,18 @@ PhaserProcessor::PhaserProcessor() {
 
 void PhaserProcessor::prepare(double sampleRate, int samplesPerBlock, int numChannels) {
     sampleRate_ = sampleRate;
-    blockSize_ = samplesPerBlock;
-    numChannels_ = numChannels;
+    blockSize_ = std::max(1, samplesPerBlock);
+    numChannels_ = std::max(1, numChannels);
+
+    // JUCE phaser allocates internal state based on maximumBlockSize.
+    // Over-provision to tolerate backend callback variance without heap corruption.
+    const auto preparedBlockSize = static_cast<juce::uint32>(
+        std::max(blockSize_, MAX_AUDIO_BUFFER_SIZE));
 
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = static_cast<juce::uint32>(samplesPerBlock);
-    spec.numChannels = static_cast<juce::uint32>(numChannels);
+    spec.maximumBlockSize = preparedBlockSize;
+    spec.numChannels = static_cast<juce::uint32>(numChannels_);
 
     phaser_.prepare(spec);
 

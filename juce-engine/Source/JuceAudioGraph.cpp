@@ -95,6 +95,10 @@ bool JuceAudioGraph::addPlugin(InstanceId instanceId, int position) {
     if (it != chain_.end()) {
         return false;
     }
+    // Prevent duplicate placement: one instance may only appear once in topology.
+    if (isPluginInParallelGroupsUnlocked(instanceId)) {
+        return false;
+    }
 
     // Add node to graph
     auto nodeId = addPluginNode(instanceId);
@@ -124,16 +128,42 @@ bool JuceAudioGraph::addPlugin(InstanceId instanceId, int position) {
 bool JuceAudioGraph::removePlugin(InstanceId instanceId) {
     std::lock_guard<std::mutex> lock(chainMutex_);
 
-    auto it = std::find(chain_.begin(), chain_.end(), instanceId);
-    if (it == chain_.end()) {
+    bool removedAny = false;
+
+    auto chainIt = std::find(chain_.begin(), chain_.end(), instanceId);
+    if (chainIt != chain_.end()) {
+        chain_.erase(chainIt);
+        removedAny = true;
+    }
+
+    for (auto& group : parallelGroups_) {
+        for (auto& branch : group.branches) {
+            auto branchIt = std::find(branch.begin(), branch.end(), instanceId);
+            if (branchIt != branch.end()) {
+                branch.erase(branchIt);
+                removedAny = true;
+            }
+        }
+    }
+
+    if (!removedAny) {
         return false;
     }
 
-    // Remove from chain
-    chain_.erase(it);
+    // Remove sidechain references to deleted plugin.
+    sidechainConnections_.erase(
+        std::remove_if(
+            sidechainConnections_.begin(),
+            sidechainConnections_.end(),
+            [instanceId](const SidechainConnection& sc) {
+                return sc.sourcePlugin == instanceId || sc.destPlugin == instanceId;
+            }),
+        sidechainConnections_.end());
 
-    // Remove node from graph
-    removePluginNode(instanceId);
+    // Remove graph node once the instance is no longer referenced anywhere.
+    if (!isPluginReferencedUnlocked(instanceId)) {
+        removePluginNode(instanceId);
+    }
 
     // Remove meter
     {
@@ -235,10 +265,21 @@ void JuceAudioGraph::clearChain() {
 
 juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId instanceId) {
     const juce::SpinLock::ScopedLockType lock(graphLock_);
+    auto existing = nodeMap_.find(instanceId);
+    if (existing != nodeMap_.end()) {
+        return existing->second;
+    }
+
     auto* pluginInstance = host_.getInstance(instanceId);
     if (pluginInstance == nullptr) {
         return juce::AudioProcessorGraph::NodeID();
     }
+
+    // Ensure instance is prepared before it can enter active processing.
+    // This avoids format/processor crashes from unprepared processBlock calls.
+    pluginInstance->setRateAndBufferSizeDetails(sampleRate_, bufferSize_);
+    pluginInstance->setNonRealtime(false);
+    pluginInstance->prepareToPlay(sampleRate_, bufferSize_);
 
     // FIX #1: Use non-owning wrapper to prevent double-free
     // The plugin instance is owned by PluginHost and stored in host_.getInstance()
@@ -246,7 +287,8 @@ juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId insta
     class NonOwningPluginWrapper : public juce::AudioProcessor {
     public:
         NonOwningPluginWrapper(juce::AudioPluginInstance* wrapped) 
-            : wrapped_(wrapped) {
+            : juce::AudioProcessor(createBusesProperties(wrapped))
+            , wrapped_(wrapped) {
             // Don't take ownership - just wrap
         }
 
@@ -269,6 +311,9 @@ juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId insta
         }
         double getTailLengthSeconds() const override { 
             return wrapped_ ? wrapped_->getTailLengthSeconds() : 0.0; 
+        }
+        bool isBusesLayoutSupported(const BusesLayout& layouts) const override {
+            return wrapped_ ? wrapped_->checkBusesLayoutSupported(layouts) : false;
         }
         bool acceptsMidi() const override { 
             return wrapped_ ? wrapped_->acceptsMidi() : false; 
@@ -301,6 +346,30 @@ juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId insta
         }
 
     private:
+        static juce::AudioProcessor::BusesProperties createBusesProperties(
+            juce::AudioPluginInstance* wrapped) {
+            juce::AudioProcessor::BusesProperties props;
+            if (wrapped == nullptr) {
+                return props;
+            }
+
+            const int numInputs = wrapped->getBusCount(true);
+            for (int i = 0; i < numInputs; ++i) {
+                if (auto* bus = wrapped->getBus(true, i)) {
+                    props = props.withInput(bus->getName(), bus->getCurrentLayout(), bus->isEnabled());
+                }
+            }
+
+            const int numOutputs = wrapped->getBusCount(false);
+            for (int i = 0; i < numOutputs; ++i) {
+                if (auto* bus = wrapped->getBus(false, i)) {
+                    props = props.withOutput(bus->getName(), bus->getCurrentLayout(), bus->isEnabled());
+                }
+            }
+
+            return props;
+        }
+
         juce::AudioPluginInstance* wrapped_;
     };
 
@@ -633,10 +702,10 @@ bool JuceAudioGraph::removeParallelGroup(int groupId) {
         return false;
     }
 
-    // Remove all plugins from all branches
+    std::vector<InstanceId> removedPlugins;
     for (const auto& branch : it->branches) {
         for (auto pluginId : branch) {
-            removePluginNode(pluginId);
+            removedPlugins.push_back(pluginId);
         }
     }
 
@@ -649,6 +718,13 @@ bool JuceAudioGraph::removeParallelGroup(int groupId) {
 
     parallelMixers_.erase(groupId);
     parallelGroups_.erase(it);
+
+    // Remove nodes only for plugins no longer referenced in chain/other groups.
+    for (auto pluginId : removedPlugins) {
+        if (!isPluginReferencedUnlocked(pluginId)) {
+            removePluginNode(pluginId);
+        }
+    }
 
     rebuildConnections();
     return true;
@@ -667,6 +743,14 @@ bool JuceAudioGraph::addToParallelBranch(int groupId, int branchIndex,
     }
 
     if (branchIndex < 0 || branchIndex >= static_cast<int>(it->branches.size())) {
+        return false;
+    }
+
+    // Prevent duplicate placement in chain/parallel topology.
+    if (std::find(chain_.begin(), chain_.end(), pluginId) != chain_.end()) {
+        return false;
+    }
+    if (isPluginInParallelGroupsUnlocked(pluginId)) {
         return false;
     }
 
@@ -711,7 +795,10 @@ bool JuceAudioGraph::removeFromParallelBranch(int groupId, int branchIndex, Inst
     }
 
     branch.erase(pluginIt);
-    removePluginNode(pluginId);
+
+    if (!isPluginReferencedUnlocked(pluginId)) {
+        removePluginNode(pluginId);
+    }
 
     rebuildConnections();
     return true;
@@ -814,6 +901,24 @@ std::optional<JuceAudioGraph::ParallelGroup> JuceAudioGraph::getParallelGroup(in
         return *it;
     }
     return std::nullopt;
+}
+
+bool JuceAudioGraph::isPluginInParallelGroupsUnlocked(InstanceId instanceId) const {
+    for (const auto& group : parallelGroups_) {
+        for (const auto& branch : group.branches) {
+            if (std::find(branch.begin(), branch.end(), instanceId) != branch.end()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool JuceAudioGraph::isPluginReferencedUnlocked(InstanceId instanceId) const {
+    if (std::find(chain_.begin(), chain_.end(), instanceId) != chain_.end()) {
+        return true;
+    }
+    return isPluginInParallelGroupsUnlocked(instanceId);
 }
 
 } // namespace map2

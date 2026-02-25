@@ -1,0 +1,260 @@
+"""
+Centralized Configuration System for MAP2 Audio Platform
+
+Features:
+- JSON file persistence with automatic backup
+- Environment variable overrides (MAP2_* prefix)
+- Type-safe accessors with validation
+- Observer pattern for change notifications
+- Schema definition with defaults and descriptions
+- Multiple config sections with dot notation access
+- Singleton pattern for global access
+- Database integration for session-specific settings
+"""
+
+import json
+import logging
+import os
+import copy
+from pathlib import Path
+from typing import Any, Dict, Optional, List, Callable, TypeVar, Generic, Set
+from dataclasses import dataclass, field
+from enum import Enum
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+
+
+# ============================================================================
+# Configuration Schema Definition
+# ============================================================================
+
+@dataclass
+class ConfigOption:
+    """Definition of a single configuration option."""
+    key: str
+    default: Any
+    description: str
+    value_type: type
+    env_var: Optional[str] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    choices: Optional[List[Any]] = None
+    sensitive: bool = False  # Don't log sensitive values
+    restart_required: bool = False  # Requires restart to apply
+    locked: bool = False  # Locked settings cannot be changed at runtime (systemd service only)
+
+
+class ConfigSection(Enum):
+    """Configuration sections."""
+    APP = "app"
+    AUDIO = "audio"
+    MIDI = "midi"
+    LCD = "lcd"
+    BACKEND = "backend"
+    DATABASE = "database"
+    AUTOMATION = "automation"
+    PLUGINS = "plugins"
+    WEBSOCKET = "websocket"
+    MONITORING = "monitoring"
+    BACKUP = "backup"
+    STORAGE = "storage"
+    AVB = "avb"  # AVB/TSN network audio transport
+
+
+# Configuration schema with all options
+CONFIG_SCHEMA: Dict[str, ConfigOption] = {
+    # Application settings
+    "app.name": ConfigOption(
+        key="app.name",
+        default="Mackes Audio Platform V2",
+        description="Application display name",
+        value_type=str,
+    ),
+    "app.version": ConfigOption(
+        key="app.version",
+        default="1.0.0-beta",
+        description="Application version",
+        value_type=str,
+    ),
+    "app.debug": ConfigOption(
+        key="app.debug",
+        default=False,
+        description="Enable debug mode",
+        value_type=bool,
+        env_var="MAP2_DEBUG",
+    ),
+    "app.log_level": ConfigOption(
+        key="app.log_level",
+        default="INFO",
+        description="Logging level",
+        value_type=str,
+        env_var="MAP2_LOG_LEVEL",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+    ),
+
+    # Audio settings
+    "audio.engine": ConfigOption(
+        key="audio.engine",
+        default="juce",
+        description="Audio engine to use: 'juce' (recommended) or 'python' (deprecated)",
+        value_type=str,
+        env_var="MAP2_AUDIO_ENGINE",
+        choices=["juce", "python"],
+        restart_required=True,
+    ),
+    "audio.allow_python_io": ConfigOption(
+        key="audio.allow_python_io",
+        default=False,
+        description="Allow deprecated Python audio I/O (NOT recommended for production)",
+        value_type=bool,
+        env_var="MAP2_ALLOW_PYTHON_IO",
+        restart_required=True,
+    ),
+    "audio.sample_rate": ConfigOption(
+        key="audio.sample_rate",
+        default=48000,
+        description="Audio sample rate in Hz (LOCKED for Tier A performance - set in systemd service only)",
+        value_type=int,
+        env_var="MAP2_SAMPLE_RATE",
+        choices=[44100, 48000, 88200, 96000, 192000],
+        restart_required=True,
+        locked=True,  # Tier A: prevent runtime changes, must restart service
+    ),
+    "audio.buffer_size": ConfigOption(
+        key="audio.buffer_size",
+        default=64,
+        description="Audio buffer size in samples (LOCKED at 64 for <3ms latency - set in systemd service only)",
+        value_type=int,
+        env_var="MAP2_BUFFER_SIZE",
+        choices=[64, 128, 256, 512, 1024, 2048],
+        restart_required=True,
+        locked=True,  # Tier A: 64 samples @ 48kHz = 1.33ms - prevent runtime changes
+    ),
+    "audio.channels": ConfigOption(
+        key="audio.channels",
+        default=2,
+        description="Number of audio channels",
+        value_type=int,
+        min_value=1,
+        max_value=32,
+        restart_required=True,
+    ),
+    "audio.device": ConfigOption(
+        key="audio.device",
+        default=None,
+        description="Audio device name (None for PipeWire/system default via JACK)",
+        value_type=str,
+        env_var="MAP2_AUDIO_DEVICE",
+        restart_required=True,
+    ),
+    "audio.backend": ConfigOption(
+        key="audio.backend",
+        default="pipewire",
+        description="Audio backend (LOCKED at 'pipewire' for Tier A stability - set in systemd service only)",
+        value_type=str,
+        env_var="MAP2_AUDIO_BACKEND",
+        choices=["pipewire", "jack", "alsa"],
+        restart_required=True,
+        locked=True,  # Tier A: prevent runtime backend switching
+    ),
+    "audio.pipewire_use_jack": ConfigOption(
+        key="audio.pipewire_use_jack",
+        default=True,
+        description="Use PipeWire's JACK compatibility layer (recommended)",
+        value_type=bool,
+        env_var="MAP2_PIPEWIRE_USE_JACK",
+        restart_required=True,
+    ),
+    "audio.latency_compensation": ConfigOption(
+        key="audio.latency_compensation",
+        default=0.0,
+        description="Additional latency compensation in ms",
+        value_type=float,
+        min_value=-100.0,
+        max_value=100.0,
+    ),
+
+    # MIDI settings
+    "midi.enabled": ConfigOption(
+        key="midi.enabled",
+        default=True,
+        description="Enable MIDI functionality",
+        value_type=bool,
+        env_var="MAP2_MIDI_ENABLED",
+    ),
+    "midi.learn_timeout": ConfigOption(
+        key="midi.learn_timeout",
+        default=10.0,
+        description="MIDI learn mode timeout in seconds",
+        value_type=float,
+        min_value=1.0,
+        max_value=60.0,
+    ),
+    "midi.cc14_enabled": ConfigOption(
+        key="midi.cc14_enabled",
+        default=True,
+        description="Enable 14-bit CC (high resolution) support",
+        value_type=bool,
+    ),
+    "midi.default_curve": ConfigOption(
+        key="midi.default_curve",
+        default="linear",
+        description="Default MIDI response curve",
+        value_type=str,
+        choices=["linear", "logarithmic", "exponential", "s_curve"],
+    ),
+
+    # LCD settings
+    "lcd.enabled": ConfigOption(
+        key="lcd.enabled",
+        default=False,
+        description="Enable LCD display support",
+        value_type=bool,
+        env_var="MAP2_ENABLE_LCD",
+    ),
+    "lcd.addresses": ConfigOption(
+        key="lcd.addresses",
+        default=[0x27, 0x3F],
+        description="I2C addresses for LCD displays",
+        value_type=list,
+    ),
+    "lcd.simulation": ConfigOption(
+        key="lcd.simulation",
+        default=False,
+        description="Use LCD simulation mode",
+        value_type=bool,
+        env_var="MAP2_LCD_SIMULATION",
+    ),
+
+    # Backend settings
+    "backend.host": ConfigOption(
+        key="backend.host",
+        default="0.0.0.0",
+        description="Backend API host address",
+        value_type=str,
+        env_var="MAP2_HOST",
+    ),
+    "backend.port": ConfigOption(
+        key="backend.port",
+        default=8080,
+        description="Backend API port",
+        value_type=int,
+        env_var="MAP2_PORT",
+        min_value=1,
+        max_value=65535,
+    ),
+    "backend.workers": ConfigOption(
+        key="backend.workers",
+        default=2,
+        description="Number of worker processes",
+        value_type=int,
+        min_value=1,
+        max_value=16,
+    ),
+    "backend.cors_origins": ConfigOption(
+        key="backend.cors_origins",
+        default=["*"],
+        description="Allowed CORS origins",
+        value_type=list,

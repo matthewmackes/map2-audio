@@ -117,7 +117,8 @@ check_command() {
 # ============================================================================
 
 detect_tsn_interfaces() {
-    log_info "Detecting TSN-capable network interfaces..."
+    # Keep logs on stderr so callers can safely parse stdout.
+    log_info "Detecting TSN-capable network interfaces..." >&2
 
     local tsn_interfaces=()
 
@@ -137,13 +138,14 @@ detect_tsn_interfaces() {
         fi
     done
 
-    echo "${tsn_interfaces[@]}"
+    printf '%s\n' "${tsn_interfaces[@]}"
 }
 
 select_interface() {
     log_info "Selecting AVB network interface..."
 
-    local interfaces=($(detect_tsn_interfaces))
+    local interfaces=()
+    mapfile -t interfaces < <(detect_tsn_interfaces)
 
     if [[ ${#interfaces[@]} -eq 0 ]]; then
         log_error "No TSN-capable network interfaces found!"
@@ -283,7 +285,10 @@ install_dependencies() {
     # Detect package manager
     if check_command "dnf"; then
         log_info "Installing via dnf..."
-        dnf install -y linuxptp iproute ethtool
+        if ! dnf install -y linuxptp iproute-tc iproute ethtool; then
+            log_warning "dnf install with iproute-tc failed; retrying without split tc package"
+            dnf install -y linuxptp iproute ethtool
+        fi
     elif check_command "apt"; then
         log_info "Installing via apt..."
         apt update
@@ -339,6 +344,25 @@ _detect_srp_daemon_binary() {
         return 0
     fi
     return 1
+}
+
+
+_set_default_srp_daemon_args() {
+    if [[ -n "${SRP_DAEMON_ARGS:-}" ]]; then
+        return 0
+    fi
+
+    case "$SRP_DAEMON" in
+        mrpd)
+            SRP_DAEMON_ARGS="-m -v -s -i ${AVB_INTERFACE}"
+            ;;
+        msrpd)
+            SRP_DAEMON_ARGS="-i ${AVB_INTERFACE}"
+            ;;
+        *)
+            SRP_DAEMON_ARGS=""
+            ;;
+    esac
 }
 
 
@@ -432,6 +456,7 @@ provision_srp_daemon() {
 
     if _detect_srp_daemon_binary; then
         SRP_INSTALL_MODE="existing"
+        _set_default_srp_daemon_args
         log_success "Using existing SRP daemon: $SRP_DAEMON ($SRP_DAEMON_BIN)"
         _write_srp_manifest
         return 0
@@ -449,6 +474,7 @@ provision_srp_daemon() {
 
     if _detect_srp_daemon_binary; then
         SRP_INSTALL_MODE="package"
+        _set_default_srp_daemon_args
         log_success "Installed SRP daemon from package: $SRP_DAEMON ($SRP_DAEMON_BIN)"
         _write_srp_manifest
         return 0
@@ -462,6 +488,7 @@ provision_srp_daemon() {
     fi
 
     log_success "Built SRP daemon from source: $SRP_DAEMON ($SRP_DAEMON_BIN)"
+    _set_default_srp_daemon_args
     _write_srp_manifest
 }
 
@@ -638,7 +665,6 @@ User=root
 Group=root
 
 # Security hardening
-NoNewPrivileges=true
 PrivateTmp=true
 
 [Install]
@@ -666,7 +692,6 @@ User=root
 Group=root
 
 # Security hardening
-NoNewPrivileges=true
 PrivateTmp=true
 
 [Install]
@@ -701,7 +726,6 @@ Restart=on-failure
 RestartSec=5
 User=root
 Group=root
-NoNewPrivileges=true
 PrivateTmp=true
 
 [Install]
@@ -791,22 +815,28 @@ configure_tsn_qdiscs() {
 
     # Configure mqprio (3 traffic classes)
     log_info "Configuring mqprio (IEEE 802.1Qbv)..."
-    tc qdisc add dev "$iface" root handle 100: mqprio \
+    if ! tc qdisc add dev "$iface" root handle 100: mqprio \
         num_tc 3 \
         map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2 \
         queues 1@0 1@1 2@2 \
-        hw 0
+        hw 0; then
+        log_warning "mqprio not supported on $iface; continuing without TSN qdisc shaping"
+        create_vlan_interface "$iface" "$VLAN_ID"
+        return 0
+    fi
 
     # Configure CBS on TC0 (AVB Class A - priority 3)
     log_info "Configuring CBS (IEEE 802.1Qav) on TC0..."
-    tc qdisc replace dev "$iface" parent 100:1 cbs \
+    if ! tc qdisc replace dev "$iface" parent 100:1 cbs \
         idleslope "$idleslope" \
         sendslope "$sendslope" \
         hicredit "$hicredit" \
         locredit "$locredit" \
-        offload 0
-
-    log_success "TSN qdiscs configured"
+        offload 0; then
+        log_warning "CBS qdisc not supported on $iface; continuing without Class A shaping"
+    else
+        log_success "TSN qdiscs configured"
+    fi
 
     # Create VLAN interface for AVB
     create_vlan_interface "$iface" "$VLAN_ID"
@@ -874,7 +904,16 @@ enable_avb() {
 update_map2_config() {
     log_info "Updating MAP2 configuration..."
 
-    local config_file="$HOME/.map2/config.json"
+    local config_home="$HOME"
+    if [[ "$EUID" -eq 0 ]] && [[ -n "${SUDO_USER:-}" ]] && [[ "${SUDO_USER}" != "root" ]]; then
+        local sudo_home
+        sudo_home="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
+        if [[ -n "$sudo_home" ]]; then
+            config_home="$sudo_home"
+        fi
+    fi
+
+    local config_file="${config_home}/.map2/config.json"
 
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would update $config_file:"

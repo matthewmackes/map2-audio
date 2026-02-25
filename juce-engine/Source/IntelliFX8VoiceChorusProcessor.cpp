@@ -855,6 +855,12 @@ void IntelliFX8VoiceChorusProcessor::process(juce::AudioBuffer<float>& buffer) {
 
             // Write to delay line
             int bufferSize = static_cast<int>(state.delayBufferL.size());
+            if (bufferSize < 2) {
+                continue;
+            }
+            if (state.writePos < 0 || state.writePos >= bufferSize) {
+                state.writePos = 0;
+            }
             state.delayBufferL[state.writePos] = inputL;
             state.delayBufferR[state.writePos] = inputR;
 
@@ -1172,13 +1178,31 @@ float IntelliFX8VoiceChorusProcessor::rateToHz(float rate) const {
 float IntelliFX8VoiceChorusProcessor::readDelayLine(const std::vector<float>& buffer,
                                                      int writePos, float delaySamples) const {
     int bufferSize = static_cast<int>(buffer.size());
+    if (bufferSize <= 0) {
+        return 0.0f;
+    }
+    if (bufferSize == 1) {
+        return buffer[0];
+    }
+    if (writePos < 0 || writePos >= bufferSize) {
+        writePos = 0;
+    }
+    if (!std::isfinite(delaySamples)) {
+        delaySamples = 0.0f;
+    }
+    delaySamples = std::clamp(delaySamples, 0.0f, static_cast<float>(bufferSize - 1));
 
     // Calculate read position with fractional part
     float readPos = static_cast<float>(writePos) - delaySamples;
-    while (readPos < 0) readPos += bufferSize;
+    float wrappedReadPos = std::fmod(readPos, static_cast<float>(bufferSize));
+    if (wrappedReadPos < 0.0f) {
+        wrappedReadPos += static_cast<float>(bufferSize);
+    }
+    wrappedReadPos = std::min(wrappedReadPos, static_cast<float>(bufferSize - 1));
 
-    int readIndex = static_cast<int>(readPos);
-    float frac = readPos - readIndex;
+    int readIndex = static_cast<int>(wrappedReadPos);
+    readIndex = std::clamp(readIndex, 0, bufferSize - 1);
+    float frac = wrappedReadPos - static_cast<float>(readIndex);
 
     // Linear interpolation
     int nextIndex = (readIndex + 1) % bufferSize;

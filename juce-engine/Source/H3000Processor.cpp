@@ -10,6 +10,32 @@
 
 namespace map2 {
 
+namespace {
+
+float computeGlideCoeff(float glideMs, double sampleRate) {
+    if (sampleRate <= 0.0) {
+        return 1.0f;  // Glide disabled -> immediate pitch transition.
+    }
+
+    float boundedGlideMs = glideMs;
+    if (boundedGlideMs < 0.0f) {
+        boundedGlideMs = 0.0f;
+    } else if (boundedGlideMs > 1000.0f) {
+        boundedGlideMs = 1000.0f;
+    } else if (!(boundedGlideMs >= 0.0f)) {
+        boundedGlideMs = 0.0f;  // NaN guard without std::isfinite (fast-math safe).
+    }
+
+    if (boundedGlideMs <= 0.0f) {
+        return 1.0f;
+    }
+
+    const float glideSamples = std::max(1.0f, boundedGlideMs * static_cast<float>(sampleRate) / 1000.0f);
+    return juce::jlimit(0.0f, 1.0f, 1.0f / glideSamples);
+}
+
+}  // namespace
+
 // ========================================
 // Algorithm Preset Values
 // ========================================
@@ -63,14 +89,17 @@ H3000Processor::AlgorithmInfo H3000Processor::getAlgorithmInfo(int index) {
 // PitchShifter Implementation
 // ========================================
 void H3000Processor::PitchShifter::prepare(int maxSamples, int grainSize) {
-    inputBuffer.resize(maxSamples * 2, 0.0f);
+    const int safeMaxSamples = std::max(maxSamples, 2);
+    const int safeGrainSize = std::max(grainSize, 2);
+
+    inputBuffer.resize(static_cast<size_t>(safeMaxSamples) * 2, 0.0f);
     inputWritePos = 0;
     currentPitch = 0.0f;
     targetPitch = 0.0f;
     grainCounter = 0;
 
     for (auto& grain : grains) {
-        grain.buffer.resize(grainSize, 0.0f);
+        grain.buffer.resize(static_cast<size_t>(safeGrainSize), 0.0f);
         grain.readPos = 0;
         grain.writePos = 0;
         grain.amplitude = 0.0f;
@@ -80,16 +109,36 @@ void H3000Processor::PitchShifter::prepare(int maxSamples, int grainSize) {
 }
 
 float H3000Processor::PitchShifter::process(float input, float pitchCents, float glideCoeff) {
+    if (inputBuffer.empty()) {
+        return input;
+    }
+
+    if (pitchCents < -2400.0f) {
+        pitchCents = -2400.0f;
+    } else if (pitchCents > 2400.0f) {
+        pitchCents = 2400.0f;
+    } else if (!(pitchCents >= -2400.0f)) {
+        pitchCents = 0.0f;
+    }
+
+    if (!(glideCoeff > 0.0f && glideCoeff <= 1.0f)) {
+        glideCoeff = 1.0f;
+    }
+
     // Store input in circular buffer
     inputBuffer[inputWritePos] = input;
     inputWritePos = (inputWritePos + 1) % static_cast<int>(inputBuffer.size());
 
     // Smooth pitch transition
     targetPitch = pitchCents;
+    if (!(currentPitch >= -9600.0f && currentPitch <= 9600.0f)) {
+        currentPitch = targetPitch;
+    }
     currentPitch += (targetPitch - currentPitch) * glideCoeff;
 
     // Calculate pitch ratio
     float pitchRatio = std::pow(2.0f, currentPitch / 1200.0f);
+    pitchRatio = juce::jlimit(0.125f, 8.0f, pitchRatio);
 
     // Grain spawning
     grainCounter++;
@@ -105,8 +154,9 @@ float H3000Processor::PitchShifter::process(float input, float pitchCents, float
                 grain.amplitude = 0.0f;
 
                 // Copy from input buffer to grain
-                int startPos = (inputWritePos - GRAIN_SIZE + static_cast<int>(inputBuffer.size())) % static_cast<int>(inputBuffer.size());
-                for (int i = 0; i < GRAIN_SIZE; ++i) {
+                const int grainSize = static_cast<int>(grain.buffer.size());
+                int startPos = (inputWritePos - grainSize + static_cast<int>(inputBuffer.size())) % static_cast<int>(inputBuffer.size());
+                for (int i = 0; i < grainSize; ++i) {
                     int idx = (startPos + i) % static_cast<int>(inputBuffer.size());
                     grain.buffer[i] = inputBuffer[idx];
                 }
@@ -120,8 +170,14 @@ float H3000Processor::PitchShifter::process(float input, float pitchCents, float
     for (auto& grain : grains) {
         if (!grain.active) continue;
 
+        const int grainSize = static_cast<int>(grain.buffer.size());
+        if (grainSize < 2) {
+            grain.active = false;
+            continue;
+        }
+
         // Hann window envelope
-        float progress = static_cast<float>(grain.readPos) / GRAIN_SIZE;
+        float progress = static_cast<float>(grain.readPos) / static_cast<float>(grainSize);
         float envelope = 0.5f * (1.0f - std::cos(2.0f * juce::MathConstants<float>::pi * progress));
 
         // Read with interpolation
@@ -129,7 +185,7 @@ float H3000Processor::PitchShifter::process(float input, float pitchCents, float
         int readPosI = static_cast<int>(readPosF);
         float frac = readPosF - readPosI;
 
-        if (readPosI >= GRAIN_SIZE - 1) {
+        if (readPosI < 0 || readPosI >= grainSize - 1) {
             grain.active = false;
             continue;
         }
@@ -138,6 +194,9 @@ float H3000Processor::PitchShifter::process(float input, float pitchCents, float
         output += sample * envelope;
 
         grain.readPos++;
+        if (grain.readPos >= grainSize) {
+            grain.active = false;
+        }
     }
 
     return output;
@@ -158,25 +217,36 @@ void H3000Processor::PitchShifter::reset() {
 // DelayLine Implementation
 // ========================================
 void H3000Processor::DelayLine::prepare(int maxSamples) {
-    buffer.resize(maxSamples, 0.0f);
+    buffer.resize(static_cast<size_t>(std::max(maxSamples, 2)), 0.0f);
     writePos = 0;
     currentDelay = 0.0f;
 }
 
 void H3000Processor::DelayLine::write(float sample) {
+    if (buffer.empty()) {
+        return;
+    }
     buffer[writePos] = sample;
     writePos = (writePos + 1) % static_cast<int>(buffer.size());
 }
 
 float H3000Processor::DelayLine::read(float delaySamples) {
-    int delayInt = static_cast<int>(delaySamples);
+    if (buffer.empty()) {
+        return 0.0f;
+    }
+    float clampedDelay = juce::jlimit(0.0f, static_cast<float>(buffer.size() - 1), delaySamples);
+    int delayInt = static_cast<int>(clampedDelay);
     int readPos = (writePos - delayInt + static_cast<int>(buffer.size())) % static_cast<int>(buffer.size());
     return buffer[readPos];
 }
 
 float H3000Processor::DelayLine::readInterpolated(float delaySamples) {
-    int delayInt = static_cast<int>(delaySamples);
-    float frac = delaySamples - delayInt;
+    if (buffer.empty()) {
+        return 0.0f;
+    }
+    float clampedDelay = juce::jlimit(0.0f, static_cast<float>(buffer.size() - 1), delaySamples);
+    int delayInt = static_cast<int>(clampedDelay);
+    float frac = clampedDelay - delayInt;
 
     int readPos1 = (writePos - delayInt + static_cast<int>(buffer.size())) % static_cast<int>(buffer.size());
     int readPos2 = (readPos1 - 1 + static_cast<int>(buffer.size())) % static_cast<int>(buffer.size());
@@ -404,8 +474,7 @@ void H3000Processor::processMicropitch(juce::AudioBuffer<float>& buffer) {
     float modDepth = params_.modDepth;
 
     float glideTime = params_.glide;
-    float glideCoeff = 1.0f / (glideTime * sampleRate_ / 1000.0f);
-    if (!true) glideCoeff = 1.0f;
+    float glideCoeff = computeGlideCoeff(glideTime, sampleRate_);
 
     smoothedMix_.setTargetValue(mix);
 
@@ -458,7 +527,7 @@ void H3000Processor::processDualShift(juce::AudioBuffer<float>& buffer) {
     float feedbackR = params_.feedback / 100.0f;
     float mix = params_.mix / 100.0f;
 
-    float glideCoeff = 1.0f / (params_.glide * sampleRate_ / 1000.0f);
+    float glideCoeff = computeGlideCoeff(params_.glide, sampleRate_);
 
     for (int i = 0; i < numSamples; ++i) {
         float dryL = leftChannel[i];

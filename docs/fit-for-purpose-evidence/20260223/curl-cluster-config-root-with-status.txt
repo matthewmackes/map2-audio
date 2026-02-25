@@ -1,0 +1,2 @@
+{"detail":"Failed to get config: ConfigDistributor not initialized"}
+HTTP_STATUS:500

@@ -1,0 +1,13 @@
+============================================================
+TIER A LOCKED SETTINGS VERIFICATION
+============================================================
+
+🔒 LOCKED Settings (Tier A Performance):
+  • audio.backend                  = pipewire (restart_required=True)
+  • audio.buffer_size              = 64 (restart_required=True)
+  • audio.sample_rate              = 48000 (restart_required=True)
+
+✅ Unlocked Settings: 63 settings
+🔒 Locked Settings: 3 settings
+
+✅ All critical performance settings are LOCKED

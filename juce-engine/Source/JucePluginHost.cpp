@@ -6,11 +6,28 @@
 #include <sstream>
 #include <thread>
 #include <fstream>
+#include <cstdlib>
+#include <iostream>
+#include <algorithm>
+#include <cctype>
 
 namespace map2 {
 
 // Fix #5: Plugin cache file for lazy loading
 static const char* PLUGIN_CACHE_FILE = "/tmp/map2_plugin_cache.xml";
+
+static bool isTruthyEnv(const char* value) {
+    if (value == nullptr) {
+        return false;
+    }
+    std::string normalized(value);
+    std::transform(
+        normalized.begin(),
+        normalized.end(),
+        normalized.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return normalized == "1" || normalized == "true" || normalized == "yes" || normalized == "on";
+}
 
 JucePluginHost::JucePluginHost() {
     // Register all available plugin formats
@@ -194,44 +211,63 @@ InstanceId JucePluginHost::loadPlugin(const std::string& pluginId,
     if (!initialized_) return INVALID_INSTANCE_ID;
 
     // Find the plugin description
-    const juce::PluginDescription* desc = nullptr;
+    juce::PluginDescription desc;
+    bool found = false;
     for (const auto& d : knownPlugins_.getTypes()) {
         if (d.fileOrIdentifier.toStdString() == pluginId ||
             d.name.toStdString() == pluginId ||
             d.createIdentifierString().toStdString() == pluginId) {
-            desc = &d;
+            desc = d;
+            found = true;
             break;
         }
     }
 
-    if (desc == nullptr) {
+    if (!found) {
+        return INVALID_INSTANCE_ID;
+    }
+
+    if (std::getenv("MAP2_PLUGIN_LOAD_DEBUG") != nullptr) {
+        std::cerr << "[map2][loadPlugin] pluginId=" << pluginId
+                  << " name=" << desc.name
+                  << " format=" << desc.pluginFormatName
+                  << " file=" << desc.fileOrIdentifier
+                  << std::endl;
+    }
+
+    // Allow temporary LV2 load quarantine if operators need to isolate issues.
+    const bool disableLv2Load = isTruthyEnv(std::getenv("MAP2_DISABLE_LV2_LOAD"));
+    const bool looksLv2 = desc.pluginFormatName.containsIgnoreCase("LV2")
+        || juce::String(pluginId).startsWithIgnoreCase("LV2-");
+    if (looksLv2 && disableLv2Load) {
         return INVALID_INSTANCE_ID;
     }
 
     // Create the plugin instance
     juce::String errorMessage;
     auto instance = formatManager_.createPluginInstance(
-        *desc, sampleRate, blockSize, errorMessage);
+        desc, sampleRate, blockSize, errorMessage);
 
     if (instance == nullptr) {
         return INVALID_INSTANCE_ID;
     }
 
-    // Prepare the plugin for playback
-    instance->prepareToPlay(sampleRate, blockSize);
-    instance->setNonRealtime(false);
+    // Configure runtime details. Actual prepare happens when the processing graph
+    // prepares playback; preparing at load time is plugin-format fragile.
+    instance->setRateAndBufferSizeDetails(sampleRate, blockSize);
+    instance->setNonRealtime(true);
 
     // Create entry
     auto entry = std::make_unique<PluginEntry>();
     entry->id = nextInstanceId_++;
     entry->instance = std::move(instance);
-    entry->info = extractPluginInfo(*desc);
-    entry->format = formatFromString(desc->pluginFormatName);
+    entry->info = extractPluginInfo(desc);
+    entry->format = formatFromString(desc.pluginFormatName);
     entry->sampleRate = sampleRate;
     entry->blockSize = blockSize;
 
-    // Build parameter name mapping
-    buildParameterMap(*entry);
+    // Parameter map is populated lazily on demand to avoid format-specific
+    // initialization hazards during load.
 
     InstanceId id = entry->id;
 

@@ -1,0 +1,1 @@
+{"endpoints":{"total":0,"talkers":0,"listeners":0,"map2":0,"avdecc":0},"connections":{"total":0,"connected":0,"connecting":0,"error":0},"loops":{"running":true,"discovery_running":true,"cleanup_running":true,"discovery_cycles":11101,"cleanup_cycles":2034,"stale_removed_total":0,"last_discovery_error":null,"last_cleanup_error":null}}

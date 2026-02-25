@@ -1,0 +1,20 @@
+Usage:
+  run_avb_hil_qualification.sh [options]
+
+Options:
+  --interface IFACE          Capture interface (default: MAP2_AVB_INTERFACE or eth0)
+  --capture-seconds N        Q05 capture duration (default: 600)
+  --output-dir PATH          Artifact directory (default: /tmp/map2-avb-hil-<timestamp>)
+  --run-q06-soak             Run Q06 soak collector in this session
+  --soak-hours N             Q06 soak duration in hours (default: 24)
+  --soak-checkpoint-minutes N  Q06 checkpoint interval (default: 60)
+  --skip-q04                 Skip AVB integration pytest gate
+  --help                     Show this help
+
+Environment:
+  MAP2_API_BASE              API base for soak script (default: http://localhost:8080/api/avb)
+  MAP2_CURL_NOPROXY          curl --noproxy value for API preflight (default: *)
+
+Behavior:
+  Gates that cannot execute due missing AVB lab prerequisites are recorded as BLOCKED
+  (with reasons in summary.txt) instead of FAIL.

@@ -1,0 +1,121 @@
+    Source/Peavey5150Processor.cpp
+
+    # Tweed Bassman 5F6-A Amplifier Simulator
+    Source/TweedBassmanProcessor.cpp
+
+    # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
+    Source/PassionFXProcessor.cpp
+
+    # Existing components (updated)
+    Source/MidiHandler.cpp
+    Source/VuMeter.cpp
+    Source/ParameterBridge.cpp
+    Source/SnapshotManager.cpp
+
+    # Python bindings
+    Source/PythonBindings.cpp
+)
+
+# Add NAM sources if enabled
+if(USE_NAM)
+    list(APPEND SOURCES
+        Source/NAMProcessor.cpp
+        ${NAM_SOURCES}
+    )
+endif()
+
+# Add AVB sources if available
+if(AVB_AVAILABLE)
+    list(APPEND SOURCES
+        Source/AvbStream.cpp
+        Source/AvbAudioIODeviceType.cpp
+        Source/AvbAudioIODevice.cpp
+    )
+endif()
+
+# Add AVDECC sources if available
+if(AVDECC_AVAILABLE)
+    list(APPEND SOURCES
+        Source/AvdeccEntity.cpp
+        Source/AvdeccEntityModel.cpp
+        Source/AvdeccEnumerator.cpp
+    )
+endif()
+
+set(HEADERS
+    Source/Common.h
+    Source/Map2AudioEngine.h
+
+    # JUCE-based components
+    Source/JuceAudioIO.h
+    Source/JucePluginHost.h
+    Source/JuceAudioGraph.h
+
+    # Enhanced audio processing
+    Source/ConvolutionProcessor.h
+    Source/DynamicsProcessor.h
+    Source/FilterProcessor.h
+    Source/ParallelMixerProcessor.h
+    Source/SpectrumAnalyzer.h
+    Source/LufsMeter.h
+    Source/PhaseCorrelation.h
+    Source/CPUMonitor.h
+
+    # Modulation processors
+    Source/ChorusProcessor.h
+    Source/PhaserProcessor.h
+    Source/PitchShifterProcessor.h
+    Source/DelayProcessor.h
+    Source/CircularDelayProcessor.h
+    Source/CircularDelayUI.h
+    Source/CircularDelayExamples.h
+    Source/IntelliFX8VoiceChorusProcessor.h
+    Source/BossXS1PolyShifterProcessor.h
+    Source/BossXS1UI.h
+    Source/ShoeGazeProcessor.h
+    
+    # Multi-Effect Processor
+    Source/EventideH9Processor.h
+    Source/EventideH9UI.h
+
+    # Peavey 5150 Block Letter Amp Simulator (NEW)
+    Source/Peavey5150Processor.h
+
+    # Tweed Bassman 5F6-A Amplifier Simulator
+    Source/TweedBassmanProcessor.h
+
+    # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
+    Source/PassionFXProcessor.h
+
+    # Existing components
+    Source/MidiHandler.h
+    Source/VuMeter.h
+    Source/ParameterBridge.h
+    Source/SnapshotManager.h
+)
+
+# Add NAM headers if enabled
+if(USE_NAM)
+    list(APPEND HEADERS Source/NAMProcessor.h)
+endif()
+
+# Add AVB headers if available
+if(AVB_AVAILABLE)
+    list(APPEND HEADERS
+        Source/AvbException.h
+        Source/AvbRingBuffer.h
+        Source/AvbStream.h
+        Source/AvbAudioIODeviceType.h
+        Source/AvbAudioIODevice.h
+    )
+endif()
+
+# Add AVDECC headers if available
+if(AVDECC_AVAILABLE)
+    list(APPEND HEADERS
+        Source/AvdeccEntity.h
+        Source/AvdeccDescriptors.h
+        Source/AvdeccEntityModel.h
+        Source/AvdeccEnumerator.h
+    )
+endif()

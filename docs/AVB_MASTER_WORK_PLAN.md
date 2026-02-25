@@ -2,7 +2,7 @@
 
 Canonical file: `docs/AVB_MASTER_WORK_PLAN.md`  
 Rule status: Active (disable only with `DISABLE WORKLIST RULE`)  
-Last updated: 2026-02-22 21:43 - Codex
+Last updated: 2026-02-25 00:14 - Codex
 
 ## Status Legend
 
@@ -283,6 +283,58 @@ Subtasks:
   Last updated: 2026-02-21 22:04 - Codex  
 Assigned to: MAP2 QA + Integrations  
 Last updated: 2026-02-21 22:04 - Codex  
+
+ID: T047  
+Status: [✓] Done  
+Title: Fix JUCE plugin load/graph lifecycle segfault in Python engine module  
+Description:  
+- Goal / acceptance criteria: `load_plugin()` with a valid discovered plugin URI no longer segfaults; graph placement is deterministic; randomized JUCE soak can execute end-to-end and emit evidence artifacts without native crash.  
+- Why it matters: Current native crash blocks T009/T008 continuity and invalidates stability qualification for dynamic host/plugin flows.  
+- Dependencies: None  
+- Estimated effort: High (~1-2 days)  
+- Required outputs: Engine/graph lifecycle fixes in `juce-engine/Source/Map2AudioEngine.cpp` and `juce-engine/Source/JuceAudioGraph.cpp`, regression tests, updated soak evidence and worklist notes.  
+Subtasks:  
+- ID: T047-subA  
+  Status: [✓] Done  
+  Title: Decouple plugin instantiation from implicit graph insertion  
+  Description:  
+  - Goal / acceptance criteria: `loadPlugin` only instantiates and tracks plugin instances; explicit routing APIs own graph placement.  
+  - Why it matters: Avoids hidden lifecycle coupling and duplicate insertion/race paths.  
+  - Dependencies: None  
+  - Estimated effort: Medium (~3-5 hours)  
+  - Required outputs: Updated load/unload/chain integration behavior with compatibility checks.  
+  Assigned to: Codex  
+  Last updated: 2026-02-25 00:14 - Codex  
+- ID: T047-subB  
+  Status: [✓] Done  
+  Title: Harden graph node ownership and single-placement invariants  
+  Description:  
+  - Goal / acceptance criteria: A plugin instance cannot be inserted into multiple topology locations; node map/lifecycle remains coherent across chain and parallel APIs.  
+  - Why it matters: Prevents memory corruption and invalid node references under dynamic graph operations.  
+  - Dependencies: T047-subA  
+  - Estimated effort: Medium (~3-5 hours)  
+  - Required outputs: Guardrails in graph mutation APIs and deterministic failure behavior for invalid placement requests.  
+  Assigned to: Codex  
+  Last updated: 2026-02-25 00:14 - Codex  
+- ID: T047-subC  
+  Status: [✓] Done  
+  Title: Add crash regression coverage and rerun soak/evidence publication  
+  Description:  
+  - Goal / acceptance criteria: Automated tests reproduce previous crash path and pass; short/full soak complete and publish PASS/FAIL artifacts.  
+  - Why it matters: Ensures fix is durable and auditable for release readiness.  
+  - Dependencies: T047-subA, T047-subB  
+  - Estimated effort: Medium (~2-4 hours)  
+  - Required outputs: New tests in `tests/` plus updated evidence paths in this worklist.  
+  Assigned to: Codex  
+  Last updated: 2026-02-25 00:14 - Codex  
+Assigned to: MAP2 JUCE Engine  
+Last updated: 2026-02-25 00:14 - Codex
+Completion notes:
+- What was done: Fixed two native crash vectors (`load_plugin` descriptor lifetime UAF and IntelliFX callback-path delay-line OOB), finished graph placement invariants, added subprocess regression coverage, and hardened the JUCE random-effects soak skill for LV2 runtime churn by auto-reusing effect sets when runtime pool is LV2-only.
+- Key findings: The original segfault was not a single issue. `JucePluginHost::loadPlugin` had a descriptor lifetime bug, and separately `IntelliFX8VoiceChorusProcessor::readDelayLine` could read one-sample past the delay buffer under edge read-position math in callback thread. Long-soak LV2 churn also exposed third-party GTK registration faults, mitigated in soak orchestration by avoiding repeated unload/reload churn.
+- Files/links produced: `juce-engine/Source/JucePluginHost.cpp`, `juce-engine/Source/JuceAudioGraph.cpp`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/IntelliFX8VoiceChorusProcessor.cpp`, `tests/test_juce_engine_plugin_load_lifecycle_stability.py`, `tests/test_juce_engine_intellifx_lifecycle_stability.py`, `.codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py`.
+- Validation/evidence: `pytest -q tests/test_juce_engine_audio_start_stability.py tests/test_juce_engine_jack_stability.py tests/test_juce_engine_plugin_load_lifecycle_stability.py tests/test_juce_engine_intellifx_lifecycle_stability.py` (6 passed); ASAN reproducer no sanitizer abort (`/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260225/juce-random-fx-soak-20260225T001010Z.json`); smoke soak 180s no native crash (`/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260225/juce-random-fx-soak-20260225T000524Z.json`); live-rewire soak 90s no native crash (`/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260225/juce-random-fx-soak-20260225T000831Z.json`).
+- Suggested next tasks: T008 evidence refresh, T016 xrun/jitter budget tuning, T017 long-duration (>30m) qualification soak.
 
 ## Consolidated Backlog from Discovered Plan References
 
@@ -1415,6 +1467,25 @@ Completion notes:
 - Files/links produced: `web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts`, `web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts`.
 - Validation/evidence: `npm run test:avb-routing -- --runInBand` (19 suites passed, 234 tests passed).
 - Suggested next tasks: Continue remaining verification plan items (`T007`, `T017`) in hardware-capable lab context.
+
+ID: T046
+Status: [✓] Done
+Title: Deliver fit-for-purpose evaluation pack for JUCE + AVB/TSN + cluster + Tesira target
+Description:
+- Goal / acceptance criteria: Produce a complete, evidence-backed review pack covering purpose/assumptions, measurable acceptance criteria, inventory, requirements matrix (MUST/SHOULD/COULD), non-security risk register, GO decision logic, remediation plan, and reproducibility runbook for the JUCE guitar node + AVB/TSN cluster + API/SSH + Biamp TesiraFORTÉ AVB interoperability target.
+- Why it matters: Release/readiness decisions require one auditable decision artifact that separates software-verified evidence from hardware-lab-gated unknowns.
+- Dependencies: T007, T017 (hardware evidence constraints), `docs/AVB_QUALIFICATION_MATRIX.md`
+- Estimated effort: Medium (~4-6 hours)
+- Required outputs: New fit-for-purpose review document in `docs/` with explicit evidence links and dated decision.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-23 14:46 - Codex
+Completion notes:
+- What was done: Produced complete evaluation deliverables with fresh host evidence capture, requirements matrix statusing, non-security risk register, GO/NO-GO decision, prioritized remediation plan, and reproducibility runbook.
+- Key findings: Software AVB/cluster control-plane suites are strong, but mission-critical release gates remain blocked by disabled AVB runtime state and missing hardware interop evidence (including Tesira-specific validation).
+- Files/links produced: `docs/FIT_FOR_PURPOSE_EVALUATION_PACK_2026-02-23.md`, `docs/RUNBOOK_EVALUATION.md`, `docs/fit-for-purpose-evidence/20260223/*`.
+- Validation/evidence: `pytest tests/test_avb_service_engine_contract.py tests/test_avb_router_map2.py tests/test_avb_routes_srp.py -q` (103 passed), `npm run test:avb-routing -- --runInBand --silent` (19 suites, 234 tests passed), `cmake --build juce-engine/build --target check-avb -j4` (AVB + AVDECC suites passed), `bash scripts/run_avb_hil_qualification.sh --interface enp0s25 --capture-seconds 30 ...` (Q04/Q05 BLOCKED due AVB disabled).
+- Suggested next tasks: Execute remediation priorities P1-P8 from `docs/FIT_FOR_PURPOSE_EVALUATION_PACK_2026-02-23.md`; in lab context, close deferred hardware queue (`T007`, `T017`) and attach Tesira evidence bundle.
 
 ## Completed Items
 

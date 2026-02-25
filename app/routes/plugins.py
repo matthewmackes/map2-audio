@@ -83,7 +83,7 @@ def _load_juce_processors() -> List[Dict[str, Any]]:
                 "category": proc["category"],
                 "class_label": "JUCE Native",
                 "version": "1.0",
-                "license": "Proprietary",
+                "license": proc.get("license", "AGPL-3.0-only"),
                 "has_ui": False,
                 "in_ports": proc["audio_ports"]["inputs"],
                 "out_ports": proc["audio_ports"]["outputs"],

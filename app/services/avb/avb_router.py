@@ -177,12 +177,16 @@ class AvbRouter:
 
         self._discovery_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
+        self._auto_connect_task: Optional[asyncio.Task] = None
         self._running = False
         self._discovery_cycles = 0
         self._cleanup_cycles = 0
+        self._auto_connect_runs = 0
         self._stale_removed_total = 0
         self._last_discovery_error: Optional[str] = None
         self._last_cleanup_error: Optional[str] = None
+        self._last_auto_connect_error: Optional[str] = None
+        self._last_auto_connect_summary: Optional[Dict[str, Any]] = None
 
     async def start(self):
         """Start router services"""
@@ -196,6 +200,9 @@ class AvbRouter:
 
         # Start cleanup (remove stale endpoints)
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+
+        if self._is_auto_connect_enabled():
+            self._auto_connect_task = asyncio.create_task(self._auto_connect_startup())
 
         logger.info("AVB Router started")
 
@@ -220,6 +227,13 @@ class AvbRouter:
             except asyncio.CancelledError:
                 pass
 
+        if self._auto_connect_task:
+            self._auto_connect_task.cancel()
+            try:
+                await self._auto_connect_task
+            except asyncio.CancelledError:
+                pass
+
         self.endpoints.clear()
         self.connections.clear()
         await self._sync_engine_discovered_devices()
@@ -230,6 +244,10 @@ class AvbRouter:
     def is_running(self) -> bool:
         """Return whether router background loops are active."""
         return self._running
+
+    def _is_auto_connect_enabled(self) -> bool:
+        """Return whether startup auto-connect orchestration is enabled."""
+        return self._coerce_bool(config_get("avb.auto_connect", False), False)
 
     # ========================================================================
     # Discovery
@@ -1047,6 +1065,163 @@ class AvbRouter:
 
         except Exception as e:
             logger.error(f"AVDECC discovery error: {e}")
+
+    @staticmethod
+    def _endpoint_sort_key(endpoint: AudioEndpoint) -> Tuple[str, str, str, int]:
+        """Build deterministic sort key for endpoint pairing decisions."""
+        try:
+            unique_id = int(endpoint.unique_id)
+        except Exception:
+            unique_id = 0
+        return (
+            str(endpoint.node_id or "").strip().lower(),
+            str(endpoint.device_type or "").strip().lower(),
+            str(endpoint.entity_id or "").strip().lower(),
+            unique_id,
+        )
+
+    def _auto_connect_pair_allowed(self, talker: AudioEndpoint, listener: AudioEndpoint) -> bool:
+        """Validate a safe deterministic pair candidate for startup auto-connect."""
+        if talker.direction != StreamDirection.TALKER:
+            return False
+        if listener.direction != StreamDirection.LISTENER:
+            return False
+        if not talker.available or not listener.available:
+            return False
+        if talker.endpoint_id() == listener.endpoint_id():
+            return False
+        if self._resolve_endpoint_node_id(talker) == self._resolve_endpoint_node_id(listener):
+            return False
+        if self._coerce_int(talker.sample_rate, 0) != self._coerce_int(listener.sample_rate, 0):
+            return False
+        if self._coerce_int(talker.channels, 0) != self._coerce_int(listener.channels, 0):
+            return False
+        return True
+
+    def _build_auto_connect_pairs(self) -> List[Tuple[str, str]]:
+        """Build a deterministic one-to-one map of startup auto-connect candidates."""
+        pairs: List[Tuple[str, str]] = []
+        used_listeners: Set[str] = set()
+
+        connected_talkers = {
+            conn.talker.endpoint_id()
+            for conn in self.connections.values()
+            if conn.state in {ConnectionState.CONNECTED, ConnectionState.CONNECTING}
+        }
+        connected_listeners = {
+            conn.listener.endpoint_id()
+            for conn in self.connections.values()
+            if conn.state in {ConnectionState.CONNECTED, ConnectionState.CONNECTING}
+        }
+
+        talkers = sorted(
+            (ep for ep in self.get_talkers() if ep.available),
+            key=self._endpoint_sort_key,
+        )
+        listeners = sorted(
+            (ep for ep in self.get_listeners() if ep.available),
+            key=self._endpoint_sort_key,
+        )
+
+        for talker in talkers:
+            talker_id = talker.endpoint_id()
+            if talker_id in connected_talkers:
+                continue
+
+            for listener in listeners:
+                listener_id = listener.endpoint_id()
+                if listener_id in connected_listeners or listener_id in used_listeners:
+                    continue
+                if not self._auto_connect_pair_allowed(talker, listener):
+                    continue
+
+                pairs.append((talker_id, listener_id))
+                used_listeners.add(listener_id)
+                break
+
+        return pairs
+
+    async def _auto_connect_once(self, *, attempt: int) -> Dict[str, Any]:
+        """Run one auto-connect pass after refreshing endpoint discovery state."""
+        await self._discover_map2_endpoints()
+        await self._discover_avdecc_endpoints()
+        await self._sync_engine_discovered_devices()
+
+        pairs = self._build_auto_connect_pairs()
+        summary: Dict[str, Any] = {
+            "attempt": attempt,
+            "enabled": True,
+            "talkers": len([ep for ep in self.get_talkers() if ep.available]),
+            "listeners": len([ep for ep in self.get_listeners() if ep.available]),
+            "candidate_pairs": len(pairs),
+            "connected": 0,
+            "failed": 0,
+            "already_connected": 0,
+            "errors": [],
+        }
+
+        for talker_id, listener_id in pairs:
+            conn_id = f"{talker_id}→{listener_id}"
+            existing = self.connections.get(conn_id)
+            if existing and existing.state in {ConnectionState.CONNECTED, ConnectionState.CONNECTING}:
+                summary["already_connected"] += 1
+                continue
+
+            try:
+                result = await self.connect(
+                    talker_id,
+                    listener_id,
+                    return_details=True,
+                )
+                if isinstance(result, dict) and result.get("success"):
+                    summary["connected"] += 1
+                else:
+                    summary["failed"] += 1
+                    if isinstance(result, dict):
+                        reason = str(result.get("reason") or "unknown")
+                        summary["errors"].append(f"{conn_id}: {reason}")
+                    else:
+                        summary["errors"].append(f"{conn_id}: connection failed")
+            except Exception as exc:
+                summary["failed"] += 1
+                summary["errors"].append(f"{conn_id}: {exc}")
+
+        return summary
+
+    async def _auto_connect_startup(self) -> None:
+        """Best-effort startup orchestration controlled by avb.auto_connect config."""
+        attempts = max(1, self._coerce_int(config_get("avb.auto_connect.startup_attempts", 3), 3))
+        retry_delay_ms = max(0, self._coerce_int(config_get("avb.auto_connect.retry_delay_ms", 2000), 2000))
+
+        for attempt in range(1, attempts + 1):
+            if not self._running or not self._is_auto_connect_enabled():
+                return
+
+            self._auto_connect_runs += 1
+            try:
+                summary = await self._auto_connect_once(attempt=attempt)
+                self._last_auto_connect_summary = summary
+                self._last_auto_connect_error = None
+                logger.info(
+                    "AVB auto-connect attempt %s/%s: talkers=%s listeners=%s candidates=%s connected=%s failed=%s",
+                    attempt,
+                    attempts,
+                    summary.get("talkers", 0),
+                    summary.get("listeners", 0),
+                    summary.get("candidate_pairs", 0),
+                    summary.get("connected", 0),
+                    summary.get("failed", 0),
+                )
+                if summary.get("connected", 0) > 0 or summary.get("already_connected", 0) > 0:
+                    return
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                self._last_auto_connect_error = str(exc)
+                logger.warning("AVB auto-connect attempt %s/%s failed: %s", attempt, attempts, exc)
+
+            if attempt < attempts:
+                await asyncio.sleep(retry_delay_ms / 1000.0)
 
     async def _cleanup_loop(self):
         """Remove stale endpoints"""
@@ -2063,6 +2238,13 @@ class AvbRouter:
                 "connected": len([c for c in self.connections.values() if c.state == ConnectionState.CONNECTED]),
                 "connecting": len([c for c in self.connections.values() if c.state == ConnectionState.CONNECTING]),
                 "error": len([c for c in self.connections.values() if c.state == ConnectionState.ERROR])
+            },
+            "auto_connect": {
+                "enabled": self._is_auto_connect_enabled(),
+                "task_running": self._auto_connect_task is not None and not self._auto_connect_task.done(),
+                "runs": self._auto_connect_runs,
+                "last_error": self._last_auto_connect_error,
+                "last_summary": self._last_auto_connect_summary,
             },
             "loops": {
                 "running": self._running,

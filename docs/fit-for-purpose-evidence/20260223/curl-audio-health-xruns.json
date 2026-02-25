@@ -1,0 +1,1 @@
+{"available":true,"total_xruns":0,"xrun_rate_per_minute":0,"status":"healthy","thresholds":{"warning":"1.0 XRuns/min","critical":"5.0 XRuns/min"}}
