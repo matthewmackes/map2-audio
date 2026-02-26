@@ -667,7 +667,7 @@ Last updated: 2026-02-25 16:50 - Codex
   - Validation evidence: `pytest -q tests/test_effects_loops_service.py tests/test_effects_loops_routes.py` passed.
 
 ID: T025
-Status: [>] In Progress
+Status: [✓] Done
 Title: Tesira loop template manager and validator
 Description:
 - Goal / acceptance criteria: Implement CRUD/validation logic for tag-mapped Tesira loop templates and activation-time validation gates.
@@ -677,12 +677,11 @@ Description:
 - Required outputs: Template service primitives, validation endpoint coverage, drift/alarm status plumbing.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-02-25 16:50 - Codex
+Last updated: 2026-02-25 19:00 - Codex
 - Completion notes:
-  - What was done: Implemented template list/upsert/validate endpoints, strict tag-field validation, and activation-time template application hooks against Tesira fleet/device services.
-  - Validation evidence: `pytest -q tests/test_effects_loops_service.py tests/test_effects_loops_routes.py` passed.
-- Blocked notes:
-  - Remaining: explicit drift/alarm reconciliation UX and deeper Tesira-side drift telemetry plumbing are still pending.
+  - What was done: Added runtime drift/alarm telemetry for Tesira loop templates, including service-level tag probe validation (`stream/meter/crosspoint/bypass/router`), runtime-status embedding in template list/upsert/validate responses, and a dedicated API endpoint (`GET /api/tesira/loop-templates/{template_id}/runtime-status`).
+  - Files/links produced: `app/services/effects_loops.py`, `app/routes/effects_loops.py`, `web/src/map2/api.ts`, `tests/test_effects_loops_service.py`, `tests/test_effects_loops_routes.py`.
+  - Validation evidence: `pytest -q tests/test_effects_loops_service.py tests/test_effects_loops_routes.py tests/test_juce_engine_external_loops.py` passed.
 
 ID: T026
 Status: [✓] Done
@@ -702,7 +701,7 @@ Last updated: 2026-02-25 16:50 - Codex
   - Validation evidence: `pytest -q tests/test_avb_router_loop_metadata.py tests/test_avb_routes_loop_metadata.py tests/test_avb_router_map2.py tests/test_avb_routes_srp.py` passed.
 
 ID: T027
-Status: [>] In Progress
+Status: [✓] Done
 Title: JUCE external loop processing interfaces and compensation control path
 Description:
 - Goal / acceptance criteria: Add engine/pybind control interfaces for external loop definitions, insertion sets, bypass, calibration, and metrics retrieval.
@@ -712,15 +711,15 @@ Description:
 - Required outputs: C++/pybind interfaces, python service wiring, unit coverage.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-02-25 16:50 - Codex
+Last updated: 2026-02-25 19:00 - Codex
 - Completion notes:
-  - What was done: Added JUCE engine/pybind control-plane interfaces (`set_external_loop_definitions`, `set_chain_loop_insertions`, `set_loop_bypass`, `calibrate_loop`, `get_loop_metrics`) and Python service wiring.
-  - Files/links produced: `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`.
-- Blocked notes:
-  - Remaining: full RT callback-path external loop DSP insertion/crossfade/compensation behavior and hard latency gate proof are not complete.
+  - What was done: Completed JUCE external-loop control-plane interfaces and added deterministic wrapper unit coverage for `set_external_loop_definitions`, `set_chain_loop_insertions`, `set_loop_bypass`, `calibrate_loop`, and `get_loop_metrics`.
+  - Files/links produced: `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `tests/test_juce_engine_external_loops.py`.
+  - Validation evidence: `pytest -q tests/test_effects_loops_service.py tests/test_effects_loops_routes.py tests/test_juce_engine_external_loops.py` passed.
+  - Follow-up: RT callback-path DSP insertion/crossfade/compensation and latency qualification are tracked in `T032`.
 
 ID: T028
-Status: [ ] Todo
+Status: [✓] Done
 Title: Web Loop Builder and chain insertion UX
 Description:
 - Goal / acceptance criteria: Ship Loop Builder, insertion controls, inspector status, and routing overlays for operator-safe creation and audition of loops.
@@ -730,12 +729,11 @@ Description:
 - Required outputs: Frontend API/types, builder/insertion/inspector components, websocket-driven status badges.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-02-25 16:50 - Codex
+Last updated: 2026-02-25 19:00 - Codex
 - Completion notes:
-  - What was done: Added frontend API/types/websocket topic contracts to support loop CRUD/insertion/metrics/calibration integration.
-  - Files/links produced: `web/src/map2/api.ts`, `web/src/map2/types.ts`, `web/src/map2/websocket.ts`.
-- Blocked notes:
-  - Remaining: Loop Builder wizard UI, chain insertion blocks, loop inspector, and routing overlay surfaces.
+  - What was done: Implemented a full Tesira Loop Builder UI tab with loop creation, activation/bypass/calibration actions, chain insertion creation/edit/delete controls, live inspector status, routing overlay preview, and websocket-driven badges for loop state/metrics/calibration events.
+  - Files/links produced: `web/src/app/components/Tesira/components/TesiraLoopBuilderTab.tsx`, `web/src/app/components/Tesira/components/TesiraControlPanel.tsx`, `web/src/map2/api.ts`.
+  - Validation evidence: `npm --prefix web run typecheck` passed.
 
 ID: T029
 Status: [✓] Done
@@ -765,9 +763,40 @@ Description:
 - Required outputs: Qualification artifacts in `docs/fit-for-purpose-evidence/` and final gate summary.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-02-25 16:50 - Codex
+Last updated: 2026-02-25 19:00 - Codex
 - Blocked notes:
-  - Requires lab hardware execution plus completion of remaining T027 RT path and T028 UX surfaces before final qualification run.
+  - Requires lab hardware execution plus completion of RT callback-path DSP insertion/crossfade/compensation work (`T032`) before final qualification run.
+
+ID: T031
+Status: [✓] Done
+Title: Move 3D Grid from top nav into Advanced menu under System
+Description:
+- Goal / acceptance criteria: Remove `3D Grid` from top-level AppShell nav and add it as an Advanced-menu entry grouped under `System`, preserving route navigation to `/grid-3d` on desktop/mobile menus.
+- Why it matters: Keeps top nav focused on primary workflows while consolidating advanced visualization tools into the Advanced menu hierarchy.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Frontend navigation/menu updates, route wiring validation, and completion notes with touched files.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-25 18:48 - Codex
+- Completion notes:
+  - What was done: Removed `3D Grid` from top-level `AppShell` nav item list and added it to `advancedMenuItems` under the `System` group, preserving `/grid-3d` route target.
+  - Key findings: Existing Advanced menu grouping/rendering already supports the move cleanly across desktop/mobile without additional layout logic changes.
+  - Files/links produced: `web/src/app/layout/AppShell.tsx`, `web/src/app/data/advancedMenuItems.ts`.
+  - Validation: `npm --prefix web run typecheck` passed.
+
+ID: T032
+Status: [ ] Todo
+Title: Implement RT callback-path external loop DSP insertion/crossfade/compensation and re-qualify latency gates
+Description:
+- Goal / acceptance criteria: Add real callback-path DSP behavior for external loops (insertion ordering, blend/crossfade handling, compensation application) and capture latency/jitter/xrun evidence proving the path meets target gate behavior.
+- Why it matters: Control-plane loop state is in place, but production confidence still requires callback-path DSP execution and measured qualification.
+- Dependencies: T027, T030
+- Estimated effort: High
+- Required outputs: JUCE callback-path implementation, regression tests, and updated qualification artifacts under `docs/fit-for-purpose-evidence/`.
+Subtasks: None
+Assigned to: Codex + Lab
+Last updated: 2026-02-25 19:00 - Codex
 
 ## Backlog
 

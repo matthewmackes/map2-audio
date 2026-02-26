@@ -73,6 +73,15 @@ import type {
   FlowSnapshotDetail,
   FlowSnapshotData,
 } from './types';
+import type {
+  DiscoveryScanStatus,
+  PresetInterlockRule,
+  TesiraDeviceDetail,
+  TesiraDeviceSummary,
+  TesiraPTPStatus,
+  TesiraPresetInfo,
+  TesiraStreamInfo,
+} from '../app/components/Tesira/types';
 
 const RAW_API_BASE = (() => {
   // Check for explicit environment variable
@@ -755,8 +764,27 @@ export interface TesiraLoopTemplate {
   channel_map_policy: string;
   validation_status: string;
   validation_error?: string | null;
+  runtime_status?: TesiraTemplateRuntimeStatus;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface TesiraTemplateRuntimeAlarm {
+  code: string;
+  severity: 'error' | 'warning' | 'info' | string;
+  message: string;
+  tag?: string;
+  tag_type?: string;
+  detail?: string;
+}
+
+export interface TesiraTemplateRuntimeStatus {
+  drift_status: 'ok' | 'warning' | 'error' | 'unknown' | string;
+  alarm_count: number;
+  alarms: TesiraTemplateRuntimeAlarm[];
+  checked_at: string;
+  probed_tag_count?: number;
+  failed_tag_count?: number;
 }
 
 export interface LoopMetrics {
@@ -829,6 +857,11 @@ export const effectsLoopsApi = {
     fetchJson<Record<string, unknown>>(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/validate`, {
       method: 'POST',
     }),
+
+  getTemplateRuntimeStatus: (templateId: string) =>
+    fetchJson<{ template_id: string; tesira_device_id: string; runtime_status: TesiraTemplateRuntimeStatus }>(
+      `${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/runtime-status`
+    ),
 
   listChainInsertions: (chainId: number) =>
     fetchJson<{ chain_id: number; loop_insertions: LoopInsertion[]; effects_loops: EffectsLoop[]; count: number }>(
@@ -3376,128 +3409,135 @@ async function _json<T>(res: Response): Promise<T> {
   return res.json()
 }
 
+type TesiraMutationResponse = {
+  success?: boolean;
+  status?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
 export const tesiraApi = {
   // Device management
-  listDevices: () =>
-    fetch(`${BASE}/devices`).then((r) => _json(r)),
+  listDevices: (): Promise<TesiraDeviceSummary[]> =>
+    fetch(`${BASE}/devices`).then((r) => _json<TesiraDeviceSummary[]>(r)),
 
-  getDevice: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}`).then((r) => _json(r)),
+  getDevice: (deviceId: string): Promise<TesiraDeviceDetail> =>
+    fetch(`${BASE}/devices/${deviceId}`).then((r) => _json<TesiraDeviceDetail>(r)),
 
-  connectDevice: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}/connect`, { method: 'POST' }).then((r) => _json(r)),
+  connectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/connect`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  disconnectDevice: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}/disconnect`, { method: 'POST' }).then((r) => _json(r)),
+  disconnectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/disconnect`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  getFaults: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}/faults`).then((r) => _json(r)),
+  getFaults: (deviceId: string): Promise<{ device_id: string; faults: string[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/faults`).then((r) => _json<{ device_id: string; faults: string[] }>(r)),
 
   // Level / mute
-  getLevel: (deviceId: string, tag: string, channel: number) =>
-    fetch(`${BASE}/devices/${deviceId}/level/${tag}/${channel}`).then((r) => _json(r)),
+  getLevel: (deviceId: string, tag: string, channel: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/level/${tag}/${channel}`).then((r) => _json<TesiraMutationResponse>(r)),
 
-  setLevel: (deviceId: string, tag: string, channel: number, levelDb: number) =>
+  setLevel: (deviceId: string, tag: string, channel: number, levelDb: number): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/level/${tag}/${channel}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ level_db: levelDb }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  getMute: (deviceId: string, tag: string, channel: number) =>
-    fetch(`${BASE}/devices/${deviceId}/mute/${tag}/${channel}`).then((r) => _json(r)),
+  getMute: (deviceId: string, tag: string, channel: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/mute/${tag}/${channel}`).then((r) => _json<TesiraMutationResponse>(r)),
 
-  setMute: (deviceId: string, tag: string, channel: number, muted: boolean) =>
+  setMute: (deviceId: string, tag: string, channel: number, muted: boolean): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/mute/${tag}/${channel}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ muted }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
   // Crosspoint
-  setCrosspoint: (deviceId: string, tag: string, row: number, col: number, gainDb: number) =>
+  setCrosspoint: (deviceId: string, tag: string, row: number, col: number, gainDb: number): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/crosspoint/${tag}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ row, col, gain_db: gainDb }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
   // EQ
-  setEQBandFreq: (deviceId: string, tag: string, band: number, freqHz: number) =>
+  setEQBandFreq: (deviceId: string, tag: string, band: number, freqHz: number): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/eq/${tag}/band/${band}/freq`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ freq_hz: freqHz }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  setEQBandGain: (deviceId: string, tag: string, band: number, gainDb: number) =>
+  setEQBandGain: (deviceId: string, tag: string, band: number, gainDb: number): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/eq/${tag}/band/${band}/gain`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ gain_db: gainDb }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  setEQBandQ: (deviceId: string, tag: string, band: number, q: number) =>
+  setEQBandQ: (deviceId: string, tag: string, band: number, q: number): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/eq/${tag}/band/${band}/q`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ q }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
   // Presets
-  listPresets: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}/presets`).then((r) => _json(r)),
+  listPresets: (deviceId: string): Promise<TesiraPresetInfo[]> =>
+    fetch(`${BASE}/devices/${deviceId}/presets`).then((r) => _json<TesiraPresetInfo[]>(r)),
 
-  recallPreset: (deviceId: string, presetIndex: number) =>
+  recallPreset: (deviceId: string, presetIndex: number): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/presets/${presetIndex}/recall`, { method: 'POST' })
-      .then((r) => _json(r)),
+      .then((r) => _json<TesiraMutationResponse>(r)),
 
   // AVB
-  getAvbStreams: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}/avb/streams`).then((r) => _json(r)),
+  getAvbStreams: (deviceId: string): Promise<TesiraStreamInfo[]> =>
+    fetch(`${BASE}/devices/${deviceId}/avb/streams`).then((r) => _json<TesiraStreamInfo[]>(r)),
 
-  getPtp: (deviceId: string) =>
-    fetch(`${BASE}/devices/${deviceId}/avb/ptp`).then((r) => _json(r)),
+  getPtp: (deviceId: string): Promise<TesiraPTPStatus> =>
+    fetch(`${BASE}/devices/${deviceId}/avb/ptp`).then((r) => _json<TesiraPTPStatus>(r)),
 
   // Metering
-  getMeters: (deviceId: string, tag: string) =>
-    fetch(`${BASE}/devices/${deviceId}/meters/${tag}`).then((r) => _json(r)),
+  getMeters: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${tag}`).then((r) => _json<TesiraMutationResponse>(r)),
 
-  startMetering: (deviceId: string, tag: string) =>
-    fetch(`${BASE}/devices/${deviceId}/meters/${tag}/start`, { method: 'POST' }).then((r) => _json(r)),
+  startMetering: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${tag}/start`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  stopMetering: (deviceId: string, tag: string) =>
-    fetch(`${BASE}/devices/${deviceId}/meters/${tag}/stop`, { method: 'POST' }).then((r) => _json(r)),
+  stopMetering: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${tag}/stop`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
 
   // Preset interlock
-  listInterlockRules: () =>
-    fetch(`${BASE}/preset_interlock`).then((r) => _json(r)),
+  listInterlockRules: (): Promise<PresetInterlockRule[]> =>
+    fetch(`${BASE}/preset_interlock`).then((r) => _json<PresetInterlockRule[]>(r)),
 
-  addInterlockRule: (body: { map2_preset_id: number; tesira_device_id: string; tesira_preset_index: number }) =>
+  addInterlockRule: (body: { map2_preset_id: number; tesira_device_id: string; tesira_preset_index: number }): Promise<PresetInterlockRule> =>
     fetch(`${BASE}/preset_interlock`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<PresetInterlockRule>(r)),
 
-  deleteInterlockRule: (ruleId: number) =>
-    fetch(`${BASE}/preset_interlock/${ruleId}`, { method: 'DELETE' }).then((r) => _json(r)),
+  deleteInterlockRule: (ruleId: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/preset_interlock/${ruleId}`, { method: 'DELETE' }).then((r) => _json<TesiraMutationResponse>(r)),
 
   // Auto-discovery
-  startDiscovery: (timeoutS: number = 8) =>
+  startDiscovery: (timeoutS: number = 8): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/discovery/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ timeout_s: timeoutS }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 
-  getDiscoveryStatus: () =>
-    fetch(`${BASE}/discovery/status`).then((r) => _json(r)),
+  getDiscoveryStatus: (): Promise<DiscoveryScanStatus> =>
+    fetch(`${BASE}/discovery/status`).then((r) => _json<DiscoveryScanStatus>(r)),
 
-  adoptDevice: (host: string, name?: string) =>
+  adoptDevice: (host: string, name?: string): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/discovery/adopt`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ host, name }),
-    }).then((r) => _json(r)),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
 }

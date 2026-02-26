@@ -222,6 +222,16 @@ async def validate_tesira_loop_template(template_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/tesira/loop-templates/{template_id}/runtime-status")
+async def get_tesira_loop_template_runtime_status(template_id: str) -> Dict[str, Any]:
+    try:
+        async with get_session() as session:
+            service = EffectsLoopService(session)
+            return await service.get_template_runtime_status(template_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.post("/chains/{chain_id}/loops/insert")
 async def insert_chain_loop(
     chain_id: int,

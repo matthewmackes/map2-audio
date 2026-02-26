@@ -161,7 +161,7 @@ function buildConnectionPayloadState(payload: unknown): Route[] {
       const talkerNodeId = talker.node_id || undefined;
       const listenerNodeId = listener.node_id || undefined;
 
-      return {
+      const route: Route = {
         id: connection.connection_id || `${talker.endpoint_id || ''}→${listener.endpoint_id || ''}`,
         talker_id: talker.endpoint_id || '',
         listener_id: listener.endpoint_id || '',
@@ -178,6 +178,8 @@ function buildConnectionPayloadState(payload: unknown): Route[] {
         listener_node_id: listenerNodeId,
         cross_node: !!talkerNodeId && !!listenerNodeId && talkerNodeId !== listenerNodeId,
       };
+
+      return route;
     })
     .filter((route): route is Route => route !== null);
 }

@@ -104,3 +104,31 @@ def test_chain_loop_insertion_route_contract(tmp_path):
         assert listed_after["count"] == 0
 
     asyncio.run(_run())
+
+
+def test_tesira_template_runtime_status_route_contract(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        upserted = await routes.upsert_tesira_loop_template(
+            "tmpl-route",
+            routes.TesiraLoopTemplatePutRequest(
+                tesira_device_id="tesira_route",
+                stream_in_tags=["ExplicitAVBInStream1"],
+                stream_out_tags=["ExplicitAVBOutStream1"],
+                channel_map_policy="direct",
+            ),
+        )
+        assert upserted["template_id"] == "tmpl-route"
+        assert "runtime_status" in upserted
+
+        validated = await routes.validate_tesira_loop_template("tmpl-route")
+        assert validated["template_id"] == "tmpl-route"
+        assert "runtime_status" in validated
+
+        runtime = await routes.get_tesira_loop_template_runtime_status("tmpl-route")
+        assert runtime["template_id"] == "tmpl-route"
+        assert "runtime_status" in runtime
+        assert runtime["runtime_status"]["drift_status"] in {"ok", "warning", "error", "unknown"}
+
+    asyncio.run(_run())

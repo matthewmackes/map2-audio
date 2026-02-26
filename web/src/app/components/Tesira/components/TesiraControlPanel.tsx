@@ -11,8 +11,9 @@ import { TesiraEQTab } from './TesiraEQTab'
 import { TesiraPresetsTab } from './TesiraPresetsTab'
 import { TesiraAvbTab } from './TesiraAvbTab'
 import { TesiraFaultsTab } from './TesiraFaultsTab'
+import { TesiraLoopBuilderTab } from './TesiraLoopBuilderTab'
 
-const TABS = ['Levels', 'Mixer', 'EQ', 'Presets', 'AVB Streams', 'Faults']
+const TABS = ['Levels', 'Mixer', 'EQ', 'Presets', 'AVB Streams', 'Faults', 'Loops']
 
 export function TesiraControlPanel() {
   const { selectedDeviceId, selectedTab, setSelectedTab } = useTesiraContext()
@@ -87,6 +88,7 @@ function DevicePanel({ deviceId, tab, onTabChange }: DevicePanelProps) {
         {tab === 3 && <TesiraPresetsTab deviceId={deviceId} />}
         {tab === 4 && <TesiraAvbTab deviceId={deviceId} />}
         {tab === 5 && <TesiraFaultsTab deviceId={deviceId} />}
+        {tab === 6 && <TesiraLoopBuilderTab deviceId={deviceId} />}
       </Box>
     </Box>
   )

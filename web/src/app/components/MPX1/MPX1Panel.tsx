@@ -187,7 +187,7 @@ export function MPX1Panel() {
         </svg>
 
         {panelState === 'offline' && <div className="mpx1-panel-overlay mpx1-panel-overlay--offline">NO DEVICE</div>}
-        {panelState === 'bypassed' && panelState !== 'offline' && <div className="mpx1-panel-overlay mpx1-panel-overlay--bypassed">BYPASS ACTIVE</div>}
+        {panelState === 'bypassed' && <div className="mpx1-panel-overlay mpx1-panel-overlay--bypassed">BYPASS ACTIVE</div>}
 
         {selectedSlot && selectedParam && (
           <div

@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Cpu, ShareNetwork } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Cpu, ShareNetwork, Cube } from '@phosphor-icons/react'
 import { BiampIcon } from '../components/Tesira/BiampIcon'
 
 export interface AdvancedMenuItem {
@@ -40,6 +40,14 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     icon: SquaresFour,
     description: 'Save & recall your sounds',
     color: '#22c55e',
+    group: 'System',
+  },
+  {
+    to: '/grid-3d',
+    label: '3D Grid',
+    icon: Cube,
+    description: '3D signal flow visualization',
+    color: '#7c3aed',
     group: 'System',
   },
 

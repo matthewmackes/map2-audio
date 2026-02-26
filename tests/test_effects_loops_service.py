@@ -100,6 +100,38 @@ class _FakeRouter:
         return {"success": True, "trace_id": "disconnect-test"}
 
 
+class _FakeTesiraResponse:
+    def __init__(self, ok: bool, error_code: str = "", error_detail: str = ""):
+        self.ok = ok
+        self.error_code = error_code
+        self.error_detail = error_detail
+
+
+class _FakeTesiraClient:
+    def __init__(self, failing_tags=None):
+        self.failing_tags = set(failing_tags or [])
+
+    async def send(self, instance_tag, _service, _attribute, *_args):
+        if instance_tag in self.failing_tags:
+            return _FakeTesiraResponse(False, error_code="OBJECT_NOT_FOUND", error_detail="missing instance tag")
+        return _FakeTesiraResponse(True)
+
+
+class _FakeTesiraDevice:
+    def __init__(self, device_id: str, connected: bool = True, failing_tags=None):
+        self.device_id = device_id
+        self.connected = connected
+        self._client = _FakeTesiraClient(failing_tags=failing_tags)
+
+
+class _FakeTesiraFleet:
+    def __init__(self, devices):
+        self._devices = {d.device_id: d for d in devices}
+
+    def get_device(self, device_id):
+        return self._devices.get(device_id)
+
+
 def test_effects_loop_channel_validation(tmp_path):
     _init_temp_db(tmp_path)
     asyncio.run(_seed_chain(1))
@@ -200,6 +232,51 @@ def test_create_insert_activate_bypass_delete_loop(tmp_path, monkeypatch):
 
             remaining = await service.list_chain_insertions(7)
             assert remaining["count"] == 0
+
+    asyncio.run(_run())
+
+
+def test_template_runtime_status_reports_probe_failures(tmp_path):
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        healthy_fleet = _FakeTesiraFleet([_FakeTesiraDevice("tesira_ok")])
+        unhealthy_fleet = _FakeTesiraFleet([_FakeTesiraDevice("tesira_bad", failing_tags={"missing.tag"})])
+
+        async with database_module.get_session() as session:
+            service = EffectsLoopService(session, tesira_fleet=healthy_fleet)
+            template = await service.upsert_template(
+                "tmpl-runtime",
+                {
+                    "tesira_device_id": "tesira_ok",
+                    "stream_in_tags": ["ExplicitAVBInStream1"],
+                    "stream_out_tags": ["ExplicitAVBOutStream1"],
+                    "meter_tags": ["LevelControl1"],
+                    "bypass_tags": ["BypassBlock1"],
+                    "crosspoint_tags": ["Router1"],
+                    "channel_map_policy": "direct",
+                },
+            )
+            runtime = template["runtime_status"]
+            assert runtime["drift_status"] in {"ok", "warning"}
+            assert runtime["alarm_count"] == 0
+
+        async with database_module.get_session() as session:
+            service = EffectsLoopService(session, tesira_fleet=unhealthy_fleet)
+            await service.upsert_template(
+                "tmpl-runtime-bad",
+                {
+                    "tesira_device_id": "tesira_bad",
+                    "stream_in_tags": ["missing.tag"],
+                    "stream_out_tags": ["ExplicitAVBOutStream1"],
+                    "channel_map_policy": "direct",
+                },
+            )
+            validation = await service.validate_template("tmpl-runtime-bad")
+            runtime = validation["runtime_status"]
+            assert runtime["drift_status"] == "error"
+            assert runtime["alarm_count"] >= 1
+            assert any(alarm.get("code") == "tag_probe_failed" for alarm in runtime.get("alarms", []))
 
     asyncio.run(_run())
 

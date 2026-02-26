@@ -8,6 +8,8 @@ import type {
   TesiraDeviceSummary,
   TesiraDeviceDetail,
   TesiraPresetInfo,
+  TesiraPTPStatus,
+  TesiraStreamInfo,
   PresetInterlockRule,
   DiscoveryScanStatus,
 } from '../types'
@@ -61,7 +63,7 @@ export function useTesiraFaults(deviceId: string) {
 }
 
 export function useTesiraAvbStreams(deviceId: string) {
-  return useQuery({
+  return useQuery<TesiraStreamInfo[]>({
     queryKey: TESIRA_KEYS.avbStreams(deviceId),
     queryFn:  () => tesiraApi.getAvbStreams(deviceId),
     enabled:  !!deviceId,
@@ -69,7 +71,7 @@ export function useTesiraAvbStreams(deviceId: string) {
 }
 
 export function useTesiraPTP(deviceId: string) {
-  return useQuery({
+  return useQuery<TesiraPTPStatus>({
     queryKey: TESIRA_KEYS.ptp(deviceId),
     queryFn:  () => tesiraApi.getPtp(deviceId),
     enabled:  !!deviceId,

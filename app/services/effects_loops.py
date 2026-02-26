@@ -468,7 +468,10 @@ class EffectsLoopService:
             select(TesiraLoopTemplate).order_by(TesiraLoopTemplate.updated_at.desc(), TesiraLoopTemplate.id.desc())
         )
         templates = list(result.scalars().all())
-        return [self._serialize_template(t) for t in templates]
+        serialized: List[Dict[str, Any]] = []
+        for template in templates:
+            serialized.append(await self._serialize_template_with_runtime(template))
+        return serialized
 
     async def upsert_template(self, template_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         tesira_device_id = self._coerce_optional_text(payload.get("tesira_device_id"))
@@ -499,7 +502,7 @@ class EffectsLoopService:
         template.updated_at = datetime.utcnow()
 
         await self.session.flush()
-        return self._serialize_template(template)
+        return await self._serialize_template_with_runtime(template)
 
     async def validate_template(self, template_id: str) -> Dict[str, Any]:
         result = await self.session.execute(
@@ -515,12 +518,30 @@ class EffectsLoopService:
         template.updated_at = datetime.utcnow()
         await self.session.flush()
 
+        runtime_status = await self._build_template_runtime_status(template)
+
         return {
             "template_id": template.template_id,
             "tesira_device_id": template.tesira_device_id,
             "valid": valid,
             "validation_status": template.validation_status,
             "reason": reason,
+            "runtime_status": runtime_status,
+        }
+
+    async def get_template_runtime_status(self, template_id: str) -> Dict[str, Any]:
+        result = await self.session.execute(
+            select(TesiraLoopTemplate).filter(TesiraLoopTemplate.template_id == template_id)
+        )
+        template = result.scalar_one_or_none()
+        if template is None:
+            raise ValueError(f"Template '{template_id}' not found")
+
+        runtime_status = await self._build_template_runtime_status(template)
+        return {
+            "template_id": template.template_id,
+            "tesira_device_id": template.tesira_device_id,
+            "runtime_status": runtime_status,
         }
 
     # ------------------------------------------------------------------
@@ -1022,6 +1043,213 @@ class EffectsLoopService:
             "validation_error": template.validation_error,
             "created_at": template.created_at.isoformat() if template.created_at else None,
             "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+        }
+
+    async def _serialize_template_with_runtime(self, template: TesiraLoopTemplate) -> Dict[str, Any]:
+        payload = self._serialize_template(template)
+        payload["runtime_status"] = await self._build_template_runtime_status(template)
+        return payload
+
+    async def _build_template_runtime_status(self, template: TesiraLoopTemplate) -> Dict[str, Any]:
+        alarms: List[Dict[str, Any]] = []
+        checked_at = datetime.utcnow().isoformat() + "Z"
+
+        validation_status = str(template.validation_status or "unknown")
+        if validation_status != "valid":
+            alarms.append(
+                {
+                    "code": "template_validation",
+                    "severity": "error",
+                    "message": str(template.validation_error or "Template validation failed"),
+                }
+            )
+
+        device_id = self._coerce_optional_text(template.tesira_device_id)
+        if device_id is None:
+            alarms.append(
+                {
+                    "code": "missing_device",
+                    "severity": "error",
+                    "message": "tesira_device_id is required for runtime validation",
+                }
+            )
+            return self._summarize_runtime_status(alarms=alarms, checked_at=checked_at, status="error")
+
+        fleet = self._get_tesira_fleet()
+        if fleet is None:
+            alarms.append(
+                {
+                    "code": "fleet_unavailable",
+                    "severity": "warning",
+                    "message": "Tesira fleet unavailable; runtime drift checks skipped",
+                }
+            )
+            return self._summarize_runtime_status(alarms=alarms, checked_at=checked_at, status="unknown")
+
+        get_device = getattr(fleet, "get_device", None)
+        device = get_device(device_id) if callable(get_device) else None
+        if device is None:
+            alarms.append(
+                {
+                    "code": "device_missing",
+                    "severity": "error",
+                    "message": f"Tesira device '{device_id}' is not registered in fleet",
+                }
+            )
+            return self._summarize_runtime_status(alarms=alarms, checked_at=checked_at, status="error")
+
+        if not bool(getattr(device, "connected", False)):
+            alarms.append(
+                {
+                    "code": "device_disconnected",
+                    "severity": "error",
+                    "message": f"Tesira device '{device_id}' is disconnected",
+                }
+            )
+            return self._summarize_runtime_status(alarms=alarms, checked_at=checked_at, status="error")
+
+        probe_results = await self._probe_template_runtime_tags(template, device)
+        alarms.extend(probe_results["alarms"])
+        status = self._runtime_status_from_alarms(alarms)
+        summary = self._summarize_runtime_status(
+            alarms=alarms,
+            checked_at=checked_at,
+            status=status,
+        )
+        summary["probed_tag_count"] = probe_results["probed_tag_count"]
+        summary["failed_tag_count"] = probe_results["failed_tag_count"]
+        return summary
+
+    async def _probe_template_runtime_tags(self, template: TesiraLoopTemplate, device: Any) -> Dict[str, Any]:
+        alarms: List[Dict[str, Any]] = []
+        probed = 0
+        failed = 0
+
+        def unique_tags(values: Sequence[str]) -> List[str]:
+            ordered: Dict[str, None] = {}
+            for raw in values:
+                text = str(raw or "").strip()
+                if text:
+                    ordered[text] = None
+            return list(ordered.keys())
+
+        checks: List[Tuple[str, str, List[Tuple[str, Tuple[Any, ...]]]]] = []
+        checks.extend(
+            ("stream_in", tag, [("numChannels", tuple())])
+            for tag in unique_tags(template.stream_in_tags or [])
+        )
+        checks.extend(
+            ("stream_out", tag, [("numChannels", tuple())])
+            for tag in unique_tags(template.stream_out_tags or [])
+        )
+        checks.extend(
+            (
+                "crosspoint",
+                tag,
+                [("crosspointLevelOut", (1, 1)), ("crosspointLevelOut", (0, 0))],
+            )
+            for tag in unique_tags(template.crosspoint_tags or [])
+        )
+        checks.extend(
+            (
+                "input_router",
+                template.input_router_tag,
+                [("crosspointLevelOut", (1, 1)), ("crosspointLevelOut", (0, 0))],
+            )
+            for _ in ([template.input_router_tag] if template.input_router_tag else [])
+        )
+        checks.extend(
+            (
+                "output_router",
+                template.output_router_tag,
+                [("crosspointLevelOut", (1, 1)), ("crosspointLevelOut", (0, 0))],
+            )
+            for _ in ([template.output_router_tag] if template.output_router_tag else [])
+        )
+        checks.extend(
+            ("meter", tag, [("level", (1,)), ("level", (0,))])
+            for tag in unique_tags(template.meter_tags or [])
+        )
+        checks.extend(
+            ("bypass", tag, [("bypass", tuple())])
+            for tag in unique_tags(template.bypass_tags or [])
+        )
+
+        for tag_type, raw_tag, probes in checks:
+            tag = str(raw_tag or "").strip()
+            if not tag:
+                continue
+            probed += 1
+            ok, detail = await self._probe_tesira_tag(device, tag, probes)
+            if ok:
+                continue
+            failed += 1
+            alarms.append(
+                {
+                    "code": "tag_probe_failed",
+                    "severity": "error",
+                    "message": f"Unable to validate {tag_type} tag '{tag}'",
+                    "tag": tag,
+                    "tag_type": tag_type,
+                    "detail": detail,
+                }
+            )
+
+        return {
+            "alarms": alarms,
+            "probed_tag_count": probed,
+            "failed_tag_count": failed,
+        }
+
+    async def _probe_tesira_tag(
+        self,
+        device: Any,
+        instance_tag: str,
+        probes: Sequence[Tuple[str, Tuple[Any, ...]]],
+    ) -> Tuple[bool, str]:
+        client = getattr(device, "_client", None)
+        send_fn = getattr(client, "send", None)
+        if not callable(send_fn):
+            return False, "tesira_client_unavailable"
+
+        errors: List[str] = []
+        for attribute, args in probes:
+            try:
+                response = await send_fn(instance_tag, "get", attribute, *args)
+                if bool(getattr(response, "ok", False)):
+                    return True, "ok"
+                code = str(getattr(response, "error_code", "ERROR") or "ERROR")
+                detail = str(getattr(response, "error_detail", "") or "")
+                if detail:
+                    errors.append(f"{attribute}: {code} ({detail})")
+                else:
+                    errors.append(f"{attribute}: {code}")
+            except Exception as exc:
+                errors.append(f"{attribute}: {exc}")
+
+        return False, "; ".join(errors[:4]) if errors else "probe_failed"
+
+    @staticmethod
+    def _runtime_status_from_alarms(alarms: Sequence[Dict[str, Any]]) -> str:
+        severities = {str(alarm.get("severity", "")).lower() for alarm in alarms}
+        if "error" in severities:
+            return "error"
+        if "warning" in severities:
+            return "warning"
+        return "ok"
+
+    @staticmethod
+    def _summarize_runtime_status(
+        *,
+        alarms: Sequence[Dict[str, Any]],
+        checked_at: str,
+        status: str,
+    ) -> Dict[str, Any]:
+        return {
+            "drift_status": status,
+            "alarm_count": len(alarms),
+            "alarms": list(alarms),
+            "checked_at": checked_at,
         }
 
     async def _publish_loop_state(self, loop: EffectsLoop, *, event: str) -> None:

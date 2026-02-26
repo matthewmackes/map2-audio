@@ -96,6 +96,11 @@ function downloadJson(filename: string, payload: unknown): void {
   URL.revokeObjectURL(url)
 }
 
+function clampInt(value: number, min: number, max: number): number {
+  const bounded = Math.max(min, Math.min(max, Number.isFinite(value) ? value : min))
+  return Math.round(bounded)
+}
+
 export function MPX1Librarian() {
   const { mpx1, setLcdText } = useMPX1PageContext()
 

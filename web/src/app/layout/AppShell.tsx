@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import { Sparkle, Info, GridFour, Cube, BookOpen, List, X, Fire, CaretRight } from '@phosphor-icons/react'
+import { Sparkle, Info, GridFour, BookOpen, List, X, Fire, CaretRight } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
@@ -79,13 +79,6 @@ const navItemsLeft: TopNavItem[] = [
     icon: GridFour,
     description: 'Cortex-style grid editor',
     color: '#2563eb'
-  },
-  {
-    to: '/grid-3d',
-    label: '3D Grid',
-    icon: Cube,
-    description: '3D signal flow visualization',
-    color: '#7c3aed'
   },
   {
     to: '/mpx1',
