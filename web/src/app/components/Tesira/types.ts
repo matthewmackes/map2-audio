@@ -93,6 +93,11 @@ export interface DiscoveredTesiraDevice {
   part_number: string | null;
   mac_address: string | null;
   already_configured: boolean;
+  /**
+   * true  → TTP port 23 is open (factory-reset, or TTP explicitly enabled)
+   * false → found via port 61451 (configured unit; TTP/SSH currently disabled)
+   */
+  ttp_enabled: boolean;
 }
 
 export interface TesiraDiscoveryEvent {

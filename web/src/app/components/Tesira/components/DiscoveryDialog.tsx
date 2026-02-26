@@ -28,6 +28,7 @@ import {
   useStartDiscovery,
   useDiscoveryStatus,
   useAdoptDevice,
+  useAddDevice,
 } from '../hooks/useTesiraApi'
 import { useTesiraDiscoveryEvents } from '../hooks/useTesiraWebSocket'
 import type { DiscoveredTesiraDevice } from '../types'
@@ -107,6 +108,8 @@ function DeviceCard({
   device, nameValue, onNameChange, onAdopt,
   adopted, adopting, adoptError,
 }: DeviceCardProps) {
+  const ttpEnabled = device.ttp_enabled !== false  // default true for old responses
+
   return (
     <Box
       sx={{
@@ -124,22 +127,38 @@ function DeviceCard({
           {device.model ?? device.mdns_name}
         </Typography>
         <ModelBadge model={device.model} />
+        {!ttpEnabled && (
+          <Tooltip title="Port 23 (TTP) is disabled — found via Biamp port 61451. Enable TTP in Tesira Software to connect.">
+            <Chip
+              label="TTP off"
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: 10, height: 18, borderColor: 'warning.main', color: 'warning.main' }}
+            />
+          </Tooltip>
+        )}
         {device.already_configured && (
           <Chip label="Already configured" size="small" variant="outlined" sx={{ fontSize: 10, height: 18 }} />
         )}
         {adopted && (
-          <Tooltip title="Adopted">
+          <Tooltip title={ttpEnabled ? 'Adopted' : 'Added to fleet'}>
             <CheckCircleIcon sx={{ color: 'success.light', fontSize: 18 }} />
           </Tooltip>
         )}
       </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
         {device.host}:{device.port}
         {device.serial_number && ` · SN: ${device.serial_number}`}
         {device.firmware_version && ` · FW: ${device.firmware_version}`}
         {device.mac_address && ` · MAC: ${device.mac_address}`}
       </Typography>
+
+      {!ttpEnabled && (
+        <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1 }}>
+          Detected via port 61451 (Biamp discovery). Enable TTP in Tesira Software to establish control.
+        </Typography>
+      )}
 
       {adoptError && (
         <Alert severity="error" sx={{ py: 0, mb: 1, fontSize: 11 }}>{adoptError}</Alert>
@@ -166,7 +185,9 @@ function DeviceCard({
               minWidth: 72,
             }}
           >
-            {adopting ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : 'Adopt'}
+            {adopting
+              ? <CircularProgress size={14} sx={{ color: '#fff' }} />
+              : ttpEnabled ? 'Adopt' : 'Add'}
           </Button>
         </Box>
       )}
@@ -184,6 +205,7 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
   const startDiscovery = useStartDiscovery()
   const { data: status } = useDiscoveryStatus()
   const adoptDevice = useAdoptDevice()
+  const addDevice = useAddDevice()
 
   const isScanning = status?.is_scanning ?? false
   const devices = status?.devices ?? []
@@ -215,10 +237,15 @@ export function DiscoveryDialog({ open, onClose }: DiscoveryDialogProps) {
     setAdoptingHost(device.host)
     setAdoptErrors((prev) => ({ ...prev, [device.host]: '' }))
     try {
-      await adoptDevice.mutateAsync({ host: device.host, name: names[device.host] })
+      if (device.ttp_enabled === false) {
+        // TTP disabled — use the no-probe endpoint
+        await addDevice.mutateAsync({ host: device.host, port: device.port, name: names[device.host] })
+      } else {
+        await adoptDevice.mutateAsync({ host: device.host, name: names[device.host] })
+      }
       setAdopted((prev) => ({ ...prev, [device.host]: true }))
     } catch (err: any) {
-      const msg = err?.message ?? 'Adoption failed'
+      const msg = err?.message ?? 'Failed'
       setAdoptErrors((prev) => ({ ...prev, [device.host]: msg }))
     } finally {
       setAdoptingHost(null)

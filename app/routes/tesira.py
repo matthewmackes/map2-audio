@@ -530,6 +530,12 @@ class AdoptDeviceRequest(BaseModel):
     name: Optional[str] = Field(None, description="Friendly name for the device (uses mDNS name if omitted)")
 
 
+class AddDeviceRequest(BaseModel):
+    host: str = Field(..., description="IP address of the Tesira unit")
+    port: int = Field(default=23, ge=1, le=65535, description="TTP port (default 23, SSH is 22)")
+    name: Optional[str] = Field(None, description="Friendly name for the device")
+
+
 def _get_discovery():
     """Return the TesiraDiscoveryService singleton."""
     try:
@@ -581,3 +587,55 @@ async def adopt_device(req: AdoptDeviceRequest):
     if not result.get("ok"):
         raise HTTPException(status_code=502, detail=result.get("error", "Adoption failed"))
     return result
+
+
+@router.post("/devices", summary="Manually add a Tesira device by IP (no TTP probe)")
+async def add_device_manual(req: AddDeviceRequest):
+    """
+    Add a Tesira device to the fleet by IP address without requiring TTP
+    connectivity.  Unlike /discovery/adopt, this endpoint does NOT probe
+    port 23 before accepting the device.
+
+    The device is persisted to config and the fleet attempts an immediate
+    connection.  If TTP / SSH is currently disabled on the unit the device
+    will appear Offline in the fleet panel; enable TTP in Tesira Software
+    (Device Maintenance → Network Settings) to establish control.
+
+    Biamp note: port 23 (Telnet TTP) and port 22 (SSH TTP) are both
+    disabled by default on configured units.  Port 61451 (proprietary
+    discovery) is always open — this is how Biamp's own Tesira Software
+    locates devices on the LAN.
+    """
+    host = req.host.strip()
+    port = req.port
+    device_name = req.name or host
+
+    # Persist to config
+    try:
+        from app.config import config_get, config_set
+        existing: List[Dict[str, Any]] = config_get("tesira.devices", []) or []
+        if any(d.get("host") == host for d in existing):
+            device_id = f"tesira_{host.replace('.', '_')}"
+            return {"ok": True, "device_id": device_id, "message": "Device already configured"}
+        existing.append({"host": host, "port": port, "name": device_name, "enabled": True})
+        config_set("tesira.devices", existing)
+        logger.info("Tesira manual add: persisted %s (%s) port %d to config", host, device_name, port)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Config persistence failed: {exc}")
+
+    # Hot-add to running fleet (connection failure is non-fatal — device shows Offline)
+    device_id = f"tesira_{host.replace('.', '_')}"
+    try:
+        from app.services.tesira import get_tesira_fleet
+        from app.services.tesira.tesira_fleet import TesiraDeviceConfig
+        fleet = get_tesira_fleet()
+        cfg = TesiraDeviceConfig(host=host, port=port, name=device_name)
+        if device_id not in fleet._devices:
+            await fleet._connect_device(cfg)
+            if not any(c.host == host for c in fleet._configs):
+                fleet._configs.append(cfg)
+    except Exception as exc:
+        logger.warning("Tesira manual add: fleet hot-add failed for %s: %s", host, exc)
+        # Non-fatal — device is in config and will connect on next fleet start
+
+    return {"ok": True, "device_id": device_id}

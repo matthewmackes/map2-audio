@@ -204,3 +204,19 @@ export function useAdoptDevice() {
     },
   })
 }
+
+/**
+ * Manually add a Tesira device by IP — no TTP probe required.
+ * Works for configured units where TTP/SSH may be disabled (port 61451 open).
+ * Device will show Offline until TTP is enabled in Tesira Software.
+ */
+export function useAddDevice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ host, port = 23, name }: { host: string; port?: number; name?: string }) =>
+      tesiraApi.addDevice(host, port, name),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.devices })
+    },
+  })
+}

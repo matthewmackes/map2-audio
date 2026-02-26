@@ -16,8 +16,11 @@ dialog can show devices as they are found (without waiting for the full timeout)
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import logging
+import re
 import socket
+import subprocess
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -28,6 +31,11 @@ logger = logging.getLogger(__name__)
 _TESIRA_SERVICE_TYPE = "_tesira._tcp.local."
 _TTP_TIMEOUT = 3.0        # seconds per connection attempt
 _DEFAULT_SCAN_TIMEOUT = 8.0
+# Biamp proprietary discovery port — open on all configured Tesira units
+# (used by Tesira Software to locate devices regardless of TTP state)
+_BIAMP_DISCOVERY_PORT = 61451
+_SUBNET_SCAN_CONCURRENCY = 100
+_SUBNET_SCAN_TIMEOUT = 1.5   # seconds per host TCP probe
 
 
 @dataclass
@@ -42,6 +50,9 @@ class DiscoveredTesiraDevice:
     part_number: Optional[str]
     mac_address: Optional[str]
     already_configured: bool = False
+    # True  → TTP port 23 is open (factory-reset or TTP explicitly enabled)
+    # False → found via port 61451 (configured unit; TTP/SSH may be disabled)
+    ttp_enabled: bool = True
 
 
 class TesiraDiscoveryService:
@@ -142,31 +153,59 @@ class TesiraDiscoveryService:
     # ──────────────────────────────────────────────────────────────────────────
 
     async def _run_scan(self, timeout_s: float) -> None:
-        """Main scan coroutine: browse mDNS then probe each host via TTP."""
+        """
+        Main scan coroutine.
+
+        Runs two discovery strategies concurrently:
+          1. mDNS  (_tesira._tcp.local.) — finds factory-reset units with TTP open
+          2. Port-61451 subnet scan      — finds ALL configured Tesira units
+             (port 61451 is Biamp's proprietary discovery port, always open)
+
+        For each found host we then try a TTP probe on port 23:
+          - If TTP responds → DiscoveredTesiraDevice(ttp_enabled=True, full identity)
+          - If TTP is closed → DiscoveredTesiraDevice(ttp_enabled=False, no identity)
+        """
         try:
-            discovered_hosts: List[tuple[str, int, str]] = []  # (host, port, mdns_name)
+            # Launch both strategies concurrently; cap subnet scan at timeout_s
+            mdns_task = asyncio.create_task(
+                asyncio.wait_for(self._mdns_browse(timeout_s * 0.75), timeout=timeout_s)
+            )
+            subnet_task = asyncio.create_task(
+                asyncio.wait_for(self._scan_subnet_port61451(), timeout=timeout_s)
+            )
+
+            mdns_hosts: List[tuple[str, int, str]] = []
+            subnet_hosts: List[tuple[str, int, str]] = []
 
             try:
-                discovered_hosts = await asyncio.wait_for(
-                    self._mdns_browse(timeout_s * 0.75),  # use 75% of timeout for mDNS
-                    timeout=timeout_s,
-                )
+                mdns_hosts = await mdns_task
             except Exception as exc:
-                logger.info("TesiraDiscovery: mDNS browse failed (%s), no hosts found", exc)
-                discovered_hosts = []
+                logger.info("TesiraDiscovery: mDNS browse failed (%s)", exc)
 
-            if not discovered_hosts:
-                logger.info("TesiraDiscovery: no Tesira units found via mDNS")
+            try:
+                subnet_hosts = await subnet_task
+            except Exception as exc:
+                logger.info("TesiraDiscovery: subnet scan failed (%s)", exc)
+
+            # De-duplicate: exclude subnet hosts already found via mDNS
+            mdns_host_set = {h for h, _, _ in mdns_hosts}
+            new_subnet = [(h, p, n) for h, p, n in subnet_hosts if h not in mdns_host_set]
+
+            if not mdns_hosts and not new_subnet:
+                logger.info("TesiraDiscovery: no Tesira units found (mDNS + port-61451)")
                 await self._broadcast("tesira:discovery", {
                     "event": "scan_complete",
                     "total_found": 0,
                 })
                 return
 
-            # Probe each host concurrently for TTP identity
+            # Probe concurrently
             probe_tasks = [
                 self._probe_and_record(host, port, mdns_name)
-                for host, port, mdns_name in discovered_hosts
+                for host, port, mdns_name in mdns_hosts
+            ] + [
+                self._probe_and_record_subnet(host, port)
+                for host, port, _ in new_subnet
             ]
             await asyncio.gather(*probe_tasks, return_exceptions=True)
 
@@ -228,6 +267,114 @@ class TesiraDiscoveryService:
             zc.close()
 
         return found
+
+    async def _scan_subnet_port61451(self) -> List[tuple[str, int, str]]:
+        """
+        TCP-connect scan of local /24 subnets on port 61451 (Biamp proprietary
+        discovery port).  Every configured Tesira unit keeps this port open
+        regardless of whether TTP/SSH is enabled — it is how Biamp's own
+        Tesira Software locates devices on the LAN.
+
+        Returns list of (host, 23, '') for each responding host.
+        Excludes the local machine's own addresses to avoid self-hits.
+        """
+        hosts: List[str] = []
+        local_ips: set[str] = set()
+        try:
+            out = subprocess.check_output(
+                ["ip", "-4", "addr", "show"], text=True, timeout=3
+            )
+            for m in re.finditer(r"inet (\d+\.\d+\.\d+\.\d+)/(\d+)", out):
+                ip_str, prefix_str = m.group(1), m.group(2)
+                local_ips.add(ip_str)
+                if ip_str.startswith("127.") or ip_str.startswith("169.254."):
+                    continue
+                prefix = int(prefix_str)
+                # Expand to /24 — don't scan wider than that
+                scan_prefix = max(prefix, 24)
+                network = ipaddress.ip_network(f"{ip_str}/{scan_prefix}", strict=False)
+                hosts.extend(str(h) for h in network.hosts())
+        except Exception as exc:
+            logger.debug("TesiraDiscovery: could not enumerate local subnets: %s", exc)
+            return []
+
+        # De-duplicate and exclude own addresses
+        hosts = list({h for h in hosts if h not in local_ips})
+
+        if not hosts:
+            return []
+
+        logger.debug(
+            "TesiraDiscovery: port-61451 scan — %d hosts across local /24 subnets", len(hosts)
+        )
+
+        results: List[tuple[str, int, str]] = []
+        sem = asyncio.Semaphore(_SUBNET_SCAN_CONCURRENCY)
+
+        async def _probe_61451(host: str) -> None:
+            async with sem:
+                try:
+                    _, writer = await asyncio.wait_for(
+                        asyncio.open_connection(host, _BIAMP_DISCOVERY_PORT),
+                        timeout=_SUBNET_SCAN_TIMEOUT,
+                    )
+                    writer.close()
+                    try:
+                        await asyncio.wait_for(writer.wait_closed(), timeout=0.5)
+                    except Exception:
+                        pass
+                    results.append((host, 23, ""))
+                    logger.debug("TesiraDiscovery: port-61451 open on %s", host)
+                except Exception:
+                    pass
+
+        await asyncio.gather(*[_probe_61451(h) for h in hosts], return_exceptions=True)
+        logger.info(
+            "TesiraDiscovery: port-61451 scan complete — %d possible Tesira unit(s)", len(results)
+        )
+        return results
+
+    async def _probe_and_record_subnet(self, host: str, port: int) -> None:
+        """
+        Handle a host found via port-61451 scan.
+
+        Tries TTP port 23 first — if it responds we get full identity and
+        ttp_enabled=True (i.e., this is a configured device with TTP on).
+        If port 23 is closed we record a minimal device with ttp_enabled=False.
+        """
+        # Try TTP probe
+        dev = await self._probe_host(host, _TTP_TIMEOUT, port=port)
+        if dev is not None:
+            dev.ttp_enabled = True
+        else:
+            # TTP disabled — record with what we know
+            dev = DiscoveredTesiraDevice(
+                host=host,
+                port=port,
+                mdns_name=host,
+                hostname=None,
+                serial_number=None,
+                firmware_version=None,
+                model=None,
+                part_number=None,
+                mac_address=None,
+                ttp_enabled=False,
+            )
+
+        # Mark already_configured
+        try:
+            from app.config import config_get
+            devices: List[Dict[str, Any]] = config_get("tesira.devices", []) or []
+            dev.already_configured = any(d.get("host") == host for d in devices)
+        except Exception:
+            pass
+
+        self._scan_result.append(dev)
+        await self._broadcast("tesira:discovery", {
+            "event": "device_found",
+            "device": asdict(dev),
+            "total_found": len(self._scan_result),
+        })
 
     async def _probe_and_record(
         self, host: str, port: int, mdns_name: str

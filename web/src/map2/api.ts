@@ -3574,7 +3574,16 @@ export default map2Api;
 const BASE = '/api/tesira'
 
 async function _json<T>(res: Response): Promise<T> {
-  if (!res.ok) throw new Error(`Tesira API ${res.status}: ${res.statusText}`)
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const body = await res.json()
+      if (typeof body?.detail === 'string') detail = body.detail
+      else if (typeof body?.error === 'string') detail = body.error
+      else if (typeof body?.message === 'string') detail = body.message
+    } catch { /* ignore parse errors, use statusText */ }
+    throw new Error(`${detail}`)
+  }
   return res.json()
 }
 
@@ -3708,5 +3717,16 @@ export const tesiraApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ host, name }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  /**
+   * Manually add a device by IP — no TTP probe required.
+   * Device appears Offline until TTP is enabled in Tesira Software.
+   */
+  addDevice: (host: string, port: number = 23, name?: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host, port, name }),
     }).then((r) => _json<TesiraMutationResponse>(r)),
 }
