@@ -17,7 +17,8 @@ import {
   Typography,
 } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { chainsApi, effectsLoopsApi, type EffectsLoop, type LoopInsertion } from '../../../../map2/api'
+import { chainsApi, effectsLoopsApi } from '../../../../map2/api'
+import type { EffectsLoop, LoopInsertion } from '../../../../map2/types'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../map2/hooks/useWebSocket'
 
 const LOOP_TOPOLOGIES = [
@@ -829,4 +830,3 @@ export function TesiraLoopBuilderTab({ deviceId }: TesiraLoopBuilderTabProps) {
     </Box>
   )
 }
-

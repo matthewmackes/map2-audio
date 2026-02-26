@@ -99,4 +99,115 @@ struct SampleLoadStatus {
     std::vector<std::string> warnings;
 };
 
+enum class SamplerBackend {
+    Native = 0,
+    Sfizz = 1,
+};
+
+inline std::string samplerBackendToString(SamplerBackend backend) {
+    switch (backend) {
+        case SamplerBackend::Native: return "native";
+        case SamplerBackend::Sfizz: return "sfizz";
+    }
+    return "native";
+}
+
+inline SamplerBackend samplerBackendFromString(const std::string& backend) {
+    if (backend == "sfizz") {
+        return SamplerBackend::Sfizz;
+    }
+    return SamplerBackend::Native;
+}
+
+enum class InterpolationMode {
+    Linear = 0,
+    Hermite = 1,
+    Sinc = 2,
+};
+
+inline std::string interpolationModeToString(InterpolationMode mode) {
+    switch (mode) {
+        case InterpolationMode::Linear: return "linear";
+        case InterpolationMode::Hermite: return "hermite";
+        case InterpolationMode::Sinc: return "sinc";
+    }
+    return "hermite";
+}
+
+inline InterpolationMode interpolationModeFromString(const std::string& mode) {
+    if (mode == "linear") return InterpolationMode::Linear;
+    if (mode == "sinc") return InterpolationMode::Sinc;
+    return InterpolationMode::Hermite;
+}
+
+struct StreamingConfig {
+    bool enabled = true;
+    uint32_t preloadSize = 128 * 1024;
+    int maxVoices = 64;
+    InterpolationMode interpolation = InterpolationMode::Hermite;
+    int qualityLive = 5;
+    int qualityFreewheeling = 8;
+    int memoryLimitMb = 256;
+};
+
+struct ScalaTuningConfig {
+    bool enabled = false;
+    std::string scalaPath;
+    int rootKey = 60;
+    float referenceFrequencyHz = 440.0f;
+};
+
+struct MpeConfig {
+    bool enabled = false;
+    int lowerZoneChannels = 0;
+    int upperZoneChannels = 0;
+    int pitchBendRangeSemitones = 48;
+};
+
+struct ModMatrixRoute {
+    std::string source;
+    std::string destination;
+    float amount = 0.0f; // -1..1
+    bool bipolar = false;
+    bool enabled = true;
+};
+
+struct HotReloadStatus {
+    bool enabled = false;
+    int intervalMs = 1000;
+    bool pendingReload = false;
+    bool reloaded = false;
+    uint64_t generation = 0;
+    std::string lastReloadIso;
+    std::string lastError;
+};
+
+struct FreezeRenderStatus {
+    bool freezeEnabled = false;
+    bool frozenSignalReady = false;
+    int freezeSamples = 0;
+    std::string renderPath;
+    std::string lastError;
+};
+
+struct SamplerAnalyzerFrame {
+    float peakLeft = 0.0f;
+    float peakRight = 0.0f;
+    float rmsLeft = 0.0f;
+    float rmsRight = 0.0f;
+    int midiEvents = 0;
+    int activeVoices = 0;
+};
+
+struct SfzBackendStatus {
+    std::string backend = "native";
+    bool sfizzAvailable = false;
+    bool sfizzLoaded = false;
+    int regionCount = 0;
+    int groupCount = 0;
+    int preloadedSamples = 0;
+    std::vector<std::string> unknownOpcodes;
+    std::vector<std::string> unsupportedOpcodes;
+};
+
 }  // namespace map2::synthforge

@@ -2879,6 +2879,14 @@ class JuceEngineService(Singleton):
             return False
         return bool(self._engine.load_synthforge_sfz(part_index, sfz_path))
 
+    async def reload_synthforge_sfz_if_changed(self, part_index: int) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "reload_synthforge_part_sfz_if_changed", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index))
+
     async def get_synthforge_part_sample_status(self, part_index: int) -> Dict[str, Any]:
         if not self._engine:
             return {
@@ -2892,6 +2900,260 @@ class JuceEngineService(Singleton):
                 "warnings": [],
             }
         return dict(self._engine.get_synthforge_part_sample_status(part_index))
+
+    async def set_synthforge_part_sampler_backend(self, part_index: int, backend: str) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_synthforge_part_sampler_backend", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, backend))
+
+    async def get_synthforge_part_sampler_backend(self, part_index: int) -> str:
+        if not self._engine:
+            return "native"
+        method = getattr(self._engine, "get_synthforge_part_sampler_backend", None)
+        if not callable(method):
+            return "native"
+        return str(method(part_index))
+
+    async def set_synthforge_part_streaming_config(self, part_index: int, config: Dict[str, Any]) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_synthforge_part_streaming_config", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, dict(config)))
+
+    async def get_synthforge_part_streaming_config(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "enabled": True,
+                "preload_size": 131072,
+                "max_voices": 64,
+                "interpolation": "hermite",
+                "quality_live": 5,
+                "quality_freewheeling": 8,
+                "memory_limit_mb": 256,
+            }
+        method = getattr(self._engine, "get_synthforge_part_streaming_config", None)
+        if not callable(method):
+            return {
+                "enabled": True,
+                "preload_size": 131072,
+                "max_voices": 64,
+                "interpolation": "hermite",
+                "quality_live": 5,
+                "quality_freewheeling": 8,
+                "memory_limit_mb": 256,
+            }
+        return dict(method(part_index))
+
+    async def set_synthforge_part_hot_reload(self, part_index: int, enabled: bool, interval_ms: int = 1000) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_synthforge_part_hot_reload", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, bool(enabled), int(interval_ms)))
+
+    async def get_synthforge_part_hot_reload_status(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "enabled": False,
+                "interval_ms": 1000,
+                "pending_reload": False,
+                "reloaded": False,
+                "generation": 0,
+                "last_reload_iso": "",
+                "last_error": "Engine not initialized",
+            }
+        method = getattr(self._engine, "get_synthforge_part_hot_reload_status", None)
+        if not callable(method):
+            return {
+                "enabled": False,
+                "interval_ms": 1000,
+                "pending_reload": False,
+                "reloaded": False,
+                "generation": 0,
+                "last_reload_iso": "",
+                "last_error": "Hot reload not supported by this engine build",
+            }
+        return dict(method(part_index))
+
+    async def load_synthforge_part_scala_tuning(
+        self,
+        part_index: int,
+        scala_path: str,
+        root_key: int = 60,
+        reference_hz: float = 440.0,
+    ) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "load_synthforge_part_scala_tuning", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, scala_path, int(root_key), float(reference_hz)))
+
+    async def get_synthforge_part_scala_tuning(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "enabled": False,
+                "scala_path": "",
+                "root_key": 60,
+                "reference_hz": 440.0,
+            }
+        method = getattr(self._engine, "get_synthforge_part_scala_tuning", None)
+        if not callable(method):
+            return {
+                "enabled": False,
+                "scala_path": "",
+                "root_key": 60,
+                "reference_hz": 440.0,
+            }
+        return dict(method(part_index))
+
+    async def set_synthforge_part_mpe_config(self, part_index: int, config: Dict[str, Any]) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_synthforge_part_mpe_config", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, dict(config)))
+
+    async def get_synthforge_part_mpe_config(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "enabled": False,
+                "lower_zone_channels": 0,
+                "upper_zone_channels": 0,
+                "pitch_bend_range_semitones": 48,
+            }
+        method = getattr(self._engine, "get_synthforge_part_mpe_config", None)
+        if not callable(method):
+            return {
+                "enabled": False,
+                "lower_zone_channels": 0,
+                "upper_zone_channels": 0,
+                "pitch_bend_range_semitones": 48,
+            }
+        return dict(method(part_index))
+
+    async def set_synthforge_part_mod_matrix_routes(self, part_index: int, routes: List[Dict[str, Any]]) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_synthforge_part_mod_matrix_routes", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, [dict(route) for route in routes]))
+
+    async def get_synthforge_part_mod_matrix_routes(self, part_index: int) -> List[Dict[str, Any]]:
+        if not self._engine:
+            return []
+        method = getattr(self._engine, "get_synthforge_part_mod_matrix_routes", None)
+        if not callable(method):
+            return []
+        return [dict(route) for route in method(part_index)]
+
+    async def set_synthforge_part_freeze(self, part_index: int, enabled: bool) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "set_synthforge_part_freeze", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, bool(enabled)))
+
+    async def get_synthforge_part_freeze_status(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "freeze_enabled": False,
+                "frozen_signal_ready": False,
+                "freeze_samples": 0,
+                "render_path": "",
+                "last_error": "Engine not initialized",
+            }
+        method = getattr(self._engine, "get_synthforge_part_freeze_status", None)
+        if not callable(method):
+            return {
+                "freeze_enabled": False,
+                "frozen_signal_ready": False,
+                "freeze_samples": 0,
+                "render_path": "",
+                "last_error": "Freeze mode not supported by this engine build",
+            }
+        return dict(method(part_index))
+
+    async def render_synthforge_part_to_file(self, part_index: int, output_path: str, duration_ms: int = 2000) -> bool:
+        if not self._engine:
+            return False
+        method = getattr(self._engine, "render_synthforge_part_to_file", None)
+        if not callable(method):
+            return False
+        return bool(method(part_index, output_path, int(duration_ms)))
+
+    async def get_synthforge_part_analyzer_frame(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "peak_left": 0.0,
+                "peak_right": 0.0,
+                "rms_left": 0.0,
+                "rms_right": 0.0,
+                "midi_events": 0,
+                "active_voices": 0,
+            }
+        method = getattr(self._engine, "get_synthforge_part_analyzer_frame", None)
+        if not callable(method):
+            return {
+                "peak_left": 0.0,
+                "peak_right": 0.0,
+                "rms_left": 0.0,
+                "rms_right": 0.0,
+                "midi_events": 0,
+                "active_voices": 0,
+            }
+        return dict(method(part_index))
+
+    async def get_synthforge_analyzer_frames(self) -> List[Dict[str, Any]]:
+        if not self._engine:
+            return []
+        method = getattr(self._engine, "get_synthforge_analyzer_frames", None)
+        if not callable(method):
+            return []
+        return [dict(frame) for frame in method()]
+
+    async def get_synthforge_part_backend_status(self, part_index: int) -> Dict[str, Any]:
+        if not self._engine:
+            return {
+                "backend": "native",
+                "sfizz_available": False,
+                "sfizz_loaded": False,
+                "region_count": 0,
+                "group_count": 0,
+                "preloaded_samples": 0,
+                "unknown_opcodes": [],
+                "unsupported_opcodes": [],
+            }
+        method = getattr(self._engine, "get_synthforge_part_backend_status", None)
+        if not callable(method):
+            return {
+                "backend": "native",
+                "sfizz_available": False,
+                "sfizz_loaded": False,
+                "region_count": 0,
+                "group_count": 0,
+                "preloaded_samples": 0,
+                "unknown_opcodes": [],
+                "unsupported_opcodes": [],
+            }
+        return dict(method(part_index))
+
+    async def get_synthforge_backend_status(self) -> List[Dict[str, Any]]:
+        if not self._engine:
+            return []
+        method = getattr(self._engine, "get_synthforge_backend_status", None)
+        if not callable(method):
+            return []
+        return [dict(status) for status in method()]
 
     async def get_synthforge_patches(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self._engine:

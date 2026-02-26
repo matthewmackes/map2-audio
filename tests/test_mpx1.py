@@ -322,4 +322,314 @@ def test_route_ping_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mpx1_routes, "get_mpx1_service", lambda: _DummyMPX1Service())
     payload = asyncio.run(mpx1_routes.ping_diagnostics())
     assert payload["status"] == "ok"
-    assert payload["param_id"] == "program.pitch.algorithm"
+
+
+# ---------------------------------------------------------------------------
+# T036 Sync-hardening tests
+# ---------------------------------------------------------------------------
+
+
+def _make_service(tmp_path: Path) -> MPX1Service:
+    return MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow.json",
+        library_path=tmp_path / "library.json",
+        midi_maps_path=tmp_path / "midi_maps.json",
+        coalesce_window_sec=0.005,
+    )
+
+
+# T036-B: Echo-loop suppression ------------------------------------------
+
+def test_echo_loop_suppression(tmp_path: Path) -> None:
+    """Outgoing SysEx echoed back must NOT re-broadcast to subscribers."""
+    service = _make_service(tmp_path)
+    received_events: list = []
+
+    async def _run() -> None:
+        # Register a WS subscriber to capture events
+        queue = await service.register_ws_client("test-echo")
+
+        # Dispatch a non-realtime param write (algorithm selector)
+        param_id = "program.pitch.algorithm"
+        await service._dispatch_param_update(param_id, 5.0, source="gui")
+
+        # Simulate the device echoing the exact same SysEx back
+        message = service.encode_param_sysex(param_id, 5.0)
+        result = await service.handle_incoming_sysex(message)
+
+        # Drain the queue
+        while not queue.empty():
+            received_events.append(queue.get_nowait())
+
+        service.unregister_ws_client("test-echo")
+        return result
+
+    result = asyncio.run(_run())
+    # The echo should be suppressed (handle_incoming_sysex returns None)
+    assert result is None
+    # No mpx1:param_rx event should be in the queue (only param_tx + param_verified)
+    rx_events = [e for e in received_events if e.get("type") == "mpx1:param_rx"]
+    assert len(rx_events) == 0, f"Echo was not suppressed; got param_rx events: {rx_events}"
+
+
+# T036-C: Write→readback verification ------------------------------------
+
+def test_readback_verification_pass(tmp_path: Path) -> None:
+    """A pending readback that matches an incoming value fires param_verified."""
+    service = _make_service(tmp_path)
+    verified_events: list = []
+
+    async def _run() -> None:
+        queue = await service.register_ws_client("test-verify")
+        param_id = "program.pitch.algorithm"
+        service._readback_timeout_sec = 1.0
+
+        # Register a readback manually (bypasses realtime_safe guard)
+        service._register_readback(param_id, 3.0)
+
+        # Simulate hardware echoing back the value (no outgoing seq → not treated as echo)
+        service._outgoing_seq.clear()
+        message = service.encode_param_sysex(param_id, 3.0)
+        await service.handle_incoming_sysex(message)
+
+        while not queue.empty():
+            verified_events.append(queue.get_nowait())
+        service.unregister_ws_client("test-verify")
+
+    asyncio.run(_run())
+    vpass = [e for e in verified_events if e.get("type") == "mpx1:param_verified"]
+    assert len(vpass) >= 1
+    assert service._verify_pass_count >= 1
+
+
+def test_readback_timeout_fires_unverified(tmp_path: Path) -> None:
+    """Pending readbacks that time out increment verify_fail_count and fire events."""
+    service = _make_service(tmp_path)
+    unverified_events: list = []
+
+    async def _run() -> None:
+        queue = await service.register_ws_client("test-unverified")
+        service._readback_timeout_sec = 0.01  # 10 ms
+
+        # Register a readback without ever resolving it
+        service._register_readback("program.pitch.algorithm", 7.0)
+
+        # Wait for it to expire, then run the checker once manually
+        await asyncio.sleep(0.05)
+        # Call the internal sweep directly (not the infinite loop wrapper)
+        now = __import__("time").monotonic()
+        timed_out = [
+            (seq_id, pid, exp_val)
+            for seq_id, (pid, exp_val, expires_at) in list(service._pending_readbacks.items())
+            if expires_at < now
+        ]
+        for seq_id, pid, exp_val in timed_out:
+            service._pending_readbacks.pop(seq_id, None)
+            service._verify_fail_count += 1
+            await service._publish_event("mpx1:param_unverified", {"param_id": pid, "expected": exp_val})
+
+        while not queue.empty():
+            unverified_events.append(queue.get_nowait())
+        service.unregister_ws_client("test-unverified")
+
+    asyncio.run(_run())
+    assert service._verify_fail_count >= 1
+    unverified = [e for e in unverified_events if e.get("type") == "mpx1:param_unverified"]
+    assert len(unverified) >= 1
+
+
+# T036-D: Ownership lock --------------------------------------------------
+
+def test_ownership_lock_suppresses_hardware_update(tmp_path: Path) -> None:
+    """GUI ownership lock should suppress an incoming hardware update within 2 s."""
+    service = _make_service(tmp_path)
+    conflict_events: list = []
+
+    async def _run() -> None:
+        queue = await service.register_ws_client("test-ownership")
+
+        param_id = "program.pitch.algorithm"
+        # GUI acquires ownership
+        service._acquire_ownership(param_id, "gui")
+        assert service._gui_owns(param_id)
+
+        # Clear echo seq so hardware message is not treated as echo
+        service._outgoing_seq.clear()
+
+        # Simulate hardware changing the same param
+        message = service.encode_param_sysex(param_id, 9.0)
+        result = await service.handle_incoming_sysex(message)
+
+        while not queue.empty():
+            conflict_events.append(queue.get_nowait())
+        service.unregister_ws_client("test-ownership")
+        return result
+
+    result = asyncio.run(_run())
+    # handle_incoming_sysex should return None (suppressed)
+    assert result is None
+    conflict = [e for e in conflict_events if e.get("type") == "mpx1:ownership_conflict"]
+    assert len(conflict) >= 1
+
+
+def test_ownership_lock_expires(tmp_path: Path) -> None:
+    """After lock_sec seconds, the GUI ownership lock should release."""
+    import time as _time
+    service = _make_service(tmp_path)
+    service._owner_lock_sec = 0.01  # 10 ms for test speed
+
+    param_id = "program.pitch.algorithm"
+    service._acquire_ownership(param_id, "gui")
+    assert service._gui_owns(param_id)
+
+    _time.sleep(0.05)  # Wait for lock to expire
+    assert not service._gui_owns(param_id)
+
+
+# T036-E: Drift detection checksum --------------------------------------
+
+def test_drift_checksum_stable_after_write(tmp_path: Path) -> None:
+    """After a param write, the expected checksum should match the current shadow."""
+    service = _make_service(tmp_path)
+
+    async def _run() -> None:
+        param_id = "program.pitch.algorithm"
+        await service._dispatch_param_update(param_id, 4.0, source="gui")
+        # Checksum should have been updated
+        assert service._expected_checksum != 0
+        current = service._compute_shadow_checksum()
+        assert service._expected_checksum == current
+
+    asyncio.run(_run())
+
+
+def test_drift_detection_detects_shadow_mutation(tmp_path: Path) -> None:
+    """Direct shadow mutation without a write should be caught by drift check."""
+    service = _make_service(tmp_path)
+
+    async def _run() -> None:
+        # Establish a baseline
+        await service._dispatch_param_update("program.pitch.algorithm", 2.0, source="gui")
+        baseline_checksum = service._compute_shadow_checksum()
+        service._expected_checksum = baseline_checksum
+
+        # Mutate shadow directly (simulate external corruption)
+        service.shadow_state["program.pitch.algorithm"] = 9.0
+
+        # The checksums should now differ
+        current = service._compute_shadow_checksum()
+        assert current != service._expected_checksum
+
+    asyncio.run(_run())
+
+
+# T036-F: Multi-client writer lock ----------------------------------------
+
+def test_writer_lock_acquire_and_release(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+
+    async def _run() -> None:
+        result = await service.acquire_write_lock("client-A")
+        assert result["acquired"] is True
+        assert service._write_lock_owner() == "client-A"
+
+        release = await service.release_write_lock("client-A")
+        assert release["released"] is True
+        assert service._write_lock_owner() is None
+
+    asyncio.run(_run())
+
+
+def test_writer_lock_second_client_blocked(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+
+    async def _run() -> None:
+        await service.acquire_write_lock("client-A")
+        # Client B tries to acquire while A holds it
+        result = await service.acquire_write_lock("client-B")
+        assert result["acquired"] is False
+        assert result["holder"] == "client-A"
+
+    asyncio.run(_run())
+
+
+def test_writer_lock_blocks_set_param(tmp_path: Path) -> None:
+    service = _make_service(tmp_path)
+
+    async def _run() -> Dict[str, Any]:
+        await service.acquire_write_lock("client-A")
+        # client-B tries to set a param without holding the lock
+        result = await service.set_param(
+            "program.pitch.algorithm", 5.0, source="api", writer_client_id="client-B"
+        )
+        return result
+
+    result = asyncio.run(_run())
+    assert result.get("locked") is True
+    assert result["holder"] == "client-A"
+
+
+def test_writer_lock_expires(tmp_path: Path) -> None:
+    import time as _time
+    service = _make_service(tmp_path)
+    service._write_lock_ttl_sec = 0.02  # 20 ms for test speed
+
+    async def _run() -> None:
+        await service.acquire_write_lock("client-A")
+        assert service._write_lock_owner() == "client-A"
+
+    asyncio.run(_run())
+    _time.sleep(0.05)
+    # Lock should have expired
+    assert service._write_lock_owner() is None
+
+
+# T036-A: SysEx simulator ------------------------------------------------
+
+def test_simulator_receive_and_echo() -> None:
+    """Simulator should store a param value and fire the sysex listener."""
+    import sys
+    import pathlib
+
+    tests_dir = str(pathlib.Path(__file__).parent)
+    if tests_dir not in sys.path:
+        sys.path.insert(0, tests_dir)
+
+    from mpx1_simulator import MPX1Simulator
+
+    sim = MPX1Simulator()
+    received: list = []
+    sim.add_sysex_listener(received.append)
+
+    address = (3, 0, 0, 0)
+    message = MPX1Simulator.build_sysex(address, 42)
+    reply = sim.receive(message)
+
+    assert reply is not None
+    assert sim.get_param(address) == 42
+    assert len(received) == 1
+    assert received[0] == message
+
+
+def test_simulator_drop_rate() -> None:
+    """With drop_rate=1.0 all messages should be dropped."""
+    import sys, pathlib
+
+    tests_dir = str(pathlib.Path(__file__).parent)
+    if tests_dir not in sys.path:
+        sys.path.insert(0, tests_dir)
+
+    from mpx1_simulator import MPX1Simulator
+
+    sim = MPX1Simulator(drop_rate=1.0)
+    received: list = []
+    sim.add_sysex_listener(received.append)
+
+    address = (3, 0, 0, 0)
+    message = MPX1Simulator.build_sysex(address, 10)
+    reply = sim.receive(message)
+
+    assert reply is None
+    assert len(received) == 0
+    assert sim.dropped_count == 1

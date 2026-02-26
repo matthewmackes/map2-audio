@@ -56,7 +56,7 @@ void TesiraAvbNode::release() {
 void TesiraAvbNode::processDevice(int deviceIdx, juce::AudioBuffer<float>& buffer) {
     if (!validDevice(deviceIdx)) return;
 
-    const auto& dev = devices_[deviceIdx];
+    auto& dev = devices_[deviceIdx];
 
     // If device is not connected, silence the buffer and return.
     if (!dev.connected.load(std::memory_order_relaxed)) {

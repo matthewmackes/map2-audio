@@ -10,10 +10,11 @@ import asyncio
 import uuid
 from typing import Any, Dict, List, Literal, Optional
 
-from fastapi import APIRouter, HTTPException, Path as FPath, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, File, HTTPException, Path as FPath, Query, UploadFile, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 from app.services.mpx1_service import get_mpx1_service
+from app.services.mpx1_scene_service import get_scene_service
 
 router = APIRouter(prefix="/api/mpx1", tags=["mpx1"])
 
@@ -249,6 +250,318 @@ async def ping_diagnostics() -> Dict[str, Any]:
 async def get_health() -> Dict[str, Any]:
     service = get_mpx1_service()
     return await service.get_health()
+
+
+# ---------------------------------------------------------------------------
+# T036-F: Multi-client writer lock
+# ---------------------------------------------------------------------------
+
+class WriteLockRequest(BaseModel):
+    client_id: str = Field(..., min_length=1, max_length=128)
+
+
+# ---------------------------------------------------------------------------
+# T037: .syx import / export / audition / versioning
+# ---------------------------------------------------------------------------
+
+
+@router.post("/library/import-syx")
+async def import_syx_file(
+    file: UploadFile = File(...),
+    skip_duplicates: bool = Query(default=True),
+) -> Dict[str, Any]:
+    """Upload a binary .syx file and merge programs into the library."""
+    service = get_mpx1_service()
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty file upload")
+    result = await service.import_syx_bytes(
+        data, source_name=file.filename or "<upload>", skip_duplicates=skip_duplicates
+    )
+    return {"status": "ok", **result}
+
+
+@router.get("/library/export-bundle")
+async def export_bundle(
+    programs: Optional[str] = Query(default=None, description="Comma-separated program numbers"),
+) -> Any:
+    from fastapi.responses import Response
+
+    service = get_mpx1_service()
+    program_numbers: Optional[List[int]] = None
+    if programs:
+        try:
+            program_numbers = [int(p.strip()) for p in programs.split(",") if p.strip()]
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid program numbers: {exc}")
+    bundle_bytes = await service.export_bundle(program_numbers)
+    return Response(
+        content=bundle_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=mpx1_presets.zip"},
+    )
+
+
+class VersionNoteRequest(BaseModel):
+    note: str = Field(default="", max_length=256)
+
+
+@router.post("/library/{program}/version")
+async def save_preset_version(
+    program: int = FPath(..., ge=0, le=249), body: VersionNoteRequest = VersionNoteRequest()
+) -> Dict[str, Any]:
+    service = get_mpx1_service()
+    try:
+        return await service.save_preset_version(program, note=body.note)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.get("/library/{program}/versions")
+async def list_preset_versions(program: int = FPath(..., ge=0, le=249)) -> Dict[str, Any]:
+    service = get_mpx1_service()
+    try:
+        return await service.list_preset_versions(program)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/library/{program}/revert/{version}")
+async def revert_preset_version(
+    program: int = FPath(..., ge=0, le=249),
+    version: int = FPath(..., ge=1),
+) -> Dict[str, Any]:
+    service = get_mpx1_service()
+    try:
+        return await service.revert_preset_version(program, version)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/library/{program}/audition")
+async def audition_program(program: int = FPath(..., ge=0, le=249)) -> Dict[str, Any]:
+    service = get_mpx1_service()
+    return await service.audition_program(program)
+
+
+@router.post("/library/audition/revert")
+async def audition_revert() -> Dict[str, Any]:
+    service = get_mpx1_service()
+    return await service.audition_revert()
+
+
+@router.post("/library/audition/confirm")
+async def audition_confirm() -> Dict[str, Any]:
+    service = get_mpx1_service()
+    return await service.audition_confirm()
+
+
+@router.post("/acquire-write-lock")
+async def acquire_write_lock(body: WriteLockRequest) -> Dict[str, Any]:
+    service = get_mpx1_service()
+    result = await service.acquire_write_lock(body.client_id)
+    if not result.get("acquired"):
+        raise HTTPException(status_code=423, detail=result)
+    return result
+
+
+@router.post("/release-write-lock")
+async def release_write_lock(body: WriteLockRequest) -> Dict[str, Any]:
+    service = get_mpx1_service()
+    return await service.release_write_lock(body.client_id)
+
+
+# ---------------------------------------------------------------------------
+# T038: Scenes, Morphing, Setlists
+# ---------------------------------------------------------------------------
+
+
+class SceneCaptureRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+    tags: List[str] = Field(default_factory=list)
+
+
+class SceneUpdateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    tags: Optional[List[str]] = None
+
+
+class MorphRequest(BaseModel):
+    scene_id_a: str = Field(..., min_length=1, max_length=128)
+    scene_id_b: str = Field(..., min_length=1, max_length=128)
+    duration_sec: float = Field(default=2.0, ge=0.05, le=60.0)
+    curve: Literal["linear", "ease_in", "ease_out", "s_curve"] = "linear"
+    beat_sync: bool = False
+    bpm: float = Field(default=120.0, ge=20.0, le=300.0)
+
+
+class SetlistRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=128)
+
+
+class SetlistUpdateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=128)
+    songs: Optional[List[Dict[str, Any]]] = None
+
+
+def _wire_scene_service() -> None:
+    """Wire the scene service to the MPX1 service on first use."""
+    svc = get_mpx1_service()
+    ss = get_scene_service()
+    if ss._get_shadow is None:
+        ss.wire(
+            get_shadow=lambda: dict(getattr(svc, "_shadow_state", {})),
+            get_program=lambda: getattr(svc, "_current_program", 0),
+            apply_params=lambda p: svc.set_params_bulk([{"param_id": k, "value": v} for k, v in p.items()]),
+            apply_program=svc.set_program,
+            is_realtime_safe=lambda pid: bool(
+                next(
+                    (
+                        p.get("realtime_safe", True)
+                        for p in getattr(svc, "_registry_params", {}).values()
+                        if p.get("id") == pid
+                    ),
+                    True,
+                )
+            ),
+        )
+
+
+@router.post("/scenes/capture")
+async def capture_scene(body: SceneCaptureRequest) -> Dict[str, Any]:
+    _wire_scene_service()
+    ss = get_scene_service()
+    return ss.capture_scene(body.name, body.tags)
+
+
+@router.get("/scenes")
+async def list_scenes() -> Dict[str, Any]:
+    ss = get_scene_service()
+    scenes = ss.list_scenes()
+    return {"scenes": scenes, "count": len(scenes)}
+
+
+@router.put("/scenes/{scene_id}")
+async def update_scene(
+    scene_id: str = FPath(..., min_length=1, max_length=128),
+    body: SceneUpdateRequest = ...,
+) -> Dict[str, Any]:
+    ss = get_scene_service()
+    try:
+        return ss.update_scene(scene_id, name=body.name, tags=body.tags)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.delete("/scenes/{scene_id}")
+async def delete_scene(scene_id: str = FPath(..., min_length=1, max_length=128)) -> Dict[str, Any]:
+    ss = get_scene_service()
+    try:
+        return ss.delete_scene(scene_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/scenes/{scene_id}/recall")
+async def recall_scene(scene_id: str = FPath(..., min_length=1, max_length=128)) -> Dict[str, Any]:
+    _wire_scene_service()
+    ss = get_scene_service()
+    try:
+        result = await ss.recall_scene(scene_id)
+        return {"status": "ok", **result}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/scenes/{scene_id_a}/diff/{scene_id_b}")
+async def diff_scenes(
+    scene_id_a: str = FPath(..., min_length=1, max_length=128),
+    scene_id_b: str = FPath(..., min_length=1, max_length=128),
+) -> Dict[str, Any]:
+    ss = get_scene_service()
+    try:
+        diffs = ss.diff_scenes(scene_id_a, scene_id_b)
+        return {"diffs": diffs, "count": len(diffs)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/scenes/morph")
+async def start_morph(body: MorphRequest) -> Dict[str, Any]:
+    _wire_scene_service()
+    ss = get_scene_service()
+    try:
+        job_id = await ss.start_morph(
+            body.scene_id_a,
+            body.scene_id_b,
+            duration_sec=body.duration_sec,
+            curve=body.curve,
+            beat_sync=body.beat_sync,
+            bpm=body.bpm,
+        )
+        return {"status": "ok", "job_id": job_id}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/scenes/morph/{job_id}/cancel")
+async def cancel_morph(job_id: str = FPath(..., min_length=1, max_length=128)) -> Dict[str, Any]:
+    ss = get_scene_service()
+    return await ss.cancel_morph(job_id)
+
+
+@router.post("/scenes/{scene_id}/momentary/press")
+async def momentary_press(scene_id: str = FPath(..., min_length=1, max_length=128)) -> Dict[str, Any]:
+    _wire_scene_service()
+    ss = get_scene_service()
+    try:
+        return await ss.momentary_press(scene_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/scenes/{scene_id}/momentary/release")
+async def momentary_release(scene_id: str = FPath(..., min_length=1, max_length=128)) -> Dict[str, Any]:
+    _wire_scene_service()
+    ss = get_scene_service()
+    return await ss.momentary_release(scene_id)
+
+
+# Setlists
+
+
+@router.post("/setlists")
+async def create_setlist(body: SetlistRequest) -> Dict[str, Any]:
+    ss = get_scene_service()
+    return ss.create_setlist(body.name)
+
+
+@router.get("/setlists")
+async def list_setlists() -> Dict[str, Any]:
+    ss = get_scene_service()
+    setlists = ss.list_setlists()
+    return {"setlists": setlists, "count": len(setlists)}
+
+
+@router.put("/setlists/{setlist_id}")
+async def update_setlist(
+    setlist_id: str = FPath(..., min_length=1, max_length=128),
+    body: SetlistUpdateRequest = ...,
+) -> Dict[str, Any]:
+    ss = get_scene_service()
+    try:
+        return ss.update_setlist(setlist_id, name=body.name, songs=body.songs)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.delete("/setlists/{setlist_id}")
+async def delete_setlist(setlist_id: str = FPath(..., min_length=1, max_length=128)) -> Dict[str, Any]:
+    ss = get_scene_service()
+    try:
+        return ss.delete_setlist(setlist_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.websocket("/ws")

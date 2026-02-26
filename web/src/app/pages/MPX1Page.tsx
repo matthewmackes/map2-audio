@@ -1,12 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Books, MusicNotes, Pulse, Sliders, SquaresFour, Waveform } from '@phosphor-icons/react'
+import { Books, MusicNotes, Pulse, Sliders, SquaresFour, Waveform, Play } from '@phosphor-icons/react'
 
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
 import '../components/MPX1/MPX1PageShell.css'
 
-type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'diag'
+type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'perform' | 'diag'
 type BypassBlock = 'REV' | 'PIT' | 'DLY' | 'CHO' | 'EQ' | 'MOD'
 
 interface SidebarSection {
@@ -23,6 +23,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
   { id: 'midi-map', to: '/mpx1/midi-map', label: 'MIDI Mapper', color: '#ec4899', icon: MusicNotes },
   { id: 'matrix', to: '/mpx1/matrix', label: 'Mod Matrix', color: '#22c55e', icon: Waveform },
   { id: 'library', to: '/mpx1/library', label: 'Library', color: '#a78bfa', icon: Books },
+  { id: 'perform', to: '/mpx1/perform', label: 'Perform', color: '#f97316', icon: Play },
   { id: 'diag', to: '/mpx1/diag', label: 'Diagnostics', color: '#14b8a6', icon: Pulse },
 ]
 

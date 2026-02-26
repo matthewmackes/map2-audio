@@ -125,6 +125,22 @@ if(JACK_FOUND)
     endif()
 endif()
 
+# sfizz sampler backend (optional, used by SynthForge full SFZ engine)
+option(USE_SFIZZ "Enable sfizz backend for SynthForge sampler engine" ON)
+if(USE_SFIZZ)
+    pkg_check_modules(SFIZZ sfizz QUIET)
+    if(SFIZZ_FOUND)
+        message(STATUS "SynthForge sfizz backend: ENABLED (sfizz ${SFIZZ_VERSION})")
+        set(SFIZZ_AVAILABLE TRUE)
+    else()
+        message(STATUS "SynthForge sfizz backend: DISABLED (sfizz not found)")
+        set(SFIZZ_AVAILABLE FALSE)
+    endif()
+else()
+    message(STATUS "SynthForge sfizz backend: DISABLED (USE_SFIZZ=OFF)")
+    set(SFIZZ_AVAILABLE FALSE)
+endif()
+
 # ========================================
 # Neural Amp Modeler Core (RT-safe)
 # ========================================
@@ -423,6 +439,10 @@ if(AVB_AVAILABLE)
     )
 endif()
 
+if(SFIZZ_AVAILABLE)
+    target_include_directories(map2_audio_engine PRIVATE ${SFIZZ_INCLUDE_DIRS})
+endif()
+
 # ========================================
 # Link libraries
 # ========================================
@@ -470,6 +490,20 @@ if(AVB_AVAILABLE)
     )
 endif()
 
+if(SFIZZ_AVAILABLE)
+    if(SFIZZ_LIBRARY_DIRS)
+        target_link_directories(map2_audio_engine PRIVATE ${SFIZZ_LIBRARY_DIRS})
+    endif()
+    target_link_libraries(map2_audio_engine PRIVATE ${SFIZZ_LIBRARIES})
+
+    # Ensure runtime loader can resolve libsfizz when installed in /usr/local/lib64.
+    if(SFIZZ_LIBRARY_DIRS)
+        foreach(_sfizz_dir ${SFIZZ_LIBRARY_DIRS})
+            target_link_options(map2_audio_engine PRIVATE "-Wl,-rpath,${_sfizz_dir}")
+        endforeach()
+    endif()
+endif()
+
 # ========================================
 # Compile definitions
 # ========================================
@@ -514,6 +548,10 @@ if(USE_NAM)
     if(UNIX AND NOT APPLE)
         target_link_libraries(map2_audio_engine PRIVATE stdc++fs)
     endif()
+endif()
+
+if(SFIZZ_AVAILABLE)
+    target_compile_definitions(map2_audio_engine PRIVATE HAS_SFIZZ=1)
 endif()
 
 if(AVB_AVAILABLE)
@@ -661,6 +699,7 @@ endif()
 message(STATUS "")
 message(STATUS "Neural Processing:")
 message(STATUS "  NAM (Neural Amp Modeler): ${USE_NAM}")
+message(STATUS "  SynthForge sfizz backend: ${SFIZZ_AVAILABLE}")
 message(STATUS "")
 message(STATUS "Network Audio:")
 message(STATUS "  AVB/TSN Transport: ${AVB_AVAILABLE}")

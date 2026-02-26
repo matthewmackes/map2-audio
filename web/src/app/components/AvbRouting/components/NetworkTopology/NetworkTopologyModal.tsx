@@ -97,7 +97,7 @@ function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
             justifyContent: 'center',
             fontSize: 12,
             fontWeight: 'bold',
-            border: '2px solid white',
+            border: '2px solid rgba(255,255,255,0.85)',
           }}
           title="PTP Master"
         >
@@ -321,7 +321,7 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0, height: '70vh', bgcolor: 'grey.100' }}>
+      <DialogContent sx={{ p: 0, height: '70vh', bgcolor: 'background.default' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -332,7 +332,7 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
           minZoom={0.1}
           maxZoom={2}
         >
-          <Background />
+          <Background color="rgba(148,163,184,0.22)" />
           <Controls />
           <MiniMap
             nodeColor={(node) => {
@@ -340,6 +340,8 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
               return avbNode?.color || '#1976d2';
             }}
             nodeBorderRadius={4}
+            maskColor="rgba(2, 6, 23, 0.55)"
+            style={{ backgroundColor: '#0b1220' }}
           />
           <Panel position="top-right">
             <Tooltip title="Fit to view">

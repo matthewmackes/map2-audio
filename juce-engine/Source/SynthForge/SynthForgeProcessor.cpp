@@ -125,6 +125,151 @@ SampleLoadStatus SynthForgeProcessor::getPartSampleStatus(int partIndex) const {
     return parts_[static_cast<size_t>(partIndex)].getSampleStatus();
 }
 
+bool SynthForgeProcessor::reloadPartSfzIfChanged(int partIndex) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].reloadSfzIfChanged();
+}
+
+bool SynthForgeProcessor::setPartSamplerBackend(int partIndex, const std::string& backend) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].setSamplerBackend(samplerBackendFromString(backend));
+}
+
+std::string SynthForgeProcessor::getPartSamplerBackend(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return samplerBackendToString(SamplerBackend::Native);
+    }
+    return samplerBackendToString(parts_[static_cast<size_t>(partIndex)].getSamplerBackend());
+}
+
+bool SynthForgeProcessor::setPartStreamingConfig(int partIndex, const StreamingConfig& config) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].setStreamingConfig(config);
+}
+
+StreamingConfig SynthForgeProcessor::getPartStreamingConfig(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getStreamingConfig();
+}
+
+bool SynthForgeProcessor::setPartHotReload(int partIndex, bool enabled, int intervalMs) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].setHotReloadEnabled(enabled, intervalMs);
+}
+
+HotReloadStatus SynthForgeProcessor::getPartHotReloadStatus(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getHotReloadStatus();
+}
+
+bool SynthForgeProcessor::loadPartScalaTuning(int partIndex, const std::string& scalaPath, int rootKey, float referenceHz) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].loadScalaTuning(scalaPath, rootKey, referenceHz);
+}
+
+ScalaTuningConfig SynthForgeProcessor::getPartScalaTuning(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getScalaTuning();
+}
+
+bool SynthForgeProcessor::setPartMpeConfig(int partIndex, const MpeConfig& config) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    parts_[static_cast<size_t>(partIndex)].setMpeConfig(config);
+    return true;
+}
+
+MpeConfig SynthForgeProcessor::getPartMpeConfig(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getMpeConfig();
+}
+
+bool SynthForgeProcessor::setPartModMatrixRoutes(int partIndex, const std::vector<ModMatrixRoute>& routes) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].setModMatrixRoutes(routes);
+}
+
+std::vector<ModMatrixRoute> SynthForgeProcessor::getPartModMatrixRoutes(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getModMatrixRoutes();
+}
+
+bool SynthForgeProcessor::setPartFreezeEnabled(int partIndex, bool enabled) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].setFreezeEnabled(enabled);
+}
+
+FreezeRenderStatus SynthForgeProcessor::getPartFreezeStatus(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getFreezeRenderStatus();
+}
+
+bool SynthForgeProcessor::renderPartToFile(int partIndex, const std::string& outputPath, int durationMs) {
+    if (!isValidPartIndex(partIndex)) {
+        return false;
+    }
+    return parts_[static_cast<size_t>(partIndex)].renderPartToFile(outputPath, durationMs);
+}
+
+SamplerAnalyzerFrame SynthForgeProcessor::getPartAnalyzerFrame(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getAnalyzerFrame();
+}
+
+std::vector<SamplerAnalyzerFrame> SynthForgeProcessor::getAnalyzerFrames() const {
+    std::vector<SamplerAnalyzerFrame> frames;
+    frames.reserve(kNumParts);
+    for (int i = 0; i < kNumParts; ++i) {
+        frames.push_back(parts_[static_cast<size_t>(i)].getAnalyzerFrame());
+    }
+    return frames;
+}
+
+SfzBackendStatus SynthForgeProcessor::getPartSfzBackendStatus(int partIndex) const {
+    if (!isValidPartIndex(partIndex)) {
+        return {};
+    }
+    return parts_[static_cast<size_t>(partIndex)].getSfzBackendStatus();
+}
+
+std::vector<SfzBackendStatus> SynthForgeProcessor::getSfzBackendStatus() const {
+    std::vector<SfzBackendStatus> statuses;
+    statuses.reserve(kNumParts);
+    for (int i = 0; i < kNumParts; ++i) {
+        statuses.push_back(parts_[static_cast<size_t>(i)].getSfzBackendStatus());
+    }
+    return statuses;
+}
+
 std::vector<PatchInfo> SynthForgeProcessor::getPatches(const std::string& categoryFilter) const {
     std::vector<PatchInfo> patches;
 
@@ -181,7 +326,7 @@ bool SynthForgeProcessor::savePatch(int partIndex, int bank, int program, const 
     patch.info.name = name.empty() ? "User Patch" : name;
     patch.info.category = "user";
     patch.info.author = "MAP2 User";
-    patch.info.description = "Saved from SynthForge phase 1 scaffold";
+    patch.info.description = "Saved from SynthForge production sampler engine";
     patch.config = parts_[static_cast<size_t>(partIndex)].getConfig();
     patch.parameters = parts_[static_cast<size_t>(partIndex)].getParameters();
 
@@ -195,7 +340,8 @@ VoiceMetrics SynthForgeProcessor::getVoiceMetrics() const {
 
     for (int i = 0; i < kNumParts; ++i) {
         const auto& part = parts_[static_cast<size_t>(i)];
-        const int active = part.getActiveVoices();
+        const auto analyzer = part.getAnalyzerFrame();
+        const int active = std::max(analyzer.activeVoices, part.getActiveVoices());
         metrics.voicesPerPart[static_cast<size_t>(i)] = active;
         metrics.activeVoices += active;
         metrics.peakVoices = std::max(metrics.peakVoices, part.getPeakVoices());
@@ -235,9 +381,15 @@ void SynthForgeProcessor::initializeFactoryPatches() {
     patchA.config.level = 1.0f;
     patchA.config.pan = 0.0f;
     patchA.parameters = {
+        {"osc1.waveform", 0.0f},
         {"osc1.level", 0.75f},
-        {"filter1.cutoff", 0.6f},
-        {"amp.attack", 0.01f},
+        {"osc1.coarse", 0.0f},
+        {"filter1.cutoff", 12000.0f},
+        {"filter1.resonance", 0.2f},
+        {"amp.attack", 10.0f},
+        {"amp.decay", 120.0f},
+        {"amp.sustain", 0.8f},
+        {"amp.release", 250.0f},
     };
 
     PatchState patchB;
@@ -246,17 +398,22 @@ void SynthForgeProcessor::initializeFactoryPatches() {
     patchB.info.name = "Warm Pad Seed";
     patchB.info.category = "factory";
     patchB.info.author = "MAP2 Audio";
-    patchB.info.description = "Seed patch for Phase 2 subtractive synthesis";
+    patchB.info.description = "Seed patch for full sfizz-backed sampler workflow";
     patchB.config.partIndex = 0;
     patchB.config.midiChannel = 2;
     patchB.config.outputBus = OutputBus::Main;
     patchB.config.level = 0.85f;
     patchB.config.pan = 0.0f;
     patchB.parameters = {
+        {"osc1.waveform", 3.0f},
         {"osc1.level", 0.6f},
-        {"osc2.level", 0.4f},
-        {"filter1.cutoff", 0.45f},
-        {"env1.release", 0.5f},
+        {"osc1.coarse", -12.0f},
+        {"filter1.cutoff", 4200.0f},
+        {"filter1.resonance", 0.35f},
+        {"amp.attack", 380.0f},
+        {"amp.decay", 900.0f},
+        {"amp.sustain", 0.72f},
+        {"amp.release", 1600.0f},
     };
 
     std::lock_guard<std::mutex> guard(patchMutex_);

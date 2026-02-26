@@ -17,6 +17,7 @@ import React, { useState } from 'react';
 import {
   Box,
   Drawer,
+  Paper,
   List,
   ListItem,
   ListItemButton,
@@ -29,6 +30,8 @@ import {
   Tooltip,
   Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -448,7 +451,7 @@ function NodeTreeItem({
             </Box>
           }
           secondary={
-            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
               <Tooltip title={`${talkers.length} talkers`}>
                 <Chip
                   icon={<OutputIcon sx={{ fontSize: 12 }} />}
@@ -581,6 +584,8 @@ function NodeTreeItem({
  * Node tree component
  */
 export function NodeTree() {
+  const theme = useTheme();
+  const isCompactLayout = useMediaQuery(theme.breakpoints.down('lg'));
   const { state, dispatch } = useRouting();
   const { data: nodes = [] } = useNodes();
   const { data: avbDevicesData } = useAvbDevices();
@@ -638,21 +643,8 @@ export function NodeTree() {
     });
   };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          position: 'relative',
-          borderRight: 1,
-          borderColor: 'divider',
-        },
-      }}
-    >
+  const content = (
+    <>
       {/* Header */}
       <Box
         sx={{
@@ -718,6 +710,48 @@ export function NodeTree() {
           </ListItemButton>
         </Tooltip>
       </Box>
+    </>
+  );
+
+  if (isCompactLayout) {
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 'clamp(170px, 28vh, 260px)',
+          maxHeight: '40vh',
+          overflow: 'hidden',
+          borderRadius: 0,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {content}
+      </Paper>
+    );
+  }
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: DRAWER_WIDTH,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: DRAWER_WIDTH,
+          boxSizing: 'border-box',
+          position: 'relative',
+          borderRight: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      {content}
     </Drawer>
   );
 }

@@ -47,6 +47,7 @@ const MPX1MidiMapView       = lazy(() => import('./pages/MPX1MidiMapView').then(
 const MPX1MatrixView        = lazy(() => import('./pages/MPX1MatrixView').then(m => ({ default: m.MPX1MatrixView })))
 const MPX1LibraryView       = lazy(() => import('./pages/MPX1LibraryView').then(m => ({ default: m.MPX1LibraryView })))
 const MPX1DiagView          = lazy(() => import('./pages/MPX1DiagView').then(m => ({ default: m.MPX1DiagView })))
+const MPX1PerformView       = lazy(() => import('./pages/MPX1PerformView').then(m => ({ default: m.MPX1PerformView })))
 
 /** Lightweight loading fallback — pure CSS, no MUI dependency */
 function PageLoader() {
@@ -148,6 +149,7 @@ export function App() {
                     <Route path="midi-map" element={<MPX1MidiMapView />} />
                     <Route path="matrix" element={<MPX1MatrixView />} />
                     <Route path="library" element={<MPX1LibraryView />} />
+                    <Route path="perform" element={<MPX1PerformView />} />
                     <Route path="diag" element={<MPX1DiagView />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />

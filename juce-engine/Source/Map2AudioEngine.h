@@ -56,6 +56,8 @@ class AvbAudioIODevice;
 #include <array>
 #include <chrono>
 #include <cstring>
+#include <memory>
+#include <vector>
 
 namespace map2 {
 
@@ -1203,6 +1205,34 @@ public:
     bool setSynthForgeParameter(int partIndex, const std::string& param, float value);
     bool loadSynthForgeSfz(int partIndex, const std::string& sfzPath);
     synthforge::SampleLoadStatus getSynthForgePartSampleStatus(int partIndex) const;
+    bool reloadSynthForgePartSfzIfChanged(int partIndex);
+
+    bool setSynthForgePartSamplerBackend(int partIndex, const std::string& backend);
+    std::string getSynthForgePartSamplerBackend(int partIndex) const;
+
+    bool setSynthForgePartStreamingConfig(int partIndex, const synthforge::StreamingConfig& config);
+    synthforge::StreamingConfig getSynthForgePartStreamingConfig(int partIndex) const;
+
+    bool setSynthForgePartHotReload(int partIndex, bool enabled, int intervalMs);
+    synthforge::HotReloadStatus getSynthForgePartHotReloadStatus(int partIndex) const;
+
+    bool loadSynthForgePartScalaTuning(int partIndex, const std::string& scalaPath, int rootKey, float referenceHz);
+    synthforge::ScalaTuningConfig getSynthForgePartScalaTuning(int partIndex) const;
+
+    bool setSynthForgePartMpeConfig(int partIndex, const synthforge::MpeConfig& config);
+    synthforge::MpeConfig getSynthForgePartMpeConfig(int partIndex) const;
+
+    bool setSynthForgePartModMatrixRoutes(int partIndex, const std::vector<synthforge::ModMatrixRoute>& routes);
+    std::vector<synthforge::ModMatrixRoute> getSynthForgePartModMatrixRoutes(int partIndex) const;
+
+    bool setSynthForgePartFreeze(int partIndex, bool enabled);
+    synthforge::FreezeRenderStatus getSynthForgePartFreezeStatus(int partIndex) const;
+    bool renderSynthForgePartToFile(int partIndex, const std::string& outputPath, int durationMs);
+
+    synthforge::SamplerAnalyzerFrame getSynthForgePartAnalyzerFrame(int partIndex) const;
+    std::vector<synthforge::SamplerAnalyzerFrame> getSynthForgeAnalyzerFrames() const;
+    synthforge::SfzBackendStatus getSynthForgePartBackendStatus(int partIndex) const;
+    std::vector<synthforge::SfzBackendStatus> getSynthForgeBackendStatus() const;
 
     std::vector<synthforge::PatchInfo> getSynthForgePatches(
         const std::string& category = "") const;
@@ -1363,6 +1393,44 @@ private:
     std::map<std::string, ExternalLoopDefinition> externalLoops_;
     std::map<int, std::vector<ExternalLoopInsertion>> chainLoopInsertions_;
     std::map<std::string, ExternalLoopMetrics> externalLoopMetrics_;
+
+    struct ExternalLoopRuntimeLoop {
+        std::string loopId;
+        bool active = false;
+        bool bypass = false;
+        int channels = 2;
+        int compensationSamples = 0;
+        std::vector<std::vector<float>> delayLines;
+        int delayWriteIndex = 0;
+    };
+
+    struct ExternalLoopRuntimeInsertion {
+        std::string insertionId;
+        std::string loopId;
+        int chainId = 0;
+        int slotIndex = 0;
+        bool enabled = false;
+        std::string mode = "serial_insert";
+        float targetBlend = 1.0f;
+        float currentBlend = 1.0f;
+        float targetSendGainLinear = 1.0f;
+        float currentSendGainLinear = 1.0f;
+        float targetReturnGainLinear = 1.0f;
+        float currentReturnGainLinear = 1.0f;
+        float smoothingAlpha = 1.0f;
+    };
+
+    struct ExternalLoopProcessingState {
+        std::map<std::string, ExternalLoopRuntimeLoop> loops;
+        std::vector<ExternalLoopRuntimeInsertion> orderedInsertions;
+    };
+
+    void rebuildExternalLoopProcessingStateLocked();
+    void processExternalLoopInsertions(juce::AudioBuffer<float>& buffer, int numSamples);
+
+    std::shared_ptr<ExternalLoopProcessingState> externalLoopProcessingState_;
+    juce::AudioBuffer<float> externalLoopDryBuffer_;
+    juce::AudioBuffer<float> externalLoopWetBuffer_;
 
     // Configuration
     double sampleRate_ = DEFAULT_SAMPLE_RATE;

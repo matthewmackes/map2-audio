@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, Cpu, ShareNetwork, Cube } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube } from '@phosphor-icons/react'
 import { BiampIcon } from '../components/Tesira/BiampIcon'
 
 export interface AdvancedMenuItem {
@@ -136,14 +136,6 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Hardware info & real-time health',
     color: '#2563eb',
     dividerBefore: true,
-    group: 'Infrastructure',
-  },
-  {
-    to: '/cpu-performance',
-    label: 'CPU Performance',
-    icon: Cpu,
-    description: 'Intel generation comparison & capacity analysis',
-    color: '#0066FF',
     group: 'Infrastructure',
   },
   {

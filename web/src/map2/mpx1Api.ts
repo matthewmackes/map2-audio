@@ -283,6 +283,46 @@ export interface MPX1MidiLearnTargetResponse {
   learn_target_param_id: string | null
 }
 
+// ---------------------------------------------------------------------------
+// T038: Scenes, Morphing, Setlists
+// ---------------------------------------------------------------------------
+
+export interface MPX1Scene {
+  id: string
+  name: string
+  program: number
+  param_count: number
+  created_at: string
+  tags: string[]
+}
+
+export interface MPX1SceneDiff {
+  param_id: string
+  scene_a: number | null
+  scene_b: number | null
+}
+
+export interface MPX1MorphRequest {
+  scene_id_a: string
+  scene_id_b: string
+  duration_sec: number
+  curve: 'linear' | 'ease_in' | 'ease_out' | 's_curve'
+  beat_sync?: boolean
+  bpm?: number
+}
+
+export interface MPX1Song {
+  name: string
+  scenes: string[]
+  footswitch_bindings: Record<string, number>
+}
+
+export interface MPX1Setlist {
+  id: string
+  name: string
+  songs: MPX1Song[]
+}
+
 export type MPX1WsMessageType =
   | 'mpx1:state'
   | 'mpx1:heartbeat'
@@ -294,6 +334,7 @@ export type MPX1WsMessageType =
   | 'mpx1:dump_failed'
   | 'mpx1:library_tag'
   | 'mpx1:midi_connected'
+  | 'mpx1:morph_progress'
   | string
 
 export interface MPX1WsMessage<T = unknown> {
@@ -464,6 +505,83 @@ export const mpx1Api = {
     }),
 
   getHealth: () => fetchMpx1Json<MPX1Health>('/health'),
+
+  // T038: Scenes
+  captureScene: (name: string, tags: string[] = []) =>
+    fetchMpx1Json<MPX1Scene>('/scenes/capture', {
+      method: 'POST',
+      body: JSON.stringify({ name, tags }),
+    }),
+
+  listScenes: () =>
+    fetchMpx1Json<{ scenes: MPX1Scene[]; count: number }>('/scenes'),
+
+  updateScene: (id: string, updates: { name?: string; tags?: string[] }) =>
+    fetchMpx1Json<MPX1Scene>(`/scenes/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }),
+
+  deleteScene: (id: string) =>
+    fetchMpx1Json<{ deleted: string }>(`/scenes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+
+  recallScene: (id: string) =>
+    fetchMpx1Json<{ status: string; recalled: string; program: number }>(
+      `/scenes/${encodeURIComponent(id)}/recall`,
+      { method: 'POST' }
+    ),
+
+  diffScenes: (idA: string, idB: string) =>
+    fetchMpx1Json<{ diffs: MPX1SceneDiff[]; count: number }>(
+      `/scenes/${encodeURIComponent(idA)}/diff/${encodeURIComponent(idB)}`
+    ),
+
+  // T038: Morphing
+  startMorph: (req: MPX1MorphRequest) =>
+    fetchMpx1Json<{ status: string; job_id: string }>('/scenes/morph', {
+      method: 'POST',
+      body: JSON.stringify(req),
+    }),
+
+  cancelMorph: (jobId: string) =>
+    fetchMpx1Json<{ cancelled: boolean; job_id: string }>(
+      `/scenes/morph/${encodeURIComponent(jobId)}/cancel`,
+      { method: 'POST' }
+    ),
+
+  momentaryPress: (sceneId: string) =>
+    fetchMpx1Json<{ pressed: string }>(`/scenes/${encodeURIComponent(sceneId)}/momentary/press`, {
+      method: 'POST',
+    }),
+
+  momentaryRelease: (sceneId: string) =>
+    fetchMpx1Json<{ released: string; restored: boolean }>(
+      `/scenes/${encodeURIComponent(sceneId)}/momentary/release`,
+      { method: 'POST' }
+    ),
+
+  // T038: Setlists
+  createSetlist: (name: string) =>
+    fetchMpx1Json<MPX1Setlist>('/setlists', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+
+  listSetlists: () =>
+    fetchMpx1Json<{ setlists: MPX1Setlist[]; count: number }>('/setlists'),
+
+  updateSetlist: (id: string, updates: { name?: string; songs?: MPX1Song[] }) =>
+    fetchMpx1Json<MPX1Setlist>(`/setlists/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }),
+
+  deleteSetlist: (id: string) =>
+    fetchMpx1Json<{ deleted: string }>(`/setlists/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
 }
 
 export interface UseMPX1StateOptions {

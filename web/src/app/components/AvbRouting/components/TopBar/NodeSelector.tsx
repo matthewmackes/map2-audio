@@ -24,7 +24,9 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import DevicesIcon from '@mui/icons-material/Devices';
 import RouterIcon from '@mui/icons-material/Router';
@@ -92,6 +94,8 @@ interface NodeTabProps {
 }
 
 function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps) {
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('sm'));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const menuId = `node-selector-menu-${node.node_id}`;
   const menuTriggerId = `node-selector-menu-trigger-${node.node_id}`;
@@ -166,9 +170,9 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
               <Box
                 component="span"
                 sx={{
-                  fontSize: 13,
+                  fontSize: isCompact ? 12 : 13,
                   fontWeight: highlighted ? 600 : 400,
-                  maxWidth: 100,
+                  maxWidth: isCompact ? 76 : 100,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -285,6 +289,8 @@ function NodeTab({ node, isLocal, highlighted, tabValue, onClick }: NodeTabProps
  * Node selector component
  */
 export function NodeSelector() {
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('sm'));
   const { state, dispatch } = useRouting();
   const { data: nodes = [] } = useNodes();
   const localNodeId = useLocalNodeId();
@@ -351,9 +357,11 @@ export function NodeSelector() {
         display: 'flex',
         alignItems: 'center',
         gap: 1,
+        flexWrap: { xs: 'wrap', sm: 'nowrap' },
         borderBottom: 1,
         borderColor: 'divider',
         bgcolor: 'background.paper',
+        px: { xs: 0.5, sm: 0 },
       }}
     >
       {/* View mode selector */}
@@ -407,6 +415,7 @@ export function NodeSelector() {
         sx={{
           flex: 1,
           minHeight: 48,
+          width: { xs: '100%', sm: 'auto' },
           '& .MuiTabs-indicator': {
             display: 'none', // Use custom border-bottom on tabs
           },
@@ -477,6 +486,12 @@ export function NodeSelector() {
           mr: 2,
           fontSize: 12,
           color: 'text.secondary',
+          width: { xs: '100%', sm: 'auto' },
+          justifyContent: { xs: 'flex-end', sm: 'flex-start' },
+          pb: { xs: 0.75, sm: 0 },
+          pr: { xs: 0.5, sm: 0 },
+          visibility: isCompact ? 'hidden' : 'visible',
+          height: isCompact ? 0 : 'auto',
         }}
       >
         <RouterIcon fontSize="small" />

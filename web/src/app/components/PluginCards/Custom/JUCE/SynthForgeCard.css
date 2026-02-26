@@ -2,492 +2,280 @@
   padding: 0;
 }
 
-.synthforge-shell .plugin-card-header {
-  display: none;
-}
-
+.synthforge-shell .plugin-card-header,
 .synthforge-shell .plugin-card-description {
   display: none;
 }
 
 .synthforge-card {
-  --sf-bg: #0a0a0a;
-  --sf-bg-2: #121212;
-  --sf-surface: #171717;
-  --sf-line: rgba(255, 255, 255, 0.1);
-  --sf-text: #f3f4f6;
-  --sf-text-muted: #98a2b3;
-  --sf-accent: #38d5ca;
-  --sf-alt-accent: #f279c2;
-  --sf-warning: #ffae4a;
-  --sf-danger: #ff6f6f;
-  --sf-good: #63e6be;
-  --sf-zone-gap: 16px;
+  --sf-bg: #0b1118;
+  --sf-bg-2: #131c26;
+  --sf-surface: #182230;
+  --sf-line: rgba(148, 163, 184, 0.3);
+  --sf-text: #e2e8f0;
+  --sf-text-muted: #a8b6c9;
+  --sf-accent: #32c7bc;
+  --sf-good: #34d399;
+  --sf-warning: #fb923c;
+  --sf-danger: #f87171;
 
-  background: linear-gradient(180deg, var(--sf-bg), var(--sf-bg-2));
   color: var(--sf-text);
-  font-family: Inter, 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(180deg, var(--sf-bg), var(--sf-bg-2));
+  font-family: 'SF Pro Text', 'Avenir Next', 'Segoe UI', sans-serif;
 }
 
 .synthforge-theme-light {
-  --sf-bg: #f8fafc;
-  --sf-bg-2: #eff3f8;
+  --sf-bg: #f4f8ff;
+  --sf-bg-2: #e7eef9;
   --sf-surface: #ffffff;
-  --sf-line: rgba(15, 23, 42, 0.14);
-  --sf-text: #0f172a;
-  --sf-text-muted: #475569;
+  --sf-line: rgba(30, 41, 59, 0.15);
+  --sf-text: #1e293b;
+  --sf-text-muted: #4b5b73;
   --sf-accent: #0ea5a4;
-  --sf-alt-accent: #d946ef;
 }
 
 .synthforge-topbar {
-  height: 46px;
-  display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(220px, 1.2fr) minmax(280px, 1fr);
-  align-items: center;
-  gap: 12px;
-  padding: 0 14px;
   border-bottom: 1px solid var(--sf-line);
   background: color-mix(in srgb, var(--sf-surface) 88%, transparent);
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.2fr) minmax(220px, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
 }
 
-.synthforge-top-left,
-.synthforge-top-center,
-.synthforge-top-right {
+.synthforge-topbar-left,
+.synthforge-topbar-center,
+.synthforge-topbar-right {
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.synthforge-top-center {
+.synthforge-topbar-center {
   justify-content: center;
 }
 
-.synthforge-top-right {
+.synthforge-topbar-right {
   justify-content: flex-end;
 }
 
-.synthforge-instrument-button {
+.synthforge-instrument-button,
+.synthforge-field select,
+.synthforge-field input,
+.synthforge-inline-field select,
+.synthforge-text-input,
+.synthforge-load-row button,
+.synthforge-button-row button,
+.synthforge-primary-button,
+.synthforge-icon-button {
   border: 1px solid var(--sf-line);
-  background: transparent;
-  color: var(--sf-text);
   border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
+  background: color-mix(in srgb, var(--sf-bg) 66%, transparent);
+  color: var(--sf-text);
+}
+
+.synthforge-instrument-button {
   min-width: 0;
-  max-width: 280px;
+  max-width: 300px;
+  padding: 7px 10px;
+  text-align: left;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
   cursor: pointer;
 }
 
-.synthforge-part-select,
-.synthforge-patch-select,
-.synthforge-patch-search {
-  border: 1px solid var(--sf-line);
-  background: transparent;
-  color: var(--sf-text);
-  border-radius: 8px;
-  font-size: 12px;
+.synthforge-inline-field,
+.synthforge-field {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--sf-text-muted);
+}
+
+.synthforge-inline-field select,
+.synthforge-field select,
+.synthforge-field input,
+.synthforge-text-input {
   height: 32px;
   padding: 0 10px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
-.synthforge-patch-select {
-  min-width: 220px;
-  max-width: 360px;
+.synthforge-topbar-center .synthforge-inline-field {
+  min-width: 230px;
 }
 
-.synthforge-cpu-meter {
-  width: 165px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid var(--sf-line);
-  overflow: hidden;
-  position: relative;
-  background: rgba(127, 127, 127, 0.08);
-}
-
-.synthforge-cpu-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  transition: width 0.12s linear;
-}
-
-.synthforge-cpu-meter-ok .synthforge-cpu-fill {
-  background: linear-gradient(90deg, rgba(99, 230, 190, 0.75), rgba(56, 213, 202, 0.85));
-}
-
-.synthforge-cpu-meter-warn .synthforge-cpu-fill {
-  background: linear-gradient(90deg, rgba(255, 174, 74, 0.8), rgba(255, 132, 67, 0.92));
-}
-
-.synthforge-cpu-meter-danger .synthforge-cpu-fill {
-  background: linear-gradient(90deg, rgba(255, 111, 111, 0.82), rgba(255, 84, 137, 0.95));
-}
-
-.synthforge-cpu-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+.synthforge-topbar-center .synthforge-text-input {
+  width: 170px;
 }
 
 .synthforge-icon-button {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--sf-line);
-  background: transparent;
-  color: var(--sf-text);
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 
-.synthforge-path-bar,
-.synthforge-help-bar {
-  padding: 8px 14px;
-  font-size: 11px;
-  border-bottom: 1px solid var(--sf-line);
-  color: var(--sf-text-muted);
-  background: color-mix(in srgb, var(--sf-surface) 80%, transparent);
-}
-
-.synthforge-help-bar {
-  color: color-mix(in srgb, var(--sf-accent) 75%, var(--sf-text));
-}
-
-.synthforge-zones {
+.synthforge-voice-summary {
   display: grid;
-  gap: var(--sf-zone-gap);
-  padding: 16px;
-}
-
-.synthforge-zone {
-  background: color-mix(in srgb, var(--sf-surface) 82%, transparent);
-  border: 1px solid var(--sf-line);
-  border-radius: 12px;
-  padding: 14px;
-}
-
-.synthforge-zone-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
+  grid-template-columns: repeat(3, auto auto);
+  gap: 2px 8px;
+  align-items: baseline;
+  font-size: 10px;
   color: var(--sf-text-muted);
 }
 
-.synthforge-zone-top {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 16px;
-  min-height: 150px;
-}
-
-.synthforge-wave-strip,
-.synthforge-keyboard-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.synthforge-wave-bars {
-  height: 64px;
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  border-radius: 10px;
-  border: 1px solid var(--sf-line);
-  padding: 6px;
-  background: color-mix(in srgb, var(--sf-bg) 82%, transparent);
-}
-
-.synthforge-wave-bars span {
-  width: 3px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-alt-accent) 86%, transparent), color-mix(in srgb, var(--sf-accent) 92%, transparent));
-  opacity: 0.75;
-}
-
-.synthforge-keys {
-  height: 76px;
-  border-radius: 10px;
-  border: 1px solid var(--sf-line);
-  background: color-mix(in srgb, var(--sf-bg) 84%, transparent);
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-}
-
-.synthforge-key {
-  flex: 1;
-  border-right: 1px solid color-mix(in srgb, var(--sf-line) 65%, transparent);
-  transition: opacity 0.12s ease;
-}
-
-.synthforge-key.white {
-  background: color-mix(in srgb, #ffffff 86%, transparent);
-  opacity: 0.64;
-}
-
-.synthforge-key.black {
-  background: color-mix(in srgb, #111827 92%, transparent);
-  opacity: 0.8;
-  max-width: 8px;
-}
-
-.synthforge-key.velocity-band {
-  box-shadow: inset 0 -16px 0 color-mix(in srgb, var(--sf-accent) 24%, transparent);
-}
-
-.synthforge-key.keyswitch {
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sf-accent) 72%, transparent);
-}
-
-.synthforge-zone-middle {
-  min-height: 304px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.synthforge-tab-row {
-  display: flex;
-  gap: 8px;
-}
-
-.synthforge-tab {
-  border: 1px solid var(--sf-line);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--sf-text-muted);
-  height: 30px;
-  padding: 0 12px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-}
-
-.synthforge-tab.active {
+.synthforge-voice-summary strong {
   color: var(--sf-text);
-  border-color: color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line));
-  background: color-mix(in srgb, var(--sf-accent) 16%, transparent);
-}
-
-.synthforge-main-tab {
-  display: grid;
-  grid-template-columns: 1.35fr 0.8fr 0.8fr;
-  gap: 18px;
-}
-
-.synthforge-macro-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(90px, 1fr));
-  gap: 14px;
-}
-
-.sf2-macro-dial {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-}
-
-.sf2-macro-ring {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: conic-gradient(var(--dial-accent) var(--dial-fill), rgba(127, 127, 127, 0.15) 0deg);
-  display: grid;
-  place-items: center;
-}
-
-.sf2-macro-core {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--sf-bg) 82%, transparent);
-  border: 1px solid var(--sf-line);
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 1px;
-}
-
-.sf2-macro-value {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-}
-
-.sf2-macro-label {
-  font-size: 10px;
-  color: var(--sf-text-muted);
-}
-
-.sf2-macro-slider {
-  width: 100%;
-  accent-color: var(--sf-accent);
-}
-
-.synthforge-perf-panel,
-.synthforge-generic-tab {
-  border: 1px solid var(--sf-line);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--sf-bg) 90%, transparent);
-  padding: 12px;
-  display: grid;
-  gap: 10px;
-  align-content: start;
-}
-
-.synthforge-perf-panel label,
-.synthforge-generic-tab label {
-  display: grid;
-  gap: 4px;
-  font-size: 10px;
-  color: var(--sf-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.synthforge-perf-panel input,
-.synthforge-generic-tab input {
-  width: 100%;
-  accent-color: var(--sf-accent);
-}
-
-.synthforge-xy-card {
-  border: 1px solid var(--sf-line);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--sf-bg) 90%, transparent);
-  padding: 12px;
-  display: grid;
-  gap: 8px;
-  align-content: start;
-}
-
-.synthforge-xy-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  color: var(--sf-text-muted);
-  letter-spacing: 0.6px;
-}
-
-.synthforge-xy-pad {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  border: 1px solid var(--sf-line);
-  background:
-    linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 20% 20%,
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 20% 20%,
-    color-mix(in srgb, var(--sf-bg) 86%, transparent);
-  position: relative;
-  cursor: crosshair;
-}
-
-.synthforge-xy-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-accent) 65%, transparent), 0 0 14px color-mix(in srgb, var(--sf-accent) 70%, transparent);
-  position: absolute;
-  transform: translate(-50%, -50%);
-}
-
-.synthforge-xy-readout {
-  font-size: 10px;
-  color: var(--sf-text-muted);
-}
-
-.synthforge-matrix-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 0.6fr;
-  gap: 6px 8px;
-}
-
-.synthforge-matrix-grid .head {
-  font-size: 10px;
-  color: var(--sf-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.synthforge-matrix-grid .row {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: subgrid;
-  border: 1px solid var(--sf-line);
-  border-radius: 8px;
-  padding: 8px;
-  font-size: 11px;
-}
-
-.synthforge-browser-tab {
-  border: 1px solid var(--sf-line);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--sf-bg) 90%, transparent);
-  min-height: 220px;
-  display: grid;
-  grid-template-rows: auto 1fr;
-}
-
-.synthforge-browser-top {
-  padding: 10px;
-  border-bottom: 1px solid var(--sf-line);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.synthforge-browser-top span {
-  font-size: 11px;
-  color: var(--sf-text-muted);
-}
-
-.synthforge-browser-search {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid var(--sf-line);
-  background: transparent;
-  color: var(--sf-text);
-  border-radius: 8px;
-  height: 30px;
-  padding: 0 10px;
   font-size: 12px;
 }
 
+.synthforge-path-bar {
+  border-bottom: 1px solid var(--sf-line);
+  font-size: 11px;
+  color: var(--sf-text-muted);
+  padding: 8px 12px;
+}
+
+.synthforge-grid {
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.synthforge-panel {
+  border: 1px solid var(--sf-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sf-surface) 90%, transparent);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.synthforge-panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.55px;
+  color: var(--sf-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.synthforge-slider-field .synthforge-slider-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.synthforge-slider-field input[type='range'] {
+  width: 100%;
+  accent-color: var(--sf-accent);
+}
+
+.synthforge-slider-field strong {
+  min-width: 72px;
+  text-align: right;
+  color: var(--sf-text);
+  font-size: 11px;
+}
+
+.synthforge-button-row {
+  display: flex;
+  gap: 8px;
+}
+
+.synthforge-inline-meta {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--sf-text-muted);
+}
+
+.synthforge-button-row button,
+.synthforge-primary-button,
+.synthforge-load-row button {
+  height: 32px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.synthforge-button-row button.active {
+  border-color: color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line));
+  background: color-mix(in srgb, var(--sf-accent) 15%, transparent);
+}
+
+.synthforge-primary-button {
+  justify-self: start;
+  background: color-mix(in srgb, var(--sf-accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line));
+}
+
+.synthforge-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.synthforge-divider {
+  height: 1px;
+  background: color-mix(in srgb, var(--sf-line) 80%, transparent);
+}
+
+.synthforge-status-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 10px;
+  font-size: 11px;
+}
+
+.synthforge-status-grid span {
+  color: var(--sf-text-muted);
+}
+
+.synthforge-load-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+}
+
+.synthforge-load-row button.hot {
+  border-color: color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sf-accent) 20%, transparent);
+}
+
 .synthforge-browser-list {
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  min-height: 140px;
   max-height: 220px;
   overflow: auto;
   padding: 8px;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .synthforge-browser-item {
   border: 1px solid var(--sf-line);
+  border-radius: 8px;
   background: transparent;
   color: var(--sf-text);
-  border-radius: 8px;
   text-align: left;
-  padding: 8px 10px;
-  cursor: pointer;
+  padding: 8px;
   display: grid;
   gap: 2px;
+  cursor: pointer;
 }
 
 .synthforge-browser-item .name {
@@ -502,110 +290,127 @@
 .synthforge-browser-empty {
   border: 1px dashed var(--sf-line);
   border-radius: 8px;
-  padding: 16px;
   color: var(--sf-text-muted);
   font-size: 12px;
+  padding: 14px;
 }
 
-.synthforge-zone-bottom {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
-  gap: 14px;
+.synthforge-keyboard-panel {
+  grid-column: 1 / -1;
 }
 
-.synthforge-midi-strip,
-.synthforge-adsr-strip,
-.synthforge-load-strip {
+.synthforge-keyboard-hint {
+  font-size: 11px;
+  color: var(--sf-text-muted);
+}
+
+.synthforge-keyboard-strip {
   border: 1px solid var(--sf-line);
   border-radius: 10px;
-  padding: 10px;
-  background: color-mix(in srgb, var(--sf-bg) 88%, transparent);
-  display: grid;
-  gap: 8px;
-}
-
-.synthforge-midi-lights {
-  display: grid;
-  grid-template-columns: repeat(16, minmax(10px, 1fr));
+  padding: 8px;
+  display: flex;
   gap: 4px;
+  overflow-x: auto;
+  background: color-mix(in srgb, var(--sf-bg) 82%, transparent);
 }
 
-.synthforge-midi-lights .light {
-  width: 100%;
-  height: 10px;
+.synthforge-midi-key {
+  border-radius: 6px;
+  min-width: 34px;
+  height: 82px;
+  border: 1px solid var(--sf-line);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  font-size: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.synthforge-midi-key span {
+  pointer-events: none;
+}
+
+.synthforge-midi-key.is-white {
+  background: color-mix(in srgb, #ffffff 88%, transparent);
+  color: #1f2937;
+}
+
+.synthforge-midi-key.is-black {
+  background: color-mix(in srgb, #0f172a 90%, transparent);
+  color: #e2e8f0;
+}
+
+.synthforge-midi-key.is-active {
+  border-color: color-mix(in srgb, var(--key-accent, var(--sf-accent)) 76%, var(--sf-line));
+  box-shadow: inset 0 -16px 0 color-mix(in srgb, var(--key-accent, var(--sf-accent)) 26%, transparent);
+}
+
+.synthforge-active-notes {
+  min-height: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.synthforge-note-chip {
+  border: 1px solid var(--sf-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.synthforge-midi-lights .light.selected {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-accent) 72%, transparent);
-}
-
-.synthforge-midi-lights .light.active {
-  background: color-mix(in srgb, var(--sf-accent) 90%, transparent);
-}
-
-.synthforge-adsr-strip svg {
-  width: 100%;
-  height: 78px;
-}
-
-.synthforge-adsr-strip path {
-  fill: none;
-  stroke: color-mix(in srgb, var(--sf-accent) 82%, var(--sf-alt-accent));
-  stroke-width: 2.2;
-}
-
-.synthforge-load-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-}
-
-.synthforge-path-input {
-  border: 1px solid var(--sf-line);
-  background: transparent;
-  color: var(--sf-text);
-  border-radius: 8px;
-  height: 32px;
-  padding: 0 10px;
-  font-size: 12px;
-}
-
-.synthforge-load-row button,
-.synthforge-part-controls button {
-  border: 1px solid var(--sf-line);
-  background: transparent;
-  color: var(--sf-text);
-  border-radius: 8px;
-  min-width: 32px;
-  height: 32px;
+  padding: 4px 8px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.synthforge-load-row button.hot {
-  border-color: color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sf-accent) 18%, transparent);
-}
-
-.synthforge-part-controls {
-  display: flex;
   gap: 8px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--sf-bg) 84%, transparent);
 }
 
-.synthforge-part-controls button.active {
-  border-color: color-mix(in srgb, var(--sf-accent) 75%, var(--sf-line));
-  background: color-mix(in srgb, var(--sf-accent) 16%, transparent);
+.synthforge-note-chip strong {
+  color: var(--sf-text);
+}
+
+.synthforge-note-empty {
+  color: var(--sf-text-muted);
+  font-size: 11px;
+}
+
+.synthforge-note-events {
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  max-height: 190px;
+  overflow: auto;
+  padding: 6px;
+  display: grid;
+  gap: 4px;
+  background: color-mix(in srgb, var(--sf-bg) 84%, transparent);
+}
+
+.synthforge-note-event {
+  display: grid;
+  grid-template-columns: 78px 34px 90px 50px 60px auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--sf-line);
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 11px;
+}
+
+.synthforge-note-event.note_on strong {
+  color: var(--sf-good);
+}
+
+.synthforge-note-event.note_off strong {
+  color: var(--sf-warning);
+}
+
+.synthforge-mod-routes .synthforge-note-event {
+  grid-template-columns: 110px 1fr 56px auto;
 }
 
 .synthforge-status-line {
   border-top: 1px solid var(--sf-line);
-  padding: 10px 14px;
+  padding: 10px 12px;
   font-size: 11px;
   display: grid;
   gap: 4px;
@@ -619,33 +424,29 @@
   color: var(--sf-warning);
 }
 
-@media (max-width: 1200px) {
-  .synthforge-main-tab {
+@media (max-width: 1180px) {
+  .synthforge-topbar {
     grid-template-columns: 1fr;
   }
 
-  .synthforge-zone-bottom {
+  .synthforge-topbar-center,
+  .synthforge-topbar-right {
+    justify-content: flex-start;
+  }
+
+  .synthforge-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 980px) {
-  .synthforge-topbar {
-    height: auto;
-    padding: 10px;
+@media (max-width: 760px) {
+  .synthforge-note-event {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 3px;
   }
 
-  .synthforge-top-center {
-    justify-content: flex-start;
-  }
-
-  .synthforge-zone-top {
-    grid-template-columns: 1fr;
-  }
-
-  .synthforge-macro-grid {
-    grid-template-columns: repeat(2, minmax(90px, 1fr));
+  .synthforge-midi-key {
+    min-width: 28px;
+    height: 72px;
   }
 }

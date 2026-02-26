@@ -17,10 +17,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import time
 import uuid
+import zlib
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.services.websocket_manager import ws_manager
 
@@ -34,6 +36,29 @@ except ImportError:
     RTMIDI_AVAILABLE = False
     rtmidi = None
     logger.warning("python-rtmidi not installed, MPX1 MIDI I/O running in simulation mode")
+
+# ---------------------------------------------------------------------------
+# Optional software simulator (set MPX1_SIMULATOR=1 in env to activate)
+# ---------------------------------------------------------------------------
+_SIMULATOR_ENABLED = os.environ.get("MPX1_SIMULATOR", "").strip() in ("1", "true", "yes")
+
+if _SIMULATOR_ENABLED and not RTMIDI_AVAILABLE:
+    try:
+        import sys as _sys
+        import pathlib as _pathlib
+
+        _tests_dir = str(_pathlib.Path(__file__).resolve().parents[2] / "tests")
+        if _tests_dir not in _sys.path:
+            _sys.path.insert(0, _tests_dir)
+        from mpx1_simulator import MPX1Simulator, SimulatedMidiIn, SimulatedMidiOut, get_simulator  # type: ignore
+
+        _SIMULATOR_ACTIVE = True
+        logger.info("MPX1 SysEx simulator activated")
+    except ImportError:
+        _SIMULATOR_ACTIVE = False
+        logger.warning("MPX1_SIMULATOR requested but mpx1_simulator module not found")
+else:
+    _SIMULATOR_ACTIVE = False
 
 
 class MPX1Service:
@@ -88,6 +113,43 @@ class MPX1Service:
         self._last_event_ts: float = time.time()
 
         self._ws_subscribers: Dict[str, asyncio.Queue] = {}
+
+        # --- T036-B: Echo-loop prevention ---
+        # outgoing seq records: seq_id → (param_id, value, expires_at)
+        self._outgoing_seq: Dict[str, Tuple[str, float, float]] = {}
+        self._echo_window_sec: float = 0.2  # 200 ms
+
+        # --- T036-C: Write→readback verification ---
+        # pending_readbacks: seq_id → (param_id, expected_value, expires_at)
+        self._pending_readbacks: Dict[str, Tuple[str, float, float]] = {}
+        self._readback_timeout_sec: float = 0.5
+        self._verification_task: Optional[asyncio.Task] = None
+        self._verify_pass_count: int = 0
+        self._verify_fail_count: int = 0
+
+        # --- T036-D: Ownership lock + soft-takeover ---
+        # _owner: param_id → ("gui"|"hardware", locked_at)
+        self._owner: Dict[str, Tuple[str, float]] = {}
+        self._owner_lock_sec: float = 2.0  # 2 s GUI-ownership window
+        # _last_sent_value: param_id → last value dispatched by GUI
+        self._last_sent_value: Dict[str, float] = {}
+
+        # --- T036-E: Drift detection ---
+        self._expected_checksum: int = 0
+        self._drift_status: str = "unknown"  # unknown | clean | stale | resyncing
+        self._drift_task: Optional[asyncio.Task] = None
+        self._drift_interval_sec: float = 30.0
+        self._drift_mismatch_threshold: int = 3
+
+        # --- T036-F: Multi-client writer lock ---
+        self._writer_client_id: Optional[str] = None
+        self._write_lock_expires: float = 0.0
+        self._write_lock_ttl_sec: float = 5.0
+
+        # --- T037: Safe audition ---
+        self._audition_previous_program: int = 0
+        self._audition_revert_task: Optional[asyncio.Task] = None
+        self._audition_timeout_sec: float = 10.0
 
         self._load_registry()
         self._load_shadow_state()
@@ -499,6 +561,26 @@ class MPX1Service:
         if input_port_index is None or output_port_index is None:
             return {"connected": False, "detail": "No MPX1-like MIDI ports found"}
 
+        # Simulator path (no real hardware)
+        if _SIMULATOR_ACTIVE:
+            sim = get_simulator()  # type: ignore[name-defined]
+            self._midi_in = SimulatedMidiIn(sim)  # type: ignore[name-defined]
+            self._midi_out = SimulatedMidiOut(sim)  # type: ignore[name-defined]
+            self._connected_input_index = input_port_index or 0
+            self._connected_output_index = output_port_index or 0
+            self._running = True
+            self._midi_poll_task = asyncio.create_task(self._midi_poll_loop(), name="mpx1_midi_poll")
+            self._start_background_tasks()
+            await self._publish_event(
+                "mpx1:midi_connected",
+                {
+                    "input_port_index": self._connected_input_index,
+                    "output_port_index": self._connected_output_index,
+                    "simulator": True,
+                },
+            )
+            return {"connected": True, "simulator": True}
+
         try:
             self._midi_in = rtmidi.MidiIn()
             self._midi_out = rtmidi.MidiOut()
@@ -509,6 +591,7 @@ class MPX1Service:
             self._connected_output_index = int(output_port_index)
             self._running = True
             self._midi_poll_task = asyncio.create_task(self._midi_poll_loop(), name="mpx1_midi_poll")
+            self._start_background_tasks()
             await self._publish_event(
                 "mpx1:midi_connected",
                 {
@@ -549,6 +632,225 @@ class MPX1Service:
         self._connected_input_index = None
         self._connected_output_index = None
 
+    def _start_background_tasks(self) -> None:
+        """Start drift-detection and readback-verification background tasks."""
+        if self._drift_task is None or self._drift_task.done():
+            self._drift_task = asyncio.create_task(
+                self._drift_detection_loop(), name="mpx1_drift_detect"
+            )
+        if self._verification_task is None or self._verification_task.done():
+            self._verification_task = asyncio.create_task(
+                self._readback_timeout_loop(), name="mpx1_readback_verify"
+            )
+
+    # -------------------------------------------------------------------------
+    # T036-B: Echo-loop prevention helpers
+    # -------------------------------------------------------------------------
+
+    def _register_outgoing(self, param_id: str, value: float) -> str:
+        """Record an outgoing param write; returns a seq_id for correlation."""
+        seq_id = uuid.uuid4().hex
+        expires_at = time.monotonic() + self._echo_window_sec
+        self._outgoing_seq[seq_id] = (param_id, value, expires_at)
+        # Prune expired entries
+        now = time.monotonic()
+        stale = [k for k, (_, _, exp) in self._outgoing_seq.items() if exp < now]
+        for k in stale:
+            self._outgoing_seq.pop(k, None)
+        return seq_id
+
+    def _is_echo(self, param_id: str, value: float) -> bool:
+        """Return True if (param_id, value) matches a recent outgoing message."""
+        now = time.monotonic()
+        for seq_id, (pid, val, expires_at) in list(self._outgoing_seq.items()):
+            if expires_at < now:
+                self._outgoing_seq.pop(seq_id, None)
+                continue
+            if pid == param_id and abs(val - value) < 0.5:
+                # Consume the echo record so it only matches once
+                self._outgoing_seq.pop(seq_id, None)
+                return True
+        return False
+
+    # -------------------------------------------------------------------------
+    # T036-C: Write→readback verification
+    # -------------------------------------------------------------------------
+
+    def _register_readback(self, param_id: str, expected_value: float) -> None:
+        """Queue a pending readback correlation for a dispatched param write."""
+        seq_id = uuid.uuid4().hex
+        expires_at = time.monotonic() + self._readback_timeout_sec
+        self._pending_readbacks[seq_id] = (param_id, expected_value, expires_at)
+
+    def _resolve_readback(self, param_id: str, received_value: float) -> bool:
+        """Try to match an incoming value to a pending readback. Returns True if matched."""
+        now = time.monotonic()
+        for seq_id, (pid, expected, expires_at) in list(self._pending_readbacks.items()):
+            if pid == param_id and abs(expected - received_value) < 0.5:
+                self._pending_readbacks.pop(seq_id, None)
+                self._verify_pass_count += 1
+                return True
+        return False
+
+    async def _readback_timeout_loop(self) -> None:
+        """Fire param_unverified events for timed-out readback correlations."""
+        while self._running:
+            await asyncio.sleep(max(0.1, self._readback_timeout_sec / 2))
+            now = time.monotonic()
+            timed_out: List[Tuple[str, str, float]] = []
+            for seq_id, (param_id, expected, expires_at) in list(self._pending_readbacks.items()):
+                if expires_at < now:
+                    timed_out.append((seq_id, param_id, expected))
+            for seq_id, param_id, expected in timed_out:
+                self._pending_readbacks.pop(seq_id, None)
+                self._verify_fail_count += 1
+                self._record_traffic(
+                    "readback_timeout", None, param_id=param_id, expected=expected
+                )
+                await self._publish_event(
+                    "mpx1:param_unverified",
+                    {"param_id": param_id, "expected": expected},
+                )
+
+    # -------------------------------------------------------------------------
+    # T036-D: Ownership lock + soft-takeover
+    # -------------------------------------------------------------------------
+
+    def _acquire_ownership(self, param_id: str, source: str) -> None:
+        self._owner[param_id] = (source, time.monotonic())
+
+    def _gui_owns(self, param_id: str) -> bool:
+        """Return True if the GUI holds a fresh ownership lock on this param."""
+        entry = self._owner.get(param_id)
+        if entry is None:
+            return False
+        owner_source, locked_at = entry
+        if owner_source != "gui":
+            return False
+        if time.monotonic() - locked_at > self._owner_lock_sec:
+            self._owner.pop(param_id, None)
+            return False
+        return True
+
+    def _pickup_distance(self, param_id: str, incoming_value: float) -> Optional[float]:
+        """For soft-takeover: return normalised distance to pickup zone, or None if no lock."""
+        last = self._last_sent_value.get(param_id)
+        if last is None:
+            return None
+        param = self.params_by_id.get(param_id)
+        if param is None:
+            return None
+        value_range = param.get("range", {}) or {}
+        span = float(value_range.get("max", 100)) - float(value_range.get("min", 0))
+        if span <= 0:
+            return None
+        return abs(incoming_value - last) / span
+
+    # -------------------------------------------------------------------------
+    # T036-E: Drift detection
+    # -------------------------------------------------------------------------
+
+    def _compute_shadow_checksum(self) -> int:
+        """CRC32 of the sorted shadow_state key-value pairs."""
+        blob = json.dumps(
+            sorted((k, round(v, 4)) for k, v in self.shadow_state.items()),
+            separators=(",", ":"),
+        ).encode()
+        return zlib.crc32(blob) & 0xFFFFFFFF
+
+    async def _drift_detection_loop(self) -> None:
+        """Periodically verify shadow state matches device state (via dump sample)."""
+        while self._running:
+            await asyncio.sleep(self._drift_interval_sec)
+            if self._midi_out is None:
+                continue
+            try:
+                await self._check_drift()
+            except Exception as exc:
+                logger.debug("Drift detection loop error: %s", exc)
+
+    async def _check_drift(self) -> None:
+        """Update expected checksum and trigger resync if shadow is stale."""
+        current_checksum = self._compute_shadow_checksum()
+        if self._expected_checksum == 0:
+            # First run — baseline
+            self._expected_checksum = current_checksum
+            self._drift_status = "clean"
+            return
+
+        if current_checksum == self._expected_checksum:
+            if self._drift_status != "clean":
+                self._drift_status = "clean"
+                await self._publish_event("mpx1:drift_status", {"status": "clean"})
+            return
+
+        # Checksum changed unexpectedly — shadow was modified without a device write
+        mismatch_count = bin(current_checksum ^ self._expected_checksum).count("1")
+        if mismatch_count >= self._drift_mismatch_threshold:
+            logger.warning("MPX1 drift detected (mismatch bits=%d)", mismatch_count)
+            self._drift_status = "resyncing"
+            await self._publish_event(
+                "mpx1:drift_detected",
+                {"mismatch_bits": mismatch_count, "action": "resync"},
+            )
+            # Re-push all shadow params to device
+            async with self._state_lock:
+                snapshot = dict(self.shadow_state)
+            for param_id, value in snapshot.items():
+                param = self.params_by_id.get(param_id)
+                if param and param.get("realtime_safe"):
+                    await self._dispatch_param_update(param_id, value, source="resync")
+            self._expected_checksum = self._compute_shadow_checksum()
+            self._drift_status = "clean"
+            await self._publish_event("mpx1:drift_status", {"status": "clean"})
+        else:
+            # Minor drift — update baseline without full resync
+            self._expected_checksum = current_checksum
+
+    # -------------------------------------------------------------------------
+    # T036-F: Multi-client writer lock
+    # -------------------------------------------------------------------------
+
+    def _write_lock_owner(self) -> Optional[str]:
+        """Return the current writer client_id, or None if lock has expired."""
+        if self._writer_client_id and time.monotonic() < self._write_lock_expires:
+            return self._writer_client_id
+        self._writer_client_id = None
+        return None
+
+    def _refresh_write_lock(self, client_id: str) -> None:
+        """Extend the write lock for client_id (no-op if another client holds it)."""
+        if self._writer_client_id is None or self._writer_client_id == client_id:
+            self._writer_client_id = client_id
+            self._write_lock_expires = time.monotonic() + self._write_lock_ttl_sec
+
+    async def acquire_write_lock(self, client_id: str) -> Dict[str, Any]:
+        current_owner = self._write_lock_owner()
+        if current_owner and current_owner != client_id:
+            return {
+                "acquired": False,
+                "holder": current_owner,
+                "expires_in_sec": self._write_lock_expires - time.monotonic(),
+            }
+        self._refresh_write_lock(client_id)
+        await self._publish_event(
+            "mpx1:writer_changed",
+            {"client_id": client_id, "expires_at": self._write_lock_expires},
+        )
+        return {
+            "acquired": True,
+            "client_id": client_id,
+            "expires_at": self._write_lock_expires,
+        }
+
+    async def release_write_lock(self, client_id: str) -> Dict[str, Any]:
+        owner = self._write_lock_owner()
+        if owner != client_id:
+            return {"released": False, "reason": "not the current writer"}
+        self._writer_client_id = None
+        await self._publish_event("mpx1:writer_changed", {"client_id": None})
+        return {"released": True}
+
     async def _midi_poll_loop(self) -> None:
         while self._running and self._midi_in is not None:
             try:
@@ -581,7 +883,49 @@ class MPX1Service:
 
         param_id = str(decoded["param_id"])
         value = float(decoded["value"])
+
+        # T036-B: Echo-loop prevention — discard if this was our own outgoing msg
+        if self._is_echo(param_id, value):
+            self._record_traffic("rx_sysex_echo_suppressed", message, param_id=param_id, value=value)
+            # Still attempt readback resolution so verification pass-counts are correct
+            self._resolve_readback(param_id, value)
+            await self._publish_event(
+                "mpx1:param_verified",
+                {"param_id": param_id, "value": value},
+            )
+            return None
+
         self._record_traffic("rx_sysex", message, param_id=param_id, value=value)
+
+        # T036-C: Readback verification — try to match to a pending write
+        verified = self._resolve_readback(param_id, value)
+        if verified:
+            await self._publish_event(
+                "mpx1:param_verified",
+                {"param_id": param_id, "value": value},
+            )
+
+        # T036-D: Ownership lock — suppress if GUI owns this param
+        if self._gui_owns(param_id):
+            distance = self._pickup_distance(param_id, value)
+            self._record_traffic(
+                "rx_sysex_ownership_conflict",
+                message,
+                param_id=param_id,
+                value=value,
+                pickup_distance=distance,
+            )
+            await self._publish_event(
+                "mpx1:ownership_conflict",
+                {"param_id": param_id, "value": value, "pickup_distance": distance},
+            )
+            if distance is not None and distance > 0:
+                await self._publish_event(
+                    "mpx1:pickup_zone",
+                    {"param_id": param_id, "hardware_value": value, "distance": distance},
+                )
+            return None
+
         async with self._state_lock:
             self.shadow_state[param_id] = value
             self._persist_shadow_state()
@@ -657,10 +1001,25 @@ class MPX1Service:
     # Parameter/program operations
     # -------------------------------------------------------------------------
 
-    async def set_param(self, param_id: str, value: float, source: str = "api") -> Dict[str, Any]:
+    async def set_param(
+        self, param_id: str, value: float, source: str = "api", writer_client_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         param = self.params_by_id.get(param_id)
         if param is None:
             raise KeyError(f"Unknown MPX1 param id: {param_id}")
+
+        # T036-F: Writer lock enforcement — if a lock is held, only the holder may write
+        current_owner = self._write_lock_owner()
+        if current_owner is not None and writer_client_id != current_owner:
+            return {
+                "locked": True,
+                "holder": current_owner,
+                "param_id": param_id,
+                "expires_in_sec": self._write_lock_expires - time.monotonic(),
+            }
+        # Refresh lock for the writer
+        if writer_client_id and current_owner == writer_client_id:
+            self._refresh_write_lock(writer_client_id)
 
         normalized = self._normalize_value(param, value)
         if bool(param.get("realtime_safe", False)):
@@ -700,6 +1059,21 @@ class MPX1Service:
 
     async def _dispatch_param_update(self, param_id: str, value: float, source: str) -> None:
         message = self.encode_param_sysex(param_id, value)
+
+        # T036-B: Register this outgoing message for echo-loop suppression
+        self._register_outgoing(param_id, value)
+
+        # T036-C: Queue readback verification (for non-coalesced/non-resync writes)
+        if source not in ("resync",):
+            param = self.params_by_id.get(param_id)
+            if param and not param.get("realtime_safe", False):
+                self._register_readback(param_id, value)
+
+        # T036-D: Record ownership and last-sent value if driven from GUI
+        if source in ("gui", "api", "api_bulk"):
+            self._acquire_ownership(param_id, "gui")
+            self._last_sent_value[param_id] = value
+
         self._record_traffic("tx_sysex", message, param_id=param_id, value=value, source=source)
         self._outgoing_sysex_log.append(message)
         if len(self._outgoing_sysex_log) > 256:
@@ -714,6 +1088,9 @@ class MPX1Service:
         async with self._state_lock:
             self.shadow_state[param_id] = value
             self._persist_shadow_state()
+
+        # T036-E: Update expected checksum after each write
+        self._expected_checksum = self._compute_shadow_checksum()
 
         await self._publish_event(
             "mpx1:param_tx",
@@ -1056,6 +1433,231 @@ class MPX1Service:
             "timestamp": time.time(),
         }
 
+    # -------------------------------------------------------------------------
+    # T037: .syx import / export / audition / versioning
+    # -------------------------------------------------------------------------
+
+    async def import_syx_bytes(
+        self, data: bytes, source_name: str = "<upload>", skip_duplicates: bool = True
+    ) -> Dict[str, Any]:
+        """Parse a binary .syx blob and merge programs into the library."""
+        from app.services.mpx1_syx_parser import MPX1SyxParser, deduplicate_programs
+
+        parser = MPX1SyxParser()
+        try:
+            programs = parser.parse_bytes(data, source_name=source_name)
+        except Exception as exc:
+            logger.error("SysEx parse error: %s", exc)
+            return {"imported": 0, "skipped": 0, "errors": [str(exc)]}
+
+        if skip_duplicates:
+            programs = deduplicate_programs(programs)
+
+        payload = self._read_library()
+        entries: List[Dict[str, Any]] = payload.get("entries", [])
+        if not isinstance(entries, list):
+            entries = []
+
+        # Build checksum index of existing entries to skip duplicates
+        existing_checksums: set[str] = set()
+        if skip_duplicates:
+            for e in entries:
+                cs = str(e.get("checksum", ""))
+                if cs:
+                    existing_checksums.add(cs)
+
+        imported = 0
+        skipped = 0
+        errors: List[str] = []
+
+        for index, prog in enumerate(programs):
+            try:
+                if skip_duplicates and prog.checksum_hex in existing_checksums:
+                    skipped += 1
+                    continue
+                # Assign program number: use extracted or next available slot
+                program_number = prog.program_number
+                if program_number is None:
+                    used = {int(e.get("program", -1)) for e in entries}
+                    program_number = next(
+                        (n for n in range(250) if n not in used), len(entries)
+                    )
+                entry = prog.to_library_entry(override_program=program_number)
+                entries.append(entry)
+                existing_checksums.add(prog.checksum_hex)
+                imported += 1
+            except Exception as exc:
+                errors.append(f"program[{index}]: {exc}")
+
+        payload["entries"] = entries
+        self._write_library(payload)
+        await self._publish_event(
+            "mpx1:library_syx_imported",
+            {"imported": imported, "skipped": skipped, "source": source_name},
+        )
+        return {"imported": imported, "skipped": skipped, "errors": errors}
+
+    async def export_bundle(self, program_numbers: Optional[List[int]] = None) -> bytes:
+        """Return a zip archive of selected programs (.syx blobs + metadata.json)."""
+        import io
+        import zipfile
+
+        payload = self._read_library()
+        entries = payload.get("entries", [])
+
+        if program_numbers is not None:
+            target_set = set(program_numbers)
+            entries = [e for e in entries if int(e.get("program", -1)) in target_set]
+
+        metadata: List[Dict[str, Any]] = []
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for entry in entries:
+                prog = int(entry.get("program", 0))
+                syx_hex = str(entry.get("syx_blob", ""))
+                if syx_hex:
+                    try:
+                        syx_bytes = bytes.fromhex(syx_hex)
+                        zf.writestr(f"programs/{prog:03d}.syx", syx_bytes)
+                    except Exception:
+                        pass
+                meta = {k: v for k, v in entry.items() if k != "syx_blob"}
+                metadata.append(meta)
+            zf.writestr("metadata.json", json.dumps(metadata, indent=2))
+        return buf.getvalue()
+
+    # --- Preset versioning ---
+
+    async def save_preset_version(
+        self, program: int, note: str = ""
+    ) -> Dict[str, Any]:
+        """Save current shadow state as a new version for *program*."""
+        payload = self._read_library()
+        entries = payload.get("entries", [])
+        target: Optional[Dict[str, Any]] = None
+        for e in entries:
+            if int(e.get("program", -1)) == program:
+                target = e
+                break
+        if target is None:
+            raise KeyError(f"Program {program} not in library")
+
+        versions = target.get("versions") or []
+        current_v = int(target.get("current_version", len(versions)))
+        new_v = current_v + 1
+
+        # Snapshot relevant shadow params for this program
+        snap = {k: v for k, v in self.shadow_state.items()}
+        versions.append({
+            "v": new_v,
+            "snapshot": snap,
+            "saved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "note": note,
+        })
+        target["versions"] = versions
+        target["current_version"] = new_v
+        payload["entries"] = entries
+        self._write_library(payload)
+        return {"program": program, "version": new_v}
+
+    async def list_preset_versions(self, program: int) -> Dict[str, Any]:
+        payload = self._read_library()
+        for e in payload.get("entries", []):
+            if int(e.get("program", -1)) == program:
+                versions = e.get("versions") or []
+                diffs = []
+                for i in range(1, len(versions)):
+                    a = versions[i - 1].get("snapshot", {})
+                    b = versions[i].get("snapshot", {})
+                    changed = [
+                        {"param_id": k, "old": a.get(k), "new": b.get(k)}
+                        for k in set(a) | set(b)
+                        if a.get(k) != b.get(k)
+                    ]
+                    diffs.append({"from_v": i, "to_v": i + 1, "changes": changed})
+                return {"program": program, "versions": versions, "diffs": diffs}
+        raise KeyError(f"Program {program} not in library")
+
+    async def revert_preset_version(self, program: int, version: int) -> Dict[str, Any]:
+        payload = self._read_library()
+        for e in payload.get("entries", []):
+            if int(e.get("program", -1)) == program:
+                versions = e.get("versions") or []
+                target_snap: Optional[Dict[str, Any]] = None
+                for v in versions:
+                    if int(v.get("v", 0)) == version:
+                        target_snap = v.get("snapshot")
+                        break
+                if target_snap is None:
+                    raise KeyError(f"Version {version} not found for program {program}")
+                # Re-apply snapshot to shadow and hardware
+                for param_id, value in target_snap.items():
+                    if param_id in self.params_by_id:
+                        await self.set_param(param_id, float(value), source="version_revert")
+                e["current_version"] = version
+                payload["entries"] = [e if int(x.get("program", -1)) == program else x
+                                       for x in payload.get("entries", [])]
+                self._write_library(payload)
+                return {"program": program, "reverted_to": version}
+        raise KeyError(f"Program {program} not in library")
+
+    # --- Safe audition ---
+
+    async def audition_program(self, program: int) -> Dict[str, Any]:
+        """Load *program* for preview; automatically reverts after timeout."""
+        self._audition_previous_program = self.current_program
+        result = await self.set_program(program)
+        # Schedule auto-revert
+        if hasattr(self, "_audition_revert_task") and self._audition_revert_task:
+            try:
+                self._audition_revert_task.cancel()
+            except Exception:
+                pass
+        self._audition_revert_task = asyncio.create_task(
+            self._audition_auto_revert(delay_sec=self._audition_timeout_sec),
+            name="mpx1_audition_revert",
+        )
+        await self._publish_event(
+            "mpx1:audition_started",
+            {
+                "program": program,
+                "previous_program": self._audition_previous_program,
+                "timeout_sec": self._audition_timeout_sec,
+            },
+        )
+        return {**result, "previous_program": self._audition_previous_program}
+
+    async def audition_revert(self) -> Dict[str, Any]:
+        """Immediately revert to the program that was active before audition."""
+        if hasattr(self, "_audition_revert_task") and self._audition_revert_task:
+            try:
+                self._audition_revert_task.cancel()
+            except Exception:
+                pass
+            self._audition_revert_task = None
+        prev = getattr(self, "_audition_previous_program", self.current_program)
+        result = await self.set_program(prev)
+        await self._publish_event("mpx1:audition_reverted", {"program": prev})
+        return result
+
+    async def audition_confirm(self) -> Dict[str, Any]:
+        """Confirm the current auditioning program (cancel auto-revert)."""
+        if hasattr(self, "_audition_revert_task") and self._audition_revert_task:
+            try:
+                self._audition_revert_task.cancel()
+            except Exception:
+                pass
+            self._audition_revert_task = None
+        await self._publish_event("mpx1:audition_confirmed", {"program": self.current_program})
+        return {"confirmed": True, "program": self.current_program}
+
+    async def _audition_auto_revert(self, delay_sec: float) -> None:
+        try:
+            await asyncio.sleep(delay_sec)
+        except asyncio.CancelledError:
+            return
+        await self.audition_revert()
+
     async def get_state(self) -> Dict[str, Any]:
         ports = await self.get_midi_ports()
         midi_maps = self._read_midi_maps()
@@ -1072,6 +1674,12 @@ class MPX1Service:
             "active_midi_map_id": midi_maps.get("active_map_id"),
             "midi_map_count": map_count,
             "learn_target_param_id": midi_maps.get("learn_target_param_id"),
+            # T036 sync-hardening fields
+            "drift_status": self._drift_status,
+            "verify_pass": self._verify_pass_count,
+            "verify_fail": self._verify_fail_count,
+            "writer_client_id": self._write_lock_owner(),
+            "pending_readbacks": len(self._pending_readbacks),
         }
 
     async def get_health(self) -> Dict[str, Any]:
@@ -1129,14 +1737,17 @@ class MPX1Service:
             self._ws_subscribers.pop(client_id, None)
 
     async def shutdown(self) -> None:
+        self._running = False
         await self.disconnect_midi()
-        if self._coalesce_task is not None:
-            self._coalesce_task.cancel()
-            try:
-                await self._coalesce_task
-            except asyncio.CancelledError:
-                pass
-            self._coalesce_task = None
+        for task_attr in ("_coalesce_task", "_drift_task", "_verification_task"):
+            task = getattr(self, task_attr, None)
+            if task is not None and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+            setattr(self, task_attr, None)
 
 
 _mpx1_service: Optional[MPX1Service] = None

@@ -274,6 +274,137 @@ py::dict synthForgeSampleLoadStatusToDict(const synthforge::SampleLoadStatus& st
     return d;
 }
 
+py::dict synthForgeStreamingConfigToDict(const synthforge::StreamingConfig& config) {
+    py::dict d;
+    d["enabled"] = config.enabled;
+    d["preload_size"] = config.preloadSize;
+    d["max_voices"] = config.maxVoices;
+    d["interpolation"] = synthforge::interpolationModeToString(config.interpolation);
+    d["quality_live"] = config.qualityLive;
+    d["quality_freewheeling"] = config.qualityFreewheeling;
+    d["memory_limit_mb"] = config.memoryLimitMb;
+    return d;
+}
+
+synthforge::StreamingConfig dictToSynthForgeStreamingConfig(const py::dict& d) {
+    synthforge::StreamingConfig config;
+    if (d.contains("enabled")) config.enabled = d["enabled"].cast<bool>();
+    if (d.contains("preload_size")) config.preloadSize = d["preload_size"].cast<uint32_t>();
+    if (d.contains("max_voices")) config.maxVoices = d["max_voices"].cast<int>();
+    if (d.contains("interpolation")) {
+        config.interpolation = synthforge::interpolationModeFromString(d["interpolation"].cast<std::string>());
+    }
+    if (d.contains("quality_live")) config.qualityLive = d["quality_live"].cast<int>();
+    if (d.contains("quality_freewheeling")) config.qualityFreewheeling = d["quality_freewheeling"].cast<int>();
+    if (d.contains("memory_limit_mb")) config.memoryLimitMb = d["memory_limit_mb"].cast<int>();
+    return config;
+}
+
+py::dict synthForgeHotReloadStatusToDict(const synthforge::HotReloadStatus& status) {
+    py::dict d;
+    d["enabled"] = status.enabled;
+    d["interval_ms"] = status.intervalMs;
+    d["pending_reload"] = status.pendingReload;
+    d["reloaded"] = status.reloaded;
+    d["generation"] = status.generation;
+    d["last_reload_iso"] = status.lastReloadIso;
+    d["last_error"] = status.lastError;
+    return d;
+}
+
+py::dict synthForgeScalaTuningToDict(const synthforge::ScalaTuningConfig& config) {
+    py::dict d;
+    d["enabled"] = config.enabled;
+    d["scala_path"] = config.scalaPath;
+    d["root_key"] = config.rootKey;
+    d["reference_hz"] = config.referenceFrequencyHz;
+    return d;
+}
+
+synthforge::MpeConfig dictToSynthForgeMpeConfig(const py::dict& d) {
+    synthforge::MpeConfig config;
+    if (d.contains("enabled")) config.enabled = d["enabled"].cast<bool>();
+    if (d.contains("lower_zone_channels")) config.lowerZoneChannels = d["lower_zone_channels"].cast<int>();
+    if (d.contains("upper_zone_channels")) config.upperZoneChannels = d["upper_zone_channels"].cast<int>();
+    if (d.contains("pitch_bend_range_semitones")) {
+        config.pitchBendRangeSemitones = d["pitch_bend_range_semitones"].cast<int>();
+    }
+    return config;
+}
+
+py::dict synthForgeMpeConfigToDict(const synthforge::MpeConfig& config) {
+    py::dict d;
+    d["enabled"] = config.enabled;
+    d["lower_zone_channels"] = config.lowerZoneChannels;
+    d["upper_zone_channels"] = config.upperZoneChannels;
+    d["pitch_bend_range_semitones"] = config.pitchBendRangeSemitones;
+    return d;
+}
+
+py::dict synthForgeModMatrixRouteToDict(const synthforge::ModMatrixRoute& route) {
+    py::dict d;
+    d["source"] = route.source;
+    d["destination"] = route.destination;
+    d["amount"] = route.amount;
+    d["bipolar"] = route.bipolar;
+    d["enabled"] = route.enabled;
+    return d;
+}
+
+synthforge::ModMatrixRoute dictToSynthForgeModMatrixRoute(const py::dict& d) {
+    synthforge::ModMatrixRoute route;
+    if (d.contains("source")) route.source = d["source"].cast<std::string>();
+    if (d.contains("destination")) route.destination = d["destination"].cast<std::string>();
+    if (d.contains("amount")) route.amount = d["amount"].cast<float>();
+    if (d.contains("bipolar")) route.bipolar = d["bipolar"].cast<bool>();
+    if (d.contains("enabled")) route.enabled = d["enabled"].cast<bool>();
+    return route;
+}
+
+py::dict synthForgeFreezeStatusToDict(const synthforge::FreezeRenderStatus& status) {
+    py::dict d;
+    d["freeze_enabled"] = status.freezeEnabled;
+    d["frozen_signal_ready"] = status.frozenSignalReady;
+    d["freeze_samples"] = status.freezeSamples;
+    d["render_path"] = status.renderPath;
+    d["last_error"] = status.lastError;
+    return d;
+}
+
+py::dict synthForgeAnalyzerFrameToDict(const synthforge::SamplerAnalyzerFrame& frame) {
+    py::dict d;
+    d["peak_left"] = frame.peakLeft;
+    d["peak_right"] = frame.peakRight;
+    d["rms_left"] = frame.rmsLeft;
+    d["rms_right"] = frame.rmsRight;
+    d["midi_events"] = frame.midiEvents;
+    d["active_voices"] = frame.activeVoices;
+    return d;
+}
+
+py::dict synthForgeBackendStatusToDict(const synthforge::SfzBackendStatus& status) {
+    py::dict d;
+    d["backend"] = status.backend;
+    d["sfizz_available"] = status.sfizzAvailable;
+    d["sfizz_loaded"] = status.sfizzLoaded;
+    d["region_count"] = status.regionCount;
+    d["group_count"] = status.groupCount;
+    d["preloaded_samples"] = status.preloadedSamples;
+
+    py::list unknown;
+    for (const auto& opcode : status.unknownOpcodes) {
+        unknown.append(opcode);
+    }
+    d["unknown_opcodes"] = unknown;
+
+    py::list unsupported;
+    for (const auto& opcode : status.unsupportedOpcodes) {
+        unsupported.append(opcode);
+    }
+    d["unsupported_opcodes"] = unsupported;
+    return d;
+}
+
 Map2AudioEngine& getModuleEngine() {
     static std::shared_ptr<Map2AudioEngine> engine = std::make_shared<Map2AudioEngine>();
     return *engine;
@@ -2520,6 +2651,87 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_synthforge_part_sample_status", [](const Map2AudioEngine& self, int partIndex) {
             return synthForgeSampleLoadStatusToDict(self.getSynthForgePartSampleStatus(partIndex));
         }, py::arg("part_index"), "Get SynthForge sampler load status for a part")
+        .def("reload_synthforge_part_sfz_if_changed", &Map2AudioEngine::reloadSynthForgePartSfzIfChanged,
+             py::arg("part_index"), "Hot reload SFZ file if source file changed")
+
+        .def("set_synthforge_part_sampler_backend", &Map2AudioEngine::setSynthForgePartSamplerBackend,
+             py::arg("part_index"), py::arg("backend"), "Set sampler backend for a part (native|sfizz)")
+        .def("get_synthforge_part_sampler_backend", &Map2AudioEngine::getSynthForgePartSamplerBackend,
+             py::arg("part_index"), "Get sampler backend for a part")
+
+        .def("set_synthforge_part_streaming_config", [](Map2AudioEngine& self, int partIndex, const py::dict& config) {
+            return self.setSynthForgePartStreamingConfig(partIndex, dictToSynthForgeStreamingConfig(config));
+        }, py::arg("part_index"), py::arg("config"), "Set streaming/interpolation config for a part")
+        .def("get_synthforge_part_streaming_config", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeStreamingConfigToDict(self.getSynthForgePartStreamingConfig(partIndex));
+        }, py::arg("part_index"), "Get streaming/interpolation config for a part")
+
+        .def("set_synthforge_part_hot_reload", &Map2AudioEngine::setSynthForgePartHotReload,
+             py::arg("part_index"), py::arg("enabled"), py::arg("interval_ms") = 1000,
+             "Enable/disable SFZ hot reload checks for a part")
+        .def("get_synthforge_part_hot_reload_status", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeHotReloadStatusToDict(self.getSynthForgePartHotReloadStatus(partIndex));
+        }, py::arg("part_index"), "Get hot reload state for a part")
+
+        .def("load_synthforge_part_scala_tuning", &Map2AudioEngine::loadSynthForgePartScalaTuning,
+             py::arg("part_index"), py::arg("scala_path"), py::arg("root_key") = 60, py::arg("reference_hz") = 440.0f,
+             "Load Scala tuning into part sampler backend")
+        .def("get_synthforge_part_scala_tuning", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeScalaTuningToDict(self.getSynthForgePartScalaTuning(partIndex));
+        }, py::arg("part_index"), "Get Scala tuning config for a part")
+
+        .def("set_synthforge_part_mpe_config", [](Map2AudioEngine& self, int partIndex, const py::dict& config) {
+            return self.setSynthForgePartMpeConfig(partIndex, dictToSynthForgeMpeConfig(config));
+        }, py::arg("part_index"), py::arg("config"), "Set MPE/channel-expression config for a part")
+        .def("get_synthforge_part_mpe_config", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeMpeConfigToDict(self.getSynthForgePartMpeConfig(partIndex));
+        }, py::arg("part_index"), "Get MPE config for a part")
+
+        .def("set_synthforge_part_mod_matrix_routes", [](Map2AudioEngine& self, int partIndex, const py::list& routes) {
+            std::vector<synthforge::ModMatrixRoute> parsed;
+            parsed.reserve(routes.size());
+            for (const auto& item : routes) {
+                parsed.push_back(dictToSynthForgeModMatrixRoute(item.cast<py::dict>()));
+            }
+            return self.setSynthForgePartModMatrixRoutes(partIndex, parsed);
+        }, py::arg("part_index"), py::arg("routes"), "Set modulation matrix routes for a part")
+        .def("get_synthforge_part_mod_matrix_routes", [](const Map2AudioEngine& self, int partIndex) {
+            py::list result;
+            for (const auto& route : self.getSynthForgePartModMatrixRoutes(partIndex)) {
+                result.append(synthForgeModMatrixRouteToDict(route));
+            }
+            return result;
+        }, py::arg("part_index"), "Get modulation matrix routes for a part")
+
+        .def("set_synthforge_part_freeze", &Map2AudioEngine::setSynthForgePartFreeze,
+             py::arg("part_index"), py::arg("enabled"), "Enable/disable freeze mode for a part")
+        .def("get_synthforge_part_freeze_status", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeFreezeStatusToDict(self.getSynthForgePartFreezeStatus(partIndex));
+        }, py::arg("part_index"), "Get freeze/render status for a part")
+        .def("render_synthforge_part_to_file", &Map2AudioEngine::renderSynthForgePartToFile,
+             py::arg("part_index"), py::arg("output_path"), py::arg("duration_ms") = 2000,
+             "Render a part to WAV for freeze/render workflows")
+
+        .def("get_synthforge_part_analyzer_frame", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeAnalyzerFrameToDict(self.getSynthForgePartAnalyzerFrame(partIndex));
+        }, py::arg("part_index"), "Get analyzer frame for one part")
+        .def("get_synthforge_analyzer_frames", [](const Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& frame : self.getSynthForgeAnalyzerFrames()) {
+                result.append(synthForgeAnalyzerFrameToDict(frame));
+            }
+            return result;
+        }, "Get analyzer frames for all parts")
+        .def("get_synthforge_part_backend_status", [](const Map2AudioEngine& self, int partIndex) {
+            return synthForgeBackendStatusToDict(self.getSynthForgePartBackendStatus(partIndex));
+        }, py::arg("part_index"), "Get backend/opcode status for one part")
+        .def("get_synthforge_backend_status", [](const Map2AudioEngine& self) {
+            py::list result;
+            for (const auto& status : self.getSynthForgeBackendStatus()) {
+                result.append(synthForgeBackendStatusToDict(status));
+            }
+            return result;
+        }, "Get backend/opcode status for all parts")
 
         .def("get_synthforge_patches", [](const Map2AudioEngine& self, const std::string& category) {
             py::list result;

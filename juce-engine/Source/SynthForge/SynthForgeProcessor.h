@@ -36,6 +36,34 @@ public:
     bool setPartParameter(int partIndex, const std::string& parameter, float value);
     bool loadPartSfz(int partIndex, const std::string& sfzPath);
     SampleLoadStatus getPartSampleStatus(int partIndex) const;
+    bool reloadPartSfzIfChanged(int partIndex);
+
+    bool setPartSamplerBackend(int partIndex, const std::string& backend);
+    std::string getPartSamplerBackend(int partIndex) const;
+
+    bool setPartStreamingConfig(int partIndex, const StreamingConfig& config);
+    StreamingConfig getPartStreamingConfig(int partIndex) const;
+
+    bool setPartHotReload(int partIndex, bool enabled, int intervalMs);
+    HotReloadStatus getPartHotReloadStatus(int partIndex) const;
+
+    bool loadPartScalaTuning(int partIndex, const std::string& scalaPath, int rootKey, float referenceHz);
+    ScalaTuningConfig getPartScalaTuning(int partIndex) const;
+
+    bool setPartMpeConfig(int partIndex, const MpeConfig& config);
+    MpeConfig getPartMpeConfig(int partIndex) const;
+
+    bool setPartModMatrixRoutes(int partIndex, const std::vector<ModMatrixRoute>& routes);
+    std::vector<ModMatrixRoute> getPartModMatrixRoutes(int partIndex) const;
+
+    bool setPartFreezeEnabled(int partIndex, bool enabled);
+    FreezeRenderStatus getPartFreezeStatus(int partIndex) const;
+    bool renderPartToFile(int partIndex, const std::string& outputPath, int durationMs);
+
+    SamplerAnalyzerFrame getPartAnalyzerFrame(int partIndex) const;
+    std::vector<SamplerAnalyzerFrame> getAnalyzerFrames() const;
+    SfzBackendStatus getPartSfzBackendStatus(int partIndex) const;
+    std::vector<SfzBackendStatus> getSfzBackendStatus() const;
 
     std::vector<PatchInfo> getPatches(const std::string& categoryFilter = "") const;
     bool loadPatch(int partIndex, int bank, int program);

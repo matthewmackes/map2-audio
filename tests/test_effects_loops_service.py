@@ -313,3 +313,76 @@ def test_chain_service_returns_loop_insertions_and_resolved_loops(tmp_path):
             assert len(list(result.scalars().all())) == 1
 
     asyncio.run(_run())
+
+
+def test_engine_sync_orders_insertions_and_preserves_dsp_fields(tmp_path):
+    _init_temp_db(tmp_path)
+    asyncio.run(_seed_chain(13))
+
+    async def _run():
+        fake_engine = _FakeEngine()
+        async with database_module.get_session() as session:
+            service = EffectsLoopService(
+                session,
+                engine_service=fake_engine,
+                avb_router=None,
+                tesira_fleet=None,
+            )
+
+            loop_a = await service.create_loop(
+                {
+                    "name": "Loop A",
+                    "channels": 2,
+                    "topology": "serial_insert",
+                }
+            )
+            loop_b = await service.create_loop(
+                {
+                    "name": "Loop B",
+                    "channels": 2,
+                    "topology": "parallel_send_return",
+                }
+            )
+
+            await service.insert_chain_loop(
+                13,
+                {
+                    "loop_id": loop_a["loop_id"],
+                    "slot_index": 1,
+                    "mode": "serial_insert",
+                    "blend_pct": 100.0,
+                    "send_gain_db": -3.0,
+                    "return_gain_db": 1.5,
+                    "crossfade_ms": 24,
+                },
+            )
+            await service.insert_chain_loop(
+                13,
+                {
+                    "loop_id": loop_b["loop_id"],
+                    "slot_index": 0,
+                    "mode": "parallel_send_return",
+                    "blend_pct": 35.0,
+                    "send_gain_db": -6.0,
+                    "return_gain_db": 2.0,
+                    "crossfade_ms": 48,
+                },
+            )
+
+            payload = fake_engine.chain_insertions[13]
+            assert [row["slot_index"] for row in payload] == [0, 2]
+            assert payload[0]["loop_id"] == loop_b["loop_id"]
+            assert payload[0]["mode"] == "parallel_send_return"
+            assert payload[0]["blend_pct"] == pytest.approx(35.0)
+            assert payload[0]["send_gain_db"] == pytest.approx(-6.0)
+            assert payload[0]["return_gain_db"] == pytest.approx(2.0)
+            assert payload[0]["crossfade_ms"] == 48
+
+            assert payload[1]["loop_id"] == loop_a["loop_id"]
+            assert payload[1]["mode"] == "serial_insert"
+            assert payload[1]["blend_pct"] == pytest.approx(100.0)
+            assert payload[1]["send_gain_db"] == pytest.approx(-3.0)
+            assert payload[1]["return_gain_db"] == pytest.approx(1.5)
+            assert payload[1]["crossfade_ms"] == 24
+
+    asyncio.run(_run())

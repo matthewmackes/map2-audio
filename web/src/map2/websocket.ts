@@ -28,6 +28,8 @@ export type WebSocketTopic =
   | 'cpu'
   | 'phase'
   | 'latency'
+  // MIDI monitor topics
+  | 'midi_activity'
   // PipeWire audio server
   | 'pipewire'
   // Biamp Tesira Forte AVB fleet

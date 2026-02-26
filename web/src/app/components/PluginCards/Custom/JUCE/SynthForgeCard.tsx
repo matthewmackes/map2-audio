@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowsClockwise,
-  GearSix,
-  Moon,
-  PianoKeys,
-  Question,
-  Sun,
-  Waves,
-} from '@phosphor-icons/react'
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowsClockwise, Moon, PianoKeys, Sun } from '@phosphor-icons/react'
 
 import { PluginCardShell } from '../../Base/PluginCardShell'
 import type { PluginCardProps } from '../../types'
@@ -16,22 +16,124 @@ import {
   soundfontApi,
   synthforgeApi,
   type SynthForgePartConfig,
+  type SynthForgeModMatrixRoute,
+  type SynthForgeStreamingConfig,
 } from '../../../../../map2/api'
 import type { SoundFont } from '../../../../types/library'
+import { useWebSocketConnection, useWebSocketTopic } from '../../../../../map2/hooks/useWebSocket'
 import './SynthForgeCard.css'
 
-type SynthForgeTab = 'main' | 'mod' | 'fx' | 'mapping' | 'browser'
 type ThemeMode = 'dark' | 'light'
-
-const TABS: Array<{ id: SynthForgeTab; label: string }> = [
-  { id: 'main', label: 'Main' },
-  { id: 'mod', label: 'Mod' },
-  { id: 'fx', label: 'FX' },
-  { id: 'mapping', label: 'Mapping' },
-  { id: 'browser', label: 'Browser' },
-]
+type NoteSource = 'external' | 'on-screen' | 'qwerty'
+type MidiEventType = 'note_on' | 'note_off'
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const OUTPUT_BUSES = ['main', 'aux_1', 'aux_2', 'aux_3', 'aux_4', 'aux_5', 'aux_6', 'aux_7', 'aux_8']
+const WAVEFORMS = ['Sine', 'Saw', 'Square', 'Triangle']
+const MOD_DESTINATIONS = [
+  'osc1.level',
+  'osc1.coarse',
+  'filter1.cutoff',
+  'filter1.resonance',
+  'amp.attack',
+  'amp.decay',
+  'amp.sustain',
+  'amp.release',
+]
+
+const KEYBOARD_MIN_NOTE = 36
+const KEYBOARD_MAX_NOTE = 96
+const KEYBOARD_BASE_NOTE = 48
+const MAX_NOTE_EVENTS = 120
+
+const QWERTY_NOTE_OFFSETS: Record<string, number> = {
+  z: 0,
+  s: 1,
+  x: 2,
+  d: 3,
+  c: 4,
+  v: 5,
+  g: 6,
+  b: 7,
+  h: 8,
+  n: 9,
+  j: 10,
+  m: 11,
+  ',': 12,
+  l: 13,
+  '.': 14,
+  ';': 15,
+  '/': 16,
+  q: 12,
+  '2': 13,
+  w: 14,
+  '3': 15,
+  e: 16,
+  r: 17,
+  '5': 18,
+  t: 19,
+  '6': 20,
+  y: 21,
+  '7': 22,
+  u: 23,
+  i: 24,
+  '9': 25,
+  o: 26,
+  '0': 27,
+  p: 28,
+  '[': 29,
+  ']': 30,
+}
+
+interface MidiNoteState {
+  channel: number
+  note: number
+  velocity: number
+  source: NoteSource
+  updatedAt: number
+}
+
+interface MidiNoteEvent extends MidiNoteState {
+  id: string
+  type: MidiEventType
+}
+
+interface SliderFieldProps {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  formatter?: (value: number) => string
+  onChange: (value: number) => void
+}
+
+function SliderField({
+  label,
+  value,
+  min,
+  max,
+  step,
+  formatter,
+  onChange,
+}: SliderFieldProps) {
+  return (
+    <label className="synthforge-field synthforge-slider-field">
+      <span>{label}</span>
+      <div className="synthforge-slider-row">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+        />
+        <strong>{formatter ? formatter(value) : value.toFixed(2)}</strong>
+      </div>
+    </label>
+  )
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -42,10 +144,26 @@ function toNumber(value: unknown, fallback: number): number {
   return fallback
 }
 
+function noteLabel(note: number): string {
+  const octave = Math.floor(note / 12) - 1
+  return `${NOTE_NAMES[note % 12]}${octave}`
+}
+
+function isBlackNote(note: number): boolean {
+  const pitchClass = note % 12
+  return pitchClass === 1 || pitchClass === 3 || pitchClass === 6 || pitchClass === 8 || pitchClass === 10
+}
+
 function getFileName(path: string): string {
   const normalized = path.replace(/\\/g, '/')
   const parts = normalized.split('/')
   return parts[parts.length - 1] || path
+}
+
+function isTextEntryTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName
+  return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
 }
 
 function defaultPart(partIndex: number): SynthForgePartConfig {
@@ -64,53 +182,9 @@ function cutoffFromNormalized(normalized: number): number {
   return clamp(20 * Math.pow(1000, clamp(normalized, 0, 1)), 20, 20000)
 }
 
-interface MacroDialProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  accent: string
-  formatter?: (value: number) => string
-  onChange: (value: number) => void
-}
-
-function MacroDial({
-  label,
-  value,
-  min,
-  max,
-  accent,
-  formatter,
-  onChange,
-}: MacroDialProps) {
-  const normalized = clamp((value - min) / (max - min), 0, 1)
-  const display = formatter ? formatter(value) : `${Math.round(value)}`
-
-  return (
-    <div className="sf2-macro-dial">
-      <div
-        className="sf2-macro-ring"
-        style={{
-          '--dial-fill': `${normalized * 360}deg`,
-          '--dial-accent': accent,
-        } as React.CSSProperties}
-      >
-        <div className="sf2-macro-core">
-          <div className="sf2-macro-value">{display}</div>
-          <div className="sf2-macro-label">{label}</div>
-        </div>
-      </div>
-      <input
-        className="sf2-macro-slider"
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        step={(max - min) / 200}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </div>
-  )
+function cutoffToNormalized(value: number): number {
+  if (value <= 1) return clamp(value, 0, 1)
+  return clamp(Math.log(value / 20) / Math.log(1000), 0, 1)
 }
 
 export function SynthForgeCard({
@@ -119,18 +193,48 @@ export function SynthForgeCard({
   compact = false,
 }: PluginCardProps) {
   const queryClient = useQueryClient()
+  useWebSocketConnection()
 
   const [activePart, setActivePart] = useState(0)
-  const [activeTab, setActiveTab] = useState<SynthForgeTab>('main')
   const [theme, setTheme] = useState<ThemeMode>('dark')
   const [showFullPath, setShowFullPath] = useState(false)
-  const [showHelp, setShowHelp] = useState(false)
   const [patchSearch, setPatchSearch] = useState('')
   const [selectedPatch, setSelectedPatch] = useState('')
+  const [saveBank, setSaveBank] = useState(0)
+  const [saveProgram, setSaveProgram] = useState(0)
+  const [saveName, setSaveName] = useState('User Patch')
   const [browserSearch, setBrowserSearch] = useState('')
   const [manualPath, setManualPath] = useState('')
-  const [xyPoint, setXyPoint] = useState({ x: 0.55, y: 0.4 })
-  const [isDraggingXy, setIsDraggingXy] = useState(false)
+  const [noteApiError, setNoteApiError] = useState('')
+  const [scalaPath, setScalaPath] = useState('')
+  const [scalaRoot, setScalaRoot] = useState(60)
+  const [scalaReferenceHz, setScalaReferenceHz] = useState(440)
+  const [renderPath, setRenderPath] = useState('/tmp/synthforge-render.wav')
+  const [hotReloadEnabled, setHotReloadEnabled] = useState(false)
+  const [hotReloadIntervalMs, setHotReloadIntervalMs] = useState(1000)
+  const [mpeEnabled, setMpeEnabled] = useState(false)
+  const [mpeLowerZone, setMpeLowerZone] = useState(8)
+  const [mpeUpperZone, setMpeUpperZone] = useState(0)
+  const [mpePitchRange, setMpePitchRange] = useState(24)
+  const [modSource, setModSource] = useState('cc.1')
+  const [modDestination, setModDestination] = useState('filter1.cutoff')
+  const [modAmount, setModAmount] = useState(0.5)
+  const [streamingDraft, setStreamingDraft] = useState<SynthForgeStreamingConfig>({
+    enabled: true,
+    preload_size: 131072,
+    max_voices: 64,
+    interpolation: 'hermite',
+    quality_live: 5,
+    quality_freewheeling: 8,
+    memory_limit_mb: 256,
+  })
+
+  const [activeNotes, setActiveNotes] = useState<Record<string, MidiNoteState>>({})
+  const [noteEvents, setNoteEvents] = useState<MidiNoteEvent[]>([])
+
+  const qwertyHeldRef = useRef<Record<string, number>>({})
+  const pointerHeldRef = useRef<Record<number, boolean>>({})
+  const hotReloadInFlightRef = useRef(false)
 
   const partsQuery = useQuery({
     queryKey: ['synthforge', 'parts'],
@@ -153,7 +257,7 @@ export function SynthForgeCard({
   const paramsQuery = useQuery({
     queryKey: ['synthforge', 'params', activePart],
     queryFn: () => synthforgeApi.getPartParameters(activePart),
-    refetchInterval: 1200,
+    refetchInterval: 1000,
   })
 
   const sfzStatusQuery = useQuery({
@@ -164,9 +268,56 @@ export function SynthForgeCard({
 
   const soundfontsQuery = useQuery({
     queryKey: ['soundfonts', 'synthforge', 'browser'],
-    queryFn: () => soundfontApi.listSoundfonts({ limit: 300, format: 'sfz' }),
+    queryFn: () => soundfontApi.listSoundfonts({ limit: 400, format: 'sfz' }),
     staleTime: 20_000,
-    enabled: activeTab === 'browser',
+  })
+
+  const backendStatusQuery = useQuery({
+    queryKey: ['synthforge', 'backend-status', activePart],
+    queryFn: () => synthforgeApi.getPartBackendStatus(activePart),
+    refetchInterval: 2000,
+  })
+
+  const streamingConfigQuery = useQuery({
+    queryKey: ['synthforge', 'streaming', activePart],
+    queryFn: () => synthforgeApi.getStreamingConfig(activePart),
+    refetchInterval: 5000,
+  })
+
+  const hotReloadQuery = useQuery({
+    queryKey: ['synthforge', 'hot-reload', activePart],
+    queryFn: () => synthforgeApi.getHotReload(activePart),
+    refetchInterval: 1500,
+  })
+
+  const scalaQuery = useQuery({
+    queryKey: ['synthforge', 'scala', activePart],
+    queryFn: () => synthforgeApi.getScalaTuning(activePart),
+    refetchInterval: 5000,
+  })
+
+  const mpeQuery = useQuery({
+    queryKey: ['synthforge', 'mpe', activePart],
+    queryFn: () => synthforgeApi.getMpeConfig(activePart),
+    refetchInterval: 5000,
+  })
+
+  const modMatrixQuery = useQuery({
+    queryKey: ['synthforge', 'mod-matrix', activePart],
+    queryFn: () => synthforgeApi.getModMatrixRoutes(activePart),
+    refetchInterval: 2000,
+  })
+
+  const freezeStatusQuery = useQuery({
+    queryKey: ['synthforge', 'freeze', activePart],
+    queryFn: () => synthforgeApi.getFreezeStatus(activePart),
+    refetchInterval: 1500,
+  })
+
+  const analyzerQuery = useQuery({
+    queryKey: ['synthforge', 'analyzer', activePart],
+    queryFn: () => synthforgeApi.getPartAnalyzerFrame(activePart),
+    refetchInterval: 500,
   })
 
   const setPartConfigMutation = useMutation({
@@ -194,6 +345,15 @@ export function SynthForgeCard({
     },
   })
 
+  const savePatchMutation = useMutation({
+    mutationFn: ({ partIndex, bank, program, name }: { partIndex: number; bank: number; program: number; name: string }) =>
+      synthforgeApi.savePatch(partIndex, bank, program, name),
+    onSuccess: (_, variables) => {
+      setSelectedPatch(`${variables.bank}:${variables.program}`)
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'patches'] })
+    },
+  })
+
   const loadSfzMutation = useMutation({
     mutationFn: ({ partIndex, sfzPath }: { partIndex: number; sfzPath: string }) =>
       synthforgeApi.loadSfz(partIndex, sfzPath),
@@ -205,6 +365,90 @@ export function SynthForgeCard({
     },
   })
 
+  const setSamplerBackendMutation = useMutation({
+    mutationFn: ({ partIndex, backend }: { partIndex: number; backend: 'native' | 'sfizz' }) =>
+      synthforgeApi.setSamplerBackend(partIndex, backend),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'backend-status', variables.partIndex] })
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'sfz', 'status', variables.partIndex] })
+    },
+  })
+
+  const setStreamingMutation = useMutation({
+    mutationFn: ({ partIndex, config }: { partIndex: number; config: SynthForgeStreamingConfig }) =>
+      synthforgeApi.setStreamingConfig(partIndex, config),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'streaming', variables.partIndex] })
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'backend-status', variables.partIndex] })
+    },
+  })
+
+  const setHotReloadMutation = useMutation({
+    mutationFn: ({ partIndex, enabled, intervalMs }: { partIndex: number; enabled: boolean; intervalMs: number }) =>
+      synthforgeApi.setHotReload(partIndex, enabled, intervalMs),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'hot-reload', variables.partIndex] })
+    },
+  })
+
+  const reloadIfChangedMutation = useMutation({
+    mutationFn: ({ partIndex }: { partIndex: number }) => synthforgeApi.reloadSfzIfChanged(partIndex),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'sfz', 'status', variables.partIndex] })
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'hot-reload', variables.partIndex] })
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'backend-status', variables.partIndex] })
+    },
+  })
+
+  const loadScalaMutation = useMutation({
+    mutationFn: ({
+      partIndex,
+      scalaPath,
+      rootKey,
+      referenceHz,
+    }: {
+      partIndex: number
+      scalaPath: string
+      rootKey: number
+      referenceHz: number
+    }) => synthforgeApi.loadScalaTuning(partIndex, scalaPath, rootKey, referenceHz),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'scala', variables.partIndex] })
+    },
+  })
+
+  const setMpeMutation = useMutation({
+    mutationFn: ({ partIndex, config }: { partIndex: number; config: { enabled: boolean; lower_zone_channels: number; upper_zone_channels: number; pitch_bend_range_semitones: number } }) =>
+      synthforgeApi.setMpeConfig(partIndex, config),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'mpe', variables.partIndex] })
+    },
+  })
+
+  const setModMatrixMutation = useMutation({
+    mutationFn: ({ partIndex, routes }: { partIndex: number; routes: SynthForgeModMatrixRoute[] }) =>
+      synthforgeApi.setModMatrixRoutes(partIndex, routes),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'mod-matrix', variables.partIndex] })
+    },
+  })
+
+  const setFreezeMutation = useMutation({
+    mutationFn: ({ partIndex, enabled }: { partIndex: number; enabled: boolean }) =>
+      synthforgeApi.setFreeze(partIndex, enabled),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'freeze', variables.partIndex] })
+    },
+  })
+
+  const renderPartMutation = useMutation({
+    mutationFn: ({ partIndex, outputPath, durationMs }: { partIndex: number; outputPath: string; durationMs: number }) =>
+      synthforgeApi.renderPartToFile(partIndex, outputPath, durationMs),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['synthforge', 'freeze', variables.partIndex] })
+    },
+  })
+
   const currentPart = useMemo(() => {
     const found = partsQuery.data?.find((part) => part.part_index === activePart)
     return found ?? defaultPart(activePart)
@@ -213,41 +457,46 @@ export function SynthForgeCard({
   const params = paramsQuery.data ?? {}
   const voices = voicesQuery.data
   const sfzStatus = sfzStatusQuery.data
-  const cpuPercent = toNumber(voices?.cpu_percent, 0)
+  const backendStatus = backendStatusQuery.data
+  const streamingConfig = streamingConfigQuery.data
+  const hotReloadStatus = hotReloadQuery.data
+  const scalaTuning = scalaQuery.data
+  const mpeConfig = mpeQuery.data
+  const modMatrixRoutes = modMatrixQuery.data ?? []
+  const freezeStatus = freezeStatusQuery.data
+  const analyzerFrame = analyzerQuery.data
+
+  const partChannel = currentPart.midi_channel >= 1 && currentPart.midi_channel <= 16
+    ? currentPart.midi_channel
+    : activePart + 1
+
+  const waveformValue = Math.round(clamp(toNumber(params['osc1.waveform'], 0), 0, 3))
+  const oscLevel = clamp(toNumber(params['osc1.level'], 0.75), 0, 1)
+  const coarseTune = clamp(toNumber(params['osc1.coarse'], 0), -24, 24)
+  const cutoffNormalized = cutoffToNormalized(toNumber(params['filter1.cutoff'], 12000))
+  const cutoffHz = cutoffFromNormalized(cutoffNormalized)
+  const resonance = clamp(toNumber(params['filter1.resonance'], 0.2), 0.1, 1.2)
+  const attackMs = clamp(toNumber(params['amp.attack'], 10), 1, 5000)
+  const decayMs = clamp(toNumber(params['amp.decay'], 120), 1, 5000)
+  const sustain = clamp(toNumber(params['amp.sustain'], 0.8), 0, 1)
+  const releaseMs = clamp(toNumber(params['amp.release'], 250), 1, 5000)
+
   const activeVoices = toNumber(voices?.active_voices, 0)
   const peakVoices = toNumber(voices?.peak_voices, 0)
   const partVoices = toNumber(voices?.voices_per_part?.[activePart], 0)
-
-  const macroValues = useMemo(() => {
-    return {
-      brightness: toNumber(params['filter1.cutoff'], 12000),
-      attack: toNumber(params['amp.attack'], 12),
-      reverb: toNumber(params['fx.reverb_send'], 0.2),
-      space: toNumber(params['fx.space'], 0.3),
-      motion: toNumber(params['lfo1.rate'], 0.4),
-      body: toNumber(params['osc1.level'], 0.75),
-      tune: toNumber(params['osc1.coarse'], 0),
-      resonance: toNumber(params['filter1.resonance'], 0.35),
-      decay: toNumber(params['amp.decay'], 120),
-      sustain: toNumber(params['amp.sustain'], 0.8),
-      release: toNumber(params['amp.release'], 260),
-    }
-  }, [params])
 
   const instrumentName = useMemo(() => {
     if (sfzStatus?.sfz_path) return getFileName(sfzStatus.sfz_path)
     return plugin.name
   }, [sfzStatus?.sfz_path, plugin.name])
 
+  const patchValueList = patchesQuery.data ?? []
   const patchFilter = patchSearch.trim().toLowerCase()
   const filteredPatches = useMemo(() => {
-    if (!patchFilter) return patchesQuery.data ?? []
-    return (patchesQuery.data ?? []).filter((patch) =>
-      patch.name.toLowerCase().includes(patchFilter)
-    )
-  }, [patchesQuery.data, patchFilter])
+    if (!patchFilter) return patchValueList
+    return patchValueList.filter((patch) => patch.name.toLowerCase().includes(patchFilter))
+  }, [patchFilter, patchValueList])
 
-  const patchValueList = patchesQuery.data ?? []
   const selectedPatchValue = selectedPatch || (patchValueList.length > 0
     ? `${patchValueList[0].bank}:${patchValueList[0].program}`
     : '')
@@ -263,47 +512,215 @@ export function SynthForgeCard({
     })
   }, [soundfontsQuery.data, browserFilter])
 
-  const waveformBars = useMemo(() => {
-    return Array.from({ length: 56 }, (_, index) => {
-      const value = Math.sin((index * 0.4) + 0.8) * 0.4 + 0.5
-      return clamp(value, 0.08, 0.96)
+  const keyboardNotes = useMemo(
+    () => Array.from({ length: KEYBOARD_MAX_NOTE - KEYBOARD_MIN_NOTE + 1 }, (_, index) => KEYBOARD_MIN_NOTE + index),
+    []
+  )
+
+  const activeNoteList = useMemo(() => {
+    return Object.values(activeNotes).sort((left, right) => {
+      if (left.note !== right.note) return left.note - right.note
+      return left.channel - right.channel
+    })
+  }, [activeNotes])
+
+  const activeNoteVelocity = useMemo(() => {
+    const velocityByNote = new Map<number, number>()
+    for (const item of activeNoteList) {
+      const current = velocityByNote.get(item.note) ?? 0
+      velocityByNote.set(item.note, Math.max(current, item.velocity))
+    }
+    return velocityByNote
+  }, [activeNoteList])
+
+  const registerNoteEvent = useCallback((
+    type: MidiEventType,
+    channel: number,
+    note: number,
+    velocity: number,
+    source: NoteSource
+  ) => {
+    const now = Date.now()
+    const key = `${channel}:${note}`
+
+    setActiveNotes((previous) => {
+      const next = { ...previous }
+      if (type === 'note_on' && velocity > 0) {
+        next[key] = { channel, note, velocity, source, updatedAt: now }
+      } else {
+        delete next[key]
+      }
+      return next
+    })
+
+    setNoteEvents((previous) => {
+      const next: MidiNoteEvent = {
+        id: `${now}-${Math.random().toString(16).slice(2)}`,
+        type,
+        channel,
+        note,
+        velocity,
+        source,
+        updatedAt: now,
+      }
+      return [next, ...previous].slice(0, MAX_NOTE_EVENTS)
     })
   }, [])
 
-  const pianoKeys = useMemo(() => {
-    return Array.from({ length: 36 }, (_, index) => {
-      const name = NOTE_NAMES[index % NOTE_NAMES.length]
-      const isBlack = name.includes('#')
-      const isKeyswitch = index < 3
-      const isVelocityBand = index >= 8 && index <= 24
-      return { index, name, isBlack, isKeyswitch, isVelocityBand }
-    })
-  }, [])
+  const sendNoteOn = useCallback(async (note: number, source: NoteSource, velocity = 100) => {
+    const channel = partChannel
+    registerNoteEvent('note_on', channel, note, velocity, source)
+    try {
+      await synthforgeApi.noteOn(channel, note, velocity)
+      setNoteApiError('')
+    } catch (error) {
+      console.error('SynthForge note-on failed', error)
+      setNoteApiError('Note input unavailable: verify MIDI engine is enabled.')
+    }
+  }, [partChannel, registerNoteEvent])
 
-  const adsrPath = useMemo(() => {
-    const attackNorm = clamp(macroValues.attack / 5000, 0.03, 0.35)
-    const decayNorm = clamp(macroValues.decay / 5000, 0.05, 0.28)
-    const sustainNorm = clamp(macroValues.sustain, 0.05, 0.95)
-    const releaseNorm = clamp(macroValues.release / 5000, 0.06, 0.4)
+  const sendNoteOff = useCallback(async (note: number, source: NoteSource) => {
+    const channel = partChannel
+    registerNoteEvent('note_off', channel, note, 0, source)
+    try {
+      await synthforgeApi.noteOff(channel, note, 0)
+      setNoteApiError('')
+    } catch (error) {
+      console.error('SynthForge note-off failed', error)
+      setNoteApiError('Note input unavailable: verify MIDI engine is enabled.')
+    }
+  }, [partChannel, registerNoteEvent])
 
-    const width = 270
-    const height = 78
-    const baseline = height - 8
-    const peakY = 8
-    const sustainY = baseline - (sustainNorm * (baseline - peakY))
+  useWebSocketTopic('midi_activity', (_topicData, message) => {
+    if (message.type !== 'midi_message') return
 
-    const attackX = width * attackNorm
-    const decayX = attackX + (width * decayNorm)
-    const releaseStartX = width - (width * releaseNorm)
+    const payload = message.data ?? {}
+    const type = String(payload.type ?? '')
+    if (type !== 'note_on' && type !== 'note_off') return
 
-    return [
-      `M0 ${baseline}`,
-      `L${attackX.toFixed(2)} ${peakY}`,
-      `L${decayX.toFixed(2)} ${sustainY.toFixed(2)}`,
-      `L${releaseStartX.toFixed(2)} ${sustainY.toFixed(2)}`,
-      `L${width} ${baseline}`,
-    ].join(' ')
-  }, [macroValues.attack, macroValues.decay, macroValues.sustain, macroValues.release])
+    const channel = Number(payload.channel)
+    const note = Number(payload.data1)
+    const velocity = Number(payload.data2 ?? 0)
+
+    if (!Number.isFinite(channel) || channel < 1 || channel > 16) return
+    if (!Number.isFinite(note) || note < 0 || note > 127) return
+    if (!Number.isFinite(velocity) || velocity < 0 || velocity > 127) return
+
+    const eventType: MidiEventType = type === 'note_on' && velocity === 0 ? 'note_off' : type
+    registerNoteEvent(eventType, channel, note, velocity, 'external')
+  })
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isTextEntryTarget(event.target)) return
+
+      const key = event.key.toLowerCase()
+      const offset = QWERTY_NOTE_OFFSETS[key]
+      if (offset === undefined) return
+
+      event.preventDefault()
+      if (event.repeat || qwertyHeldRef.current[key] !== undefined) return
+
+      const note = clamp(KEYBOARD_BASE_NOTE + offset, 0, 127)
+      qwertyHeldRef.current[key] = note
+      void sendNoteOn(note, 'qwerty', 110)
+    }
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      const note = qwertyHeldRef.current[key]
+      if (note === undefined) return
+
+      delete qwertyHeldRef.current[key]
+      void sendNoteOff(note, 'qwerty')
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+
+      const heldNotes = Object.values(qwertyHeldRef.current)
+      qwertyHeldRef.current = {}
+      for (const note of heldNotes) {
+        void sendNoteOff(note, 'qwerty')
+      }
+    }
+  }, [sendNoteOn, sendNoteOff])
+
+  useEffect(() => {
+    return () => {
+      const heldNotes = Object.keys(pointerHeldRef.current).map((note) => Number(note))
+      pointerHeldRef.current = {}
+      for (const note of heldNotes) {
+        void sendNoteOff(note, 'on-screen')
+      }
+    }
+  }, [sendNoteOff])
+
+  useEffect(() => {
+    if (!selectedPatch && patchValueList.length > 0) {
+      setSelectedPatch(`${patchValueList[0].bank}:${patchValueList[0].program}`)
+    }
+  }, [patchValueList, selectedPatch])
+
+  useEffect(() => {
+    if (streamingConfig) {
+      setStreamingDraft(streamingConfig)
+    }
+  }, [streamingConfig])
+
+  useEffect(() => {
+    if (hotReloadStatus) {
+      setHotReloadEnabled(hotReloadStatus.enabled)
+      setHotReloadIntervalMs(hotReloadStatus.interval_ms)
+    }
+  }, [hotReloadStatus])
+
+  useEffect(() => {
+    if (scalaTuning) {
+      setScalaPath(scalaTuning.scala_path ?? '')
+      setScalaRoot(scalaTuning.root_key ?? 60)
+      setScalaReferenceHz(scalaTuning.reference_hz ?? 440)
+    }
+  }, [scalaTuning])
+
+  useEffect(() => {
+    if (mpeConfig) {
+      setMpeEnabled(mpeConfig.enabled)
+      setMpeLowerZone(mpeConfig.lower_zone_channels)
+      setMpeUpperZone(mpeConfig.upper_zone_channels)
+      setMpePitchRange(mpeConfig.pitch_bend_range_semitones)
+    }
+  }, [mpeConfig])
+
+  useEffect(() => {
+    if (!hotReloadEnabled) return undefined
+
+    const timer = window.setInterval(() => {
+      if (hotReloadInFlightRef.current) return
+      hotReloadInFlightRef.current = true
+
+      void synthforgeApi.reloadSfzIfChanged(activePart)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['synthforge', 'sfz', 'status', activePart] })
+          queryClient.invalidateQueries({ queryKey: ['synthforge', 'hot-reload', activePart] })
+          queryClient.invalidateQueries({ queryKey: ['synthforge', 'backend-status', activePart] })
+        })
+        .catch(() => {
+          // Best-effort poller: errors are surfaced via status endpoints.
+        })
+        .finally(() => {
+          hotReloadInFlightRef.current = false
+        })
+    }, Math.max(100, hotReloadIntervalMs))
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [activePart, hotReloadEnabled, hotReloadIntervalMs, queryClient])
 
   const updatePartConfig = useCallback((patch: Partial<SynthForgePartConfig>) => {
     const next: SynthForgePartConfig = {
@@ -327,6 +744,17 @@ export function SynthForgeCard({
     loadPatchMutation.mutate({ partIndex: activePart, bank, program })
   }, [activePart, loadPatchMutation])
 
+  const handlePatchSave = useCallback(() => {
+    const name = saveName.trim()
+    if (!name) return
+    savePatchMutation.mutate({
+      partIndex: activePart,
+      bank: Math.max(0, saveBank),
+      program: Math.max(0, saveProgram),
+      name,
+    })
+  }, [activePart, saveBank, saveName, savePatchMutation, saveProgram])
+
   const handleLoadManualPath = useCallback(() => {
     const path = manualPath.trim()
     if (!path) return
@@ -339,22 +767,87 @@ export function SynthForgeCard({
     loadSfzMutation.mutate({ partIndex: activePart, sfzPath: path })
   }, [activePart, loadSfzMutation, manualPath, sfzStatus?.sfz_path])
 
-  const handleXyUpdate = useCallback((x: number, y: number) => {
-    setXyPoint({ x, y })
-    setPartParam('filter1.cutoff', cutoffFromNormalized(x))
-    setPartParam('filter1.resonance', clamp(1.2 - y, 0.1, 1.2))
-  }, [setPartParam])
+  const handleApplyStreaming = useCallback(() => {
+    setStreamingMutation.mutate({ partIndex: activePart, config: streamingDraft })
+  }, [activePart, setStreamingMutation, streamingDraft])
 
-  const onXyPointerEvent = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    const target = event.currentTarget
-    const rect = target.getBoundingClientRect()
-    const x = clamp((event.clientX - rect.left) / rect.width, 0, 1)
-    const y = clamp((event.clientY - rect.top) / rect.height, 0, 1)
-    handleXyUpdate(x, y)
-  }, [handleXyUpdate])
+  const handleApplyHotReload = useCallback(() => {
+    setHotReloadMutation.mutate({
+      partIndex: activePart,
+      enabled: hotReloadEnabled,
+      intervalMs: hotReloadIntervalMs,
+    })
+  }, [activePart, hotReloadEnabled, hotReloadIntervalMs, setHotReloadMutation])
 
-  const meterState = cpuPercent > 72 ? 'danger' : cpuPercent > 45 ? 'warn' : 'ok'
+  const handleReloadIfChanged = useCallback(() => {
+    reloadIfChangedMutation.mutate({ partIndex: activePart })
+  }, [activePart, reloadIfChangedMutation])
+
+  const handleApplyScala = useCallback(() => {
+    const path = scalaPath.trim()
+    if (!path) return
+    loadScalaMutation.mutate({
+      partIndex: activePart,
+      scalaPath: path,
+      rootKey: scalaRoot,
+      referenceHz: scalaReferenceHz,
+    })
+  }, [activePart, loadScalaMutation, scalaPath, scalaReferenceHz, scalaRoot])
+
+  const handleApplyMpe = useCallback(() => {
+    setMpeMutation.mutate({
+      partIndex: activePart,
+      config: {
+        enabled: mpeEnabled,
+        lower_zone_channels: mpeLowerZone,
+        upper_zone_channels: mpeUpperZone,
+        pitch_bend_range_semitones: mpePitchRange,
+      },
+    })
+  }, [activePart, mpeEnabled, mpeLowerZone, mpePitchRange, mpeUpperZone, setMpeMutation])
+
+  const handleAddModRoute = useCallback(() => {
+    const nextRoutes = [...modMatrixRoutes]
+    nextRoutes.push({
+      source: modSource.trim() || 'cc.1',
+      destination: modDestination,
+      amount: modAmount,
+      bipolar: false,
+      enabled: true,
+    })
+    setModMatrixMutation.mutate({ partIndex: activePart, routes: nextRoutes })
+  }, [activePart, modAmount, modDestination, modMatrixRoutes, modSource, setModMatrixMutation])
+
+  const handleClearModRoutes = useCallback(() => {
+    setModMatrixMutation.mutate({ partIndex: activePart, routes: [] })
+  }, [activePart, setModMatrixMutation])
+
+  const handleToggleFreeze = useCallback(() => {
+    const enabled = !(freezeStatus?.freeze_enabled ?? false)
+    setFreezeMutation.mutate({ partIndex: activePart, enabled })
+  }, [activePart, freezeStatus?.freeze_enabled, setFreezeMutation])
+
+  const handleRenderToFile = useCallback(() => {
+    const path = renderPath.trim()
+    if (!path) return
+    renderPartMutation.mutate({ partIndex: activePart, outputPath: path, durationMs: 2000 })
+  }, [activePart, renderPartMutation, renderPath])
+
+  const handleKeyboardPointerDown = useCallback((note: number) => (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (pointerHeldRef.current[note]) return
+    pointerHeldRef.current[note] = true
+    event.currentTarget.setPointerCapture(event.pointerId)
+    void sendNoteOn(note, 'on-screen', 100)
+  }, [sendNoteOn])
+
+  const handleKeyboardPointerUp = useCallback((note: number) => {
+    if (!pointerHeldRef.current[note]) return
+    delete pointerHeldRef.current[note]
+    void sendNoteOff(note, 'on-screen')
+  }, [sendNoteOff])
+
   const statusHasPath = Boolean(sfzStatus?.sfz_path)
+  const activePatchList = filteredPatches.length > 0 ? filteredPatches : patchValueList
 
   return (
     <PluginCardShell
@@ -368,7 +861,7 @@ export function SynthForgeCard({
     >
       <div className={`synthforge-card synthforge-theme-${theme}`}>
         <div className="synthforge-topbar">
-          <div className="synthforge-top-left">
+          <div className="synthforge-topbar-left">
             <button
               className="synthforge-instrument-button"
               onClick={() => setShowFullPath((prev) => !prev)}
@@ -376,58 +869,56 @@ export function SynthForgeCard({
             >
               {instrumentName}
             </button>
-            <select
-              className="synthforge-part-select"
-              value={activePart}
-              onChange={(event) => setActivePart(Number(event.target.value))}
-            >
-              {Array.from({ length: 16 }, (_, index) => (
-                <option key={index} value={index}>Part {index + 1}</option>
-              ))}
-            </select>
+            <label className="synthforge-inline-field">
+              Part
+              <select
+                value={activePart}
+                onChange={(event) => setActivePart(Number(event.target.value))}
+              >
+                {Array.from({ length: 16 }, (_, index) => (
+                  <option key={index} value={index}>Part {index + 1}</option>
+                ))}
+              </select>
+            </label>
           </div>
 
-          <div className="synthforge-top-center">
-            {patchValueList.length > 20 && (
+          <div className="synthforge-topbar-center">
+            {patchValueList.length > 12 && (
               <input
-                className="synthforge-patch-search"
-                placeholder="Search patch..."
+                className="synthforge-text-input"
+                placeholder="Search patch"
                 value={patchSearch}
                 onChange={(event) => setPatchSearch(event.target.value)}
               />
             )}
-            <select
-              className="synthforge-patch-select"
-              value={selectedPatchValue}
-              onChange={(event) => handlePatchLoad(event.target.value)}
-            >
-              {(filteredPatches.length > 0 ? filteredPatches : patchValueList).map((patch) => {
-                const value = `${patch.bank}:${patch.program}`
-                return (
-                  <option key={value} value={value}>
-                    {patch.name}
-                  </option>
-                )
-              })}
-            </select>
+            <label className="synthforge-inline-field">
+              Patch
+              <select
+                value={selectedPatchValue}
+                onChange={(event) => handlePatchLoad(event.target.value)}
+                disabled={patchValueList.length === 0 || loadPatchMutation.isPending}
+              >
+                {activePatchList.map((patch) => {
+                  const value = `${patch.bank}:${patch.program}`
+                  return (
+                    <option key={value} value={value}>
+                      {patch.name}
+                    </option>
+                  )
+                })}
+              </select>
+            </label>
           </div>
 
-          <div className="synthforge-top-right">
-            <div className={`synthforge-cpu-meter synthforge-cpu-meter-${meterState}`}>
-              <div
-                className="synthforge-cpu-fill"
-                style={{ width: `${clamp(cpuPercent, 0, 100)}%` }}
-              />
-              <span className="synthforge-cpu-label">
-                {cpuPercent.toFixed(1)}% • {activeVoices}/{Math.max(peakVoices, 1)}
-              </span>
+          <div className="synthforge-topbar-right">
+            <div className="synthforge-voice-summary">
+              <strong>{activeVoices}</strong>
+              <span>Active</span>
+              <strong>{partVoices}</strong>
+              <span>Part</span>
+              <strong>{peakVoices}</strong>
+              <span>Peak</span>
             </div>
-            <button className="synthforge-icon-button" onClick={() => setShowHelp((prev) => !prev)} title="Help">
-              <Question size={15} weight="duotone" />
-            </button>
-            <button className="synthforge-icon-button" title="Settings">
-              <GearSix size={15} weight="duotone" />
-            </button>
             <button
               className="synthforge-icon-button"
               onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
@@ -442,382 +933,657 @@ export function SynthForgeCard({
           <div className="synthforge-path-bar">{sfzStatus.sfz_path}</div>
         )}
 
-        {showHelp && (
-          <div className="synthforge-help-bar">
-            Minimal performance view: switch tabs for Mod/FX/Mapping/Browser, load SFZ from browser or manual path, and use Hot Reload after editing files externally.
-          </div>
-        )}
+        <div className="synthforge-grid">
+          <section className="synthforge-panel">
+            <div className="synthforge-panel-title">Part Routing</div>
 
-        <div className="synthforge-zones">
-          <section className="synthforge-zone synthforge-zone-top">
-            <div className="synthforge-wave-strip">
-              <div className="synthforge-zone-title"><Waves size={13} weight="duotone" /> Waveform Preview</div>
-              <div className="synthforge-wave-bars">
-                {waveformBars.map((bar, index) => (
-                  <span
-                    key={`${index}-${bar}`}
-                    style={{ height: `${Math.round(bar * 100)}%` }}
-                  />
+            <label className="synthforge-field">
+              MIDI Channel
+              <select
+                value={currentPart.midi_channel}
+                onChange={(event) => updatePartConfig({ midi_channel: Number(event.target.value) })}
+              >
+                <option value={0}>OMNI</option>
+                {Array.from({ length: 16 }, (_, index) => (
+                  <option key={index + 1} value={index + 1}>Channel {index + 1}</option>
                 ))}
-              </div>
+              </select>
+            </label>
+
+            <label className="synthforge-field">
+              Output Bus
+              <select
+                value={currentPart.output_bus}
+                onChange={(event) => updatePartConfig({ output_bus: event.target.value })}
+              >
+                {OUTPUT_BUSES.map((bus) => (
+                  <option key={bus} value={bus}>{bus}</option>
+                ))}
+              </select>
+            </label>
+
+            <SliderField
+              label="Level"
+              value={currentPart.level}
+              min={0}
+              max={1}
+              step={0.01}
+              formatter={(value) => `${Math.round(value * 100)}%`}
+              onChange={(value) => updatePartConfig({ level: value })}
+            />
+
+            <SliderField
+              label="Pan"
+              value={currentPart.pan}
+              min={-1}
+              max={1}
+              step={0.01}
+              formatter={(value) => value.toFixed(2)}
+              onChange={(value) => updatePartConfig({ pan: value })}
+            />
+
+            <div className="synthforge-button-row">
+              <button
+                className={currentPart.mute ? 'active' : ''}
+                onClick={() => updatePartConfig({ mute: !currentPart.mute })}
+              >
+                Mute
+              </button>
+              <button
+                className={currentPart.solo ? 'active' : ''}
+                onClick={() => updatePartConfig({ solo: !currentPart.solo })}
+              >
+                Solo
+              </button>
             </div>
-            <div className="synthforge-keyboard-overview">
-              <div className="synthforge-zone-title"><PianoKeys size={13} weight="duotone" /> Key Mapping</div>
-              <div className="synthforge-keys">
-                {pianoKeys.map((key) => (
-                  <div
-                    key={`${key.name}-${key.index}`}
-                    className={[
-                      'synthforge-key',
-                      key.isBlack ? 'black' : 'white',
-                      key.isKeyswitch ? 'keyswitch' : '',
-                      key.isVelocityBand ? 'velocity-band' : '',
-                    ].join(' ')}
-                  />
+
+            <div className="synthforge-divider" />
+
+            <div className="synthforge-panel-title">Patch Save</div>
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                Bank
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={saveBank}
+                  onChange={(event) => setSaveBank(Number(event.target.value))}
+                />
+              </label>
+              <label className="synthforge-field">
+                Program
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={saveProgram}
+                  onChange={(event) => setSaveProgram(Number(event.target.value))}
+                />
+              </label>
+            </div>
+            <label className="synthforge-field">
+              Patch Name
+              <input
+                type="text"
+                value={saveName}
+                onChange={(event) => setSaveName(event.target.value)}
+                placeholder="User Patch"
+              />
+            </label>
+            <button
+              className="synthforge-primary-button"
+              onClick={handlePatchSave}
+              disabled={savePatchMutation.isPending}
+            >
+              Save Patch
+            </button>
+          </section>
+
+          <section className="synthforge-panel">
+            <div className="synthforge-panel-title">Synth DSP</div>
+
+            <label className="synthforge-field">
+              Waveform
+              <select
+                value={waveformValue}
+                onChange={(event) => setPartParam('osc1.waveform', Number(event.target.value))}
+              >
+                {WAVEFORMS.map((name, index) => (
+                  <option key={name} value={index}>{name}</option>
                 ))}
-              </div>
+              </select>
+            </label>
+
+            <SliderField
+              label="Osc Level"
+              value={oscLevel}
+              min={0}
+              max={1}
+              step={0.01}
+              formatter={(value) => `${Math.round(value * 100)}%`}
+              onChange={(value) => setPartParam('osc1.level', value)}
+            />
+
+            <SliderField
+              label="Coarse Tune"
+              value={coarseTune}
+              min={-24}
+              max={24}
+              step={1}
+              formatter={(value) => `${Math.round(value)} st`}
+              onChange={(value) => setPartParam('osc1.coarse', value)}
+            />
+
+            <SliderField
+              label="Filter Cutoff"
+              value={cutoffNormalized}
+              min={0}
+              max={1}
+              step={0.001}
+              formatter={() => `${Math.round(cutoffHz)} Hz`}
+              onChange={(value) => setPartParam('filter1.cutoff', cutoffFromNormalized(value))}
+            />
+
+            <SliderField
+              label="Filter Resonance"
+              value={resonance}
+              min={0.1}
+              max={1.2}
+              step={0.01}
+              formatter={(value) => value.toFixed(2)}
+              onChange={(value) => setPartParam('filter1.resonance', value)}
+            />
+
+            <div className="synthforge-divider" />
+            <div className="synthforge-panel-title">Envelope</div>
+
+            <SliderField
+              label="Attack"
+              value={attackMs}
+              min={1}
+              max={5000}
+              step={1}
+              formatter={(value) => `${Math.round(value)} ms`}
+              onChange={(value) => setPartParam('amp.attack', value)}
+            />
+
+            <SliderField
+              label="Decay"
+              value={decayMs}
+              min={1}
+              max={5000}
+              step={1}
+              formatter={(value) => `${Math.round(value)} ms`}
+              onChange={(value) => setPartParam('amp.decay', value)}
+            />
+
+            <SliderField
+              label="Sustain"
+              value={sustain}
+              min={0}
+              max={1}
+              step={0.01}
+              formatter={(value) => `${Math.round(value * 100)}%`}
+              onChange={(value) => setPartParam('amp.sustain', value)}
+            />
+
+            <SliderField
+              label="Release"
+              value={releaseMs}
+              min={1}
+              max={5000}
+              step={1}
+              formatter={(value) => `${Math.round(value)} ms`}
+              onChange={(value) => setPartParam('amp.release', value)}
+            />
+          </section>
+
+          <section className="synthforge-panel">
+            <div className="synthforge-panel-title">SFZ Load & Browser</div>
+
+            <div className="synthforge-status-grid">
+              <span>Loaded</span>
+              <strong>{sfzStatus?.loaded ? 'Yes' : 'No'}</strong>
+              <span>Regions</span>
+              <strong>{toNumber(sfzStatus?.region_count, 0)}</strong>
+              <span>Samples</span>
+              <strong>{toNumber(sfzStatus?.loaded_sample_count, 0)}</strong>
+              <span>Sampler Mode</span>
+              <strong>{sfzStatus?.sampler_mode ? 'Enabled' : 'Disabled'}</strong>
+            </div>
+
+            <div className="synthforge-load-row">
+              <input
+                className="synthforge-text-input"
+                placeholder="/path/to/instrument.sfz"
+                value={manualPath}
+                onChange={(event) => setManualPath(event.target.value)}
+              />
+              <button onClick={handleLoadManualPath} disabled={loadSfzMutation.isPending}>Load</button>
+              <button
+                className={statusHasPath ? 'hot' : ''}
+                onClick={handleHotReload}
+                disabled={loadSfzMutation.isPending}
+                title="Reload current SFZ"
+              >
+                <ArrowsClockwise size={14} weight="duotone" />
+              </button>
+            </div>
+
+            <label className="synthforge-field">
+              Search Library
+              <input
+                className="synthforge-text-input"
+                placeholder="Search SFZ files"
+                value={browserSearch}
+                onChange={(event) => setBrowserSearch(event.target.value)}
+              />
+            </label>
+
+            <div className="synthforge-browser-list">
+              {filteredSoundfonts.map((item) => (
+                <button
+                  key={item.path}
+                  className="synthforge-browser-item"
+                  onClick={() => {
+                    setManualPath(item.path)
+                    loadSfzMutation.mutate({ partIndex: activePart, sfzPath: item.path })
+                  }}
+                >
+                  <span className="name">{item.name}</span>
+                  <span className="meta">{item.library} • {item.format.toUpperCase()}</span>
+                </button>
+              ))}
+              {filteredSoundfonts.length === 0 && (
+                <div className="synthforge-browser-empty">No SFZ files found in library index.</div>
+              )}
             </div>
           </section>
 
-          <section className="synthforge-zone synthforge-zone-middle">
-            <div className="synthforge-tab-row">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`synthforge-tab ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
+          <section className="synthforge-panel">
+            <div className="synthforge-panel-title">Sampler Engine</div>
+
+            <label className="synthforge-field">
+              Backend
+              <select
+                value={(backendStatus?.backend as 'native' | 'sfizz') || 'native'}
+                onChange={(event) => {
+                  const backend = event.target.value as 'native' | 'sfizz'
+                  setSamplerBackendMutation.mutate({ partIndex: activePart, backend })
+                }}
+              >
+                <option value="native">Native</option>
+                <option value="sfizz">sfizz</option>
+              </select>
+            </label>
+
+            <div className="synthforge-status-grid">
+              <span>sfizz</span>
+              <strong>{backendStatus?.sfizz_available ? 'Available' : 'Unavailable'}</strong>
+              <span>Regions</span>
+              <strong>{toNumber(backendStatus?.region_count, 0)}</strong>
+              <span>Groups</span>
+              <strong>{toNumber(backendStatus?.group_count, 0)}</strong>
+              <span>Preloaded</span>
+              <strong>{toNumber(backendStatus?.preloaded_samples, 0)}</strong>
+            </div>
+            {(backendStatus?.unknown_opcodes?.length ?? 0) > 0 && (
+              <div className="synthforge-status-line">
+                <span className="warn">
+                  Unknown opcodes: {(backendStatus?.unknown_opcodes ?? []).join(', ')}
+                </span>
+              </div>
+            )}
+
+            <div className="synthforge-divider" />
+            <div className="synthforge-panel-title">Streaming & Quality</div>
+
+            <label className="synthforge-field">
+              Interpolation
+              <select
+                value={streamingDraft.interpolation}
+                onChange={(event) => setStreamingDraft((prev) => ({
+                  ...prev,
+                  interpolation: event.target.value as SynthForgeStreamingConfig['interpolation'],
+                }))}
+              >
+                <option value="linear">Linear</option>
+                <option value="hermite">Hermite</option>
+                <option value="sinc">Sinc</option>
+              </select>
+            </label>
+
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                Preload (bytes)
+                <input
+                  type="number"
+                  min={16384}
+                  max={16777216}
+                  step={4096}
+                  value={streamingDraft.preload_size}
+                  onChange={(event) => setStreamingDraft((prev) => ({
+                    ...prev,
+                    preload_size: Number(event.target.value),
+                  }))}
+                />
+              </label>
+              <label className="synthforge-field">
+                Max Voices
+                <input
+                  type="number"
+                  min={8}
+                  max={512}
+                  step={1}
+                  value={streamingDraft.max_voices}
+                  onChange={(event) => setStreamingDraft((prev) => ({
+                    ...prev,
+                    max_voices: Number(event.target.value),
+                  }))}
+                />
+              </label>
+            </div>
+
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                Live Quality
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={1}
+                  value={streamingDraft.quality_live}
+                  onChange={(event) => setStreamingDraft((prev) => ({
+                    ...prev,
+                    quality_live: Number(event.target.value),
+                  }))}
+                />
+              </label>
+              <label className="synthforge-field">
+                Freewheel Quality
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={1}
+                  value={streamingDraft.quality_freewheeling}
+                  onChange={(event) => setStreamingDraft((prev) => ({
+                    ...prev,
+                    quality_freewheeling: Number(event.target.value),
+                  }))}
+                />
+              </label>
+            </div>
+
+            <button className="synthforge-primary-button" onClick={handleApplyStreaming} disabled={setStreamingMutation.isPending}>
+              Apply Streaming
+            </button>
+
+            <div className="synthforge-divider" />
+            <div className="synthforge-panel-title">Hot Reload</div>
+            <div className="synthforge-button-row">
+              <button className={hotReloadEnabled ? 'active' : ''} onClick={() => setHotReloadEnabled((prev) => !prev)}>
+                {hotReloadEnabled ? 'Enabled' : 'Disabled'}
+              </button>
+              <input
+                className="synthforge-text-input"
+                type="number"
+                min={100}
+                max={10000}
+                value={hotReloadIntervalMs}
+                onChange={(event) => setHotReloadIntervalMs(Number(event.target.value))}
+              />
+            </div>
+            <div className="synthforge-button-row">
+              <button onClick={handleApplyHotReload} disabled={setHotReloadMutation.isPending}>Apply Reload Policy</button>
+              <button onClick={handleReloadIfChanged} disabled={reloadIfChangedMutation.isPending}>Check Now</button>
+            </div>
+
+            <div className="synthforge-divider" />
+            <div className="synthforge-panel-title">Scala & MPE</div>
+            <div className="synthforge-load-row">
+              <input
+                className="synthforge-text-input"
+                placeholder="/path/to/scale.scl"
+                value={scalaPath}
+                onChange={(event) => setScalaPath(event.target.value)}
+              />
+              <button onClick={handleApplyScala} disabled={loadScalaMutation.isPending}>Load Scala</button>
+            </div>
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                Root
+                <input
+                  type="number"
+                  min={0}
+                  max={127}
+                  value={scalaRoot}
+                  onChange={(event) => setScalaRoot(Number(event.target.value))}
+                />
+              </label>
+              <label className="synthforge-field">
+                Ref Hz
+                <input
+                  type="number"
+                  min={300}
+                  max={500}
+                  step={0.1}
+                  value={scalaReferenceHz}
+                  onChange={(event) => setScalaReferenceHz(Number(event.target.value))}
+                />
+              </label>
+            </div>
+
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                MPE
+                <select
+                  value={mpeEnabled ? 'on' : 'off'}
+                  onChange={(event) => setMpeEnabled(event.target.value === 'on')}
                 >
-                  {tab.label}
-                </button>
+                  <option value="off">Off</option>
+                  <option value="on">On</option>
+                </select>
+              </label>
+              <label className="synthforge-field">
+                PB Range
+                <input
+                  type="number"
+                  min={1}
+                  max={96}
+                  value={mpePitchRange}
+                  onChange={(event) => setMpePitchRange(Number(event.target.value))}
+                />
+              </label>
+            </div>
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                Lower Zone
+                <input
+                  type="number"
+                  min={0}
+                  max={15}
+                  value={mpeLowerZone}
+                  onChange={(event) => setMpeLowerZone(Number(event.target.value))}
+                />
+              </label>
+              <label className="synthforge-field">
+                Upper Zone
+                <input
+                  type="number"
+                  min={0}
+                  max={15}
+                  value={mpeUpperZone}
+                  onChange={(event) => setMpeUpperZone(Number(event.target.value))}
+                />
+              </label>
+            </div>
+            <button onClick={handleApplyMpe} disabled={setMpeMutation.isPending}>Apply MPE</button>
+
+            <div className="synthforge-divider" />
+            <div className="synthforge-panel-title">Mod Matrix</div>
+            <div className="synthforge-compact-grid">
+              <label className="synthforge-field">
+                Source
+                <input
+                  type="text"
+                  value={modSource}
+                  onChange={(event) => setModSource(event.target.value)}
+                />
+              </label>
+              <label className="synthforge-field">
+                Destination
+                <select
+                  value={modDestination}
+                  onChange={(event) => setModDestination(event.target.value)}
+                >
+                  {MOD_DESTINATIONS.map((dest) => (
+                    <option key={dest} value={dest}>{dest}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <SliderField
+              label="Amount"
+              value={modAmount}
+              min={-1}
+              max={1}
+              step={0.01}
+              formatter={(value) => value.toFixed(2)}
+              onChange={setModAmount}
+            />
+            <div className="synthforge-button-row">
+              <button onClick={handleAddModRoute} disabled={setModMatrixMutation.isPending}>Add Route</button>
+              <button onClick={handleClearModRoutes} disabled={setModMatrixMutation.isPending || modMatrixRoutes.length === 0}>
+                Clear
+              </button>
+            </div>
+            <div className="synthforge-note-events synthforge-mod-routes">
+              {modMatrixRoutes.length === 0 && (
+                <div className="synthforge-note-empty">No modulation routes configured</div>
+              )}
+              {modMatrixRoutes.map((route, index) => (
+                <div key={`${route.source}-${route.destination}-${index}`} className="synthforge-note-event">
+                  <strong>{route.source}</strong>
+                  <span>→ {route.destination}</span>
+                  <span>{route.amount.toFixed(2)}</span>
+                  <span>{route.enabled ? 'enabled' : 'disabled'}</span>
+                </div>
               ))}
             </div>
 
-            {activeTab === 'main' && (
-              <div className="synthforge-main-tab">
-                <div className="synthforge-macro-grid">
-                  <MacroDial
-                    label="Brightness"
-                    value={macroValues.brightness}
-                    min={20}
-                    max={20000}
-                    accent={accentColor}
-                    formatter={(value) => `${Math.round(value)}Hz`}
-                    onChange={(value) => setPartParam('filter1.cutoff', value)}
-                  />
-                  <MacroDial
-                    label="Attack"
-                    value={macroValues.attack}
-                    min={1}
-                    max={5000}
-                    accent="#4cc9f0"
-                    formatter={(value) => `${Math.round(value)}ms`}
-                    onChange={(value) => setPartParam('amp.attack', value)}
-                  />
-                  <MacroDial
-                    label="Reverb"
-                    value={macroValues.reverb}
-                    min={0}
-                    max={1}
-                    accent="#ff6ea8"
-                    formatter={(value) => `${Math.round(value * 100)}%`}
-                    onChange={(value) => setPartParam('fx.reverb_send', value)}
-                  />
-                  <MacroDial
-                    label="Space"
-                    value={macroValues.space}
-                    min={0}
-                    max={1}
-                    accent="#b2f7ef"
-                    formatter={(value) => `${Math.round(value * 100)}%`}
-                    onChange={(value) => setPartParam('fx.space', value)}
-                  />
-                  <MacroDial
-                    label="Motion"
-                    value={macroValues.motion}
-                    min={0}
-                    max={2}
-                    accent="#67d4ff"
-                    formatter={(value) => `${value.toFixed(2)}Hz`}
-                    onChange={(value) => setPartParam('lfo1.rate', value)}
-                  />
-                  <MacroDial
-                    label="Body"
-                    value={macroValues.body}
-                    min={0}
-                    max={1}
-                    accent="#89f7fe"
-                    formatter={(value) => `${Math.round(value * 100)}%`}
-                    onChange={(value) => setPartParam('osc1.level', value)}
-                  />
-                </div>
+            <div className="synthforge-divider" />
+            <div className="synthforge-panel-title">Freeze, Render, Analyzer</div>
+            <div className="synthforge-button-row">
+              <button
+                className={freezeStatus?.freeze_enabled ? 'active' : ''}
+                onClick={handleToggleFreeze}
+                disabled={setFreezeMutation.isPending}
+              >
+                {freezeStatus?.freeze_enabled ? 'Freeze On' : 'Freeze Off'}
+              </button>
+              <span className="synthforge-inline-meta">
+                {freezeStatus?.frozen_signal_ready ? `Frozen ${freezeStatus.freeze_samples} smp` : 'Not frozen'}
+              </span>
+            </div>
 
-                <div className="synthforge-perf-panel">
-                  <label>
-                    Volume
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={currentPart.level}
-                      onChange={(event) => updatePartConfig({ level: Number(event.target.value) })}
-                    />
-                  </label>
-                  <label>
-                    Pan
-                    <input
-                      type="range"
-                      min={-1}
-                      max={1}
-                      step={0.01}
-                      value={currentPart.pan}
-                      onChange={(event) => updatePartConfig({ pan: Number(event.target.value) })}
-                    />
-                  </label>
-                  <label>
-                    Tune (±24)
-                    <input
-                      type="range"
-                      min={-24}
-                      max={24}
-                      step={1}
-                      value={macroValues.tune}
-                      onChange={(event) => setPartParam('osc1.coarse', Number(event.target.value))}
-                    />
-                  </label>
-                  <label>
-                    Resonance
-                    <input
-                      type="range"
-                      min={0.1}
-                      max={1.2}
-                      step={0.01}
-                      value={macroValues.resonance}
-                      onChange={(event) => setPartParam('filter1.resonance', Number(event.target.value))}
-                    />
-                  </label>
-                </div>
+            <div className="synthforge-load-row">
+              <input
+                className="synthforge-text-input"
+                value={renderPath}
+                onChange={(event) => setRenderPath(event.target.value)}
+                placeholder="/tmp/synthforge-render.wav"
+              />
+              <button onClick={handleRenderToFile} disabled={renderPartMutation.isPending}>Render WAV</button>
+            </div>
 
-                <div className="synthforge-xy-card">
-                  <div className="synthforge-xy-title">Expressive XY</div>
-                  <div
-                    className="synthforge-xy-pad"
-                    onPointerDown={(event) => {
-                      setIsDraggingXy(true)
-                      event.currentTarget.setPointerCapture(event.pointerId)
-                      onXyPointerEvent(event)
-                    }}
-                    onPointerMove={(event) => {
-                      if (isDraggingXy) onXyPointerEvent(event)
-                    }}
-                    onPointerUp={() => setIsDraggingXy(false)}
-                    onPointerCancel={() => setIsDraggingXy(false)}
-                  >
-                    <span
-                      className="synthforge-xy-dot"
-                      style={{
-                        left: `${xyPoint.x * 100}%`,
-                        top: `${xyPoint.y * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="synthforge-xy-readout">
-                    Cutoff {Math.round(cutoffFromNormalized(xyPoint.x))}Hz • Res {(clamp(1.2 - xyPoint.y, 0.1, 1.2)).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'mod' && (
-              <div className="synthforge-generic-tab">
-                <div className="synthforge-matrix-grid">
-                  <div className="head">Source</div>
-                  <div className="head">Destination</div>
-                  <div className="head">Amount</div>
-                  {[
-                    ['Velocity', 'Amp', '0.84'],
-                    ['LFO1', 'Cutoff', '0.41'],
-                    ['Aftertouch', 'Resonance', '0.22'],
-                    ['ModWheel', 'Space', '0.37'],
-                  ].map(([source, destination, amount]) => (
-                    <div key={`${source}-${destination}`} className="row">
-                      <span>{source}</span>
-                      <span>{destination}</span>
-                      <span>{amount}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'fx' && (
-              <div className="synthforge-generic-tab">
-                <label>
-                  Reverb Send
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={macroValues.reverb}
-                    onChange={(event) => setPartParam('fx.reverb_send', Number(event.target.value))}
-                  />
-                </label>
-                <label>
-                  Delay Send
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={toNumber(params['fx.delay_send'], 0.18)}
-                    onChange={(event) => setPartParam('fx.delay_send', Number(event.target.value))}
-                  />
-                </label>
-                <label>
-                  Chorus Send
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={toNumber(params['fx.chorus_send'], 0.12)}
-                    onChange={(event) => setPartParam('fx.chorus_send', Number(event.target.value))}
-                  />
-                </label>
-              </div>
-            )}
-
-            {activeTab === 'mapping' && (
-              <div className="synthforge-generic-tab">
-                <label>
-                  Key Range
-                  <input
-                    type="range"
-                    min={0}
-                    max={127}
-                    step={1}
-                    value={Math.round(toNumber(params['mapping.key_center'], 60))}
-                    onChange={(event) => setPartParam('mapping.key_center', Number(event.target.value))}
-                  />
-                </label>
-                <label>
-                  Velocity Focus
-                  <input
-                    type="range"
-                    min={1}
-                    max={127}
-                    step={1}
-                    value={Math.round(toNumber(params['mapping.velocity_focus'], 96))}
-                    onChange={(event) => setPartParam('mapping.velocity_focus', Number(event.target.value))}
-                  />
-                </label>
-                <label>
-                  Round Robin
-                  <input
-                    type="range"
-                    min={1}
-                    max={8}
-                    step={1}
-                    value={Math.round(toNumber(params['mapping.rr_count'], 4))}
-                    onChange={(event) => setPartParam('mapping.rr_count', Number(event.target.value))}
-                  />
-                </label>
-              </div>
-            )}
-
-            {activeTab === 'browser' && (
-              <div className="synthforge-browser-tab">
-                <div className="synthforge-browser-top">
-                  <input
-                    className="synthforge-browser-search"
-                    placeholder="Search SFZ library..."
-                    value={browserSearch}
-                    onChange={(event) => setBrowserSearch(event.target.value)}
-                  />
-                  <span>{filteredSoundfonts.length} instruments</span>
-                </div>
-                <div className="synthforge-browser-list">
-                  {filteredSoundfonts.map((item) => (
-                    <button
-                      key={item.path}
-                      className="synthforge-browser-item"
-                      onClick={() => {
-                        setManualPath(item.path)
-                        loadSfzMutation.mutate({ partIndex: activePart, sfzPath: item.path })
-                      }}
-                    >
-                      <span className="name">{item.name}</span>
-                      <span className="meta">{item.library} • {item.format.toUpperCase()}</span>
-                    </button>
-                  ))}
-                  {filteredSoundfonts.length === 0 && (
-                    <div className="synthforge-browser-empty">No SFZ files found in library index.</div>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="synthforge-status-grid">
+              <span>Peak L/R</span>
+              <strong>{`${toNumber(analyzerFrame?.peak_left, 0).toFixed(3)} / ${toNumber(analyzerFrame?.peak_right, 0).toFixed(3)}`}</strong>
+              <span>RMS L/R</span>
+              <strong>{`${toNumber(analyzerFrame?.rms_left, 0).toFixed(3)} / ${toNumber(analyzerFrame?.rms_right, 0).toFixed(3)}`}</strong>
+              <span>MIDI Events</span>
+              <strong>{toNumber(analyzerFrame?.midi_events, 0)}</strong>
+              <span>Active Voices</span>
+              <strong>{toNumber(analyzerFrame?.active_voices, 0)}</strong>
+            </div>
           </section>
 
-          <section className="synthforge-zone synthforge-zone-bottom">
-            <div className="synthforge-midi-strip">
-              <div className="synthforge-zone-title">MIDI Activity</div>
-              <div className="synthforge-midi-lights">
-                {Array.from({ length: 16 }, (_, channel) => {
-                  const selected = channel === activePart
-                  const active = selected && partVoices > 0
-                  return <span key={channel} className={`light ${selected ? 'selected' : ''} ${active ? 'active' : ''}`} />
-                })}
-              </div>
+          <section className="synthforge-panel synthforge-keyboard-panel">
+            <div className="synthforge-panel-title">
+              <PianoKeys size={14} weight="duotone" />
+              Keyboard & MIDI Activity
+            </div>
+            <div className="synthforge-keyboard-hint">
+              Input channel: <strong>{partChannel}</strong> • QWERTY layout active (`Z-M`, `Q-P`, sharps on adjacent keys)
             </div>
 
-            <div className="synthforge-adsr-strip">
-              <div className="synthforge-zone-title">Envelope</div>
-              <svg viewBox="0 0 270 80" preserveAspectRatio="none">
-                <path d={adsrPath} />
-              </svg>
+            <div className="synthforge-keyboard-strip">
+              {keyboardNotes.map((note) => {
+                const velocity = activeNoteVelocity.get(note) ?? 0
+                const style = {
+                  '--key-accent': accentColor,
+                } as CSSProperties
+
+                return (
+                  <button
+                    key={note}
+                    className={[
+                      'synthforge-midi-key',
+                      isBlackNote(note) ? 'is-black' : 'is-white',
+                      velocity > 0 ? 'is-active' : '',
+                    ].join(' ')}
+                    style={style}
+                    onPointerDown={handleKeyboardPointerDown(note)}
+                    onPointerUp={() => handleKeyboardPointerUp(note)}
+                    onPointerCancel={() => handleKeyboardPointerUp(note)}
+                    onPointerLeave={() => handleKeyboardPointerUp(note)}
+                    title={`${noteLabel(note)} (${note})`}
+                  >
+                    <span>{noteLabel(note)}</span>
+                  </button>
+                )
+              })}
             </div>
 
-            <div className="synthforge-load-strip">
-              <div className="synthforge-zone-title">Hot Reload</div>
-              <div className="synthforge-load-row">
-                <input
-                  className="synthforge-path-input"
-                  placeholder="/path/to/instrument.sfz"
-                  value={manualPath}
-                  onChange={(event) => setManualPath(event.target.value)}
-                />
-                <button onClick={handleLoadManualPath} disabled={loadSfzMutation.isPending}>Load</button>
-                <button
-                  className={statusHasPath ? 'hot' : ''}
-                  onClick={handleHotReload}
-                  disabled={loadSfzMutation.isPending}
-                >
-                  <ArrowsClockwise size={14} weight="duotone" />
-                </button>
-              </div>
-              <div className="synthforge-part-controls">
-                <button
-                  className={currentPart.mute ? 'active' : ''}
-                  onClick={() => updatePartConfig({ mute: !currentPart.mute })}
-                >
-                  Mute
-                </button>
-                <button
-                  className={currentPart.solo ? 'active' : ''}
-                  onClick={() => updatePartConfig({ solo: !currentPart.solo })}
-                >
-                  Solo
-                </button>
-              </div>
+            <div className="synthforge-active-notes">
+              {activeNoteList.length === 0 && (
+                <div className="synthforge-note-empty">No active notes</div>
+              )}
+              {activeNoteList.map((item) => (
+                <div key={`${item.channel}:${item.note}`} className="synthforge-note-chip">
+                  <strong>{noteLabel(item.note)}</strong>
+                  <span>CH {item.channel}</span>
+                  <span>VEL {item.velocity}</span>
+                  <span>{item.source}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="synthforge-note-events">
+              {noteEvents.length === 0 && (
+                <div className="synthforge-note-empty">Awaiting MIDI note events...</div>
+              )}
+              {noteEvents.map((event) => (
+                <div key={event.id} className={`synthforge-note-event ${event.type}`}>
+                  <span>{new Date(event.updatedAt).toLocaleTimeString()}</span>
+                  <strong>{event.type === 'note_on' ? 'ON' : 'OFF'}</strong>
+                  <span>{noteLabel(event.note)} ({event.note})</span>
+                  <span>CH {event.channel}</span>
+                  <span>VEL {event.velocity}</span>
+                  <span>{event.source}</span>
+                </div>
+              ))}
             </div>
           </section>
         </div>
 
-        {(sfzStatus?.last_error || (sfzStatus?.warnings?.length ?? 0) > 0) && (
+        {(sfzStatus?.last_error || (sfzStatus?.warnings?.length ?? 0) > 0 || noteApiError) && (
           <div className="synthforge-status-line">
-            {sfzStatus.last_error && <span className="error">{sfzStatus.last_error}</span>}
-            {sfzStatus.warnings?.map((warning) => <span key={warning} className="warn">{warning}</span>)}
+            {sfzStatus?.last_error && <span className="error">{sfzStatus.last_error}</span>}
+            {sfzStatus?.warnings?.map((warning) => <span key={warning} className="warn">{warning}</span>)}
+            {noteApiError && <span className="warn">{noteApiError}</span>}
           </div>
         )}
       </div>

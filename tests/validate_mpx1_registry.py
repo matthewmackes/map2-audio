@@ -36,6 +36,12 @@ ALLOWED_TYPES = {
 
 MIN_PARAM_COUNT = 200
 
+# Minimum number of non-scaffold params expected per algorithm slot when
+# coverage.status == "complete".  Scaffold-only entries (mix+level+bypass = 3)
+# trigger a warning; any algorithm with only scaffold params is incomplete.
+SCAFFOLD_PARAM_NAMES = {"mix", "level", "bypass"}
+MIN_DEEP_PARAMS_PER_ALGORITHM = 1  # at least one param beyond mix/level/bypass
+
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -214,8 +220,61 @@ def validate_registry(path: Path | None = None) -> list[str]:
         _validate_range(param, errors)
 
     _validate_alg_slot_coverage(registry, params, errors)
+    _validate_deep_param_coverage(registry, params, errors)
 
     return errors
+
+
+def _validate_deep_param_coverage(
+    registry: dict[str, Any], params: list[dict[str, Any]], errors: list[str]
+) -> None:
+    """When coverage.status == 'complete', every algorithm slot must have at
+    least one parameter beyond the scaffold trio (mix / level / bypass)."""
+    coverage = registry.get("coverage", {})
+    status = coverage.get("status")
+    if status != "complete":
+        # bootstrap_partial: emit a warning-level note but don't hard-fail
+        return
+
+    slot_map = coverage.get("algorithm_slot_coverage")
+    if not isinstance(slot_map, dict):
+        return
+
+    # Group params by (block, algorithm)
+    from collections import defaultdict
+
+    groups: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for p in params:
+        block = str(p.get("block", ""))
+        algorithm = str(p.get("algorithm", ""))
+        param_id = str(p.get("id", ""))
+        # extract the leaf name (last segment after final ".")
+        leaf = param_id.rsplit(".", 1)[-1] if "." in param_id else param_id
+        groups[(block, algorithm)].append(leaf)
+
+    for block, slot_range in slot_map.items():
+        if not isinstance(slot_range, str) or ".." not in slot_range:
+            continue
+        lower_raw, upper_raw = slot_range.split("..", maxsplit=1)
+        try:
+            lower = int(lower_raw)
+            upper = int(upper_raw)
+        except ValueError:
+            continue
+
+        for alg_index in range(lower, upper + 1):
+            # Algorithm index 0 is universally the Bypass (passthrough) algorithm
+            # for every block and legitimately has no deep parameters.
+            if alg_index == 0:
+                continue
+            algorithm_id = f"alg_{alg_index:02d}"
+            leaves = set(groups.get((block, algorithm_id), []))
+            deep = leaves - SCAFFOLD_PARAM_NAMES
+            if len(deep) < MIN_DEEP_PARAMS_PER_ALGORITHM:
+                errors.append(
+                    f"coverage.complete violation: {block}/{algorithm_id} has no "
+                    f"deep parameters (only scaffold: {sorted(leaves)})"
+                )
 
 
 def test_validate_mpx1_registry() -> None:
@@ -223,7 +282,84 @@ def test_validate_mpx1_registry() -> None:
     assert not errors, "\n".join(errors)
 
 
+def coverage_report(path: Path | None = None) -> dict[str, Any]:
+    """Return a dict describing per-block, per-algorithm param counts."""
+    registry_path = path or _registry_path()
+    try:
+        registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"error": str(exc)}
+
+    params = registry.get("params", [])
+    slot_map = registry.get("coverage", {}).get("algorithm_slot_coverage", {})
+
+    from collections import defaultdict
+
+    # group by (block, algorithm)
+    groups: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for p in params:
+        block = str(p.get("block", ""))
+        algorithm = str(p.get("algorithm", ""))
+        param_id = str(p.get("id", ""))
+        leaf = param_id.rsplit(".", 1)[-1] if "." in param_id else param_id
+        groups[(block, algorithm)].append(leaf)
+
+    report: dict[str, Any] = {
+        "total_params": len(params),
+        "coverage_status": registry.get("coverage", {}).get("status"),
+        "blocks": {},
+    }
+
+    for block, slot_range in slot_map.items():
+        if not isinstance(slot_range, str) or ".." not in slot_range:
+            continue
+        lower_raw, upper_raw = slot_range.split("..", maxsplit=1)
+        try:
+            lower, upper = int(lower_raw), int(upper_raw)
+        except ValueError:
+            continue
+
+        block_info: dict[str, Any] = {}
+        for alg_index in range(lower, upper + 1):
+            algorithm_id = f"alg_{alg_index:02d}"
+            leaves = set(groups.get((block, algorithm_id), []))
+            deep = leaves - SCAFFOLD_PARAM_NAMES
+            # alg_00 = Bypass; no deep params expected
+            is_bypass = alg_index == 0
+            block_info[algorithm_id] = {
+                "total": len(leaves),
+                "scaffold": len(leaves & SCAFFOLD_PARAM_NAMES),
+                "deep": len(deep),
+                "complete": is_bypass or len(deep) >= MIN_DEEP_PARAMS_PER_ALGORITHM,
+                "bypass": is_bypass,
+            }
+        report["blocks"][block] = block_info
+
+    return report
+
+
 def main() -> int:
+    import sys
+
+    show_report = "--report" in sys.argv
+
+    if show_report:
+        report = coverage_report()
+        if "error" in report:
+            print(f"Error: {report['error']}")
+            return 1
+        print(f"Coverage report ({_registry_path()})")
+        print(f"  Total params : {report['total_params']}")
+        print(f"  Status       : {report['coverage_status']}")
+        for block, algs in sorted(report.get("blocks", {}).items()):
+            total_algs = len(algs)
+            complete = sum(1 for a in algs.values() if a["complete"])
+            print(f"  {block:12s}: {complete}/{total_algs} algorithms have deep params")
+            for alg_id, info in sorted(algs.items()):
+                mark = "✓" if info["complete"] else "✗"
+                print(f"    {mark} {alg_id}: {info['total']} total ({info['deep']} deep)")
+        return 0
+
     errors = validate_registry()
     if errors:
         print("MPX1 registry validation FAILED")

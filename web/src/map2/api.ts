@@ -1743,6 +1743,76 @@ export interface SynthForgeSampleStatus {
   warnings: string[]
 }
 
+export interface SynthForgeStreamingConfig {
+  enabled: boolean
+  preload_size: number
+  max_voices: number
+  interpolation: 'linear' | 'hermite' | 'sinc'
+  quality_live: number
+  quality_freewheeling: number
+  memory_limit_mb: number
+}
+
+export interface SynthForgeHotReloadStatus {
+  enabled: boolean
+  interval_ms: number
+  pending_reload: boolean
+  reloaded: boolean
+  generation: number
+  last_reload_iso: string
+  last_error: string
+}
+
+export interface SynthForgeScalaTuning {
+  enabled: boolean
+  scala_path: string
+  root_key: number
+  reference_hz: number
+}
+
+export interface SynthForgeMpeConfig {
+  enabled: boolean
+  lower_zone_channels: number
+  upper_zone_channels: number
+  pitch_bend_range_semitones: number
+}
+
+export interface SynthForgeModMatrixRoute {
+  source: string
+  destination: string
+  amount: number
+  bipolar: boolean
+  enabled: boolean
+}
+
+export interface SynthForgeFreezeStatus {
+  freeze_enabled: boolean
+  frozen_signal_ready: boolean
+  freeze_samples: number
+  render_path: string
+  last_error: string
+}
+
+export interface SynthForgeAnalyzerFrame {
+  peak_left: number
+  peak_right: number
+  rms_left: number
+  rms_right: number
+  midi_events: number
+  active_voices: number
+}
+
+export interface SynthForgeBackendStatus {
+  backend: string
+  sfizz_available: boolean
+  sfizz_loaded: boolean
+  region_count: number
+  group_count: number
+  preloaded_samples: number
+  unknown_opcodes: string[]
+  unsupported_opcodes: string[]
+}
+
 export const synthforgeApi = {
   getParts: () =>
     fetchJson<SynthForgePartConfig[]>(`${API_BASE}/synthforge/parts`),
@@ -1790,6 +1860,105 @@ export const synthforgeApi = {
 
   getSfzStatus: (partIndex: number) =>
     fetchJson<SynthForgeSampleStatus>(`${API_BASE}/synthforge/sfz/status/${partIndex}`),
+
+  reloadSfzIfChanged: (partIndex: number) =>
+    fetchJson<{ status: string; part_index: number; reloaded: boolean; sample_status: SynthForgeSampleStatus; hot_reload: SynthForgeHotReloadStatus }>(
+      `${API_BASE}/synthforge/sfz/reload-if-changed/${partIndex}`,
+      { method: 'POST' }
+    ),
+
+  setSamplerBackend: (partIndex: number, backend: 'native' | 'sfizz') =>
+    fetchJson<{ status: string; part_index: number; backend: string }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/sampler-backend`,
+      { method: 'POST', body: JSON.stringify({ backend }) }
+    ),
+
+  getSamplerBackend: (partIndex: number) =>
+    fetchJson<{ part_index: number; backend: string }>(`${API_BASE}/synthforge/parts/${partIndex}/sampler-backend`),
+
+  setStreamingConfig: (partIndex: number, config: SynthForgeStreamingConfig) =>
+    fetchJson<{ status: string; part_index: number; config: SynthForgeStreamingConfig }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/streaming`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
+  getStreamingConfig: (partIndex: number) =>
+    fetchJson<SynthForgeStreamingConfig>(`${API_BASE}/synthforge/parts/${partIndex}/streaming`),
+
+  setHotReload: (partIndex: number, enabled: boolean, intervalMs: number = 1000) =>
+    fetchJson<{ status: string; part_index: number; hot_reload: SynthForgeHotReloadStatus }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/hot-reload`,
+      { method: 'POST', body: JSON.stringify({ enabled, interval_ms: intervalMs }) }
+    ),
+
+  getHotReload: (partIndex: number) =>
+    fetchJson<SynthForgeHotReloadStatus>(`${API_BASE}/synthforge/parts/${partIndex}/hot-reload`),
+
+  loadScalaTuning: (partIndex: number, scalaPath: string, rootKey: number = 60, referenceHz: number = 440) =>
+    fetchJson<{ status: string; part_index: number; tuning: SynthForgeScalaTuning }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/scala`,
+      { method: 'POST', body: JSON.stringify({ scala_path: scalaPath, root_key: rootKey, reference_hz: referenceHz }) }
+    ),
+
+  getScalaTuning: (partIndex: number) =>
+    fetchJson<SynthForgeScalaTuning>(`${API_BASE}/synthforge/parts/${partIndex}/scala`),
+
+  setMpeConfig: (partIndex: number, config: SynthForgeMpeConfig) =>
+    fetchJson<{ status: string; part_index: number; mpe: SynthForgeMpeConfig }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/mpe`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
+  getMpeConfig: (partIndex: number) =>
+    fetchJson<SynthForgeMpeConfig>(`${API_BASE}/synthforge/parts/${partIndex}/mpe`),
+
+  setModMatrixRoutes: (partIndex: number, routes: SynthForgeModMatrixRoute[]) =>
+    fetchJson<{ status: string; part_index: number; routes: SynthForgeModMatrixRoute[] }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/mod-matrix`,
+      { method: 'POST', body: JSON.stringify({ routes }) }
+    ),
+
+  getModMatrixRoutes: (partIndex: number) =>
+    fetchJson<SynthForgeModMatrixRoute[]>(`${API_BASE}/synthforge/parts/${partIndex}/mod-matrix`),
+
+  setFreeze: (partIndex: number, enabled: boolean) =>
+    fetchJson<{ status: string; part_index: number; freeze: SynthForgeFreezeStatus }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/freeze`,
+      { method: 'POST', body: JSON.stringify({ enabled }) }
+    ),
+
+  getFreezeStatus: (partIndex: number) =>
+    fetchJson<SynthForgeFreezeStatus>(`${API_BASE}/synthforge/parts/${partIndex}/freeze`),
+
+  renderPartToFile: (partIndex: number, outputPath: string, durationMs: number = 2000) =>
+    fetchJson<{ status: string; part_index: number; freeze: SynthForgeFreezeStatus }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/render`,
+      { method: 'POST', body: JSON.stringify({ output_path: outputPath, duration_ms: durationMs }) }
+    ),
+
+  getPartAnalyzerFrame: (partIndex: number) =>
+    fetchJson<SynthForgeAnalyzerFrame>(`${API_BASE}/synthforge/parts/${partIndex}/analyzer`),
+
+  getAnalyzerFrames: () =>
+    fetchJson<SynthForgeAnalyzerFrame[]>(`${API_BASE}/synthforge/analyzer`),
+
+  getPartBackendStatus: (partIndex: number) =>
+    fetchJson<SynthForgeBackendStatus>(`${API_BASE}/synthforge/backend-status/${partIndex}`),
+
+  getBackendStatus: () =>
+    fetchJson<SynthForgeBackendStatus[]>(`${API_BASE}/synthforge/backend-status`),
+
+  noteOn: (channel: number, note: number, velocity: number = 100) =>
+    fetchJson<{ status: string; channel: number; note: number; velocity: number }>(
+      `${API_BASE}/synthforge/midi/note-on`,
+      { method: 'POST', body: JSON.stringify({ channel, note, velocity }) }
+    ),
+
+  noteOff: (channel: number, note: number, velocity: number = 0) =>
+    fetchJson<{ status: string; channel: number; note: number; velocity: number }>(
+      `${API_BASE}/synthforge/midi/note-off`,
+      { method: 'POST', body: JSON.stringify({ channel, note, velocity }) }
+    ),
 }
 
 // ==================== Automation API ====================

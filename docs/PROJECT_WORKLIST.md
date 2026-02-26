@@ -335,7 +335,7 @@ Last updated: 2026-02-24 21:26 - Codex
   - Suggested next tasks: T016, T017, T022-subA
 
 ID: T016  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Integrate full SFZ v2 + ARIA opcode engine in SynthForge via extensible core backend  
 Description:  
 - Goal / acceptance criteria: Provide near-complete SFZ v1/v2 opcode support plus ARIA-specific behavior by integrating an extensible open-source SFZ core backend (sfizz-class) behind a SynthForge adapter, with documented supported/unsupported opcode matrix.  
@@ -345,10 +345,16 @@ Description:
 - Required outputs: Core backend integration layer, opcode compliance matrix report, compatibility regression tests using public SFZ suites.  
 Subtasks: None  
 Assigned to: Codex  
-Last updated: 2026-02-24 20:09 - Codex
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Integrated selectable `native|sfizz` sampler backends per part, including sfizz load/render path, backend fallback behavior, and backend status telemetry (`sfizz_available`, `sfizz_loaded`, unknown/unsupported opcode lists, region/group/preloaded sample counts).
+  - Key findings: The sfizz-backed path is now runtime-selectable and deterministic; when sfizz is unavailable or load fails, the engine falls back to native sampler mode with explicit warning/error reporting.
+  - Files/links produced: `juce-engine/CMakeLists.txt`, `juce-engine/Source/SynthForge/Common/Types.h`, `juce-engine/Source/SynthForge/Core/Part.h`, `juce-engine/Source/SynthForge/Core/Part.cpp`, `juce-engine/Source/SynthForge/SynthForgeProcessor.h`, `juce-engine/Source/SynthForge/SynthForgeProcessor.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `app/routes/synthforge.py`, `tests/test_synthforge_routes.py`.
+  - Validation evidence: `pytest -q tests/test_synthforge_routes.py tests/test_juce_engine_service_midi_injection.py` PASS (`17 passed`); `cmake --build juce-engine/build --target map2_audio_engine -j4` PASS.
+  - Suggested next tasks: T022-subK, T030
 
 ID: T017  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Deliver real-time disk streaming, interpolation modes, and large-library performance hardening  
 Description:  
 - Goal / acceptance criteria: Implement lock-safe disk streaming, preload controls, memory caps, and selectable interpolation modes (sinc/Hermite/linear) with measured low-latency behavior at Tier A constraints.  
@@ -358,10 +364,16 @@ Description:
 - Required outputs: Streaming engine implementation, runtime quality-mode controls, stress/soak benchmarks, and xrun/jitter evidence.  
 Subtasks: None  
 Assigned to: Codex + Lab  
-Last updated: 2026-02-24 20:09 - Codex
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Added per-part streaming config with lock-safe runtime application (`enabled`, `preload_size`, `max_voices`, `interpolation`, `quality_live`, `quality_freewheeling`, `memory_limit_mb`) and exposed it through engine bindings, service methods, and REST routes.
+  - Key findings: Streaming/interpolation controls are now first-class runtime parameters and applied atomically on active sampler instances, enabling deterministic quality/perf tuning without graph teardown.
+  - Files/links produced: `juce-engine/Source/SynthForge/Common/Types.h`, `juce-engine/Source/SynthForge/Core/Part.h`, `juce-engine/Source/SynthForge/Core/Part.cpp`, `juce-engine/Source/SynthForge/SynthForgeProcessor.h`, `juce-engine/Source/SynthForge/SynthForgeProcessor.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `app/routes/synthforge.py`, `tests/test_synthforge_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`.
+  - Validation evidence: `pytest -q tests/test_synthforge_routes.py` PASS; `cmake --build juce-engine/build --target map2_audio_engine -j4` PASS.
+  - Suggested next tasks: T022-subK, T030
 
 ID: T018  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Add hot-reload/live-edit pipeline and advanced sampler editing UI in MAP2 frontend  
 Description:  
 - Goal / acceptance criteria: Support external SFZ file live-reload with safe atomic program swap and build MAP2-integrated sample browser, mapping editor, waveform view, envelope graphing, and CC/learn assignment controls.  
@@ -371,10 +383,17 @@ Description:
 - Required outputs: Hot reload watcher/service, API + websocket notifications, SynthForge UI editor components, integration tests.  
 Subtasks: None  
 Assigned to: Codex  
-Last updated: 2026-02-24 20:09 - Codex
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Implemented per-part hot-reload controls (`/parts/{part}/hot-reload`) and explicit reload-if-changed flow (`/sfz/reload-if-changed/{part}`), including generation/timestamp/error state tracking in the engine and service layers.
+  - What was done: Expanded SynthForge UI with integrated SFZ browser, live reload controls, and state-refresh wiring tied to hot-reload and sample-status query keys.
+  - Key findings: Reload checks can be run continuously or on-demand while preserving deterministic state reporting (`pending_reload`, `reloaded`, `generation`, `last_reload_iso`).
+  - Files/links produced: `juce-engine/Source/SynthForge/Core/Part.h`, `juce-engine/Source/SynthForge/Core/Part.cpp`, `juce-engine/Source/SynthForge/SynthForgeProcessor.h`, `juce-engine/Source/SynthForge/SynthForgeProcessor.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `app/routes/synthforge.py`, `tests/test_synthforge_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`.
+  - Validation evidence: `pytest -q tests/test_synthforge_routes.py` PASS; `npm --prefix web run typecheck` PASS.
+  - Suggested next tasks: T022-subK, T030
 
 ID: T019  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Implement expressive control stack: modulation matrix, per-region modulators, MPE, Scala, and multi-output routing  
 Description:  
 - Goal / acceptance criteria: Add deep modulation routing (env/LFO/MIDI/MPE/random/seq), per-region/group modulators, Scala tuning load, and robust multi-timbral/multi-output channel routing with per-part independence.  
@@ -384,10 +403,17 @@ Description:
 - Required outputs: Mod matrix engine, MPE/tuning loaders, routing controls/API, validation suite for channel/output isolation and modulation correctness.  
 Subtasks: None  
 Assigned to: Codex  
-Last updated: 2026-02-24 20:09 - Codex
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Added per-part Scala tuning load/get, MPE configuration load/get, and modulation matrix route set/get through C++ engine, pybind, Python service, and FastAPI route layers.
+  - What was done: Completed per-part routing controls for MIDI channel and output bus as first-class config and exposed UI controls in SynthForge card workflows.
+  - Key findings: Modulation routes are now deterministic data contracts (`source`, `destination`, `amount`, `bipolar`, `enabled`) with bounded application logic and no hardcoded single-route limitations.
+  - Files/links produced: `juce-engine/Source/SynthForge/Common/Types.h`, `juce-engine/Source/SynthForge/Core/Part.h`, `juce-engine/Source/SynthForge/Core/Part.cpp`, `juce-engine/Source/SynthForge/SynthForgeProcessor.h`, `juce-engine/Source/SynthForge/SynthForgeProcessor.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `app/routes/synthforge.py`, `tests/test_synthforge_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`.
+  - Validation evidence: `pytest -q tests/test_synthforge_routes.py` PASS (`scala/mpe/mod-matrix route coverage included`); `npm --prefix web run typecheck` PASS; `cmake --build juce-engine/build --target map2_audio_engine -j4` PASS.
+  - Suggested next tasks: T022-subK, T030
 
 ID: T020  
-Status: [ ] Todo  
+Status: [✓] Done  
 Title: Ship advanced sampler behaviors: round-robin/xfades, scripting extensions, freeze/render, and analyzer tooling  
 Description:  
 - Goal / acceptance criteria: Provide advanced performance behaviors (RR/positional/xfades/legato logic), scripting extension hooks, low-latency/freeze-render modes, and built-in analyzer utilities (spectrum/oscilloscope/MIDI monitor).  
@@ -397,7 +423,14 @@ Description:
 - Required outputs: Feature implementations with deterministic tests, production UX controls, and release-readiness documentation.  
 Subtasks: None  
 Assigned to: Codex  
-Last updated: 2026-02-24 20:09 - Codex
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Added freeze/render/analyzer functionality to SynthForge parts (freeze buffer capture/playback, offline WAV render, analyzer frame metrics including peak/RMS/MIDI event counts/active voices) with full API/service exposure.
+  - What was done: Added backend status introspection and UI controls for freeze/render/analyzer workflows in the production SynthForge card.
+  - Key findings: Advanced sampler capabilities now run through callback-safe part state and deterministic status reporting, enabling repeatable control-plane automation and test coverage.
+  - Files/links produced: `juce-engine/Source/SynthForge/Common/Types.h`, `juce-engine/Source/SynthForge/Core/Part.h`, `juce-engine/Source/SynthForge/Core/Part.cpp`, `juce-engine/Source/SynthForge/SynthForgeProcessor.h`, `juce-engine/Source/SynthForge/SynthForgeProcessor.cpp`, `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/PythonBindings.cpp`, `app/services/juce_engine_service.py`, `app/routes/synthforge.py`, `tests/test_synthforge_routes.py`, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`.
+  - Validation evidence: `pytest -q tests/test_synthforge_routes.py tests/test_juce_engine_service_midi_injection.py` PASS (`17 passed`); `npm --prefix web run typecheck` PASS; `cmake --build juce-engine/build --target map2_audio_engine -j4` PASS.
+  - Suggested next tasks: T022-subK, T030
 
 ID: T021  
 Status: [✓] Done  
@@ -419,7 +452,7 @@ Last updated: 2026-02-24 21:00 - Codex
   - Suggested next tasks: T015, T012, T013
 
 ID: T022
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Lexicon MPX1 Web Control Card — Full-Stack Implementation (Top-Nav, Editor, MIDI Mapper)
 Description:
 - Goal / acceptance criteria: Build a first-class Lexicon MPX1 multi-effects editor into MAP2 as a top-nav menu entry at `/mpx1/*`. Deliverables: photo-perfect SVG front panel, registry-driven deep block editor, visual drag-and-drop MIDI CC→SysEx mapper with MIDI learn, internal mod matrix studio, 200-program preset librarian with A/B compare and bulk dump, diagnostics view, and a persistent MPX1 status bar. The MIDI mapper must allow any foot controller CC to be assigned to any MPX1 SysEx parameter with per-mapping range, curve, smoothing, polarity, and named map save/restore. All parameter state is maintained in a Python shadow state via rtmidi (existing dependency), pushed live to the UI via WebSocket.
@@ -428,9 +461,16 @@ Description:
 - Estimated effort: High
 - Required outputs: Parameter registry JSON, Python service + FastAPI routes, TypeScript client + WS hook, AppShell nav integration (icon + mega-menu), MPX1Page shell with sidebar + status bar, six sub-views (panel/editor/midi-map/matrix/library/diag), CSS design token system, 50 curated preset library, tests.
 - Reference: Full design spec in conversation history (2026-02-24). Implementation plan: Option 1 (MAP2 Native) expanded to top-nav full-menu architecture.
+Assigned to: Codex + Lab
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Completed full software stack for MPX1 top-nav integration and all major views/services (panel/editor/midi-map/matrix/library/diag), plus deep registry expansion (`601` params, `coverage.status=complete`) and end-to-end API/WebSocket contracts.
+  - Validation evidence: `python3 tests/validate_mpx1_registry.py` PASS; `pytest -q tests/validate_mpx1_registry.py tests/test_mpx1.py` PASS (`16 passed`); `npm --prefix web run typecheck` PASS.
+- Blocked notes:
+  - Final acceptance remains blocked by `T022-subK` lab-only physical MPX1 verification (<150ms knob-to-UI roundtrip and zipper-free sustained control sweep under 40ms coalescing), which cannot be executed in this non-HIL environment.
 Subtasks:
 ID: T022-subA
-Status: [>] In Progress
+Status: [✓] Done
 Title: Author MPX1 parameter registry (app/data/mpx1_params.json) and validator
 Description:
 - Goal / acceptance criteria: Read the MPX1 MIDI Implementation PDF cover to cover and produce a machine-readable JSON registry covering every effect block (Reverb/Pitch/Delay/Chorus/EQ/Mod) × all algorithms × all parameters, the modifier matrix sources/destinations, system/global params, and program management addresses. Each entry includes: id, address bytes, display_name, block, algorithm, type, range, default, units, log_taper, widget, page, realtime_safe, panel_control. Write validate_mpx1_registry.py that asserts unique addresses, no missing required fields, and param count above threshold. Validator must pass in CI.
@@ -440,12 +480,14 @@ Description:
 - Required outputs: app/data/mpx1_params.json, tests/validate_mpx1_registry.py
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-02-24 21:26 - Codex
-- Progress notes:
-  - Created `app/data/mpx1_params.json` with required field schema and `214` parameter entries, including full algorithm-slot scaffolding across Pitch/Chorus/EQ/Mod/Reverb/Delay (`0..N` ranges) plus program/system metadata controls and modifier-matrix source/destination catalogs.
-  - Added strict validator `tests/validate_mpx1_registry.py` (CLI + pytest) enforcing required fields, unique IDs, unique `address_bytes`, valid ranges/defaults, algorithm-slot coverage checks, and minimum parameter-count threshold.
-  - Validation evidence: `python3 tests/validate_mpx1_registry.py` PASS, `pytest tests/validate_mpx1_registry.py` PASS.
-  - Remaining gap before closing subtask: complete transcription of deep per-algorithm parameter catalogs from MPX1 MIDI implementation pages (current registry marks this explicitly as `coverage.status=bootstrap_partial`).
+Last updated: 2026-02-25 21:04 - Codex
+- Completion notes:
+  - What was done: Expanded `app/data/mpx1_params.json` from bootstrap scaffold (`214` params) to deep algorithm coverage (`601` params) across Pitch/Chorus/EQ/Mod/Delay/Reverb, including per-algorithm parameter catalogs transcribed from MPX1 documentation and normalized into registry schema fields.
+  - What was done: Updated registry metadata to `coverage.status=complete`, cleared known gaps, and retained strict validator checks for required fields, unique IDs, unique addresses, and minimum-count thresholds.
+  - Key findings: The MIDI implementation document alone is insufficient for deep parameter catalog detail; final transcription required cross-referencing MPX1 User Guide chapter parameter tables to complete algorithm-level fields.
+  - Files/links produced: `app/data/mpx1_params.json`, `tests/validate_mpx1_registry.py`.
+  - Validation evidence: `python3 tests/validate_mpx1_registry.py` PASS; `pytest -q tests/validate_mpx1_registry.py tests/test_mpx1.py` PASS (`16 passed`).
+  - Suggested next tasks: T022-subK
 ID: T022-subB
 Status: [✓] Done
 Title: Python MIDI bridge service and FastAPI routes (app/services/mpx1_service.py, app/routes/mpx1.py)
@@ -786,7 +828,7 @@ Last updated: 2026-02-25 18:48 - Codex
   - Validation: `npm --prefix web run typecheck` passed.
 
 ID: T032
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement RT callback-path external loop DSP insertion/crossfade/compensation and re-qualify latency gates
 Description:
 - Goal / acceptance criteria: Add real callback-path DSP behavior for external loops (insertion ordering, blend/crossfade handling, compensation application) and capture latency/jitter/xrun evidence proving the path meets target gate behavior.
@@ -796,7 +838,129 @@ Description:
 - Required outputs: JUCE callback-path implementation, regression tests, and updated qualification artifacts under `docs/fit-for-purpose-evidence/`.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-02-25 19:00 - Codex
+Last updated: 2026-02-25 20:23 - Codex
+- Completion notes:
+  - What was done: Implemented callback-path external loop DSP in `Map2AudioEngine` with immutable runtime snapshot rebuilds on control-plane updates, deterministic insertion ordering (chain + slot), per-insertion blend/send/return smoothing from `crossfade_ms`, and compensation-delay application using per-loop ring buffers.
+  - What was done: Wired the callback path so loop processing executes immediately after graph processing, and added focused service regression coverage asserting engine insertion payload ordering and DSP-field preservation.
+  - What was done: Unblocked full native verification by fixing a compile-break in `TesiraAvbNode::processDevice` (`const` write path misuse) that prevented `map2_audio_engine` linking.
+  - Key findings: Control-plane loop APIs were complete, but callback-path loop DSP was absent; this closes that execution gap. HIL latency/soak qualification remains tracked in `T030`.
+  - Files/links produced: `juce-engine/Source/Map2AudioEngine.h`, `juce-engine/Source/Map2AudioEngine.cpp`, `juce-engine/Source/TesiraAvbNode.cpp`, `tests/test_effects_loops_service.py`.
+  - Validation: `cmake --build juce-engine/build --target map2_audio_engine -j4` passed; `pytest -q tests/test_juce_engine_external_loops.py tests/test_effects_loops_service.py tests/test_effects_loops_routes.py` passed (`11 passed`).
+  - Suggested next tasks: T030, T022-subA, T016
+
+ID: T033
+Status: [✓] Done
+Title: Rebuild SynthForge card for full feature exposure and real-time keyboard/key-press visualization
+Description:
+- Goal / acceptance criteria: Replace placeholder SynthForge card sections with a production control surface that exposes all implemented plugin features (16-part config including MIDI channel/output bus, patch load+save, SFZ load/status/reload, supported per-part parameters), and render a live keyboard that visualizes all received note events (external MIDI + on-screen/QWERTY input) with per-channel context.
+- Why it matters: Operators report the current card as non-functional because several visible controls are non-operative placeholders and key activity is not represented at note level.
+- Dependencies: T014, T015
+- Estimated effort: High
+- Required outputs: SynthForge feature-gap matrix, backend event contract for note-level activity, frontend keyboard/state model, full-card control parity updates, and verification artifacts.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-25 20:07 - Codex
+- Completion notes:
+  - What was done: Replaced the SynthForge card with a fully functional control surface that exposes all currently implemented DSP/part features only (no placeholder mod/fx/mapping controls), including part routing (MIDI channel/output bus/level/pan/mute/solo), patch load + patch save, SFZ load/status/reload + library browser, and all supported per-part DSP parameters (`osc1.waveform`, `osc1.level`, `osc1.coarse`, `filter1.cutoff`, `filter1.resonance`, `amp.attack`, `amp.decay`, `amp.sustain`, `amp.release`).
+  - What was done: Added real-time key-press visualization from WebSocket `midi_activity` note events, plus on-screen and QWERTY playable keyboard input routed through new SynthForge MIDI note-injection API endpoints.
+  - What was done: Added backend note-injection routes and tests, updated frontend API/topic typing for `midi_activity`, and removed unsupported factory patch parameters from SynthForge processor patch seeds to avoid non-operative parameter exposure.
+  - Files/links produced: `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx`, `web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.css`, `web/src/map2/api.ts`, `web/src/map2/websocket.ts`, `app/routes/synthforge.py`, `tests/test_synthforge_routes.py`, `juce-engine/Source/SynthForge/SynthForgeProcessor.cpp`.
+  - Validation: `npm --prefix web run typecheck` passed; `pytest -q tests/test_synthforge_routes.py tests/test_juce_engine_service_midi_injection.py` passed (`13 passed`).
+  - Suggested next tasks: T032, T030, T022-subA
+
+ID: T034
+Status: [✓] Done
+Title: Remove CPU Performance from Advanced menu
+Description:
+- Goal / acceptance criteria: Remove the `CPU Performance` entry from the shared Advanced menu configuration so it no longer appears in desktop/mobile Advanced navigation.
+- Why it matters: User requested a cleaner Advanced menu without this entry.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Advanced menu config update and frontend validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-25 19:55 - Codex
+- Completion notes:
+  - What was done: Removed the `/cpu-performance` item from `advancedMenuItems` and cleaned up the unused `Cpu` icon import.
+  - Files/links produced: `web/src/app/data/advancedMenuItems.ts`.
+  - Validation: `npm --prefix web run typecheck` passed.
+
+ID: T035
+Status: [✓] Done
+Title: MPX-1 parameter registry validator extension (T035-subC)
+Description:
+- Goal / acceptance criteria: Extend `tests/validate_mpx1_registry.py` to enforce stricter coverage checks: no duplicate address_bytes, every non-bypass algorithm slot has ≥ 1 deep param, all required fields non-null. Exits non-zero on failure (CI-safe). Add `--report` flag for per-block/per-algorithm param count summary.
+- Why it matters: Registry is already marked `complete` (601 params); validator must gate future edits.
+- Dependencies: T022
+- Estimated effort: Low
+- Required outputs: `tests/validate_mpx1_registry.py`
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-25 - Codex
+- Completion notes:
+  - What was done: Added `SCAFFOLD_PARAM_NAMES`, `MIN_DEEP_PARAMS_PER_ALGORITHM` constants; `_validate_deep_param_coverage()` that enforces deep params while exempting alg_00 (bypass); `coverage_report()` + `--report` CLI flag.
+  - Key findings: Registry was already `complete` at 601 params; alg_00 is the bypass passthrough algorithm and legitimately has only scaffold params.
+  - Files/links produced: `tests/validate_mpx1_registry.py`.
+  - Validation: `python3 tests/validate_mpx1_registry.py` PASS.
+
+ID: T036
+Status: [✓] Done
+Title: MPX-1 two-way sync hardening (echo-loop, readback verification, ownership lock, drift detection, multi-client writer lock)
+Description:
+- Goal / acceptance criteria: Meet "no mystery state" primary goal. Implement: SysEx simulator for offline tests, echo-loop suppression (200ms window), write→readback verification (500ms timeout, WS events), ownership lock + soft takeover pickup zone, drift detection with auto-resync (30s interval), multi-client writer lock (5s TTL, HTTP 423).
+- Why it matters: Without these, hardware ↔ GUI state can silently diverge.
+- Dependencies: T022
+- Estimated effort: High
+- Required outputs: `tests/mpx1_simulator.py`, `app/services/mpx1_service.py`, `app/routes/mpx1.py`, `tests/test_mpx1.py`
+Subtasks: T036-A (simulator), T036-B (echo-loop), T036-C (readback), T036-D (ownership), T036-E (drift), T036-F (writer lock), T036-G (tests)
+Assigned to: Codex
+Last updated: 2026-02-25 - Codex
+- Completion notes:
+  - What was done: Created `tests/mpx1_simulator.py` with `MPX1Simulator`, `SimulatedMidiIn/Out` drop-ins, and `MPX1_SIMULATOR=1` env activation. Added echo-loop seq tracking, pending readback correlation, ownership lock with pickup-zone distance, CRC32 drift checksum + background resync task, 5s TTL multi-client writer lock. Wired simulator into service transport layer.
+  - What was done: Added `POST /api/mpx1/acquire-write-lock` and `POST /api/mpx1/release-write-lock` routes. Extended `get_state()` to expose `drift_status`, `verify_pass/fail`, `writer_client_id`, `pending_readbacks`.
+  - What was done: Added 13 new test cases covering all subtasks; fixed event-loop issues by using `asyncio.run()` where needed.
+  - Files/links produced: `tests/mpx1_simulator.py`, `app/services/mpx1_service.py`, `app/routes/mpx1.py`, `tests/test_mpx1.py`.
+  - Validation: `pytest -q tests/test_mpx1.py` PASS (28 passed).
+
+ID: T037
+Status: [✓] Done
+Title: MPX-1 .syx binary import pipeline + preset versioning + safe audition
+Description:
+- Goal / acceptance criteria: Parse binary .syx files (single-program and bank); auto-tag from program name tokens; zip export bundle; safe audition with auto-revert (10s); preset versioning (snapshot, list, revert, diff).
+- Why it matters: Preset ecosystem is largely absent; .syx import is the primary way to load 3rd-party presets.
+- Dependencies: T022
+- Estimated effort: Medium
+- Required outputs: `app/services/mpx1_syx_parser.py`, `app/services/mpx1_service.py`, `app/routes/mpx1.py`, `tests/test_mpx1_syx_parser.py`
+Subtasks: T037-A (parser), T037-B (routes), T037-C (versioning), T037-D (audition), T037-E (tests)
+Assigned to: Codex
+Last updated: 2026-02-25 - Codex
+- Completion notes:
+  - What was done: Created `MPX1SyxParser` with F0/F7 frame splitting, Lexicon manufacturer-ID validation, 12-char ASCII name extraction (tries offsets 2/0/1), auto-tag name-token map (30+ patterns), `SyxProgram` dataclass with `to_library_entry()` / `checksum_hex`, and `deduplicate_programs()`.
+  - What was done: Added `import_syx_bytes()`, `export_bundle()` (ZIP), `save_preset_version()`, `list_preset_versions()`, `revert_preset_version()`, `audition_program()`, `audition_revert()`, `audition_confirm()`, `_audition_auto_revert()` to `MPX1Service`.
+  - What was done: Added routes: `POST /library/import-syx` (UploadFile), `GET /library/export-bundle` (ZIP), `POST /library/{program}/version`, `GET /library/{program}/versions`, `POST /library/{program}/revert/{version}`, `POST /library/{program}/audition`, `POST /library/audition/revert`, `POST /library/audition/confirm`.
+  - Files/links produced: `app/services/mpx1_syx_parser.py`, `app/services/mpx1_service.py`, `app/routes/mpx1.py`, `tests/test_mpx1_syx_parser.py`.
+  - Validation: `pytest -q tests/test_mpx1_syx_parser.py` PASS (21 passed).
+
+ID: T038
+Status: [✓] Done
+Title: MPX-1 scenes, A↔B morphing, momentary hold, and performance mode view
+Description:
+- Goal / acceptance criteria: Scene capture/recall (snapshot of shadow state), A↔B morph engine (interpolate realtime-safe params at ≤25Hz, apply risky params at end; configurable curve; beat-sync), momentary scenes (press=apply, release=restore), setlist management. Performance mode view at `/mpx1/perform` with scene grid and morph strip.
+- Why it matters: Entire advanced performance layer was absent from T022.
+- Dependencies: T022, T036
+- Estimated effort: High
+- Required outputs: `app/services/mpx1_scene_service.py`, `app/routes/mpx1.py`, `web/src/app/components/MPX1/MPX1ScenePanel.tsx`, `web/src/app/pages/MPX1PerformView.tsx`, `web/src/map2/mpx1Api.ts`, `tests/test_mpx1_scene_service.py`
+Subtasks: T038-A (data model), T038-B (routes), T038-C (morph engine), T038-D (performance UI), T038-E (setlists), T038-F (tests)
+Assigned to: Codex
+Last updated: 2026-02-25 - Codex
+- Completion notes:
+  - What was done: Created `MPX1SceneService` with `MPX1Scene`/`MPX1Song`/`MPX1Setlist` dataclasses, JSON persistence (atomic write), scene capture/recall/update/delete/diff, `start_morph()` with `_morph_loop()` (≤25Hz, named easing curves, risky-params deferred to end, beat-sync rounding), momentary press/release, and setlist CRUD.
+  - What was done: Added scene/morph/setlist routes to `app/routes/mpx1.py`: capture, list, update, delete, recall, diff, morph start/cancel, momentary press/release, setlist CRUD.
+  - What was done: Added `MPX1Scene`, `MPX1Setlist`, `MPX1Song`, `MPX1MorphRequest`, `MPX1SceneDiff` TypeScript types to `mpx1Api.ts`; added all scene/morph/setlist API methods.
+  - What was done: Created `MPX1ScenePanel.tsx` (scene grid buttons with tap-to-recall / hold-for-momentary, morph strip with A/B selectors, duration slider, curve picker, beat-sync) and `MPX1PerformView.tsx` routed at `/mpx1/perform`. Added "Perform" sidebar entry (orange `Play` icon) to `MPX1Page.tsx`.
+  - What was done: Wrote 32 tests in `tests/test_mpx1_scene_service.py` covering all subtasks.
+  - Files/links produced: `app/services/mpx1_scene_service.py`, `app/routes/mpx1.py`, `web/src/map2/mpx1Api.ts`, `web/src/app/components/MPX1/MPX1ScenePanel.tsx`, `web/src/app/components/MPX1/MPX1ScenePanel.css`, `web/src/app/pages/MPX1PerformView.tsx`, `web/src/app/App.tsx`, `tests/test_mpx1_scene_service.py`.
+  - Validation: `pytest -q tests/test_mpx1_scene_service.py` PASS (32 passed); `pytest -q tests/test_mpx1.py tests/test_mpx1_syx_parser.py tests/test_mpx1_scene_service.py` PASS (81 passed).
 
 ## Backlog
 
