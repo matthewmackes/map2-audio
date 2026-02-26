@@ -1,0 +1,82 @@
+# MAP2 Audio Platform — Example Kickstart Configuration
+# ======================================================
+# This file is a reference example for unattended installation.
+#
+# Usage:
+#   python -m installer --unattended installer/examples/map2-ks.yaml
+#   python -m installer --validate-ks installer/examples/map2-ks.yaml
+#   python -m installer --unattended installer/examples/map2-ks.yaml --dry-run
+#
+# Kickstart analogy:
+#   This is the MAP2 equivalent of a Fedora Kickstart file.  Every field
+#   maps directly to a TUI screen input.  Change the values here to
+#   customise the installation for your environment.
+#
+# Schema: installer/config/schema.py (InstallerConfig)
+
+installer_version: "1.0.0"
+dry_run: false
+
+# ── Mode ──────────────────────────────────────────────────────────────────
+# audio | all-in-one | management | custom
+mode: audio
+
+# ── Locale ────────────────────────────────────────────────────────────────
+locale:
+  language: en_US.UTF-8
+  timezone: America/New_York
+  keymap: us
+
+# ── Network ───────────────────────────────────────────────────────────────
+network:
+  hostname: map2-audio-01
+  configure_avb: false
+  avb_interface: null
+  proxy_url: null
+  connectivity_ok: false
+
+# ── Storage / Paths ───────────────────────────────────────────────────────
+storage:
+  install_dir: /home/mm/map2-audio
+  venv_dir: /home/mm/map2-audio/.venv
+  log_dir: /var/log/map2
+  installer_log: /var/log/map2-installer.log
+
+# ── Software Selection ────────────────────────────────────────────────────
+software:
+  install_lv2_plugins: true
+  install_avb: false
+  install_nam: true
+  install_frontend: false    # Set true for all-in-one
+  install_juce_engine: true
+  install_lcd: false
+  install_cluster_mgr: false
+  extra_packages: []
+
+# ── Audio Interface ───────────────────────────────────────────────────────
+audio:
+  audio_interface: auto        # 'auto' = PipeWire default; or 'UA1000' for EDIROL
+  buffer_size: 64              # 32|64|128|256|512|1024 samples
+  sample_rate: 48000           # 44100|48000|88200|96000 Hz
+  audio_group_user: mm
+
+# ── Real-Time Configuration ───────────────────────────────────────────────
+realtime:
+  isolated_cores: "4,5"        # CPUs dedicated to audio (isolcpus=)
+  housekeeping_cores: "0-3"
+  audio_rtprio: 80             # SCHED_FIFO priority for audio callback (1-99)
+  midi_rtprio: 80
+  irq_rtprio: 50               # Priority for USB IRQ handler thread
+  sched_policy: FIFO
+  enable_rtkit: true
+  write_grub: true             # Write isolcpus to /etc/default/grub
+  preempt_model: full
+  max_cstate: 1                # Intel: disable deep C-states (C2+)
+
+# ── User Account ──────────────────────────────────────────────────────────
+user:
+  username: mm
+  add_audio_group: true
+  add_sudo: true
+  password_hash: null          # null = do not change existing password
+                               # Set to a SHA-512 hash string for automated deploys

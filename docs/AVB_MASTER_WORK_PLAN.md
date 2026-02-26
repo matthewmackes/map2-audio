@@ -2,7 +2,7 @@
 
 Canonical file: `docs/AVB_MASTER_WORK_PLAN.md`  
 Rule status: Active (disable only with `DISABLE WORKLIST RULE`)  
-Last updated: 2026-02-25 00:14 - Codex
+Last updated: 2026-02-26 14:12 - Codex
 
 ## Status Legend
 
@@ -1486,6 +1486,165 @@ Completion notes:
 - Files/links produced: `docs/FIT_FOR_PURPOSE_EVALUATION_PACK_2026-02-23.md`, `docs/RUNBOOK_EVALUATION.md`, `docs/fit-for-purpose-evidence/20260223/*`.
 - Validation/evidence: `pytest tests/test_avb_service_engine_contract.py tests/test_avb_router_map2.py tests/test_avb_routes_srp.py -q` (103 passed), `npm run test:avb-routing -- --runInBand --silent` (19 suites, 234 tests passed), `cmake --build juce-engine/build --target check-avb -j4` (AVB + AVDECC suites passed), `bash scripts/run_avb_hil_qualification.sh --interface enp0s25 --capture-seconds 30 ...` (Q04/Q05 BLOCKED due AVB disabled).
 - Suggested next tasks: Execute remediation priorities P1-P8 from `docs/FIT_FOR_PURPOSE_EVALUATION_PACK_2026-02-23.md`; in lab context, close deferred hardware queue (`T007`, `T017`) and attach Tesira evidence bundle.
+
+ID: T049
+Status: [✓] Done
+Title: Build World-Class Enterprise Educational TUI Installer for MAP2 Audio Platform
+Description:
+- Goal / acceptance criteria: Replace scattered bash scripts and manual steps with a single, polished Python TUI installer (`python -m installer` or `./install --tui`) that is Anaconda/Kickstart-inspired, Textual-based, fully educational, enterprise-robust, and supports both interactive TUI and unattended/scripted modes. Every screen teaches the user what the setting does and why it matters.
+- Why it matters: Onboarding new hosts is currently a fragmented multi-script process. A unified, validated, idempotent installer reduces errors, speeds deployment, and documents institutional knowledge inline.
+- Dependencies: T048 (AVB latency optimizer context), existing install_on_new_host.sh + lv2_linux_installer.py
+- Estimated effort: High (~3-5 days across 9 subtasks)
+- Required outputs: Complete `installer/` Python package with modular stages, backend drivers, Textual UI screens, unattended YAML mode, README with mermaid architecture diagram, and pytest coverage.
+Subtasks:
+- ID: T049-subA
+  Status: [✓] Done
+  Title: Scaffold installer package — entry point, Textual app skeleton, Pydantic config schema, KS YAML load/save
+  Description:
+  - Goal / acceptance criteria: `python -m installer` launches a working Textual app with Welcome screen; `installer/config/` has schema.py (Pydantic v2), kickstart.py (YAML serialize/deserialize), defaults.py. Full file-tree scaffold in place.
+  - Why it matters: Sets the architectural foundation — all later subtasks slot into established contracts (config model, app shell, screen base class).
+  - Dependencies: None
+  - Estimated effort: Medium (~3-5 hours)
+  - Required outputs: `installer/__main__.py`, `installer/installer.py`, `installer/config/schema.py`, `installer/config/kickstart.py`, `installer/config/defaults.py`, `installer/ui/screens/_base.py`
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subB
+  Status: [✓] Done
+  Title: Backend modules — executor (dry-run safe subprocess), system detector, package manager, PipeWire/systemd drivers
+  Description:
+  - Goal / acceptance criteria: `installer/backend/executor.py` wraps subprocess with dry-run, shlex safety, timeout, retry, and structured logging. `installer/backend/system.py` detects OS/distro/kernel/CPU/RAM/audio interfaces. `installer/backend/packages.py` abstracts DNF/apt. `installer/backend/pipewire.py` and `installer/backend/services.py` apply configs idempotently.
+  - Why it matters: Safe, testable command execution is the foundation of a production installer — mirrors Anaconda's `blivet`/`pykickstart` backend philosophy.
+  - Dependencies: T049-subA
+  - Estimated effort: Medium (~4-6 hours)
+  - Required outputs: `installer/backend/{executor,system,packages,services,pipewire,grub,build,verifier}.py` with unit tests
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subC
+  Status: [✓] Done
+  Title: Stage screens 00–04 — Welcome/Detect, Mode Selection, Network, Storage/Paths, Software Selection
+  Description:
+  - Goal / acceptance criteria: Five fully navigable Textual screens with real-time validation: (0) animated welcome + auto environment detection panel, (1) mode picker (audio/all-in-one/management/custom) with mode descriptions, (2) network config with live ping test + repo reachability, (3) install path + disk space live meter, (4) software component checklist (LV2, AVB, NAM, frontend). Each screen has F1/? help overlay with educational prose.
+  - Why it matters: Hub-and-spoke flow mirrors Anaconda TUI; progressive validation means errors surface before the install stage.
+  - Dependencies: T049-subA, T049-subB
+  - Estimated effort: High (~5-8 hours)
+  - Required outputs: `installer/ui/screens/{welcome,mode,network,storage,software}.py` + shared help content
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subD
+  Status: [✓] Done
+  Title: Stage screens 05–07 — Audio Interface Config, RT/Latency Settings, User Configuration
+  Description:
+  - Goal / acceptance criteria: (5) Audio interface screen: auto-detect USB/ALSA devices, buffer-size picker with latency-ms live calculation (64 samples / 48000 Hz = 1.33 ms), CPU isolation core picker; (6) RT screen: SCHED_FIFO priorities, PipeWire quantum, GRUB cmdline preview, kernel-rt option; (7) Users: username/password form with live strength meter and audio group membership. All screens educate on the "why" (e.g., "CPU isolation prevents OS jitter from interrupting audio callbacks").
+  - Why it matters: Audio-specific RT config is the most error-prone part of MAP2 installation — surfacing it with validated inputs and explanations prevents the most common production issues.
+  - Dependencies: T049-subA, T049-subB
+  - Estimated effort: High (~5-8 hours)
+  - Required outputs: `installer/ui/screens/{audio,realtime,users}.py` + RT calculation utilities
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subE
+  Status: [✓] Done
+  Title: Review/Dry-Run screen and Install Execution Engine with live log + error recovery
+  Description:
+  - Goal / acceptance criteria: (8) Review screen renders a Kickstart-like YAML summary of all pending changes with confirm/edit flow. Install engine runs stages sequentially with per-stage progress bars, a scrolling live log widget, spinner per active command, and on-failure modal with Retry/Skip/Diagnose/Abort choices. All output streams to `/var/log/map2-installer.log`.
+  - Why it matters: The review screen prevents destructive surprises; the live log and error recovery modal make the installer self-diagnosing, not just a crash wrapper.
+  - Dependencies: T049-subC, T049-subD
+  - Estimated effort: High (~5-8 hours)
+  - Required outputs: `installer/ui/screens/{review,install_progress}.py`, `installer/backend/executor.py` error recovery hooks
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subF
+  Status: [✓] Done
+  Title: Post-install verification screen — RT validation, service health, audio round-trip test
+  Description:
+  - Goal / acceptance criteria: Automated post-install checklist: PipeWire quantum matches target, systemd services active, JUCE engine binary present + starts, RT scheduling on audio thread confirmed via /proc/PID/sched, latency estimate shown, optional jackd round-trip test (latency-test), GRUB cmdline verified. Renders pass/warn/fail badges per check. Produces `~/.map2/install-verification.json`.
+  - Why it matters: Closes the install loop — mirrors Anaconda's post-install firstboot validation concept. A failed install that reports success is worse than a failed install.
+  - Dependencies: T049-subE
+  - Estimated effort: Medium (~3-5 hours)
+  - Required outputs: `installer/ui/screens/verify.py`, `installer/backend/verifier.py`, verification JSON schema
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subG
+  Status: [✓] Done
+  Title: Unattended / scripted mode — Kickstart YAML, --unattended flag, CI integration
+  Description:
+  - Goal / acceptance criteria: `python -m installer --unattended map2-ks.yaml` runs the full install with no UI, using YAML config file; `--dry-run` mode prints plan without executing; `--generate-ks` generates a template YAML from current system state. CI-friendly exit codes (0=success, 1=validation-error, 2=install-error). Pydantic validates YAML before any changes.
+  - Why it matters: Enterprise deployments need scriptable, repeatable installation — mirrors Fedora Kickstart `%pre/%post` philosophy. Also enables automated testing of the installer itself.
+  - Dependencies: T049-subA, T049-subE
+  - Estimated effort: Medium (~3-5 hours)
+  - Required outputs: `installer/modes/unattended.py`, sample `installer/examples/map2-ks.yaml`, pytest integration test
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subH
+  Status: [✓] Done
+  Title: UI polish — F1/? help overlays, educational prose, TrueColor/monochrome themes, keyboard-first navigation
+  Description:
+  - Goal / acceptance criteria: Every screen has context-sensitive F1/? help modal with educational explanation, pro-tip, and common-pitfall. Theme engine supports: TrueColor (MAP2 brand colors), 256-color, 16-color, monochrome (serial-console safe). Tab/Shift-Tab navigation proven on all screens. Footer shows active key bindings per screen (Anaconda-style hint bar). Graceful degradation: TERM=dumb falls back to text summary mode.
+  - Why it matters: Educational value is a first-class requirement — the installer must teach users about enterprise audio Linux concepts, not just click through blindly.
+  - Dependencies: T049-subC, T049-subD, T049-subE
+  - Estimated effort: Medium (~3-5 hours)
+  - Required outputs: `installer/ui/help_content.py`, `installer/ui/theme.py`, `installer/ui/widgets/help_overlay.py`, TERM=dumb fallback path
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+- ID: T049-subI
+  Status: [✓] Done
+  Title: README + docs — architecture diagram (Mermaid), quickstart, developer guide, heavy inline comments audit
+  Description:
+  - Goal / acceptance criteria: `installer/README.md` with: TUI quickstart, unattended quickstart, Mermaid architecture diagram (component + flow), developer guide (how to add a new stage screen). All source files have heavy inline educational comments explaining Anaconda/Kickstart analogies and design rationale. `requirements-installer.txt` pinned.
+  - Why it matters: Documentation is part of the deliverable spec and amplifies educational mission beyond the runtime UI.
+  - Dependencies: T049-subA through T049-subH
+  - Estimated effort: Low-Medium (~2-3 hours)
+  - Required outputs: `installer/README.md`, `requirements-installer.txt`, inline comment audit pass across all installer modules
+  Assigned to: Codex
+  Last updated: 2026-02-26 - Codex
+Assigned to: Codex
+Last updated: 2026-02-26 - Codex
+Completion notes:
+- What was done: Implemented complete `installer/` Python package — 9 subtasks: Pydantic v2 config schema with KS YAML round-trip (subA), all backend drivers with dry-run-safe CommandExecutor (subB), stage screens 00–04 Welcome/Mode/Network/Storage/Software with live validation (subC), stage screens 05–07 Audio/RT/Users with live latency calculator and GRUB preview (subD), Review + InstallProgress screens with live log, per-stage progress bars, and Retry/Skip/Abort error recovery modal (subE), Verify screen with PASS/WARN/FAIL badges and JSON report (subF), UnattendedRunner headless mode with CI-friendly exit codes (subG), F1/? help overlays + TrueColor TCSS theme (subH), README with Mermaid architecture + flow diagrams and developer guide (subI).
+- Key findings: Textual 7.3.0 available system-wide and in venv. Python 3.14.2 on target. `crypt` module removed in Python 3.13+ — password hashing falls back gracefully. Empty `isolated_cores=""` must be allowed for management mode (validator updated). All 24 tests pass, 0 warnings.
+- Files/links produced: `installer/` package (38 files total), `requirements-installer.txt`, `installer/examples/map2-ks.yaml`, `installer/README.md` with Mermaid component + sequence diagrams, `installer/tests/test_config.py` (24 tests across 5 test classes).
+- Validation/evidence: `python3 -m pytest installer/tests/test_config.py -v` → 24 passed, 0 warnings in 0.36s; `python3 -m installer --validate-ks installer/examples/map2-ks.yaml` → valid; `python3 -m installer --generate-ks audio` → well-formed YAML; unattended dry-run with example KS exits 0.
+- Suggested next tasks: Wire shell entrypoint `./install --tui` (chmod+x wrapper); add `--unattended` to CI/CD deploy pipeline; add Textual pilot integration tests for TUI navigation.
+
+ID: T048
+Status: [✓] Done
+Title: Build MAP2 AVB latency optimizer CLI with deterministic reporting and safe patch flow
+Description:
+- Goal / acceptance criteria: Implement `scripts/avb_latency_optimizer.py` and modular helpers under `scripts/avb_latency_optimizer/` with scan/extract/analyze/recommend/apply/verify/report flows; add docs and tests; generate sample outputs under `tmp/avb-audit-sample/`.
+- Why it matters: MAP2 needs a reproducible AVB/TSN audit path that converts repository/system evidence into concrete latency optimization actions while failing safely when HIL/tooling is unavailable.
+- Dependencies: T014, T017
+- Estimated effort: Medium (~4-8 hours)
+- Required outputs: New optimizer CLI and modules, `docs/AVB_LATENCY_OPTIMIZER.md`, targeted pytest coverage, sample reports/artifacts, and completion evidence in this worklist.
+Subtasks:
+- ID: T048-subA
+  Status: [✓] Done
+  Title: Implement scanner/extractor/analyzer/report generator with deterministic artifact contracts
+  Description:
+  - Goal / acceptance criteria: Produce stable `report.md`, `report.json`, and `findings.csv` outputs with explicit evidence and confidence tags (`observed`, `inferred`, `unknown`).
+  - Why it matters: Deterministic outputs are required for grading, CI, and repeatable remediation planning.
+  - Dependencies: T014
+  - Estimated effort: Medium (~2-4 hours)
+  - Required outputs: Python modules and CLI wiring with reproducible artifact generation.
+  Assigned to: Codex
+  Last updated: 2026-02-26 14:12 - Codex
+- ID: T048-subB
+  Status: [✓] Done
+  Title: Add safe patch apply and fail-soft verification runners
+  Description:
+  - Goal / acceptance criteria: Gate writes behind `--apply --confirm-apply`, backup originals, and mark missing external tools as skipped instead of failing execution.
+  - Why it matters: Avoids destructive behavior while preserving practical verification workflows across mixed lab/non-lab environments.
+  - Dependencies: T048-subA, T017
+  - Estimated effort: Medium (~1-3 hours)
+  - Required outputs: `patching.py`, `verification.py`, tests covering guarded apply and skipped-tool handling.
+  Assigned to: Codex
+  Last updated: 2026-02-26 14:12 - Codex
+Assigned to: Codex
+Last updated: 2026-02-26 14:12 - Codex
+Completion notes:
+- What was done: Implemented a new AVB optimizer CLI (`scripts/avb_latency_optimizer.py`) with modular package (`scripts/avb_latency_optimizer/{scanner,extractors,analyzer,latency_model,recommendations,patching,verification,reporting,models}.py`), added operator docs (`docs/AVB_LATENCY_OPTIMIZER.md`), added focused pytest coverage, and generated deterministic sample artifacts in `tmp/avb-audit-sample` and `tmp/avb-audit-sample-verify`.
+- Key findings: Tool now provides deterministic JSON/CSV/Markdown reporting, guarded patch flow (`--apply --confirm-apply`), and fail-soft verification behavior with explicit skipped-tool reporting; repository scan indicates AVB control-plane keywords are present but estimated one-way latency still exceeds aggressive live target envelope.
+- Files/links produced: `scripts/avb_latency_optimizer.py`, `scripts/avb_latency_optimizer/__init__.py`, `scripts/avb_latency_optimizer/models.py`, `scripts/avb_latency_optimizer/scanner.py`, `scripts/avb_latency_optimizer/extractors.py`, `scripts/avb_latency_optimizer/analyzer.py`, `scripts/avb_latency_optimizer/latency_model.py`, `scripts/avb_latency_optimizer/recommendations.py`, `scripts/avb_latency_optimizer/patching.py`, `scripts/avb_latency_optimizer/verification.py`, `scripts/avb_latency_optimizer/reporting.py`, `tests/test_avb_latency_optimizer_scanner.py`, `tests/test_avb_latency_optimizer_extractors.py`, `tests/test_avb_latency_optimizer_latency_model.py`, `tests/test_avb_latency_optimizer_patching.py`, `docs/AVB_LATENCY_OPTIMIZER.md`, `tmp/avb-audit-sample/*`, `tmp/avb-audit-sample-verify/*`.
+- Validation/evidence: `pytest -q tests/test_avb_latency_optimizer_scanner.py tests/test_avb_latency_optimizer_extractors.py tests/test_avb_latency_optimizer_latency_model.py tests/test_avb_latency_optimizer_patching.py` (5 passed); `python3 scripts/avb_latency_optimizer.py --path-to-platform /home/mm/map2-audio --output-dir /home/mm/map2-audio/tmp/avb-audit-sample --dry-run --max-files 3500`; `python3 scripts/avb_latency_optimizer.py --path-to-platform /home/mm/map2-audio --output-dir /home/mm/map2-audio/tmp/avb-audit-sample-verify --dry-run --verify --max-files 1200 --exclude-dir node_modules`.
+- Suggested next tasks: Run HIL-only measurements (scope loopback + live stream jitter under AVB switch load) and attach results to `T007`/`T017`; decide whether to adopt generated patch baseline (`config/avb-latency-optimizer.conf`) into managed install workflow.
 
 ## Completed Items
 

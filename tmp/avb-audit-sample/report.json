@@ -1,0 +1,92 @@
+{
+  "compliance_matrix": {
+    "IEEE 802.1AS (gPTP sync)": {
+      "classification": "observed",
+      "evidence_count": 6,
+      "note": "Feature signals found in repository scan.",
+      "state": "present"
+    },
+    "IEEE 802.1Qat/Qcc (reservation)": {
+      "classification": "observed",
+      "evidence_count": 6,
+      "note": "Feature signals found in repository scan.",
+      "state": "present"
+    },
+    "IEEE 802.1Qav (CBS/FQTSS)": {
+      "classification": "observed",
+      "evidence_count": 6,
+      "note": "Feature signals found in repository scan.",
+      "state": "present"
+    },
+    "NIC hardware timestamping": {
+      "classification": "observed",
+      "evidence_count": 6,
+      "note": "Feature signals found in repository scan.",
+      "state": "present"
+    },
+    "RT scheduling (SCHED_FIFO/PREEMPT_RT)": {
+      "classification": "observed",
+      "evidence_count": 6,
+      "note": "Feature signals found in repository scan.",
+      "state": "present"
+    },
+    "VLAN PCP/QoS isolation": {
+      "classification": "observed",
+      "evidence_count": 6,
+      "note": "Feature signals found in repository scan.",
+      "state": "present"
+    }
+  },
+  "findings": [
+    {
+      "classification": "inferred",
+      "component": "end-to-end",
+      "confidence": 0.95,
+      "effort": "Medium",
+      "evidence": [
+        {
+          "excerpt": "Estimated one-way latency=6.783 ms",
+          "line": 1,
+          "path": "report-model"
+        }
+      ],
+      "id": "F001",
+      "impact": "Round-trip targets for live monitoring may be missed under current assumptions.",
+      "recommendation": "Prioritize buffer reduction, hop minimization, and CBS+gPTP hardening to approach target.",
+      "risk": "Medium",
+      "severity": "high",
+      "title": "Estimated one-way latency exceeds aggressive live-performance budget"
+    }
+  ],
+  "generated_at": "2026-02-26T14:09:20Z",
+  "latency_budget": {
+    "assumptions": [],
+    "components_ms": {
+      "listener_buffer_ms": 2.6667,
+      "network_hops_ms": 0.75,
+      "presentation_offset_ms": 0.5,
+      "processing_ms": 0.2,
+      "talker_buffer_ms": 2.6667
+    },
+    "confidence": 0.95,
+    "optimized_target_ms": 3.7167,
+    "worst_case_ms": 6.7834
+  },
+  "patches": [
+    {
+      "desired_content": "# MAP2 AVB Latency Optimizer Suggested Baseline\n# Generated for operator review before production apply.\n[avb]\nenable_gptp=true\nrequire_stream_reservation=true\nenable_cbs=true\nmax_reserved_bandwidth_percent=75\npresentation_offset_ms=0.35\ntarget_buffer_samples=128\n\n[runtime]\nrt_policy=SCHED_FIFO\nrt_priority=85\npin_audio_irq=true\n\n[notes]\nfinding_count=1\n",
+      "id": "P001",
+      "reason": "Centralize recommended latency-safe defaults before host-specific rollout.",
+      "target_path": "config/avb-latency-optimizer.conf",
+      "title": "Add operator-reviewed AVB latency baseline config"
+    }
+  ],
+  "root_path": "/home/mm/map2-audio",
+  "scan_summary": {
+    "total_errors": 0,
+    "total_files_scanned": 3500,
+    "total_matches": 26835,
+    "total_skipped": 12025
+  },
+  "verification": []
+}
