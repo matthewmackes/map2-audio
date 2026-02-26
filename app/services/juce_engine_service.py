@@ -75,8 +75,12 @@ EDIROL_UA1000 = {
 class AudioEngineConfig:
     """Audio engine configuration - defaults to Edirol UA-1000"""
     sample_rate: int = EDIROL_UA1000["sample_rate"]
-    # Keep compatibility default used by existing tests and deployments.
-    buffer_size: int = 256
+    # RT-LATENCY FIX: Must match the PipeWire force-quantum (64/48000 = 1.33 ms/period).
+    # The previous value of 256 was passed to set_buffer_size(), overriding the C++
+    # DEFAULT_BUFFER_SIZE=64 defined in Common.h and accumulating 4× PipeWire periods
+    # (~5.3 ms) inside the JUCE JACK client before the first processBlock() call.
+    # EDIROL_UA1000["buffer_size"] is 64, which aligns with clock.force-quantum=64.
+    buffer_size: int = EDIROL_UA1000["buffer_size"]
     audio_device: str = EDIROL_UA1000["alsa_device"]
     input_channels: int = EDIROL_UA1000["input_channels"]
     output_channels: int = EDIROL_UA1000["output_channels"]

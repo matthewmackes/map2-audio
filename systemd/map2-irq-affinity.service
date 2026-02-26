@@ -1,0 +1,45 @@
+[Unit]
+Description=MAP2 Audio Platform — IRQ Affinity Pinning for RT Audio
+Documentation=https://github.com/matthewmackes/map2-audio
+#
+# Pins the xhci_hcd USB controller interrupt (Edirol UA-1000) to the dedicated
+# audio cores (CPU 4,5) isolated via GRUB isolcpus=4,5. Also elevates the
+# irq/N-xhci_hcd kernel thread to SCHED_FIFO/70 (requires threadirqs in cmdline).
+#
+# BACKGROUND: The UA-1000 uses UAC1 USB audio with 1ms USB frame granularity.
+# Each frame fires an interrupt on the xhci_hcd controller. If that interrupt
+# lands on a busy general-purpose CPU, the processing delay propagates into
+# the audio data delivery path, adding latency spikes. Pinning the IRQ to the
+# isolated audio core eliminates this cross-core wakeup cost.
+#
+# DEPENDENCY: Requires kernel boot parameter "threadirqs" to make hardirq
+# handlers schedulable kernel threads. Without threadirqs, affinity is still
+# set (kernel honors it for the hardirq) but RT priority elevation has no effect.
+# Check: grep threadirqs /proc/cmdline
+#
+# ORDER: Must run after hardware initialization but before map2-backend starts
+# processing audio. Placed before map2-backend.service in the chain.
+
+After=sysinit.target local-fs.target
+Before=sound.target map2-backend.service
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/map2-irq-affinity.sh
+
+# Needs root to write to /proc/irq/*/smp_affinity and call chrt on kernel threads
+User=root
+
+# Keep it lean — no unnecessary sandboxing on a root oneshot
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-irq-affinity
+
+# If pinning fails, log but do not block audio service startup
+# (audio will work without IRQ pinning, just with slightly higher jitter)
+SuccessExitStatus=0 1
+
+[Install]
+WantedBy=sysinit.target

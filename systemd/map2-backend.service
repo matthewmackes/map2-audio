@@ -26,8 +26,16 @@ Environment="PIPEWIRE_LATENCY=64/48000"
 Environment="PIPEWIRE_FALLBACK_PLAYBACK_DEVICE=alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output"
 Environment="PIPEWIRE_FALLBACK_CAPTURE_DEVICE=alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input"
 
-# Force PipeWire graph quantum/rate in the user session (requires pw-metadata)
-# NOTE: force-rate MUST come before force-quantum (setting rate resets quantum)
+# Force PipeWire graph quantum/rate in the user session via pw-metadata.
+# These must be set here (not in pipewire.conf.d/) because:
+#   1. clock.force-* values in .conf files cannot be overridden by applications
+#      at runtime — they are locked at PipeWire load time.
+#   2. pw-metadata settings survive a JACK client restart within the same session
+#      but reset on PipeWire daemon restart, so re-applying at service start is correct.
+#
+# ORDER IS CRITICAL: force-rate resets quantum internally in PipeWire. Setting
+# rate first, then quantum, guarantees quantum=64 is the final active value.
+# Do NOT swap these lines or add a second force-quantum after this block.
 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 64
 
@@ -50,18 +58,44 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-orchestrator
 
-# Real-time audio optimizations
+# ── Realtime audio scheduling model ──────────────────────────────────────────
+# This service runs uvicorn (Python async HTTP server) that hosts the JUCE
+# audio engine as a native extension. The RT scheduling hierarchy is:
+#
+#   Python/uvicorn event loop  → Nice=-10, SCHED_OTHER  (I/O bound, not RT)
+#   JUCE audio callback thread → SCHED_FIFO 80 (self-elevated by JUCE framework
+#                                 via pthread_setschedparam on audio device open)
+#
+# INTENTIONAL: CPUSchedulingPolicy is NOT set to fifo here. Setting the entire
+# uvicorn process to SCHED_FIFO would place the async HTTP event loop, WebSocket
+# handlers, and FastAPI workers into the RT scheduler, causing starvation of kernel
+# threads and non-RT system processes. Only the JUCE audio callback thread needs RT.
+# That thread self-elevates using CAP_SYS_NICE (AmbientCapabilities below) +
+# LimitRTPRIO=95 (grants rtprio to all threads in this process).
+#
+# To verify JUCE audio thread has RT scheduling after startup:
+#   ps -eLo pid,comm,cls,rtprio | grep -E "pipewire|wire|python|uvicorn"
+#   Expected: JUCE audio callback thread shows CLS=FF (FIFO), RTPRIO=80
+
 Nice=-10
 LimitRTPRIO=95
 LimitMEMLOCK=infinity
 LimitNOFILE=65536
-# CPU affinity: use isolated cores if available (set in GRUB)
+
+# CPU affinity: pin to kernel-isolated cores (set in GRUB via isolcpus=4,5).
+# nohz_full=4,5 and rcu_nocbs=4,5 are also set in GRUB for these cores,
+# eliminating HZ tick interrupts and RCU callbacks on the audio cores.
+# IMPORTANT: Must match GRUB_CMDLINE_LINUX isolcpus= value. Previously mismatched
+# (GRUB had isolcpus=2,3 while this was CPUAffinity=4 5) — now both use 4,5.
 CPUAffinity=4 5
+
 # I/O priority - realtime class, high priority
 IOSchedulingClass=realtime
 IOSchedulingPriority=1
 
-# Allow RT scheduling for the audio thread
+# Allow RT scheduling for the JUCE audio callback thread.
+# CAP_SYS_NICE: permits pthread_setschedparam(SCHED_FIFO) without root.
+# AmbientCapabilities: the capability is inherited by child threads (audio thread).
 AmbientCapabilities=CAP_SYS_NICE
 CapabilityBoundingSet=CAP_SYS_NICE
 
