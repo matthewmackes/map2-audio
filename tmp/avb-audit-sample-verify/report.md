@@ -1,6 +1,6 @@
 # AVB Latency Optimizer Report
 
-Generated at (UTC): 2026-02-26T14:10:31Z
+Generated at (UTC): 2026-02-26T21:35:46Z
 Root path: /home/mm/map2-audio
 
 ## Executive Summary
