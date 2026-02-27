@@ -84,6 +84,7 @@ def init_db(database_url: str = None) -> None:
     )
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
     Base.metadata.create_all(bind=_engine)
+    _ensure_special_settings_schema_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -157,6 +158,53 @@ async def _set_async_pragmas(conn) -> None:
             logger.warning(f"Failed to set async PRAGMA {pragma}={value}: {e}")
 
 
+def _special_settings_default_promoted_routes_json() -> str:
+    return '["/welcome","/grid"]'
+
+
+def _ensure_special_settings_schema_sync() -> None:
+    """Apply additive schema upgrades for special_settings in existing SQLite DBs."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        result = conn.execute(text("PRAGMA table_info(special_settings)"))
+        columns = {str(row[1]) for row in result.fetchall()}
+
+        if columns and "promoted_advanced_routes" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN promoted_advanced_routes JSON"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET promoted_advanced_routes = :routes "
+                    "WHERE promoted_advanced_routes IS NULL"
+                ),
+                {"routes": _special_settings_default_promoted_routes_json()},
+            )
+            logger.info("Added special_settings.promoted_advanced_routes schema upgrade")
+
+
+async def _ensure_special_settings_schema_async(conn) -> None:
+    """Apply additive schema upgrades for special_settings in async SQLite sessions."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    result = await conn.execute(text("PRAGMA table_info(special_settings)"))
+    columns = {str(row[1]) for row in result.fetchall()}
+
+    if columns and "promoted_advanced_routes" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN promoted_advanced_routes JSON"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET promoted_advanced_routes = :routes "
+                "WHERE promoted_advanced_routes IS NULL"
+            ),
+            {"routes": _special_settings_default_promoted_routes_json()},
+        )
+        logger.info("Added async special_settings.promoted_advanced_routes schema upgrade")
+
+
 async def _ensure_tables_created() -> None:
     """Create tables once if they don't exist (called only once per startup)."""
     global _tables_created, _pragmas_set
@@ -174,6 +222,7 @@ async def _ensure_tables_created() -> None:
                 _pragmas_set = True
                 logger.info("Async database PRAGMAs applied (WAL mode enabled)")
             await conn.run_sync(Base.metadata.create_all)
+            await _ensure_special_settings_schema_async(conn)
         _tables_created = True
 
 
@@ -1130,6 +1179,7 @@ class SpecialSettings(Base):
     enabled = Column(Boolean, nullable=False, default=False)
     hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
     menu_location = Column(String(20), default="top-nav")  # "top-nav" | "mobile-only" | "hidden"
+    promoted_advanced_routes = Column(JSON, default=lambda: ["/welcome", "/grid"])
     
     # Cluster replication metadata
     version = Column(Integer, default=1)  # Incremented on each update

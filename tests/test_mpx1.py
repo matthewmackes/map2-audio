@@ -30,6 +30,110 @@ def test_sysex_codec_round_trip() -> None:
     assert decoded["value"] == 7.0
 
 
+def test_sysex_decode_accepts_lexicon_channel1_style_header() -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=Path("/tmp/mpx1-test-shadow-decode-ch1.json"),
+        library_path=Path("/tmp/mpx1-test-library-decode-ch1.json"),
+    )
+
+    param_id = "program.pitch.algorithm"
+    canonical = service.encode_param_sysex(param_id, 9)
+
+    # Lexicon hardware can emit device-id/function bytes that differ from
+    # MAP2's canonical 0x7F/0x11 transmit header.
+    variant = [0xF0, 0x06, 0x09, 0x00, *canonical[4:10], 0xF7]
+    decoded = service.decode_param_sysex(variant)
+
+    assert decoded is not None
+    assert decoded["param_id"] == param_id
+    assert decoded["value"] == 9.0
+
+
+def test_sysex_decode_accepts_header_with_extra_prefix_byte() -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=Path("/tmp/mpx1-test-shadow-decode-extra-prefix.json"),
+        library_path=Path("/tmp/mpx1-test-library-decode-extra-prefix.json"),
+    )
+
+    param_id = "program.pitch.algorithm"
+    canonical = service.encode_param_sysex(param_id, 8)
+    addr_and_value = canonical[4:10]
+
+    # Some inbound variants insert one extra command byte before address.
+    variant = [0xF0, 0x06, 0x09, 0x00, 0x01, *addr_and_value, 0xF7]
+    decoded = service.decode_param_sysex(variant)
+
+    assert decoded is not None
+    assert decoded["param_id"] == param_id
+    assert decoded["value"] == 8.0
+
+
+def test_extended_program_status_sysex_updates_current_program(tmp_path: Path) -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow-program-status.json",
+        library_path=tmp_path / "library-program-status.json",
+    )
+
+    message = [
+        0xF0, 0x06, 0x09, 0x00, 0x01, 0x02,
+        0x00, 0x00, 0x00, 0x01, 0x02,  # 0x21 = 33
+        0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
+        0xF7,
+    ]
+
+    async def _run() -> Dict[str, Any] | None:
+        return await service.handle_incoming_sysex(message)
+
+    decoded = asyncio.run(_run())
+    assert decoded is not None
+    assert decoded["frame_type"] == "program_status"
+    assert decoded["program"] == 33
+    assert service.current_program == 33
+
+
+def test_extended_panel_status_sysex_decodes_control_value(tmp_path: Path) -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow-panel-status.json",
+        library_path=tmp_path / "library-panel-status.json",
+    )
+
+    message = [
+        0xF0, 0x06, 0x09, 0x00, 0x01, 0x01,
+        0x00, 0x00, 0x00, 0x0B, 0x01,  # 0x1B = 27
+        0x04, 0x00, 0x00, 0x00,
+        0xF7,
+    ]
+
+    async def _run() -> Dict[str, Any] | None:
+        return await service.handle_incoming_sysex(message)
+
+    decoded = asyncio.run(_run())
+    assert decoded is not None
+    assert decoded["frame_type"] == "panel_status"
+    assert decoded["control_value"] == 27
+
+
+def test_extended_heartbeat_sysex_classified(tmp_path: Path) -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow-heartbeat.json",
+        library_path=tmp_path / "library-heartbeat.json",
+    )
+
+    message = [0xF0, 0x06, 0x12, 0x00, 0x12, 0x01, 0x00, 0xF7]
+
+    async def _run() -> Dict[str, Any] | None:
+        return await service.handle_incoming_sysex(message)
+
+    decoded = asyncio.run(_run())
+    assert decoded is not None
+    assert decoded["frame_type"] == "heartbeat"
+
+
 def test_shadow_state_updates_after_param_dispatch(tmp_path: Path) -> None:
     shadow_path = tmp_path / "mpx1_shadow.json"
     library_path = tmp_path / "mpx1_library.json"

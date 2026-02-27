@@ -8,6 +8,7 @@ have synchronized special settings.
 
 import logging
 import os
+import asyncio
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,25 @@ from app.database import SpecialSettings
 from app.models import SpecialSettingsResponse
 
 logger = logging.getLogger(__name__)
+DEFAULT_PROMOTED_ADVANCED_ROUTES = ["/welcome", "/grid"]
+
+
+def _normalize_promoted_routes(routes: Optional[list]) -> list[str]:
+    if not routes:
+        return []
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw_route in routes:
+        if not isinstance(raw_route, str):
+            continue
+        route = raw_route.strip()
+        if not route or not route.startswith("/") or route in seen:
+            continue
+        seen.add(route)
+        normalized.append(route)
+
+    return normalized
 
 
 class SpecialSettingsStateManager:
@@ -39,6 +59,7 @@ class SpecialSettingsStateManager:
         - enabled: bool
         - hidden_plugins: List[str]
         - menu_location: str
+        - promoted_advanced_routes: List[str]
         - updated_by_node: str
         - timestamp: str (ISO format)
         - version: int
@@ -57,6 +78,7 @@ class SpecialSettingsStateManager:
                         enabled=False,
                         hidden_plugins=[],
                         menu_location="top-nav",
+                        promoted_advanced_routes=DEFAULT_PROMOTED_ADVANCED_ROUTES.copy(),
                         version=1
                     )
                     session.add(settings)
@@ -65,6 +87,12 @@ class SpecialSettingsStateManager:
                 settings.enabled = entry_data.get("enabled", False)
                 settings.hidden_plugins = entry_data.get("hidden_plugins", [])
                 settings.menu_location = entry_data.get("menu_location", "top-nav")
+                settings.promoted_advanced_routes = _normalize_promoted_routes(
+                    entry_data.get(
+                        "promoted_advanced_routes",
+                        settings.promoted_advanced_routes if settings.promoted_advanced_routes is not None else DEFAULT_PROMOTED_ADVANCED_ROUTES,
+                    )
+                )
                 settings.version = entry_data.get("version", settings.version)
                 settings.updated_by_node = entry_data.get("updated_by_node")
                 settings.last_updated = datetime.utcnow()
@@ -75,6 +103,7 @@ class SpecialSettingsStateManager:
                     f"Applied special settings: enabled={settings.enabled}, "
                     f"hidden={len(settings.hidden_plugins)}, "
                     f"location={settings.menu_location}, "
+                    f"promoted={len(settings.promoted_advanced_routes or [])}, "
                     f"version={settings.version}"
                 )
                 return True
@@ -99,6 +128,11 @@ class SpecialSettingsStateManager:
                     "enabled": settings.enabled,
                     "hidden_plugins": settings.hidden_plugins or [],
                     "menu_location": settings.menu_location,
+                    "promoted_advanced_routes": _normalize_promoted_routes(
+                        settings.promoted_advanced_routes
+                        if settings.promoted_advanced_routes is not None
+                        else DEFAULT_PROMOTED_ADVANCED_ROUTES
+                    ),
                     "version": settings.version,
                     "updated_by_node": settings.updated_by_node,
                     "timestamp": settings.last_updated.isoformat() if settings.last_updated else None,
@@ -114,6 +148,7 @@ async def replicate_special_settings_to_raft(
     enabled: bool,
     hidden_plugins: list,
     menu_location: str,
+    promoted_advanced_routes: list,
     node_id: str
 ) -> int:
     """
@@ -140,6 +175,7 @@ async def replicate_special_settings_to_raft(
             "enabled": enabled,
             "hidden_plugins": hidden_plugins,
             "menu_location": menu_location,
+            "promoted_advanced_routes": _normalize_promoted_routes(promoted_advanced_routes),
             "updated_by_node": node_id,
             "timestamp": datetime.utcnow().isoformat(),
             "version": version,
@@ -155,7 +191,7 @@ async def replicate_special_settings_to_raft(
         logger.info(
             f"Special settings replicated to Raft log at index {log_index}: "
             f"enabled={enabled}, hidden={len(hidden_plugins)}, "
-            f"location={menu_location}, version={version}"
+            f"location={menu_location}, promoted={len(entry_data['promoted_advanced_routes'])}, version={version}"
         )
         
         # Wait for majority to acknowledge (with timeout)

@@ -190,6 +190,13 @@ img {
   box-shadow: 0 8px 14px rgba(15, 23, 42, 0.3);
 }
 
+.nav-tab-item--menu-active,
+.nav-tab-item--menu-open {
+  color: var(--tab-text-strong);
+  border-color: rgba(147, 197, 253, 0.72);
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.32) 0%, rgba(37, 99, 235, 0.18) 100%);
+}
+
 .nav-tab-item:focus-visible {
   outline: none;
   border-color: rgba(147, 197, 253, 0.76);
@@ -316,6 +323,10 @@ img {
 }
 
 .advanced-menu-root {
+  position: relative;
+}
+
+.mpx1-nav-root {
   position: relative;
 }
 
@@ -551,6 +562,10 @@ img {
   gap: 9px;
 }
 
+.nav-mobile-item-wrap {
+  position: relative;
+}
+
 .nav-mobile-item--submenu {
   flex-direction: row;
   align-items: center;
@@ -581,6 +596,43 @@ img {
   border-style: dashed;
   border-color: rgba(148, 163, 184, 0.42);
   background: rgba(15, 23, 42, 0.84);
+}
+
+.nav-advanced-promote-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.74);
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  color: #dbeafe;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.nav-advanced-promote-toggle input {
+  width: 12px;
+  height: 12px;
+  accent-color: #60a5fa;
+  cursor: pointer;
+}
+
+.nav-advanced-promote-toggle.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nav-advanced-promote-toggle.is-disabled input {
+  cursor: not-allowed;
 }
 
 .nav-mobile-submenu-note {
@@ -614,6 +666,12 @@ img {
     min-height: 106px;
     padding: 16px 14px;
     font-size: 12px;
+  }
+
+  .nav-mobile-menu-content--desktop .nav-advanced-promote-toggle {
+    top: 9px;
+    right: 9px;
+    font-size: 10px;
   }
 
   .nav-mobile-menu-content--desktop .nav-mobile-item svg {
@@ -729,6 +787,13 @@ img {
   .nav-mobile-item {
     padding: 10px 8px;
     font-size: 10px;
+  }
+
+  .nav-advanced-promote-toggle {
+    top: 6px;
+    right: 6px;
+    font-size: 8px;
+    letter-spacing: 0.05em;
   }
 
   .nav-mobile-item--submenu {

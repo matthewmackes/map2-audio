@@ -10,11 +10,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { apiUrl, wsUrl } from '../utils/apiTarget'
+import { defaultPromotedAdvancedRoutes } from '../data/advancedMenuItems'
 
 export interface SpecialSettings {
   enabled: boolean
   hiddenPlugins: string[]
   menuLocation: 'top-nav' | 'mobile-only' | 'hidden'
+  promotedAdvancedRoutes: string[]
   version?: number
   lastUpdated?: string
   updatedByNode?: string
@@ -50,6 +52,7 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         enabled: data.enabled || false,
         hiddenPlugins: data.hidden_plugins || [],
         menuLocation: data.menu_location || 'top-nav',
+        promotedAdvancedRoutes: data.promoted_advanced_routes || defaultPromotedAdvancedRoutes,
         version: data.version,
         lastUpdated: data.last_updated,
         updatedByNode: data.updated_by_node,
@@ -71,6 +74,7 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         enabled: newSettings.enabled ?? settings?.enabled ?? false,
         hidden_plugins: newSettings.hiddenPlugins ?? settings?.hiddenPlugins ?? [],
         menu_location: newSettings.menuLocation ?? settings?.menuLocation ?? 'top-nav',
+        promoted_advanced_routes: newSettings.promotedAdvancedRoutes ?? settings?.promotedAdvancedRoutes ?? defaultPromotedAdvancedRoutes,
       }
       
       let response = await fetch(apiUrl('/api/settings/special'), {
@@ -113,6 +117,7 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         enabled: data.enabled,
         hiddenPlugins: data.hidden_plugins || [],
         menuLocation: data.menu_location,
+        promotedAdvancedRoutes: data.promoted_advanced_routes || defaultPromotedAdvancedRoutes,
         version: data.version,
         lastUpdated: data.last_updated,
         updatedByNode: data.updated_by_node,

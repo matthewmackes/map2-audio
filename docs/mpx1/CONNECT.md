@@ -11,6 +11,13 @@
 3. Use **Reconnect** in diagnostics to bind MAP2 to detected MPX1 ports.
 4. Verify status dot turns online in `/mpx1/panel` and `/mpx1` status bar.
 
+## Recommended MPX MIDI Settings
+- MPX MIDI receive channel: **Omni**
+- MPX MIDI transmit channel: **1**
+- SysEx transmit/receive: **Enabled**
+- If diagnostics are flooded with MIDI Clock and control events are hard to inspect,
+  disable MPX clock transmit while validating control-data paths.
+
 ## Operational Checks
 1. Move a physical MPX1 encoder and confirm `/mpx1/diag` traffic updates.
 2. Move a web control and confirm MPX1 responds without zipper noise.
@@ -22,6 +29,7 @@
   - Restart ALSA/PipeWire MIDI services.
 - Connected but no response:
   - Confirm MPX1 MIDI channel and SysEx receive settings.
+  - Confirm MPX transmits on channel 1 (or adjust MAP2 MIDI-map channel filters).
   - Verify MIDI loop is not blocked by another process locking ports.
 - High latency:
   - Check host CPU load and real-time scheduling settings.

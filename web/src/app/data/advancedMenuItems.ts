@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube } from '@phosphor-icons/react'
+import { SquaresFour, Sparkle, Package, Waveform, MusicNotes, Pulse, Usb, Monitor, HardDrives, ShareNetwork, Cube, BookOpen, GridFour } from '@phosphor-icons/react'
 import { BiampIcon } from '../components/Tesira/BiampIcon'
 
 export interface AdvancedMenuItem {
@@ -11,6 +11,8 @@ export interface AdvancedMenuItem {
   dividerBefore?: boolean
   group?: string
   popupMenu?: 'hardware-interfaces'
+  promotionKey: string
+  promotable?: boolean
 }
 
 export interface HardwareInterfaceMenuItem {
@@ -24,6 +26,8 @@ export interface HardwareInterfaceMenuItem {
 // Shared advanced-navigation items used by the shell and About page menu.
 // Route entries should stay in sync with App route registrations.
 // Popup entries use `popupMenu` and are handled by the renderers.
+export const defaultPromotedAdvancedRoutes = ['/welcome', '/grid']
+
 export const advancedMenuItems: AdvancedMenuItem[] = [
   // ── System ──
   {
@@ -33,6 +37,25 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'System status & quick actions',
     color: '#f59e0b',
     group: 'System',
+    promotionKey: '/',
+  },
+  {
+    to: '/welcome',
+    label: 'Guide',
+    icon: BookOpen,
+    description: 'Platform guide & concepts',
+    color: '#60a5fa',
+    group: 'System',
+    promotionKey: '/welcome',
+  },
+  {
+    to: '/grid',
+    label: 'Grid',
+    icon: GridFour,
+    description: 'Cortex-style grid editor',
+    color: '#2563eb',
+    group: 'System',
+    promotionKey: '/grid',
   },
   {
     to: '/presets',
@@ -41,6 +64,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Save & recall your sounds',
     color: '#22c55e',
     group: 'System',
+    promotionKey: '/presets',
   },
   {
     to: '/grid-3d',
@@ -49,6 +73,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: '3D signal flow visualization',
     color: '#7c3aed',
     group: 'System',
+    promotionKey: '/grid-3d',
   },
 
   // ── Content & Plugins ──
@@ -60,6 +85,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#06b6d4',
     dividerBefore: true,
     group: 'Content & Plugins',
+    promotionKey: '/plugins',
   },
   {
     to: '/library',
@@ -68,6 +94,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Impulse responses & NAM models',
     color: '#06b6d4',
     group: 'Content & Plugins',
+    promotionKey: '/library',
   },
 
   // ── Audio Processing ──
@@ -79,6 +106,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#3b82f6',
     dividerBefore: true,
     group: 'Audio Processing',
+    promotionKey: '/engine',
   },
 
   // ── Control ──
@@ -90,6 +118,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#ec4899',
     dividerBefore: true,
     group: 'Control',
+    promotionKey: '/midi',
   },
   {
     to: '/mpx1',
@@ -98,6 +127,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Hardware rack editor + MIDI mapping',
     color: '#3b82f6',
     group: 'Control',
+    promotionKey: '/mpx1',
   },
 
   // ── Hardware & Interfaces ──
@@ -109,6 +139,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#22c55e',
     dividerBefore: true,
     group: 'Hardware & Interfaces',
+    promotionKey: '/lcd',
   },
   {
     to: '#hardware-interfaces',
@@ -118,6 +149,8 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#0ea5e9',
     group: 'Hardware & Interfaces',
     popupMenu: 'hardware-interfaces',
+    promotionKey: '#hardware-interfaces',
+    promotable: false,
   },
   {
     to: '/avb-routing',
@@ -126,6 +159,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'AVB/TSN routing matrix & network diagnostics',
     color: '#06b6d4',
     group: 'Hardware & Interfaces',
+    promotionKey: '/avb-routing',
   },
   {
     to: '/tesira',
@@ -134,6 +168,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Biamp Tesira Forte AVB fleet control & metering',
     color: '#E31837',
     group: 'Hardware & Interfaces',
+    promotionKey: '/tesira',
   },
 
   // ── Infrastructure ──
@@ -145,6 +180,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#2563eb',
     dividerBefore: true,
     group: 'Infrastructure',
+    promotionKey: '/host-machine',
   },
   {
     to: '/cluster-dashboard',
@@ -153,6 +189,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Multi-node cluster monitoring & simulation',
     color: '#2563eb',
     group: 'Infrastructure',
+    promotionKey: '/cluster-dashboard',
   },
   {
     to: '/multi-system',
@@ -161,6 +198,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     description: 'Side-by-side multi-host metrics & comparison',
     color: '#38bdf8',
     group: 'Infrastructure',
+    promotionKey: '/multi-system',
   },
 ]
 

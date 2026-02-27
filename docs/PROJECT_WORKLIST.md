@@ -281,7 +281,7 @@ Last updated: 2026-02-24 21:26 - Codex
   - Suggested next tasks: T013, T016, T022-subA
 
 ID: T013  
-Status: [✗] Blocked  
+Status: [>] In Progress  
 Title: Execute privileged host RT remediation and full-duration Tier A re-qualification  
 Description:  
 - Goal / acceptance criteria: Apply root-required host tuning (USB autosuspend, IRQ affinity/service priorities as needed), then run full-duration Tier A soak (`>=30m`) and archive final pass/fail evidence against strict thresholds.  
@@ -291,10 +291,11 @@ Description:
 - Required outputs: Privileged tuning change log, full-duration soak artifacts, final go/no-go recommendation.  
 Subtasks: None  
 Assigned to: Codex + Lab  
-Last updated: 2026-02-24 21:34 - Codex
-- Blocked notes:
-  - Requires privileged host tuning actions (root/system-level scheduler/IRQ/power controls) that are not available in this current unprivileged execution context.
-  - Fresh forced-JACK soak evidence is captured (`docs/fit-for-purpose-evidence/20260225/synthforge-tier-a-soak-forcejack-t012-5m.json`) and confirms stability but not strict jitter/xrun gate compliance.
+Last updated: 2026-02-27 11:12 - Codex
+- Progress notes:
+  - Privileged host tuning executed successfully via `./scripts/setup_realtime.sh --yes` (run as `mm`, uses internal sudo), including RT limits, CPU governor service, PipeWire low-latency config, IRQ affinity service, and rtkit enablement.
+  - Post-remediation verification improved to `RT Configuration Grade: A+` with `./scripts/verify_rt_config.sh --quick` (`21` pass, `0` warnings, `0` failed), and USB autosuspend was forced to disabled (`/sys/module/usbcore/parameters/autosuspend=-1`).
+  - Remaining work for task completion: execute and archive full-duration (`>=30m`) Tier A soak artifacts under current tuned host profile, then issue final pass/fail recommendation against strict jitter/xrun thresholds.
 
 ID: T014  
 Status: [✓] Done  
@@ -452,7 +453,7 @@ Last updated: 2026-02-24 21:00 - Codex
   - Suggested next tasks: T015, T012, T013
 
 ID: T022
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Lexicon MPX1 Web Control Card — Full-Stack Implementation (Top-Nav, Editor, MIDI Mapper)
 Description:
 - Goal / acceptance criteria: Build a first-class Lexicon MPX1 multi-effects editor into MAP2 as a top-nav menu entry at `/mpx1/*`. Deliverables: photo-perfect SVG front panel, registry-driven deep block editor, visual drag-and-drop MIDI CC→SysEx mapper with MIDI learn, internal mod matrix studio, 200-program preset librarian with A/B compare and bulk dump, diagnostics view, and a persistent MPX1 status bar. The MIDI mapper must allow any foot controller CC to be assigned to any MPX1 SysEx parameter with per-mapping range, curve, smoothing, polarity, and named map save/restore. All parameter state is maintained in a Python shadow state via rtmidi (existing dependency), pushed live to the UI via WebSocket.
@@ -462,12 +463,12 @@ Description:
 - Required outputs: Parameter registry JSON, Python service + FastAPI routes, TypeScript client + WS hook, AppShell nav integration (icon + mega-menu), MPX1Page shell with sidebar + status bar, six sub-views (panel/editor/midi-map/matrix/library/diag), CSS design token system, 50 curated preset library, tests.
 - Reference: Full design spec in conversation history (2026-02-24). Implementation plan: Option 1 (MAP2 Native) expanded to top-nav full-menu architecture.
 Assigned to: Codex + Lab
-Last updated: 2026-02-25 21:04 - Codex
+Last updated: 2026-02-27 11:25 - Codex
 - Completion notes:
   - What was done: Completed full software stack for MPX1 top-nav integration and all major views/services (panel/editor/midi-map/matrix/library/diag), plus deep registry expansion (`601` params, `coverage.status=complete`) and end-to-end API/WebSocket contracts.
   - Validation evidence: `python3 tests/validate_mpx1_registry.py` PASS; `pytest -q tests/validate_mpx1_registry.py tests/test_mpx1.py` PASS (`16 passed`); `npm --prefix web run typecheck` PASS.
-- Blocked notes:
-  - Final acceptance remains blocked by `T022-subK` lab-only physical MPX1 verification (<150ms knob-to-UI roundtrip and zipper-free sustained control sweep under 40ms coalescing), which cannot be executed in this non-HIL environment.
+- Progress notes:
+  - Final acceptance is now actively executing under `T022-subK` with live hardware attached; remaining gate is inbound physical control verification (`<150ms` knob-to-UI + zipper-free sustained response).
 Subtasks:
 ID: T022-subA
 Status: [✓] Done
@@ -651,7 +652,7 @@ Last updated: 2026-02-25 02:14 - Codex
   - Validation evidence: `npm --prefix web run typecheck` PASS, `pytest -q tests/test_mpx1.py` PASS (`13 passed`), `pytest -q tests/test_mpx1.py tests/test_synthforge_routes.py` PASS (`21 passed`).
   - Suggested next tasks: T022-subK, T022-subA
 ID: T022-subK
-Status: [✗] Blocked
+Status: [>] In Progress
 Title: Diagnostics view, connection docs, and end-to-end hardware test (/mpx1/diag)
 Description:
 - Goal / acceptance criteria: MPX1DiagView.tsx: MIDI traffic ring buffer (last 100 SysEx messages, hex + decoded param name + timestamp), round-trip latency meter (send ping SysEx, measure echo, display min/avg/max/p99), connection health panel (port name, last heartbeat, packet error count, reconnect button), "Force Resync" button (requests full state dump). Write docs/mpx1/CONNECT.md (how to connect the MPX1: USB-MIDI port, MAP2 config, bridge startup). Write docs/mpx1/SYSEX_NOTES.md (protocol implementation notes, encoding choices, known quirks). Run end-to-end test with real hardware; confirm <150ms UI update on hardware knob turn, confirm smooth (no zippering) hardware response on UI knob drag at 40ms coalesce. Validate typecheck passes.
@@ -661,16 +662,21 @@ Description:
 - Required outputs: web/src/app/pages/MPX1DiagView.tsx, docs/mpx1/CONNECT.md, docs/mpx1/SYSEX_NOTES.md, hardware validation notes
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-02-25 02:14 - Codex
+Last updated: 2026-02-27 11:19 - Codex
 - Completion notes:
   - What was done: Implemented `/mpx1/diag` diagnostics view with MIDI/SysEx traffic ring buffer, latency metrics (min/avg/max/p99), connection health panel, reconnect and force-resync controls, and dump progress tracking. Added backend diagnostics endpoints (`/api/mpx1/diagnostics`, `/api/mpx1/diagnostics/ping`) with service-level traffic capture and packet error tracking. Added onboarding/implementation docs: `docs/mpx1/CONNECT.md` and `docs/mpx1/SYSEX_NOTES.md`.
   - Key findings: Software diagnostics stack is complete and test-covered for API/UI paths; final acceptance criteria requiring physical hardware latency/zipper verification cannot be executed in this non-HIL environment.
   - Files/links produced: `web/src/app/pages/MPX1DiagView.tsx`, `web/src/app/pages/MPX1DiagView.css`, `web/src/app/App.tsx`, `app/services/mpx1_service.py`, `app/routes/mpx1.py`, `web/src/map2/mpx1Api.ts`, `docs/mpx1/CONNECT.md`, `docs/mpx1/SYSEX_NOTES.md`, `tests/test_mpx1.py`.
   - Validation evidence: `pytest -q tests/test_mpx1.py tests/test_synthforge_routes.py` PASS (`23 passed`), `npm --prefix web run typecheck` PASS.
-- Blocked notes:
-  - Pending lab-only hardware validation: confirm <150ms UI update on physical MPX1 knob movement and confirm zipper-free hardware response under sustained web knob drag with 40ms coalescing.
+- Progress notes:
+  - Hardware transport is now connected live via `/api/mpx1/midi/connect` (`input_port_index=1`, `output_port_index=1`, `UA-1000 MIDI 24:0`), and health confirms `connected=true`.
+  - Sustained web-control sweep at 40ms cadence (`250` updates on `pitch.alg_00.mix`) showed `packet_error_delta=0` and stable outbound traffic (`250` `tx_sysex` events), supporting the no-zipper proxy path for UI→device command flow.
+  - MPX inbound control-path evidence is now confirmed: diagnostics capture repeated hardware SysEx frames (`F0 06 09 00 01 01 ... F7`) while MPX is configured `receive=omni` / `send=ch1`; parser hardening was added to accept Lexicon header variants for param-style frames.
+  - Long-form program status frames (`F0 06 09 00 01 02 ... F7`) are now decoded as `rx_program_sysex` and mapped to deterministic `current_program` updates (`2/2` validation runs, `0` unknowns in capture window).
+  - Inbound physical-control `<150ms` confirmation remains pending: currently observed inbound frames are long state/report SysEx classes that are still logged as unknown (not yet translated to concrete param shadow updates), so knob→specific-param UI correlation is not yet scored.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-15s.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.md`.
 Assigned to: Codex
-Last updated: 2026-02-25 02:03 - Codex
+Last updated: 2026-02-27 13:00 - Codex
 
 ID: T023
 Status: [✓] Done
@@ -980,6 +986,74 @@ Last updated: 2026-02-27 00:00 - Codex
   - What was done: Refactored topbar/tab/title styling in `index.css` with scalable spacing/typography, active-state polish, responsive breakpoints, and enlarged desktop Advanced menu grid sizing.
   - Files/links produced: `web/src/app/layout/AppShell.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/index.css`.
   - Validation: `npm --prefix web run typecheck` PASS; `npm --prefix web run build` fails on pre-existing Tesira API typing errors in `web/src/app/components/Tesira/hooks/useTesiraApi.ts` and `web/src/map2/api.ts` (unrelated to T039).
+
+ID: T040
+Status: [✓] Done
+Title: Add Advanced-menu checkbox promotion pattern for top nav, including Guide/Grid and Lexicon mega-menu injection
+Description:
+- Goal / acceptance criteria: Add a checkbox to every Advanced menu entry. Checked means the entry is promoted into the global top navigation; unchecked means the entry is only visible in Advanced menu. Add `Guide` (`/welcome`) and `Grid` (`/grid`) entries to Advanced menu and ensure they follow the same checkbox promotion behavior as every other Advanced item. When the Lexicon entry (`/mpx1`) is checked/promoted, render the `Lexicon Mega Menu` trigger in top navigation (not a plain link), reusing existing mega-menu behavior and preserving desktop/mobile menu correctness.
+- Why it matters: Establishes a consistent operator-controlled navigation pattern that reduces topbar clutter while allowing fast access to selected advanced workflows.
+- Dependencies: T039
+- Estimated effort: Medium
+- Required outputs: Updated advanced-menu data model, persisted promotion state in special settings API/backend (including cluster replication path), AppShell rendering updates (dynamic top-nav promotion + Lexicon mega-menu trigger path), UI checkbox styling/interactions for desktop/mobile Advanced menu, and validation evidence.
+Subtasks:
+ID: T040-subA
+Status: [✓] Done
+Title: Extend special settings schema/API for promoted advanced nav items
+Description:
+- Goal / acceptance criteria: Add a new persisted field for promoted Advanced menu routes/items and wire it through DB model, pydantic models, route handlers, and Raft sync paths.
+- Why it matters: Promotion choices must survive reloads and stay consistent across cluster nodes.
+- Dependencies: T039
+- Estimated effort: Medium
+- Required outputs: Updated `SpecialSettings` schema + API payload contract + replication wiring.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-27 03:30 - Codex
+ID: T040-subB
+Status: [✓] Done
+Title: Add Guide/Grid into Advanced menu shared config and define promotion metadata for all items
+Description:
+- Goal / acceptance criteria: Ensure every Advanced item has promotion metadata/identity; include `Guide` and `Grid` in Advanced menu and avoid duplicate/popup-only ambiguity.
+- Why it matters: A stable item identity is required for deterministic checkbox state and top-nav rendering.
+- Dependencies: T040-subA
+- Estimated effort: Low
+- Required outputs: `advancedMenuItems` shape update and route-aligned entries for `/welcome` and `/grid`.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-27 03:30 - Codex
+ID: T040-subC
+Status: [✓] Done
+Title: Implement Advanced menu checkbox UI and dynamic top-nav promotion in AppShell
+Description:
+- Goal / acceptance criteria: Render per-item checkboxes in Advanced menu (desktop/mobile), persist toggles via special settings update flow, generate top-nav items from checked Advanced entries, and keep unchecked entries Advanced-only.
+- Why it matters: This is the core new interaction pattern requested for operators.
+- Dependencies: T040-subA, T040-subB
+- Estimated effort: Medium
+- Required outputs: `AppShell` logic updates and CSS adjustments for checkbox pattern.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-27 03:30 - Codex
+ID: T040-subD
+Status: [✓] Done
+Title: Re-enable Lexicon mega-menu trigger when Lexicon is promoted
+Description:
+- Goal / acceptance criteria: When `/mpx1` is checked/promoted, render the top-nav Lexicon trigger that opens `MPX1MegaMenu`; when unchecked, remove it from top-nav and keep entry in Advanced menu only.
+- Why it matters: User expectation is explicit: promoted Lexicon must use Mega Menu behavior.
+- Dependencies: T040-subC
+- Estimated effort: Medium
+- Required outputs: AppShell mega-menu integration with open-state/click-outside handling and safe fallback values.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-27 03:30 - Codex
+Assigned to: Codex
+Last updated: 2026-02-27 03:30 - Codex
+- Completion notes:
+  - What was done: Added persisted `promoted_advanced_routes` to Special Settings across DB schema/model, API request/response models, route handlers, and Raft replication/state-sync paths; included additive SQLite schema upgrade logic for existing databases.
+  - What was done: Updated advanced menu data with deterministic promotion metadata for every item, added `Guide` (`/welcome`) and `Grid` (`/grid`) entries to Advanced menu, and set shared default promoted routes to `[/welcome, /grid]`.
+  - What was done: Reworked `AppShell` navigation to render top-nav items dynamically from promoted Advanced entries, added per-entry Advanced-menu checkbox controls (desktop/mobile), and restored MPX1 promoted behavior as a top-nav `MPX1MegaMenu` trigger instead of a plain link.
+  - Files/links produced: `app/database.py`, `app/models.py`, `app/routes/special_settings.py`, `app/services/special_settings_raft.py`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/hooks/useSpecialSettings.tsx`, `web/src/app/layout/AppShell.tsx`, `web/src/index.css`, `tests/test_special_settings_routes.py`.
+  - Validation: `npm --prefix web run typecheck` PASS; `pytest -q tests/test_special_settings_routes.py` PASS (`3 passed`).
+  - Suggested next tasks: T013, T030, T022-subK
 
 ## Backlog
 

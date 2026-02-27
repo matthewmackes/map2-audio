@@ -56,6 +56,7 @@ class SpecialSettingsResponse(BaseModel):
     enabled: bool = False
     hidden_plugins: List[str] = []
     menu_location: str = "top-nav"
+    promoted_advanced_routes: List[str] = ["/welcome", "/grid"]
     version: int = 1
     last_updated: Optional[str] = None  # ISO timestamp
     updated_by_node: Optional[str] = None
@@ -66,6 +67,7 @@ class SpecialSettingsUpdateRequest(BaseModel):
     enabled: bool
     hidden_plugins: List[str]
     menu_location: str  # "top-nav" | "mobile-only" | "hidden"
+    promoted_advanced_routes: List[str] = ["/welcome", "/grid"]
 
 
 class PasswordAuthRequest(BaseModel):

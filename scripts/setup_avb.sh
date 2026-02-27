@@ -285,17 +285,17 @@ install_dependencies() {
     # Detect package manager
     if check_command "dnf"; then
         log_info "Installing via dnf..."
-        if ! dnf install -y linuxptp iproute-tc iproute ethtool; then
+        if ! dnf install -y linuxptp iproute-tc iproute ethtool libpcap-devel; then
             log_warning "dnf install with iproute-tc failed; retrying without split tc package"
-            dnf install -y linuxptp iproute ethtool
+            dnf install -y linuxptp iproute ethtool libpcap-devel
         fi
     elif check_command "apt"; then
         log_info "Installing via apt..."
         apt update
-        apt install -y linuxptp iproute2 ethtool
+        apt install -y linuxptp iproute2 ethtool libpcap-dev
     elif check_command "pacman"; then
         log_info "Installing via pacman..."
-        pacman -S --noconfirm linuxptp iproute2 ethtool
+        pacman -S --noconfirm linuxptp iproute2 ethtool libpcap
     else
         log_error "Could not detect package manager (dnf/apt/pacman)"
         exit 1

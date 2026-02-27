@@ -448,27 +448,92 @@ class MPX1Service:
         lo, hi = self._encode_14bit(int(round(normalized)))
         return [*self._SYSEX_PREFIX, *address, lo, hi, self._SYSEX_SUFFIX]
 
-    def decode_param_sysex(self, message: List[int]) -> Optional[Dict[str, Any]]:
-        if len(message) < 11:
+    def _decode_param_sysex_at_offset(self, message: List[int], offset: int) -> Optional[Dict[str, Any]]:
+        """Try decode using address/value bytes at a specific offset."""
+        if offset < 0 or offset + 5 >= len(message) - 1:
             return None
-        if message[:4] != self._SYSEX_PREFIX:
-            return None
-        if message[-1] != self._SYSEX_SUFFIX:
-            return None
-
-        address = tuple(int(v) & 0x7F for v in message[4:8])
-        lo = int(message[8]) & 0x7F
-        hi = int(message[9]) & 0x7F
-        value = self._decode_14bit(lo, hi)
-
+        address = tuple(int(v) & 0x7F for v in message[offset:offset + 4])
         param = self.params_by_address.get(address)
         if param is None:
             return None
+        lo = int(message[offset + 4]) & 0x7F
+        hi = int(message[offset + 5]) & 0x7F
+        value = self._decode_14bit(lo, hi)
         return {
             "param_id": param["id"],
             "address": list(address),
             "value": float(value),
         }
+
+    def decode_param_sysex(self, message: List[int]) -> Optional[Dict[str, Any]]:
+        # Accept canonical MAP2 frames plus common Lexicon hardware header variants.
+        if len(message) < 10:
+            return None
+        if int(message[0]) & 0xFF != 0xF0:
+            return None
+        if (int(message[1]) & 0x7F) != 0x06:
+            return None
+        if int(message[-1]) & 0xFF != self._SYSEX_SUFFIX:
+            return None
+
+        # Most common frames:
+        #   F0 06 7F 11 [addr x4] [lo hi] F7   -> offset 4
+        #   F0 06 dd ff [addr x4] [lo hi] F7   -> offset 4
+        # Some units prepend an extra command byte before address -> offset 5.
+        candidate_offsets: List[int] = [4, 5]
+        for offset in candidate_offsets:
+            decoded = self._decode_param_sysex_at_offset(message, offset)
+            if decoded is not None:
+                return decoded
+        return None
+
+    def decode_extended_sysex(self, message: List[int]) -> Optional[Dict[str, Any]]:
+        """Decode known long-form Lexicon MPX status/report frames."""
+        if len(message) < 8:
+            return None
+        if int(message[0]) & 0xFF != 0xF0:
+            return None
+        if (int(message[1]) & 0x7F) != 0x06:
+            return None
+        if int(message[-1]) & 0xFF != self._SYSEX_SUFFIX:
+            return None
+
+        # Observed compact heartbeat/status frame:
+        # F0 06 12 00 12 01 00 F7
+        if (
+            (int(message[2]) & 0x7F) == 0x12
+            and (int(message[3]) & 0x7F) == 0x00
+            and (int(message[4]) & 0x7F) == 0x12
+            and (int(message[5]) & 0x7F) == 0x01
+        ):
+            return {"frame_type": "heartbeat"}
+
+        if (int(message[2]) & 0x7F) != 0x09 or (int(message[3]) & 0x7F) != 0x00:
+            return None
+
+        # Example observed frame:
+        # F0 06 09 00 01 02 ... <program_lsn> <program_msn> ... F7
+        if len(message) >= 11 and (int(message[4]) & 0x7F, int(message[5]) & 0x7F) == (0x01, 0x02):
+            program_lsn = int(message[9]) & 0x0F
+            program_msn = int(message[10]) & 0x0F
+            return {
+                "frame_type": "program_status",
+                "program": int(program_lsn + (program_msn << 4)),
+                "command": [0x01, 0x02],
+            }
+
+        # Example observed frame:
+        # F0 06 09 00 01 01 ... <value_lsn> <value_msn> ... F7
+        if len(message) >= 11 and (int(message[4]) & 0x7F, int(message[5]) & 0x7F) == (0x01, 0x01):
+            value_lsn = int(message[9]) & 0x0F
+            value_msn = int(message[10]) & 0x0F
+            return {
+                "frame_type": "panel_status",
+                "control_value": int(value_lsn + (value_msn << 4)),
+                "command": [0x01, 0x01],
+            }
+
+        return None
 
     def _hex_bytes(self, data: List[int]) -> str:
         return " ".join(f"{int(v) & 0xFF:02X}" for v in data)
@@ -876,6 +941,34 @@ class MPX1Service:
                 await asyncio.sleep(0.05)
 
     async def handle_incoming_sysex(self, message: List[int]) -> Optional[Dict[str, Any]]:
+        extended = self.decode_extended_sysex(message)
+        if extended is not None:
+            frame_type = str(extended.get("frame_type", "unknown"))
+            if frame_type == "program_status":
+                program = int(extended.get("program", self.current_program))
+                self.current_program = max(0, program)
+                self._persist_shadow_state()
+                self._record_traffic("rx_program_sysex", message, program=program)
+                await self._publish_event(
+                    "mpx1:program_changed",
+                    {"program": program, "source": "midi_sysex"},
+                )
+                return extended
+
+            if frame_type == "panel_status":
+                value = int(extended.get("control_value", 0))
+                self._record_traffic("rx_sysex_panel", message, control_value=value)
+                await self._publish_event(
+                    "mpx1:panel_status",
+                    {"control_value": value},
+                )
+                return extended
+
+            if frame_type == "heartbeat":
+                self._record_traffic("rx_sysex_heartbeat", message)
+                await self._publish_event("mpx1:heartbeat", {})
+                return extended
+
         decoded = self.decode_param_sysex(message)
         if decoded is None:
             self._record_traffic("rx_sysex_unknown", message)

@@ -1,11 +1,17 @@
-import type { ReactNode } from 'react'
+import type { ComponentType, CSSProperties, Dispatch, ReactNode, SetStateAction } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
-import { Sparkle, Info, GridFour, BookOpen, List, X, Fire, CaretRight } from '@phosphor-icons/react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { Sparkle, Info, List, X, Fire, CaretRight } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
-import { advancedMenuItems, hardwareInterfaceMenuItems, type AdvancedMenuItem } from '../data/advancedMenuItems'
+import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
+import {
+  advancedMenuItems,
+  defaultPromotedAdvancedRoutes,
+  hardwareInterfaceMenuItems,
+  type AdvancedMenuItem,
+} from '../data/advancedMenuItems'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -27,45 +33,31 @@ const DragonIcon = ({ size = 16, color = '#dc2626' }: { size?: number; color?: s
 interface TopNavItem {
   to: string
   label: string
-  icon: React.ComponentType<any>
+  icon: ComponentType<any>
   description: string
   color: string
+  kind?: 'link' | 'mpx1-mega-menu'
 }
 
-// Main navigation items (left side, top-level)
-const navItemsLeft: TopNavItem[] = [
-  {
-    to: '/welcome',
-    label: 'Guide',
-    icon: BookOpen,
-    description: 'Platform guide & concepts',
-    color: '#60a5fa'
-  },
-  {
-    to: '/grid',
-    label: 'Grid',
-    icon: GridFour,
-    description: 'Cortex-style grid editor',
-    color: '#2563eb'
-  },
-  ...(enableLegacy ? [{ to: '/legacy', label: 'Legacy', icon: Sparkle, description: 'Classic interface', color: '#60a5fa' }] : []),
-]
+interface AdvancedMenuSection {
+  group: string
+  items: AdvancedMenuItem[]
+}
 
-// Right-side navigation items (About)
+const legacyNavItems: TopNavItem[] = enableLegacy
+  ? [{ to: '/legacy', label: 'Legacy', icon: Sparkle, description: 'Classic interface', color: '#60a5fa', kind: 'link' }]
+  : []
+
 const navItemsRight: TopNavItem[] = [
   {
     to: '/about',
     label: 'About',
     icon: Info,
     description: 'System info',
-    color: '#9ca3af'
+    color: '#9ca3af',
+    kind: 'link',
   },
 ]
-
-interface AdvancedMenuSection {
-  group: string
-  items: AdvancedMenuItem[]
-}
 
 function groupAdvancedMenuItems(items: AdvancedMenuItem[]): AdvancedMenuSection[] {
   const sections: AdvancedMenuSection[] = []
@@ -85,59 +77,96 @@ function groupAdvancedMenuItems(items: AdvancedMenuItem[]): AdvancedMenuSection[
 
 const advancedMenuSections = groupAdvancedMenuItems(advancedMenuItems)
 
-// Check if current path matches a nav item
-function useActiveNavItem() {
-  const location = useLocation()
-  const advancedNavItems = [
-    ...advancedMenuItems.filter(item => !item.popupMenu),
-    ...hardwareInterfaceMenuItems,
-  ]
+function isRouteMatch(pathname: string, to: string): boolean {
+  return pathname === to || (to !== '/' && pathname.startsWith(to + '/'))
+}
 
-  // Check hic sunt dracones items
-  const underTheHoodMatch = advancedNavItems.find(item =>
-    location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'))
-  )
-
-  if (underTheHoodMatch) {
-    return { type: 'under-the-hood' as const, item: underTheHoodMatch }
+function normalizePromotedRoutes(routes: string[] | null | undefined): string[] {
+  if (!routes || routes.length === 0) {
+    return []
   }
 
-  // Check main nav items (left + right)
-  const allMainItems = [...navItemsLeft, ...navItemsRight]
-  for (const item of allMainItems) {
-    if (location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'))) {
-      return { type: 'main' as const, item }
+  const normalized: string[] = []
+  const seen = new Set<string>()
+
+  for (const rawRoute of routes) {
+    const route = typeof rawRoute === 'string' ? rawRoute.trim() : ''
+    if (!route || !route.startsWith('/') || seen.has(route)) {
+      continue
     }
+    seen.add(route)
+    normalized.push(route)
   }
 
-  // Default to first hic sunt dracones item (Overview)
-  return { type: 'under-the-hood' as const, item: advancedMenuItems[0] }
+  return normalized
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const activeNav = useActiveNavItem()
   const location = useLocation()
   const [navOpen, setNavOpen] = useState(false)
   const navMenuRef = useRef<HTMLDivElement>(null)
   const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
   const [hardwareInterfacesOpen, setHardwareInterfacesOpen] = useState(false)
   const [mobileHardwareInterfacesOpen, setMobileHardwareInterfacesOpen] = useState(false)
+  const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
   const advancedMenuRef = useRef<HTMLDivElement>(null)
-  
-  // Get special settings to determine if Advanced Menu should be visible
+  const mpx1MenuRef = useRef<HTMLDivElement>(null)
+
   const {
     settings: specialSettings,
     isLoading: specialSettingsLoading,
     updateSettings: updateSpecialSettings,
   } = useSpecialSettings()
+
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showSpecialSettings, setShowSpecialSettings] = useState(false)
-  
-  // Determine if Advanced Menu should be shown based on special settings
+
+  const promotedRoutes = useMemo(
+    () => normalizePromotedRoutes(specialSettings?.promotedAdvancedRoutes ?? defaultPromotedAdvancedRoutes),
+    [specialSettings?.promotedAdvancedRoutes],
+  )
+
+  const promotedRouteSet = useMemo(() => new Set(promotedRoutes), [promotedRoutes])
+
+  const promotedTopNavItems = useMemo<TopNavItem[]>(() => {
+    return advancedMenuItems
+      .filter(item => item.promotable !== false && !item.popupMenu && promotedRouteSet.has(item.promotionKey))
+      .map(item => ({
+        to: item.to,
+        label: item.label,
+        icon: item.icon,
+        description: item.description,
+        color: item.color,
+        kind: item.to === '/mpx1' ? 'mpx1-mega-menu' : 'link',
+      }))
+  }, [promotedRouteSet])
+
+  const leftNavItems = useMemo(() => [...promotedTopNavItems, ...legacyNavItems], [promotedTopNavItems])
+  const rightNavItems = navItemsRight
+
+  const activeNav = useMemo(() => {
+    const advancedNavItems = [
+      ...advancedMenuItems.filter(item => !item.popupMenu),
+      ...hardwareInterfaceMenuItems,
+    ]
+
+    const underTheHoodMatch = advancedNavItems.find(item => isRouteMatch(location.pathname, item.to))
+    if (underTheHoodMatch) {
+      return { type: 'under-the-hood' as const, item: underTheHoodMatch }
+    }
+
+    const allMainItems = [...leftNavItems, ...rightNavItems]
+    const mainMatch = allMainItems.find(item => isRouteMatch(location.pathname, item.to))
+    if (mainMatch) {
+      return { type: 'main' as const, item: mainMatch }
+    }
+
+    return { type: 'under-the-hood' as const, item: advancedMenuItems[0] }
+  }, [location.pathname, leftNavItems, rightNavItems])
+
   const showAdvancedMenu = specialSettings?.enabled && specialSettings?.menuLocation !== 'hidden'
   const showInTopNav = specialSettings?.menuLocation === 'top-nav'
 
-  // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (navMenuRef.current && !navMenuRef.current.contains(event.target as Node)) {
@@ -148,38 +177,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         setAdvancedMenuOpen(false)
         setHardwareInterfacesOpen(false)
       }
+      if (mpx1MenuRef.current && !mpx1MenuRef.current.contains(event.target as Node)) {
+        setMpx1MenuOpen(false)
+      }
     }
 
-    if (navOpen || advancedMenuOpen) {
+    if (navOpen || advancedMenuOpen || mpx1MenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [navOpen, advancedMenuOpen])
+  }, [navOpen, advancedMenuOpen, mpx1MenuOpen])
 
-  // Left nav: main items
-  const leftNavItems = [...navItemsLeft]
-
-  // Right nav: About
-  const rightNavItems = [...navItemsRight]
-
-  // Helper to render a nav item
-  const renderNavItem = (item: TopNavItem) => {
-    const Icon = item.icon
-    return (
-      <NavLink
-        key={item.to}
-        to={item.to}
-        className="nav-tab-item"
-        title={item.description}
-        style={{ '--tab-color': item.color } as React.CSSProperties}
-      >
-        <span className="nav-tab-icon">
-          <Icon size={16} weight="duotone" aria-hidden />
-        </span>
-        <span className="nav-tab-label">{item.label}</span>
-      </NavLink>
-    )
-  }
+  useEffect(() => {
+    setMpx1MenuOpen(false)
+  }, [location.pathname])
 
   const isFullBleedRoute = location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
 
@@ -192,6 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setShowPasswordDialog(false)
     const nextMenuLocation = specialSettings?.menuLocation ?? 'top-nav'
     const nextHiddenPlugins = specialSettings?.hiddenPlugins ?? []
+    const nextPromotedRoutes = normalizePromotedRoutes(specialSettings?.promotedAdvancedRoutes ?? defaultPromotedAdvancedRoutes)
     const nextEnabled = specialSettings?.enabled ?? false
 
     try {
@@ -200,6 +212,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           enabled: true,
           hiddenPlugins: nextHiddenPlugins,
           menuLocation: nextMenuLocation,
+          promotedAdvancedRoutes: nextPromotedRoutes,
         })
       }
     } catch (err) {
@@ -218,6 +231,111 @@ export function AppShell({ children }: { children: ReactNode }) {
     setShowSpecialSettings(false)
   }
 
+  const togglePromotedRoute = async (item: AdvancedMenuItem, checked: boolean) => {
+    if (item.promotable === false) {
+      return
+    }
+
+    const currentRoutes = normalizePromotedRoutes(specialSettings?.promotedAdvancedRoutes ?? defaultPromotedAdvancedRoutes)
+    const nextRoutes = checked
+      ? Array.from(new Set([...currentRoutes, item.promotionKey]))
+      : currentRoutes.filter(route => route !== item.promotionKey)
+
+    await updateSpecialSettings({ promotedAdvancedRoutes: nextRoutes })
+  }
+
+  const renderPromotionToggle = (item: AdvancedMenuItem) => {
+    const promotable = item.promotable !== false
+    const checked = promotable && promotedRouteSet.has(item.promotionKey)
+    const disabled = specialSettingsLoading || !promotable
+
+    return (
+      <label
+        className={`nav-advanced-promote-toggle${disabled ? ' is-disabled' : ''}`}
+        onClick={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+        }}
+        title={promotable ? 'Show in top navigation' : 'Submenu-only entry cannot be promoted'}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(event) => {
+            event.stopPropagation()
+            void togglePromotedRoute(item, event.target.checked)
+          }}
+        />
+        <span>Top Nav</span>
+      </label>
+    )
+  }
+
+  const renderNavItem = (item: TopNavItem) => {
+    const Icon = item.icon
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        className="nav-tab-item"
+        title={item.description}
+        style={{ '--tab-color': item.color } as CSSProperties}
+      >
+        <span className="nav-tab-icon">
+          <Icon size={16} weight="duotone" aria-hidden />
+        </span>
+        <span className="nav-tab-label">{item.label}</span>
+      </NavLink>
+    )
+  }
+
+  const renderMpx1MegaMenuTrigger = (item: TopNavItem) => {
+    const Icon = item.icon
+    const isRouteActive = isRouteMatch(location.pathname, '/mpx1')
+
+    return (
+      <div key={`mpx1-mega-${item.to}`} className="mpx1-nav-root" ref={mpx1MenuRef}>
+        <button
+          type="button"
+          className={`nav-tab-item nav-tab-item--menu${isRouteActive ? ' nav-tab-item--menu-active' : ''}${mpx1MenuOpen ? ' nav-tab-item--menu-open' : ''}`}
+          title={item.description}
+          style={{ '--tab-color': item.color } as CSSProperties}
+          onClick={() => {
+            const nextOpen = !mpx1MenuOpen
+            setMpx1MenuOpen(nextOpen)
+            if (nextOpen) {
+              setAdvancedMenuOpen(false)
+              setHardwareInterfacesOpen(false)
+            }
+          }}
+          aria-haspopup="menu"
+          aria-expanded={mpx1MenuOpen}
+          aria-controls="mpx1-mega-menu"
+        >
+          <span className="nav-tab-icon">
+            <Icon size={16} weight="duotone" aria-hidden />
+          </span>
+          <span className="nav-tab-label">{item.label}</span>
+          <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${mpx1MenuOpen ? ' is-open' : ''}`} />
+        </button>
+
+        {mpx1MenuOpen && (
+          <MPX1MegaMenu
+            menuId="mpx1-mega-menu"
+            connected={false}
+            currentProgram={0}
+            currentProgramName="No Device"
+            mixMeter={0}
+            levelMeter={0}
+            hasMidiMappings={false}
+            onClose={() => setMpx1MenuOpen(false)}
+          />
+        )}
+      </div>
+    )
+  }
+
   const renderAdvancedMenuGroups = ({
     keyPrefix,
     hardwareOpen,
@@ -226,7 +344,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }: {
     keyPrefix: string
     hardwareOpen: boolean
-    setHardwareOpen: React.Dispatch<React.SetStateAction<boolean>>
+    setHardwareOpen: Dispatch<SetStateAction<boolean>>
     onNavigate: () => void
   }) => (
     <>
@@ -240,21 +358,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               if (item.popupMenu === 'hardware-interfaces') {
                 return (
                   <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-submenu-wrap">
-                    <button
-                      type="button"
-                      className={`nav-mobile-item nav-mobile-item--submenu${hardwareOpen ? ' is-open' : ''}`}
-                      style={{ '--item-color': item.color } as React.CSSProperties}
-                      onClick={() => setHardwareOpen(open => !open)}
-                      aria-expanded={hardwareOpen}
-                    >
-                      <Icon size={18} weight="duotone" aria-hidden />
-                      <span>{item.label}</span>
-                      <CaretRight
-                        size={14}
-                        weight="bold"
-                        className={`nav-mobile-item-caret${hardwareOpen ? ' is-open' : ''}`}
-                      />
-                    </button>
+                    <div className="nav-mobile-item-wrap">
+                      <button
+                        type="button"
+                        className={`nav-mobile-item nav-mobile-item--submenu${hardwareOpen ? ' is-open' : ''}`}
+                        style={{ '--item-color': item.color } as CSSProperties}
+                        onClick={() => setHardwareOpen(open => !open)}
+                        aria-expanded={hardwareOpen}
+                      >
+                        <Icon size={18} weight="duotone" aria-hidden />
+                        <span>{item.label}</span>
+                        <CaretRight
+                          size={14}
+                          weight="bold"
+                          className={`nav-mobile-item-caret${hardwareOpen ? ' is-open' : ''}`}
+                        />
+                      </button>
+                      {renderPromotionToggle(item)}
+                    </div>
 
                     {hardwareOpen && (
                       <div className="nav-mobile-submenu-grid">
@@ -263,7 +384,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             key={`${keyPrefix}-${hardwareItem.label}-${hardwareItem.to}`}
                             to={hardwareItem.to}
                             className="nav-mobile-item nav-mobile-item--child"
-                            style={{ '--item-color': hardwareItem.color } as React.CSSProperties}
+                            style={{ '--item-color': hardwareItem.color } as CSSProperties}
                             onClick={() => {
                               setHardwareOpen(false)
                               onNavigate()
@@ -284,19 +405,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               }
 
               return (
-                <NavLink
-                  key={`${keyPrefix}-${section.group}-${item.to}`}
-                  to={item.to}
-                  className="nav-mobile-item"
-                  style={{ '--item-color': item.color } as React.CSSProperties}
-                  onClick={() => {
-                    setHardwareOpen(false)
-                    onNavigate()
-                  }}
-                >
-                  <Icon size={18} weight="duotone" aria-hidden />
-                  <span>{item.label}</span>
-                </NavLink>
+                <div key={`${keyPrefix}-${section.group}-${item.to}`} className="nav-mobile-item-wrap">
+                  <NavLink
+                    to={item.to}
+                    className="nav-mobile-item"
+                    style={{ '--item-color': item.color } as CSSProperties}
+                    onClick={() => {
+                      setHardwareOpen(false)
+                      onNavigate()
+                    }}
+                  >
+                    <Icon size={18} weight="duotone" aria-hidden />
+                    <span>{item.label}</span>
+                  </NavLink>
+                  {renderPromotionToggle(item)}
+                </div>
               )
             })}
           </div>
@@ -316,27 +439,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <header className="topbar-pro">
-        {/* Left: Main navigation tabs (desktop) / Hamburger (mobile) */}
         <nav className="nav-tabs-left" aria-label="Main navigation">
-          {leftNavItems.map(renderNavItem)}
+          {leftNavItems.map(item => item.kind === 'mpx1-mega-menu' ? renderMpx1MegaMenuTrigger(item) : renderNavItem(item))}
         </nav>
 
-        {/* Center: Active tab title - prominent display */}
         <div className="nav-active-title">
           <div
             className="nav-active-display"
-            style={{ '--active-color': activeNav.item.color } as React.CSSProperties}
+            style={{ '--active-color': activeNav.item.color } as CSSProperties}
           >
             <activeNav.item.icon size={22} weight="duotone" className="nav-active-icon" aria-hidden />
             <span className="nav-active-text">{activeNav.item.label}</span>
           </div>
         </div>
 
-        {/* Right: Advanced Menu (conditional) + About + Hamburger Menu */}
         <div className="nav-tabs-right-container">
           <nav className="nav-tabs-right" aria-label="Settings navigation">
             {rightNavItems.map(renderNavItem)}
-            {/* Advanced Menu - only shown when Special is enabled and location is top-nav */}
             {showAdvancedMenu && showInTopNav && (
               <div className="advanced-menu-root" ref={advancedMenuRef}>
                 <button
@@ -345,6 +464,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   onClick={() => {
                     const nextOpen = !advancedMenuOpen
                     setAdvancedMenuOpen(nextOpen)
+                    setMpx1MenuOpen(false)
                     if (!nextOpen) {
                       setHardwareInterfacesOpen(false)
                     }
@@ -358,7 +478,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <span className="nav-tab-advanced-label">Advanced</span>
                   <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${advancedMenuOpen ? ' is-open' : ''}`} />
                 </button>
-                
+
                 {advancedMenuOpen && (
                   <div id="advanced-nav-menu" className="advanced-menu-panel" role="menu">
                     <div className="advanced-menu-header">
@@ -404,12 +524,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           </nav>
 
-          {/* Mobile hamburger button */}
-          <button 
-            className="nav-hamburger-btn" 
+          <button
+            className="nav-hamburger-btn"
             onClick={() => {
               const nextOpen = !navOpen
               setNavOpen(nextOpen)
+              setMpx1MenuOpen(false)
               if (!nextOpen) {
                 setMobileHardwareInterfacesOpen(false)
               }
@@ -421,7 +541,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        {/* Mobile menu dropdown */}
         {navOpen && (
           <div className="nav-mobile-menu" ref={navMenuRef}>
             <div className="nav-mobile-menu-content">

@@ -1,12 +1,23 @@
 # MPX1 SysEx Implementation Notes
 
 ## Frame Shape
-MAP2 MPX1 parameter messages use this frame layout:
+MAP2 MPX1 parameter transmit messages use this frame layout:
 
 - Prefix: `F0 06 7F 11`
 - Address bytes: 4 bytes from registry `address_bytes`
 - Value: 14-bit split (`lo`, `hi`) using 7-bit packing
 - Suffix: `F7`
+
+Inbound decode accepts both the canonical MAP2 prefix and common Lexicon
+hardware variants observed on live MPX units:
+
+- `F0 06 <device_id> <function> ... F7` (for example `F0 06 09 00 ... F7`)
+- Optional one-byte command prefix before the 4-byte address payload
+
+Known decoded long-form command classes:
+
+- `... 01 02 ...`: program status frame (decoded to `current_program`)
+- `... 01 01 ...`: panel status frame (decoded to `control_value` telemetry)
 
 ## Value Encoding
 - Encode: `value -> lo = value & 0x7F`, `hi = (value >> 7) & 0x7F`
@@ -29,6 +40,10 @@ MAP2 MPX1 parameter messages use this frame layout:
 - `/api/mpx1/diagnostics/ping` provides API-path latency estimate.
 
 ## Known Quirks
-- Full opcode coverage depends on registry completeness (`coverage.status=bootstrap_partial`).
+- Registry coverage is complete, but not all inbound SysEx classes are currently
+  mapped to param-level updates.
+- Some MPX units emit long state/report SysEx frames (for example
+  `F0 06 09 00 01 01 ... F7`) that are captured in diagnostics but are not yet
+  translated into per-parameter shadow-state changes.
 - `smoothing_ms` is persisted for mappings but interpolation behavior is currently baseline.
 - Hardware round-trip latency depends on host MIDI stack and interface quality.

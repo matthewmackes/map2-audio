@@ -1,0 +1,129 @@
+{
+  "timestamp_utc": "2026-02-27T17:38:30Z",
+  "steps": {
+    "connect": {
+      "status": "ok",
+      "connected": true
+    },
+    "health_after_connect": {
+      "status": "ok",
+      "rtmidi_available": true,
+      "connected": true,
+      "ws_subscribers": 0,
+      "active_dump_jobs": [],
+      "coalesce_window_ms": 40,
+      "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+      "library_path": "/home/mm/.map2/mpx1_library.json",
+      "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+      "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+      "active_midi_map_id": null,
+      "midi_map_count": 0,
+      "learn_target_param_id": null,
+      "packet_error_count": 0,
+      "last_heartbeat": 1772213910.811309
+    },
+    "ports": {
+      "rtmidi_available": true,
+      "inputs": [
+        {
+          "index": 0,
+          "name": "Midi Through:Midi Through Port-0 14:0",
+          "connected": false
+        },
+        {
+          "index": 1,
+          "name": "UA-1000:UA-1000 MIDI 24:0",
+          "connected": true
+        },
+        {
+          "index": 2,
+          "name": "MAP2 Audio Engine:MIDI Out 134:1",
+          "connected": false
+        },
+        {
+          "index": 3,
+          "name": "RtMidiOut Client:RtMidi output 144:0",
+          "connected": false
+        },
+        {
+          "index": 4,
+          "name": "RtMidiOut Client:RtMidi output 150:0",
+          "connected": false
+        }
+      ],
+      "outputs": [
+        {
+          "index": 0,
+          "name": "Midi Through:Midi Through Port-0 14:0",
+          "connected": false
+        },
+        {
+          "index": 1,
+          "name": "UA-1000:UA-1000 MIDI 24:0",
+          "connected": true
+        },
+        {
+          "index": 2,
+          "name": "RtMidiIn Client:RtMidi input 133:0",
+          "connected": false
+        },
+        {
+          "index": 3,
+          "name": "MAP2 Audio Engine:MIDI In 134:0",
+          "connected": false
+        },
+        {
+          "index": 4,
+          "name": "RtMidiIn Client:RtMidi input 141:0",
+          "connected": false
+        },
+        {
+          "index": 5,
+          "name": "RtMidiIn Client:RtMidi input 149:0",
+          "connected": false
+        }
+      ],
+      "recommended_input_index": null,
+      "recommended_output_index": null
+    },
+    "diagnostics_ping_stats": {
+      "samples": 30,
+      "min_ms": 0.007021008059382439,
+      "max_ms": 0.02632000541780144,
+      "avg_ms": 0.007871767350782951,
+      "p99_ms": 0.02632000541780144
+    },
+    "sweep": {
+      "parameter": "pitch.alg_00.mix",
+      "updates_sent": 250,
+      "duration_seconds": 14.587332487106323,
+      "api_call_latency_ms": {
+        "min": 1.288334999117069,
+        "max": 1304.556415998377,
+        "avg": 14.257526787987445,
+        "p95": 28.079432013328187
+      },
+      "packet_error_before": 0,
+      "packet_error_after": 0,
+      "packet_error_delta": 0,
+      "new_diag_events": 251,
+      "tx_sysex_events": 251,
+      "rx_sysex_events": 0,
+      "rx_cc_events": 0
+    },
+    "raw_alsa_capture": {
+      "command": "timeout 15s aseqdump -p 24:0",
+      "exit_code": 124,
+      "clock_events": 720,
+      "cc_events": 0,
+      "sysex_events": 0,
+      "log_path": "/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-15s.log"
+    }
+  },
+  "acceptance": {
+    "connected": true,
+    "ui_knob_drag_no_packet_errors": true,
+    "physical_knob_inbound_detected": false,
+    "physical_knob_latency_lt_150ms_confirmed": false
+  }
+}
