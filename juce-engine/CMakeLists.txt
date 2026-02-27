@@ -199,21 +199,42 @@ else()
 endif()
 
 # ========================================
-# AVDECC (IEEE 1722.1) Third-Party Interop (Optional)
+# AVDECC (IEEE 1722.1) via L-Acoustics la_avdecc (Optional)
+# Replaces custom AVDECC stack. Independent of USE_AVB — uses libpcap transport.
 # ========================================
-option(USE_AVDECC "Enable AVDECC for third-party AVB device interop" OFF)
+option(USE_AVDECC "Enable AVDECC for third-party AVB device interop (via la_avdecc)" OFF)
+set(AVDECC_AVAILABLE FALSE)
 if(USE_AVDECC)
-    if(AVB_AVAILABLE)
-        message(STATUS "AVDECC: ENABLED (IEEE 1722.1 interoperability)")
+    pkg_check_modules(LIBPCAP libpcap QUIET)
+    if(LIBPCAP_FOUND)
+        message(STATUS "AVDECC: ENABLED via la_avdecc v4.3.1.1 (libpcap ${LIBPCAP_VERSION})")
         set(AVDECC_AVAILABLE TRUE)
+
+        # Disable la_avdecc sub-targets we don't need
+        set(BUILD_AVDECC_TESTS        OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_EXAMPLES     OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_DOC          OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_CONTROLLER_LIB ON CACHE BOOL "" FORCE)
+        set(AVDECC_ENABLE_VERBOSE_DEBUG_LOG OFF CACHE BOOL "" FORCE)
+        # Use PCap protocol interface (raw Ethernet on Linux via libpcap)
+        set(BUILD_AVDECC_INTERFACE_PCAP     ON  CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_INTERFACE_MAC      OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_INTERFACE_VIRTUAL  OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_INTERFACE_SERIAL   OFF CACHE BOOL "" FORCE)
+
+        FetchContent_Declare(
+            la_avdecc
+            GIT_REPOSITORY https://github.com/L-Acoustics/avdecc.git
+            GIT_TAG        v4.3.1.1
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(la_avdecc)
     else()
-        message(STATUS "AVDECC: DISABLED (requires AVB to be enabled first)")
-        message(STATUS "  Enable AVB first with: cmake -DUSE_AVB=ON -DUSE_AVDECC=ON")
-        set(AVDECC_AVAILABLE FALSE)
+        message(STATUS "AVDECC: DISABLED (libpcap not found)")
+        message(STATUS "  Install with: sudo dnf install libpcap-devel")
     endif()
 else()
     message(STATUS "AVDECC: DISABLED (USE_AVDECC=OFF)")
-    set(AVDECC_AVAILABLE FALSE)
 endif()
 
 # ========================================
@@ -300,12 +321,14 @@ if(AVB_AVAILABLE)
     )
 endif()
 
-# Add AVDECC sources if available
+# Add AVDECC sources if available (la_avdecc wrapper)
 if(AVDECC_AVAILABLE)
     list(APPEND SOURCES
-        Source/AvdeccEntity.cpp
-        Source/AvdeccEntityModel.cpp
-        Source/AvdeccEnumerator.cpp
+        Source/AvdeccController.cpp   # Wraps la_avdecc_controller
+        # Superseded by la_avdecc (kept on disk for reference):
+        # Source/AvdeccEntity.cpp
+        # Source/AvdeccEntityModel.cpp
+        # Source/AvdeccEnumerator.cpp
     )
 endif()
 
@@ -387,13 +410,15 @@ if(AVB_AVAILABLE)
     )
 endif()
 
-# Add AVDECC headers if available
+# Add AVDECC headers if available (la_avdecc wrapper)
 if(AVDECC_AVAILABLE)
     list(APPEND HEADERS
-        Source/AvdeccEntity.h
-        Source/AvdeccDescriptors.h
-        Source/AvdeccEntityModel.h
-        Source/AvdeccEnumerator.h
+        Source/AvdeccController.h   # New la_avdecc wrapper
+        # Superseded (kept on disk for reference):
+        # Source/AvdeccEntity.h
+        # Source/AvdeccDescriptors.h
+        # Source/AvdeccEntityModel.h
+        # Source/AvdeccEnumerator.h
     )
 endif()
 
@@ -437,6 +462,10 @@ if(AVB_AVAILABLE)
         ${AVTP_INCLUDE_DIRS}
         ${LIBCAP_INCLUDE_DIRS}
     )
+endif()
+
+if(AVDECC_AVAILABLE)
+    target_include_directories(map2_audio_engine PRIVATE ${LIBPCAP_INCLUDE_DIRS})
 endif()
 
 if(SFIZZ_AVAILABLE)
@@ -487,6 +516,13 @@ if(AVB_AVAILABLE)
     target_link_libraries(map2_audio_engine PRIVATE
         ${AVTP_LIBRARIES}
         ${LIBCAP_LIBRARIES}
+    )
+endif()
+
+if(AVDECC_AVAILABLE)
+    target_link_libraries(map2_audio_engine PRIVATE
+        la_avdecc_controller_static
+        ${LIBPCAP_LIBRARIES}
     )
 endif()
 

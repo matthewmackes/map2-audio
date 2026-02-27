@@ -962,6 +962,25 @@ Last updated: 2026-02-25 - Codex
   - Files/links produced: `app/services/mpx1_scene_service.py`, `app/routes/mpx1.py`, `web/src/map2/mpx1Api.ts`, `web/src/app/components/MPX1/MPX1ScenePanel.tsx`, `web/src/app/components/MPX1/MPX1ScenePanel.css`, `web/src/app/pages/MPX1PerformView.tsx`, `web/src/app/App.tsx`, `tests/test_mpx1_scene_service.py`.
   - Validation: `pytest -q tests/test_mpx1_scene_service.py` PASS (32 passed); `pytest -q tests/test_mpx1.py tests/test_mpx1_syx_parser.py tests/test_mpx1_scene_service.py` PASS (81 passed).
 
+ID: T039
+Status: [✓] Done
+Title: Refactor top navigation/title tabs and keep Advanced menu on mobile-grid layout across desktop/mobile
+Description:
+- Goal / acceptance criteria: Move `Lexicon MPX1` out of top-level nav into Advanced `Control`, render the Advanced dropdown using the same mobile grid structure on desktop and mobile, and modernize topbar/title-tab styling so it scales cleanly across viewport sizes.
+- Why it matters: Reduces top-level clutter, keeps advanced workflows in one place, and improves operator readability/consistency.
+- Dependencies: T021, T022
+- Estimated effort: Medium
+- Required outputs: `web/src/app/layout/AppShell.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/index.css`, validation command output.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-27 00:00 - Codex
+- Completion notes:
+  - What was done: Removed the MPX1 top-nav entry and moved it under Advanced menu `Control` in shared menu data.
+  - What was done: Replaced duplicated desktop/mobile Advanced menu markup with a shared renderer that always uses the mobile grid-group layout, including shared hardware-submenu behavior.
+  - What was done: Refactored topbar/tab/title styling in `index.css` with scalable spacing/typography, active-state polish, responsive breakpoints, and enlarged desktop Advanced menu grid sizing.
+  - Files/links produced: `web/src/app/layout/AppShell.tsx`, `web/src/app/data/advancedMenuItems.ts`, `web/src/index.css`.
+  - Validation: `npm --prefix web run typecheck` PASS; `npm --prefix web run build` fails on pre-existing Tesira API typing errors in `web/src/app/components/Tesira/hooks/useTesiraApi.ts` and `web/src/map2/api.ts` (unrelated to T039).
+
 ## Backlog
 
 ID: T900  

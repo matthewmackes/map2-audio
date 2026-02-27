@@ -106,7 +106,7 @@ export function MPX1MegaMenu({
   const safeLevel = clamp01(levelMeter)
 
   return (
-    <div id={menuId} className="mpx1-mega-menu" role="menu" aria-label="Lexicon MPX1 menu">
+    <div id={menuId} className="mpx1-mega-menu" role="menu" aria-label="MPX1 menu">
       <section className="mpx1-mega-menu__header">
         <div className="mpx1-mega-menu__header-status">
           <span className={`mpx1-status-dot${connected ? ' is-online' : ''}`} aria-hidden />

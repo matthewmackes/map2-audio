@@ -1,0 +1,11 @@
+prefix=/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-build/Install
+exec_prefix=/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-build/Install
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: fmt
+Description: A modern formatting library
+Version: 10.1.0
+Libs: -L${libdir} -lfmt
+Cflags: -I${includedir}
+

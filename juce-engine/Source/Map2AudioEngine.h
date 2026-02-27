@@ -27,7 +27,7 @@
 #endif
 
 #ifdef HAS_AVDECC
-#include "AvdeccEntity.h"
+#include "AvdeccController.h"
 #endif
 
 #ifdef HAS_AVB
@@ -1259,9 +1259,9 @@ public:
     CPUMonitor& getCPUMonitor() { return cpuMonitor_; }
 
 #ifdef HAS_AVDECC
-    // AVDECC Entity accessor (Phase 10)
-    Map2Audio::AvdeccEntity* getAvdeccEntity() { return avdeccEntity_.get(); }
-    const Map2Audio::AvdeccEntity* getAvdeccEntity() const { return avdeccEntity_.get(); }
+    // AVDECC Controller accessor
+    Map2Audio::Map2AvdeccController* getAvdeccController() { return avdeccController_.get(); }
+    const Map2Audio::Map2AvdeccController* getAvdeccController() const { return avdeccController_.get(); }
 #endif
 
 #ifdef HAS_AVB
@@ -1326,8 +1326,8 @@ private:
 #endif
 
 #ifdef HAS_AVDECC
-    // AVDECC Entity for network audio discovery/enumeration (Phase 10)
-    std::unique_ptr<Map2Audio::AvdeccEntity> avdeccEntity_;
+    // AVDECC Controller (la_avdecc-backed)
+    std::unique_ptr<Map2Audio::Map2AvdeccController> avdeccController_;
 #endif
 
 #ifdef HAS_AVB

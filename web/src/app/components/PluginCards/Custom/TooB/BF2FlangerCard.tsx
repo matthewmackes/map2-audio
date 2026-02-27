@@ -59,7 +59,7 @@ export function BF2FlangerCard({
       compact={compact}
     >
       {/* BF-2 Controls */}
-      <ParameterSection title="Boss BF-2 Style Flanger" accentColor={accentColor}>
+      <ParameterSection title="Vintage BF-2 Style Flanger" accentColor={accentColor}>
         <ParameterRow>
           <ParameterKnob
             label="Manual"

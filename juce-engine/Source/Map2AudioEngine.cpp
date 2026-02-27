@@ -99,6 +99,13 @@ std::string readAvbMarkerValue(const std::string& key) {
 bool isPtpPidHealthy() {
     constexpr const char* pidPath = "/run/ptp4l.pid";
     if (!std::filesystem::exists(pidPath)) {
+        // Fallback for systemd-managed ptp4l setups that do not write a PID file.
+        if (std::system("pidof ptp4l >/dev/null 2>&1") == 0) {
+            return true;
+        }
+        if (std::system("systemctl is-active --quiet map2-ptp4l.service >/dev/null 2>&1") == 0) {
+            return true;
+        }
         return false;
     }
 
@@ -372,8 +379,7 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     meteringThread_ = std::thread([this]() { meteringThreadFunc(); });
 
 #ifdef HAS_AVDECC
-    // Phase 10: Initialize AVDECC entity if enabled
-    // Get interface from environment or use default
+    // Initialize AVDECC controller (la_avdecc-backed)
     const char* avdecc_iface_env = std::getenv("MAP2_AVB_INTERFACE");
     std::string avdecc_interface = avdecc_iface_env ? avdecc_iface_env : "";
     if (avdecc_interface.empty()) {
@@ -384,22 +390,22 @@ bool Map2AudioEngine::initialize(const std::string& /*configFile*/) {
     }
 
     try {
-        avdeccEntity_ = std::make_unique<Map2Audio::AvdeccEntity>(
+        avdeccController_ = std::make_unique<Map2Audio::Map2AvdeccController>(
             avdecc_interface,
             "MAP2-AudioEngine",
             8,  // Max talker streams
             8   // Max listener streams
         );
 
-        if (!avdeccEntity_->start()) {
-            std::cerr << "Warning: Failed to start AVDECC entity (non-fatal)" << std::endl;
-            avdeccEntity_.reset();
+        if (!avdeccController_->start()) {
+            std::cerr << "Warning: Failed to start AVDECC controller (non-fatal)" << std::endl;
+            avdeccController_.reset();
         } else {
-            std::cout << "  AVDECC Entity: Started on " << avdecc_interface << std::endl;
+            std::cout << "  AVDECC Controller: Started on " << avdecc_interface << std::endl;
         }
     } catch (const std::exception& e) {
         std::cerr << "Warning: AVDECC initialization failed: " << e.what() << " (non-fatal)" << std::endl;
-        avdeccEntity_.reset();
+        avdeccController_.reset();
     }
 #endif
 
@@ -454,11 +460,11 @@ void Map2AudioEngine::shutdown() {
     audioIO_.shutdown();
 
 #ifdef HAS_AVDECC
-    // Phase 10: Shutdown AVDECC entity
-    if (avdeccEntity_) {
-        avdeccEntity_->stop();
-        avdeccEntity_.reset();
-        std::cout << "  AVDECC Entity: Stopped" << std::endl;
+    // Shutdown AVDECC controller
+    if (avdeccController_) {
+        avdeccController_->stop();
+        avdeccController_.reset();
+        std::cout << "  AVDECC Controller: Stopped" << std::endl;
     }
 #endif
 

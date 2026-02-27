@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/CMakeFiles/la_avdecc-populate"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/CMakeFiles/la_avdecc-populate.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/CMakeFiles/la_avdecc-populate-complete.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-build.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-configure.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-download.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-install.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-patch.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-test.rule"
+		},
+		{
+			"file" : "/home/mm/map2-audio/juce-engine/build-avdecc-test/_deps/la_avdecc-subbuild/la_avdecc-populate-prefix/src/la_avdecc-populate-stamp/la_avdecc-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"la_avdecc-populate"
+		],
+		"name" : "la_avdecc-populate"
+	}
+}

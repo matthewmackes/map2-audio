@@ -56,7 +56,7 @@ export function CE2ChorusCard({
       compact={compact}
     >
       {/* Classic CE-2 Layout - Just two big knobs like the original */}
-      <ParameterSection title="Boss CE-2 Style Chorus" accentColor={accentColor}>
+      <ParameterSection title="Vintage CE-2 Style Chorus" accentColor={accentColor}>
         <ParameterRow justify="space-around">
           <ParameterKnob
             label="Rate"

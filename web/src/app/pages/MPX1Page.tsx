@@ -203,7 +203,7 @@ export function MPX1Page() {
 
           <MPX1StatusBar
             connected={Boolean(mpx1.state?.connected)}
-            deviceName="Lexicon MPX1"
+            deviceName="MPX1 Rack"
             programNumber={currentProgram}
             programName={currentProgramName}
             lcdText={lcdText}

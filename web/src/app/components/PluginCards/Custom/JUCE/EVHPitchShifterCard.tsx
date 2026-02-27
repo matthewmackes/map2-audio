@@ -138,7 +138,7 @@ function EVHPitchShifterCardBase({
       compact={compact}
       customHeader={
         <div className="evh-card-header">
-          <span className="evh-card-title">EVH HARMONIZER</span>
+          <span className="evh-card-title">VINTAGE HARMONIZER</span>
           <span className="evh-subtitle">Vintage Harmonizer Style</span>
         </div>
       }
@@ -180,7 +180,7 @@ function EVHPitchShifterCardBase({
             {/* Roth Era */}
             <div className="evh-era-header">
               <span>David Lee Roth Era (1978-1984)</span>
-              <span className="evh-era-gear">H910 / H949</span>
+              <span className="evh-era-gear">Dual Rack Detune</span>
             </div>
             {ROTH_ERA_PRESETS.map((idx) => {
               const preset = presets[idx]

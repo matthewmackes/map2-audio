@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(nc -z -v -w 3 172.20.146.233 23)",
+      "Bash(ping -c 3 -W 2 172.20.146.233)",
+      "Bash(nmap -sT -p 22,23,80,443,1710,1711,49152,10000 172.20.146.233)",
+      "WebFetch(domain:support.biamp.com)",
+      "WebFetch(domain:tesira-help.biamp.com)",
+      "Bash(sudo systemctl reload-or-restart map2-backend.service)",
+      "WebFetch(domain:downloads.biamp.com)",
+      "WebFetch(domain:tesira-webhelp.biamp.com)",
+      "Bash(nc -v -w 3 172.20.146.233 61451)",
+      "Bash(xxd)",
+      "Bash(printf \"DEVICE get version\\\\n\")",
+      "Bash(printf \"device get version\\\\r\\\\n\")"
     ]
   }
 }

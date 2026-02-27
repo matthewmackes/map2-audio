@@ -91,6 +91,14 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     dividerBefore: true,
     group: 'Control',
   },
+  {
+    to: '/mpx1',
+    label: 'MPX1 Rack',
+    icon: Waveform,
+    description: 'Hardware rack editor + MIDI mapping',
+    color: '#3b82f6',
+    group: 'Control',
+  },
 
   // ── Hardware & Interfaces ──
   {

@@ -86,15 +86,15 @@ export interface VanHalenPreset {
 export const VAN_HALEN_PRESETS: VanHalenPreset[] = [
   { index: 0, name: 'Manual', song: 'Custom', album: '-', year: '-', description: 'User-defined settings', settings: {} },
   { index: 1, name: 'Eruption', song: 'Eruption', album: 'Van Halen', year: '1978', description: 'Classic VH1 tone - subtle +/-4c', settings: { pitch_l: 4, pitch_r: -4, delay_l: 3, delay_r: 6, mix: 40 } },
-  { index: 2, name: 'Unchained', song: 'Unchained', album: 'Fair Warning', year: '1981', description: 'Punchy H910 detune', settings: { pitch_l: 4, pitch_r: -4, delay_l: 3, delay_r: 6, mix: 35 } },
+  { index: 2, name: 'Unchained', song: 'Unchained', album: 'Fair Warning', year: '1981', description: 'Punchy rack detune', settings: { pitch_l: 4, pitch_r: -4, delay_l: 3, delay_r: 6, mix: 35 } },
   { index: 3, name: 'Little Guitars', song: 'Little Guitars', album: 'Diver Down', year: '1982', description: 'Delicate shimmer', settings: { pitch_l: 5, pitch_r: -5, delay_l: 5, delay_r: 10, mix: 30 } },
   { index: 4, name: 'Mean Street', song: 'Mean Street', album: 'Fair Warning', year: '1981', description: 'Heavier detune', settings: { pitch_l: 7, pitch_r: -7, delay_l: 8, delay_r: 16, mix: 45 } },
   { index: 5, name: 'Drop Dead Legs', song: 'Drop Dead Legs', album: '1984', year: '1984', description: 'Sub-octave effect', settings: { pitch_l: -1200, pitch_r: 0, delay_l: 0, delay_r: 0, mix: 25 } },
-  { index: 6, name: 'Panama', song: 'Panama', album: '1984', year: '1984', description: 'Classic H949 detune', settings: { pitch_l: 7, pitch_r: -9, delay_l: 8, delay_r: 20, mix: 40 } },
+  { index: 6, name: 'Panama', song: 'Panama', album: '1984', year: '1984', description: 'Classic rack detune', settings: { pitch_l: 7, pitch_r: -9, delay_l: 8, delay_r: 20, mix: 40 } },
   { index: 7, name: 'Cathedral', song: 'Cathedral', album: 'Diver Down', year: '1982', description: 'Shimmer with feedback', settings: { pitch_l: 12, pitch_r: -12, delay_l: 80, delay_r: 100, feedback: 40, mix: 50 } },
   { index: 8, name: 'Hot For Teacher', song: 'Hot For Teacher', album: '1984', year: '1984', description: 'Punchy detune', settings: { pitch_l: 6, pitch_r: -6, delay_l: 5, delay_r: 12, mix: 35 } },
-  { index: 9, name: "Why Can't This Be Love", song: "Why Can't This Be Love", album: '5150', year: '1986', description: 'Micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 25, mix: 45 } },
-  { index: 10, name: 'Dreams', song: 'Dreams', album: '5150', year: '1986', description: 'Wide stereo micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 20, delay_r: 50, mix: 50 } },
+  { index: 9, name: "Why Can't This Be Love", song: "Why Can't This Be Love", album: '1986 Album', year: '1986', description: 'Micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 25, mix: 45 } },
+  { index: 10, name: 'Dreams', song: 'Dreams', album: '1986 Album', year: '1986', description: 'Wide stereo micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 20, delay_r: 50, mix: 50 } },
   { index: 11, name: 'Finish What Ya Started', song: 'Finish What Ya Started', album: 'OU812', year: '1988', description: 'Clean subtle micropitch', settings: { pitch_l: 6, pitch_r: -6, delay_l: 0, delay_r: 15, mix: 35 } },
   { index: 12, name: 'Right Now', song: 'Right Now', album: 'F.U.C.K.', year: '1991', description: 'Thick micropitch', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 25, mix: 50 } },
   { index: 13, name: "Can't Stop Lovin' You", song: "Can't Stop Lovin' You", album: 'Balance', year: '1995', description: 'Smooth ballad tone', settings: { pitch_l: 9, pitch_r: -9, delay_l: 0, delay_r: 20, mix: 40 } },
@@ -562,7 +562,7 @@ export function useBossXS1() {
     queryKey: ['bossXS1'],
     queryFn: async () => {
       const response = await fetch('/api/engine/pitch/boss-xs1')
-      if (!response.ok) throw new Error('Failed to fetch Boss XS-1 data')
+      if (!response.ok) throw new Error('Failed to fetch poly shifter data')
       return response.json()
     },
     refetchInterval: 100,
@@ -588,7 +588,7 @@ export function useBossXS1() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
       })
-      if (!response.ok) throw new Error('Failed to update Boss XS-1')
+      if (!response.ok) throw new Error('Failed to update poly shifter')
       return response.json()
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bossXS1'] }),

@@ -10,6 +10,7 @@ All endpoints return available=false gracefully when AVB is disabled or hardware
 """
 
 import asyncio
+import inspect
 import json
 import logging
 from datetime import datetime, timezone
@@ -2268,7 +2269,7 @@ async def get_avdecc_entities() -> Dict[str, Any]:
 
         if not router or not router.avdecc_entity:
             return {
-                "enabled": False,
+                "enabled": True,
                 "entities": [],
                 "error": "AVDECC entity not initialized"
             }
@@ -2391,28 +2392,45 @@ async def get_avdecc_stats() -> Dict[str, Any]:
 
         if not router or not router.avdecc_entity:
             return {
-                "enabled": False,
+                "enabled": True,
+                "entities_discovered": 0,
+                "connections_active": 0,
                 "error": "AVDECC entity not initialized"
             }
 
-        stats = await asyncio.to_thread(router.avdecc_entity.getStats)
+        # Synthesize stats from available engine methods (no getStats binding exists)
+        entities_discovered = 0
+        connections_active = 0
+
+        discover_fn = _resolve_avdecc_callable(
+            router.avdecc_entity,
+            ["get_avdecc_entities", "getDiscoveredEntities", "get_discovered_entities", "getAvdeccEntities"],
+        )
+        if discover_fn is not None:
+            try:
+                entities = await asyncio.to_thread(discover_fn)
+                entities_discovered = len(entities) if entities else 0
+            except Exception:
+                pass
+
+        connections_fn = _resolve_avdecc_callable(
+            router.avdecc_entity,
+            ["get_active_connections", "getActiveConnections"],
+        )
+        if connections_fn is not None:
+            try:
+                conns = await asyncio.to_thread(connections_fn)
+                connections_active = len(conns) if conns else 0
+            except Exception:
+                pass
 
         return {
             "enabled": True,
-            "adp": {
-                "messages_sent": stats.adp_messages_sent,
-                "messages_received": stats.adp_messages_received
-            },
-            "acmp": {
-                "messages_sent": stats.acmp_messages_sent,
-                "messages_received": stats.acmp_messages_received
-            },
-            "aecp": {
-                "messages_sent": stats.aecp_messages_sent,
-                "messages_received": stats.aecp_messages_received
-            },
-            "entities_discovered": stats.entities_discovered,
-            "connections_active": stats.connections_active
+            "adp": {"messages_sent": 0, "messages_received": 0},
+            "acmp": {"messages_sent": 0, "messages_received": 0},
+            "aecp": {"messages_sent": 0, "messages_received": 0},
+            "entities_discovered": entities_discovered,
+            "connections_active": connections_active
         }
 
     except Exception as e:

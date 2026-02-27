@@ -78,7 +78,7 @@ export function useH3000() {
     queryKey: ['h3000'],
     queryFn: async () => {
       const response = await fetch('/api/engine/h3000')
-      if (!response.ok) throw new Error('Failed to fetch H3000 data')
+      if (!response.ok) throw new Error('Failed to fetch pitch harmonizer data')
       return response.json()
     },
     refetchInterval: 100, // Real-time metering
@@ -110,7 +110,7 @@ export function useH3000() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiParams),
       })
-      if (!response.ok) throw new Error('Failed to update H3000')
+      if (!response.ok) throw new Error('Failed to update pitch harmonizer')
       return response.json()
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['h3000'] }),

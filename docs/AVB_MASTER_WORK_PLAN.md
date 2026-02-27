@@ -2,7 +2,7 @@
 
 Canonical file: `docs/AVB_MASTER_WORK_PLAN.md`  
 Rule status: Active (disable only with `DISABLE WORKLIST RULE`)  
-Last updated: 2026-02-26 14:12 - Codex
+Last updated: 2026-02-26 18:30 - Codex
 
 ## Status Legend
 
@@ -1711,11 +1711,14 @@ Subtasks:
   Assigned to: Codex  
   Last updated: 2026-02-21 22:07 - Codex  
 Assigned to: MAP2 Release Engineering  
-Last updated: 2026-02-22 13:10 - Codex
+Last updated: 2026-02-26 18:30 - Codex
 Blocked notes:
 - What was done: Published and updated qualification matrix/runbook artifacts with reproducible command set and explicit rollback/backout checks; added dedicated capture/soak references and wrappers (`scripts/avb_capture_clock_drift.sh`, `scripts/run_avb_24h_soak.sh`, `scripts/run_avb_hil_qualification.sh`, `docs/AVB_24H_SOAK_TEMPLATE.md`), including auto-generated matrix update snippet output (`matrix_update.md`) for Q04-Q06.
 - Why blocked: Hardware-in-the-loop qualification rows (`Q04`-`Q06`) still require AVB-capable lab execution and measured outcomes.
 - Latest run evidence (2026-02-22): restarted `map2-backend` to restore API responsiveness, then `scripts/run_avb_hil_qualification.sh --interface enp0s25 --capture-seconds 30` produced `Q04/Q05=BLOCKED` (`AVB status reports enabled=false available=false`) and `Q06=SKIPPED`; summary at `/tmp/map2-avb-hil-continue-20260222-2144/summary.txt` and matrix updated via `scripts/apply_avb_hil_matrix_update.sh`.
+- Latest run evidence (2026-02-26): executed `scripts/run_avb_hil_qualification.sh --interface enp0s25 --capture-seconds 30 --output-dir /tmp/map2-avb-hil-20260226-174155-tesira`, producing `Q04/Q05=BLOCKED` (`AVB status reports enabled=true available=false`) and `Q06=SKIPPED`; summary at `/tmp/map2-avb-hil-20260226-174155-tesira/summary.txt`, matrix snippet at `/tmp/map2-avb-hil-20260226-174155-tesira/matrix_update.md`, and canonical matrix updated via `scripts/apply_avb_hil_matrix_update.sh`.
+- Latest run evidence (2026-02-26): runtime AVB readiness blocker cleared on MAP2 host by rebuilding active backend engine with `USE_AVB=ON`, hardening JUCE ptp4l probe fallback (`pidof` + `systemd is-active`), and writing explicit marker metadata (`/etc/map2/avb-enabled` with `enabled=true`, `interface=enp11s0`). Post-restart API checks report `state=operational`, `available=true`, `interface=enp11s0`, and AVB device inventory `count=2` (`AVB Listener (Local)`, `AVB Talker (Local)`).
+- Latest run evidence (2026-02-26): executed `scripts/run_avb_hil_qualification.sh --interface enp11s0 --capture-seconds 30 --output-dir /tmp/map2-avb-hil-20260226-182951`, then applied update via `scripts/apply_avb_hil_matrix_update.sh /tmp/map2-avb-hil-20260226-182951/summary.txt docs/AVB_QUALIFICATION_MATRIX.md`; run reported `Q04=PASS` (log: `23 skipped`), `Q05=BLOCKED` (`ERROR: tshark is required but not found in PATH`), `Q06=SKIPPED/PENDING`.
 - Unblock condition: Run HIL matrix scenarios and record measured evidence in `docs/AVB_QUALIFICATION_MATRIX.md`.
 
 
@@ -1760,9 +1763,12 @@ Subtasks:
   Assigned to: Codex  
   Last updated: 2026-02-22 13:10 - Codex  
 Assigned to: Release Engineering + QA  
-Last updated: 2026-02-22 13:10 - Codex
+Last updated: 2026-02-26 18:30 - Codex
 Blocked notes:
 - What was done: Added/confirmed stream manager transition + timestamp/sequence coverage (`juce-engine/tests/AvbStreamManagerTests.cpp`), added reproducible AVTP/PTP drift capture workflow (`scripts/avb_capture_clock_drift.sh`), and added executable soak/qualification runners (`scripts/run_avb_24h_soak.sh`, `scripts/run_avb_hil_qualification.sh`) plus explicit 8-stream/24h soak template (`docs/AVB_24H_SOAK_TEMPLATE.md`); HIL wrapper now emits `matrix_update.md` for direct qualification matrix updates.
 - Why blocked: Final qualification acceptance still depends on running these workflows on AVB-capable hardware and recording measured outcomes.
 - Latest run evidence (2026-02-22): hardware wrapper execution now reaches API and reports readiness blocker `AVB status reports enabled=false available=false` in `/tmp/map2-avb-hil-continue-20260222-2144/summary.txt`.
+- Latest run evidence (2026-02-26): hardware wrapper still blocked by runtime readiness (`AVB status reports enabled=true available=false`) with summary `/tmp/map2-avb-hil-20260226-174155-tesira/summary.txt`; direct API checks show `state=configured`, `reason=JUCE engine AVB readiness probe unavailable`, and discovery/device lists empty.
+- Latest run evidence (2026-02-26): runtime readiness now reports `state=operational` and `available=true` on `enp11s0` after enabling AVB build flags in active backend module, adding ptp4l probe fallback in JUCE AVB readiness checks, and writing marker metadata; next blocker is strictly hardware qualification evidence capture for Q04-Q06.
+- Latest run evidence (2026-02-26): HIL wrapper run on `enp11s0` (`/tmp/map2-avb-hil-20260226-182951/summary.txt`) now advances matrix state (`Q04=PASS`, `Q05=BLOCKED`, `Q06=PENDING`); Q05 remains blocked due missing `tshark`, and Q06 remains deferred until explicit soak execution.
 - Validation/evidence available now: software-side matrix and commands documented in `docs/AVB_QUALIFICATION_MATRIX.md`.

@@ -169,8 +169,8 @@ function Peavey5150CardBase({
       compact={compact}
       customHeader={
         <div className="peavey5150-card-header">
-          <span className="peavey5150-card-title">PEAVEY</span>
-          <span className="peavey5150-card-subtitle">BLOCK LETTER 5150</span>
+          <span className="peavey5150-card-title">HIGH GAIN</span>
+          <span className="peavey5150-card-subtitle">BLOCK LETTER AMP</span>
         </div>
       }
     >

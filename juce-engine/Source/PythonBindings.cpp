@@ -31,9 +31,7 @@
 #include <memory>
 
 #ifdef HAS_AVDECC
-#include "AvdeccEntity.h"
-#include "AvdeccEntityModel.h"
-#include "AvdeccDescriptors.h"
+#include "AvdeccController.h"
 #endif
 
 namespace py = pybind11;
@@ -512,7 +510,7 @@ py::dict avdeccEntityToDict(const Map2Audio::DiscoveredEntity& entity) {
     d["vendor_id"] = (uint32_t)(entity.entity_model_id >> 40);
     d["model_id"] = (uint64_t)(entity.entity_model_id & 0xFFFFFFFFFF);
     d["available"] = entity.available;
-    d["has_model"] = (entity.model_ != nullptr);
+    d["has_model"] = entity.has_model;
     return d;
 }
 
@@ -4794,7 +4792,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         .def("get_avdecc_entities", [](const Map2AudioEngine& self) {
             py::list entities;
 
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) {
                 return entities;  // Empty list if AVDECC not initialized
             }
@@ -4808,24 +4806,18 @@ PYBIND11_MODULE(map2_audio_engine, m) {
         }, "Get list of discovered AVDECC entities")
 
         .def("get_avdecc_entity_model", [](const Map2AudioEngine& self, uint64_t entity_id) -> py::object {
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) {
                 return py::none();
             }
 
-            auto discovered = avdecc->getDiscoveredEntities();
-            for (const auto& entity : discovered) {
-                if (entity.entity_id == entity_id && entity.model_) {
-                    // Convert EntityModel to JSON dict
-                    auto json_str = entity.model_->toJSON();
-
-                    // Parse JSON string to Python dict
-                    py::module_ json_module = py::module_::import("json");
-                    return json_module.attr("loads")(json_str);
-                }
+            auto json_opt = avdecc->getEntityModelJson(entity_id);
+            if (!json_opt.has_value() || json_opt->empty()) {
+                return py::none();
             }
 
-            return py::none();
+            py::module_ json_module = py::module_::import("json");
+            return json_module.attr("loads")(json_opt.value());
         }, py::arg("entity_id"),
            "Get complete entity model as JSON dict")
 
@@ -4838,7 +4830,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                                   uint16_t talker_stream_index,
                                   uint64_t listener_entity_id,
                                   uint16_t listener_stream_index) -> bool {
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) return false;
 
             return avdecc->connectStream(
@@ -4856,7 +4848,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                                      uint16_t talker_stream_index,
                                      uint64_t listener_entity_id,
                                      uint16_t listener_stream_index) -> bool {
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) return false;
 
             return avdecc->disconnectStream(
@@ -4870,7 +4862,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
            "Disconnect AVTP stream via ACMP DISCONNECT_TX_COMMAND")
 
         .def("get_active_connections", [](const Map2AudioEngine& self) -> py::list {
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) return py::list();
 
             py::list connections;
@@ -4914,7 +4906,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result.stream_format = 0;
             result.message = "avdecc_unavailable";
 
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) {
                 return streamFormatResultToDict(result);
             }
@@ -4950,7 +4942,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             result.stream_format = stream_format;
             result.message = "avdecc_unavailable";
 
-            auto* avdecc = self.getAvdeccEntity();
+            auto* avdecc = self.getAvdeccController();
             if (!avdecc) {
                 return streamFormatResultToDict(result);
             }
@@ -5132,7 +5124,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
     #ifdef HAS_AVDECC
     m.def("is_avdecc_available", []() -> bool {
         try {
-            auto* avdecc = getModuleEngine().getAvdeccEntity();
+            auto* avdecc = getModuleEngine().getAvdeccController();
             return avdecc != nullptr && avdecc->isRunning();
         } catch (...) {
             return false;
@@ -5142,7 +5134,7 @@ PYBIND11_MODULE(map2_audio_engine, m) {
     m.def("get_avdecc_entities", []() -> py::list {
         py::list entities;
         try {
-            auto* avdecc = getModuleEngine().getAvdeccEntity();
+            auto* avdecc = getModuleEngine().getAvdeccController();
             if (!avdecc) {
                 return entities;
             }
@@ -5159,17 +5151,15 @@ PYBIND11_MODULE(map2_audio_engine, m) {
 
     m.def("get_avdecc_entity_model", [](uint64_t entity_id) -> py::object {
         try {
-            auto* avdecc = getModuleEngine().getAvdeccEntity();
+            auto* avdecc = getModuleEngine().getAvdeccController();
             if (!avdecc) {
                 return py::none();
             }
 
-            auto discovered = avdecc->getDiscoveredEntities();
-            for (const auto& entity : discovered) {
-                if (entity.entity_id == entity_id && entity.model_) {
-                    py::module_ json_module = py::module_::import("json");
-                    return json_module.attr("loads")(entity.model_->toJSON());
-                }
+            auto json_opt = avdecc->getEntityModelJson(entity_id);
+            if (json_opt.has_value() && !json_opt->empty()) {
+                py::module_ json_module = py::module_::import("json");
+                return json_module.attr("loads")(json_opt.value());
             }
         } catch (...) {
         }
