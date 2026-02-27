@@ -639,3 +639,141 @@ async def add_device_manual(req: AddDeviceRequest):
         # Non-fatal — device is in config and will connect on next fleet start
 
     return {"ok": True, "device_id": device_id}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Firmware management
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _get_firmware_service():
+    from app.services.tesira.firmware_service import get_firmware_service
+    return get_firmware_service()
+
+
+@router.get("/firmware/latest", summary="Get latest Tesira firmware version from Biamp")
+async def get_latest_firmware():
+    """
+    Fetch (and cache for 1 hour) the latest available Tesira firmware version
+    from Biamp's release notes page.  Returns the version string, fetch
+    timestamp, download URL, and release notes URL.
+    """
+    svc = _get_firmware_service()
+    version = await svc.get_latest_version()
+    return {
+        "version": version,
+        "fetched_at": svc.get_cached_at(),
+        "download_url": svc.get_download_url(),
+        "release_notes_url": svc.get_release_notes_url(),
+        "update_path_url": svc.get_update_path_url(),
+    }
+
+
+@router.get("/devices/{device_id}/firmware", summary="Get firmware status for a device")
+async def get_device_firmware(device_id: str = FPath(..., description="Device ID")):
+    """
+    Return the current firmware version of the device alongside the latest
+    available version (cached) and whether an update is available.
+    """
+    fleet = _get_fleet()
+    device = fleet.get_device(device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail=f"Device {device_id!r} not found")
+
+    current = device.info.firmware_version if device.info else None
+
+    svc = _get_firmware_service()
+    latest = await svc.get_latest_version()
+    update_available = svc.compare_versions(current, latest)
+
+    return {
+        "device_id": device_id,
+        "host": device.host,
+        "name": device.name,
+        "connected": device.connected,
+        "current_version": current,
+        "latest_version": latest,
+        "update_available": update_available,
+        "update_path_url": svc.get_update_path_url(current),
+        "download_url": svc.get_download_url(),
+        "release_notes_url": svc.get_release_notes_url(),
+    }
+
+
+@router.post("/devices/{device_id}/reboot", summary="Reboot a Tesira device via TTP")
+async def reboot_device(device_id: str = FPath(..., description="Device ID")):
+    """
+    Send a DEVICE reboot command via TTP.  The device will disconnect and
+    reconnect (the fleet's offline retry loop will pick it back up).
+    Requires the device to be currently connected.
+    """
+    fleet = _get_fleet()
+    device = fleet.get_device(device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail=f"Device {device_id!r} not found")
+    if not device.connected:
+        raise HTTPException(status_code=409, detail="Device is offline — cannot send reboot")
+    try:
+        await device.reboot()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Reboot command failed: {exc}")
+    return {"ok": True, "message": f"Reboot command sent to {device.host}"}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Manual reconnect (trigger immediate offline retry)
+# ──────────────────────────────────────────────────────────────────────────────
+
+@router.post("/devices/{device_id}/reconnect", summary="Trigger immediate reconnect attempt")
+async def reconnect_device(device_id: str = FPath(..., description="Device ID")):
+    """
+    Immediately attempt to reconnect an offline device.  Runs the port-61451
+    probe (experimental Telnet enable) and then retries TTP port 23.
+    Safe to call on an already-connected device (no-ops).
+    """
+    fleet = _get_fleet()
+    device = fleet.get_device(device_id)
+    if device is None:
+        raise HTTPException(status_code=404, detail=f"Device {device_id!r} not found")
+
+    if device.connected:
+        return {"ok": True, "message": "Device already connected", "connected": True}
+
+    from app.services.tesira.port61451_probe import probe_and_enable_ttp
+    from app.services.tesira.tesira_fleet import TesiraDeviceConfig
+
+    host = device.host
+    probe_result: Dict[str, Any] = {}
+
+    # Port-61451 probe
+    try:
+        probe = await probe_and_enable_ttp(host)
+        probe_result = {
+            "port61451_open": probe.port61451_open,
+            "ttp_on_61451_possible": probe.ttp_on_61451_possible,
+            "ssh_open": probe.ssh_open,
+            "ttp_now_open": probe.ttp_now_open,
+        }
+    except Exception as exc:
+        logger.warning("Reconnect probe error for %s: %s", host, exc)
+
+    # Retry TTP connect
+    cfg = next((c for c in fleet._configs if c.host == host), None)
+    if cfg is None:
+        cfg = TesiraDeviceConfig(host=host, port=device.port, name=device.name)
+
+    try:
+        await device.connect()
+    except Exception as exc:
+        logger.debug("Reconnect TTP attempt failed for %s: %s", host, exc)
+
+    connected_now = device.connected
+    if connected_now:
+        await fleet._broadcast_device_state(device_id, 'connected')
+        await fleet._register_endpoints(device)
+
+    return {
+        "ok": True,
+        "connected": connected_now,
+        "probe": probe_result,
+        "message": "Connected" if connected_now else "Still offline — TTP not reachable",
+    }

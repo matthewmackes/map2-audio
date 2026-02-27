@@ -61,8 +61,36 @@ export interface TesiraMeterPush {
 
 export interface TesiraDeviceStateEvent {
   device_id: string;
-  event: 'connected' | 'disconnected' | 'fault' | 'preset_changed';
+  event: 'connected' | 'disconnected' | 'fault' | 'preset_changed' | 'adopted' | 'reconnecting';
   detail?: string;
+  /** Only present on 'reconnecting' events */
+  next_retry_s?: number;
+}
+
+export interface TesiraFirmwareStatus {
+  device_id: string;
+  host: string;
+  name: string;
+  connected: boolean;
+  current_version: string | null;
+  latest_version: string | null;
+  update_available: boolean;
+  update_path_url: string;
+  download_url: string;
+  release_notes_url: string;
+}
+
+export interface TesiraLatestFirmware {
+  version: string | null;
+  fetched_at: string | null;
+  download_url: string;
+  release_notes_url: string;
+  update_path_url: string;
+}
+
+export interface TesiraMutationResponse {
+  ok: boolean;
+  message: string;
 }
 
 export interface TesiraPTPEvent {

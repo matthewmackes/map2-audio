@@ -314,6 +314,11 @@ class TesiraDevice:
             for i, n in enumerate(names)
         ]
 
+    async def reboot(self) -> None:
+        """Send DEVICE reboot via TTP. The device will disconnect and reconnect."""
+        await self._client.send('device', 'reboot')
+        logger.info("TesiraDevice[%s] reboot command sent", self.host)
+
     async def recall_preset(self, preset_index: int) -> None:
         """
         Recall a preset by index (1-based as displayed on device).

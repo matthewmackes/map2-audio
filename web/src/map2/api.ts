@@ -3729,4 +3729,19 @@ export const tesiraApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ host, port, name }),
     }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // Firmware management
+  getLatestFirmware: (): Promise<TesiraLatestFirmware> =>
+    fetch(`${BASE}/firmware/latest`).then((r) => _json<TesiraLatestFirmware>(r)),
+
+  getDeviceFirmware: (deviceId: string): Promise<TesiraFirmwareStatus> =>
+    fetch(`${BASE}/devices/${deviceId}/firmware`).then((r) => _json<TesiraFirmwareStatus>(r)),
+
+  rebootDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/reboot`, { method: 'POST' })
+      .then((r) => _json<TesiraMutationResponse>(r)),
+
+  reconnectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/reconnect`, { method: 'POST' })
+      .then((r) => _json<TesiraMutationResponse>(r)),
 }

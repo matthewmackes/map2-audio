@@ -12,6 +12,9 @@ import type {
   TesiraStreamInfo,
   PresetInterlockRule,
   DiscoveryScanStatus,
+  TesiraFirmwareStatus,
+  TesiraLatestFirmware,
+  TesiraMutationResponse,
 } from '../types'
 
 // ── Query keys ────────────────────────────────────────────────────────────────
@@ -24,6 +27,8 @@ export const TESIRA_KEYS = {
   ptp:            (id: string) => ['tesira', 'devices', id, 'avb', 'ptp'] as const,
   interlock:      ['tesira', 'preset_interlock'] as const,
   discoveryStatus: ['tesira', 'discovery', 'status'] as const,
+  firmwareLatest: ['tesira', 'firmware', 'latest'] as const,
+  deviceFirmware: (id: string) => ['tesira', 'devices', id, 'firmware'] as const,
 }
 
 // ── Device listing ────────────────────────────────────────────────────────────
@@ -217,6 +222,68 @@ export function useAddDevice() {
       tesiraApi.addDevice(host, port, name),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: TESIRA_KEYS.devices })
+    },
+  })
+}
+
+// ── Firmware management ────────────────────────────────────────────────────────
+
+/**
+ * Fetch the latest Tesira firmware version from Biamp's release notes.
+ * Cached on the backend for 1 hour.
+ */
+export function useFirmwareLatest() {
+  return useQuery<TesiraLatestFirmware>({
+    queryKey: TESIRA_KEYS.firmwareLatest,
+    queryFn:  () => tesiraApi.getLatestFirmware(),
+    staleTime: 60 * 60 * 1000, // 1 hour
+  })
+}
+
+/**
+ * Fetch firmware status for a specific device: current vs latest version,
+ * update_available flag, and useful links.
+ */
+export function useDeviceFirmware(deviceId: string) {
+  return useQuery<TesiraFirmwareStatus>({
+    queryKey: TESIRA_KEYS.deviceFirmware(deviceId),
+    queryFn:  () => tesiraApi.getDeviceFirmware(deviceId),
+    enabled:  !!deviceId,
+    refetchInterval: 5 * 60 * 1000, // 5 min
+  })
+}
+
+/**
+ * Reboot a Tesira device via TTP DEVICE reboot command.
+ * Only works when device is connected (TTP enabled).
+ */
+export function useRebootDevice() {
+  const qc = useQueryClient()
+  return useMutation<TesiraMutationResponse, Error, string>({
+    mutationFn: (deviceId: string) => tesiraApi.rebootDevice(deviceId),
+    onSuccess: (_data, deviceId) => {
+      // Device will disconnect during reboot; invalidate after brief delay
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: TESIRA_KEYS.devices })
+        qc.invalidateQueries({ queryKey: TESIRA_KEYS.device(deviceId) })
+      }, 2000)
+    },
+  })
+}
+
+/**
+ * Trigger an immediate reconnect attempt for an offline device.
+ * Probes port 61451 and retries TTP port 23.
+ */
+export function useReconnectDevice() {
+  const qc = useQueryClient()
+  return useMutation<TesiraMutationResponse, Error, string>({
+    mutationFn: (deviceId: string) => tesiraApi.reconnectDevice(deviceId),
+    onSuccess: (_data, deviceId) => {
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: TESIRA_KEYS.devices })
+        qc.invalidateQueries({ queryKey: TESIRA_KEYS.device(deviceId) })
+      }, 3000)
     },
   })
 }

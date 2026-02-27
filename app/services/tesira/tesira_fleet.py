@@ -47,7 +47,11 @@ class TesiraFleet:
         self._devices: Dict[str, "TesiraDevice"] = {}     # device_id → TesiraDevice
         self._configs: List[TesiraDeviceConfig] = []
         self._ptp_poll_task: Optional[asyncio.Task] = None
+        self._offline_retry_task: Optional[asyncio.Task] = None
         self._stopping = False
+
+    # Seconds between reconnect attempts for offline devices
+    OFFLINE_RETRY_INTERVAL = 30
 
     # ──────────────────────────────────────────────────────────────────────────
     # Lifecycle
@@ -70,6 +74,10 @@ class TesiraFleet:
         self._ptp_poll_task = asyncio.create_task(
             self._ptp_poll_loop(), name="tesira_ptp_poll"
         )
+        # Start offline retry loop — probes port 61451 + retries TTP for offline devices
+        self._offline_retry_task = asyncio.create_task(
+            self._offline_retry_loop(), name="tesira_offline_retry"
+        )
         logger.info(
             "TesiraFleet started: %d/%d devices connected",
             sum(1 for d in self._devices.values() if d.connected),
@@ -79,12 +87,13 @@ class TesiraFleet:
     async def stop(self) -> None:
         """Disconnect all devices and cancel background tasks."""
         self._stopping = True
-        if self._ptp_poll_task and not self._ptp_poll_task.done():
-            self._ptp_poll_task.cancel()
-            try:
-                await self._ptp_poll_task
-            except (asyncio.CancelledError, Exception):
-                pass
+        for task in (self._ptp_poll_task, self._offline_retry_task):
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except (asyncio.CancelledError, Exception):
+                    pass
 
         for device in list(self._devices.values()):
             try:
@@ -239,6 +248,81 @@ class TesiraFleet:
             self._broadcast('tesira:meters', payload),
             name='tesira_meter_broadcast',
         )
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Internal: Offline device retry loop
+    # ──────────────────────────────────────────────────────────────────────────
+
+    async def _offline_retry_loop(self) -> None:
+        """
+        Every OFFLINE_RETRY_INTERVAL seconds, retry TTP connection for any
+        device that is currently offline.  Before each TTP attempt, fire a
+        best-effort port-61451 probe (experimental: may enable Telnet on some
+        firmware versions).
+
+        When a device connects, the normal _broadcast_device_state('connected')
+        call handles UI notification.  While still offline we broadcast a
+        'reconnecting' event so the frontend can show status.
+        """
+        from app.services.tesira.port61451_probe import probe_and_enable_ttp
+
+        await asyncio.sleep(self.OFFLINE_RETRY_INTERVAL)   # initial delay
+
+        while not self._stopping:
+            offline_devices = [
+                (did, dev) for did, dev in self._devices.items()
+                if not dev.connected
+            ]
+
+            if offline_devices:
+                logger.debug(
+                    "TesiraFleet offline retry: %d device(s) to probe", len(offline_devices)
+                )
+
+            for device_id, device in offline_devices:
+                if self._stopping:
+                    break
+                host = device.host
+
+                # 1. Experimental: probe port 61451 to try to enable Telnet
+                try:
+                    probe = await probe_and_enable_ttp(host)
+                    if probe.ttp_now_open:
+                        logger.info(
+                            "TesiraFleet[%s]: port 23 now open after port-61451 probe", host
+                        )
+                    if probe.ssh_open:
+                        logger.info(
+                            "TesiraFleet[%s]: SSH (port 22) is open — consider SSH TTP", host
+                        )
+                except Exception as exc:
+                    logger.debug("TesiraFleet[%s]: port-61451 probe error: %s", host, exc)
+
+                # 2. Retry TTP connection (port 23)
+                cfg = next((c for c in self._configs if c.host == host), None)
+                if cfg is None:
+                    continue
+
+                try:
+                    await device.connect()
+                    if device.connected:
+                        logger.info("TesiraFleet[%s]: reconnected after offline retry", host)
+                        await self._broadcast_device_state(device_id, 'connected')
+                        await self._register_endpoints(device)
+                        continue
+                except Exception as exc:
+                    logger.debug("TesiraFleet[%s]: retry connect failed: %s", host, exc)
+
+                # 3. Still offline — broadcast 'reconnecting' so UI can show status
+                await self._broadcast('tesira:device_state', {
+                    'device_id': device_id,
+                    'event': 'reconnecting',
+                    'next_retry_s': self.OFFLINE_RETRY_INTERVAL,
+                    'detail': f"TTP port 23 unreachable; retrying in {self.OFFLINE_RETRY_INTERVAL}s",
+                    'timestamp': datetime.now(timezone.utc).isoformat(),
+                })
+
+            await asyncio.sleep(self.OFFLINE_RETRY_INTERVAL)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Internal: PTP poll loop
