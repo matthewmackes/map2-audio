@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react'
 import { X, GearSix, Eye, EyeSlash, List, Monitor, DeviceMobile } from '@phosphor-icons/react'
 import { apiUrl } from '../utils/apiTarget'
+import { getDisplayPluginName } from '../../map2/displayNames'
 
 interface Plugin {
   uri: string
@@ -241,6 +242,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
               }}>
                 {nativePlugins.map((plugin) => {
                   const isVisible = !hiddenPlugins.has(plugin.uri)
+                  const displayName = getDisplayPluginName(plugin.name, plugin.uri)
                   return (
                     <label
                       key={plugin.uri}
@@ -276,7 +278,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
                           fontWeight: 500,
                           color: isVisible ? '#f3f4f6' : '#6b7280',
                         }}>
-                          {plugin.name}
+                          {displayName}
                         </div>
                         <div style={{
                           fontSize: '11px',

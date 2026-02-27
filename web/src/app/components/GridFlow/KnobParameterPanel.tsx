@@ -12,6 +12,7 @@ import { ParameterKnob } from '../Controls/ParameterKnob'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginCardComponent, getCategoryConfig } from '../PluginCards'
 import type { PluginCardProps } from '../PluginCards/types'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 // Fallback color for unknown categories
 const FALLBACK_COLOR = '#37d6c9'
@@ -161,7 +162,7 @@ export function KnobParameterPanel({
               Plugin metadata not found
             </p>
             <p className="knob-param-panel-error-desc">
-              "{plugin.name || 'Unknown plugin'}" is in the chain but not found in the plugin discovery cache.
+              "{getDisplayPluginName(plugin.name, plugin.uri)}" is in the chain but not found in the plugin discovery cache.
             </p>
             <p className="knob-param-panel-error-uri">
               URI: {plugin.uri}

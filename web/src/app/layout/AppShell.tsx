@@ -6,6 +6,7 @@ import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
+import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
   advancedMenuItems,
   defaultPromotedAdvancedRoutes,
@@ -36,7 +37,7 @@ interface TopNavItem {
   icon: ComponentType<any>
   description: string
   color: string
-  kind?: 'link' | 'mpx1-mega-menu'
+  kind?: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'
 }
 
 interface AdvancedMenuSection {
@@ -101,6 +102,21 @@ function normalizePromotedRoutes(routes: string[] | null | undefined): string[] 
   return normalized
 }
 
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return Math.min(1, Math.max(0, value))
+}
+
+function normalizeMidiValue(value: number, max = 127): number {
+  if (!Number.isFinite(value)) return 0
+  return clamp01(value / max)
+}
+
+function formatProgramName(program: number, fallback?: string): string {
+  if (fallback && fallback.trim().length > 0) return fallback
+  return `Program ${Math.max(0, program).toString().padStart(3, '0')}`
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const [navOpen, setNavOpen] = useState(false)
@@ -109,8 +125,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [hardwareInterfacesOpen, setHardwareInterfacesOpen] = useState(false)
   const [mobileHardwareInterfacesOpen, setMobileHardwareInterfacesOpen] = useState(false)
   const [mpx1MenuOpen, setMpx1MenuOpen] = useState(false)
+  const [topHardwareSubmenuOpen, setTopHardwareSubmenuOpen] = useState(false)
   const advancedMenuRef = useRef<HTMLDivElement>(null)
   const mpx1MenuRef = useRef<HTMLDivElement>(null)
+  const topHardwareMenuRef = useRef<HTMLDivElement>(null)
+
+  const {
+    state: mpx1State,
+    programs: mpx1Programs,
+    shadow: mpx1Shadow,
+    setProgram: setMpx1Program,
+    refresh: refreshMpx1State,
+  } = useMPX1State({ autoConnectWs: false })
+
+  const currentProgram = mpx1State?.current_program ?? 0
+  const currentProgramEntry = mpx1Programs.find((program) => program.program === currentProgram)
+  const currentProgramName = formatProgramName(currentProgram, currentProgramEntry?.name)
+  const mixMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_mix'] ?? mpx1Shadow['program.mix'] ?? 0))
+  const levelMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_level'] ?? mpx1Shadow['program.level'] ?? 0))
 
   const {
     settings: specialSettings,
@@ -130,14 +162,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const promotedTopNavItems = useMemo<TopNavItem[]>(() => {
     return advancedMenuItems
-      .filter(item => item.promotable !== false && !item.popupMenu && promotedRouteSet.has(item.promotionKey))
+      .filter(item => item.promotable !== false && promotedRouteSet.has(item.promotionKey))
       .map(item => ({
         to: item.to,
         label: item.label,
         icon: item.icon,
         description: item.description,
         color: item.color,
-        kind: item.to === '/mpx1' ? 'mpx1-mega-menu' : 'link',
+        kind:
+          item.popupMenu === 'hardware-interfaces'
+            ? 'hardware-submenu'
+            : item.to === '/mpx1'
+              ? 'mpx1-mega-menu'
+              : 'link',
       }))
   }, [promotedRouteSet])
 
@@ -180,17 +217,30 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (mpx1MenuRef.current && !mpx1MenuRef.current.contains(event.target as Node)) {
         setMpx1MenuOpen(false)
       }
+      if (topHardwareMenuRef.current && !topHardwareMenuRef.current.contains(event.target as Node)) {
+        setTopHardwareSubmenuOpen(false)
+      }
     }
 
-    if (navOpen || advancedMenuOpen || mpx1MenuOpen) {
+    if (navOpen || advancedMenuOpen || mpx1MenuOpen || topHardwareSubmenuOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [navOpen, advancedMenuOpen, mpx1MenuOpen])
+  }, [navOpen, advancedMenuOpen, mpx1MenuOpen, topHardwareSubmenuOpen])
 
   useEffect(() => {
     setMpx1MenuOpen(false)
+    setTopHardwareSubmenuOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!promotedRouteSet.has('/mpx1')) {
+      setMpx1MenuOpen(false)
+    }
+    if (!promotedRouteSet.has('/hardware-interfaces')) {
+      setTopHardwareSubmenuOpen(false)
+    }
+  }, [promotedRouteSet])
 
   const isFullBleedRoute = location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
 
@@ -229,6 +279,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   }) => {
     await updateSpecialSettings(settings)
     setShowSpecialSettings(false)
+  }
+
+  const handleMpx1Rescan = async () => {
+    try {
+      await mpx1Api.getMidiPorts()
+      await refreshMpx1State()
+    } catch (err) {
+      console.error('MPX1 MIDI rescan failed:', err)
+    }
+  }
+
+  const handleMpx1Disconnect = async () => {
+    try {
+      await mpx1Api.disconnectMidi()
+      await refreshMpx1State()
+    } catch (err) {
+      console.error('MPX1 disconnect failed:', err)
+    }
   }
 
   const togglePromotedRoute = async (item: AdvancedMenuItem, checked: boolean) => {
@@ -281,6 +349,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="nav-tab-item"
         title={item.description}
         style={{ '--tab-color': item.color } as CSSProperties}
+        onClick={() => {
+          setMpx1MenuOpen(false)
+          setTopHardwareSubmenuOpen(false)
+        }}
       >
         <span className="nav-tab-icon">
           <Icon size={16} weight="duotone" aria-hidden />
@@ -305,6 +377,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             const nextOpen = !mpx1MenuOpen
             setMpx1MenuOpen(nextOpen)
             if (nextOpen) {
+              setTopHardwareSubmenuOpen(false)
               setAdvancedMenuOpen(false)
               setHardwareInterfacesOpen(false)
             }
@@ -323,14 +396,77 @@ export function AppShell({ children }: { children: ReactNode }) {
         {mpx1MenuOpen && (
           <MPX1MegaMenu
             menuId="mpx1-mega-menu"
-            connected={false}
-            currentProgram={0}
-            currentProgramName="No Device"
-            mixMeter={0}
-            levelMeter={0}
+            connected={Boolean(mpx1State?.connected)}
+            currentProgram={currentProgram}
+            currentProgramName={currentProgramName}
+            mixMeter={mixMeter}
+            levelMeter={levelMeter}
             hasMidiMappings={false}
             onClose={() => setMpx1MenuOpen(false)}
+            onRescan={handleMpx1Rescan}
+            onDisconnect={handleMpx1Disconnect}
+            onProgramStep={async (delta) => {
+              const nextProgram = Math.max(0, currentProgram + delta)
+              try {
+                await setMpx1Program(nextProgram)
+              } catch (err) {
+                console.error('MPX1 program change failed:', err)
+              }
+            }}
           />
+        )}
+      </div>
+    )
+  }
+
+  const renderHardwareSubmenuTrigger = (item: TopNavItem) => {
+    const Icon = item.icon
+    const isHardwareRouteActive = hardwareInterfaceMenuItems.some((hardwareItem) =>
+      isRouteMatch(location.pathname, hardwareItem.to)
+    )
+
+    return (
+      <div key={`hardware-submenu-${item.to}`} className="top-hardware-nav-root" ref={topHardwareMenuRef}>
+        <button
+          type="button"
+          className={`nav-tab-item nav-tab-item--menu${isHardwareRouteActive ? ' nav-tab-item--menu-active' : ''}${topHardwareSubmenuOpen ? ' nav-tab-item--menu-open' : ''}`}
+          title={item.description}
+          style={{ '--tab-color': item.color } as CSSProperties}
+          onClick={() => {
+            const nextOpen = !topHardwareSubmenuOpen
+            setTopHardwareSubmenuOpen(nextOpen)
+            if (nextOpen) {
+              setMpx1MenuOpen(false)
+              setAdvancedMenuOpen(false)
+              setHardwareInterfacesOpen(false)
+            }
+          }}
+          aria-haspopup="menu"
+          aria-expanded={topHardwareSubmenuOpen}
+          aria-controls="top-hardware-menu"
+        >
+          <span className="nav-tab-icon">
+            <Icon size={16} weight="duotone" aria-hidden />
+          </span>
+          <span className="nav-tab-label">{item.label}</span>
+          <CaretRight size={12} weight="bold" className={`nav-tab-advanced-caret${topHardwareSubmenuOpen ? ' is-open' : ''}`} />
+        </button>
+
+        {topHardwareSubmenuOpen && (
+          <div id="top-hardware-menu" className="top-hardware-menu-panel" role="menu" aria-label="Audio interfaces">
+            {hardwareInterfaceMenuItems.map((hardwareItem) => (
+              <NavLink
+                key={`top-hardware-${hardwareItem.label}-${hardwareItem.to}`}
+                to={hardwareItem.to}
+                className="top-hardware-menu-link"
+                style={{ '--item-color': hardwareItem.color } as CSSProperties}
+                onClick={() => setTopHardwareSubmenuOpen(false)}
+              >
+                <hardwareItem.icon size={16} weight="duotone" aria-hidden />
+                <span>{hardwareItem.label}</span>
+              </NavLink>
+            ))}
+          </div>
         )}
       </div>
     )
@@ -440,7 +576,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <header className="topbar-pro">
         <nav className="nav-tabs-left" aria-label="Main navigation">
-          {leftNavItems.map(item => item.kind === 'mpx1-mega-menu' ? renderMpx1MegaMenuTrigger(item) : renderNavItem(item))}
+          {leftNavItems.map((item) => {
+            if (item.kind === 'mpx1-mega-menu') {
+              return renderMpx1MegaMenuTrigger(item)
+            }
+            if (item.kind === 'hardware-submenu') {
+              return renderHardwareSubmenuTrigger(item)
+            }
+            return renderNavItem(item)
+          })}
         </nav>
 
         <div className="nav-active-title">
@@ -465,6 +609,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     const nextOpen = !advancedMenuOpen
                     setAdvancedMenuOpen(nextOpen)
                     setMpx1MenuOpen(false)
+                    setTopHardwareSubmenuOpen(false)
                     if (!nextOpen) {
                       setHardwareInterfacesOpen(false)
                     }
@@ -530,6 +675,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               const nextOpen = !navOpen
               setNavOpen(nextOpen)
               setMpx1MenuOpen(false)
+              setTopHardwareSubmenuOpen(false)
               if (!nextOpen) {
                 setMobileHardwareInterfacesOpen(false)
               }

@@ -4,6 +4,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Package, DownloadSimple, Trash, ArrowsClockwise, CheckCircle, XCircle, SpinnerGap, CaretDown, CaretUp, EyeSlash, Eye, Faders, Lightning, WaveSine, Gauge, Warning, Check, Plug } from '@phosphor-icons/react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 interface PluginPack {
   id: string
@@ -66,8 +67,8 @@ export function LV2PluginsPage() {
     
     // Filter by search term
     let filtered = list.filter((p: Plugin) =>
-      p.name.toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
-      (p.author || '').toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
+      getDisplayPluginName(p.name, p.uri).toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
+      sanitizeRestrictedDisplayText(p.author || '').toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
       p.uri.toLowerCase().includes(managementSearchTerm.toLowerCase())
     )
 
@@ -75,12 +76,14 @@ export function LV2PluginsPage() {
     filtered.sort((a: Plugin, b: Plugin) => {
       switch (managementSortBy) {
         case 'author':
-          return (a.author || '').localeCompare(b.author || '') || a.name.localeCompare(b.name)
+          return sanitizeRestrictedDisplayText(a.author || '').localeCompare(sanitizeRestrictedDisplayText(b.author || ''))
+            || getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
         case 'format':
-          return (a.format || '').localeCompare(b.format || '') || a.name.localeCompare(b.name)
+          return (a.format || '').localeCompare(b.format || '')
+            || getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
         case 'name':
         default:
-          return a.name.localeCompare(b.name)
+          return getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
       }
     })
 
@@ -691,8 +694,8 @@ export function LV2PluginsPage() {
                           style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
                         />
                       </td>
-                      <td style={{ padding: '12px 16px', fontWeight: 500, color: '#fff' }}>{plugin.name}</td>
-                      <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{plugin.author || '-'}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 500, color: '#fff' }}>{getDisplayPluginName(plugin.name, plugin.uri)}</td>
+                      <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{sanitizeRestrictedDisplayText(plugin.author || '') || '-'}</td>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{
                           padding: '2px 8px',

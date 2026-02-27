@@ -6,6 +6,7 @@
 import { UiPlugin, PluginType, UiControl } from '../../../../pipedal/Lv2Plugin'
 import { Plugin, PluginParameter } from '../../../../map2/types'
 import { UnifiedPlugin, ParameterPreview, PluginFormat } from '../types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 
 /**
  * Extract top parameters for preview from UiControl array
@@ -151,9 +152,9 @@ export function normalizeUiPlugin(
 
   return {
     uri: plugin.uri,
-    name: plugin.name,
+    name: getDisplayPluginName(plugin.name, plugin.uri),
     format: plugin.is_vst3 ? 'vst3' : 'lv2',
-    authorName: plugin.author_name || 'Unknown',
+    authorName: sanitizeRestrictedDisplayText(plugin.author_name || 'Unknown'),
     authorHomepage: plugin.author_homepage || undefined,
     category: plugin.plugin_display_type || 'Plugin',
     displayType: plugin.plugin_display_type || 'Plugin',
@@ -190,9 +191,9 @@ export function normalizeMap2Plugin(
 ): UnifiedPlugin {
   return {
     uri: plugin.uri,
-    name: plugin.name,
+    name: getDisplayPluginName(plugin.name, plugin.uri),
     format: 'lv2' as PluginFormat, // Map2 API doesn't distinguish
-    authorName: plugin.author || 'Unknown',
+    authorName: sanitizeRestrictedDisplayText(plugin.author || 'Unknown'),
     authorHomepage: undefined,
     category: plugin.category || 'Plugin',
     displayType: plugin.class_label || plugin.category || 'Plugin',

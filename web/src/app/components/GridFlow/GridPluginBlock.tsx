@@ -9,6 +9,7 @@ import { useCallback, useState, memo } from 'react'
 import { X, Power } from '@phosphor-icons/react'
 import { getCategoryConfig, getCategoryIcon } from './categoryConfig'
 import type { ChainPlugin, Plugin } from '../../../map2/types'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 export interface GridPluginBlockProps {
   plugin: ChainPlugin
@@ -47,7 +48,7 @@ export const GridPluginBlock = memo(function GridPluginBlock({
   const category = meta?.category || 'Utility'
   const { color, bg } = getCategoryConfig(category)
   const Icon = getCategoryIcon(category)
-  const name = meta?.name || plugin.name || 'Unknown'
+  const name = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
   const shortName = name.length > 12 ? name.substring(0, 10) + '...' : name
 
   const handleDragStart = useCallback(

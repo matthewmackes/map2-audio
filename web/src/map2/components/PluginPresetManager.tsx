@@ -44,6 +44,7 @@ import {
   History as HistoryIcon,
 } from '@mui/icons-material';
 import { pluginPresetsApi } from '../api';
+import { sanitizeRestrictedDisplayText } from '../displayNames';
 
 export interface PluginParameter {
   symbol: string;
@@ -86,6 +87,7 @@ export default function PluginPresetManager({
   onLoadPreset,
   onPresetsChanged,
 }: PluginPresetManagerProps) {
+  const displayPluginName = sanitizeRestrictedDisplayText(pluginName) || 'Processor';
   const [presets, setPresets] = useState<PresetItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -261,7 +263,7 @@ export default function PluginPresetManager({
       <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SettingsIcon />
-          Presets for {pluginName}
+          Presets for {displayPluginName}
         </Typography>
         <Tooltip title="Save current parameters as a preset">
           <Button
@@ -506,7 +508,7 @@ export default function PluginPresetManager({
             <Typography variant="body2">Set as default for this plugin</Typography>
           </Stack>
           <Alert severity="info">
-            Current parameters from {pluginName} will be saved
+            Current parameters from {displayPluginName} will be saved
           </Alert>
         </DialogContent>
         <DialogActions>

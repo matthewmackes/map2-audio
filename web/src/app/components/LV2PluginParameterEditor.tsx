@@ -27,6 +27,7 @@ import { usePluginOutput } from '../hooks/usePluginOutputs'
 import { NumberInput } from './Controls/NumberInput'
 import type { Plugin, PluginParameter, OutputPort } from '../../map2/types'
 import { getCategoryConfig } from './PluginCards/types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 interface LV2PluginParameterEditorProps {
   plugin: Plugin
@@ -694,7 +695,7 @@ export function LV2PluginParameterEditor({
                 color: accentColor,
                 margin: 0,
               }}>
-                {plugin.name}
+                {getDisplayPluginName(plugin.name, plugin.uri)}
               </h3>
               <div style={{
                 fontSize: 11,
@@ -703,7 +704,7 @@ export function LV2PluginParameterEditor({
                 alignItems: 'center',
                 gap: 8,
               }}>
-                <span>{plugin.author || 'Unknown author'}</span>
+                <span>{sanitizeRestrictedDisplayText(plugin.author) || 'Unknown author'}</span>
                 <span>•</span>
                 <span style={{
                   padding: '1px 6px',

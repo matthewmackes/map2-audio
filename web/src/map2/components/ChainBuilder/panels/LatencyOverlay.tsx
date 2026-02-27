@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { memo, useMemo } from 'react';
+import { getDisplayPluginName } from '../../../displayNames';
 
 // ============================================================================
 // Types
@@ -68,10 +69,11 @@ interface LatencySegmentProps {
 const LatencySegment = memo(({ plugin, percentage, sampleRate, isLast }: LatencySegmentProps) => {
   const ms = samplesToMs(plugin.latencySamples, sampleRate);
   const color = getLatencyColor(ms);
+  const displayName = getDisplayPluginName(plugin.name, plugin.uri);
 
   return (
     <div
-      title={`${plugin.name}: ${plugin.latencySamples} samples (${formatLatency(plugin.latencySamples, sampleRate)})${plugin.isCompensated ? ' - PDC Compensated' : ''}`}
+      title={`${displayName}: ${plugin.latencySamples} samples (${formatLatency(plugin.latencySamples, sampleRate)})${plugin.isCompensated ? ' - PDC Compensated' : ''}`}
       style={{
         width: `${Math.max(percentage, 2)}%`,
         height: '100%',
@@ -248,7 +250,7 @@ const LatencyOverlay = memo(({
                     }}
                   />
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#e5e7eb' }}>
-                    {plugin.name}
+                    {getDisplayPluginName(plugin.name, plugin.uri)}
                   </span>
                   <span style={{ color: '#9ca3af', flexShrink: 0 }}>
                     {formatLatency(plugin.latencySamples, sampleRate)}

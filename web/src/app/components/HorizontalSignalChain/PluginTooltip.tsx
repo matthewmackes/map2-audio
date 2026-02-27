@@ -4,6 +4,7 @@
 
 import type { ChainPlugin, Plugin } from '../../../map2/types'
 import { getIconForCategory } from './icons'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 interface PluginTooltipContentProps {
   plugin: ChainPlugin
@@ -42,7 +43,7 @@ function formatPorts(inPorts?: number, outPorts?: number): string {
  */
 export function PluginTooltipContent({ plugin, meta }: PluginTooltipContentProps) {
   const Icon = getIconForCategory(meta?.category || meta?.class_label)
-  const name = meta?.name || plugin.name || plugin.uri.split('/').pop() || 'Unknown'
+  const name = getDisplayPluginName(meta?.name || plugin.name || plugin.uri.split('/').pop() || 'Unknown', plugin.uri)
   const category = meta?.category || meta?.class_label || 'Effect'
   const format = plugin.format || meta?.format || 'LV2'
   const paramCount = meta?.parameters?.length || Object.keys(plugin.parameters || {}).length

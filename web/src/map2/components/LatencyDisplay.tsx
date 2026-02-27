@@ -29,6 +29,7 @@ import {
   Cancel as DisabledIcon,
 } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
+import { sanitizeRestrictedDisplayText } from '../displayNames';
 
 interface PluginLatency {
   uri: string;
@@ -292,7 +293,7 @@ export default function LatencyDisplay({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <LatencyBadge latencyMs={plugin.latencyMs} compact />
                         <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                          {plugin.name}
+                          {sanitizeRestrictedDisplayText(plugin.name) || 'Processor'}
                         </Typography>
                         {plugin.compensated && (
                           <Chip

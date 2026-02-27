@@ -21,6 +21,7 @@ import {
 import { irApi, namApi, soundfontApi, foldersApi, pluginsApi } from '../../../map2/api'
 import type { NAMModel, IRFile } from '../../../map2/types'
 import type { SoundFont } from '../../types/library'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 // Unified asset type for the table
 type AssetType = 'nam' | 'cabinet' | 'reverb' | 'sfz' | 'native'
@@ -245,10 +246,10 @@ export function InstalledAssetsTable() {
       if (plugin.is_native || plugin.format === 'JUCE') {
         assets.push({
           id: `native:${plugin.uri}`,
-          name: plugin.name,
+          name: getDisplayPluginName(plugin.name, plugin.uri),
           type: 'native',
           path: plugin.uri,
-          source: plugin.author || 'Built-in',
+          source: sanitizeRestrictedDisplayText(plugin.author) || 'Built-in',
           category: plugin.category,
           uri: plugin.uri,
         })

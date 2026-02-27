@@ -24,6 +24,7 @@ import type {
   PluginUIInfo,
   PeakData
 } from '../../map2/types';
+import { sanitizeRestrictedDisplayText } from '../../map2/displayNames';
 
 // Icons
 import { 
@@ -190,6 +191,7 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
   style,
 }) => {
   const [isExpanded, setIsExpanded] = useState(expanded);
+  const displayPluginName = sanitizeRestrictedDisplayText(pluginName) || 'Output';
   
   useEffect(() => {
     setIsExpanded(expanded);
@@ -292,7 +294,7 @@ export const PluginOutputPanel: React.FC<PluginOutputPanelProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Pulse size={14} weight="duotone" style={{ color: '#22c55e' }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255, 255, 255, 0.8)' }}>
-            {pluginName || 'Output'}
+            {displayPluginName}
           </span>
           
           {/* Capability badges */}

@@ -149,8 +149,7 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     color: '#0ea5e9',
     group: 'Hardware & Interfaces',
     popupMenu: 'hardware-interfaces',
-    promotionKey: '#hardware-interfaces',
-    promotable: false,
+    promotionKey: '/hardware-interfaces',
   },
   {
     to: '/avb-routing',

@@ -7,6 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames';
 
 // Plugin format types
 export type PluginFormat = 'VST3' | 'AudioUnit' | 'LV2' | 'LADSPA' | 'All';
@@ -68,13 +69,21 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
     search: '',
   });
 
+  const sanitizePluginInfo = useCallback((plugin: PluginInfo): PluginInfo => ({
+    ...plugin,
+    name: getDisplayPluginName(plugin.name, plugin.uri),
+    author: sanitizeRestrictedDisplayText(plugin.author),
+    brand: sanitizeRestrictedDisplayText(plugin.brand),
+  }), []);
+
   // Fetch all plugins
   const pluginsQuery = useQuery<PluginInfo[]>({
     queryKey: ['plugins', 'all'],
     queryFn: async () => {
       const res = await fetch('/api/plugins/all');
       if (!res.ok) throw new Error('Failed to fetch plugins');
-      return res.json();
+      const data = await res.json();
+      return (data as PluginInfo[]).map(sanitizePluginInfo);
     },
     refetchInterval: refreshInterval || false,
     staleTime: 60000, // Cache for 1 minute
@@ -86,7 +95,8 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
     queryFn: async () => {
       const res = await fetch('/api/plugins/vst3');
       if (!res.ok) throw new Error('Failed to fetch VST3 plugins');
-      return res.json();
+      const data = await res.json();
+      return (data as PluginInfo[]).map(sanitizePluginInfo);
     },
     enabled: filter.format === 'VST3' || filter.format === 'All',
     staleTime: 60000,
@@ -98,7 +108,8 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
     queryFn: async () => {
       const res = await fetch('/api/plugins/au');
       if (!res.ok) throw new Error('Failed to fetch AU plugins');
-      return res.json();
+      const data = await res.json();
+      return (data as PluginInfo[]).map(sanitizePluginInfo);
     },
     enabled: filter.format === 'AudioUnit' || filter.format === 'All',
     staleTime: 60000,
@@ -110,7 +121,8 @@ export function usePluginBrowser(options: UsePluginBrowserOptions = {}) {
     queryFn: async () => {
       const res = await fetch('/api/plugins/lv2');
       if (!res.ok) throw new Error('Failed to fetch LV2 plugins');
-      return res.json();
+      const data = await res.json();
+      return (data as PluginInfo[]).map(sanitizePluginInfo);
     },
     enabled: filter.format === 'LV2' || filter.format === 'All',
     staleTime: 60000,

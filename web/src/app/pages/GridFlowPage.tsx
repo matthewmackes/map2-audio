@@ -87,6 +87,7 @@ import { ConfirmationDialog } from '../components/GridFlow/ConfirmationDialog'
 import { ButtonGroup } from '../components/GridFlow/ButtonGroup'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
 import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot } from '../../map2/types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -2183,6 +2184,7 @@ export function GridFlowPage() {
                   <div className="grid-flow-modal-native-grid">
                     {nativeProcessors.map((plugin) => {
                       const catConfig = getCategoryConfig(plugin.category)
+                      const displayName = getDisplayPluginName(plugin.name, plugin.uri)
                       return (
                         <button
                           key={plugin.uri}
@@ -2194,7 +2196,7 @@ export function GridFlowPage() {
                           }}
                           style={{ '--accent': catConfig.color } as React.CSSProperties}
                         >
-                          <span className="grid-flow-modal-native-name">{plugin.name}</span>
+                          <span className="grid-flow-modal-native-name">{displayName}</span>
                           <span className="grid-flow-modal-native-category" style={{ color: catConfig.color }}>
                             {plugin.category}
                           </span>
@@ -2261,7 +2263,7 @@ export function GridFlowPage() {
                                 }
                               }}
                             >
-                              <span className="grid-flow-modal-item-name">{plugin.name}</span>
+                              <span className="grid-flow-modal-item-name">{getDisplayPluginName(plugin.name, plugin.uri)}</span>
                               <span className="grid-flow-modal-item-meta">
                                 <span
                                   className="grid-flow-modal-item-category"
@@ -2269,7 +2271,7 @@ export function GridFlowPage() {
                                 >
                                   {plugin.category}
                                 </span>
-                                {plugin.author && <span className="grid-flow-modal-item-author">{plugin.author}</span>}
+                                {plugin.author && <span className="grid-flow-modal-item-author">{sanitizeRestrictedDisplayText(plugin.author)}</span>}
                               </span>
                             </button>
 
@@ -2541,7 +2543,7 @@ export function GridFlowPage() {
                 <div className="grid-flow-lane-picker-plugins">
                   {currentChain.plugins.map((plugin) => (
                     <div key={plugin.uri} className="grid-flow-lane-picker-plugin">
-                      <div className="grid-flow-lane-picker-plugin-name">{plugin.name}</div>
+                      <div className="grid-flow-lane-picker-plugin-name">{getDisplayPluginName(plugin.name, plugin.uri)}</div>
                       <div className="grid-flow-lane-picker-params">
                         {Object.entries(plugin.parameters || {}).map(([symbol, value]) => {
                           const param = { symbol, value }
@@ -2554,7 +2556,7 @@ export function GridFlowPage() {
                                 const newLane: AutomationLane = {
                                   id: `${plugin.uri}:${param.symbol}`,
                                   parameterName: param.symbol,
-                                  pluginName: plugin.name,
+                                  pluginName: getDisplayPluginName(plugin.name, plugin.uri),
                                   pluginUri: plugin.uri,
                                   parameterSymbol: param.symbol,
                                   points: [],

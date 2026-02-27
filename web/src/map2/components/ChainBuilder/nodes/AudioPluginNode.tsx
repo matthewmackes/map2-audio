@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { AudioPluginNodeData, getSidechainHandleId } from './AudioPluginNodeTypes';
+import { getDisplayPluginName } from '../../../displayNames';
 
 /**
  * Calculate latency in milliseconds from samples
@@ -227,7 +228,7 @@ const AudioPluginNode = memo(
                   color="text.primary"
                   sx={{ lineHeight: 1.3, wordBreak: 'break-word', fontSize: compact ? '0.85rem' : '0.95rem' }}
                 >
-                  {plugin.name}
+                  {getDisplayPluginName(plugin.name, plugin.uri)}
                 </Typography>
                 {!compact && plugin.plugin_display_type && (
                   <Typography

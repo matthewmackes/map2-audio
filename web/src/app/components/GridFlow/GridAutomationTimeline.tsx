@@ -17,6 +17,7 @@ import {
   CaretDown,
   CaretRight,
 } from '@phosphor-icons/react'
+import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 export interface AutomationPoint {
   id: string
@@ -211,7 +212,7 @@ export const GridAutomationTimeline = memo(function GridAutomationTimeline({
                   </button>
                   <div className="grid-automation-lane-info">
                     <span className="grid-automation-lane-param">{lane.parameterName}</span>
-                    <span className="grid-automation-lane-plugin">{lane.pluginName}</span>
+                    <span className="grid-automation-lane-plugin">{sanitizeRestrictedDisplayText(lane.pluginName) || 'Processor'}</span>
                   </div>
                   <button
                     className={`grid-automation-lane-arm ${lane.armed ? 'armed' : ''}`}

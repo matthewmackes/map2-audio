@@ -22,6 +22,7 @@ import type { Plugin } from '../../../../map2/types'
 import { getCategoryConfig, getCategoryIcon } from '../types'
 import { BypassSwitch } from './BypassSwitch'
 import { getPluginDescription } from '../../../data/pluginDescriptions'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 
 interface PluginCardShellProps {
   plugin: Plugin
@@ -67,7 +68,8 @@ export function PluginCardShell({
   const [showMenu, setShowMenu] = useState(false)
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
-  const description = getPluginDescription(plugin.name)
+  const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+  const description = sanitizeRestrictedDisplayText(getPluginDescription(plugin.name) || '')
   const CategoryIcon = getCategoryIcon(plugin.category)
 
   const handleBypassToggle = useCallback(() => {
@@ -104,10 +106,10 @@ export function PluginCardShell({
             />
           )}
           <div className="plugin-card-title-section">
-            <h3 className="plugin-card-title">{plugin.name}</h3>
+            <h3 className="plugin-card-title">{displayName}</h3>
             {!compact && (
               <div className="plugin-card-subtitle">
-                <span className="plugin-card-author">{plugin.author || 'Unknown'}</span>
+                <span className="plugin-card-author">{sanitizeRestrictedDisplayText(plugin.author) || 'Unknown'}</span>
                 <span className="plugin-card-category" style={{ color: accentColor }}>
                   {CategoryIcon && (
                     <CategoryIcon

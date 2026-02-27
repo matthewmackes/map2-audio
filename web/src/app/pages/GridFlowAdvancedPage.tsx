@@ -23,6 +23,7 @@ import {
 import { Scene3D } from '../components/GridFlowAdvanced/3d/Scene3D'
 import { useGraphStore, type GraphLink, type GraphNode } from '../stores/graphStore'
 import { chainsApi } from '../../map2/api'
+import { getDisplayPluginName } from '../../map2/displayNames'
 import { useToasts } from '../components/Toasts'
 import type { Chain, ChainPlugin } from '../../map2/types'
 
@@ -115,7 +116,7 @@ function buildGraphFromChains(chains: Chain[], layoutPass: number): { nodes: Gra
 
       nodes.push({
         id: nodeId,
-        label: plugin.name || 'Plugin',
+        label: getDisplayPluginName(plugin.name, plugin.uri),
         pluginUri: plugin.uri,
         chainId: chain.id,
         layer: 0,

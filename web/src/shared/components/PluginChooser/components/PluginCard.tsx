@@ -34,6 +34,7 @@ import PluginFormatBadge from './PluginFormatBadge'
 import { PluginIOBadge } from './PluginIOIndicator'
 import PluginIcon from '../../../../pipedal/PluginIcon'
 import { getPluginDescription } from '../utils/pluginDescriptions'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 
 interface PluginCardProps {
   plugin: UnifiedPlugin
@@ -57,6 +58,8 @@ export const PluginCard = memo(function PluginCard({
   draggable = true,
 }: PluginCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+  const displayAuthor = sanitizeRestrictedDisplayText(plugin.authorName)
 
   const handleClick = (e: MouseEvent) => {
     e.stopPropagation()
@@ -157,7 +160,7 @@ export const PluginCard = memo(function PluginCard({
                 noWrap
                 sx={{ flexShrink: 1, minWidth: 0 }}
               >
-                {plugin.name}
+                {displayName}
               </Typography>
               <PluginFormatBadge format={plugin.format} size="small" />
             </Stack>
@@ -179,12 +182,12 @@ export const PluginCard = memo(function PluginCard({
                   '&:hover': { color: 'primary.main' },
                 }}
               >
-                {plugin.authorName}
+                {displayAuthor}
                 <OpenInNewIcon sx={{ fontSize: 10 }} />
               </Link>
             ) : (
               <Typography variant="caption" color="text.secondary" noWrap>
-                {plugin.authorName}
+                {displayAuthor}
               </Typography>
             )}
           </Box>
@@ -499,6 +502,9 @@ function CompactPluginCard({
   onDragStart,
   draggable,
 }: PluginCardProps) {
+  const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+  const displayAuthor = sanitizeRestrictedDisplayText(plugin.authorName)
+
   const handleClick = (e: MouseEvent) => {
     e.stopPropagation()
     onSelect?.(plugin.uri)
@@ -539,12 +545,12 @@ function CompactPluginCard({
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={0.5}>
           <Typography variant="body2" fontWeight={600} noWrap sx={{ flexShrink: 1 }}>
-            {plugin.name}
+            {displayName}
           </Typography>
           <PluginFormatBadge format={plugin.format} size="small" />
         </Stack>
         <Typography variant="caption" color="text.secondary" noWrap>
-          {plugin.authorName}
+          {displayAuthor}
         </Typography>
       </Box>
 

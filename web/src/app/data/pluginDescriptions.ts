@@ -3,6 +3,8 @@
  * Curated descriptions for common LV2 plugins based on official documentation
  */
 
+import { sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+
 // Pattern-based descriptions (matches plugin name patterns)
 export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   // Neural Amp Modeler
@@ -307,7 +309,7 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
 export function getPluginDescription(pluginName: string): string | null {
   // Try exact match first
   if (PLUGIN_DESCRIPTIONS[pluginName]) {
-    return PLUGIN_DESCRIPTIONS[pluginName]
+    return sanitizeRestrictedDisplayText(PLUGIN_DESCRIPTIONS[pluginName]) || null
   }
 
   // Try partial matches (plugin name contains key or key contains plugin name)
@@ -315,7 +317,7 @@ export function getPluginDescription(pluginName: string): string | null {
   for (const [key, description] of Object.entries(PLUGIN_DESCRIPTIONS)) {
     const keyLower = key.toLowerCase()
     if (nameLower.includes(keyLower) || keyLower.includes(nameLower)) {
-      return description
+      return sanitizeRestrictedDisplayText(description) || null
     }
   }
 
@@ -326,7 +328,7 @@ export function getPluginDescription(pluginName: string): string | null {
       const wordLower = word.toLowerCase()
       for (const [key, description] of Object.entries(PLUGIN_DESCRIPTIONS)) {
         if (key.toLowerCase() === wordLower) {
-          return description
+          return sanitizeRestrictedDisplayText(description) || null
         }
       }
     }

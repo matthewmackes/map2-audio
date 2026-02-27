@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { useLatency } from '../../hooks/useLatency';
+import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames';
 
 interface LatencyDisplayProps {
   /** Show detailed per-plugin breakdown */
@@ -147,7 +148,7 @@ export const LatencyDisplay: React.FC<LatencyDisplayProps> = ({
               {sortedPlugins.slice(0, 3).map((plugin) => (
                 <LatencyBar
                   key={plugin.pluginId}
-                  name={plugin.pluginName ?? 'Unknown Plugin'}
+                  name={sanitizeRestrictedDisplayText(plugin.pluginName) || 'Processor'}
                   samples={plugin.latencySamples}
                   ms={plugin.latencyMs}
                   percentage={plugin.percentage}
@@ -164,7 +165,7 @@ export const LatencyDisplay: React.FC<LatencyDisplayProps> = ({
             sortedPlugins.map((plugin) => (
               <LatencyBar
                 key={plugin.pluginId}
-                name={plugin.pluginName ?? 'Unknown Plugin'}
+                name={sanitizeRestrictedDisplayText(plugin.pluginName) || 'Processor'}
                 samples={plugin.latencySamples}
                 ms={plugin.latencyMs}
                 percentage={plugin.percentage}
@@ -200,10 +201,10 @@ export const LatencyDisplay: React.FC<LatencyDisplayProps> = ({
                 {/* Plugin block */}
                 <div
                   className="flex-shrink-0 px-2 py-1 bg-zinc-700/50 rounded text-xs"
-                  title={`${plugin.pluginName}: ${plugin.latencyMs.toFixed(2)}ms`}
+                  title={`${sanitizeRestrictedDisplayText(plugin.pluginName) || 'Processor'}: ${plugin.latencyMs.toFixed(2)}ms`}
                 >
                   <div className="text-zinc-300 truncate max-w-[80px]">
-                    {plugin.pluginName}
+                    {sanitizeRestrictedDisplayText(plugin.pluginName) || 'Processor'}
                   </div>
                   <div className="text-zinc-500 text-[10px]">
                     {plugin.latencyMs.toFixed(1)}ms

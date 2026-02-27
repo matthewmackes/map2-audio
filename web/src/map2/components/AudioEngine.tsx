@@ -45,6 +45,7 @@ import {
 import { audioApi, metricsApi, systemApi } from '../api';
 import { useMeterData } from '../hooks/useWebSocket';
 import type { AudioStatus, AudioLevels, PluginLevels, SystemMetrics, MetricsSummary, RealtimeStatus, JackMetrics } from '../types';
+import { sanitizeRestrictedDisplayText } from '../displayNames';
 
 function LevelMeter({ label, level, color = 'primary' }: { label: string; level: number; color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' }) {
   const dbValue = 20 * Math.log10(Math.max(level, 0.00001));
@@ -409,7 +410,7 @@ export default function AudioEngine() {
                   <Card key={plugin.uri} variant="outlined">
                     <CardContent>
                       <Typography variant="subtitle2" gutterBottom>
-                        {plugin.name}
+                        {sanitizeRestrictedDisplayText(plugin.name) || 'Processor'}
                       </Typography>
                       <Stack spacing={1}>
                         <LevelMeter

@@ -19,6 +19,7 @@ import {
   type SynthForgeModMatrixRoute,
   type SynthForgeStreamingConfig,
 } from '../../../../../map2/api'
+import { getDisplayPluginName } from '../../../../../map2/displayNames'
 import type { SoundFont } from '../../../../types/library'
 import { useWebSocketConnection, useWebSocketTopic } from '../../../../../map2/hooks/useWebSocket'
 import './SynthForgeCard.css'
@@ -487,8 +488,8 @@ export function SynthForgeCard({
 
   const instrumentName = useMemo(() => {
     if (sfzStatus?.sfz_path) return getFileName(sfzStatus.sfz_path)
-    return plugin.name
-  }, [sfzStatus?.sfz_path, plugin.name])
+    return getDisplayPluginName(plugin.name, plugin.uri)
+  }, [sfzStatus?.sfz_path, plugin.name, plugin.uri])
 
   const patchValueList = patchesQuery.data ?? []
   const patchFilter = patchSearch.trim().toLowerCase()
@@ -865,7 +866,7 @@ export function SynthForgeCard({
             <button
               className="synthforge-instrument-button"
               onClick={() => setShowFullPath((prev) => !prev)}
-              title={sfzStatus?.sfz_path || plugin.name}
+              title={sfzStatus?.sfz_path || getDisplayPluginName(plugin.name, plugin.uri)}
             >
               {instrumentName}
             </button>

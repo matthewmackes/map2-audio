@@ -23,6 +23,7 @@ import {
   SpinnerGap,
   ArrowsClockwise,
 } from '@phosphor-icons/react'
+import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 interface CommunityPreset {
   uuid: string
@@ -486,10 +487,10 @@ function PresetCard({
           {preset.name}
         </h3>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #888)' }}>
-          by {preset.author}
+          by {sanitizeRestrictedDisplayText(preset.author)}
         </div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary, #666)' }}>
-          for {preset.plugin_name}
+          for {sanitizeRestrictedDisplayText(preset.plugin_name) || 'Processor'}
         </div>
       </div>
 

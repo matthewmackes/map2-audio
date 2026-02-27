@@ -24,6 +24,7 @@ import {
   Timeline as CurveIcon,
 } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
+import { sanitizeRestrictedDisplayText } from '../../displayNames';
 
 // ============================================================================
 // Types
@@ -344,7 +345,7 @@ const AutomationLane = memo(({
             {parameterName}
           </Typography>
           <Chip
-            label={pluginName}
+            label={sanitizeRestrictedDisplayText(pluginName) || 'Processor'}
             size="small"
             variant="outlined"
             sx={{ height: 18, fontSize: '0.6rem' }}

@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getWsUrl, API_BASE } from '../../map2/api'
+import { sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 export interface PluginLatency {
   pluginId: string | number
@@ -74,7 +75,7 @@ export function useLatency(options: UseLatencyOptions = {}) {
               pluginId: item.plugin_id,
               latencySamples: item.latency_samples || 0,
               latencyMs: item.latency_ms || 0,
-              pluginName: item.plugin_name
+              pluginName: sanitizeRestrictedDisplayText(item.plugin_name)
             })),
             running: message.data.running ?? true
           }
@@ -117,7 +118,7 @@ export function useLatency(options: UseLatencyOptions = {}) {
           pluginId: item.plugin_id,
           latencySamples: item.latency_samples || 0,
           latencyMs: item.latency_ms || 0,
-          pluginName: item.plugin_name
+          pluginName: sanitizeRestrictedDisplayText(item.plugin_name)
         })),
         running: true
       }

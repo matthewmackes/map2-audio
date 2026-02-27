@@ -78,10 +78,14 @@ import type {
   PresetInterlockRule,
   TesiraDeviceDetail,
   TesiraDeviceSummary,
+  TesiraFirmwareStatus,
+  TesiraLatestFirmware,
+  TesiraMutationResponse,
   TesiraPTPStatus,
   TesiraPresetInfo,
   TesiraStreamInfo,
 } from '../app/components/Tesira/types';
+import { sanitizeDisplayPayload } from './displayNames';
 
 const RAW_API_BASE = (() => {
   // Check for explicit environment variable
@@ -260,7 +264,8 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     throw new ApiError(response.status, response.statusText, body);
   }
 
-  return response.json();
+  const data = await response.json();
+  return sanitizeDisplayPayload(data) as T;
 }
 
 // ==================== Audio API ====================
@@ -3585,13 +3590,6 @@ async function _json<T>(res: Response): Promise<T> {
     throw new Error(`${detail}`)
   }
   return res.json()
-}
-
-type TesiraMutationResponse = {
-  success?: boolean;
-  status?: string;
-  message?: string;
-  [key: string]: unknown;
 }
 
 export const tesiraApi = {

@@ -60,6 +60,7 @@ import {
 import { pluginsApi, presetsApi, chainsApi, pluginPresetsApi } from '../api';
 import type { Plugin, Preset, PresetCategory } from '../types';
 import PluginPresetManager from './PluginPresetManager';
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../displayNames';
 
 // Plugin Pack types
 interface PluginPack {
@@ -340,9 +341,11 @@ export default function PluginBrowser() {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
+        const displayName = getDisplayPluginName(plugin.name, plugin.uri).toLowerCase();
+        const displayAuthor = sanitizeRestrictedDisplayText(plugin.author).toLowerCase();
         return (
-          plugin.name.toLowerCase().includes(query) ||
-          plugin.author.toLowerCase().includes(query) ||
+          displayName.includes(query) ||
+          displayAuthor.includes(query) ||
           plugin.category.toLowerCase().includes(query) ||
           plugin.class_label.toLowerCase().includes(query)
         );
@@ -469,7 +472,7 @@ export default function PluginBrowser() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <PluginIcon color="primary" />
                         <Typography variant="h6" component="div" noWrap>
-                          {plugin.name}
+                          {getDisplayPluginName(plugin.name, plugin.uri)}
                         </Typography>
                         {pluginsWithFavorites.has(plugin.uri) && (
                           <Tooltip title="Has saved presets">
@@ -479,7 +482,7 @@ export default function PluginBrowser() {
                       </Box>
 
                       <Typography variant="body2" color="text.secondary">
-                        by {plugin.author}
+                        by {sanitizeRestrictedDisplayText(plugin.author)}
                       </Typography>
 
                       <Stack direction="row" spacing={1}>
@@ -1083,7 +1086,7 @@ export default function PluginBrowser() {
           {selectedPluginForPreset && (
             <PluginPresetManager
               pluginUri={selectedPluginForPreset.uri}
-              pluginName={selectedPluginForPreset.name}
+              pluginName={getDisplayPluginName(selectedPluginForPreset.name, selectedPluginForPreset.uri)}
               currentParameters={
                 selectedPluginForPreset.parameters?.reduce(
                   (acc, param) => ({

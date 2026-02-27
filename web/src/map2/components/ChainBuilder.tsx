@@ -52,6 +52,7 @@ import {
 import { chainsApi, pluginsApi, usbApi, historyApi, audioApi, automationApi } from '../api';
 import { useChainUpdates, useMeterData } from '../hooks/useWebSocket';
 import type { Chain, Plugin, PluginParameter } from '../types';
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../displayNames';
 import {
   ChainFlowCanvas,
   chainToFlow,
@@ -1017,9 +1018,11 @@ export default function ChainBuilder() {
 
     return pool.filter((plugin) => {
       if (!query) return true;
+      const displayName = getDisplayPluginName(plugin.name, plugin.uri).toLowerCase();
+      const displayAuthor = sanitizeRestrictedDisplayText(plugin.author).toLowerCase();
       return (
-        plugin.name.toLowerCase().includes(query) ||
-        plugin.author.toLowerCase().includes(query) ||
+        displayName.includes(query) ||
+        displayAuthor.includes(query) ||
         plugin.category.toLowerCase().includes(query) ||
         plugin.class_label.toLowerCase().includes(query)
       );
@@ -1706,8 +1709,8 @@ export default function ChainBuilder() {
                   onClick={() => handleInsertUtility(plugin.uri)}
                 >
                   <ListItemText
-                    primary={plugin.name}
-                    secondary={`${plugin.author} • ${plugin.category}`}
+                    primary={getDisplayPluginName(plugin.name, plugin.uri)}
+                    secondary={`${sanitizeRestrictedDisplayText(plugin.author)} • ${plugin.category}`}
                   />
                   <Chip label={`${plugin.in_ports} in / ${plugin.out_ports} out`} size="small" />
                 </ListItem>
@@ -1826,7 +1829,7 @@ export default function ChainBuilder() {
               {selectedChain.plugins.map((plugin) => (
                 <Box key={plugin.uri} sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    {plugin.name}
+                    {getDisplayPluginName(plugin.name, plugin.uri)}
                   </Typography>
                   <Box sx={{ pl: 2 }}>
                     {plugin.parameters?.map((param) => {
