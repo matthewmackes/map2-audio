@@ -15,6 +15,7 @@ Provides:
 from __future__ import annotations
 
 import asyncio
+import gc
 import json
 import logging
 import os
@@ -567,24 +568,53 @@ class MPX1Service:
         outputs: List[Dict[str, Any]] = []
         recommended_in: Optional[int] = None
         recommended_out: Optional[int] = None
+        probe_errors: List[str] = []
 
-        midi_in = rtmidi.MidiIn()
-        for index in range(midi_in.get_port_count()):
-            name = midi_in.get_port_name(index)
-            inputs.append({"index": index, "name": name, "connected": index == self._connected_input_index})
-            lowered = name.lower()
-            if recommended_in is None and ("mpx" in lowered or "lexicon" in lowered):
-                recommended_in = index
-        del midi_in
+        midi_in: Any = None
+        try:
+            midi_in = rtmidi.MidiIn()
+            for index in range(midi_in.get_port_count()):
+                name = midi_in.get_port_name(index)
+                inputs.append({"index": index, "name": name, "connected": index == self._connected_input_index})
+                lowered = name.lower()
+                if recommended_in is None and ("mpx" in lowered or "lexicon" in lowered):
+                    recommended_in = index
+        except Exception as exc:
+            error = f"input_probe_failed: {exc}"
+            probe_errors.append(error)
+            self._record_traffic("midi_ports_probe_error", None, direction="input", error=str(exc))
+            logger.warning("MPX1 MIDI input probe failed: %s", exc)
+        finally:
+            if midi_in is not None:
+                try:
+                    midi_in.close_port()
+                except Exception:
+                    pass
+            midi_in = None
+            gc.collect()
 
-        midi_out = rtmidi.MidiOut()
-        for index in range(midi_out.get_port_count()):
-            name = midi_out.get_port_name(index)
-            outputs.append({"index": index, "name": name, "connected": index == self._connected_output_index})
-            lowered = name.lower()
-            if recommended_out is None and ("mpx" in lowered or "lexicon" in lowered):
-                recommended_out = index
-        del midi_out
+        midi_out: Any = None
+        try:
+            midi_out = rtmidi.MidiOut()
+            for index in range(midi_out.get_port_count()):
+                name = midi_out.get_port_name(index)
+                outputs.append({"index": index, "name": name, "connected": index == self._connected_output_index})
+                lowered = name.lower()
+                if recommended_out is None and ("mpx" in lowered or "lexicon" in lowered):
+                    recommended_out = index
+        except Exception as exc:
+            error = f"output_probe_failed: {exc}"
+            probe_errors.append(error)
+            self._record_traffic("midi_ports_probe_error", None, direction="output", error=str(exc))
+            logger.warning("MPX1 MIDI output probe failed: %s", exc)
+        finally:
+            if midi_out is not None:
+                try:
+                    midi_out.close_port()
+                except Exception:
+                    pass
+            midi_out = None
+            gc.collect()
 
         return {
             "rtmidi_available": True,
@@ -592,6 +622,7 @@ class MPX1Service:
             "outputs": outputs,
             "recommended_input_index": recommended_in,
             "recommended_output_index": recommended_out,
+            "probe_errors": probe_errors,
         }
 
     async def connect_midi(

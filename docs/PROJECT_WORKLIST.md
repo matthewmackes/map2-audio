@@ -97,7 +97,10 @@ Description:
 - Required outputs: Updated qualification matrix and archived artifacts.  
 Subtasks: None  
 Assigned to: Lab + Codex  
-Last updated: 2026-02-23 00:00 - Codex
+Last updated: 2026-02-27 16:16 - Codex
+- Blocked notes:
+  - 2026-02-27 host recheck confirms AVB stack operational on `enp11s0`, but HIL gate prerequisites are absent: `discovered_count=0`, `streams=0`, and PTP state remains `INITIALIZING`.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260227/avb-t004-q04-q06-check.json`, `docs/fit-for-purpose-evidence/20260227/avb-t004-q04-q06-check.md`.
 
 ID: T005  
 Status: [✓] Done  
@@ -244,7 +247,7 @@ Last updated: 2026-02-24 19:35 - Codex
   - Suggested next tasks: T011, T004, T900
 
 ID: T011  
-Status: [✗] Blocked  
+Status: [✓] Done  
 Title: Remediate host real-time jitter/xrun behavior and re-qualify SynthForge soak gates  
 Description:  
 - Goal / acceptance criteria: Apply host-level real-time tuning/remediation (scheduler, IRQ affinity, backend/device path, isolation) and re-run `T010` until xrun/jitter thresholds pass or blockers are explicitly documented.  
@@ -254,12 +257,13 @@ Description:
 - Required outputs: Remediation change log, before/after soak evidence comparison, updated threshold pass/fail matrix, and final recommendation (go/no-go).  
 Subtasks: None  
 Assigned to: Codex + Lab  
-Last updated: 2026-02-24 16:50 - Codex
+Last updated: 2026-02-27 16:08 - Codex
 - Completion notes:
   - What was done: Executed host RT diagnostics (`verify_rt_config.sh --quick`) and multiple remediation soak runs (pinned RT, pw-jack wrapper, steady-clock callback timing patch), then captured comparison artifacts and reran start/stop regression tests.
   - Key findings: Best short remediation run (`rtpin + steady_clock`, 5m) improved xrun rate from `85.96/min` baseline (`T010` 30m) to `35.98/min`, but strict gates still fail (`xruns > 0`, peak jitter `23.38ms` > `0.2ms`). Extended 10-minute rerun remained unstable (`24094` xruns, fails headroom/budget gates). Forced JACK backend remains unstable (`MAP2_AUDIO_PREFER_JACK=1` reproduces `SIGSEGV`, exit code `139`).
   - Files/links produced: `juce-engine/Source/JuceAudioIO.cpp`, `juce-engine/Source/JuceAudioIO.h`, `docs/fit-for-purpose-evidence/20260224/synthforge-tier-a-soak-rtpin-5m.json`, `docs/fit-for-purpose-evidence/20260224/synthforge-tier-a-soak-rtpin-pwjack-5m.json`, `docs/fit-for-purpose-evidence/20260224/synthforge-tier-a-soak-rtpin-steadyclock-5m.json`, `docs/fit-for-purpose-evidence/20260224/synthforge-tier-a-soak-rtpin-steadyclock-10m.json`, `docs/fit-for-purpose-evidence/20260224/synthforge-tier-a-remediation-t011.md`.
-  - Suggested next tasks: T012, T013, T004
+  - Closure: Privileged full-duration re-qualification was completed in `T013`; strict Tier A timing gates remain unmet and are now documented as an explicit no-go on this host profile.
+  - Suggested next tasks: T013, T004
 
 ID: T012  
 Status: [✓] Done  
@@ -281,7 +285,7 @@ Last updated: 2026-02-24 21:26 - Codex
   - Suggested next tasks: T013, T016, T022-subA
 
 ID: T013  
-Status: [>] In Progress  
+Status: [✓] Done  
 Title: Execute privileged host RT remediation and full-duration Tier A re-qualification  
 Description:  
 - Goal / acceptance criteria: Apply root-required host tuning (USB autosuspend, IRQ affinity/service priorities as needed), then run full-duration Tier A soak (`>=30m`) and archive final pass/fail evidence against strict thresholds.  
@@ -291,11 +295,13 @@ Description:
 - Required outputs: Privileged tuning change log, full-duration soak artifacts, final go/no-go recommendation.  
 Subtasks: None  
 Assigned to: Codex + Lab  
-Last updated: 2026-02-27 11:12 - Codex
-- Progress notes:
+Last updated: 2026-02-27 16:08 - Codex
+- Completion notes:
   - Privileged host tuning executed successfully via `./scripts/setup_realtime.sh --yes` (run as `mm`, uses internal sudo), including RT limits, CPU governor service, PipeWire low-latency config, IRQ affinity service, and rtkit enablement.
   - Post-remediation verification improved to `RT Configuration Grade: A+` with `./scripts/verify_rt_config.sh --quick` (`21` pass, `0` warnings, `0` failed), and USB autosuspend was forced to disabled (`/sys/module/usbcore/parameters/autosuspend=-1`).
-  - Remaining work for task completion: execute and archive full-duration (`>=30m`) Tier A soak artifacts under current tuned host profile, then issue final pass/fail recommendation against strict jitter/xrun thresholds.
+  - What was done: Executed full-duration Tier A soak (`1800s`) and archived final artifacts: `docs/fit-for-purpose-evidence/20260227/synthforge-tier-a-soak-t013-30m.json` and `docs/fit-for-purpose-evidence/20260227/synthforge-tier-a-soak-t013-30m.md`.
+  - Key findings: Final run remained a strict-gate failure (`overall_pass=false`) with `69` xruns and `18.616ms` peak callback jitter (threshold `<=0.2ms`), while headroom (`min 50.26%`) and budget-utilization (`max 49.82%`) gates passed.
+  - Final recommendation: `NO-GO` for Tier A real-time qualification on this host profile until xrun/jitter gates are met in a subsequent hardware/system pass.
 
 ID: T014  
 Status: [✓] Done  
@@ -453,7 +459,7 @@ Last updated: 2026-02-24 21:00 - Codex
   - Suggested next tasks: T015, T012, T013
 
 ID: T022
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Lexicon MPX1 Web Control Card — Full-Stack Implementation (Top-Nav, Editor, MIDI Mapper)
 Description:
 - Goal / acceptance criteria: Build a first-class Lexicon MPX1 multi-effects editor into MAP2 as a top-nav menu entry at `/mpx1/*`. Deliverables: photo-perfect SVG front panel, registry-driven deep block editor, visual drag-and-drop MIDI CC→SysEx mapper with MIDI learn, internal mod matrix studio, 200-program preset librarian with A/B compare and bulk dump, diagnostics view, and a persistent MPX1 status bar. The MIDI mapper must allow any foot controller CC to be assigned to any MPX1 SysEx parameter with per-mapping range, curve, smoothing, polarity, and named map save/restore. All parameter state is maintained in a Python shadow state via rtmidi (existing dependency), pushed live to the UI via WebSocket.
@@ -463,12 +469,12 @@ Description:
 - Required outputs: Parameter registry JSON, Python service + FastAPI routes, TypeScript client + WS hook, AppShell nav integration (icon + mega-menu), MPX1Page shell with sidebar + status bar, six sub-views (panel/editor/midi-map/matrix/library/diag), CSS design token system, 50 curated preset library, tests.
 - Reference: Full design spec in conversation history (2026-02-24). Implementation plan: Option 1 (MAP2 Native) expanded to top-nav full-menu architecture.
 Assigned to: Codex + Lab
-Last updated: 2026-02-27 11:25 - Codex
+Last updated: 2026-02-27 16:16 - Codex
 - Completion notes:
   - What was done: Completed full software stack for MPX1 top-nav integration and all major views/services (panel/editor/midi-map/matrix/library/diag), plus deep registry expansion (`601` params, `coverage.status=complete`) and end-to-end API/WebSocket contracts.
   - Validation evidence: `python3 tests/validate_mpx1_registry.py` PASS; `pytest -q tests/validate_mpx1_registry.py tests/test_mpx1.py` PASS (`16 passed`); `npm --prefix web run typecheck` PASS.
 - Progress notes:
-  - Final acceptance is now actively executing under `T022-subK` with live hardware attached; remaining gate is inbound physical control verification (`<150ms` knob-to-UI + zipper-free sustained response).
+  - Final acceptance is blocked on `T022-subK`: latest live run passed connection + 40ms zipper-free sweep, but captured no inbound hardware knob/status events to score `<150ms` knob-to-UI latency.
 Subtasks:
 ID: T022-subA
 Status: [✓] Done
@@ -652,7 +658,7 @@ Last updated: 2026-02-25 02:14 - Codex
   - Validation evidence: `npm --prefix web run typecheck` PASS, `pytest -q tests/test_mpx1.py` PASS (`13 passed`), `pytest -q tests/test_mpx1.py tests/test_synthforge_routes.py` PASS (`21 passed`).
   - Suggested next tasks: T022-subK, T022-subA
 ID: T022-subK
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Diagnostics view, connection docs, and end-to-end hardware test (/mpx1/diag)
 Description:
 - Goal / acceptance criteria: MPX1DiagView.tsx: MIDI traffic ring buffer (last 100 SysEx messages, hex + decoded param name + timestamp), round-trip latency meter (send ping SysEx, measure echo, display min/avg/max/p99), connection health panel (port name, last heartbeat, packet error count, reconnect button), "Force Resync" button (requests full state dump). Write docs/mpx1/CONNECT.md (how to connect the MPX1: USB-MIDI port, MAP2 config, bridge startup). Write docs/mpx1/SYSEX_NOTES.md (protocol implementation notes, encoding choices, known quirks). Run end-to-end test with real hardware; confirm <150ms UI update on hardware knob turn, confirm smooth (no zippering) hardware response on UI knob drag at 40ms coalesce. Validate typecheck passes.
@@ -662,7 +668,7 @@ Description:
 - Required outputs: web/src/app/pages/MPX1DiagView.tsx, docs/mpx1/CONNECT.md, docs/mpx1/SYSEX_NOTES.md, hardware validation notes
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-02-27 11:19 - Codex
+Last updated: 2026-02-27 16:16 - Codex
 - Completion notes:
   - What was done: Implemented `/mpx1/diag` diagnostics view with MIDI/SysEx traffic ring buffer, latency metrics (min/avg/max/p99), connection health panel, reconnect and force-resync controls, and dump progress tracking. Added backend diagnostics endpoints (`/api/mpx1/diagnostics`, `/api/mpx1/diagnostics/ping`) with service-level traffic capture and packet error tracking. Added onboarding/implementation docs: `docs/mpx1/CONNECT.md` and `docs/mpx1/SYSEX_NOTES.md`.
   - Key findings: Software diagnostics stack is complete and test-covered for API/UI paths; final acceptance criteria requiring physical hardware latency/zipper verification cannot be executed in this non-HIL environment.
@@ -670,13 +676,13 @@ Last updated: 2026-02-27 11:19 - Codex
   - Validation evidence: `pytest -q tests/test_mpx1.py tests/test_synthforge_routes.py` PASS (`23 passed`), `npm --prefix web run typecheck` PASS.
 - Progress notes:
   - Hardware transport is now connected live via `/api/mpx1/midi/connect` (`input_port_index=1`, `output_port_index=1`, `UA-1000 MIDI 24:0`), and health confirms `connected=true`.
-  - Sustained web-control sweep at 40ms cadence (`250` updates on `pitch.alg_00.mix`) showed `packet_error_delta=0` and stable outbound traffic (`250` `tx_sysex` events), supporting the no-zipper proxy path for UI→device command flow.
-  - MPX inbound control-path evidence is now confirmed: diagnostics capture repeated hardware SysEx frames (`F0 06 09 00 01 01 ... F7`) while MPX is configured `receive=omni` / `send=ch1`; parser hardening was added to accept Lexicon header variants for param-style frames.
-  - Long-form program status frames (`F0 06 09 00 01 02 ... F7`) are now decoded as `rx_program_sysex` and mapped to deterministic `current_program` updates (`2/2` validation runs, `0` unknowns in capture window).
-  - Inbound physical-control `<150ms` confirmation remains pending: currently observed inbound frames are long state/report SysEx classes that are still logged as unknown (not yet translated to concrete param shadow updates), so knob→specific-param UI correlation is not yet scored.
+  - Runtime hardening added: `/api/mpx1/midi/ports` now fails closed with structured `probe_errors` payload instead of HTTP 500 when ALSA sequencer probe fails (`tests/test_mpx1.py` updated; `34 passed`).
+  - Latest live rerun (`120` updates @ `40ms` + `45s` inbound capture) passed no-zipper proxy (`packet_error_delta=0`) but observed `0` inbound `mpx1:panel_status` and `0` `mpx1:param_rx` events, so `<150ms` hardware knob-to-UI latency remains unscored.
   - Evidence artifacts: `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-15s.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.md`.
+- Blocked notes:
+  - Requires inbound control telemetry from physical MPX output (operator knob movement plus confirmed device MIDI OUT path) to verify `<150ms` knob-to-UI acceptance gate.
 Assigned to: Codex
-Last updated: 2026-02-27 13:00 - Codex
+Last updated: 2026-02-27 16:16 - Codex
 
 ID: T023
 Status: [✓] Done
@@ -811,9 +817,10 @@ Description:
 - Required outputs: Qualification artifacts in `docs/fit-for-purpose-evidence/` and final gate summary.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-02-25 19:00 - Codex
+Last updated: 2026-02-27 16:16 - Codex
 - Blocked notes:
-  - Requires lab hardware execution plus completion of RT callback-path DSP insertion/crossfade/compensation work (`T032`) before final qualification run.
+  - `T032` dependency is complete, but current host has no active effects-loop topology (`/api/effects-loops` returns `count=0`), so `<0.5ms` latency and 8-loop churn soak gates cannot execute.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260227/effects-loops-t030-hil-check.json`, `docs/fit-for-purpose-evidence/20260227/effects-loops-t030-hil-check.md`.
 
 ID: T031
 Status: [✓] Done

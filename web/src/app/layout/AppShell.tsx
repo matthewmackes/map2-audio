@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties, Dispatch, ReactNode, SetStateAction } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Sparkle, Info, List, X, Fire, CaretRight } from '@phosphor-icons/react'
+import { Sparkle, Info, List, X, Fire, CaretRight, PushPin } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
@@ -318,25 +318,28 @@ export function AppShell({ children }: { children: ReactNode }) {
     const disabled = specialSettingsLoading || !promotable
 
     return (
-      <label
-        className={`nav-advanced-promote-toggle${disabled ? ' is-disabled' : ''}`}
+      <button
+        type="button"
+        className={`nav-advanced-promote-toggle${checked ? ' is-pinned' : ''}${disabled ? ' is-disabled' : ''}`}
         onClick={(event) => {
           event.preventDefault()
           event.stopPropagation()
+          if (!disabled) {
+            void togglePromotedRoute(item, !checked)
+          }
         }}
-        title={promotable ? 'Show in top navigation' : 'Submenu-only entry cannot be promoted'}
+        title={
+          !promotable
+            ? 'This entry cannot be pinned to the nav bar'
+            : checked
+              ? 'Unpin from navigation bar'
+              : 'Pin to navigation bar'
+        }
+        disabled={disabled}
+        aria-pressed={checked}
       >
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(event) => {
-            event.stopPropagation()
-            void togglePromotedRoute(item, event.target.checked)
-          }}
-        />
-        <span>Top Nav</span>
-      </label>
+        <PushPin size={11} weight={checked ? 'fill' : 'regular'} aria-hidden />
+      </button>
     )
   }
 
@@ -552,7 +555,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     }}
                   >
                     <Icon size={18} weight="duotone" aria-hidden />
-                    <span>{item.label}</span>
+                    <div className="nav-mobile-item-text">
+                      <span className="nav-mobile-item-label">{item.label}</span>
+                      <span className="nav-mobile-item-desc">{item.description}</span>
+                    </div>
                   </NavLink>
                   {renderPromotionToggle(item)}
                 </div>
@@ -587,14 +593,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="nav-active-title">
-          <div
-            className="nav-active-display"
-            style={{ '--active-color': activeNav.item.color } as CSSProperties}
-          >
-            <activeNav.item.icon size={22} weight="duotone" className="nav-active-icon" aria-hidden />
-            <span className="nav-active-text">{activeNav.item.label}</span>
-          </div>
+        <div
+          className="nav-active-title"
+          style={{ '--active-color': activeNav.item.color } as CSSProperties}
+        >
+          <activeNav.item.icon size={14} weight="duotone" className="nav-active-icon" aria-hidden />
+          <span className="nav-active-text">{activeNav.item.label}</span>
         </div>
 
         <div className="nav-tabs-right-container">
@@ -627,10 +631,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {advancedMenuOpen && (
                   <div id="advanced-nav-menu" className="advanced-menu-panel" role="menu">
                     <div className="advanced-menu-header">
-                      <p className="advanced-menu-kicker">Operator Controls</p>
-                      <p className="advanced-menu-title">Advanced Menu</p>
+                      <div className="advanced-menu-header-main">
+                        <p className="advanced-menu-kicker">Operator Controls</p>
+                        <p className="advanced-menu-title">Advanced Tools</p>
+                      </div>
                       <p className="advanced-menu-subtitle">
-                        System-level routing, interfaces, and infrastructure dashboards.
+                        System-level routing, interfaces &amp; infrastructure dashboards.
                       </p>
                     </div>
 

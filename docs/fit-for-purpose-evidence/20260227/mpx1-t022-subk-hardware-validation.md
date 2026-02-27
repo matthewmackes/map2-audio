@@ -2,26 +2,21 @@
 
 ## Connection
 - Connected: `True`
-- MIDI in/out indices: `None` / `None`
-
-## Diagnostics Ping
-- Samples: `30`
-- Latency ms min/avg/max/p99: `0.007` / `0.008` / `0.026` / `0.026`
+- MIDI in/out indices: `1` / `1`
 
 ## 40ms Sweep (UI Knob-Drag Proxy)
 - Parameter: `pitch.alg_00.mix`
-- Updates sent: `250`
+- Updates sent: `120`
 - Packet error delta: `0`
-- TX events: `251`
-- RX SysEx events: `0`
-- RX CC events: `0`
+- TX events: `120`
+- RX events: `0`
 
-## Raw ALSA Inbound Capture
-- Command: `timeout 15s aseqdump -p 24:0`
-- Clock events: `720`
-- CC events: `0`
-- SysEx events: `0`
-- Log: `/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-15s.log`
+## Physical Inbound Capture (WebSocket)
+- Duration: `45s`
+- `mpx1:panel_status` events: `0`
+- `mpx1:param_rx` events: `0`
+- `mpx1:program_changed` events: `0`
+- Latency: `N/A` (no inbound knob/status event captured)
 
 ## Acceptance Gate Summary
 - Connected: `PASS`
@@ -30,4 +25,4 @@
 - Physical knob <150ms UI update confirmed: `FAIL`
 
 ## Result
-- `T022-subK` remains open pending live inbound knob-event detection and measured `<150ms` physical knob-to-UI confirmation.
+- Overall: `FAIL`

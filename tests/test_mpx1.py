@@ -7,6 +7,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.routes import mpx1 as mpx1_routes
+import app.services.mpx1_service as mpx1_service_module
 from app.services.mpx1_service import MPX1Service
 
 
@@ -285,6 +286,37 @@ def test_midi_learn_assigns_mapping_to_active_map(tmp_path: Path) -> None:
     assert mappings[0]["target_param_id"] == "program.pitch.algorithm"
     assert mappings[0]["cc"] == 7
     assert mappings[0]["channel"] == 1
+
+
+def test_get_midi_ports_probe_failure_returns_structured_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow.json",
+        library_path=tmp_path / "library.json",
+        midi_maps_path=tmp_path / "midi_maps.json",
+    )
+
+    class _BrokenRtMidi:
+        class MidiIn:
+            def __init__(self) -> None:
+                raise RuntimeError("in probe failure")
+
+        class MidiOut:
+            def __init__(self) -> None:
+                raise RuntimeError("out probe failure")
+
+    monkeypatch.setattr(mpx1_service_module, "RTMIDI_AVAILABLE", True)
+    monkeypatch.setattr(mpx1_service_module, "rtmidi", _BrokenRtMidi)
+
+    payload = asyncio.run(service.get_midi_ports())
+    assert payload["rtmidi_available"] is True
+    assert payload["inputs"] == []
+    assert payload["outputs"] == []
+    assert payload["recommended_input_index"] is None
+    assert payload["recommended_output_index"] is None
+    assert len(payload["probe_errors"]) == 2
 
 
 class _DummyMPX1Service:
