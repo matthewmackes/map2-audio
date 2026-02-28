@@ -1082,6 +1082,25 @@ Last updated: 2026-02-27 19:20 - Codex
   - Validation: `npm --prefix web run typecheck` PASS.
   - Suggested next tasks: T022-subK, T030, T013
 
+ID: T042
+Status: [✓] Done
+Title: MPX1 WYSIWYG Signal Flow Canvas — 8th view (/mpx1/flow)
+Description:
+- Goal / acceptance criteria: Add a WYSIWYG graphical signal flow canvas as an additional view on the existing MPX1 menu. The canvas must show the 6-effect-block routing architecture in real time, with two parallel lanes (Upper/Lower), animated patch cords, split/merge Y-junctions, per-block bypass, a parameter editor sidebar, and global controls in a toolbar. All state driven from live shadow state via existing WebSocket.
+- Why it matters: Provides a professional WYSIWYG interface for the MPX1 that no existing software offers — operators can see and edit signal routing at a glance without memorising block positions.
+- Dependencies: T022 (MPX1 full stack), T041 (program numbering)
+- Estimated effort: High
+- Required outputs: New route `/mpx1/flow`, 9 new frontend files, navigation integration in sidebar + megamenu.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-28 - Codex
+- Completion notes:
+  - What was done: Implemented full WYSIWYG Signal Flow Canvas as the 8th MPX1 view. Routing data model (`mpx1FlowRouting.ts`) derives upper/lower lane layout and patch cord descriptors from live shadow state; graceful fallback to all-upper if routing keys absent. Two-row flex canvas with absolute SVG overlay for animated cubic bezier patch cords (1.2s dash animation; gray/dashed when bypassed). Block cards show live algorithm names, bypass toggle, and 4px level meter strip, with CSS pulse-glow animation. Right sidebar parameter editor opens on card click — algorithm selector, params grouped by page, all widget types (toggle/slider/knob/select), built from registry. Toolbar: program prev/next, undo/redo (Ctrl+Z/Y, 50-entry stack), tap tempo, A/B compare snapshot, bypass-all, zoom buttons. Zoom: Ctrl+scroll (0.35×–2.5×), middle-drag/Ctrl+drag pan. Responsive: sidebar becomes bottom sheet at <1100px. Fixed React error #185 (infinite setState loop from no-dep useLayoutEffect) with functional updater equality checks.
+  - Key findings: No-dep `useLayoutEffect` calling `setState` unconditionally causes infinite update cycles — must use functional updater forms that return the same reference when values are unchanged. `MPX1ParamUpdateRequest` uses snake_case `param_id` not camelCase.
+  - Files/links produced: `web/src/app/components/MPX1/mpx1FlowRouting.ts`, `web/src/app/components/MPX1/useFlowUndoRedo.ts`, `web/src/app/components/MPX1/MPX1FlowBlockCard.tsx`, `web/src/app/components/MPX1/MPX1FlowPatchCords.tsx`, `web/src/app/components/MPX1/MPX1FlowSidebar.tsx`, `web/src/app/components/MPX1/MPX1FlowToolbar.tsx`, `web/src/app/components/MPX1/MPX1FlowCanvas.tsx`, `web/src/app/components/MPX1/MPX1FlowCanvas.css`, `web/src/app/pages/MPX1FlowView.tsx`. Modified: `web/src/app/App.tsx`, `web/src/app/pages/MPX1Page.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.tsx`.
+  - Validation: `pytest -q tests/test_mpx1.py tests/test_mpx1_syx_parser.py tests/test_mpx1_scene_service.py` PASS (`87 passed`); `npm --prefix web run typecheck` PASS; Vite production build PASS.
+  - Suggested next tasks: T022-subK (hardware permitting), T030 (hardware permitting)
+
 ## Backlog
 
 ID: T900  
