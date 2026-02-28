@@ -57,7 +57,12 @@ export function MPX1FlowPatchCords({ cords, nodeRefs, canvasRef }: MPX1FlowPatch
     const canvas = canvasRef.current
     if (!canvas) return
 
-    setSvgSize({ w: canvas.scrollWidth, h: canvas.scrollHeight })
+    const newW = canvas.scrollWidth
+    const newH = canvas.scrollHeight
+    // Functional updater: return prev reference if unchanged → React skips re-render
+    setSvgSize((prev) =>
+      prev.w === newW && prev.h === newH ? prev : { w: newW, h: newH },
+    )
 
     const paths: RenderedCord[] = []
     for (const cord of cords) {
@@ -78,10 +83,20 @@ export function MPX1FlowPatchCords({ cords, nodeRefs, canvasRef }: MPX1FlowPatch
         // skip malformed rects
       }
     }
-    setRendered(paths)
+
+    // Use a string signature to detect changes — prevents infinite setState loops
+    // from the no-dep useLayoutEffect below.
+    const sig = paths.map((p) => `${p.id}|${p.d}`).join(';')
+    setRendered((prev) => {
+      const prevSig = prev.map((p) => `${p.id}|${p.d}`).join(';')
+      return prevSig === sig ? prev : paths
+    })
   }
 
-  // Recompute after every render (layout may have changed)
+  // Recompute after every render so cord positions track DOM layout changes
+  // (e.g. zoom/pan transforms).  The equality checks inside computeRef.current
+  // ensure setState is a no-op when nothing has actually moved, which stops
+  // the otherwise-infinite update cycle.
   useLayoutEffect(() => {
     computeRef.current()
   })
