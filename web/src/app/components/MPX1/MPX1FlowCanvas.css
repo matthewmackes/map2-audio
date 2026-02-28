@@ -171,19 +171,16 @@
   background: rgba(239, 68, 68, 0.18);
 }
 
-/* ── Workspace (canvas + optional sidebar) ────────────────────────────────── */
+/* ── Workspace (canvas + docked editor) ───────────────────────────────────── */
 
 .mpx1-flow__workspace {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-rows: minmax(220px, 1fr) auto;
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  transition: grid-template-columns 0.22s ease;
-}
-
-.mpx1-flow__workspace.has-sidebar {
-  grid-template-columns: 1fr 288px;
+  gap: 10px;
+  padding: 10px 12px 12px;
 }
 
 /* ── Canvas area ──────────────────────────────────────────────────────────── */
@@ -192,12 +189,15 @@
   overflow: hidden;
   position: relative;
   cursor: default;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
   background:
     radial-gradient(
       ellipse at 50% 35%,
       rgba(30, 41, 59, 0.55) 0%,
       rgba(8, 14, 26, 0.95) 75%
     );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .mpx1-flow__canvas-area:active {
@@ -209,11 +209,15 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 52px 72px 72px;
+  padding: 34px 52px 44px;
   min-width: 920px;
-  gap: 28px;
+  gap: 22px;
   transform-origin: top left;
   will-change: transform;
+}
+
+.mpx1-flow__editor-dock {
+  min-height: 0;
 }
 
 /* ── Path rows ────────────────────────────────────────────────────────────── */
@@ -223,6 +227,7 @@
   align-items: center;
   gap: 16px;
   position: relative;
+  padding-top: 20px; /* room for lane label */
 }
 
 .mpx1-flow__path-row--lower {
@@ -404,31 +409,37 @@
   overflow: visible;
 }
 
-/* ── Right sidebar ────────────────────────────────────────────────────────── */
+/* ── Docked parameter panel ───────────────────────────────────────────────── */
 
 .mpx1-flow-sidebar {
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid rgba(255, 255, 255, 0.07);
-  background: #0c1322;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(14, 22, 39, 0.96), rgba(5, 10, 22, 0.96)),
+    radial-gradient(circle at 20% 15%, rgba(129, 140, 248, 0.08), transparent 50%);
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
 }
 
 .mpx1-flow-sidebar--empty {
+  display: flex;
   align-items: center;
   justify-content: center;
   color: #475569;
   font-size: 12px;
-  padding: 24px;
+  min-height: 108px;
+  padding: 16px;
   text-align: center;
 }
 
 .mpx1-flow-sidebar__header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 11px 14px;
+  gap: 7px;
+  padding: 9px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(0, 0, 0, 0.18);
   flex-shrink: 0;
@@ -444,7 +455,7 @@
 
 .mpx1-flow-sidebar__title {
   flex: 1;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--block-accent, #94a3b8);
@@ -471,7 +482,11 @@
 }
 
 .mpx1-flow-sidebar__algo-section {
-  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 230px);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 }
@@ -487,12 +502,13 @@
 
 .mpx1-flow-sidebar__algo-select {
   width: 100%;
-  padding: 5px 8px;
+  min-width: 0;
+  padding: 4px 8px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 5px;
   color: #e2e8f0;
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -501,13 +517,19 @@
 }
 
 .mpx1-flow-sidebar__params {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  overflow: hidden;
 }
 
 .mpx1-flow-sidebar__page-group {
-  margin-bottom: 18px;
+  margin: 0;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.3);
+  padding: 7px 8px;
 }
 
 .mpx1-flow-sidebar__page-title {
@@ -516,15 +538,15 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #475569;
-  margin-bottom: 8px;
-  padding-bottom: 4px;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .mpx1-flow-sidebar__param-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 5px;
 }
 
 .mpx1-flow-sidebar__empty-msg {
@@ -536,12 +558,17 @@
 
 /* Param control widgets inside the sidebar */
 
+.mpx1-flow-sidebar__control {
+  min-height: 58px;
+}
+
 .mpx1-flow-sidebar__toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 5px 8px;
+  min-height: 58px;
+  padding: 6px 7px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 5px;
@@ -562,97 +589,354 @@
 }
 
 .mpx1-flow-sidebar__toggle-name {
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .mpx1-flow-sidebar__toggle-value {
-  font-size: 10px;
+  font-size: 9px;
   opacity: 0.65;
 }
 
 .mpx1-flow-sidebar__select-wrap {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
   gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.45);
 }
 
 .mpx1-flow-sidebar__slider-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.45);
 }
 
 .mpx1-flow-sidebar__label {
-  font-size: 10px;
+  font-size: 9px;
   color: #64748b;
+  line-height: 1.2;
 }
 
 .mpx1-flow-sidebar__value {
-  font-size: 10px;
+  font-size: 9px;
   color: #94a3b8;
   text-align: right;
+  line-height: 1;
 }
 
 .mpx1-flow-sidebar__slider-wrap input[type='range'] {
   width: 100%;
-  height: 4px;
+  height: 3px;
   accent-color: var(--block-accent, #94a3b8);
+  margin: 0;
 }
 
 .mpx1-flow-sidebar__select-wrap select {
   width: 100%;
-  padding: 4px 6px;
+  min-width: 0;
+  padding: 3px 5px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   color: #e2e8f0;
-  font-size: 11px;
+  font-size: 10px;
 }
 
-/* ── Scrollbar styling for sidebar params ─────────────────────────────────── */
-
-.mpx1-flow-sidebar__params::-webkit-scrollbar {
-  width: 4px;
+.mpx1-flow-sidebar .mpx1-knob {
+  min-height: 94px;
+  padding: 4px;
+  border-radius: 8px;
+  gap: 2px;
 }
 
-.mpx1-flow-sidebar__params::-webkit-scrollbar-track {
-  background: transparent;
+.mpx1-flow-sidebar .mpx1-knob__value {
+  font-size: 9px;
 }
 
-.mpx1-flow-sidebar__params::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+.mpx1-flow-sidebar .mpx1-knob__label {
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  max-width: 88px;
 }
 
-.mpx1-flow-sidebar__params::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+/* ── Responsive ───────────────────────────────────────────────────────────── */
 
-/* ── Responsive: narrow viewport collapses sidebar ────────────────────────── */
-
-@media (max-width: 1100px) {
-  .mpx1-flow__workspace.has-sidebar {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+@media (max-width: 1200px) {
+  .mpx1-flow-sidebar__param-grid {
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   }
+}
 
-  .mpx1-flow-sidebar {
-    max-height: 220px;
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-  }
-
-  .mpx1-flow-sidebar__params {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
+@media (max-width: 980px) {
+  .mpx1-flow__workspace {
+    grid-template-rows: minmax(190px, 1fr) auto;
     gap: 8px;
-    align-items: flex-start;
+    padding: 8px;
   }
 
-  .mpx1-flow-sidebar__page-group {
-    flex: 1;
-    min-width: 180px;
-    margin-bottom: 0;
+  .mpx1-flow__canvas-inner {
+    min-width: 760px;
+    padding: 26px 28px 30px;
+    gap: 18px;
   }
+
+  .mpx1-flow-sidebar__algo-section {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 760px) {
+  .mpx1-flow-sidebar__param-grid {
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Effect Order Bar + Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.mpx1-flow__order-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px;
+  background: #060d18;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.mpx1-flow__order-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.mpx1-flow__order-notation {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64c8a8;
+  letter-spacing: 0.08em;
+  cursor: default;
+}
+
+.mpx1-flow__order-btn {
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.mpx1-flow__order-btn:hover,
+.mpx1-flow__order-btn.is-active {
+  background: rgba(100,200,168,0.12);
+  border-color: rgba(100,200,168,0.3);
+  color: #64c8a8;
+}
+
+.mpx1-flow__order-reset-btn {
+  font-size: 9px;
+  font-family: inherit;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid rgba(100,116,139,0.3);
+  border-radius: 4px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.mpx1-flow__order-reset-btn:hover {
+  color: #94a3b8;
+  border-color: rgba(148,163,184,0.4);
+}
+
+/* Effect Order Panel */
+.mpx1-flow__order-panel {
+  padding: 10px 14px;
+  background: #060d18;
+  border-bottom: 1px solid rgba(100,200,168,0.15);
+  flex-shrink: 0;
+}
+
+.mpx1-flow__order-panel__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64c8a8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mpx1-flow__order-panel__hint {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #475569;
+}
+
+.mpx1-flow__order-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.mpx1-flow__order-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(var(--chip-color), 0.3);
+  border-color: color-mix(in srgb, var(--chip-color) 30%, transparent);
+  border-radius: 6px;
+  padding: 4px 6px 4px 5px;
+  color: var(--chip-color);
+}
+
+.mpx1-flow__order-chip__pos {
+  font-size: 9px;
+  font-weight: 700;
+  color: #475569;
+  min-width: 12px;
+  text-align: center;
+}
+
+.mpx1-flow__order-chip__name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: inherit;
+}
+
+.mpx1-flow__order-chip__arrows {
+  display: flex;
+  gap: 2px;
+}
+
+.mpx1-flow__order-chip__arrows button {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 3px;
+  background: rgba(255,255,255,0.04);
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, color 0.1s;
+  padding: 0;
+}
+.mpx1-flow__order-chip__arrows button:hover:not(:disabled) {
+  background: rgba(255,255,255,0.1);
+  color: #e2e8f0;
+}
+.mpx1-flow__order-chip__arrows button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.mpx1-flow__order-panel__flow-preview {
+  margin-top: 8px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: #475569;
+  letter-spacing: 0.04em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Lane Labels (Upper / Lower)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.mpx1-flow__lane-label {
+  position: absolute;
+  left: 0;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mpx1-flow__lane-label--upper {
+  top: -18px;
+  color: rgba(56,189,248,0.6);
+}
+
+.mpx1-flow__lane-label--lower {
+  top: -18px;
+  color: rgba(167,139,250,0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Routing Mode Picker
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.mpx1-flow__route-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(15,23,42,0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.mpx1-flow__route-picker__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mpx1-flow__route-btn {
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s, box-shadow 0.1s;
+  white-space: nowrap;
+}
+.mpx1-flow__route-btn:hover {
+  background: rgba(56,189,248,0.08);
+  border-color: rgba(56,189,248,0.25);
+  color: #94a3b8;
+}
+.mpx1-flow__route-btn.is-active {
+  background: rgba(56,189,248,0.14);
+  border-color: rgba(56,189,248,0.4);
+  color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56,189,248,0.18);
 }

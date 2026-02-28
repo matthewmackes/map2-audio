@@ -4,12 +4,13 @@
  * Layout:
  *   ┌────────────────────────────────────────────────────────────────┐
  *   │  MPX1FlowToolbar (program nav, undo/redo, tap, A/B, zoom)     │
- *   ├──────────────────────────────────┬─────────────────────────────┤
- *   │  Canvas area (~70%)              │  MPX1FlowSidebar (~30%)     │
- *   │  [IN]─[B1]─[B2]─[B3]─[B4]─[OUT]│  (selected block params)    │
- *   │          ╲─[B5]─[B6]─╱          │                             │
- *   │  (SVG patch cord overlay)        │                             │
- *   └──────────────────────────────────┴─────────────────────────────┘
+ *   ├────────────────────────────────────────────────────────────────┤
+ *   │  Canvas area (signal flow lanes + patch cords)                │
+ *   │  [IN]─[B1]─[B2]─[B3]─[B4]─[OUT]                               │
+ *   │          ╲─[B5]─[B6]─╱                                        │
+ *   ├────────────────────────────────────────────────────────────────┤
+ *   │  Docked parameter editor box (selected block params)          │
+ *   └────────────────────────────────────────────────────────────────┘
  */
 
 import React, {
@@ -26,12 +27,24 @@ import { MPX1FlowPatchCords } from './MPX1FlowPatchCords'
 import { MPX1FlowSidebar } from './MPX1FlowSidebar'
 import { MPX1FlowToolbar } from './MPX1FlowToolbar'
 import {
+  BLOCK_COLORS,
+  BLOCK_LABELS,
+  DEFAULT_EFFECT_ORDER,
   type BlockRoutingState,
+  type EffectBlockId,
   computeBlockStates,
   computeFlowLayout,
   computePatchCords,
 } from './mpx1FlowRouting'
 import { useFlowUndoRedo } from './useFlowUndoRedo'
+
+const ROUTING_MODES = [
+  { value: 0, label: 'Upper',  shortLabel: '↑ Upper',  title: 'Route this block through the upper signal path' },
+  { value: 1, label: 'Lower',  shortLabel: '↓ Lower',  title: 'Route this block through the lower signal path' },
+  { value: 2, label: 'Split',  shortLabel: '⇕ Split',  title: 'This block is in the upper path and opens a lower (parallel) branch after it' },
+  { value: 3, label: 'Paral',  shortLabel: '⇅ Para',   title: 'Run this block in parallel with the upper path (lower lane)' },
+  { value: 4, label: 'Merge',  shortLabel: '⥤ Merge',  title: 'This block is in the upper path and merges the lower branch back in' },
+]
 import './MPX1FlowCanvas.css'
 
 interface ViewTransform {
@@ -54,6 +67,9 @@ export function MPX1FlowCanvas() {
     panY: 0,
   })
   const [blockLevels, setBlockLevels] = useState<Record<number, number>>({})
+  // Effect order — user can reorder the 6 blocks; defaults to factory order
+  const [effectOrder, setEffectOrder] = useState<EffectBlockId[]>([...DEFAULT_EFFECT_ORDER])
+  const [showOrderPanel, setShowOrderPanel] = useState(false)
   const undoRedo = useFlowUndoRedo(50)
 
   // Panning state
@@ -79,8 +95,8 @@ export function MPX1FlowCanvas() {
   // ── Derived data from shadow state ────────────────────────────────────────
 
   const blockStates = useMemo(
-    () => computeBlockStates(mpx1.shadow, mpx1.registry),
-    [mpx1.shadow, mpx1.registry],
+    () => computeBlockStates(mpx1.shadow, mpx1.registry, effectOrder),
+    [mpx1.shadow, mpx1.registry, effectOrder],
   )
 
   const layout = useMemo(() => computeFlowLayout(blockStates), [blockStates])
@@ -280,6 +296,49 @@ export function MPX1FlowCanvas() {
     }
   }, [mpx1, setLcdText, undoRedo])
 
+  // ── Routing mode change ───────────────────────────────────────────────────
+
+  const handleRoutingModeChange = useCallback(
+    (blockIndex: number, newMode: number) => {
+      const paramId = `routing.block_${blockIndex}.routing`
+      const prevValue = mpx1.shadow[paramId] ?? 0
+      undoRedo.push(paramId, prevValue, newMode)
+      void mpx1.setParam(paramId, newMode).catch((err) => {
+        console.error('[MPX1Flow] routing mode change:', err)
+      })
+      const modeLabel = ROUTING_MODES.find((m) => m.value === newMode)?.label ?? String(newMode)
+      setLcdText(`Block ${blockIndex}: ${modeLabel}`)
+    },
+    [mpx1, setLcdText, undoRedo],
+  )
+
+  // ── Effect order helpers ───────────────────────────────────────────────────
+
+  const moveBlockInOrder = useCallback(
+    (index: number, direction: -1 | 1) => {
+      setEffectOrder((prev) => {
+        const next = [...prev]
+        const swapIdx = index + direction
+        if (swapIdx < 0 || swapIdx >= next.length) return prev
+        ;[next[index], next[swapIdx]] = [next[swapIdx], next[index]]
+        return next
+      })
+    },
+    [],
+  )
+
+  const resetEffectOrder = useCallback(() => {
+    setEffectOrder([...DEFAULT_EFFECT_ORDER])
+  }, [])
+
+  // ── "Ord" notation (uppercase=active, lowercase=inactive) ─────────────────
+
+  const ordNotation = effectOrder.map((id) => {
+    const block = blockStates.find((b) => b.effectType === id)
+    const letter = BLOCK_LABELS[id][0]
+    return block?.bypassed ? letter.toLowerCase() : letter.toUpperCase()
+  }).join('=')
+
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
@@ -297,7 +356,82 @@ export function MPX1FlowCanvas() {
         setLcdText={setLcdText}
       />
 
-      <div className={`mpx1-flow__workspace${selectedBlock ? ' has-sidebar' : ''}`}>
+      {/* ── Effect Order bar ─────────────────────────────────────────────── */}
+      <div className="mpx1-flow__order-bar">
+        <span className="mpx1-flow__order-label">Ord</span>
+        <span className="mpx1-flow__order-notation" title="Uppercase = active, lowercase = bypassed">
+          {ordNotation}
+        </span>
+        <button
+          type="button"
+          className={`mpx1-flow__order-btn${showOrderPanel ? ' is-active' : ''}`}
+          onClick={() => setShowOrderPanel((v) => !v)}
+          title="Edit Effect Order (change block processing order)"
+        >
+          Effect Order
+        </button>
+        {effectOrder.join(',') !== DEFAULT_EFFECT_ORDER.join(',') && (
+          <button
+            type="button"
+            className="mpx1-flow__order-reset-btn"
+            onClick={resetEffectOrder}
+            title="Reset to factory default order"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      {/* ── Effect Order panel ───────────────────────────────────────────── */}
+      {showOrderPanel && (
+        <div className="mpx1-flow__order-panel" role="region" aria-label="Effect Order editor">
+          <div className="mpx1-flow__order-panel__title">
+            Effect Order
+            <span className="mpx1-flow__order-panel__hint">
+              Drag or use arrows to change processing order · Factory: P=C=E=M=D=R
+            </span>
+          </div>
+          <div className="mpx1-flow__order-chips">
+            {effectOrder.map((id, idx) => (
+              <div
+                key={id}
+                className="mpx1-flow__order-chip"
+                style={{ '--chip-color': BLOCK_COLORS[id] } as React.CSSProperties}
+              >
+                <span className="mpx1-flow__order-chip__pos">{idx + 1}</span>
+                <span className="mpx1-flow__order-chip__name">
+                  {BLOCK_LABELS[id]}
+                </span>
+                <div className="mpx1-flow__order-chip__arrows">
+                  <button
+                    type="button"
+                    title="Move earlier in chain"
+                    disabled={idx === 0}
+                    onClick={() => moveBlockInOrder(idx, -1)}
+                    aria-label={`Move ${BLOCK_LABELS[id]} earlier`}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    title="Move later in chain"
+                    disabled={idx === effectOrder.length - 1}
+                    onClick={() => moveBlockInOrder(idx, 1)}
+                    aria-label={`Move ${BLOCK_LABELS[id]} later`}
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mpx1-flow__order-panel__flow-preview">
+            {['Input', ...effectOrder.map((id) => BLOCK_LABELS[id]), 'Output'].join(' → ')}
+          </div>
+        </div>
+      )}
+
+      <div className="mpx1-flow__workspace">
         {/* ── Canvas area ───────────────────────────────────────────────── */}
         <div
           ref={canvasAreaRef}
@@ -317,6 +451,11 @@ export function MPX1FlowCanvas() {
           >
             {/* Upper path row */}
             <div className="mpx1-flow__path-row mpx1-flow__path-row--upper">
+              {/* Lane label */}
+              <div className="mpx1-flow__lane-label mpx1-flow__lane-label--upper">
+                {lowerBlocks.length > 0 ? 'Upper Lane' : 'Signal Path'}
+              </div>
+
               <div ref={inputNodeRef} className="mpx1-flow__io-node" aria-label="Input">
                 <span className="mpx1-flow__io-label">IN</span>
               </div>
@@ -347,6 +486,11 @@ export function MPX1FlowCanvas() {
             {/* Lower path row — only rendered when parallel/split routing is active */}
             {lowerBlocks.length > 0 && (
               <div className="mpx1-flow__path-row mpx1-flow__path-row--lower">
+                {/* Lane label */}
+                <div className="mpx1-flow__lane-label mpx1-flow__lane-label--lower">
+                  Lower Lane
+                </div>
+
                 {/* Spacer to align lower blocks under the split point */}
                 {layout.splitAtBlock !== null && (
                   <div
@@ -383,8 +527,28 @@ export function MPX1FlowCanvas() {
           </div>
         </div>
 
-        {/* ── Right sidebar ─────────────────────────────────────────────── */}
-        {selectedBlock && (
+        {/* ── Docked editor panel below canvas ─────────────────────────── */}
+        <div className="mpx1-flow__editor-dock">
+          {/* ── Routing mode picker (shown when a block is selected) ──── */}
+          {selectedBlock && (
+            <div className="mpx1-flow__route-picker">
+              <span className="mpx1-flow__route-picker__label">
+                {selectedBlock.label} Route:
+              </span>
+              {ROUTING_MODES.map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  className={`mpx1-flow__route-btn${selectedBlock.routingMode === mode.value ? ' is-active' : ''}`}
+                  title={mode.title}
+                  onClick={() => handleRoutingModeChange(selectedBlock.blockIndex, mode.value)}
+                >
+                  {mode.shortLabel}
+                </button>
+              ))}
+            </div>
+          )}
+
           <MPX1FlowSidebar
             selectedBlock={selectedBlock}
             mpx1={mpx1}
@@ -392,7 +556,7 @@ export function MPX1FlowCanvas() {
             onClose={() => setSelectedBlockIndex(null)}
             setLcdText={setLcdText}
           />
-        )}
+        </div>
       </div>
     </div>
   )

@@ -15,6 +15,19 @@ import type { MPX1Registry, MPX1RegistryParam } from '../../../map2/mpx1Api'
 
 export type EffectBlockId = 'pitch' | 'chorus' | 'eq' | 'mod' | 'reverb' | 'delay'
 
+/** All six effect types. */
+export const ALL_EFFECT_BLOCKS: readonly EffectBlockId[] = [
+  'pitch', 'chorus', 'eq', 'mod', 'delay', 'reverb',
+]
+
+/**
+ * Factory default signal-chain order (matches hardware manual Ord P=C=E=M=D=R).
+ * Position 0 = first block processed, position 5 = last.
+ */
+export const DEFAULT_EFFECT_ORDER: readonly EffectBlockId[] = [
+  'pitch', 'chorus', 'eq', 'mod', 'delay', 'reverb',
+]
+
 /** Canonical hardware signal-chain order (1=first block processed, 6=last) */
 export const BLOCK_SIGNAL_ORDER: readonly number[] = [1, 2, 3, 4, 5, 6]
 
@@ -23,8 +36,8 @@ export const BLOCK_EFFECT_MAP: Readonly<Record<number, EffectBlockId>> = {
   2: 'chorus',
   3: 'eq',
   4: 'mod',
-  5: 'reverb',
-  6: 'delay',
+  5: 'delay',
+  6: 'reverb',
 }
 
 export const BLOCK_LABELS: Readonly<Record<EffectBlockId, string>> = {
@@ -84,18 +97,22 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-/** Derive live block states from shadow + registry */
+/** Derive live block states from shadow + registry.
+ *  @param effectOrder — ordered list of effect types (default = DEFAULT_EFFECT_ORDER).
+ *    Position 0 in the array = chain position 1 (first processed).
+ */
 export function computeBlockStates(
   shadow: Record<string, number>,
   registry: MPX1Registry | null,
+  effectOrder: readonly EffectBlockId[] = DEFAULT_EFFECT_ORDER,
 ): BlockRoutingState[] {
   const paramsById = new Map<string, MPX1RegistryParam>()
   for (const param of registry?.params ?? []) {
     paramsById.set(param.id, param)
   }
 
-  return BLOCK_SIGNAL_ORDER.map((blockIndex) => {
-    const effectType = BLOCK_EFFECT_MAP[blockIndex]
+  return effectOrder.map((effectType, position) => {
+    const blockIndex = position + 1 // 1-based signal chain position
     const algParamId = `program.${effectType}.algorithm`
     const algParam = paramsById.get(algParamId)
 

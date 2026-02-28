@@ -6,210 +6,402 @@ import { MPX1Knob } from './MPX1Knob'
 import { formatMpx1ProgramNumber } from './programNumber'
 import './MPX1Panel.css'
 
-interface PanelControlSlot {
+/* ─── Types ─────────────────────────────────────────────────────────────── */
+
+interface EffectBlock {
   slotId: string
-  x: number
-  y: number
   paramId: string
-  fallbackLabel: string
+  label: string
+  shortId: string
 }
 
-const PANEL_SLOTS: PanelControlSlot[] = [
-  { slotId: 'pitch', x: 110, y: 176, paramId: 'program.pitch.algorithm', fallbackLabel: 'Pitch Alg' },
-  { slotId: 'chorus', x: 226, y: 176, paramId: 'program.chorus.algorithm', fallbackLabel: 'Chorus Alg' },
-  { slotId: 'eq', x: 342, y: 176, paramId: 'program.eq.algorithm', fallbackLabel: 'EQ Alg' },
-  { slotId: 'mod', x: 458, y: 176, paramId: 'program.mod.algorithm', fallbackLabel: 'Mod Alg' },
-  { slotId: 'reverb', x: 574, y: 176, paramId: 'program.reverb.algorithm', fallbackLabel: 'Reverb Alg' },
-  { slotId: 'delay', x: 690, y: 176, paramId: 'program.delay.algorithm', fallbackLabel: 'Delay Alg' },
+const EFFECT_BLOCKS: EffectBlock[] = [
+  { slotId: 'pitch',  paramId: 'program.pitch.algorithm',  label: 'PITCH',  shortId: 'P' },
+  { slotId: 'chorus', paramId: 'program.chorus.algorithm', label: 'CHORUS', shortId: 'C' },
+  { slotId: 'eq',     paramId: 'program.eq.algorithm',     label: 'EQ',     shortId: 'E' },
+  { slotId: 'mod',    paramId: 'program.mod.algorithm',    label: 'MOD',    shortId: 'M' },
+  { slotId: 'delay',  paramId: 'program.delay.algorithm',  label: 'DELAY',  shortId: 'D' },
+  { slotId: 'reverb', paramId: 'program.reverb.algorithm', label: 'REVERB', shortId: 'R' },
 ]
+
+/* ─── Helpers ────────────────────────────────────────────────────────────── */
 
 function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) return min
   return Math.min(max, Math.max(min, value))
 }
 
-function findParam(params: MPX1RegistryParam[] | undefined, paramId: string): MPX1RegistryParam | null {
-  if (!params) return null
-  return params.find((param) => param.id === paramId) ?? null
+function findParam(
+  params: MPX1RegistryParam[] | undefined,
+  paramId: string,
+): MPX1RegistryParam | null {
+  return params?.find((p) => p.id === paramId) ?? null
 }
+
+/* ─── Component ──────────────────────────────────────────────────────────── */
 
 export function MPX1Panel() {
   const { mpx1, setLcdText } = useMPX1PageContext()
 
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const svgRef = useRef<SVGSVGElement | null>(null)
-  const lcdTextRef = useRef<SVGTextElement | null>(null)
 
-  const [selectedSlot, setSelectedSlot] = useState<PanelControlSlot | null>(null)
-  const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 })
+  const [selectedBlock, setSelectedBlock] = useState<EffectBlock | null>(null)
+  const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 })
 
   const params = mpx1.registry?.params ?? []
+  const shadow = mpx1.shadow
 
-  const activeBypassCount = useMemo(
-    () => Object.entries(mpx1.shadow).filter(([id, value]) => id.endsWith('.bypass') && value >= 0.5).length,
-    [mpx1.shadow]
+  /* ── Derived state ────────────────────────────────────────────────────── */
+
+  const bypassedSlots = useMemo(
+    () =>
+      new Set(
+        Object.entries(shadow)
+          .filter(([id, val]) => id.endsWith('.bypass') && val >= 0.5)
+          .map(([id]) => id.replace('.bypass', '').split('.').pop() ?? ''),
+      ),
+    [shadow],
   )
 
   const panelState = !mpx1.state?.connected
     ? 'offline'
-    : activeBypassCount > 0
+    : bypassedSlots.size > 0
       ? 'bypassed'
       : 'active'
 
-  const lastEventText = useMemo(() => {
-    const event = mpx1.lastEvent
-    if (!event) {
-      return 'No SysEx activity yet'
-    }
-    const timestamp = typeof event.timestamp === 'number'
-      ? new Date(event.timestamp * 1000).toLocaleTimeString()
-      : new Date().toLocaleTimeString()
-    const data = event.data as Record<string, unknown> | undefined
-    const paramId = typeof data?.param_id === 'string' ? data.param_id : ''
-    const value = Number(data?.value)
-    if (paramId) {
-      return `${event.type} • ${paramId} = ${Number.isFinite(value) ? value.toFixed(2) : '-'} • ${timestamp}`
-    }
-    return `${event.type} • ${timestamp}`
-  }, [mpx1.lastEvent])
+  const ledSync   = Boolean(mpx1.state?.connected)
+  const ledMidi   = mpx1.lastEvent?.type === 'mpx1:midi_cc'
+  const ledEdit   = Boolean(selectedBlock)
+  const ledBypass = panelState === 'bypassed'
 
-  const selectedParam = useMemo(() => {
-    if (!selectedSlot) return null
-    return findParam(params, selectedSlot.paramId)
-  }, [params, selectedSlot])
+  const programNumber = formatMpx1ProgramNumber(mpx1.state?.current_program ?? 0)
+  const programName   = mpx1.state?.connected
+    ? (mpx1.state as Record<string, unknown>)?.program_name as string | undefined ?? ''
+    : ''
+
+  const displayLine1 = programName.slice(0, 16)
+  const displayLine2 = programName.length > 16 ? programName.slice(16, 32) : ''
+
+  /* ── Selected param (popover) ─────────────────────────────────────────── */
+
+  const selectedParam = useMemo(
+    () => (selectedBlock ? findParam(params, selectedBlock.paramId) : null),
+    [params, selectedBlock],
+  )
 
   const selectedValue = useMemo(() => {
     if (!selectedParam) return 0
-    const shadowValue = mpx1.shadow[selectedParam.id]
-    if (Number.isFinite(shadowValue)) return Number(shadowValue)
+    const v = shadow[selectedParam.id]
+    if (Number.isFinite(v)) return Number(v)
     return Number(selectedParam.default ?? selectedParam.range?.min ?? 0)
-  }, [mpx1.shadow, selectedParam])
+  }, [shadow, selectedParam])
 
-  useEffect(() => {
-    const svg = svgRef.current
-    if (!svg) {
-      return
+  /* ── LCD text sync ────────────────────────────────────────────────────── */
+
+  const lastEventText = useMemo(() => {
+    const ev = mpx1.lastEvent
+    if (!ev) return 'No SysEx activity yet'
+    const ts =
+      typeof ev.timestamp === 'number'
+        ? new Date(ev.timestamp * 1000).toLocaleTimeString()
+        : new Date().toLocaleTimeString()
+    const d = ev.data as Record<string, unknown> | undefined
+    const pid = typeof d?.param_id === 'string' ? d.param_id : ''
+    const val = Number(d?.value)
+    if (pid)
+      return `${ev.type} • ${pid} = ${Number.isFinite(val) ? val.toFixed(2) : '-'} • ${ts}`
+    return `${ev.type} • ${ts}`
+  }, [mpx1.lastEvent])
+
+  /* ── Popover display text ─────────────────────────────────────────────── */
+
+  const valueDisplayText = useMemo(() => {
+    if (selectedParam) {
+      const name = selectedParam.display_name ?? selectedBlock?.label ?? ''
+      return `${name.slice(0, 10)}: ${selectedValue.toFixed(2)}`
     }
+    return `P${programNumber}  ${mpx1.state?.connected ? 'ONLINE' : '--'}`
+  }, [selectedParam, selectedBlock, selectedValue, programNumber, mpx1.state?.connected])
 
-    const ledStates: Record<string, boolean> = {
-      'led-sync': Boolean(mpx1.state?.connected),
-      'led-midi': mpx1.lastEvent?.type === 'mpx1:midi_cc',
-      'led-edit': Boolean(selectedSlot),
-      'led-bypass': panelState === 'bypassed',
-    }
+  /* ── Handlers ─────────────────────────────────────────────────────────── */
 
-    Object.entries(ledStates).forEach(([ledId, active]) => {
-      const led = svg.querySelector<SVGCircleElement>(`[data-mpx1-led='${ledId}']`)
-      if (!led) return
-      led.setAttribute('fill', active ? '#34d399' : '#334155')
-      led.style.filter = active ? 'drop-shadow(0 0 5px rgba(52, 211, 153, 0.8))' : 'none'
-    })
-
-    if (lcdTextRef.current) {
-      const text = selectedParam
-        ? `${selectedParam.display_name}: ${selectedValue.toFixed(2)}`
-        : `P${formatMpx1ProgramNumber(mpx1.state?.current_program ?? 0)}  ${mpx1.state?.connected ? 'ONLINE' : 'NO DEVICE'}`
-      lcdTextRef.current.textContent = text.slice(0, 42)
-    }
-  }, [mpx1.lastEvent?.type, mpx1.state?.connected, mpx1.state?.current_program, panelState, selectedParam, selectedSlot, selectedValue])
-
-  const handleControlClick = (slot: PanelControlSlot, event: React.MouseEvent) => {
+  const handleBlockClick = (block: EffectBlock, e: React.MouseEvent) => {
     const container = containerRef.current
     if (!container) return
     const bounds = container.getBoundingClientRect()
-    setPopoverPosition({
-      x: clamp(event.clientX - bounds.left + 10, 20, bounds.width - 220),
-      y: clamp(event.clientY - bounds.top - 10, 20, bounds.height - 220),
+    setPopoverPos({
+      x: clamp(e.clientX - bounds.left + 12, 20, bounds.width - 220),
+      y: clamp(e.clientY - bounds.top + 8,   20, bounds.height - 240),
     })
-    setSelectedSlot(slot)
-    setLcdText(`EDIT • ${slot.fallbackLabel}`)
+    setSelectedBlock(block)
+    setLcdText(`EDIT  ${block.label}`)
   }
 
-  const updateSelectedValue = (value: number) => {
+  const handleValueChange = (value: number) => {
     if (!selectedParam) return
     void mpx1.setParam(selectedParam.id, value).catch((err) => {
-      console.error('Failed to update MPX1 panel control:', err)
+      console.error('[MPX1Panel] setParam failed:', err)
     })
   }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
 
   return (
     <div className={`mpx1-panel-view mpx1-panel-view--${panelState}`}>
-      <div className="mpx1-panel-wrapper" ref={containerRef}>
-        <svg
-          ref={svgRef}
-          className="mpx1-panel-svg"
-          viewBox="0 0 820 340"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-label="MPX1 front panel"
-        >
-          <defs>
-            <linearGradient id="panelFace" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#1f2937" />
-              <stop offset="100%" stopColor="#111827" />
-            </linearGradient>
-          </defs>
 
-          <rect x="6" y="10" width="808" height="320" rx="16" fill="url(#panelFace)" stroke="#475569" strokeWidth="2" />
-          <rect x="32" y="34" width="260" height="82" rx="8" fill="#111827" stroke="#334155" />
-          <rect x="40" y="44" width="244" height="62" rx="5" fill="#1f2937" stroke="#0f172a" />
-          <text ref={lcdTextRef} x="52" y="80" fill="#fbbf24" fontSize="16" fontFamily="'Space Grotesk', sans-serif">MPX1 ONLINE</text>
+      {/* ── Rack shell ─────────────────────────────────────────────────── */}
+      <div className="mpx1-rack-shell" ref={containerRef}>
 
-          <circle cx="325" cy="66" r="8" data-mpx1-led="led-sync" />
-          <circle cx="352" cy="66" r="8" data-mpx1-led="led-midi" />
-          <circle cx="379" cy="66" r="8" data-mpx1-led="led-edit" />
-          <circle cx="406" cy="66" r="8" data-mpx1-led="led-bypass" />
+        {/* Rack ears */}
+        <div className="mpx1-rack-ear mpx1-rack-ear--left" aria-hidden="true">
+          <div className="mpx1-rack-ear__hole" />
+          <div className="mpx1-rack-ear__hole" />
+          <div className="mpx1-rack-ear__hole" />
+        </div>
+        <div className="mpx1-rack-ear mpx1-rack-ear--right" aria-hidden="true">
+          <div className="mpx1-rack-ear__hole" />
+          <div className="mpx1-rack-ear__hole" />
+          <div className="mpx1-rack-ear__hole" />
+        </div>
 
-          <text x="316" y="98" fill="#94a3b8" fontSize="10">SYNC  MIDI  EDIT  BYP</text>
+        {/* ── Face plate ─────────────────────────────────────────────── */}
+        <div className="mpx1-face" role="region" aria-label="Lexicon MPX-1 front panel">
 
-          {PANEL_SLOTS.map((slot) => {
-            const param = findParam(params, slot.paramId)
-            const label = param?.panel_control || param?.display_name || slot.fallbackLabel
-            return (
-              <g key={slot.slotId}>
-                <circle cx={slot.x} cy={slot.y} r="34" fill="#0f172a" stroke="#475569" strokeWidth="1.5" />
-                <circle cx={slot.x} cy={slot.y - 18} r="4" fill="#cbd5e1" />
-                <text x={slot.x} y={slot.y + 50} textAnchor="middle" fill="#cbd5e1" fontSize="10">{label}</text>
-                <circle
-                  cx={slot.x}
-                  cy={slot.y}
-                  r="42"
-                  fill="transparent"
-                  stroke="transparent"
-                  data-mpx1-control={slot.paramId}
-                  className="mpx1-panel-hit"
-                  onClick={(event) => handleControlClick(slot, event)}
+          {/* ── Input / Output knobs ──────────────────────────────────── */}
+          <div className="mpx1-section--io">
+            <div className="mpx1-io-knob-group">
+              <div className="mpx1-io-knob-label">Input</div>
+              <div
+                className="mpx1-hw-knob mpx1-hw-knob--lg"
+                role="slider"
+                aria-label="Input level"
+                aria-valuenow={75}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                title="Input Level"
+              />
+            </div>
+            <div className="mpx1-io-knob-group">
+              <div className="mpx1-io-knob-label">Output</div>
+              <div
+                className="mpx1-hw-knob mpx1-hw-knob--lg"
+                role="slider"
+                aria-label="Output level"
+                aria-valuenow={75}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                title="Output Level"
+              />
+            </div>
+          </div>
+
+          {/* ── Display section ───────────────────────────────────────── */}
+          <div className="mpx1-section--display">
+            <div className="mpx1-display-brand">
+              <span className="mpx1-display-brand__name">MPX 1</span>
+              <span className="mpx1-display-brand__sub">Multiple Processor FX</span>
+            </div>
+
+            <div className="mpx1-display-bezel" aria-live="polite" aria-label="Program display">
+              <div className="mpx1-display__number">{programNumber}</div>
+              <div className="mpx1-display__name">
+                {displayLine1 || (mpx1.state?.connected ? '\u00a0' : 'NO DEVICE')}
+                {displayLine2 && (
+                  <>
+                    <br />
+                    {displayLine2}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* LED indicators */}
+            <div className="mpx1-led-row">
+              <div className="mpx1-led-group">
+                <div
+                  className={`mpx1-led ${ledSync ? 'mpx1-led--on' : ''}`}
+                  title="Sync"
                 />
-              </g>
-            )
-          })}
+                <span className="mpx1-led-label">SYNC</span>
+              </div>
+              <div className="mpx1-led-group">
+                <div
+                  className={`mpx1-led mpx1-led--amber ${ledMidi ? 'mpx1-led--on' : ''}`}
+                  title="MIDI activity"
+                />
+                <span className="mpx1-led-label">MIDI</span>
+              </div>
+              <div className="mpx1-led-group">
+                <div
+                  className={`mpx1-led ${ledEdit ? 'mpx1-led--on' : ''}`}
+                  title="Edit mode"
+                />
+                <span className="mpx1-led-label">EDIT</span>
+              </div>
+              <div className="mpx1-led-group">
+                <div
+                  className={`mpx1-led mpx1-led--amber ${ledBypass ? 'mpx1-led--on' : ''}`}
+                  title="Bypass active"
+                />
+                <span className="mpx1-led-label">BYP</span>
+              </div>
+            </div>
+          </div>
 
-          <rect x="30" y="286" width="760" height="26" rx="6" fill="#0f172a" stroke="#334155" />
-          <text x="44" y="304" fill="#64748b" fontSize="10">LEXICON MPX1 • MAP2 WEB PANEL</text>
-        </svg>
+          {/* ── Effect block buttons ──────────────────────────────────── */}
+          <div className="mpx1-section--blocks">
+            <div className="mpx1-blocks-label">Effect Blocks</div>
+            <div className="mpx1-blocks-row">
+              {EFFECT_BLOCKS.map((block) => {
+                const isBypassed = bypassedSlots.has(block.slotId)
+                const isSelected = selectedBlock?.slotId === block.slotId
+                return (
+                  <button
+                    key={block.slotId}
+                    type="button"
+                    className={[
+                      'mpx1-block-btn',
+                      isSelected  ? 'mpx1-block-btn--selected'  : '',
+                      isBypassed  ? 'mpx1-block-btn--bypassed'  : '',
+                    ].join(' ').trim()}
+                    onClick={(e) => handleBlockClick(block, e)}
+                    aria-pressed={isSelected}
+                    aria-label={`${block.label} effect block${isBypassed ? ' (bypassed)' : ''}`}
+                    title={`${block.label} – click to edit`}
+                  >
+                    <div className="mpx1-block-btn__bypass" aria-hidden="true" />
+                    <div className="mpx1-block-btn__led"    aria-hidden="true" />
+                    <span className="mpx1-block-btn__name">{block.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-        {panelState === 'offline' && <div className="mpx1-panel-overlay mpx1-panel-overlay--offline">NO DEVICE</div>}
-        {panelState === 'bypassed' && <div className="mpx1-panel-overlay mpx1-panel-overlay--bypassed">BYPASS ACTIVE</div>}
+          {/* ── Function buttons (All, A/B, Tap) ─────────────────────── */}
+          <div className="mpx1-section--fn">
+            <div className="mpx1-fn-row">
+              <button type="button" className="mpx1-fn-btn" title="Compare A/B">
+                <span className="mpx1-fn-btn__label">A/B</span>
+              </button>
+              <button type="button" className="mpx1-fn-btn" title="All bypasses">
+                <span className="mpx1-fn-btn__label">ALL</span>
+              </button>
+            </div>
+            <div className="mpx1-fn-row">
+              <button type="button" className="mpx1-fn-btn" title="Tap tempo">
+                <span className="mpx1-fn-btn__label">TAP</span>
+              </button>
+              <button type="button" className="mpx1-fn-btn" title="System settings">
+                <span className="mpx1-fn-btn__label">SYS</span>
+              </button>
+            </div>
+          </div>
 
-        {selectedSlot && selectedParam && (
+          {/* ── Value encoder ─────────────────────────────────────────── */}
+          <div className="mpx1-section--value">
+            <div className="mpx1-value-display" aria-live="polite">
+              <div className="mpx1-value-display__text">{valueDisplayText}</div>
+            </div>
+            <div
+              className="mpx1-hw-knob"
+              role="slider"
+              aria-label="Value encoder"
+              aria-valuenow={selectedValue}
+              aria-valuemin={0}
+              aria-valuemax={127}
+              title="Value"
+            />
+            <div className="mpx1-io-knob-label" style={{ fontSize: 7 }}>VALUE</div>
+            <button type="button" className="mpx1-fn-btn" title="Edit / Enter">
+              <span className="mpx1-fn-btn__label">EDIT</span>
+            </button>
+          </div>
+
+          {/* ── Navigation (< >) + Power ──────────────────────────────── */}
+          <div className="mpx1-section--nav">
+            <div className="mpx1-nav-row">
+              <button
+                type="button"
+                className="mpx1-nav-btn"
+                aria-label="Previous program"
+                title="Previous program"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="mpx1-nav-btn"
+                aria-label="Next program"
+                title="Next program"
+              >
+                ›
+              </button>
+            </div>
+            <div className="mpx1-logo-row">
+              <span className="mpx1-logo">lexicon</span>
+              <div
+                className={`mpx1-power-led ${mpx1.state?.connected ? 'mpx1-power-led--on' : ''}`}
+                title={mpx1.state?.connected ? 'Device connected' : 'Device offline'}
+                aria-label={mpx1.state?.connected ? 'Power on' : 'Power off'}
+              />
+            </div>
+          </div>
+
+        </div>{/* /face */}
+
+        {/* ── State overlays ──────────────────────────────────────────── */}
+        {panelState === 'offline' && (
+          <div className="mpx1-panel-overlay mpx1-panel-overlay--offline">NO DEVICE</div>
+        )}
+        {panelState === 'bypassed' && (
+          <div className="mpx1-panel-overlay mpx1-panel-overlay--bypassed">BYPASS ACTIVE</div>
+        )}
+
+        {/* ── Parameter popover ───────────────────────────────────────── */}
+        {selectedBlock && selectedParam && (
           <div
             className="mpx1-panel-popover"
-            style={{ left: popoverPosition.x, top: popoverPosition.y }}
+            style={{ left: popoverPos.x, top: popoverPos.y }}
+            role="dialog"
+            aria-label={`Edit ${selectedParam.display_name}`}
           >
-            <div className="mpx1-panel-popover__title">{selectedParam.display_name}</div>
+            <div className="mpx1-panel-popover__title">
+              {selectedParam.display_name}
+            </div>
             <MPX1Knob
               label={selectedParam.units || 'value'}
               value={selectedValue}
               min={Number(selectedParam.range?.min ?? 0)}
               max={Number(selectedParam.range?.max ?? 127)}
-              step={Math.max(0.01, (Number(selectedParam.range?.max ?? 127) - Number(selectedParam.range?.min ?? 0)) / 200)}
-              onChange={updateSelectedValue}
+              step={Math.max(
+                0.01,
+                (Number(selectedParam.range?.max ?? 127) -
+                  Number(selectedParam.range?.min ?? 0)) /
+                  200,
+              )}
+              onChange={handleValueChange}
             />
-            <button type="button" onClick={() => setSelectedSlot(null)}>Close</button>
+            <button
+              type="button"
+              className="mpx1-panel-popover__close"
+              onClick={() => {
+                setSelectedBlock(null)
+                setLcdText('')
+              }}
+            >
+              Close
+            </button>
           </div>
         )}
+
+      </div>{/* /rack-shell */}
+
+      {/* ── Activity log ────────────────────────────────────────────────── */}
+      <div className="mpx1-panel-activity" aria-live="polite">
+        {lastEventText}
       </div>
 
-      <div className="mpx1-panel-activity">{lastEventText}</div>
     </div>
   )
 }
