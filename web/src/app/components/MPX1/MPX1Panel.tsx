@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import type { MPX1RegistryParam } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
 import { MPX1Knob } from './MPX1Knob'
+import { formatMpx1ProgramNumber } from './programNumber'
 import './MPX1Panel.css'
 
 interface PanelControlSlot {
@@ -107,7 +108,7 @@ export function MPX1Panel() {
     if (lcdTextRef.current) {
       const text = selectedParam
         ? `${selectedParam.display_name}: ${selectedValue.toFixed(2)}`
-        : `P${(mpx1.state?.current_program ?? 0).toString().padStart(3, '0')}  ${mpx1.state?.connected ? 'ONLINE' : 'NO DEVICE'}`
+        : `P${formatMpx1ProgramNumber(mpx1.state?.current_program ?? 0)}  ${mpx1.state?.connected ? 'ONLINE' : 'NO DEVICE'}`
       lcdTextRef.current.textContent = text.slice(0, 42)
     }
   }, [mpx1.lastEvent?.type, mpx1.state?.connected, mpx1.state?.current_program, panelState, selectedParam, selectedSlot, selectedValue])

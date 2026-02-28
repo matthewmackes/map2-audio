@@ -1,0 +1,21 @@
+{
+  "timestamp_utc": "2026-02-27T22:20:06.957676+00:00",
+  "duration_sec": 75,
+  "events_count": 8,
+  "ws_counts": {
+    "panel_status": 0,
+    "param_rx": 0,
+    "program_changed": 0,
+    "heartbeat": 7
+  },
+  "diag_count_before": 0,
+  "diag_count_after": 0,
+  "diag_counts_recent": {
+    "rx_sysex_panel": 0,
+    "rx_sysex": 0,
+    "rx_program_sysex": 0,
+    "rx_sysex_unknown": 0
+  },
+  "unknown_hex_samples": [],
+  "panel_samples": []
+}

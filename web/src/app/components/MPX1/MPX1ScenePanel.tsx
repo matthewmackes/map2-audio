@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mpx1Api, type MPX1Scene, type MPX1MorphRequest } from '../../../map2/mpx1Api'
+import { formatMpx1ProgramLabel } from './programNumber'
 import './MPX1ScenePanel.css'
 
 const MORPH_CURVES = ['linear', 'ease_in', 'ease_out', 's_curve'] as const
@@ -66,10 +67,10 @@ function SceneBtn({ scene, isActive, onRecall, onPress, onRelease, onDelete }: S
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
-      title={`${scene.name} — P${scene.program.toString().padStart(3, '0')}\nTap to recall, hold for momentary`}
+      title={`${scene.name} — ${formatMpx1ProgramLabel(scene.program, 'P')}\nTap to recall, hold for momentary`}
     >
       <span>{scene.name}</span>
-      <span className="mpx1-scene-btn__program">P{scene.program.toString().padStart(3, '0')}</span>
+      <span className="mpx1-scene-btn__program">{formatMpx1ProgramLabel(scene.program, 'P')}</span>
       {scene.tags.length > 0 && (
         <span className="mpx1-scene-btn__tags">
           {scene.tags.slice(0, 3).map((tag) => (

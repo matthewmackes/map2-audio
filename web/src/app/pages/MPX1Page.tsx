@@ -1,12 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Books, MusicNotes, Pulse, Sliders, SquaresFour, Waveform, Play } from '@phosphor-icons/react'
+import { Books, GitBranch, MusicNotes, Pulse, Sliders, SquaresFour, Waveform, Play } from '@phosphor-icons/react'
 
 import { MPX1StatusBar } from '../components/MPX1/MPX1StatusBar'
+import { formatMpx1ProgramName, formatMpx1ProgramNumber } from '../components/MPX1/programNumber'
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../map2/mpx1Api'
 import '../components/MPX1/MPX1PageShell.css'
 
-type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'perform' | 'diag'
+type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'perform' | 'diag' | 'flow'
 type BypassBlock = 'REV' | 'PIT' | 'DLY' | 'CHO' | 'EQ' | 'MOD'
 
 interface SidebarSection {
@@ -25,6 +26,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
   { id: 'library', to: '/mpx1/library', label: 'Library', color: '#a78bfa', icon: Books },
   { id: 'perform', to: '/mpx1/perform', label: 'Perform', color: '#f97316', icon: Play },
   { id: 'diag', to: '/mpx1/diag', label: 'Diagnostics', color: '#14b8a6', icon: Pulse },
+  { id: 'flow', to: '/mpx1/flow', label: 'Signal Flow', color: '#818cf8', icon: GitBranch },
 ]
 
 const DEFAULT_BYPASS_STATE: Record<BypassBlock, boolean> = {
@@ -89,7 +91,7 @@ export function MPX1Page() {
 
   const currentProgram = mpx1.state?.current_program ?? 0
   const currentProgramEntry = mpx1.programs.find((program) => program.program === currentProgram)
-  const currentProgramName = currentProgramEntry?.name ?? `Program ${Math.max(0, currentProgram).toString().padStart(3, '0')}`
+  const currentProgramName = formatMpx1ProgramName(currentProgram, currentProgramEntry?.name)
 
   const maxProgramSlots = Math.max(1, mpx1.registry?.program_management?.program_slots ?? 250)
 
@@ -110,7 +112,7 @@ export function MPX1Page() {
 
   useEffect(() => {
     const connectivity = mpx1.state?.connected ? 'ONLINE' : 'OFFLINE'
-    setLcdText(`PROGRAM ${currentProgram.toString().padStart(3, '0')} • ${currentProgramName} • ${connectivity}`)
+    setLcdText(`PROGRAM ${formatMpx1ProgramNumber(currentProgram)} • ${currentProgramName} • ${connectivity}`)
   }, [currentProgram, currentProgramName, mpx1.state?.connected])
 
   const handleProgramStep = useCallback((delta: number) => {

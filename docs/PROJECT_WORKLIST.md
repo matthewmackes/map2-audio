@@ -469,7 +469,7 @@ Description:
 - Required outputs: Parameter registry JSON, Python service + FastAPI routes, TypeScript client + WS hook, AppShell nav integration (icon + mega-menu), MPX1Page shell with sidebar + status bar, six sub-views (panel/editor/midi-map/matrix/library/diag), CSS design token system, 50 curated preset library, tests.
 - Reference: Full design spec in conversation history (2026-02-24). Implementation plan: Option 1 (MAP2 Native) expanded to top-nav full-menu architecture.
 Assigned to: Codex + Lab
-Last updated: 2026-02-27 16:16 - Codex
+Last updated: 2026-02-27 18:18 - Codex
 - Completion notes:
   - What was done: Completed full software stack for MPX1 top-nav integration and all major views/services (panel/editor/midi-map/matrix/library/diag), plus deep registry expansion (`601` params, `coverage.status=complete`) and end-to-end API/WebSocket contracts.
   - Validation evidence: `python3 tests/validate_mpx1_registry.py` PASS; `pytest -q tests/validate_mpx1_registry.py tests/test_mpx1.py` PASS (`16 passed`); `npm --prefix web run typecheck` PASS.
@@ -668,7 +668,7 @@ Description:
 - Required outputs: web/src/app/pages/MPX1DiagView.tsx, docs/mpx1/CONNECT.md, docs/mpx1/SYSEX_NOTES.md, hardware validation notes
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-02-27 16:16 - Codex
+Last updated: 2026-02-27 17:25 - Codex
 - Completion notes:
   - What was done: Implemented `/mpx1/diag` diagnostics view with MIDI/SysEx traffic ring buffer, latency metrics (min/avg/max/p99), connection health panel, reconnect and force-resync controls, and dump progress tracking. Added backend diagnostics endpoints (`/api/mpx1/diagnostics`, `/api/mpx1/diagnostics/ping`) with service-level traffic capture and packet error tracking. Added onboarding/implementation docs: `docs/mpx1/CONNECT.md` and `docs/mpx1/SYSEX_NOTES.md`.
   - Key findings: Software diagnostics stack is complete and test-covered for API/UI paths; final acceptance criteria requiring physical hardware latency/zipper verification cannot be executed in this non-HIL environment.
@@ -677,12 +677,13 @@ Last updated: 2026-02-27 16:16 - Codex
 - Progress notes:
   - Hardware transport is now connected live via `/api/mpx1/midi/connect` (`input_port_index=1`, `output_port_index=1`, `UA-1000 MIDI 24:0`), and health confirms `connected=true`.
   - Runtime hardening added: `/api/mpx1/midi/ports` now fails closed with structured `probe_errors` payload instead of HTTP 500 when ALSA sequencer probe fails (`tests/test_mpx1.py` updated; `34 passed`).
-  - Latest live rerun (`120` updates @ `40ms` + `45s` inbound capture) passed no-zipper proxy (`packet_error_delta=0`) but observed `0` inbound `mpx1:panel_status` and `0` `mpx1:param_rx` events, so `<150ms` hardware knob-to-UI latency remains unscored.
-  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-15s.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.md`.
+  - Post-reboot rerun (pass5, `75s`) still fails the inbound gate: websocket saw only heartbeat/program updates (`program_changed=2`), with `0` `mpx1:panel_status` and `0` `mpx1:param_rx`.
+  - Raw ALSA verification during pass5 captured only one periodic program-status SysEx (`F0 06 09 00 01 02 ... F7`) and no knob-control events; this confirms front-panel control data is still not being transmitted to host.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation-pass3.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation-pass3.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation-pass4.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation-pass4.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation-pass5.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-hardware-validation-pass5.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-live-capture-pass2.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-15s.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-pass2.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-pass3.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-pass4.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-aseqdump-pass5.log`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-inbound-sysex-variant-snapshot.md`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.json`, `docs/fit-for-purpose-evidence/20260227/mpx1-t022-subk-program-status-decode-validation.md`.
 - Blocked notes:
-  - Requires inbound control telemetry from physical MPX output (operator knob movement plus confirmed device MIDI OUT path) to verify `<150ms` knob-to-UI acceptance gate.
+  - Requires MPX front-panel MIDI transmit mode to emit control data (not clock-only) so inbound control telemetry is available for `<150ms` knob-to-UI scoring.
 Assigned to: Codex
-Last updated: 2026-02-27 16:16 - Codex
+Last updated: 2026-02-27 18:18 - Codex
 
 ID: T023
 Status: [✓] Done
@@ -1061,6 +1062,25 @@ Last updated: 2026-02-27 03:30 - Codex
   - Files/links produced: `app/database.py`, `app/models.py`, `app/routes/special_settings.py`, `app/services/special_settings_raft.py`, `web/src/app/data/advancedMenuItems.ts`, `web/src/app/hooks/useSpecialSettings.tsx`, `web/src/app/layout/AppShell.tsx`, `web/src/index.css`, `tests/test_special_settings_routes.py`.
   - Validation: `npm --prefix web run typecheck` PASS; `pytest -q tests/test_special_settings_routes.py` PASS (`3 passed`).
   - Suggested next tasks: T013, T030, T022-subK
+
+ID: T041
+Status: [✓] Done
+Title: Align MPX1 GUI program numbering with hardware-facing 1-based labels
+Description:
+- Goal / acceptance criteria: Ensure MPX1 program numbers shown in GUI controls (status bar, mega menu, page LCD text, panel LCD, librarian, scene panel, and AppShell header labels) use 1-based display numbering so selecting/displaying program `100` in GUI aligns with MPX1 front-panel expectation. Preserve existing API/internal transport semantics to avoid backend regressions.
+- Why it matters: Operators reported GUI-driven program control landing one step off versus hardware-facing numbering, causing selection mistakes during live use.
+- Dependencies: T022-subE, T022-subI
+- Estimated effort: Low
+- Required outputs: Shared program-number formatter utility, MPX1 UI wiring updates across affected views, canonical worklist update, and frontend typecheck validation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-02-27 19:20 - Codex
+- Completion notes:
+  - What was done: Added a shared MPX1 program formatter utility (`formatMpx1ProgramNumber`, `formatMpx1ProgramLabel`, `formatMpx1ProgramName`) and applied it across AppShell, MPX1 page/status bar, mega-menu, panel, scene panel, and librarian displays.
+  - What was done: Normalized fallback/default `Program NNN` naming to show 1-based labels while leaving custom program names unchanged; extended librarian search to match displayed (1-based) program numbers.
+  - Files/links produced: `web/src/app/components/MPX1/programNumber.ts`, `web/src/app/layout/AppShell.tsx`, `web/src/app/pages/MPX1Page.tsx`, `web/src/app/components/MPX1/MPX1StatusBar.tsx`, `web/src/app/components/MPX1/MPX1MegaMenu.tsx`, `web/src/app/components/MPX1/MPX1Panel.tsx`, `web/src/app/components/MPX1/MPX1ScenePanel.tsx`, `web/src/app/components/MPX1/MPX1Librarian.tsx`.
+  - Validation: `npm --prefix web run typecheck` PASS.
+  - Suggested next tasks: T022-subK, T030, T013
 
 ## Backlog
 

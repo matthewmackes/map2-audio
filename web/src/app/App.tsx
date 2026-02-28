@@ -48,6 +48,7 @@ const MPX1MatrixView        = lazy(() => import('./pages/MPX1MatrixView').then(m
 const MPX1LibraryView       = lazy(() => import('./pages/MPX1LibraryView').then(m => ({ default: m.MPX1LibraryView })))
 const MPX1DiagView          = lazy(() => import('./pages/MPX1DiagView').then(m => ({ default: m.MPX1DiagView })))
 const MPX1PerformView       = lazy(() => import('./pages/MPX1PerformView').then(m => ({ default: m.MPX1PerformView })))
+const MPX1FlowView          = lazy(() => import('./pages/MPX1FlowView').then(m => ({ default: m.MPX1FlowView })))
 
 /** Lightweight loading fallback — pure CSS, no MUI dependency */
 function PageLoader() {
@@ -151,6 +152,7 @@ export function App() {
                     <Route path="library" element={<MPX1LibraryView />} />
                     <Route path="perform" element={<MPX1PerformView />} />
                     <Route path="diag" element={<MPX1DiagView />} />
+                    <Route path="flow" element={<MPX1FlowView />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

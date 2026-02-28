@@ -6,6 +6,7 @@ import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
 import { MPX1MegaMenu } from '../components/MPX1/MPX1MegaMenu'
+import { formatMpx1ProgramName } from '../components/MPX1/programNumber'
 import { mpx1Api, useMPX1State } from '../../map2/mpx1Api'
 import {
   advancedMenuItems,
@@ -112,11 +113,6 @@ function normalizeMidiValue(value: number, max = 127): number {
   return clamp01(value / max)
 }
 
-function formatProgramName(program: number, fallback?: string): string {
-  if (fallback && fallback.trim().length > 0) return fallback
-  return `Program ${Math.max(0, program).toString().padStart(3, '0')}`
-}
-
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const [navOpen, setNavOpen] = useState(false)
@@ -140,7 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const currentProgram = mpx1State?.current_program ?? 0
   const currentProgramEntry = mpx1Programs.find((program) => program.program === currentProgram)
-  const currentProgramName = formatProgramName(currentProgram, currentProgramEntry?.name)
+  const currentProgramName = formatMpx1ProgramName(currentProgram, currentProgramEntry?.name)
   const mixMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_mix'] ?? mpx1Shadow['program.mix'] ?? 0))
   const levelMeter = normalizeMidiValue(Number(mpx1Shadow['program.master_level'] ?? mpx1Shadow['program.level'] ?? 0))
 

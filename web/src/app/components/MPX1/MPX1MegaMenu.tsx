@@ -4,6 +4,7 @@ import {
   Books,
   CaretLeft,
   CaretRight,
+  GitBranch,
   Lightning,
   MusicNotes,
   Power,
@@ -13,9 +14,10 @@ import {
   Waveform,
 } from '@phosphor-icons/react'
 
+import { formatMpx1ProgramNumber } from './programNumber'
 import './MPX1MegaMenu.css'
 
-type Mpx1TileId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'diag'
+type Mpx1TileId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'diag' | 'flow'
 
 interface Mpx1Tile {
   id: Mpx1TileId
@@ -67,6 +69,13 @@ const TILES: Mpx1Tile[] = [
     label: 'Diagnostics',
     description: 'SysEx traffic + health',
     icon: Pulse,
+  },
+  {
+    id: 'flow',
+    to: '/mpx1/flow',
+    label: 'Signal Flow',
+    description: 'WYSIWYG routing canvas',
+    icon: GitBranch,
   },
 ]
 
@@ -123,7 +132,7 @@ export function MPX1MegaMenu({
             <CaretLeft size={14} weight="bold" aria-hidden />
           </button>
           <div className="mpx1-program-meta">
-            <div className="mpx1-program-number">P{Math.max(0, currentProgram).toString().padStart(3, '0')}</div>
+            <div className="mpx1-program-number">P{formatMpx1ProgramNumber(currentProgram)}</div>
             <div className="mpx1-program-name" title={currentProgramName}>{currentProgramName}</div>
           </div>
           <button

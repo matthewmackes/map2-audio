@@ -1,6 +1,8 @@
 import React from 'react'
 import { CaretLeft, CaretRight, Lightning } from '@phosphor-icons/react'
 
+import { formatMpx1ProgramNumber } from './programNumber'
+
 type BypassBlock = 'REV' | 'PIT' | 'DLY' | 'CHO' | 'EQ' | 'MOD'
 
 interface MPX1StatusBarProps {
@@ -57,7 +59,7 @@ export function MPX1StatusBar({
         >
           <CaretLeft size={12} weight="bold" aria-hidden />
         </button>
-        <span className="mpx1-statusbar__prog-number">{programNumber.toString().padStart(3, '0')}</span>
+        <span className="mpx1-statusbar__prog-number">{formatMpx1ProgramNumber(programNumber)}</span>
         <span className="mpx1-statusbar__prog-name" title={programName}>{programName}</span>
         <button
           type="button"

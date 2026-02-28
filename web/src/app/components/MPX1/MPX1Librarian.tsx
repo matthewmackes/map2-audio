@@ -15,6 +15,7 @@ import {
   type MPX1Program,
 } from '../../../map2/mpx1Api'
 import { useMPX1PageContext } from '../../pages/MPX1Page'
+import { formatMpx1ProgramName, formatMpx1ProgramNumber } from './programNumber'
 import './MPX1Librarian.css'
 
 const TAG_FILTERS = ['all', 'reverb', 'delay', 'chorus', 'pitch', 'mod'] as const
@@ -201,6 +202,7 @@ export function MPX1Librarian() {
       return (
         String(entry.name).toLowerCase().includes(query)
         || String(entry.program).includes(query)
+        || formatMpx1ProgramNumber(entry.program).includes(query)
         || (entry.tags ?? []).some((tag) => String(tag).toLowerCase().includes(query))
       )
     })
@@ -246,7 +248,7 @@ export function MPX1Librarian() {
     const targetProgram = nextSlot === 'A' ? slotA : slotB
     setLastCompared(nextSlot)
     await mpx1.setProgram(targetProgram)
-    setLcdText(`COMPARE ${nextSlot} • PROGRAM ${targetProgram.toString().padStart(3, '0')}`)
+    setLcdText(`COMPARE ${nextSlot} • PROGRAM ${formatMpx1ProgramNumber(targetProgram)}`)
   }
 
   const handleStartDump = async () => {
@@ -357,10 +359,10 @@ export function MPX1Librarian() {
 
       <section className="mpx1-library__ab-strip">
         <button type="button" className={slotA != null ? 'is-set' : ''} onClick={() => slotA != null && void mpx1.setProgram(slotA)}>
-          A: {slotA != null ? slotA.toString().padStart(3, '0') : '---'}
+          A: {slotA != null ? formatMpx1ProgramNumber(slotA) : '---'}
         </button>
         <button type="button" className={slotB != null ? 'is-set' : ''} onClick={() => slotB != null && void mpx1.setProgram(slotB)}>
-          B: {slotB != null ? slotB.toString().padStart(3, '0') : '---'}
+          B: {slotB != null ? formatMpx1ProgramNumber(slotB) : '---'}
         </button>
         <button type="button" onClick={() => void handleCompareToggle()} disabled={slotA == null || slotB == null}>
           Compare A↔B
@@ -403,8 +405,8 @@ export function MPX1Librarian() {
                       onChange={() => toggleSelection(program)}
                     />
                   </td>
-                  <td>{program.toString().padStart(3, '0')}</td>
-                  <td>{entry.name}</td>
+                  <td>{formatMpx1ProgramNumber(program)}</td>
+                  <td>{formatMpx1ProgramName(program, String(entry.name ?? ''))}</td>
                   <td>{String(entry.type ?? 'general')}</td>
                   <td>{(entry.tags ?? []).join(', ')}</td>
                   <td>{renderStars(Number(entry.rating ?? 0))}</td>
