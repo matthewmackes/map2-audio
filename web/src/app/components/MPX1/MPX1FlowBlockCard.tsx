@@ -1,12 +1,12 @@
 import React from 'react'
 
-import type { BlockRoutingState } from './mpx1FlowRouting'
+import type { BlockRoutingState, EffectBlockId } from './mpx1FlowRouting'
 
 interface MPX1FlowBlockCardProps {
   block: BlockRoutingState
   selected: boolean
   level?: number   // 0..1 normalized level for the meter strip
-  onSelect: (blockIndex: number) => void
+  onSelect: (effectType: EffectBlockId) => void
   onBypassToggle: (blockIndex: number, shouldBypass: boolean) => void
 }
 
@@ -19,7 +19,7 @@ export const MPX1FlowBlockCard = React.forwardRef<HTMLDivElement, MPX1FlowBlockC
         ref={ref}
         className={`mpx1-flow-card${selected ? ' is-selected' : ''}${block.bypassed ? ' is-bypassed' : ''}`}
         style={{ '--block-accent': block.color } as React.CSSProperties}
-        onClick={() => onSelect(block.blockIndex)}
+        onClick={() => onSelect(block.effectType)}
         role="button"
         tabIndex={0}
         aria-label={`${block.label} — ${block.algorithmName}${block.bypassed ? ', bypassed' : ''}`}
@@ -27,7 +27,7 @@ export const MPX1FlowBlockCard = React.forwardRef<HTMLDivElement, MPX1FlowBlockC
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            onSelect(block.blockIndex)
+            onSelect(block.effectType)
           }
         }}
       >

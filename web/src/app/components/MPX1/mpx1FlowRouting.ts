@@ -100,11 +100,15 @@ function clamp(value: number, min: number, max: number): number {
 /** Derive live block states from shadow + registry.
  *  @param effectOrder — ordered list of effect types (default = DEFAULT_EFFECT_ORDER).
  *    Position 0 in the array = chain position 1 (first processed).
+ *  @param routingOverrides — local-state routing modes keyed by chain position (1-6).
+ *    Takes precedence over shadow values so UI changes are immediately reflected
+ *    without waiting for a hardware echo of non-SysEx routing params.
  */
 export function computeBlockStates(
   shadow: Record<string, number>,
   registry: MPX1Registry | null,
   effectOrder: readonly EffectBlockId[] = DEFAULT_EFFECT_ORDER,
+  routingOverrides: Readonly<Record<number, number>> = {},
 ): BlockRoutingState[] {
   const paramsById = new Map<string, MPX1RegistryParam>()
   for (const param of registry?.params ?? []) {
@@ -125,8 +129,9 @@ export function computeBlockStates(
 
     const algorithmName = `Algorithm ${algorithmIndex.toString().padStart(2, '0')}`
 
-    // Routing state — gracefully falls back to Upper (0) if not in shadow
-    const routingMode = shadow[`routing.block_${blockIndex}.routing`] ?? 0
+    // Routing state: local overrides take precedence over shadow (routing params
+    // are not real SysEx echoed values, so shadow reads would always be 0).
+    const routingMode = routingOverrides[blockIndex] ?? shadow[`routing.block_${blockIndex}.routing`] ?? 0
     const pathType = shadow[`routing.block_${blockIndex}.path_type`] ?? 0
 
     // Bypass detection: look for {effectType}.alg_NN.bypass param

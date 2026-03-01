@@ -60,7 +60,8 @@ const ZOOM_STEP = 0.15
 export function MPX1FlowCanvas() {
   const { mpx1, setLcdText } = useMPX1PageContext()
 
-  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null)
+  // Selection tracked by effectType so it survives block reordering
+  const [selectedEffectId, setSelectedEffectId] = useState<EffectBlockId | null>(null)
   const [viewTransform, setViewTransform] = useState<ViewTransform>({
     zoom: 1,
     panX: 0,
@@ -69,6 +70,9 @@ export function MPX1FlowCanvas() {
   const [blockLevels, setBlockLevels] = useState<Record<number, number>>({})
   // Effect order — user can reorder the 6 blocks; defaults to factory order
   const [effectOrder, setEffectOrder] = useState<EffectBlockId[]>([...DEFAULT_EFFECT_ORDER])
+  // Routing modes keyed by chain position (1-6); local state so changes are
+  // immediately reflected without relying on hardware SysEx echo
+  const [localRoutingModes, setLocalRoutingModes] = useState<Record<number, number>>({})
   const [showOrderPanel, setShowOrderPanel] = useState(false)
   const undoRedo = useFlowUndoRedo(50)
 
@@ -95,8 +99,8 @@ export function MPX1FlowCanvas() {
   // ── Derived data from shadow state ────────────────────────────────────────
 
   const blockStates = useMemo(
-    () => computeBlockStates(mpx1.shadow, mpx1.registry, effectOrder),
-    [mpx1.shadow, mpx1.registry, effectOrder],
+    () => computeBlockStates(mpx1.shadow, mpx1.registry, effectOrder, localRoutingModes),
+    [mpx1.shadow, mpx1.registry, effectOrder, localRoutingModes],
   )
 
   const layout = useMemo(() => computeFlowLayout(blockStates), [blockStates])
@@ -137,10 +141,10 @@ export function MPX1FlowCanvas() {
 
   const selectedBlock = useMemo(
     () =>
-      selectedBlockIndex !== null
-        ? (blockStates.find((b) => b.blockIndex === selectedBlockIndex) ?? null)
+      selectedEffectId !== null
+        ? (blockStates.find((b) => b.effectType === selectedEffectId) ?? null)
         : null,
-    [selectedBlockIndex, blockStates],
+    [selectedEffectId, blockStates],
   )
 
   // ── Live metering ─────────────────────────────────────────────────────────
@@ -296,20 +300,18 @@ export function MPX1FlowCanvas() {
     }
   }, [mpx1, setLcdText, undoRedo])
 
-  // ── Routing mode change ───────────────────────────────────────────────────
+  // ── Routing mode change (local state only — routing.block_N is not a real SysEx param) ──
 
   const handleRoutingModeChange = useCallback(
     (blockIndex: number, newMode: number) => {
-      const paramId = `routing.block_${blockIndex}.routing`
-      const prevValue = mpx1.shadow[paramId] ?? 0
-      undoRedo.push(paramId, prevValue, newMode)
-      void mpx1.setParam(paramId, newMode).catch((err) => {
-        console.error('[MPX1Flow] routing mode change:', err)
+      setLocalRoutingModes((prev) => {
+        if (prev[blockIndex] === newMode) return prev
+        return { ...prev, [blockIndex]: newMode }
       })
       const modeLabel = ROUTING_MODES.find((m) => m.value === newMode)?.label ?? String(newMode)
       setLcdText(`Block ${blockIndex}: ${modeLabel}`)
     },
-    [mpx1, setLcdText, undoRedo],
+    [setLcdText],
   )
 
   // ── Effect order helpers ───────────────────────────────────────────────────
@@ -462,14 +464,14 @@ export function MPX1FlowCanvas() {
 
               {upperBlocks.map((block) => (
                 <MPX1FlowBlockCard
-                  key={block.blockIndex}
+                  key={block.effectType}
                   ref={
                     blockRefsMap.current[`block_${block.blockIndex}`] as React.RefObject<HTMLDivElement>
                   }
                   block={block}
-                  selected={selectedBlockIndex === block.blockIndex}
+                  selected={selectedEffectId === block.effectType}
                   level={blockLevels[block.blockIndex] ?? 0}
-                  onSelect={setSelectedBlockIndex}
+                  onSelect={setSelectedEffectId}
                   onBypassToggle={handleBypassToggle}
                 />
               ))}
@@ -504,14 +506,14 @@ export function MPX1FlowCanvas() {
                 )}
                 {lowerBlocks.map((block) => (
                   <MPX1FlowBlockCard
-                    key={block.blockIndex}
+                    key={block.effectType}
                     ref={
                       blockRefsMap.current[`block_${block.blockIndex}`] as React.RefObject<HTMLDivElement>
                     }
                     block={block}
-                    selected={selectedBlockIndex === block.blockIndex}
+                    selected={selectedEffectId === block.effectType}
                     level={blockLevels[block.blockIndex] ?? 0}
-                    onSelect={setSelectedBlockIndex}
+                    onSelect={setSelectedEffectId}
                     onBypassToggle={handleBypassToggle}
                   />
                 ))}
@@ -553,7 +555,7 @@ export function MPX1FlowCanvas() {
             selectedBlock={selectedBlock}
             mpx1={mpx1}
             onParamChange={handleSidebarParamChange}
-            onClose={() => setSelectedBlockIndex(null)}
+            onClose={() => setSelectedEffectId(null)}
             setLcdText={setLcdText}
           />
         </div>
