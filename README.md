@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**561** Python | **821** TypeScript | **255** C++/H | **103** Docs | **340** total commits | **0** stars | **0** forks | **0** open issues
+**561** Python | **821** TypeScript | **255** C++/H | **103** Docs | **341** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,6 +200,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`afd1ea29`](https://github.com/matthewmackes/map2-audio/commit/afd1ea29394443b03196e619dda6f71c3fb18400) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-06 |
 | [`acd532d4`](https://github.com/matthewmackes/map2-audio/commit/acd532d4e9363e57859f8019bc9a78bce42ca6d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-05 |
 | [`3d835db4`](https://github.com/matthewmackes/map2-audio/commit/3d835db4607bb8c002017129b4719397e200a88a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-04 |
 | [`ff54c5c0`](https://github.com/matthewmackes/map2-audio/commit/ff54c5c0ac5ce824a35d3176172ff4ef7f88b518) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-03 |
@@ -207,7 +208,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`e5a36977`](https://github.com/matthewmackes/map2-audio/commit/e5a36977a21b9be8801cf279349da03b3ed2e6b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-01 |
 | [`2719f1e1`](https://github.com/matthewmackes/map2-audio/commit/2719f1e18e35b1d841c6c90933384c3cffb141c8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-28 |
 | [`6e5592b3`](https://github.com/matthewmackes/map2-audio/commit/6e5592b33298cf144360217083d5f1d79b9e6dd1) | Delete .tmp/xdg-state/sync-gnome directory | Matthew Mackes | 2026-02-27 |
-| [`baf375f4`](https://github.com/matthewmackes/map2-audio/commit/baf375f4ca5d78ba16b421101126f723ba63cfbc) | Delete archives directory | Matthew Mackes | 2026-02-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
