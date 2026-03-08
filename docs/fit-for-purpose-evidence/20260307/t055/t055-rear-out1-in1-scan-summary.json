@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-03-07T20:24:27-05:00",
+  "playback_channels": ["AUX0", "AUX1", "AUX2", "AUX3"],
+  "capture_channels": ["AUX0", "AUX1", "AUX2", "AUX3"],
+  "ok_count": 0,
+  "no_signal_count": 0,
+  "timeout_or_fail_count": 16,
+  "details_file": "docs/fit-for-purpose-evidence/20260307/t055/aux-pair-scan-rear-out1-in1.txt"
+}

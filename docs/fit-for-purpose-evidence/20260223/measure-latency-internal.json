@@ -1,0 +1,140 @@
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+C   29      0      0    ---     ---   ---   ---     0                  Dummy-Driver
+C   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+C   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+C   55      0      0    ---     ---   ---   ---     0                  alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+C   56      0      0    ---     ---   ---   ---     0                  alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+C   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+C   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+C   92      0      0    ---     ---   ---   ---     0                  PortAudio
+C  123      0      0    ---     ---   ---   ---     0                  JUCEJack
+C  152      0      0    ---     ---   ---   ---     0                  PortAudio
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  40.5us   0.8us  0.02  0.00  188600   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   1.5us  20.1us  0.00  0.01  254928   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  17.9us   0.6us  0.01  0.00  724234                   + PortAudio
+R  123    128  48000  14.4us   2.9us  0.01  0.00  298970                   + JUCEJack
+R  152      0      0  21.3us   0.5us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  49.3us   1.1us  0.02  0.00  188609   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   4.3us  19.2us  0.00  0.01  254930   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  16.9us   0.5us  0.01  0.00  724291                   + PortAudio
+R  123    128  48000  17.3us   6.6us  0.01  0.00  298971                   + JUCEJack
+R  152      0      0  28.1us   1.0us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  37.3us   0.7us  0.01  0.00  188611   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   2.1us  17.9us  0.00  0.01  254931   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  15.5us   0.4us  0.01  0.00  724303                   + PortAudio
+R  123    128  48000  13.7us   2.2us  0.01  0.00  298972                   + JUCEJack
+R  152      0      0  20.9us   0.3us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  43.4us   0.7us  0.02  0.00  188612   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   5.4us  19.1us  0.00  0.01  254932   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  15.7us   0.4us  0.01  0.00  724303                   + PortAudio
+R  123    128  48000   4.8us  12.5us  0.00  0.00  298973                   + JUCEJack
+R  152      0      0  20.9us   0.4us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  40.7us   0.6us  0.02  0.00  188616   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   4.0us  18.1us  0.00  0.01  254938   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  14.5us   0.2us  0.01  0.00  724325                   + PortAudio
+R  123    128  48000  14.4us   2.6us  0.01  0.00  298979                   + JUCEJack
+R  152      0      0  20.7us   0.5us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  78.6us   1.9us  0.03  0.00  188616   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   9.7us  48.4us  0.00  0.02  254938   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  15.6us   0.8us  0.01  0.00  724325                   + PortAudio
+R  123    128  48000  11.4us   4.9us  0.00  0.00  298979                   + JUCEJack
+R  152      0      0  20.7us   1.0us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  38.0us   0.7us  0.01  0.00  188623   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   1.6us  18.3us  0.00  0.01  254943   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  15.3us   0.3us  0.01  0.00  724361                   + PortAudio
+R  123    128  48000  14.4us   2.3us  0.01  0.00  298996                   + JUCEJack
+R  152      0      0  19.1us   0.1us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  37.0us   0.7us  0.01  0.00  188623   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   1.5us  17.5us  0.00  0.01  254943   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  14.8us   0.1us  0.01  0.00  724361                   + PortAudio
+R  123    128  48000  14.2us   2.3us  0.01  0.00  298996                   + JUCEJack
+R  152      0      0  20.6us   0.5us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  62.5us   0.7us  0.02  0.00  188630   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0  17.5us  18.5us  0.01  0.01  254950   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  23.0us   0.3us  0.01  0.00  724397                   + PortAudio
+R  123    128  48000  22.6us   2.3us  0.01  0.00  299015                   + JUCEJack
+R  152      0      0  26.3us   0.5us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+I   29      0      0   0.0us   0.0us  ???   ???     0                  Dummy-Driver
+S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+S   50      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+R   56    128  48000  40.9us   0.7us  0.02  0.00  188630   S32LE 12 48000 alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+R   55      0      0   4.5us  18.0us  0.00  0.01  254950   S32LE 10 48000  + alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+R   92    128  48000  14.8us   0.3us  0.01  0.00  724397                   + PortAudio
+R  123    128  48000  14.7us   2.2us  0.01  0.00  299015                   + JUCEJack
+R  152      0      0  21.9us   0.5us  0.01  0.00    4                   + PortAudio
+S   32      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+S   45      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+{
+    "method": "internal_calculation",
+    "timestamp": "2026-02-23T14:43:51-05:00",
+    "estimated_round_trip_ms": 2.966,
+    "buffer_latency_ms": 1.333,
+    "input_latency_ms": 1.333,
+    "output_latency_ms": 1.333,
+    "pipewire_overhead_ms": 0.3,
+    "jack_input_latency_frames": 0,
+    "jack_output_latency_frames": 0,
+    "jack_input_latency_ms": 0,
+    "jack_output_latency_ms": 0,
+    "jack_round_trip_ms": 2.966,
+    "buffer_size": 64,
+    "sample_rate": 48000,
+    "duration_seconds": 10,
+    "status": "estimated",
+    "note": "Software estimate only. Use loopback cable + --jack for true measurement."
+}

@@ -6,8 +6,11 @@
 import type {
   AudioStatus,
   AudioLevels,
+  AudioSourceTruthPayload,
   PluginLevels,
   Chain,
+  EffectsLoop,
+  LoopInsertion,
   ChainTemplate,
   Plugin,
   Preset,
@@ -71,6 +74,47 @@ import type {
   FlowSnapshotDetail,
   FlowSnapshotData,
 } from './types';
+import type {
+  TesiraCapabilityEnvelope,
+  TesiraCrosspointMatrix,
+  DiscoveryScanStatus,
+  PresetInterlockRule,
+  TesiraDspBlock,
+  TesiraDspBlockListResponse,
+  TesiraDspBulkOperation,
+  TesiraDspBulkResult,
+  TesiraDspParamsResponse,
+  TesiraDspProbeResult,
+  TesiraDeviceDetail,
+  TesiraDeviceSummary,
+  TesiraDesignGraph,
+  TesiraDesignCompileBatchResponse,
+  TesiraDesignCompileResponse,
+  TesiraDesignDiagnosticsResponse,
+  TesiraDesignLibraryResponse,
+  TesiraDesignMutationResponse,
+  TesiraDesignValidateResponse,
+  TesiraDesignWorkspaceDetailResponse,
+  TesiraDesignWorkspaceListResponse,
+  TesiraFleetHealth,
+  TesiraFirmwareStatus,
+  TesiraGpioListResponse,
+  TesiraLatestFirmware,
+  TesiraMeterHistoryResponse,
+  TesiraMeterPeakResponse,
+  TesiraMutationResponse,
+  TesiraLayoutArtifact,
+  TesiraLayoutListResponse,
+  TesiraSageVueStatus,
+  TesiraDeploymentJob,
+  TesiraPtpTopologyResponse,
+  TesiraPTPStatus,
+  TesiraPresetInfo,
+  TesiraSceneDetail,
+  TesiraSceneListResponse,
+  TesiraStreamInfo,
+} from '../app/components/Tesira/types';
+import { sanitizeDisplayPayload } from './displayNames';
 
 const RAW_API_BASE = (() => {
   // Check for explicit environment variable
@@ -249,7 +293,8 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     throw new ApiError(response.status, response.statusText, body);
   }
 
-  return response.json();
+  const data = await response.json();
+  return sanitizeDisplayPayload(data) as T;
 }
 
 // ==================== Audio API ====================
@@ -268,6 +313,8 @@ export const audioApi = {
   getPluginLevels: () => fetchJson<{ plugins: PluginLevels[] }>(`${API_BASE}/audio/levels/plugins`),
 
   getPipedalMetrics: () => fetchJson<Record<string, unknown>>(`${API_BASE}/audio/pipedal`),
+
+  getSourceOfTruth: () => fetchJson<AudioSourceTruthPayload>(`${API_BASE}/audio/source-of-truth`),
 
   configure: (config: { sampleRate?: number; bufferSize?: number }) => {
     const params = new URLSearchParams();
@@ -735,6 +782,150 @@ export const chainsApi = {
     fetchJson<{ status: string; chain: Chain }>(
       `${API_BASE}/chains/templates/load?template_name=${encodeURIComponent(templateName)}`,
       { method: 'POST' }
+    ),
+};
+
+// ==================== Effects Loops API ====================
+
+export interface TesiraLoopTemplate {
+  template_id: string;
+  tesira_device_id: string;
+  stream_in_tags: string[];
+  stream_out_tags: string[];
+  crosspoint_tags: string[];
+  input_router_tag?: string | null;
+  output_router_tag?: string | null;
+  meter_tags: string[];
+  bypass_tags: string[];
+  channel_map_policy: string;
+  validation_status: string;
+  validation_error?: string | null;
+  runtime_status?: TesiraTemplateRuntimeStatus;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface TesiraTemplateRuntimeAlarm {
+  code: string;
+  severity: 'error' | 'warning' | 'info' | string;
+  message: string;
+  tag?: string;
+  tag_type?: string;
+  detail?: string;
+}
+
+export interface TesiraTemplateRuntimeStatus {
+  drift_status: 'ok' | 'warning' | 'error' | 'unknown' | string;
+  alarm_count: number;
+  alarms: TesiraTemplateRuntimeAlarm[];
+  checked_at: string;
+  probed_tag_count?: number;
+  failed_tag_count?: number;
+}
+
+export interface LoopMetrics {
+  loop_id: string;
+  state_actual?: string;
+  target_added_latency_ms: number;
+  measured_added_latency_ms?: number | null;
+  compensation_samples: number;
+  channels?: number;
+  health_status?: string;
+  health_reason?: string | null;
+  updated_at?: string | null;
+}
+
+export const effectsLoopsApi = {
+  list: () =>
+    fetchJson<{ loops: EffectsLoop[]; count: number }>(`${API_BASE}/effects-loops`),
+
+  create: (payload: Partial<EffectsLoop> & { name: string; channels: number; topology: string }) =>
+    fetchJson<EffectsLoop>(`${API_BASE}/effects-loops`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  get: (loopId: string) =>
+    fetchJson<EffectsLoop>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`),
+
+  patch: (loopId: string, payload: Partial<EffectsLoop>) =>
+    fetchJson<EffectsLoop>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+
+  delete: (loopId: string) =>
+    fetchJson<{ status: string; loop_id: string }>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}`, {
+      method: 'DELETE',
+    }),
+
+  activate: (loopId: string, payload: { audition_mode?: boolean } = {}) =>
+    fetchJson<Record<string, unknown>>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/activate`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  bypass: (loopId: string, bypass: boolean) =>
+    fetchJson<Record<string, unknown>>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/bypass`, {
+      method: 'POST',
+      body: JSON.stringify({ bypass }),
+    }),
+
+  calibrate: (loopId: string, options: Record<string, unknown> = {}) =>
+    fetchJson<Record<string, unknown>>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/calibrate`, {
+      method: 'POST',
+      body: JSON.stringify({ options }),
+    }),
+
+  getMetrics: (loopId: string) =>
+    fetchJson<LoopMetrics>(`${API_BASE}/effects-loops/${encodeURIComponent(loopId)}/metrics`),
+
+  listTemplates: () =>
+    fetchJson<{ templates: TesiraLoopTemplate[]; count: number }>(`${API_BASE}/tesira/loop-templates`),
+
+  upsertTemplate: (templateId: string, payload: Omit<TesiraLoopTemplate, 'template_id' | 'validation_status' | 'validation_error' | 'created_at' | 'updated_at'>) =>
+    fetchJson<TesiraLoopTemplate>(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  validateTemplate: (templateId: string) =>
+    fetchJson<Record<string, unknown>>(`${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/validate`, {
+      method: 'POST',
+    }),
+
+  getTemplateRuntimeStatus: (templateId: string) =>
+    fetchJson<{ template_id: string; tesira_device_id: string; runtime_status: TesiraTemplateRuntimeStatus }>(
+      `${API_BASE}/tesira/loop-templates/${encodeURIComponent(templateId)}/runtime-status`
+    ),
+
+  listChainInsertions: (chainId: number) =>
+    fetchJson<{ chain_id: number; loop_insertions: LoopInsertion[]; effects_loops: EffectsLoop[]; count: number }>(
+      `${API_BASE}/chains/${chainId}/loops`
+    ),
+
+  insertChainLoop: (chainId: number, payload: Partial<LoopInsertion> & { loop_id: string; slot_index: number }) =>
+    fetchJson<{ chain_id: number; insertion: LoopInsertion; effects_loop: EffectsLoop }>(
+      `${API_BASE}/chains/${chainId}/loops/insert`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
+
+  patchChainLoop: (chainId: number, insertionId: string, payload: Partial<LoopInsertion>) =>
+    fetchJson<{ chain_id: number; insertion: LoopInsertion }>(
+      `${API_BASE}/chains/${chainId}/loops/${encodeURIComponent(insertionId)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }
+    ),
+
+  deleteChainLoop: (chainId: number, insertionId: string) =>
+    fetchJson<{ status: string; chain_id: number; insertion_id: string }>(
+      `${API_BASE}/chains/${chainId}/loops/${encodeURIComponent(insertionId)}`,
+      { method: 'DELETE' }
     ),
 };
 
@@ -1548,6 +1739,263 @@ export const soundfontApi = {
     return response.json() as Promise<{ status: string; filename: string; format: string; path: string }>
   },
 };
+
+// ==================== SynthForge API ====================
+
+export interface SynthForgePartConfig {
+  part_index: number
+  midi_channel: number
+  output_bus: string
+  level: number
+  pan: number
+  mute: boolean
+  solo: boolean
+}
+
+export interface SynthForgePatchInfo {
+  bank: number
+  program: number
+  name: string
+  category: string
+  author: string
+  description?: string
+}
+
+export interface SynthForgeVoiceMetrics {
+  active_voices: number
+  peak_voices: number
+  voices_per_part: number[]
+  cpu_percent: number
+}
+
+export interface SynthForgeSampleStatus {
+  loaded: boolean
+  sampler_mode: boolean
+  part_index: number
+  region_count: number
+  loaded_sample_count: number
+  sfz_path: string
+  last_error: string
+  warnings: string[]
+}
+
+export interface SynthForgeStreamingConfig {
+  enabled: boolean
+  preload_size: number
+  max_voices: number
+  interpolation: 'linear' | 'hermite' | 'sinc'
+  quality_live: number
+  quality_freewheeling: number
+  memory_limit_mb: number
+}
+
+export interface SynthForgeHotReloadStatus {
+  enabled: boolean
+  interval_ms: number
+  pending_reload: boolean
+  reloaded: boolean
+  generation: number
+  last_reload_iso: string
+  last_error: string
+}
+
+export interface SynthForgeScalaTuning {
+  enabled: boolean
+  scala_path: string
+  root_key: number
+  reference_hz: number
+}
+
+export interface SynthForgeMpeConfig {
+  enabled: boolean
+  lower_zone_channels: number
+  upper_zone_channels: number
+  pitch_bend_range_semitones: number
+}
+
+export interface SynthForgeModMatrixRoute {
+  source: string
+  destination: string
+  amount: number
+  bipolar: boolean
+  enabled: boolean
+}
+
+export interface SynthForgeFreezeStatus {
+  freeze_enabled: boolean
+  frozen_signal_ready: boolean
+  freeze_samples: number
+  render_path: string
+  last_error: string
+}
+
+export interface SynthForgeAnalyzerFrame {
+  peak_left: number
+  peak_right: number
+  rms_left: number
+  rms_right: number
+  midi_events: number
+  active_voices: number
+}
+
+export interface SynthForgeBackendStatus {
+  backend: string
+  sfizz_available: boolean
+  sfizz_loaded: boolean
+  region_count: number
+  group_count: number
+  preloaded_samples: number
+  unknown_opcodes: string[]
+  unsupported_opcodes: string[]
+}
+
+export const synthforgeApi = {
+  getParts: () =>
+    fetchJson<SynthForgePartConfig[]>(`${API_BASE}/synthforge/parts`),
+
+  setPartConfig: (partIndex: number, config: SynthForgePartConfig) =>
+    fetchJson<{ status: string; part_index: number }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/config`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
+  getPatches: (category?: string) =>
+    fetchJson<SynthForgePatchInfo[]>(
+      `${API_BASE}/synthforge/patches${category ? `?category=${encodeURIComponent(category)}` : ''}`
+    ),
+
+  loadPatch: (partIndex: number, bank: number, program: number) =>
+    fetchJson<{ status: string; part_index: number; bank: number; program: number }>(
+      `${API_BASE}/synthforge/patches/load`,
+      { method: 'POST', body: JSON.stringify({ part_index: partIndex, bank, program }) }
+    ),
+
+  savePatch: (partIndex: number, bank: number, program: number, name: string) =>
+    fetchJson<{ status: string; part_index: number; bank: number; program: number; name: string }>(
+      `${API_BASE}/synthforge/patches/save`,
+      { method: 'POST', body: JSON.stringify({ part_index: partIndex, bank, program, name }) }
+    ),
+
+  getVoices: () =>
+    fetchJson<SynthForgeVoiceMetrics>(`${API_BASE}/synthforge/voices`),
+
+  getPartParameters: (partIndex: number) =>
+    fetchJson<Record<string, number>>(`${API_BASE}/synthforge/parameters/${partIndex}`),
+
+  setPartParameter: (partIndex: number, param: string, value: number) =>
+    fetchJson<{ status: string; part_index: number; param: string; value: number }>(
+      `${API_BASE}/synthforge/parameters/${partIndex}`,
+      { method: 'POST', body: JSON.stringify({ param, value }) }
+    ),
+
+  loadSfz: (partIndex: number, sfzPath: string) =>
+    fetchJson<{ status: string; part_index: number; sample_status: SynthForgeSampleStatus }>(
+      `${API_BASE}/synthforge/sfz/load`,
+      { method: 'POST', body: JSON.stringify({ part_index: partIndex, sfz_path: sfzPath }) }
+    ),
+
+  getSfzStatus: (partIndex: number) =>
+    fetchJson<SynthForgeSampleStatus>(`${API_BASE}/synthforge/sfz/status/${partIndex}`),
+
+  reloadSfzIfChanged: (partIndex: number) =>
+    fetchJson<{ status: string; part_index: number; reloaded: boolean; sample_status: SynthForgeSampleStatus; hot_reload: SynthForgeHotReloadStatus }>(
+      `${API_BASE}/synthforge/sfz/reload-if-changed/${partIndex}`,
+      { method: 'POST' }
+    ),
+
+  setSamplerBackend: (partIndex: number, backend: 'native' | 'sfizz') =>
+    fetchJson<{ status: string; part_index: number; backend: string }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/sampler-backend`,
+      { method: 'POST', body: JSON.stringify({ backend }) }
+    ),
+
+  getSamplerBackend: (partIndex: number) =>
+    fetchJson<{ part_index: number; backend: string }>(`${API_BASE}/synthforge/parts/${partIndex}/sampler-backend`),
+
+  setStreamingConfig: (partIndex: number, config: SynthForgeStreamingConfig) =>
+    fetchJson<{ status: string; part_index: number; config: SynthForgeStreamingConfig }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/streaming`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
+  getStreamingConfig: (partIndex: number) =>
+    fetchJson<SynthForgeStreamingConfig>(`${API_BASE}/synthforge/parts/${partIndex}/streaming`),
+
+  setHotReload: (partIndex: number, enabled: boolean, intervalMs: number = 1000) =>
+    fetchJson<{ status: string; part_index: number; hot_reload: SynthForgeHotReloadStatus }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/hot-reload`,
+      { method: 'POST', body: JSON.stringify({ enabled, interval_ms: intervalMs }) }
+    ),
+
+  getHotReload: (partIndex: number) =>
+    fetchJson<SynthForgeHotReloadStatus>(`${API_BASE}/synthforge/parts/${partIndex}/hot-reload`),
+
+  loadScalaTuning: (partIndex: number, scalaPath: string, rootKey: number = 60, referenceHz: number = 440) =>
+    fetchJson<{ status: string; part_index: number; tuning: SynthForgeScalaTuning }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/scala`,
+      { method: 'POST', body: JSON.stringify({ scala_path: scalaPath, root_key: rootKey, reference_hz: referenceHz }) }
+    ),
+
+  getScalaTuning: (partIndex: number) =>
+    fetchJson<SynthForgeScalaTuning>(`${API_BASE}/synthforge/parts/${partIndex}/scala`),
+
+  setMpeConfig: (partIndex: number, config: SynthForgeMpeConfig) =>
+    fetchJson<{ status: string; part_index: number; mpe: SynthForgeMpeConfig }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/mpe`,
+      { method: 'POST', body: JSON.stringify(config) }
+    ),
+
+  getMpeConfig: (partIndex: number) =>
+    fetchJson<SynthForgeMpeConfig>(`${API_BASE}/synthforge/parts/${partIndex}/mpe`),
+
+  setModMatrixRoutes: (partIndex: number, routes: SynthForgeModMatrixRoute[]) =>
+    fetchJson<{ status: string; part_index: number; routes: SynthForgeModMatrixRoute[] }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/mod-matrix`,
+      { method: 'POST', body: JSON.stringify({ routes }) }
+    ),
+
+  getModMatrixRoutes: (partIndex: number) =>
+    fetchJson<SynthForgeModMatrixRoute[]>(`${API_BASE}/synthforge/parts/${partIndex}/mod-matrix`),
+
+  setFreeze: (partIndex: number, enabled: boolean) =>
+    fetchJson<{ status: string; part_index: number; freeze: SynthForgeFreezeStatus }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/freeze`,
+      { method: 'POST', body: JSON.stringify({ enabled }) }
+    ),
+
+  getFreezeStatus: (partIndex: number) =>
+    fetchJson<SynthForgeFreezeStatus>(`${API_BASE}/synthforge/parts/${partIndex}/freeze`),
+
+  renderPartToFile: (partIndex: number, outputPath: string, durationMs: number = 2000) =>
+    fetchJson<{ status: string; part_index: number; freeze: SynthForgeFreezeStatus }>(
+      `${API_BASE}/synthforge/parts/${partIndex}/render`,
+      { method: 'POST', body: JSON.stringify({ output_path: outputPath, duration_ms: durationMs }) }
+    ),
+
+  getPartAnalyzerFrame: (partIndex: number) =>
+    fetchJson<SynthForgeAnalyzerFrame>(`${API_BASE}/synthforge/parts/${partIndex}/analyzer`),
+
+  getAnalyzerFrames: () =>
+    fetchJson<SynthForgeAnalyzerFrame[]>(`${API_BASE}/synthforge/analyzer`),
+
+  getPartBackendStatus: (partIndex: number) =>
+    fetchJson<SynthForgeBackendStatus>(`${API_BASE}/synthforge/backend-status/${partIndex}`),
+
+  getBackendStatus: () =>
+    fetchJson<SynthForgeBackendStatus[]>(`${API_BASE}/synthforge/backend-status`),
+
+  noteOn: (channel: number, note: number, velocity: number = 100) =>
+    fetchJson<{ status: string; channel: number; note: number; velocity: number }>(
+      `${API_BASE}/synthforge/midi/note-on`,
+      { method: 'POST', body: JSON.stringify({ channel, note, velocity }) }
+    ),
+
+  noteOff: (channel: number, note: number, velocity: number = 0) =>
+    fetchJson<{ status: string; channel: number; note: number; velocity: number }>(
+      `${API_BASE}/synthforge/midi/note-off`,
+      { method: 'POST', body: JSON.stringify({ channel, note, velocity }) }
+    ),
+}
 
 // ==================== Automation API ====================
 
@@ -3114,6 +3562,7 @@ export const map2Api = {
   irLibrary: irLibraryApi,
   nam: namApi,
   soundfont: soundfontApi,
+  synthforge: synthforgeApi,
   automation: automationApi,
   history: historyApi,
   sessions: sessionsApi,
@@ -3152,3 +3601,465 @@ export const map2Api = {
 };
 
 export default map2Api;
+
+// ============================================================================
+// Tesira Forte AVB API
+// All calls target /api/tesira (registered in app/routes/tesira.py)
+// ============================================================================
+
+const BASE = '/api/tesira'
+
+async function _json<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const body = await res.json()
+      if (typeof body?.detail === 'string') detail = body.detail
+      else if (typeof body?.error === 'string') detail = body.error
+      else if (typeof body?.message === 'string') detail = body.message
+    } catch { /* ignore parse errors, use statusText */ }
+    throw new Error(`${detail}`)
+  }
+  return res.json()
+}
+
+export const tesiraApi = {
+  // Device management
+  listDevices: (): Promise<TesiraDeviceSummary[]> =>
+    fetch(`${BASE}/devices`).then((r) => _json<TesiraDeviceSummary[]>(r)),
+
+  listDesigns: (deviceId: string, params?: { includeInactive?: boolean; includeTemplates?: boolean }): Promise<TesiraDesignWorkspaceListResponse> => {
+    const search = new URLSearchParams()
+    if (params?.includeInactive) search.set('include_inactive', 'true')
+    if (params?.includeTemplates === false) search.set('include_templates', 'false')
+    const query = search.toString()
+    return fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs${query ? `?${query}` : ''}`)
+      .then((r) => _json<TesiraDesignWorkspaceListResponse>(r))
+  },
+
+  getDesignLibrary: (deviceId: string, profile?: string): Promise<TesiraDesignLibraryResponse> => {
+    const search = new URLSearchParams()
+    if (profile) search.set('profile', profile)
+    const query = search.toString()
+    return fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/library${query ? `?${query}` : ''}`)
+      .then((r) => _json<TesiraDesignLibraryResponse>(r)),
+  },
+
+  createDesign: (deviceId: string, body: {
+    design_id?: string
+    name: string
+    description?: string | null
+    graph?: TesiraDesignGraph
+    is_template?: boolean
+    is_active?: boolean
+  }): Promise<TesiraDesignMutationResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<TesiraDesignMutationResponse>(r)),
+
+  getDesign: (deviceId: string, designId: string): Promise<TesiraDesignWorkspaceDetailResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}`)
+      .then((r) => _json<TesiraDesignWorkspaceDetailResponse>(r)),
+
+  updateDesign: (deviceId: string, designId: string, body: {
+    name?: string
+    description?: string | null
+    graph?: TesiraDesignGraph
+    is_template?: boolean
+    is_active?: boolean
+  }): Promise<TesiraDesignMutationResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<TesiraDesignMutationResponse>(r)),
+
+  deleteDesign: (deviceId: string, designId: string): Promise<{ ok: boolean; device_id: string; design_id: string }> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}`, {
+      method: 'DELETE',
+    }).then((r) => _json<{ ok: boolean; device_id: string; design_id: string }>(r)),
+
+  validateDesign: (deviceId: string, designId: string, graph?: TesiraDesignGraph): Promise<TesiraDesignValidateResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(graph ? { graph } : {}),
+    }).then((r) => _json<TesiraDesignValidateResponse>(r)),
+
+  compileDesign: (
+    deviceId: string,
+    designId: string,
+    body?: { optimize?: boolean; recompile?: boolean }
+  ): Promise<TesiraDesignCompileResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/compile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileResponse>(r)),
+
+  recompileDesign: (
+    deviceId: string,
+    designId: string,
+    body?: { optimize?: boolean }
+  ): Promise<TesiraDesignCompileResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/recompile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileResponse>(r)),
+
+  compileActiveDesign: (
+    deviceId: string,
+    body?: { optimize?: boolean; recompile?: boolean }
+  ): Promise<TesiraDesignCompileBatchResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/compile-active`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileBatchResponse>(r)),
+
+  compileAllDesigns: (
+    deviceId: string,
+    body?: { optimize?: boolean; recompile?: boolean; include_templates?: boolean }
+  ): Promise<TesiraDesignCompileBatchResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/compile-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileBatchResponse>(r)),
+
+  compileUncompiledDesigns: (
+    deviceId: string,
+    body?: { optimize?: boolean; recompile?: boolean; include_templates?: boolean }
+  ): Promise<TesiraDesignCompileBatchResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/compile-uncompiled`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileBatchResponse>(r)),
+
+  getDesignDiagnostics: (deviceId: string, designId: string): Promise<TesiraDesignDiagnosticsResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/diagnostics`)
+      .then((r) => _json<TesiraDesignDiagnosticsResponse>(r)),
+
+  listLayouts: (params?: { deviceFamily?: string; includeInactive?: boolean }): Promise<TesiraLayoutListResponse> => {
+    const search = new URLSearchParams()
+    if (params?.deviceFamily) search.set('device_family', params.deviceFamily)
+    if (params?.includeInactive) search.set('include_inactive', 'true')
+    const query = search.toString()
+    return fetch(`${BASE}/layouts${query ? `?${query}` : ''}`).then((r) => _json<TesiraLayoutListResponse>(r))
+  },
+
+  getLayout: (layoutId: string, version?: string): Promise<TesiraLayoutArtifact> => {
+    const query = version ? `?version=${encodeURIComponent(version)}` : ''
+    return fetch(`${BASE}/layouts/${encodeURIComponent(layoutId)}${query}`)
+      .then((r) => _json<TesiraLayoutArtifact>(r))
+  },
+
+  importLayout: (body: {
+    layout_id: string
+    version?: string
+    name: string
+    device_family: string
+    channel_profile?: string | null
+    required_firmware?: string | null
+    checksum: string
+    artifact_uri?: string | null
+    instance_tag_map?: Record<string, unknown>
+    feature_flags?: string[]
+    notes?: string | null
+    is_active?: boolean
+  }): Promise<{ status: string; layout: TesiraLayoutArtifact }> =>
+    fetch(`${BASE}/layouts/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<{ status: string; layout: TesiraLayoutArtifact }>(r)),
+
+  getSageVueStatus: (): Promise<TesiraSageVueStatus> =>
+    fetch(`${BASE}/sagevue/status`).then((r) => _json<TesiraSageVueStatus>(r)),
+
+  startDeployment: (deviceId: string, body: {
+    layout_id: string
+    layout_version?: string
+    dry_run?: boolean
+    requested_by?: string | null
+    rollback_layout_id?: string | null
+    rollback_layout_version?: string | null
+  }): Promise<TesiraDeploymentJob> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/deploy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<TesiraDeploymentJob>(r)),
+
+  getDeployment: (jobId: string): Promise<TesiraDeploymentJob> =>
+    fetch(`${BASE}/deployments/${encodeURIComponent(jobId)}`)
+      .then((r) => _json<TesiraDeploymentJob>(r)),
+
+  rollbackDeployment: (jobId: string, body?: {
+    requested_by?: string | null
+    layout_id?: string | null
+    layout_version?: string | null
+  }): Promise<TesiraDeploymentJob> =>
+    fetch(`${BASE}/deployments/${encodeURIComponent(jobId)}/rollback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDeploymentJob>(r)),
+
+  getFleetHealth: (): Promise<TesiraFleetHealth> =>
+    fetch(`${BASE}/fleet/health`).then((r) => _json<TesiraFleetHealth>(r)),
+
+  getPtpTopology: (): Promise<TesiraPtpTopologyResponse> =>
+    fetch(`${BASE}/fleet/ptp-topology`).then((r) => _json<TesiraPtpTopologyResponse>(r)),
+
+  getDevice: (deviceId: string): Promise<TesiraDeviceDetail> =>
+    fetch(`${BASE}/devices/${deviceId}`).then((r) => _json<TesiraDeviceDetail>(r)),
+
+  getCapabilities: (deviceId: string): Promise<TesiraCapabilityEnvelope> =>
+    fetch(`${BASE}/devices/${deviceId}/capabilities`).then((r) => _json<TesiraCapabilityEnvelope>(r)),
+
+  connectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/connect`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  disconnectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/disconnect`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  getFaults: (deviceId: string): Promise<{ device_id: string; faults: string[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/faults`).then((r) => _json<{ device_id: string; faults: string[] }>(r)),
+
+  // Level / mute
+  getLevel: (deviceId: string, tag: string, channel: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/level/${tag}/${channel}`).then((r) => _json<TesiraMutationResponse>(r)),
+
+  setLevel: (deviceId: string, tag: string, channel: number, levelDb: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/level/${tag}/${channel}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ level_db: levelDb }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  getMute: (deviceId: string, tag: string, channel: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/mute/${tag}/${channel}`).then((r) => _json<TesiraMutationResponse>(r)),
+
+  setMute: (deviceId: string, tag: string, channel: number, muted: boolean): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/mute/${tag}/${channel}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ muted }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // Crosspoint
+  setCrosspoint: (deviceId: string, tag: string, row: number, col: number, gainDb: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/crosspoint/${tag}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ row, col, gain_db: gainDb }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  getCrosspointMatrix: (deviceId: string, tag: string, rows: number, cols: number): Promise<TesiraCrosspointMatrix> =>
+    fetch(`${BASE}/devices/${deviceId}/crosspoint/${tag}?rows=${rows}&cols=${cols}`)
+      .then((r) => _json<TesiraCrosspointMatrix>(r)),
+
+  setCrosspointMute: (deviceId: string, tag: string, row: number, col: number, muted: boolean): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/crosspoint/${tag}/mute`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ row, col, muted }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // DSP model
+  probeDspBlocks: (deviceId: string, maxInstances: number = 32): Promise<TesiraDspProbeResult> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/probe?max_instances=${maxInstances}`, { method: 'POST' })
+      .then((r) => _json<TesiraDspProbeResult>(r)),
+
+  listDspBlocks: (deviceId: string): Promise<TesiraDspBlockListResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/blocks`).then((r) => _json<TesiraDspBlockListResponse>(r)),
+
+  getDspBlock: (deviceId: string, instanceTag: string): Promise<{ device_id: string } & TesiraDspBlock> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/blocks/${encodeURIComponent(instanceTag)}`)
+      .then((r) => _json<{ device_id: string } & TesiraDspBlock>(r)),
+
+  getDspParams: (deviceId: string, instanceTag: string): Promise<TesiraDspParamsResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/${encodeURIComponent(instanceTag)}/params`)
+      .then((r) => _json<TesiraDspParamsResponse>(r)),
+
+  setDspParam: (
+    deviceId: string,
+    instanceTag: string,
+    attribute: string,
+    value: unknown,
+    args: unknown[] = [],
+  ): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/${encodeURIComponent(instanceTag)}/params`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attribute, value, args }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  dspBulkGet: (deviceId: string, operations: TesiraDspBulkOperation[]): Promise<{ device_id: string; count: number; results: TesiraDspBulkResult[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/bulk-get`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operations }),
+    }).then((r) => _json<{ device_id: string; count: number; results: TesiraDspBulkResult[] }>(r)),
+
+  dspBulkSet: (deviceId: string, operations: TesiraDspBulkOperation[]): Promise<{ device_id: string; count: number; results: TesiraDspBulkResult[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/bulk-set`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operations }),
+    }).then((r) => _json<{ device_id: string; count: number; results: TesiraDspBulkResult[] }>(r)),
+
+  // EQ
+  setEQBandFreq: (deviceId: string, tag: string, band: number, freqHz: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/eq/${tag}/band/${band}/freq`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ freq_hz: freqHz }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  setEQBandGain: (deviceId: string, tag: string, band: number, gainDb: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/eq/${tag}/band/${band}/gain`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gain_db: gainDb }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  setEQBandQ: (deviceId: string, tag: string, band: number, q: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/eq/${tag}/band/${band}/q`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // Presets
+  listPresets: (deviceId: string): Promise<TesiraPresetInfo[]> =>
+    fetch(`${BASE}/devices/${deviceId}/presets`).then((r) => _json<TesiraPresetInfo[]>(r)),
+
+  recallPreset: (deviceId: string, presetIndex: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/presets/${presetIndex}/recall`, { method: 'POST' })
+      .then((r) => _json<TesiraMutationResponse>(r)),
+
+  // AVB
+  getAvbStreams: (deviceId: string): Promise<TesiraStreamInfo[]> =>
+    fetch(`${BASE}/devices/${deviceId}/avb/streams`).then((r) => _json<TesiraStreamInfo[]>(r)),
+
+  getPtp: (deviceId: string): Promise<TesiraPTPStatus> =>
+    fetch(`${BASE}/devices/${deviceId}/avb/ptp`).then((r) => _json<TesiraPTPStatus>(r)),
+
+  // Metering
+  getMeters: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${tag}`).then((r) => _json<TesiraMutationResponse>(r)),
+
+  getMeterHistory: (deviceId: string, tag: string, limit: number = 300): Promise<TesiraMeterHistoryResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${encodeURIComponent(tag)}/history?limit=${limit}`)
+      .then((r) => _json<TesiraMeterHistoryResponse>(r)),
+
+  getMeterPeak: (deviceId: string, tag: string): Promise<TesiraMeterPeakResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${encodeURIComponent(tag)}/peak`)
+      .then((r) => _json<TesiraMeterPeakResponse>(r)),
+
+  startMetering: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${tag}/start`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  stopMetering: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${tag}/stop`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // GPIO
+  listGpio: (deviceId: string): Promise<TesiraGpioListResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/gpio`).then((r) => _json<TesiraGpioListResponse>(r)),
+
+  getGpioPin: (deviceId: string, pin: number): Promise<{ device_id: string; pin: number; state: boolean }> =>
+    fetch(`${BASE}/devices/${deviceId}/gpio/${pin}`).then((r) => _json<{ device_id: string; pin: number; state: boolean }>(r)),
+
+  setGpioPin: (deviceId: string, pin: number, state: boolean): Promise<{ ok: boolean; device_id: string; pin: number; state: boolean }> =>
+    fetch(`${BASE}/devices/${deviceId}/gpio/${pin}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state }),
+    }).then((r) => _json<{ ok: boolean; device_id: string; pin: number; state: boolean }>(r)),
+
+  // Scene snapshots
+  captureScene: (deviceId: string, name: string): Promise<{ ok: boolean; device_id: string; scene_id: string; name: string; block_count: number }> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }).then((r) => _json<{ ok: boolean; device_id: string; scene_id: string; name: string; block_count: number }>(r)),
+
+  listScenes: (deviceId: string): Promise<TesiraSceneListResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes`).then((r) => _json<TesiraSceneListResponse>(r)),
+
+  getScene: (deviceId: string, sceneId: string): Promise<TesiraSceneDetail> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/${encodeURIComponent(sceneId)}`).then((r) => _json<TesiraSceneDetail>(r)),
+
+  recallScene: (deviceId: string, sceneId: string): Promise<{ ok: boolean; device_id: string; scene_id: string; applied: number; failed: string[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/${encodeURIComponent(sceneId)}/recall`, { method: 'POST' })
+      .then((r) => _json<{ ok: boolean; device_id: string; scene_id: string; applied: number; failed: string[] }>(r)),
+
+  deleteScene: (deviceId: string, sceneId: string): Promise<{ ok: boolean; device_id: string; scene_id: string }> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/${encodeURIComponent(sceneId)}`, { method: 'DELETE' })
+      .then((r) => _json<{ ok: boolean; device_id: string; scene_id: string }>(r)),
+
+  // Preset interlock
+  listInterlockRules: (): Promise<PresetInterlockRule[]> =>
+    fetch(`${BASE}/preset_interlock`).then((r) => _json<PresetInterlockRule[]>(r)),
+
+  addInterlockRule: (body: { map2_preset_id: number; tesira_device_id: string; tesira_preset_index: number }): Promise<PresetInterlockRule> =>
+    fetch(`${BASE}/preset_interlock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<PresetInterlockRule>(r)),
+
+  deleteInterlockRule: (ruleId: number): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/preset_interlock/${ruleId}`, { method: 'DELETE' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // Auto-discovery
+  startDiscovery: (timeoutS: number = 8): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/discovery/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timeout_s: timeoutS }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  getDiscoveryStatus: (): Promise<DiscoveryScanStatus> =>
+    fetch(`${BASE}/discovery/status`).then((r) => _json<DiscoveryScanStatus>(r)),
+
+  adoptDevice: (host: string, name?: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/discovery/adopt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host, name }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  /**
+   * Manually add a device by IP — no TTP probe required.
+   * Device appears Offline until TTP is enabled in Tesira Software.
+   */
+  addDevice: (host: string, port: number = 23, name?: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host, port, name }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // Firmware management
+  getLatestFirmware: (): Promise<TesiraLatestFirmware> =>
+    fetch(`${BASE}/firmware/latest`).then((r) => _json<TesiraLatestFirmware>(r)),
+
+  getDeviceFirmware: (deviceId: string): Promise<TesiraFirmwareStatus> =>
+    fetch(`${BASE}/devices/${deviceId}/firmware`).then((r) => _json<TesiraFirmwareStatus>(r)),
+
+  rebootDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/reboot`, { method: 'POST' })
+      .then((r) => _json<TesiraMutationResponse>(r)),
+
+  reconnectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/reconnect`, { method: 'POST' })
+      .then((r) => _json<TesiraMutationResponse>(r)),
+}

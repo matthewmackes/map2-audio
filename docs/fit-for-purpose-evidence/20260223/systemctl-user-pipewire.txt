@@ -1,0 +1,26 @@
+● pipewire.service - PipeWire Multimedia Service
+     Loaded: loaded (/usr/lib/systemd/user/pipewire.service; enabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/user/service.d
+             └─10-timeout-abort.conf
+             /home/mm/.config/systemd/user/pipewire.service.d
+             └─override.conf
+     Active: active (running) since Thu 2026-02-19 11:20:08 EST; 4 days ago
+ Invocation: 626d9cea325a4bb9ab617cec7ae0d578
+TriggeredBy: ● pipewire.socket
+   Main PID: 1212 (pipewire)
+      Tasks: 2 (limit: 38348)
+     Memory: 55.6M (peak: 57.5M)
+        CPU: 34min 6.849s
+     CGroup: /user.slice/user-1000.slice/user@1000.service/session.slice/pipewire.service
+             └─1212 /usr/bin/pipewire
+
+Feb 22 20:09:42 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:388 delay:388 target:192 thr:128, resync (9 suppressed)
+Feb 23 02:05:19 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:448 delay:448 target:192 thr:128, resync (10 suppressed)
+Feb 23 02:15:13 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:442 delay:442 target:192 thr:128, resync (9 suppressed)
+Feb 23 02:26:36 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:442 delay:442 target:192 thr:128, resync (3 suppressed)
+Feb 23 03:39:39 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:442 delay:442 target:192 thr:128, resync (4 suppressed)
+Feb 23 08:32:36 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:442 delay:442 target:192 thr:128, resync (2 suppressed)
+Feb 23 09:04:21 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:442 delay:442 target:192 thr:128, resync (3 suppressed)
+Feb 23 10:03:07 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:394 delay:394 target:192 thr:128, resync (2 suppressed)
+Feb 23 10:18:32 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:442 delay:442 target:192 thr:128, resync (2 suppressed)
+Feb 23 10:40:11 MAP2-TESTBED pipewire[1212]: spa.alsa: hw:2p: follower avail:412 delay:412 target:192 thr:128, resync (3 suppressed)

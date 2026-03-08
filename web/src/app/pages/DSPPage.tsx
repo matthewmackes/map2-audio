@@ -25,19 +25,19 @@ const NATIVE_PLUGINS = [
   { uri: 'map2://juce/modulation/chorus', name: 'Chorus', category: 'Modulation', color: '#06b6d4' },
   { uri: 'map2://juce/modulation/phaser', name: 'Phaser', category: 'Modulation', color: '#ec4899' },
   { uri: 'map2://juce/modulation/intellifx', name: 'IntelliFX', category: 'Modulation', color: '#14b8a6' },
-  { uri: 'map2://juce/pitch/shifter', name: 'EVH Harmonizer', category: 'Pitch', color: '#eab308' },
+  { uri: 'map2://juce/pitch/shifter', name: 'Vintage Harmonizer', category: 'Pitch', color: '#eab308' },
   { uri: 'map2://juce/pitch/interval', name: 'Interval Shifter', category: 'Pitch', color: '#f59e0b' },
-  { uri: 'map2://juce/pitch/boss-xs1', name: 'Boss XS-1 Poly Shifter', category: 'Pitch', color: '#f97316' },
-  { uri: 'map2://juce/pitch/h3000', name: 'H3000 Ultra-Harmonizer', category: 'Pitch', color: '#8b5cf6' },
+  { uri: 'map2://juce/pitch/boss-xs1', name: 'Poly XS-1 Shifter', category: 'Pitch', color: '#f97316' },
+  { uri: 'map2://juce/pitch/h3000', name: 'Ultra Harmonizer', category: 'Pitch', color: '#8b5cf6' },
   { uri: 'map2://juce/reverb/pcm70', name: 'Lexi Love (PCM 70)', category: 'Reverb', color: '#22c55e' },
   { uri: 'map2://juce/convolution/cabinet', name: 'Cabinet IR', category: 'Convolution', color: '#78716c' },
   { uri: 'map2://juce/convolution/reverb', name: 'Reverb IR', category: 'Convolution', color: '#a3a3a3' },
   { uri: 'map2://juce/nam', name: 'Neural Amp Modeler', category: 'Amp Modeling', color: '#ef4444' },
-  { uri: 'map2://juce/amp/peavey5150', name: 'Peavey 5150', category: 'Amp Models', color: '#dc2626' },
+  { uri: 'map2://juce/amp/peavey5150', name: 'Block Letter Amp', category: 'Amp Models', color: '#dc2626' },
   { uri: 'map2://juce/amp/tweedbassman', name: 'Tweed Bassman 5F6-A', category: 'Amp Models', color: '#d97706' },
   { uri: 'map2://juce/multieffect/shoegaze', name: 'ShoeGaze', category: 'Multi-FX', color: '#6366f1' },
   { uri: 'map2://juce/multieffect/passionfx', name: 'PassionFX', category: 'Multi-FX', color: '#e11d48' },
-  { uri: 'map2://juce/effects/eventide-h9', name: 'Eventide H9', category: 'Multi-FX', color: '#0ea5e9' },
+  { uri: 'map2://juce/effects/eventide-h9', name: 'Multi-Effect Rack', category: 'Multi-FX', color: '#0ea5e9' },
 ]
 
 export function DSPPage() {
@@ -158,7 +158,7 @@ export function DSPPage() {
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 500, fontSize: 13, color: '#f3f4f6' }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{p.uri}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Built-in processor</div>
                       </div>
                       {p.standalone && (
                         <span style={{ fontSize: 10, padding: '2px 6px', background: '#22c55e22', color: '#22c55e', borderRadius: 4 }}>

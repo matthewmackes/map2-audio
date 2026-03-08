@@ -18,6 +18,9 @@ import hashlib
 
 logger = logging.getLogger(__name__)
 
+# NAM model file parsing support is always available in this Python module.
+NAM_AVAILABLE = True
+
 
 @dataclass
 class NAMModel:

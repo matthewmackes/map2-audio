@@ -77,6 +77,20 @@ int parseIntOrDefault(const char* value, int fallback) {
     return fallback;
 }
 
+bool isPtpReady() {
+    if (std::filesystem::exists("/run/ptp4l.pid")) {
+        return true;
+    }
+    // Fallback for systemd-managed ptp4l setups that do not emit /run/ptp4l.pid.
+    if (std::system("pidof ptp4l >/dev/null 2>&1") == 0) {
+        return true;
+    }
+    if (std::system("systemctl is-active --quiet map2-ptp4l.service >/dev/null 2>&1") == 0) {
+        return true;
+    }
+    return false;
+}
+
 }  // namespace
 
 // ============================================================================
@@ -265,10 +279,8 @@ bool AvbAudioIODeviceType::isAvbAvailable() const {
         return false;
     }
 
-    // Check 3: ptp4l running (check for PID file or systemd status)
-    // Simple check: look for /run/ptp4l.pid
-    if (!std::filesystem::exists("/run/ptp4l.pid")) {
-        // Not running
+    // Check 3: ptp4l runtime health
+    if (!isPtpReady()) {
         return false;
     }
 

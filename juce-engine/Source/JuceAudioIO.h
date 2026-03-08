@@ -8,6 +8,7 @@
 
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <thread>
 #include "Common.h"
 
 #ifdef HAS_AVB
@@ -218,7 +219,7 @@ private:
     // Statistics
     mutable std::mutex statsMutex_;
     AudioStats stats_;
-    std::chrono::high_resolution_clock::time_point lastCallbackTime_;
+    std::chrono::steady_clock::time_point lastCallbackTime_;
     bool firstCallback_ = true;  // Skip jitter calc on first callback
 
     // Callback timing analysis (lock-free atomics for RT safety)
@@ -227,6 +228,7 @@ private:
     std::atomic<double> peakJitter_{0.0};
     std::atomic<double> peakCallbackDuration_{0.0};
     std::atomic<double> callbackDurationSmoothed_{0.0};
+    std::atomic<bool> callbackSizeWarningLogged_{false};
     static constexpr double JITTER_SMOOTHING = 0.05;  // EMA alpha
     static constexpr double DURATION_SMOOTHING = 0.1;
     static constexpr double XRUN_JITTER_THRESHOLD = 2.0; // 2x expected interval = xrun
@@ -253,6 +255,9 @@ private:
 
     // Device recovery
     std::atomic<bool> recoveryInProgress_{false};
+    std::atomic<bool> shutdownRequested_{false};
+    std::thread recoveryThread_;
+    mutable std::mutex recoveryThreadMutex_;
     juce::AudioDeviceManager::AudioDeviceSetup lastSetup_{};
     bool recoveryEnabled_ = true;
     static constexpr int MAX_RECOVERY_ATTEMPTS = 5;
@@ -265,6 +270,7 @@ private:
     AudioDeviceInfo deviceToInfo(juce::AudioIODevice* device) const;
     void updateStats(int numSamples, double processingTime);
     bool attemptRecovery(int attempt = 0);
+    void joinRecoveryThread();
 };
 
 } // namespace map2

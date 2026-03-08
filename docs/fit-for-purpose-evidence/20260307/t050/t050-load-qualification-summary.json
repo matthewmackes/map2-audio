@@ -1,0 +1,30 @@
+{
+  "run": {
+    "command": "MAP2_LOCUST_WS_CLIENTS=100 MAP2_LOCUST_SOAK_SECONDS=300 python3 -m locust -f tests/load_test.py --headless -u 10 -r 2 -t 310s --host http://localhost:8080 --csv .../locust-final --csv-full-history",
+    "target_ws_clients": 100,
+    "target_soak_seconds": 300,
+    "target_midi_burst_updates": 500
+  },
+  "aggregated_http": {
+    "request_count": 400,
+    "failure_count": 379,
+    "median_ms": 8000.0,
+    "avg_ms": 7583.267007832532,
+    "min_ms": 1.3121329993737163,
+    "max_ms": 8008.135075999235,
+    "p95_ms": 8000.0,
+    "p99_ms": 8000.0
+  },
+  "ws_summary": {
+    "connected": 100.0,
+    "drops": 9240.0,
+    "samples": 994.0,
+    "spread_mean_ms": 0.15735701608664057,
+    "spread_p95_ms": 0.22440100110543426
+  },
+  "gate_fail_reasons": [
+    "REST p95 8000.00ms exceeds 50.00ms",
+    "WS dropped connections = 9240 (expected 0)"
+  ],
+  "result": "fail"
+}

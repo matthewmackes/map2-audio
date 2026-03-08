@@ -6,12 +6,13 @@
  * falls back to Cortex Control inspired knob grid for others.
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { Suspense, useState, useCallback, useMemo } from 'react'
 import { Power, GearSix, ArrowsClockwise, WarningCircle } from '@phosphor-icons/react'
 import { ParameterKnob } from '../Controls/ParameterKnob'
 import type { ChainPlugin, Plugin, PluginParameter } from '../../../map2/types'
 import { getPluginCardComponent, getCategoryConfig } from '../PluginCards'
 import type { PluginCardProps } from '../PluginCards/types'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 // Fallback color for unknown categories
 const FALLBACK_COLOR = '#37d6c9'
@@ -105,9 +106,25 @@ export function KnobParameterPanel({
 
   // Check if there's a custom card component for this plugin
   const CardComponent = useMemo(() => {
-    if (useClassicMode || !meta) return null
-    return getPluginCardComponent(meta.uri, meta.category)
-  }, [meta, useClassicMode])
+    if (useClassicMode || !meta || !plugin) return null
+
+    const category = meta.category || 'Instrument'
+    const candidates = [plugin.uri, meta.uri].filter((value): value is string => Boolean(value))
+
+    for (const candidateUri of candidates) {
+      const component = getPluginCardComponent(candidateUri, category)
+      if (component) {
+        return component
+      }
+    }
+
+    const synthforgeHint = `${plugin.uri} ${meta.uri} ${plugin.name || ''} ${meta.name || ''}`.toLowerCase()
+    if (synthforgeHint.includes('synthforge')) {
+      return getPluginCardComponent('map2://juce/synthforge', category)
+    }
+
+    return null
+  }, [meta, plugin, useClassicMode])
 
   // Build parameter values from chain plugin (index-based for card system)
   const parameterValues = useMemo(() => {
@@ -145,7 +162,7 @@ export function KnobParameterPanel({
               Plugin metadata not found
             </p>
             <p className="knob-param-panel-error-desc">
-              "{plugin.name || 'Unknown plugin'}" is in the chain but not found in the plugin discovery cache.
+              "{getDisplayPluginName(plugin.name, plugin.uri)}" is in the chain but not found in the plugin discovery cache.
             </p>
             <p className="knob-param-panel-error-uri">
               URI: {plugin.uri}
@@ -166,7 +183,59 @@ export function KnobParameterPanel({
     )
   }
 
-  const accentColor = getCategoryConfig(meta.category).color
+  const isHardware = meta.format === 'Hardware' || meta.is_hardware || plugin.uri.startsWith('hardware://')
+  const accentColor = isHardware ? '#C8A951' : getCategoryConfig(meta.category).color
+
+  // Hardware plugin → show link to MPX-1 Panel instead of empty params
+  if (isHardware) {
+    return (
+      <div className="knob-param-panel">
+        <div className="knob-param-panel-header">
+          <div className="knob-param-panel-title">
+            <span className="knob-param-panel-category" style={{ color: '#C8A951' }}>
+              HARDWARE
+            </span>
+            <span className="knob-param-panel-name">{meta.name}</span>
+          </div>
+          {onToggleBypass && (
+            <button
+              className={`knob-param-panel-power ${plugin.bypassed ? 'bypassed' : 'active'}`}
+              onClick={onToggleBypass}
+              title={plugin.bypassed ? 'Enable plugin' : 'Bypass plugin'}
+              style={{ '--accent': '#C8A951' } as React.CSSProperties}
+            >
+              <Power size={18} weight="duotone" />
+            </button>
+          )}
+        </div>
+        <div className="knob-param-panel-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
+          <img src="/img/fx_lexicon.svg" alt="Lexicon MPX-1" width={48} height={48} />
+          <p style={{ color: '#C8A951', fontWeight: 600, fontSize: 14, margin: 0 }}>
+            Lexicon MPX-1 Hardware Effect
+          </p>
+          <p style={{ color: '#888', fontSize: 12, margin: 0, textAlign: 'center' }}>
+            601 parameters controlled via MIDI SysEx
+          </p>
+          <button
+            onClick={() => { window.location.href = '/mpx1/panel' }}
+            style={{
+              background: '#C8A951',
+              color: '#1A1A1A',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 20px',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
+              marginTop: 4,
+            }}
+          >
+            Open MPX-1 Panel
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Use custom card component if available
   if (CardComponent) {
@@ -195,7 +264,9 @@ export function KnobParameterPanel({
 
     return (
       <div className="knob-param-panel knob-param-panel-card">
-        <CardComponent {...cardProps} />
+        <Suspense fallback={<div className="knob-param-panel-empty"><p>Loading plugin interface...</p></div>}>
+          <CardComponent {...cardProps} />
+        </Suspense>
       </div>
     )
   }

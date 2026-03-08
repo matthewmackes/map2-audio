@@ -1,0 +1,196 @@
+=== playback_AUX0 -> capture_AUX0 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:25:38-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX0",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX0"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX0 -> capture_AUX1 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:25:53-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX0",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX1"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX0 -> capture_AUX2 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:26:08-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX0",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX2"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX0 -> capture_AUX3 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:26:23-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX0",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX3"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX1 -> capture_AUX0 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:26:38-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX1",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX0"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX1 -> capture_AUX1 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:26:53-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX1",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX1"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX1 -> capture_AUX2 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:27:08-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX1",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX2"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX1 -> capture_AUX3 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:27:23-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX1",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX3"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX2 -> capture_AUX0 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:27:38-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX2",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX0"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX2 -> capture_AUX1 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:27:53-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX2",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX1"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX2 -> capture_AUX2 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:28:08-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX2",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX2"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX2 -> capture_AUX3 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:28:23-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX2",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX3"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX3 -> capture_AUX0 ===
+RESULT: NO_SIGNAL error=No loopback signal detected. Connect output to input with a cable.
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T20:28:38-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX3",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX0"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
+
+=== playback_AUX3 -> capture_AUX1 ===

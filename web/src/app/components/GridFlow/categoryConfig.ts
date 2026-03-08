@@ -89,6 +89,9 @@ export const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'Spectrum': { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', icon: ChartBar },
   // Generator
   'Generator': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: MultiEffectIcon },
+  // Hardware
+  'lexicon': { color: '#C8A951', bg: 'rgba(200, 169, 81, 0.15)', icon: Broadcast },
+  'Hardware': { color: '#C8A951', bg: 'rgba(200, 169, 81, 0.15)', icon: Broadcast },
   // Default
   'Effect': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', icon: Sparkle },
   'default': { color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', icon: MultiEffectIcon },

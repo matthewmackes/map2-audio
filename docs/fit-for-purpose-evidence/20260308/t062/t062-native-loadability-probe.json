@@ -1,0 +1,50 @@
+{
+  "timestamp_utc": "2026-03-08T14:21:51+00:00",
+  "catalog_count": 25,
+  "loadable_count": 25,
+  "failed_count": 0,
+  "failed_uris": [],
+  "loadable_sample": [
+    {
+      "uri": "map2://juce/dynamics/compressor",
+      "instance_id": 1
+    },
+    {
+      "uri": "map2://juce/dynamics/celestial",
+      "instance_id": 2
+    },
+    {
+      "uri": "map2://juce/dynamics/limiter",
+      "instance_id": 3
+    },
+    {
+      "uri": "map2://juce/dynamics/gate",
+      "instance_id": 4
+    },
+    {
+      "uri": "map2://juce/eq/parametric",
+      "instance_id": 5
+    },
+    {
+      "uri": "map2://juce/convolution/cabinet",
+      "instance_id": 6
+    },
+    {
+      "uri": "map2://juce/convolution/reverb",
+      "instance_id": 7
+    },
+    {
+      "uri": "map2://juce/nam",
+      "instance_id": 8
+    },
+    {
+      "uri": "map2://juce/synthforge",
+      "instance_id": 9
+    },
+    {
+      "uri": "map2://juce/delay",
+      "instance_id": 10
+    }
+  ],
+  "init_ok": true
+}

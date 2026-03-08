@@ -1,0 +1,70 @@
+{
+  "task_id": "T055",
+  "timestamp": "2026-03-07T19:50:00-05:00",
+  "device": "EDIROL UA-1000",
+  "conditions": {
+    "tuned": {
+      "period_size": 64,
+      "period_num": 2,
+      "headroom": 0,
+      "trials": [
+        {
+          "file": "tuned/trial1.json",
+          "status": "failed",
+          "error": "No loopback signal detected. Connect output to input with a cable."
+        },
+        {
+          "file": "tuned/trial2.json",
+          "status": "failed",
+          "error": "No loopback signal detected. Connect output to input with a cable."
+        },
+        {
+          "file": "tuned/trial3.json",
+          "status": "failed",
+          "error": "No loopback signal detected. Connect output to input with a cable."
+        }
+      ],
+      "measured_count": 0
+    },
+    "rollback": {
+      "period_size": 64,
+      "period_num": 3,
+      "headroom": 0,
+      "trials": [
+        {
+          "file": "rollback/trial1.json",
+          "status": "failed",
+          "error": "No loopback signal detected. Connect output to input with a cable."
+        },
+        {
+          "file": "rollback/trial2.json",
+          "status": "failed",
+          "error": "No loopback signal detected. Connect output to input with a cable."
+        },
+        {
+          "file": "rollback/trial3.json",
+          "status": "failed",
+          "error": "No loopback signal detected. Connect output to input with a cable."
+        }
+      ],
+      "measured_count": 0
+    }
+  },
+  "harness_update": {
+    "file": "scripts/measure_latency.sh",
+    "changes": [
+      "added JACK port auto-detection for PipeWire names",
+      "added --jack-playback-port and --jack-capture-port options",
+      "included detected ports in JSON output",
+      "suppressed pw-top stdout leakage during --json output"
+    ],
+    "sanity_artifact": "internal-estimate-smoke.json"
+  },
+  "result": {
+    "status": "blocked",
+    "reason": "No physical analog loopback signal detected in all six attempts",
+    "can_compute_avg_p95": false,
+    "platform_restored_to_tuned": true,
+    "unblock_requirement": "Patch UA-1000 AUX0 output to AUX0 input with a physical cable and rerun the trial matrix"
+  }
+}

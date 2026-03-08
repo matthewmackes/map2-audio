@@ -1,0 +1,2 @@
+-rwxr-xr-x. 1 mm mm 32535 Feb 16 14:56 scripts/setup_avb.sh
+-rwxr-xr-x. 1 mm mm 15544 Feb 16 14:56 scripts/uninstall_avb.sh

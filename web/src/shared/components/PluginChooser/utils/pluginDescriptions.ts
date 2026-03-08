@@ -4,6 +4,8 @@
  * Used to enhance plugin cards with detailed information
  */
 
+import { sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
+
 export const PLUGIN_DESCRIPTIONS: Record<string, { description: string; category: string; function: string; tips?: string }> = {
   // Spectrum Analyzers
   '1/3 Octave Spectrum Display Mono': {
@@ -371,14 +373,25 @@ export function getPluginDescription(
 ): { description: string; category: string; function: string; tips?: string } {
   // Try exact match first
   if (PLUGIN_DESCRIPTIONS[pluginName]) {
-    return PLUGIN_DESCRIPTIONS[pluginName];
+    const entry = PLUGIN_DESCRIPTIONS[pluginName]
+    return {
+      ...entry,
+      description: sanitizeRestrictedDisplayText(entry.description),
+      function: sanitizeRestrictedDisplayText(entry.function),
+      tips: entry.tips ? sanitizeRestrictedDisplayText(entry.tips) : undefined,
+    };
   }
 
   // Try partial match
   for (const [key, value] of Object.entries(PLUGIN_DESCRIPTIONS)) {
     if (pluginName.toLowerCase().includes(key.toLowerCase()) ||
         key.toLowerCase().includes(pluginName.toLowerCase())) {
-      return value;
+      return {
+        ...value,
+        description: sanitizeRestrictedDisplayText(value.description),
+        function: sanitizeRestrictedDisplayText(value.function),
+        tips: value.tips ? sanitizeRestrictedDisplayText(value.tips) : undefined,
+      };
     }
   }
 
@@ -404,8 +417,8 @@ export function getPluginDescription(
   )?.[1] || 'Audio processing plugin';
 
   return {
-    description,
+    description: sanitizeRestrictedDisplayText(description),
     category: category || pluginType || 'Processing',
-    function: 'Processes audio signal with effect or processing parameters',
+    function: sanitizeRestrictedDisplayText('Processes audio signal with effect or processing parameters'),
   };
 }

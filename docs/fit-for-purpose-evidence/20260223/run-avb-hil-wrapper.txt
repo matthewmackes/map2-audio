@@ -1,0 +1,4 @@
+HIL qualification artifacts: docs/fit-for-purpose-evidence/20260223/hil-wrapper
+Summary: docs/fit-for-purpose-evidence/20260223/hil-wrapper/summary.txt
+Matrix snippet: docs/fit-for-purpose-evidence/20260223/hil-wrapper/matrix_update.md
+One or more gates are BLOCKED by environment constraints; see reasons in docs/fit-for-purpose-evidence/20260223/hil-wrapper/summary.txt

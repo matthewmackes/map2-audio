@@ -1,0 +1,14 @@
+Method,Name,Error,Occurrences
+POST,/api/plugins/unload?uri,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",2
+POST,/api/chains/{id}/activate,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",2
+POST,/api/chains/{id}/deactivate,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",1
+GET,/api/audio/levels,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",16
+GET,/api/audio/levels (during plugin swap),"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",3
+GET,/api/chains/{id},"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",2
+GET,/api/audio/levels/plugins,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",2
+GET,/api/plugins/discover,"CatchResponseError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)"")",21
+GET,/api/audio/status,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",1
+GET,/api/plugins/list,"CatchResponseError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)"")",22
+GET,/api/audio/latency,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",13
+GET,/api/chains/,"CatchResponseError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)"")",23
+POST,/api/plugins/load?uri,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",2

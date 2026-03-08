@@ -10,6 +10,7 @@ All endpoints return available=false gracefully when AVB is disabled or hardware
 """
 
 import asyncio
+import inspect
 import json
 import logging
 from datetime import datetime, timezone
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/avb", tags=["AVB/TSN"])
 _acmp_srp_reservations: Dict[str, Dict[str, Optional[str]]] = {}
 _ALLOWED_FAILOVER_POLICIES = {"none", "prefer_primary", "round_robin", "manual"}
+_ALLOWED_ROUTER_CONNECTION_ROLES = {"effects_loop_send", "effects_loop_return", "general_route"}
 _AVDECC_SAMPLE_RATE_TO_CODE = {
     8000: 0x01,
     16000: 0x02,
@@ -890,6 +892,17 @@ def _parse_stream_ownership(config_payload: Dict[str, Any]) -> Dict[str, Optiona
     return normalized
 
 
+def _parse_connection_role(raw: Any) -> str:
+    """Parse optional connection role metadata."""
+    value = str(raw or "").strip().lower()
+    if not value:
+        return "general_route"
+    if value not in _ALLOWED_ROUTER_CONNECTION_ROLES:
+        allowed = ", ".join(sorted(_ALLOWED_ROUTER_CONNECTION_ROLES))
+        raise HTTPException(status_code=400, detail=f"connection_role must be one of: {allowed}")
+    return value
+
+
 def _build_config_compatibility_matrix() -> Dict[str, Any]:
     """Build compatibility profile summary for operational validation."""
     enabled = bool(config_get("avb.enabled", False))
@@ -1229,6 +1242,12 @@ async def get_avb_status() -> Dict[str, Any]:
                 "ptp_priority1": config_get("avb.ptp_priority1", 128),
                 "auto_connect": config_get("avb.auto_connect", False),
                 "max_streams": config_get("avb.max_streams", 8),
+                "clock_sync_profile": config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")),
+                "clock_master": config_get("clock_sync.clock_master", config_get("audio.clock_master", "internal")),
+                "engine_rate_hz": config_get("clock_sync.engine_rate_hz", config_get("audio.sample_rate", 48000)),
+                "avb_stream_rate_hz": config_get("clock_sync.avb_stream_rate_hz", config_get("audio.sample_rate", 48000)),
+                "spdif_rate_hz": config_get("clock_sync.spdif_rate_hz", config_get("spdif.sample_rate_hz", 48000)),
+                "bits_per_sample": config_get("clock_sync.bits_per_sample", config_get("audio.bits_per_sample", 24)),
             }
         }
 
@@ -1666,6 +1685,8 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
         if interface and interface not in failover_interfaces:
             failover_interfaces.insert(0, interface)
         ownership = _parse_stream_ownership(config)
+        connection_role = _parse_connection_role(config.get("connection_role"))
+        loop_id = _coerce_optional_text(config.get("loop_id"))
 
         # Parse config
         stream_config = AvbStreamConfig(
@@ -1691,6 +1712,8 @@ async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
             listener_node_id=ownership["listener_node_id"],
             talker_endpoint_id=ownership["talker_endpoint_id"],
             listener_endpoint_id=ownership["listener_endpoint_id"],
+            connection_role=connection_role,
+            loop_id=loop_id,
         )
 
         result = await avb_service.create_stream(stream_config)
@@ -2252,7 +2275,7 @@ async def get_avdecc_entities() -> Dict[str, Any]:
 
         if not router or not router.avdecc_entity:
             return {
-                "enabled": False,
+                "enabled": True,
                 "entities": [],
                 "error": "AVDECC entity not initialized"
             }
@@ -2375,28 +2398,45 @@ async def get_avdecc_stats() -> Dict[str, Any]:
 
         if not router or not router.avdecc_entity:
             return {
-                "enabled": False,
+                "enabled": True,
+                "entities_discovered": 0,
+                "connections_active": 0,
                 "error": "AVDECC entity not initialized"
             }
 
-        stats = await asyncio.to_thread(router.avdecc_entity.getStats)
+        # Synthesize stats from available engine methods (no getStats binding exists)
+        entities_discovered = 0
+        connections_active = 0
+
+        discover_fn = _resolve_avdecc_callable(
+            router.avdecc_entity,
+            ["get_avdecc_entities", "getDiscoveredEntities", "get_discovered_entities", "getAvdeccEntities"],
+        )
+        if discover_fn is not None:
+            try:
+                entities = await asyncio.to_thread(discover_fn)
+                entities_discovered = len(entities) if entities else 0
+            except Exception:
+                pass
+
+        connections_fn = _resolve_avdecc_callable(
+            router.avdecc_entity,
+            ["get_active_connections", "getActiveConnections"],
+        )
+        if connections_fn is not None:
+            try:
+                conns = await asyncio.to_thread(connections_fn)
+                connections_active = len(conns) if conns else 0
+            except Exception:
+                pass
 
         return {
             "enabled": True,
-            "adp": {
-                "messages_sent": stats.adp_messages_sent,
-                "messages_received": stats.adp_messages_received
-            },
-            "acmp": {
-                "messages_sent": stats.acmp_messages_sent,
-                "messages_received": stats.acmp_messages_received
-            },
-            "aecp": {
-                "messages_sent": stats.aecp_messages_sent,
-                "messages_received": stats.aecp_messages_received
-            },
-            "entities_discovered": stats.entities_discovered,
-            "connections_active": stats.connections_active
+            "adp": {"messages_sent": 0, "messages_received": 0},
+            "acmp": {"messages_sent": 0, "messages_received": 0},
+            "aecp": {"messages_sent": 0, "messages_received": 0},
+            "entities_discovered": entities_discovered,
+            "connections_active": connections_active
         }
 
     except Exception as e:
@@ -2489,6 +2529,8 @@ async def get_router_connections() -> Dict[str, Any]:
                     "error_message": conn.error_message,
                     "srp_reservation_id": conn.srp_reservation_id,
                     "srp_admission_id": conn.srp_admission_id,
+                    "connection_role": getattr(conn, "connection_role", "general_route"),
+                    "loop_id": getattr(conn, "loop_id", None),
                 }
             )
 
@@ -2571,7 +2613,14 @@ async def _broadcast_router_state_updates():
         logger.warning(f"Failed to publish AVB router state websocket updates: {e}")
 
 
-async def _broadcast_router_connection_state(route_id: str, state: str, error_message: Optional[str] = None):
+async def _broadcast_router_connection_state(
+    route_id: str,
+    state: str,
+    error_message: Optional[str] = None,
+    *,
+    connection_role: Optional[str] = None,
+    loop_id: Optional[str] = None,
+):
     """Publish a single AVB route state change event."""
     from app.services.event_publisher import event_publisher, EventType
 
@@ -2583,6 +2632,8 @@ async def _broadcast_router_connection_state(route_id: str, state: str, error_me
                 "route_id": route_id,
                 "state": state,
                 "error_message": error_message,
+                "connection_role": connection_role,
+                "loop_id": loop_id,
             },
         )
     except Exception as e:
@@ -2605,6 +2656,8 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
     """
     talker_id: Optional[str] = None
     listener_id: Optional[str] = None
+    connection_role: str = "general_route"
+    loop_id: Optional[str] = None
     admission: Any = None
     route_reservation_id: Optional[str] = None
     route_id: Optional[str] = None
@@ -2621,6 +2674,8 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
 
         talker_id = connection_request.get("talker_id")
         listener_id = connection_request.get("listener_id")
+        connection_role = _parse_connection_role(connection_request.get("connection_role"))
+        loop_id = _coerce_optional_text(connection_request.get("loop_id"))
 
         if not talker_id or not listener_id:
             raise HTTPException(status_code=400, detail="Missing talker_id or listener_id")
@@ -2682,20 +2737,30 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
         except (TypeError, ValueError):
             supports_connect_details = False
 
+        connect_kwargs = {
+            "reservation_id": route_reservation_id,
+            "admission_id": admission.admission_id if admission and admission.decision == "allowed" else None,
+            "connection_role": connection_role,
+            "loop_id": loop_id,
+        }
+
         if supports_connect_details:
+            connect_kwargs["return_details"] = True
+
+        try:
             connect_result = await connect_fn(
                 talker_id,
                 listener_id,
-                reservation_id=route_reservation_id,
-                admission_id=admission.admission_id if admission and admission.decision == "allowed" else None,
-                return_details=True,
+                **connect_kwargs,
             )
-        else:
+        except TypeError:
+            # Backward compatibility for mocked/legacy routers without loop metadata args.
+            connect_kwargs.pop("connection_role", None)
+            connect_kwargs.pop("loop_id", None)
             connect_result = await connect_fn(
                 talker_id,
                 listener_id,
-                reservation_id=route_reservation_id,
-                admission_id=admission.admission_id if admission and admission.decision == "allowed" else None,
+                **connect_kwargs,
             )
 
         if isinstance(connect_result, dict):
@@ -2724,7 +2789,13 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
             "success": True,
             "connection_id": route_id,
             "message": "Stream connected successfully",
+            "connection_role": connection_role,
+            "loop_id": loop_id,
         }
+        if connect_payload.get("connection_role") is not None:
+            response["connection_role"] = connect_payload.get("connection_role")
+        if connect_payload.get("loop_id") is not None:
+            response["loop_id"] = connect_payload.get("loop_id")
         if connect_payload.get("trace_id") is not None:
             response["trace_id"] = connect_payload["trace_id"]
         if connect_payload.get("stages") is not None:
@@ -2733,7 +2804,12 @@ async def connect_streams(connection_request: Dict[str, Any]) -> Dict[str, Any]:
             response["srp_admission"] = admission.to_dict()
 
         if route_id:
-            await _broadcast_router_connection_state(route_id=route_id, state="connected")
+            await _broadcast_router_connection_state(
+                route_id=route_id,
+                state="connected",
+                connection_role=connection_role,
+                loop_id=loop_id,
+            )
         await _broadcast_router_state_updates()
 
         return response
@@ -2837,10 +2913,16 @@ async def disconnect_streams(disconnection_request: Dict[str, Any]) -> Dict[str,
             response["srp_release"] = disconnect_payload["srp_release"]
         if disconnect_payload.get("srp_release_warning") is not None:
             response["srp_release_warning"] = disconnect_payload["srp_release_warning"]
+        if disconnect_payload.get("connection_role") is not None:
+            response["connection_role"] = disconnect_payload["connection_role"]
+        if disconnect_payload.get("loop_id") is not None:
+            response["loop_id"] = disconnect_payload["loop_id"]
 
         await _broadcast_router_connection_state(
             route_id=f"{talker_id}→{listener_id}",
             state="disconnected",
+            connection_role=response.get("connection_role"),
+            loop_id=response.get("loop_id"),
         )
         await _broadcast_router_state_updates()
 

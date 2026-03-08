@@ -1,0 +1,16 @@
+MAP2 Audio AVB/TSN Setup Script
+
+Usage: sudo scripts/setup_avb.sh [OPTIONS]
+
+Options:
+  --dry-run           Check compatibility without making changes
+  --yes, -y           Non-interactive mode (auto-confirm all prompts)
+  --interface, -i IF  Specify AVB network interface
+  --verbose, -v       Enable verbose output
+  --help, -h          Show this help message
+
+Examples:
+  sudo scripts/setup_avb.sh --dry-run                    # Check if AVB can be configured
+  sudo scripts/setup_avb.sh --interface enp3s0           # Use specific interface
+  sudo scripts/setup_avb.sh --yes                        # Non-interactive setup
+

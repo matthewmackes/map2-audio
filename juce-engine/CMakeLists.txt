@@ -35,6 +35,9 @@ option(JUCE_PLUGINHOST_VST3 "Enable VST3 plugin hosting" OFF)
 option(JUCE_PLUGINHOST_AU "Enable AudioUnit plugin hosting (macOS)" OFF)
 option(JUCE_PLUGINHOST_LV2 "Enable LV2 plugin hosting via JUCE" ON)
 option(JUCE_PLUGINHOST_LADSPA "Enable LADSPA plugin hosting" ON)
+option(MAP2_PYBIND_ENABLE_EXTRAS
+    "Enable pybind11 extras for Python module build (Release stripping/LTO helper behavior)"
+    ON)
 
 # ========================================
 # JUCE Framework Integration
@@ -122,6 +125,22 @@ if(JACK_FOUND)
     endif()
 endif()
 
+# sfizz sampler backend (optional, used by SynthForge full SFZ engine)
+option(USE_SFIZZ "Enable sfizz backend for SynthForge sampler engine" ON)
+if(USE_SFIZZ)
+    pkg_check_modules(SFIZZ sfizz QUIET)
+    if(SFIZZ_FOUND)
+        message(STATUS "SynthForge sfizz backend: ENABLED (sfizz ${SFIZZ_VERSION})")
+        set(SFIZZ_AVAILABLE TRUE)
+    else()
+        message(STATUS "SynthForge sfizz backend: DISABLED (sfizz not found)")
+        set(SFIZZ_AVAILABLE FALSE)
+    endif()
+else()
+    message(STATUS "SynthForge sfizz backend: DISABLED (USE_SFIZZ=OFF)")
+    set(SFIZZ_AVAILABLE FALSE)
+endif()
+
 # ========================================
 # Neural Amp Modeler Core (RT-safe)
 # ========================================
@@ -180,21 +199,42 @@ else()
 endif()
 
 # ========================================
-# AVDECC (IEEE 1722.1) Third-Party Interop (Optional)
+# AVDECC (IEEE 1722.1) via L-Acoustics la_avdecc (Optional)
+# Replaces custom AVDECC stack. Independent of USE_AVB — uses libpcap transport.
 # ========================================
-option(USE_AVDECC "Enable AVDECC for third-party AVB device interop" OFF)
+option(USE_AVDECC "Enable AVDECC for third-party AVB device interop (via la_avdecc)" OFF)
+set(AVDECC_AVAILABLE FALSE)
 if(USE_AVDECC)
-    if(AVB_AVAILABLE)
-        message(STATUS "AVDECC: ENABLED (IEEE 1722.1 interoperability)")
+    pkg_check_modules(LIBPCAP libpcap QUIET)
+    if(LIBPCAP_FOUND)
+        message(STATUS "AVDECC: ENABLED via la_avdecc v4.3.1.1 (libpcap ${LIBPCAP_VERSION})")
         set(AVDECC_AVAILABLE TRUE)
+
+        # Disable la_avdecc sub-targets we don't need
+        set(BUILD_AVDECC_TESTS        OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_EXAMPLES     OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_DOC          OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_CONTROLLER_LIB ON CACHE BOOL "" FORCE)
+        set(AVDECC_ENABLE_VERBOSE_DEBUG_LOG OFF CACHE BOOL "" FORCE)
+        # Use PCap protocol interface (raw Ethernet on Linux via libpcap)
+        set(BUILD_AVDECC_INTERFACE_PCAP     ON  CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_INTERFACE_MAC      OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_INTERFACE_VIRTUAL  OFF CACHE BOOL "" FORCE)
+        set(BUILD_AVDECC_INTERFACE_SERIAL   OFF CACHE BOOL "" FORCE)
+
+        FetchContent_Declare(
+            la_avdecc
+            GIT_REPOSITORY https://github.com/L-Acoustics/avdecc.git
+            GIT_TAG        v4.3.1.1
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(la_avdecc)
     else()
-        message(STATUS "AVDECC: DISABLED (requires AVB to be enabled first)")
-        message(STATUS "  Enable AVB first with: cmake -DUSE_AVB=ON -DUSE_AVDECC=ON")
-        set(AVDECC_AVAILABLE FALSE)
+        message(STATUS "AVDECC: DISABLED (libpcap not found)")
+        message(STATUS "  Install with: sudo dnf install libpcap-devel")
     endif()
 else()
     message(STATUS "AVDECC: DISABLED (USE_AVDECC=OFF)")
-    set(AVDECC_AVAILABLE FALSE)
 endif()
 
 # ========================================
@@ -232,7 +272,8 @@ set(SOURCES
     Source/ShoeGazeProcessor.cpp
     Source/LexiLoveProcessor.cpp
     Source/H3000Processor.cpp
-    
+    Source/LexiconHardwareProcessor.cpp
+
     # Multi-Effect Processor
     Source/EventideH9Processor.cpp
 
@@ -244,6 +285,14 @@ set(SOURCES
 
     # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
     Source/PassionFXProcessor.cpp
+
+    # SynthForge (Phase 1 scaffold)
+    Source/SynthForge/SynthForgeProcessor.cpp
+    Source/SynthForge/Core/Part.cpp
+    Source/SynthForge/Core/VoiceAllocator.cpp
+    Source/SynthForge/Core/MidiRouter.cpp
+    Source/SynthForge/Sampler/SfzLoader.cpp
+    Source/SynthForge/Sound/SynthVoice.cpp
 
     # Existing components (updated)
     Source/MidiHandler.cpp
@@ -269,15 +318,18 @@ if(AVB_AVAILABLE)
         Source/AvbStream.cpp
         Source/AvbAudioIODeviceType.cpp
         Source/AvbAudioIODevice.cpp
+        Source/TesiraAvbNode.cpp
     )
 endif()
 
-# Add AVDECC sources if available
+# Add AVDECC sources if available (la_avdecc wrapper)
 if(AVDECC_AVAILABLE)
     list(APPEND SOURCES
-        Source/AvdeccEntity.cpp
-        Source/AvdeccEntityModel.cpp
-        Source/AvdeccEnumerator.cpp
+        Source/AvdeccController.cpp   # Wraps la_avdecc_controller
+        # Superseded by la_avdecc (kept on disk for reference):
+        # Source/AvdeccEntity.cpp
+        # Source/AvdeccEntityModel.cpp
+        # Source/AvdeccEnumerator.cpp
     )
 endif()
 
@@ -326,6 +378,15 @@ set(HEADERS
     # PassionFX Multi-Effect (Steve Vai Passion & Warfare)
     Source/PassionFXProcessor.h
 
+    # SynthForge (Phase 1 scaffold)
+    Source/SynthForge/SynthForgeProcessor.h
+    Source/SynthForge/Core/Part.h
+    Source/SynthForge/Core/VoiceAllocator.h
+    Source/SynthForge/Core/MidiRouter.h
+    Source/SynthForge/Sampler/SfzLoader.h
+    Source/SynthForge/Sound/SynthVoice.h
+    Source/SynthForge/Common/Types.h
+
     # Existing components
     Source/MidiHandler.h
     Source/VuMeter.h
@@ -346,23 +407,31 @@ if(AVB_AVAILABLE)
         Source/AvbStream.h
         Source/AvbAudioIODeviceType.h
         Source/AvbAudioIODevice.h
+        Source/TesiraAvbNode.h
     )
 endif()
 
-# Add AVDECC headers if available
+# Add AVDECC headers if available (la_avdecc wrapper)
 if(AVDECC_AVAILABLE)
     list(APPEND HEADERS
-        Source/AvdeccEntity.h
-        Source/AvdeccDescriptors.h
-        Source/AvdeccEntityModel.h
-        Source/AvdeccEnumerator.h
+        Source/AvdeccController.h   # New la_avdecc wrapper
+        # Superseded (kept on disk for reference):
+        # Source/AvdeccEntity.h
+        # Source/AvdeccDescriptors.h
+        # Source/AvdeccEntityModel.h
+        # Source/AvdeccEnumerator.h
     )
 endif()
 
 # ========================================
 # Create Python module
 # ========================================
-pybind11_add_module(map2_audio_engine ${SOURCES} ${HEADERS})
+if(MAP2_PYBIND_ENABLE_EXTRAS)
+    pybind11_add_module(map2_audio_engine ${SOURCES} ${HEADERS})
+else()
+    # Disable pybind11 extras for ASAN/gdb triage so symbols are preserved.
+    pybind11_add_module(map2_audio_engine NO_EXTRAS ${SOURCES} ${HEADERS})
+endif()
 
 # ========================================
 # Include directories
@@ -394,6 +463,14 @@ if(AVB_AVAILABLE)
         ${AVTP_INCLUDE_DIRS}
         ${LIBCAP_INCLUDE_DIRS}
     )
+endif()
+
+if(AVDECC_AVAILABLE)
+    target_include_directories(map2_audio_engine PRIVATE ${LIBPCAP_INCLUDE_DIRS})
+endif()
+
+if(SFIZZ_AVAILABLE)
+    target_include_directories(map2_audio_engine PRIVATE ${SFIZZ_INCLUDE_DIRS})
 endif()
 
 # ========================================
@@ -443,6 +520,27 @@ if(AVB_AVAILABLE)
     )
 endif()
 
+if(AVDECC_AVAILABLE)
+    target_link_libraries(map2_audio_engine PRIVATE
+        la_avdecc_controller_static
+        ${LIBPCAP_LIBRARIES}
+    )
+endif()
+
+if(SFIZZ_AVAILABLE)
+    if(SFIZZ_LIBRARY_DIRS)
+        target_link_directories(map2_audio_engine PRIVATE ${SFIZZ_LIBRARY_DIRS})
+    endif()
+    target_link_libraries(map2_audio_engine PRIVATE ${SFIZZ_LIBRARIES})
+
+    # Ensure runtime loader can resolve libsfizz when installed in /usr/local/lib64.
+    if(SFIZZ_LIBRARY_DIRS)
+        foreach(_sfizz_dir ${SFIZZ_LIBRARY_DIRS})
+            target_link_options(map2_audio_engine PRIVATE "-Wl,-rpath,${_sfizz_dir}")
+        endforeach()
+    endif()
+endif()
+
 # ========================================
 # Compile definitions
 # ========================================
@@ -487,6 +585,10 @@ if(USE_NAM)
     if(UNIX AND NOT APPLE)
         target_link_libraries(map2_audio_engine PRIVATE stdc++fs)
     endif()
+endif()
+
+if(SFIZZ_AVAILABLE)
+    target_compile_definitions(map2_audio_engine PRIVATE HAS_SFIZZ=1)
 endif()
 
 if(AVB_AVAILABLE)
@@ -634,6 +736,7 @@ endif()
 message(STATUS "")
 message(STATUS "Neural Processing:")
 message(STATUS "  NAM (Neural Amp Modeler): ${USE_NAM}")
+message(STATUS "  SynthForge sfizz backend: ${SFIZZ_AVAILABLE}")
 message(STATUS "")
 message(STATUS "Network Audio:")
 message(STATUS "  AVB/TSN Transport: ${AVB_AVAILABLE}")

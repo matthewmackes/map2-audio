@@ -10,7 +10,8 @@ import json
 import logging
 import gzip
 import base64
-from typing import Dict, Set, Any, Optional, List
+from collections import deque
+from typing import Dict, Set, Any, Optional, List, Deque
 from fastapi import WebSocket
 from datetime import datetime
 
@@ -42,8 +43,8 @@ class WebSocketManager:
         # Connection metadata
         self.connection_info: Dict[str, Dict[str, Any]] = {}
 
-        # Event history: topic -> list of recent events
-        self.event_history: Dict[str, List[Dict[str, Any]]] = {}
+        # Event history: topic -> bounded deque of recent events
+        self.event_history: Dict[str, Deque[Dict[str, Any]]] = {}
         self.history_limit = 10  # Keep last 10 events per topic
 
         # Lock for thread-safe operations
@@ -157,22 +158,31 @@ class WebSocketManager:
             message: JSON string or plain text
             topic: If specified, only send to subscribers of this topic
         """
-        # Determine target clients
-        if topic and topic in self.subscriptions:
-            target_clients = self.subscriptions[topic]
+        # Determine target clients from a snapshot to avoid mutation during send.
+        if topic:
+            target_clients = set(self.subscriptions.get(topic, set()))
         else:
             target_clients = set(self.active_connections.keys())
-        
-        # Send to all targets
-        disconnected_clients = []
+
+        send_client_ids: List[str] = []
+        send_tasks = []
         for client_id in target_clients:
-            if client_id in self.active_connections:
-                try:
-                    await self.active_connections[client_id].send_text(message)
-                except Exception as e:
-                    logger.error(f"Error broadcasting to {client_id}: {e}")
-                    disconnected_clients.append(client_id)
-        
+            websocket = self.active_connections.get(client_id)
+            if websocket is None:
+                continue
+            send_client_ids.append(client_id)
+            send_tasks.append(websocket.send_text(message))
+
+        if not send_tasks:
+            return
+
+        send_results = await asyncio.gather(*send_tasks, return_exceptions=True)
+        disconnected_clients = []
+        for client_id, result in zip(send_client_ids, send_results):
+            if isinstance(result, Exception):
+                logger.error(f"Error broadcasting to {client_id}: {result}")
+                disconnected_clients.append(client_id)
+
         # Clean up disconnected clients
         for client_id in disconnected_clients:
             self.disconnect(client_id)
@@ -189,15 +199,11 @@ class WebSocketManager:
         """
         # Store in event history if topic is specified
         if topic:
-            async with self._lock:
-                if topic not in self.event_history:
-                    self.event_history[topic] = []
-
-                self.event_history[topic].append(data)
-
-                # Limit history size
-                if len(self.event_history[topic]) > self.history_limit:
-                    self.event_history[topic].pop(0)
+            history = self.event_history.get(topic)
+            if history is None:
+                history = deque(maxlen=self.history_limit)
+                self.event_history[topic] = history
+            history.append(data)
 
         message = json.dumps(data)
         
@@ -245,12 +251,12 @@ class WebSocketManager:
         if topic:
             return {
                 "topic": topic,
-                "events": self.event_history.get(topic, [])
+                "events": list(self.event_history.get(topic, []))
             }
         else:
             return {
                 "all_topics": {
-                    topic: events
+                    topic: list(events)
                     for topic, events in self.event_history.items()
                 }
             }

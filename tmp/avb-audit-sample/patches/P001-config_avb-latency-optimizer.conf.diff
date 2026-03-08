@@ -1,0 +1,37 @@
+--- a/config/avb-latency-optimizer.conf
++++ b/config/avb-latency-optimizer.conf
+@@ -0,0 +1,17 @@
++# MAP2 AVB Latency Optimizer Suggested Baseline
+
++# Generated for operator review before production apply.
+
++[avb]
+
++enable_gptp=true
+
++require_stream_reservation=true
+
++enable_cbs=true
+
++max_reserved_bandwidth_percent=75
+
++presentation_offset_ms=0.35
+
++target_buffer_samples=128
+
++
+
++[runtime]
+
++rt_policy=SCHED_FIFO
+
++rt_priority=85
+
++pin_audio_irq=true
+
++
+
++[notes]
+
++finding_count=1
+

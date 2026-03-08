@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash, ArrowsClockwise, SpinnerGap, Warning, Check } from '@phosphor-icons/react'
 import { pluginsApi } from '../../map2/api'
 import type { Plugin } from '../../map2/types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 export function PluginManagementCard() {
   const queryClient = useQueryClient()
@@ -27,8 +28,8 @@ export function PluginManagementCard() {
     
     // Filter by search term
     let filtered = list.filter((p: Plugin) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getDisplayPluginName(p.name, p.uri).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sanitizeRestrictedDisplayText(p.author).toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.uri.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
@@ -36,12 +37,14 @@ export function PluginManagementCard() {
     filtered.sort((a: Plugin, b: Plugin) => {
       switch (sortBy) {
         case 'author':
-          return a.author.localeCompare(b.author) || a.name.localeCompare(b.name)
+          return sanitizeRestrictedDisplayText(a.author).localeCompare(sanitizeRestrictedDisplayText(b.author))
+            || getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
         case 'format':
-          return (a.format || '').localeCompare(b.format || '') || a.name.localeCompare(b.name)
+          return (a.format || '').localeCompare(b.format || '')
+            || getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
         case 'name':
         default:
-          return a.name.localeCompare(b.name)
+          return getDisplayPluginName(a.name, a.uri).localeCompare(getDisplayPluginName(b.name, b.uri))
       }
     })
 
@@ -311,8 +314,8 @@ export function PluginManagementCard() {
                       style={{ cursor: 'pointer' }}
                     />
                   </td>
-                  <td style={{ padding: '12px', fontWeight: 500, color: 'white' }}>{plugin.name}</td>
-                  <td style={{ padding: '12px', color: '#aaa' }}>{plugin.author || '-'}</td>
+                  <td style={{ padding: '12px', fontWeight: 500, color: 'white' }}>{getDisplayPluginName(plugin.name, plugin.uri)}</td>
+                  <td style={{ padding: '12px', color: '#aaa' }}>{sanitizeRestrictedDisplayText(plugin.author) || '-'}</td>
                   <td style={{ padding: '12px' }}>
                     <span style={{ padding: '4px 8px', background: 'rgba(59, 130, 246, 0.3)', color: '#60a5fa', borderRadius: 4, fontSize: 11 }}>
                       {plugin.format || 'LV2'}

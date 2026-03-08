@@ -1,0 +1,48 @@
+=== playback_AUX0 -> capture_AUX0 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX0 -> capture_AUX1 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX0 -> capture_AUX2 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX0 -> capture_AUX3 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX1 -> capture_AUX0 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX1 -> capture_AUX1 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX1 -> capture_AUX2 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX1 -> capture_AUX3 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX2 -> capture_AUX0 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX2 -> capture_AUX1 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX2 -> capture_AUX2 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX2 -> capture_AUX3 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX3 -> capture_AUX0 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX3 -> capture_AUX1 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX3 -> capture_AUX2 ===
+RESULT: TIMEOUT_OR_FAIL
+
+=== playback_AUX3 -> capture_AUX3 ===
+RESULT: TIMEOUT_OR_FAIL
+

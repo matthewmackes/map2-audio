@@ -1,0 +1,2 @@
+id,severity,component,classification,title,evidence_path,evidence_line,impact,recommendation,effort,risk,confidence
+F001,high,end-to-end,inferred,Estimated one-way latency exceeds aggressive live-performance budget,report-model,1,Round-trip targets for live monitoring may be missed under current assumptions.,"Prioritize buffer reduction, hop minimization, and CBS+gPTP hardening to approach target.",Medium,Medium,0.95

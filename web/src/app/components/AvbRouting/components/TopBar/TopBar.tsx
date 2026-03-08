@@ -26,8 +26,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  useMediaQuery,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useTheme } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
@@ -597,6 +599,8 @@ function buildSceneDiffPresetImportPlan(
  * Top bar component
  */
 export function TopBar() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { state, dispatch } = useRouting();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
@@ -2072,14 +2076,41 @@ export function TopBar() {
   ]);
 
   return (
-    <AppBar position="static" color="default" elevation={1}>
+    <AppBar
+      position="static"
+      color="default"
+      elevation={1}
+      sx={{
+        bgcolor: 'background.paper',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
       {/* Node Selector - Top Row */}
       <NodeSelector />
 
       {/* Controls - Bottom Row */}
-      <Toolbar sx={{ gap: 2 }}>
+      <Toolbar
+        sx={{
+          gap: { xs: 1, sm: 1.5 },
+          px: { xs: 1, sm: 2 },
+          py: { xs: 0.75, sm: 1 },
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          minHeight: { xs: 'auto', sm: 56 },
+        }}
+      >
         {/* Title */}
-        <Typography variant="h6" sx={{ fontWeight: 600, minWidth: 200 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            minWidth: { xs: 0, md: 180 },
+            width: { xs: '100%', md: 'auto' },
+            fontSize: { xs: 16, sm: 18, md: 20 },
+            lineHeight: 1.2,
+          }}
+        >
           AVB Routing Matrix
         </Typography>
 
@@ -2090,7 +2121,10 @@ export function TopBar() {
           value={state.search}
           onChange={handleSearchChange}
           inputProps={{ 'data-testid': 'topbar-search-input' }}
-          sx={{ width: 300 }}
+          sx={{
+            width: { xs: '100%', sm: 260, lg: 300 },
+            flexGrow: { xs: 1, md: 0 },
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -2101,7 +2135,21 @@ export function TopBar() {
         />
 
         {/* Stats */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            alignItems: 'center',
+            flexWrap: isMobile ? 'nowrap' : 'wrap',
+            overflowX: isMobile ? 'auto' : 'visible',
+            width: isMobile ? '100%' : 'auto',
+            maxWidth: '100%',
+            pb: isMobile ? 0.25 : 0,
+            '& .MuiChip-root': {
+              flexShrink: 0,
+            },
+          }}
+        >
           <Chip
             label={`${endpointCount} endpoints`}
             size="small"
@@ -2216,7 +2264,22 @@ export function TopBar() {
           )}
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }} data-testid="topbar-scene-status-strip">
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            alignItems: 'center',
+            flexWrap: isMobile ? 'nowrap' : 'wrap',
+            overflowX: isMobile ? 'auto' : 'visible',
+            width: isMobile ? '100%' : 'auto',
+            maxWidth: '100%',
+            pb: isMobile ? 0.25 : 0,
+            '& .MuiChip-root': {
+              flexShrink: 0,
+            },
+          }}
+          data-testid="topbar-scene-status-strip"
+        >
           <Chip
             size="small"
             variant="outlined"
@@ -2286,7 +2349,7 @@ export function TopBar() {
           />
         </Box>
 
-        <Box sx={{ flex: 1 }} /> {/* Spacer */}
+        <Box sx={{ flex: 1, display: { xs: 'none', xl: 'block' } }} /> {/* Spacer */}
 
         {/* Filters */}
         <Tooltip title="Open endpoint filter controls">
@@ -2329,7 +2392,7 @@ export function TopBar() {
 
         {/* Safe Patch Mode */}
         {state.safePatchMode ? (
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             <Chip
               icon={<SecurityIcon />}
               label={`Safe Patch (${pendingCount} pending)`}
@@ -2382,7 +2445,7 @@ export function TopBar() {
         </Tooltip>
 
         {/* Undo/Redo */}
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', gap: 0.5, ml: { xs: 0, md: 'auto' } }}>
           <Tooltip title="Undo (Ctrl+Z)">
             <span>
               <IconButton
@@ -2412,10 +2475,19 @@ export function TopBar() {
         open={scenesOpen}
         anchorEl={scenesAnchor}
         onClose={handleScenesClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
       >
-        <Box sx={{ p: 2, width: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box
+          sx={{
+            p: 2,
+            width: { xs: 'min(92vw, 360px)', sm: 360 },
+            maxWidth: '92vw',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+          }}
+        >
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Scene Management
           </Typography>
@@ -2801,10 +2873,19 @@ export function TopBar() {
         open={filtersOpen}
         anchorEl={filtersAnchor}
         onClose={handleFiltersClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
       >
-        <Box sx={{ p: 2, width: 360, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box
+          sx={{
+            p: 2,
+            width: { xs: 'min(92vw, 360px)', sm: 360 },
+            maxWidth: '92vw',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+          }}
+        >
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Endpoint Filters
           </Typography>
@@ -3046,10 +3127,19 @@ export function TopBar() {
         open={sceneDiffOpen}
         anchorEl={sceneDiffAnchor}
         onClose={handleSceneDiffClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
       >
-        <Box sx={{ p: 2, width: 380, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box
+          sx={{
+            p: 2,
+            width: { xs: 'min(92vw, 380px)', sm: 380 },
+            maxWidth: '92vw',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+          }}
+        >
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Scene Diff Controls
           </Typography>

@@ -1,0 +1,26 @@
+{
+  "timestamp_utc": "2026-02-27T21:16:20.767897+00:00",
+  "effects_loops": {
+    "loops": [],
+    "count": 0
+  },
+  "gate_eval": {
+    "loop_count_gate": {
+      "pass": false,
+      "criteria": ">= 8 active loops configured",
+      "observed_count": 0
+    },
+    "latency_gate": {
+      "pass": false,
+      "criteria": "<= 0.5ms added latency",
+      "reason": "No HIL loop metrics available without configured loops + Tesira path"
+    },
+    "soak_gate": {
+      "pass": false,
+      "criteria": "8-loop churn soak stability",
+      "reason": "Cannot execute without active loop topology"
+    },
+    "overall_pass": false
+  },
+  "conclusion": "Blocked: no active effects-loop HIL topology detected; latency/soak gates cannot run."
+}

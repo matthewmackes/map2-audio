@@ -1,0 +1,10 @@
+[load_test] started WS soak with target=100 clients
+[load_test] WS summary: {
+  "connected": 100.0,
+  "drops": 0.0,
+  "samples": 622.0,
+  "spread_mean_ms": 0.13915904178817992,
+  "spread_p95_ms": 0.21170099898881745
+}
+[load_test] FAIL:
+ - REST p95 8000.00ms exceeds 50.00ms

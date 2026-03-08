@@ -49,6 +49,7 @@ enum class PluginFormat {
     AudioUnit,
     LV2,
     LADSPA,
+    Hardware,   // External hardware effect via send/return (e.g., Lexicon MPX-1)
     Unknown
 };
 
@@ -258,6 +259,7 @@ inline std::string pluginFormatToString(PluginFormat format) {
         case PluginFormat::AudioUnit: return "AudioUnit";
         case PluginFormat::LV2: return "LV2";
         case PluginFormat::LADSPA: return "LADSPA";
+        case PluginFormat::Hardware: return "Hardware";
         case PluginFormat::All: return "All";
         default: return "Unknown";
     }
@@ -269,6 +271,7 @@ inline PluginFormat stringToPluginFormat(const std::string& str) {
     if (str == "AudioUnit" || str == "AU" || str == "au") return PluginFormat::AudioUnit;
     if (str == "LV2" || str == "lv2") return PluginFormat::LV2;
     if (str == "LADSPA" || str == "ladspa") return PluginFormat::LADSPA;
+    if (str == "Hardware" || str == "hardware") return PluginFormat::Hardware;
     if (str == "All" || str == "all") return PluginFormat::All;
     return PluginFormat::Unknown;
 }

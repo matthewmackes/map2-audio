@@ -1,0 +1,662 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      The system is: Linux - 6.18.5-200.fc43.x86_64 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /usr/lib64/ccache/clang++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is Clang, found in:
+        /home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/3.31.10/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_a1f15/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_a1f15.dir/build.make CMakeFiles/cmTC_a1f15.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG'
+        Building CXX object CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/lib64/ccache/clang++   -v -MD -MT CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        clang version 21.1.8 (Fedora 21.1.8-4.fc43)
+        Target: x86_64-redhat-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang++.cfg
+        System configuration file directory: /etc/clang/
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/bin/clang-21" -cc1 -triple x86_64-redhat-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model static -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/mm/map2-audio/juce-engine/ChorusPlugin/build/CMakeFiles/CMakeScratch/TryCompile-Yg9UXU -v -fcoverage-compilation-dir=/home/mm/map2-audio/juce-engine/ChorusPlugin/build/CMakeFiles/CMakeScratch/TryCompile-Yg9UXU -resource-dir /usr/bin/../lib/clang/21 -dependency-file CMakeFiles/cmTC_f0291.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_f0291.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15 -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/x86_64-redhat-linux -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/backward -internal-isystem /usr/bin/../lib/clang/21/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f0291.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 21.1.8 based upon LLVM 21.1.8 default target x86_64-redhat-linux-gnu
+        ignoring nonexistent directory "/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15
+         /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/x86_64-redhat-linux
+         /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/backward
+         /usr/bin/../lib/clang/21/include
+         /usr/local/include
+         /usr/include
+        End of search list.
+        Linking CXX executable cmTC_a1f15
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a1f15.dir/link.txt --verbose=1
+        clang version 21.1.8 (Fedora 21.1.8-4.fc43)
+        Target: x86_64-redhat-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang++.cfg
+        System configuration file directory: /etc/clang/
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_a1f15 /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o -L/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15 -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o
+        GNU ld version 2.45.1-1.fc43
+        /usr/lib64/ccache/clang++  -v -Wl,-v CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_a1f15
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15]
+          add: [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/x86_64-redhat-linux]
+          add: [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/backward]
+          add: [/usr/bin/../lib/clang/21/include]
+          add: [/usr/local/include]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15] ==> [/usr/include/c++/15]
+        collapse include dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/x86_64-redhat-linux] ==> [/usr/include/c++/15/x86_64-redhat-linux]
+        collapse include dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/backward] ==> [/usr/include/c++/15/backward]
+        collapse include dir [/usr/bin/../lib/clang/21/include] ==> [/usr/lib/clang/21/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/include/c++/15;/usr/include/c++/15/x86_64-redhat-linux;/usr/include/c++/15/backward;/usr/lib/clang/21/include;/usr/local/include;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_a1f15/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_a1f15.dir/build.make CMakeFiles/cmTC_a1f15.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-027DTG']
+        ignore line: [Building CXX object CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/lib64/ccache/clang++   -v -MD -MT CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang version 21.1.8 (Fedora 21.1.8-4.fc43)]
+        ignore line: [Target: x86_64-redhat-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang++.cfg]
+        ignore line: [System configuration file directory: /etc/clang/]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/bin/clang-21" -cc1 -triple x86_64-redhat-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model static -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/mm/map2-audio/juce-engine/ChorusPlugin/build/CMakeFiles/CMakeScratch/TryCompile-Yg9UXU -v -fcoverage-compilation-dir=/home/mm/map2-audio/juce-engine/ChorusPlugin/build/CMakeFiles/CMakeScratch/TryCompile-Yg9UXU -resource-dir /usr/bin/../lib/clang/21 -dependency-file CMakeFiles/cmTC_f0291.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_f0291.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15 -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/x86_64-redhat-linux -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/backward -internal-isystem /usr/bin/../lib/clang/21/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f0291.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 21.1.8 based upon LLVM 21.1.8 default target x86_64-redhat-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15]
+        ignore line: [ /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/x86_64-redhat-linux]
+        ignore line: [ /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../include/c++/15/backward]
+        ignore line: [ /usr/bin/../lib/clang/21/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking CXX executable cmTC_a1f15]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a1f15.dir/link.txt --verbose=1]
+        ignore line: [clang version 21.1.8 (Fedora 21.1.8-4.fc43)]
+        ignore line: [Target: x86_64-redhat-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang++.cfg]
+        ignore line: [System configuration file directory: /etc/clang/]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_a1f15 /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o -L/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15 -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_a1f15] ==> ignore
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o]
+          arg [-L/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu] ==> dir [/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu]
+          arg [-L/usr/bin/../lib/gcc/x86_64-redhat-linux/15] ==> dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+          arg [-L/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64] ==> dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib64] ==> dir [/usr/lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_a1f15.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o]
+        linker tool for 'CXX': /usr/bin/ld
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o] ==> [/usr/lib64/crt1.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o] ==> [/usr/lib64/crti.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/15/crtbegin.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/15/crtend.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o] ==> [/usr/lib64/crtn.o]
+        collapse library dir [/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu] ==> [/usr/lib/clang/21/lib/x86_64-redhat-linux-gnu]
+        collapse library dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15] ==> [/usr/lib/gcc/x86_64-redhat-linux/15]
+        collapse library dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/usr/lib64/crt1.o;/usr/lib64/crti.o;/usr/lib/gcc/x86_64-redhat-linux/15/crtbegin.o;/usr/lib/gcc/x86_64-redhat-linux/15/crtend.o;/usr/lib64/crtn.o]
+        implicit dirs: [/usr/lib/clang/21/lib/x86_64-redhat-linux-gnu;/usr/lib/gcc/x86_64-redhat-linux/15;/usr/lib64;/lib64;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Running the CXX compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld version 2.45.1-1.fc43
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/usr/share/cmake/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/usr/share/cmake/Modules/CheckCXXCompilerFlag.cmake:55 (cmake_check_compiler_flag)"
+      - "CMakeLists.txt:14 (check_cxx_compiler_flag)"
+    checks:
+      - "Performing Test COMPILER_SUPPORTS_MARCH_NATIVE"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-Gjb67I"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-Gjb67I"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+    buildResult:
+      variable: "COMPILER_SUPPORTS_MARCH_NATIVE"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-Gjb67I'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_761b8/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_761b8.dir/build.make CMakeFiles/cmTC_761b8.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-Gjb67I'
+        Building CXX object CMakeFiles/cmTC_761b8.dir/src.cxx.o
+        /usr/lib64/ccache/clang++ -DCOMPILER_SUPPORTS_MARCH_NATIVE  -std=gnu++17 -fPIE   -march=native -MD -MT CMakeFiles/cmTC_761b8.dir/src.cxx.o -MF CMakeFiles/cmTC_761b8.dir/src.cxx.o.d -o CMakeFiles/cmTC_761b8.dir/src.cxx.o -c /home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-Gjb67I/src.cxx
+        Linking CXX executable cmTC_761b8
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_761b8.dir/link.txt --verbose=1
+        /usr/lib64/ccache/clang++ CMakeFiles/cmTC_761b8.dir/src.cxx.o -o cmTC_761b8
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-Gjb67I'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:35 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /usr/lib64/ccache/clang 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is Clang, found in:
+        /home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/3.31.10/CompilerIdC/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:35 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_eb023/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_eb023.dir/build.make CMakeFiles/cmTC_eb023.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg'
+        Building C object CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o
+        /usr/lib64/ccache/clang   -fPIE   -v -MD -MT CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c
+        clang version 21.1.8 (Fedora 21.1.8-4.fc43)
+        Target: x86_64-redhat-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang.cfg
+        System configuration file directory: /etc/clang/
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         (in-process)
+         "/usr/bin/clang-21" -cc1 -triple x86_64-redhat-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg -v -fcoverage-compilation-dir=/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg -resource-dir /usr/bin/../lib/clang/21 -dependency-file CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/bin/../lib/clang/21/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 21.1.8 based upon LLVM 21.1.8 default target x86_64-redhat-linux-gnu
+        ignoring nonexistent directory "/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include"
+        ignoring nonexistent directory "/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/bin/../lib/clang/21/include
+         /usr/local/include
+         /usr/include
+        End of search list.
+        Linking C executable cmTC_eb023
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eb023.dir/link.txt --verbose=1
+        clang version 21.1.8 (Fedora 21.1.8-4.fc43)
+        Target: x86_64-redhat-linux-gnu
+        Thread model: posix
+        InstalledDir: /usr/bin
+        Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang.cfg
+        System configuration file directory: /etc/clang/
+        Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15
+        Candidate multilib: .;@m64
+        Candidate multilib: 32;@m32
+        Selected multilib: .;@m64
+         "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_eb023 /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o -L/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15 -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o
+        GNU ld version 2.45.1-1.fc43
+        /usr/lib64/ccache/clang  -v -Wl,-v CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -o cmTC_eb023
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:35 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/bin/../lib/clang/21/include]
+          add: [/usr/local/include]
+          add: [/usr/include]
+        end of search list found
+        collapse include dir [/usr/bin/../lib/clang/21/include] ==> [/usr/lib/clang/21/include]
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/usr/include] ==> [/usr/include]
+        implicit include dirs: [/usr/lib/clang/21/include;/usr/local/include;/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:35 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_eb023/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_eb023.dir/build.make CMakeFiles/cmTC_eb023.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg']
+        ignore line: [Building C object CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/usr/lib64/ccache/clang   -fPIE   -v -MD -MT CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang version 21.1.8 (Fedora 21.1.8-4.fc43)]
+        ignore line: [Target: x86_64-redhat-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang.cfg]
+        ignore line: [System configuration file directory: /etc/clang/]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        ignore line: [ (in-process)]
+        ignore line: [ "/usr/bin/clang-21" -cc1 -triple x86_64-redhat-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg -v -fcoverage-compilation-dir=/home/mm/map2-audio/juce-engine/build-asan-clang/CMakeFiles/CMakeScratch/TryCompile-UqMDJg -resource-dir /usr/bin/../lib/clang/21 -dependency-file CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/bin/../lib/clang/21/include -internal-isystem /usr/local/include -internal-isystem /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcolor-diagnostics -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 21.1.8 based upon LLVM 21.1.8 default target x86_64-redhat-linux-gnu]
+        ignore line: [ignoring nonexistent directory "/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../x86_64-redhat-linux/include"]
+        ignore line: [ignoring nonexistent directory "/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/bin/../lib/clang/21/include]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /usr/include]
+        ignore line: [End of search list.]
+        ignore line: [Linking C executable cmTC_eb023]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eb023.dir/link.txt --verbose=1]
+        ignore line: [clang version 21.1.8 (Fedora 21.1.8-4.fc43)]
+        ignore line: [Target: x86_64-redhat-linux-gnu]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /usr/bin]
+        ignore line: [Configuration file: /etc/clang/x86_64-redhat-linux-gnu-clang.cfg]
+        ignore line: [System configuration file directory: /etc/clang/]
+        ignore line: [Found candidate GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Selected GCC installation: /usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+        ignore line: [Candidate multilib: .]
+        ignore line: [@m64]
+        ignore line: [Candidate multilib: 32]
+        ignore line: [@m32]
+        ignore line: [Selected multilib: .]
+        ignore line: [@m64]
+        link line: [ "/usr/bin/ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_eb023 /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o -L/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15 -L/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/lib -L/usr/lib -v CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o /usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o]
+          arg [/usr/bin/ld] ==> ignore
+          arg [--hash-style=gnu] ==> ignore
+          arg [--build-id] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-m] ==> ignore
+          arg [elf_x86_64] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_eb023] ==> ignore
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o]
+          arg [-L/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu] ==> dir [/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu]
+          arg [-L/usr/bin/../lib/gcc/x86_64-redhat-linux/15] ==> dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15]
+          arg [-L/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64] ==> dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64]
+          arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+          arg [-L/usr/lib64] ==> dir [/usr/lib64]
+          arg [-L/lib] ==> dir [/lib]
+          arg [-L/usr/lib] ==> dir [/usr/lib]
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_eb023.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--no-as-needed] ==> ignore
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o]
+          arg [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o] ==> obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o]
+        linker tool for 'C': /usr/bin/ld
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crt1.o] ==> [/usr/lib64/crt1.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o] ==> [/usr/lib64/crti.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtbegin.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/15/crtbegin.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/crtend.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/15/crtend.o]
+        collapse obj [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crtn.o] ==> [/usr/lib64/crtn.o]
+        collapse library dir [/usr/bin/../lib/clang/21/lib/x86_64-redhat-linux-gnu] ==> [/usr/lib/clang/21/lib/x86_64-redhat-linux-gnu]
+        collapse library dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15] ==> [/usr/lib/gcc/x86_64-redhat-linux/15]
+        collapse library dir [/usr/bin/../lib/gcc/x86_64-redhat-linux/15/../../../../lib64] ==> [/usr/lib64]
+        collapse library dir [/lib/../lib64] ==> [/lib64]
+        collapse library dir [/usr/lib64] ==> [/usr/lib64]
+        collapse library dir [/lib] ==> [/lib]
+        collapse library dir [/usr/lib] ==> [/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/usr/lib64/crt1.o;/usr/lib64/crti.o;/usr/lib/gcc/x86_64-redhat-linux/15/crtbegin.o;/usr/lib/gcc/x86_64-redhat-linux/15/crtend.o;/usr/lib64/crtn.o]
+        implicit dirs: [/usr/lib/clang/21/lib/x86_64-redhat-linux-gnu;/usr/lib/gcc/x86_64-redhat-linux/15;/usr/lib64;/lib64;/lib;/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:35 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld version 2.45.1-1.fc43
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_GaoDwMW0AJB4pgJW/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_GaoDwMW0AJB4pgJW/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_CXX_FLAGS: " -march=native -ffast-math"
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_GaoDwMW0AJB4pgJW/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_5aac5/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_5aac5.dir/build.make CMakeFiles/cmTC_5aac5.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_GaoDwMW0AJB4pgJW/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_5aac5.dir/check_atomic_lCqSt0hGuyD2w3jz.cpp.o
+        /usr/lib64/ccache/clang++   -march=native -ffast-math  -std=c++17 -fPIE -MD -MT CMakeFiles/cmTC_5aac5.dir/check_atomic_lCqSt0hGuyD2w3jz.cpp.o -MF CMakeFiles/cmTC_5aac5.dir/check_atomic_lCqSt0hGuyD2w3jz.cpp.o.d -o CMakeFiles/cmTC_5aac5.dir/check_atomic_lCqSt0hGuyD2w3jz.cpp.o -c /home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_lCqSt0hGuyD2w3jz.cpp
+        Linking CXX executable cmTC_5aac5
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5aac5.dir/link.txt --verbose=1
+        /usr/lib64/ccache/clang++  -march=native -ffast-math  CMakeFiles/cmTC_5aac5.dir/check_atomic_lCqSt0hGuyD2w3jz.cpp.o -o cmTC_5aac5
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_GaoDwMW0AJB4pgJW/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCEModuleSupport.cmake:59 (try_compile)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCEModuleSupport.cmake:69 (_juce_find_target_architecture)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_CXX_FLAGS: " -march=native -ffast-math"
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_aba1d/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_aba1d.dir/build.make CMakeFiles/cmTC_aba1d.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_aba1d.dir/juce_runtime_arch_detection.cpp.o
+        /usr/lib64/ccache/clang++   -march=native -ffast-math  -std=gnu++17 -fPIE -MD -MT CMakeFiles/cmTC_aba1d.dir/juce_runtime_arch_detection.cpp.o -MF CMakeFiles/cmTC_aba1d.dir/juce_runtime_arch_detection.cpp.o.d -o CMakeFiles/cmTC_aba1d.dir/juce_runtime_arch_detection.cpp.o -c /home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-src/extras/Build/CMake/juce_runtime_arch_detection.cpp
+        /home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-src/extras/Build/CMake/juce_runtime_arch_detection.cpp:57:4: error: JUCE_ARCH x86_64
+           57 |   #error JUCE_ARCH x86_64
+              |    ^
+        1 error generated.
+        gmake[1]: *** [CMakeFiles/cmTC_aba1d.dir/build.make:82: CMakeFiles/cmTC_aba1d.dir/juce_runtime_arch_detection.cpp.o] Error 1
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/CMakeFiles/CMakeTmp'
+        gmake: *** [Makefile:134: cmTC_aba1d/fast] Error 2
+        
+      exitCode: 2
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_KsmxQLVE8PaWwICA/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_KsmxQLVE8PaWwICA/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_CXX_FLAGS: " -march=native -ffast-math"
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_KsmxQLVE8PaWwICA/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d4341/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d4341.dir/build.make CMakeFiles/cmTC_d4341.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_KsmxQLVE8PaWwICA/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_d4341.dir/check_atomic_Phnr2bHJWw7iU44B.cpp.o
+        /usr/lib64/ccache/clang++   -march=native -ffast-math  -std=c++17 -fPIE -MD -MT CMakeFiles/cmTC_d4341.dir/check_atomic_Phnr2bHJWw7iU44B.cpp.o -MF CMakeFiles/cmTC_d4341.dir/check_atomic_Phnr2bHJWw7iU44B.cpp.o.d -o CMakeFiles/cmTC_d4341.dir/check_atomic_Phnr2bHJWw7iU44B.cpp.o -c /home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_Phnr2bHJWw7iU44B.cpp
+        Linking CXX executable cmTC_d4341
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d4341.dir/link.txt --verbose=1
+        /usr/lib64/ccache/clang++  -march=native -ffast-math  CMakeFiles/cmTC_d4341.dir/check_atomic_Phnr2bHJWw7iU44B.cpp.o -o cmTC_d4341
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_KsmxQLVE8PaWwICA/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCECheckAtomic.cmake:73 (try_compile)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCECheckAtomic.cmake:128 (_juce_create_atomic_target)"
+      - "build-asan-clang/_deps/juce-src/extras/Build/CMake/JUCEModuleSupport.cmake:53 (include)"
+      - "build-asan-clang/_deps/juce-src/CMakeLists.txt:50 (include)"
+    directories:
+      source: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_sARiAcxyfiubqqq7/CMakeFiles/CMakeTmp"
+      binary: "/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_sARiAcxyfiubqqq7/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/usr/bin/clang-scan-deps-21"
+      CMAKE_CXX_FLAGS: " -march=native -ffast-math"
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: "-fsanitize=address"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+    buildResult:
+      variable: "compile_result"
+      cached: true
+      stdout: |
+        Change Dir: '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_sARiAcxyfiubqqq7/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c16b3/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_c16b3.dir/build.make CMakeFiles/cmTC_c16b3.dir/build
+        gmake[1]: Entering directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_sARiAcxyfiubqqq7/CMakeFiles/CMakeTmp'
+        Building CXX object CMakeFiles/cmTC_c16b3.dir/check_atomic_6jWY2x1hTpHdrg4R.cpp.o
+        /usr/lib64/ccache/clang++   -march=native -ffast-math  -std=c++17 -fPIE -MD -MT CMakeFiles/cmTC_c16b3.dir/check_atomic_6jWY2x1hTpHdrg4R.cpp.o -MF CMakeFiles/cmTC_c16b3.dir/check_atomic_6jWY2x1hTpHdrg4R.cpp.o.d -o CMakeFiles/cmTC_c16b3.dir/check_atomic_6jWY2x1hTpHdrg4R.cpp.o -c /home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_6jWY2x1hTpHdrg4R.cpp
+        Linking CXX executable cmTC_c16b3
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c16b3.dir/link.txt --verbose=1
+        /usr/lib64/ccache/clang++  -march=native -ffast-math  -fsanitize=address  CMakeFiles/cmTC_c16b3.dir/check_atomic_6jWY2x1hTpHdrg4R.cpp.o -o cmTC_c16b3
+        gmake[1]: Leaving directory '/home/mm/map2-audio/juce-engine/build-asan-clang/_deps/juce-build/check_atomic_dir_sARiAcxyfiubqqq7/CMakeFiles/CMakeTmp'
+        
+      exitCode: 0
+...

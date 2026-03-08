@@ -186,7 +186,7 @@ class AvbDiscoveryService:
                 talker_streams=talkers,
                 listener_streams=listeners,
                 max_streams=config_get("avb.max_streams", 8),
-                sample_rate=config_get("audio.sample_rate", 48000),
+                sample_rate=config_get("clock_sync.avb_stream_rate_hz", config_get("audio.sample_rate", 48000)),
                 channels=config_get("audio.input_channels", 2),
             )
 

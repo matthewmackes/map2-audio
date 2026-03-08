@@ -194,6 +194,33 @@ public:
     void endPluginProcessing(InstanceId instanceId);
 
     // ========================================
+    // Hardware plugin registration
+    // ========================================
+
+    /**
+     * Register an external hardware effect as a managed plugin.
+     * Unlike loadPlugin(), this does not use the format scanner —
+     * the caller provides a fully constructed AudioProcessor.
+     * @param processor Owned AudioProcessor (e.g., LexiconHardwareProcessor)
+     * @param info Metadata for the hardware effect
+     * @return Instance ID, or INVALID_INSTANCE_ID on failure
+     */
+    InstanceId registerHardwarePlugin(std::unique_ptr<juce::AudioProcessor> processor,
+                                      const PluginInfo& info);
+
+    /**
+     * Get an AudioProcessor by instance ID.
+     * Works for both regular plugins and hardware plugins.
+     */
+    juce::AudioProcessor* getProcessor(InstanceId instanceId);
+    const juce::AudioProcessor* getProcessor(InstanceId instanceId) const;
+
+    /**
+     * Check if an instance is a hardware plugin
+     */
+    bool isHardwarePlugin(InstanceId instanceId) const;
+
+    // ========================================
     // Audio processing
     // ========================================
 
@@ -243,11 +270,20 @@ private:
 
     std::vector<std::string> searchPaths_;
 
+    // Hardware plugins (AudioProcessor, not AudioPluginInstance)
+    struct HardwarePluginEntry {
+        InstanceId id = INVALID_INSTANCE_ID;
+        std::unique_ptr<juce::AudioProcessor> processor;
+        PluginInfo info;
+        bool bypassed = false;
+    };
+    std::map<InstanceId, std::unique_ptr<HardwarePluginEntry>> hardwareInstances_;
+
     // Helper methods
     PluginInfo extractPluginInfo(const juce::PluginDescription& desc) const;
     PluginFormat formatFromString(const juce::String& formatName) const;
     void buildParameterMap(PluginEntry& entry);
-    
+
     // Fix #5: Plugin cache management
     void loadPluginCache();
     void savePluginCache();

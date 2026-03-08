@@ -194,6 +194,24 @@
       ]
     },
     {
+      "uri": "map2://juce/synthforge",
+      "name": "SynthForge",
+      "category": "Instrument",
+      "description": "16-part multitimbral module/sampler scaffold integrated with MAP2 JUCE engine",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 0,
+        "outputs": 2
+      },
+      "priority": 12,
+      "is_native": true,
+      "api_base": "/api/synthforge",
+      "features": ["multitimbral-16-part", "midi-routing", "voice-metrics", "patch-management", "sfz-import"],
+      "parameters": [
+        {"name": "Master Level", "symbol": "master_level", "min": 0, "max": 1, "default": 1}
+      ]
+    },
+    {
       "uri": "map2://juce/delay",
       "name": "Stereo Delay",
       "category": "Delay",
@@ -1196,6 +1214,28 @@
         {"name": "Pattern", "symbol": "pattern", "min": 0, "max": 127, "default": 0},
         {"name": "Variation", "symbol": "variation", "min": 0, "max": 10, "default": 0},
         {"name": "Transport", "symbol": "transport", "type": "toggle", "default": false}
+      ]
+    },
+    {
+      "uri": "map2://tesira/avb-node",
+      "name": "Tesira AVB Node",
+      "category": "AVB",
+      "description": "Biamp Tesira Forte AVB audio stream processor — up to 5 units, 128 channels each. Per-channel dB gain and mute via lock-free atomic bridge between Python/TTP layer and the RT audio callback.",
+      "author": "MAP2 Audio",
+      "audio_ports": {
+        "inputs": 128,
+        "outputs": 128
+      },
+      "priority": 1,
+      "is_native": true,
+      "requires_avb": true,
+      "api_base": "/api/tesira",
+      "features": ["avb-routing", "ttp-control", "real-time-metering", "preset-interlock"],
+      "parameters": [
+        {"name": "Device Index", "symbol": "device_idx", "min": 0, "max": 4, "default": 0, "type": "int"},
+        {"name": "Channel", "symbol": "channel", "min": 0, "max": 127, "default": 0, "type": "int"},
+        {"name": "Level", "symbol": "level_db", "min": -60, "max": 12, "default": 0, "unit": "dB"},
+        {"name": "Mute", "symbol": "mute", "type": "toggle", "default": false}
       ]
     }
   ]

@@ -1,0 +1,2 @@
+docs/AVB_MASTER_WORK_PLAN.md:1421:Title: Deliver fit-for-purpose evaluation pack for JUCE + AVB/TSN + cluster + Tesira target
+docs/AVB_MASTER_WORK_PLAN.md:1423:- Goal / acceptance criteria: Produce a complete, evidence-backed review pack covering purpose/assumptions, measurable acceptance criteria, inventory, requirements matrix (MUST/SHOULD/COULD), non-security risk register, GO decision logic, remediation plan, and reproducibility runbook for the JUCE guitar node + AVB/TSN cluster + API/SSH + Biamp TesiraFORTÉ AVB interoperability target.

@@ -1,0 +1,28 @@
+
+> mackes-audio-platform-2@3.0.0-FEB2026 test:avb-routing
+> jest web/src/app/App.avbRoutingRoute.test.tsx web/src/app/pages/AvbRoutingPage.test.tsx web/src/app/components/AvbRouting/context/routingReducer.test.ts web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx web/src/app/components/AvbRouting/components/TopBar/TopBar.filters.test.tsx web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx web/src/app/components/AvbRouting/components/TopBar/SceneDiffPreview.test.tsx web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx --runInBand --runInBand --silent
+
+PASS web/src/app/components/AvbRouting/components/TopBar/TopBar.integration.test.tsx (29.171 s)
+PASS web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneDiffControls.test.tsx (12.133 s)
+PASS web/src/app/components/AvbRouting/components/TopBar/TopBar.sceneManagementControls.test.tsx (8.433 s)
+PASS web/src/app/components/AvbRouting/components/TopBar/NodeSelector.badges.test.tsx
+PASS web/src/app/components/AvbRouting/components/NodeTree/NodeTree.badges.test.tsx
+PASS web/src/app/components/AvbRouting/components/TopBar/TopBar.filters.test.tsx
+PASS web/src/app/components/AvbRouting/context/RoutingContext.integration.test.tsx
+PASS web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.nodeContext.test.tsx
+PASS web/src/app/components/AvbRouting/components/NetworkTopology/NetworkTopologyModal.badges.test.tsx
+PASS web/src/app/components/AvbRouting/components/RoutingGrid/RoutingGrid.notifications.test.tsx
+PASS web/src/app/App.avbRoutingRoute.test.tsx
+PASS web/src/app/components/AvbRouting/components/TopBar/SceneDiffPreview.test.tsx
+PASS web/src/app/components/AvbRouting/components/RoutingGrid/MatrixCell.crossNode.test.tsx
+PASS web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.integration.test.tsx
+PASS web/src/app/components/AvbRouting/context/routingReducer.test.ts
+PASS web/src/app/components/AvbRouting/hooks/useKeyboardNavigation.test.tsx
+PASS web/src/app/pages/AvbRoutingPage.test.tsx
+PASS web/src/app/components/AvbRouting/hooks/useAvbApi.errorContracts.test.ts
+PASS web/src/app/components/AvbRouting/hooks/useNodeApi.test.ts
+
+Test Suites: 19 passed, 19 total
+Tests:       234 passed, 234 total
+Snapshots:   0 total
+Time:        59.845 s, estimated 60 s

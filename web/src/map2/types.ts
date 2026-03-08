@@ -32,7 +32,131 @@ export interface PluginLevels {
   output: number;
 }
 
+export type AudioSourceTruthSeverity = 'info' | 'warning' | 'error';
+export type AudioSourceTruthStatus = 'aligned' | 'warning' | 'error';
+
+export interface AudioSourceTruthIssue {
+  id: string;
+  severity: AudioSourceTruthSeverity;
+  message: string;
+  expected?: string | number | boolean | string[] | number[];
+  actual?: string | number | boolean | string[] | number[];
+}
+
+export interface AudioSourceTruthPayload {
+  timestamp: string;
+  status: AudioSourceTruthStatus;
+  profile: {
+    selected_profile: string;
+    profile_version: string;
+    clock_master: string;
+    remarks: string[];
+  };
+  configured: {
+    engine_rate_hz: number;
+    avb_stream_rate_hz: number;
+    spdif_rate_hz: number;
+    buffer_size_samples: number;
+    bits_per_sample: number;
+    allowed_rates_hz: number[];
+    require_hard_lock: boolean;
+    allow_resampler: boolean;
+    spdif: {
+      enabled: boolean;
+      device: string;
+      transport_mode: string;
+      allow_resampler: boolean;
+      require_hard_lock: boolean;
+      remarks: string[];
+    };
+    avb: {
+      enabled: boolean;
+      interface: string;
+      auto_connect: boolean;
+      ptp_domain: number;
+      max_streams: number;
+    };
+  };
+  runtime: {
+    engine: {
+      available: boolean;
+      running: boolean;
+      sample_rate_hz: number;
+      buffer_size_samples: number;
+      cpu_load_percent: number;
+      audio_device: string;
+    };
+    pipewire: {
+      available: boolean;
+      clock_rate_hz: number;
+      clock_force_rate_hz: number;
+      clock_quantum_samples: number;
+      clock_force_quantum_samples: number;
+      clock_allowed_rates_hz: number[];
+      effective_rate_hz: number;
+      effective_quantum_samples: number;
+      error?: string;
+    };
+    avb: {
+      enabled: boolean;
+      interface: string;
+      auto_connect: boolean;
+      available: boolean;
+      state: string;
+      reason?: string | null;
+      ptp: {
+        available: boolean;
+        state?: string;
+        offset_ns?: number;
+        error?: string;
+      };
+    };
+  };
+  consistency: {
+    checks: Record<string, boolean>;
+    issues: AudioSourceTruthIssue[];
+    issue_count: number;
+  };
+}
+
 // ==================== Chain Types ====================
+
+export interface EffectsLoop {
+  loop_id: string;
+  name: string;
+  channels: number;
+  topology: string;
+  tesira_device_id?: string | null;
+  template_id?: string | null;
+  send_endpoint_id?: string | null;
+  return_endpoint_id?: string | null;
+  state_desired: string;
+  state_actual: string;
+  health_status: string;
+  health_reason?: string | null;
+  target_added_latency_ms: number;
+  measured_added_latency_ms?: number | null;
+  compensation_samples: number;
+  calibration_status: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface LoopInsertion {
+  insertion_id: string;
+  chain_id: number;
+  loop_id: string;
+  slot_index: number;
+  enabled: boolean;
+  mode: string;
+  blend_pct: number;
+  send_gain_db: number;
+  return_gain_db: number;
+  crossfade_ms: number;
+  band_split_hz: number[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
 
 export interface Chain {
   id: number;
@@ -41,6 +165,8 @@ export interface Chain {
   created_at: string;
   updated_at: string;
   plugins: ChainPlugin[];
+  loop_insertions?: LoopInsertion[];
+  effects_loops?: EffectsLoop[];
 }
 
 export interface ChainPlugin {
@@ -72,7 +198,7 @@ export interface ChainTemplate {
 // ==================== Plugin Types ====================
 
 /** Supported plugin formats (JUCE multi-format support) */
-export type PluginFormat = 'VST3' | 'AudioUnit' | 'LV2' | 'LADSPA' | 'Unknown';
+export type PluginFormat = 'VST3' | 'AudioUnit' | 'LV2' | 'LADSPA' | 'Hardware' | 'Unknown';
 
 export interface PluginParameter {
   index: number;
@@ -111,6 +237,7 @@ export interface Plugin {
   supports_double_precision?: boolean;
   sidechain_buses?: number;
   sidechain_bus_names?: string[];
+  is_hardware?: boolean;
 }
 
 // ==================== Preset Types ====================

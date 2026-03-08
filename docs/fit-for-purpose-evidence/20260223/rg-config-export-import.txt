@@ -1,0 +1,353 @@
+app/routes/avb.py:6:- TSN qdisc configuration (Phase 2)
+app/routes/avb.py:12:import asyncio
+app/routes/avb.py:13:import json
+app/routes/avb.py:14:import logging
+app/routes/avb.py:15:from datetime import datetime, timezone
+app/routes/avb.py:16:from fastapi import APIRouter, HTTPException
+app/routes/avb.py:17:from pydantic import BaseModel
+app/routes/avb.py:18:from typing import Dict, Any, List, Optional
+app/routes/avb.py:19:from urllib.parse import urlparse
+app/routes/avb.py:21:from app.config import config_get
+app/routes/avb.py:22:from app.services.avb import is_avb_available, get_avb_readiness
+app/routes/avb.py:23:from app.services.avb.ptp_monitor import get_ptp_monitor
+app/routes/avb.py:24:from app.services.avb.tsn_qdisc import get_tsn_qdisc_manager
+app/routes/avb.py:58:    return bool(config_get("avb.srp.enabled", True))
+app/routes/avb.py:62:    return _srp_enabled() and bool(config_get("avb.srp.required", True))
+app/routes/avb.py:617:    Legacy keys kept for existing config files:
+app/routes/avb.py:621:    canonical = config_get("avb.avdecc_enabled", None)
+app/routes/avb.py:625:    legacy = config_get("avdecc.enabled", None)
+app/routes/avb.py:629:    return bool(config_get("avb.discovery.avdecc_enabled", False))
+app/routes/avb.py:635:        from app.services.juce_engine_service import juce_engine
+app/routes/avb.py:688:    """Resolve stream interface from payload, falling back to global config."""
+app/routes/avb.py:689:    config = stream.get("config") if isinstance(stream.get("config"), dict) else {}
+app/routes/avb.py:690:    interface = str(config.get("interface", "")).strip()
+app/routes/avb.py:693:    return str(config_get("avb.interface", "") or "").strip()
+app/routes/avb.py:739:            "mqprio_configured": bool(tsn_status.get("mqprio_configured")),
+app/routes/avb.py:740:            "cbs_configured": bool(tsn_status.get("cbs_configured")),
+app/routes/avb.py:741:            "etf_configured": bool(tsn_status.get("etf_configured")),
+app/routes/avb.py:742:            "vlan_configured": bool(tsn_status.get("vlan_configured")),
+app/routes/avb.py:766:        fallback_interface = str(config_get("avb.interface", "") or "").strip()
+app/routes/avb.py:789:        tsn_by_interface[""] = {"available": False, "error": "No AVB interface configured"}
+app/routes/avb.py:835:    """Coerce configured failover policy into canonical value with safe fallback."""
+app/routes/avb.py:873:def _parse_stream_ownership(config_payload: Dict[str, Any]) -> Dict[str, Optional[str]]:
+app/routes/avb.py:881:    ownership_raw = config_payload.get("ownership")
+app/routes/avb.py:888:        raw_value = ownership_payload.get(field_name, config_payload.get(field_name))
+app/routes/avb.py:893:def _build_config_compatibility_matrix() -> Dict[str, Any]:
+app/routes/avb.py:895:    enabled = bool(config_get("avb.enabled", False))
+app/routes/avb.py:899:    failover_policy = _sanitize_failover_policy(config_get("avb.failover_policy", "none"))
+app/routes/avb.py:900:    failover_interfaces = _normalize_string_list(config_get("avb.failover_interfaces", []))
+app/routes/avb.py:901:    interface = str(config_get("avb.interface", "") or "").strip()
+app/routes/avb.py:963:def _extract_stream_config(stream: Dict[str, Any]) -> Dict[str, Any]:
+app/routes/avb.py:964:    config = stream.get("config")
+app/routes/avb.py:965:    return dict(config) if isinstance(config, dict) else {}
+app/routes/avb.py:968:def _build_effective_stream_config(stream: Dict[str, Any]) -> Dict[str, Any]:
+app/routes/avb.py:970:    Build operator-visible runtime config after stream + global fallback resolution.
+app/routes/avb.py:974:    stream_config = _extract_stream_config(stream)
+app/routes/avb.py:975:    global_interface = str(config_get("avb.interface", "") or "").strip()
+app/routes/avb.py:976:    global_presentation_offset = _coerce_positive_int(config_get("avb.presentation_offset_us", 2000), 2000)
+app/routes/avb.py:977:    global_buffer_size = _coerce_positive_int(config_get("audio.buffer_size", 256), 256)
+app/routes/avb.py:978:    global_failover_policy = _sanitize_failover_policy(config_get("avb.failover_policy", "none"))
+app/routes/avb.py:979:    global_failover_interfaces = _normalize_string_list(config_get("avb.failover_interfaces", []))
+app/routes/avb.py:981:    interface = str(stream_config.get("interface", "") or "").strip() or global_interface
+app/routes/avb.py:982:    channels = _coerce_positive_int(stream_config.get("channels", 2), 2)
+app/routes/avb.py:983:    sample_rate = _coerce_positive_int(stream_config.get("sample_rate", 48000), 48000)
+app/routes/avb.py:984:    buffer_size = _coerce_positive_int(stream_config.get("buffer_size", global_buffer_size), global_buffer_size)
+app/routes/avb.py:986:        stream_config.get("presentation_offset_us", global_presentation_offset),
+app/routes/avb.py:989:    priority = _coerce_positive_int(stream_config.get("priority", 3), 3)
+app/routes/avb.py:990:    dest_mac = stream_config.get("dest_mac")
+app/routes/avb.py:994:    stream_failover_policy = str(stream_config.get("failover_policy", "") or "").strip()
+app/routes/avb.py:1000:        stream_config.get("failover_interfaces", global_failover_interfaces)
+app/routes/avb.py:1086:        "effective_config": _build_effective_stream_config(stream),
+app/routes/avb.py:1091:            "mqprio_configured": bool(tsn_status.get("mqprio_configured")),
+app/routes/avb.py:1092:            "cbs_configured": bool(tsn_status.get("cbs_configured")),
+app/routes/avb.py:1093:            "etf_configured": bool(tsn_status.get("etf_configured")),
+app/routes/avb.py:1094:            "vlan_configured": bool(tsn_status.get("vlan_configured")),
+app/routes/avb.py:1125:def _resolve_stream_interface(config_payload: Dict[str, Any]) -> str:
+app/routes/avb.py:1126:    """Resolve stream interface from request or global config, failing closed when missing."""
+app/routes/avb.py:1127:    interface = str(config_payload.get("interface", "") or "").strip()
+app/routes/avb.py:1130:    fallback_interface = str(config_get("avb.interface", "") or "").strip()
+app/routes/avb.py:1135:        detail="interface is required (set request.interface or avb.interface config)",
+app/routes/avb.py:1159:        # Check if AVB intent/config is present before probing PTP monitor.
+app/routes/avb.py:1163:                "error": readiness.get("reason") or "AVB not enabled in configuration",
+app/routes/avb.py:1167:        if not readiness.get("configured", False):
+app/routes/avb.py:1170:                "error": readiness.get("reason") or "AVB not configured",
+app/routes/avb.py:1196:        - enabled: bool (from config)
+app/routes/avb.py:1198:        - interface: str (configured interface)
+app/routes/avb.py:1203:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1216:            "configured": bool(readiness.get("configured", False)),
+app/routes/avb.py:1226:            "compatibility": _build_config_compatibility_matrix(),
+app/routes/avb.py:1227:            "config": {
+app/routes/avb.py:1228:                "ptp_domain": config_get("avb.ptp_domain", 0),
+app/routes/avb.py:1229:                "ptp_priority1": config_get("avb.ptp_priority1", 128),
+app/routes/avb.py:1230:                "auto_connect": config_get("avb.auto_connect", False),
+app/routes/avb.py:1231:                "max_streams": config_get("avb.max_streams", 8),
+app/routes/avb.py:1240:@router.get("/config/compatibility")
+app/routes/avb.py:1241:async def get_avb_config_compatibility() -> Dict[str, Any]:
+app/routes/avb.py:1242:    """Get compatibility profile matrix for AVB runtime configuration."""
+app/routes/avb.py:1244:        return _build_config_compatibility_matrix()
+app/routes/avb.py:1256:        from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/avb.py:1275:        from app.services.avb.srp_log_store import SrpAdmissionLogStore
+app/routes/avb.py:1309:        from app.services.avb.srp_log_store import SrpAdmissionLogStore
+app/routes/avb.py:1326:    Get TSN (Traffic Control qdisc) configuration status.
+app/routes/avb.py:1330:        - available: bool (false if not configured)
+app/routes/avb.py:1332:        - mqprio_configured: bool (multi-queue priority qdisc)
+app/routes/avb.py:1333:        - cbs_configured: bool (Credit-Based Shaper)
+app/routes/avb.py:1334:        - etf_configured: bool (Earliest TxTime First)
+app/routes/avb.py:1335:        - vlan_configured: bool (VLAN 2 interface)
+app/routes/avb.py:1340:    This endpoint always returns 200 OK, even when TSN is not configured.
+app/routes/avb.py:1344:        # Check if AVB is enabled in config
+app/routes/avb.py:1345:        if not config_get("avb.enabled", False):
+app/routes/avb.py:1348:                "error": "AVB not enabled in configuration"
+app/routes/avb.py:1385:        from app.services.avb.tsn_qdisc import TsnQdiscManager
+app/routes/avb.py:1422:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1478:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1525:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1572:async def create_stream(config: Dict[str, Any]) -> Dict[str, Any]:
+app/routes/avb.py:1588:        from app.services.avb.avb_service import get_avb_service, AvbStreamConfig, StreamDirection
+app/routes/avb.py:1595:        stream_id = config.get("stream_id")
+app/routes/avb.py:1599:        direction_raw = config.get("direction")
+app/routes/avb.py:1607:        srp_payload = config.get("srp")
+app/routes/avb.py:1646:        channels = _require_positive_int_field(config, "channels", default=2)
+app/routes/avb.py:1647:        sample_rate = _require_positive_int_field(config, "sample_rate", default=48000)
+app/routes/avb.py:1648:        buffer_size = _require_positive_int_field(config, "buffer_size", default=256)
+app/routes/avb.py:1649:        presentation_offset_us = _require_positive_int_field(config, "presentation_offset_us", default=2000)
+app/routes/avb.py:1652:            priority = int(config.get("priority", 3))
+app/routes/avb.py:1658:        interface = _resolve_stream_interface(config)
+app/routes/avb.py:1659:        global_failover_policy = _sanitize_failover_policy(config_get("avb.failover_policy", "none"))
+app/routes/avb.py:1661:            config.get("failover_policy"),
+app/routes/avb.py:1664:        failover_raw = config.get("failover_interfaces", config_get("avb.failover_interfaces", []))
+app/routes/avb.py:1668:        ownership = _parse_stream_ownership(config)
+app/routes/avb.py:1670:        # Parse config
+app/routes/avb.py:1671:        stream_config = AvbStreamConfig(
+app/routes/avb.py:1678:            dest_mac=config.get("dest_mac"),
+app/routes/avb.py:1696:        result = await avb_service.create_stream(stream_config)
+app/routes/avb.py:1706:        raise HTTPException(status_code=400, detail=f"Invalid stream config: {e}")
+app/routes/avb.py:1716:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1734:                from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/avb.py:1768:    rollback_handled = False
+app/routes/avb.py:1774:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1775:        from app.services.avb.srp_admission import SrpAdmissionRequest, get_srp_admission_service
+app/routes/avb.py:1798:                        "channels": stream.get("config", {}).get("channels"),
+app/routes/avb.py:1799:                        "sample_rate": stream.get("config", {}).get("sample_rate"),
+app/routes/avb.py:1839:                        endpoint="streams.start.rollback",
+app/routes/avb.py:1847:                    rollback_handled = True
+app/routes/avb.py:1850:                        "SRP release failed during stream start rollback %s: %s",
+app/routes/avb.py:1855:                        reason="Stream start failed and SRP rollback release also failed",
+app/routes/avb.py:1859:                    rollback_handled = True
+app/routes/avb.py:1875:            rollback_reservation: Optional[str] = None
+app/routes/avb.py:1877:                rollback_reservation = str(srp_binding["reservation_id"])
+app/routes/avb.py:1881:                    rollback_reservation = str(reservation_id)
+app/routes/avb.py:1883:            if rollback_reservation and not start_succeeded and not rollback_handled:
+app/routes/avb.py:1885:                    from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/avb.py:1888:                        reservation_id=rollback_reservation,
+app/routes/avb.py:1903:            rollback_reservation: Optional[str] = None
+app/routes/avb.py:1905:                rollback_reservation = str(srp_binding["reservation_id"])
+app/routes/avb.py:1909:                    rollback_reservation = str(reservation_id)
+app/routes/avb.py:1911:            if rollback_reservation and not start_succeeded and not rollback_handled:
+app/routes/avb.py:1913:                    from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/avb.py:1916:                        reservation_id=rollback_reservation,
+app/routes/avb.py:1936:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:1937:        from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/avb.py:1986:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:2028:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:2064:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:2095:        from app.services.avb.avb_service import get_avb_service
+app/routes/avb.py:2096:        from app.services.juce_engine_service import get_audio_engine
+app/routes/avb.py:2151:        from app.services.avb.avb_discovery import get_avb_discovery_service
+app/routes/avb.py:2177:        from app.services.avb.avb_discovery import get_avb_discovery_service
+app/routes/avb.py:2208:        from app.services.avb.avb_discovery import get_avb_discovery_service
+app/routes/avb.py:2246:                "error": "AVDECC not enabled in configuration"
+app/routes/avb.py:2249:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2302:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2372:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2426:        from app.services.avb.avb_router import get_avb_router, StreamDirection
+app/routes/avb.py:2468:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2517:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2554:    from app.services.event_publisher import event_publisher, EventType
+app/routes/avb.py:2576:    from app.services.event_publisher import event_publisher, EventType
+app/routes/avb.py:2614:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2615:        from app.services.avb.srp_admission import SrpAdmissionRequest, get_srp_admission_service
+app/routes/avb.py:2679:            import inspect
+app/routes/avb.py:2753:                from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/avb.py:2764:                    "SRP rollback release failed after router.connect exception %s->%s: %s",
+app/routes/avb.py:2788:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2806:            import inspect
+app/routes/avb.py:2860:        from app.services.avb.avb_router import get_avb_router
+app/routes/avb.py:2891:    - Configuration descriptors
+app/routes/avb.py:2918:                detail="AVDECC not enabled in configuration"
+app/routes/avb.py:2938:        from app.services.juce_engine_service import get_audio_engine, JUCE_AVAILABLE, juce_engine
+app/routes/avb.py:2987:                from app.services.avb.aem_cache import get_aem_cache
+app/routes/avb.py:2991:                    config_get("avb.avdecc.aem_cache_max_age_seconds", 86400),
+app/routes/avb.py:3107:        from app.services.avb.aem_cache import get_aem_cache
+app/routes/avb.py:3139:    configuration_index: int = 0
+app/routes/avb.py:3144:    from app.services.juce_engine_service import get_audio_engine
+app/routes/avb.py:3160:        raise HTTPException(status_code=503, detail="AVDECC not enabled in configuration")
+app/routes/avb.py:3354:    if req.configuration_index < 0:
+app/routes/avb.py:3355:        raise HTTPException(status_code=400, detail="configuration_index must be >= 0")
+app/routes/avb.py:3371:        int(req.configuration_index),
+app/routes/avb.py:3392:        int(req.configuration_index),
+app/routes/avb.py:3445:        "configuration_index": int(req.configuration_index),
+app/routes/avb.py:3483:    from app.services.avb.srp_admission import SrpAdmissionRequest, get_srp_admission_service
+app/routes/avb.py:3528:                        reason="ACMP connect failed and SRP rollback release failed",
+app/routes/avb.py:3539:                "SRP release failed during ACMP connect rollback %s:%s->%s:%s: %s",
+app/routes/avb.py:3548:                    reason="ACMP connect failed and SRP rollback release failed",
+app/routes/avb.py:3589:            rollback_payload = await _release_acmp_reservation(endpoint="avdecc.connections.rollback")
+app/routes/avb.py:3593:                payload=rollback_payload,
+app/routes/avb.py:3607:            rollback_payload = await _release_acmp_reservation(endpoint="avdecc.connections.rollback")
+app/routes/avb.py:3613:                    payload=rollback_payload,
+app/routes/avb.py:3646:        rollback_payload: Optional[Dict[str, Any]] = None
+app/routes/avb.py:3648:            rollback_payload = await _release_acmp_reservation(endpoint="avdecc.connections.rollback")
+app/routes/avb.py:3655:                payload=rollback_payload,
+app/routes/avb.py:3675:    from app.services.avb.srp_admission import get_srp_admission_service
+app/routes/cluster_admin.py:16:import asyncio
+app/routes/cluster_admin.py:17:import logging
+app/routes/cluster_admin.py:18:import sqlite3
+app/routes/cluster_admin.py:19:import socket
+app/routes/cluster_admin.py:20:import subprocess
+app/routes/cluster_admin.py:21:from typing import Any, Dict, List, Optional
+app/routes/cluster_admin.py:22:from datetime import datetime
+app/routes/cluster_admin.py:23:from fastapi import APIRouter, HTTPException, status
+app/routes/cluster_admin.py:25:from app.services.cluster.registry import get_cluster_registry
+app/routes/cluster_admin.py:26:from app.services.cluster.health_aggregator import get_health_aggregator
+app/routes/cluster_admin.py:27:from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/routes/cluster_admin.py:28:from app.services.cluster.certificate_authority import get_cluster_ca
+app/routes/cluster_admin.py:29:from app.services.cluster.update_orchestrator import get_update_scheduler
+app/routes/cluster_admin.py:30:from app.services.cluster.config_pusher import get_config_sync
+app/routes/cluster_admin.py:31:from app.services.cluster.state_replicator import get_state_replicator
+app/routes/cluster_admin.py:32:from app.services.cluster.distributed_event_bus import get_event_bus, EventType
+app/routes/cluster_admin.py:33:from app.services.cluster.node_lifecycle import get_lifecycle_manager
+app/routes/cluster_admin.py:34:from app.services.cluster.disaster_recovery import get_disaster_recovery
+app/routes/cluster_admin.py:35:from app.services.cluster.network_topology import get_topology_monitor
+app/routes/cluster_admin.py:36:from app.services.cluster.config_manager import get_config_manager
+app/routes/cluster_admin.py:37:from app.services.cluster.deployment_manager import get_deployment_manager
+app/routes/cluster_admin.py:100:        from app.services.cluster.clone_reset import preview_clone_reset
+app/routes/cluster_admin.py:134:        from app.services.cluster.clone_reset import reset_clone_to_default_and_rejoin
+app/routes/cluster_admin.py:160:    - network configuration
+app/routes/cluster_admin.py:188:        # Update cluster config
+app/routes/cluster_admin.py:189:        config_mgr = get_config_manager()
+app/routes/cluster_admin.py:190:        config_mgr.update_config({
+app/routes/cluster_admin.py:572:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/routes/cluster_admin.py:623:            "cluster_name": get_config_manager().get("cluster_name", "MAP2 Audio Cluster"),
+app/routes/cluster_admin.py:695:            "ca_certificate": "configured" if ca.has_root_ca() else "not_configured",
+app/routes/cluster_admin.py:875:# Configuration Distribution Endpoints
+app/routes/cluster_admin.py:879:@router.post("/config/push")
+app/routes/cluster_admin.py:880:async def push_configuration(
+app/routes/cluster_admin.py:881:    config_type: str,
+app/routes/cluster_admin.py:882:    config_data: Dict,
+app/routes/cluster_admin.py:883:    message: str = "Configuration update",
+app/routes/cluster_admin.py:886:    Push configuration to all cluster nodes.
+app/routes/cluster_admin.py:889:        config_type: "preset", "midi_mapping", or "audio_chain"
+app/routes/cluster_admin.py:890:        config_data: Configuration data to distribute
+app/routes/cluster_admin.py:895:        - nodes_updated: Number of nodes that received config
+app/routes/cluster_admin.py:898:        config_sync = get_config_sync()
+app/routes/cluster_admin.py:899:        success = await config_sync.push_config_to_nodes(
+app/routes/cluster_admin.py:900:            config_type, config_data, message
+app/routes/cluster_admin.py:908:                "config_type": config_type,
+app/routes/cluster_admin.py:915:        logger.error(f"Config push failed: {e}")
+app/routes/cluster_admin.py:919:@router.get("/config/history")
+app/routes/cluster_admin.py:920:async def get_config_history(limit: int = 20) -> Dict:
+app/routes/cluster_admin.py:922:    Get history of configuration changes.
+app/routes/cluster_admin.py:928:        - versions: List of configuration versions with timestamps
+app/routes/cluster_admin.py:931:        config_sync = get_config_sync()
+app/routes/cluster_admin.py:932:        history = config_sync.get_config_history(limit=limit)
+app/routes/cluster_admin.py:948:        logger.error(f"Failed to get config history: {e}")
+app/routes/cluster_admin.py:952:@router.get("/config/diff")
+app/routes/cluster_admin.py:953:async def get_config_diff(version_a: str, version_b: str) -> Dict:
+app/routes/cluster_admin.py:955:    Get differences between two configuration versions.
+app/routes/cluster_admin.py:965:        config_sync = get_config_sync()
+app/routes/cluster_admin.py:966:        diff = await config_sync.get_config_diff(version_a, version_b)
+app/routes/cluster_admin.py:978:@router.post("/config/rollback")
+app/routes/cluster_admin.py:979:async def rollback_configuration(version_hash: str) -> Dict:
+app/routes/cluster_admin.py:981:    Rollback configuration to previous version.
+app/routes/cluster_admin.py:987:        - success: Whether rollback was successful
+app/routes/cluster_admin.py:991:        config_sync = get_config_sync()
+app/routes/cluster_admin.py:992:        success = await config_sync.rollback_config(version_hash)
+app/routes/cluster_admin.py:997:            "message": "Configuration rolled back" if success else "Rollback failed",
+app/routes/cluster_admin.py:1000:        logger.error(f"Rollback failed: {e}")
+app/routes/cluster_admin.py:1103:                from app.services.cluster.distributed_event_bus import EventSeverity
+app/routes/cluster_admin.py:1256:        from app.services.cluster.node_lifecycle import NodeLifecycleEvent
+app/routes/cluster_admin.py:1294:        backup_type: Type of backup ("full", "database", "presets", "config")
+app/routes/cluster_admin.py:1366:        restore_type: What to restore ("full", "database", "presets", "config")
+app/routes/config_api.py:2:Configuration Distribution API Routes
+app/routes/config_api.py:4:Handles configuration management endpoints:
+app/routes/config_api.py:5:- Push configuration to nodes
+app/routes/config_api.py:6:- Query configuration
+app/routes/config_api.py:8:- Rollback configuration
+app/routes/config_api.py:11:from datetime import datetime
+app/routes/config_api.py:12:from pathlib import Path
+app/routes/config_api.py:13:import shutil
+app/routes/config_api.py:14:import tempfile
+app/routes/config_api.py:15:from fastapi import APIRouter, HTTPException, UploadFile, File, Request
+app/routes/config_api.py:16:from pydantic import BaseModel
+app/routes/config_api.py:17:from typing import Dict, Any, Optional
+app/routes/config_api.py:18:import io
+app/routes/config_api.py:19:import tarfile
+app/routes/config_api.py:20:import json
+app/routes/config_api.py:21:import yaml
+app/routes/config_api.py:23:from app.services.cluster.config_distributor import get_config_distributor
+app/routes/config_api.py:25:router = APIRouter(prefix="/api/cluster/config", tags=["config"])
+app/routes/config_api.py:28:class ConfigRequest(BaseModel):
+app/routes/config_api.py:29:    """Configuration query request."""
+app/routes/config_api.py:33:class ConfigResponse(BaseModel):
+app/routes/config_api.py:34:    """Configuration response."""
+app/routes/config_api.py:36:    config: Dict[str, Any]
+app/routes/config_api.py:45:async def get_config(key: Optional[str] = None):
+app/routes/config_api.py:47:    Get configuration values.
+app/routes/config_api.py:50:        key: Optional specific config key to retrieve
+app/routes/config_api.py:53:        distributor = get_config_distributor()
+app/routes/config_api.py:54:        config = distributor.get_config(key)
+app/routes/config_api.py:60:            "config": config,
+app/routes/config_api.py:65:        raise HTTPException(500, f"Failed to get config: {e}")
+app/routes/config_api.py:68:def _validate_config_tree(config_path: Path) -> bool:
+app/routes/config_api.py:69:    """Validate YAML/JSON config files in a directory tree."""
+app/routes/config_api.py:70:    config_files = list(config_path.glob("**/*.yaml")) + \
+app/routes/config_api.py:71:                  list(config_path.glob("**/*.yml")) + \
+app/routes/config_api.py:72:                  list(config_path.glob("**/*.json"))
+app/routes/config_api.py:74:    # Must contain at least one recognized config file.
+app/routes/config_api.py:75:    if not config_files:
+app/routes/config_api.py:78:    for config_file in config_files:
+app/routes/config_api.py:80:            if config_file.suffix in [".yaml", ".yml"]:
+app/routes/config_api.py:81:                with open(config_file, "r", encoding="utf-8") as f:
+app/routes/config_api.py:83:            elif config_file.suffix == ".json":
+app/routes/config_api.py:84:                with open(config_file, "r", encoding="utf-8") as f:
+app/routes/config_api.py:92:async def push_config(request: Request, file: Optional[UploadFile] = File(None)):
+app/routes/config_api.py:94:    Receive configuration push from another node.
+app/routes/config_api.py:96:    Expects tarball with configuration files.
+app/routes/config_api.py:99:        distributor = get_config_distributor()
+app/routes/config_api.py:107:            raise HTTPException(400, "Empty config payload")
+app/routes/config_api.py:112:        with tempfile.TemporaryDirectory(prefix="map2_config_push_") as tmpdir:
+app/routes/config_api.py:128:            # Validate extracted configuration
+app/routes/config_api.py:129:            if not _validate_config_tree(extract_root):
+app/routes/config_api.py:130:                raise HTTPException(400, "Configuration validation failed")
+app/routes/config_api.py:132:            # Stage new config in same parent for atomic rename
+app/routes/config_api.py:133:            staging_path = local_path.parent / f".config_staging_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+app/routes/config_api.py:136:            # Validate staged config once more before swap
+app/routes/config_api.py:137:            if not _validate_config_tree(staging_path):
+app/routes/config_api.py:139:                raise HTTPException(400, "Staged configuration validation failed")
+app/routes/config_api.py:141:            backup_path = local_path.parent / f".config_backup_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+app/routes/config_api.py:169:            "message": "Configuration received and applied",
+app/routes/config_api.py:174:        raise HTTPException(500, f"Config push failed: {e}")
+app/routes/config_api.py:180:    Manually trigger configuration synchronization.
+app/routes/config_api.py:186:        distributor = get_config_distributor()
+app/routes/config_api.py:196:            is_valid = await distributor._validate_config()
+app/routes/config_api.py:198:                raise HTTPException(400, "Configuration validation failed")
+app/routes/config_api.py:200:            success = await distributor._distribute_config()
+app/routes/config_api.py:202:                raise HTTPException(500, "Configuration distribution failed")
+app/routes/config_api.py:209:            "message": "Configuration synchronized",
+app/routes/config_api.py:219:@router.post("/rollback")
+app/routes/config_api.py:220:async def rollback_config(commit: Optional[str] = None):
+app/routes/config_api.py:222:    Rollback configuration to a previous commit.
+app/routes/config_api.py:225:        commit: Commit SHA to rollback to (defaults to previous)
+app/routes/config_api.py:228:        distributor = get_config_distributor()
+app/routes/config_api.py:231:            # Rollback to previous commit
+app/routes/config_api.py:237:                raise HTTPException(400, "No previous commit to rollback to")
+app/routes/config_api.py:244:        # Validate config
+app/routes/config_api.py:245:        is_valid = await distributor._validate_config()
+app/routes/config_api.py:247:            raise HTTPException(400, "Rollback config is invalid")
+app/routes/config_api.py:250:        success = await distributor._distribute_config()
+app/routes/config_api.py:252:            raise HTTPException(500, "Rollback distribution failed")
+app/routes/config_api.py:259:            "message": "Configuration rolled back",
+app/routes/config_api.py:266:        raise HTTPException(500, f"Rollback failed: {e}")
+app/routes/config_api.py:270:async def get_config_status():
+app/routes/config_api.py:271:    """Get current configuration distribution status."""
+app/routes/config_api.py:273:        distributor = get_config_distributor()

@@ -84,6 +84,7 @@ def init_db(database_url: str = None) -> None:
     )
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
     Base.metadata.create_all(bind=_engine)
+    _ensure_special_settings_schema_sync()
     logger.info("Database initialized with WAL mode and power-failure resilience")
 
 
@@ -157,6 +158,53 @@ async def _set_async_pragmas(conn) -> None:
             logger.warning(f"Failed to set async PRAGMA {pragma}={value}: {e}")
 
 
+def _special_settings_default_promoted_routes_json() -> str:
+    return '["/welcome","/grid"]'
+
+
+def _ensure_special_settings_schema_sync() -> None:
+    """Apply additive schema upgrades for special_settings in existing SQLite DBs."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        result = conn.execute(text("PRAGMA table_info(special_settings)"))
+        columns = {str(row[1]) for row in result.fetchall()}
+
+        if columns and "promoted_advanced_routes" not in columns:
+            conn.execute(text("ALTER TABLE special_settings ADD COLUMN promoted_advanced_routes JSON"))
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET promoted_advanced_routes = :routes "
+                    "WHERE promoted_advanced_routes IS NULL"
+                ),
+                {"routes": _special_settings_default_promoted_routes_json()},
+            )
+            logger.info("Added special_settings.promoted_advanced_routes schema upgrade")
+
+
+async def _ensure_special_settings_schema_async(conn) -> None:
+    """Apply additive schema upgrades for special_settings in async SQLite sessions."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    result = await conn.execute(text("PRAGMA table_info(special_settings)"))
+    columns = {str(row[1]) for row in result.fetchall()}
+
+    if columns and "promoted_advanced_routes" not in columns:
+        await conn.execute(text("ALTER TABLE special_settings ADD COLUMN promoted_advanced_routes JSON"))
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET promoted_advanced_routes = :routes "
+                "WHERE promoted_advanced_routes IS NULL"
+            ),
+            {"routes": _special_settings_default_promoted_routes_json()},
+        )
+        logger.info("Added async special_settings.promoted_advanced_routes schema upgrade")
+
+
 async def _ensure_tables_created() -> None:
     """Create tables once if they don't exist (called only once per startup)."""
     global _tables_created, _pragmas_set
@@ -174,12 +222,13 @@ async def _ensure_tables_created() -> None:
                 _pragmas_set = True
                 logger.info("Async database PRAGMAs applied (WAL mode enabled)")
             await conn.run_sync(Base.metadata.create_all)
+            await _ensure_special_settings_schema_async(conn)
         _tables_created = True
 
 
 @asynccontextmanager
-async def get_session() -> "AsyncSession":
-    """Get async database session context manager with automatic commit/rollback."""
+async def get_session(read_only: bool = False) -> "AsyncSession":
+    """Get async database session context manager with automatic transaction handling."""
     if _async_session_maker is None:
         init_async_db()
 
@@ -189,8 +238,12 @@ async def get_session() -> "AsyncSession":
     async with _async_session_maker() as session:
         try:
             yield session
-            await session.commit()
-        except Exception:
+            if read_only:
+                # End read-only transactions without forcing commit/write locks.
+                await session.rollback()
+            else:
+                await session.commit()
+        except BaseException:
             await session.rollback()
             raise
 
@@ -260,6 +313,7 @@ class Chain(Base):
 
     # Relationships
     chain_plugins = relationship("ChainPlugin", back_populates="chain", cascade="all, delete-orphan")
+    loop_insertions = relationship("EffectsLoopInsertion", back_populates="chain", cascade="all, delete-orphan")
     presets = relationship("Preset", back_populates="chain", cascade="all, delete-orphan")
 
 
@@ -431,6 +485,126 @@ class ChainPlugin(Base):
 
     # Relationships
     chain = relationship("Chain", back_populates="chain_plugins")
+
+
+# =============================================================================
+# EXTERNAL EFFECTS LOOPS (TESIRA AVB SEND/RETURN)
+# =============================================================================
+
+class EffectsLoop(Base):
+    """External effects loop definition mapped to AVB/Tesira topology."""
+    __tablename__ = "effects_loops"
+
+    id = Column(Integer, primary_key=True)
+    loop_id = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    channels = Column(Integer, nullable=False, default=2)  # 1..8 validated in service layer
+    topology = Column(String(64), default="serial_insert")
+
+    tesira_device_id = Column(String(128), nullable=True)
+    template_id = Column(String(128), nullable=True)
+    send_endpoint_id = Column(String(255), nullable=True)
+    return_endpoint_id = Column(String(255), nullable=True)
+
+    state_desired = Column(String(32), default="inactive")
+    state_actual = Column(String(32), default="inactive")
+    health_status = Column(String(32), default="unknown")
+    health_reason = Column(Text, nullable=True)
+
+    target_added_latency_ms = Column(Float, default=0.5)
+    measured_added_latency_ms = Column(Float, nullable=True)
+    compensation_samples = Column(Integer, default=0)
+    calibration_status = Column(String(32), default="uncalibrated")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    insertions = relationship("EffectsLoopInsertion", back_populates="loop", cascade="all, delete-orphan")
+    calibrations = relationship("EffectsLoopCalibration", back_populates="loop", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("idx_effects_loops_device_template", "tesira_device_id", "template_id"),
+        Index("idx_effects_loops_state", "state_actual", "health_status"),
+    )
+
+
+class EffectsLoopInsertion(Base):
+    """Insertion record linking a loop into a chain slot."""
+    __tablename__ = "effects_loop_insertions"
+
+    id = Column(Integer, primary_key=True)
+    insertion_id = Column(String(64), unique=True, nullable=False, index=True)
+    chain_id = Column(Integer, ForeignKey("chains.id", ondelete="CASCADE"), nullable=False, index=True)
+    loop_id = Column(String(64), ForeignKey("effects_loops.loop_id", ondelete="CASCADE"), nullable=False, index=True)
+    slot_index = Column(Integer, nullable=False, default=0)
+    enabled = Column(Boolean, default=True)
+
+    mode = Column(String(32), default="serial_insert")
+    blend_pct = Column(Float, default=100.0)
+    send_gain_db = Column(Float, default=0.0)
+    return_gain_db = Column(Float, default=0.0)
+    crossfade_ms = Column(Integer, default=12)
+    band_split_hz = Column(JSON, default=list)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    chain = relationship("Chain", back_populates="loop_insertions")
+    loop = relationship("EffectsLoop", back_populates="insertions")
+
+    __table_args__ = (
+        Index("idx_effects_loop_insertions_chain_slot", "chain_id", "slot_index"),
+        Index("idx_effects_loop_insertions_chain_loop", "chain_id", "loop_id"),
+    )
+
+
+class EffectsLoopCalibration(Base):
+    """Calibration history and compensation records per loop."""
+    __tablename__ = "effects_loop_calibrations"
+
+    id = Column(Integer, primary_key=True)
+    calibration_id = Column(String(64), unique=True, nullable=False, index=True)
+    loop_id = Column(String(64), ForeignKey("effects_loops.loop_id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(32), default="pending")
+    measured_added_latency_ms = Column(Float, nullable=True)
+    compensation_samples = Column(Integer, default=0)
+    notes = Column(JSON, default=dict)
+    measured_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    loop = relationship("EffectsLoop", back_populates="calibrations")
+
+    __table_args__ = (
+        Index("idx_effects_loop_calibrations_loop_created", "loop_id", "created_at"),
+    )
+
+
+class TesiraLoopTemplate(Base):
+    """Tag-mapped Tesira template metadata for loop orchestration."""
+    __tablename__ = "tesira_loop_templates"
+
+    id = Column(Integer, primary_key=True)
+    template_id = Column(String(128), unique=True, nullable=False, index=True)
+    tesira_device_id = Column(String(128), nullable=False, index=True)
+
+    stream_in_tags = Column(JSON, default=list)
+    stream_out_tags = Column(JSON, default=list)
+    crosspoint_tags = Column(JSON, default=list)
+    input_router_tag = Column(String(255), nullable=True)
+    output_router_tag = Column(String(255), nullable=True)
+    meter_tags = Column(JSON, default=list)
+    bypass_tags = Column(JSON, default=list)
+    channel_map_policy = Column(String(64), default="direct")
+
+    validation_status = Column(String(32), default="unknown")
+    validation_error = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_loop_templates_device", "tesira_device_id"),
+    )
 
 
 class MIDIMappingGroup(Base):
@@ -718,6 +892,161 @@ class NAMModel(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+# =============================================================================
+# TESIRA FORTE AVB — PRESET INTERLOCK RULES
+# =============================================================================
+
+class TesiraBlockDeclaration(Base):
+    """Persisted DSP block declarations discovered/provisioned for a Tesira device."""
+    __tablename__ = "tesira_block_declarations"
+
+    id = Column(Integer, primary_key=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    instance_tag = Column(String(255), nullable=False, index=True)
+    block_type = Column(String(64), nullable=False, default="UNKNOWN")
+    channel_count = Column(Integer, nullable=False, default=1)
+    parameter_map = Column(JSON, default=dict)
+    is_probed = Column(Boolean, default=True)
+    last_probed_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_block_decl_device_tag_unique", "device_id", "instance_tag", unique=True),
+        Index("idx_tesira_block_decl_type", "block_type"),
+    )
+
+
+class TesiraSceneSnapshot(Base):
+    """Stored DSP scene snapshots for capture/recall workflows."""
+    __tablename__ = "tesira_scene_snapshots"
+
+    id = Column(Integer, primary_key=True)
+    scene_id = Column(String(128), nullable=False, unique=True, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    block_states = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_scene_device_created", "device_id", "created_at"),
+    )
+
+
+class TesiraLayoutArtifact(Base):
+    """Catalog entry for a precompiled Tesira layout artifact."""
+    __tablename__ = "tesira_layout_artifacts"
+
+    id = Column(Integer, primary_key=True)
+    layout_id = Column(String(128), nullable=False, index=True)
+    version = Column(String(64), nullable=False, default="1.0.0")
+    name = Column(String(255), nullable=False, default="Unnamed Layout")
+    device_family = Column(String(128), nullable=False, default="UNKNOWN")
+    channel_profile = Column(String(128), nullable=True)
+    required_firmware = Column(String(64), nullable=True)
+    checksum = Column(String(128), nullable=False)
+    artifact_uri = Column(String(1024), nullable=True)
+    instance_tag_map = Column(JSON, default=dict)
+    feature_flags = Column(JSON, default=list)
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_layout_artifact_unique", "layout_id", "version", unique=True),
+        Index("idx_tesira_layout_family", "device_family"),
+        Index("idx_tesira_layout_active", "is_active"),
+    )
+
+
+class TesiraDesignWorkspace(Base):
+    """Persisted MAP2-native Tesira design graph workspace."""
+    __tablename__ = "tesira_design_workspaces"
+
+    id = Column(Integer, primary_key=True)
+    design_id = Column(String(128), nullable=False, unique=True, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    name = Column(String(255), nullable=False, default="Untitled Design")
+    description = Column(Text, nullable=True)
+    graph = Column(JSON, default=dict)
+    is_template = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    compile_status = Column(String(32), nullable=False, default="UNCOMPILED")
+    compile_revision = Column(Integer, nullable=False, default=0)
+    compiled_graph_hash = Column(String(128), nullable=True)
+    compile_diagnostics = Column(JSON, default=dict)
+    last_compiled_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_design_device_created", "device_id", "created_at"),
+        Index("idx_tesira_design_device_active", "device_id", "is_active"),
+    )
+
+
+class TesiraDeploymentJob(Base):
+    """Deployment transaction state for Tesira layout orchestration."""
+    __tablename__ = "tesira_deployment_jobs"
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(String(64), nullable=False, unique=True, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    layout_id = Column(String(128), nullable=False)
+    layout_version = Column(String(64), nullable=False, default="1.0.0")
+    rollback_layout_id = Column(String(128), nullable=True)
+    rollback_layout_version = Column(String(64), nullable=True)
+    requested_by = Column(String(128), nullable=True)
+    dry_run = Column(Boolean, default=False)
+    status = Column(String(32), nullable=False, default="queued")
+    stage = Column(String(32), nullable=False, default="queued")
+    sagevue_job_id = Column(String(128), nullable=True)
+    error_detail = Column(Text, nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_deploy_device_created", "device_id", "created_at"),
+        Index("idx_tesira_deploy_status", "status"),
+    )
+
+
+class TesiraDeploymentEvent(Base):
+    """Timeline event emitted during Tesira deployment orchestration."""
+    __tablename__ = "tesira_deployment_events"
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(String(64), nullable=False, index=True)
+    sequence = Column(Integer, nullable=False)
+    stage = Column(String(32), nullable=False)
+    status = Column(String(32), nullable=False)
+    message = Column(Text, nullable=False)
+    payload = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_deploy_event_job_seq_unique", "job_id", "sequence", unique=True),
+    )
+
+
+class TesiraInterlockRule(Base):
+    """
+    Maps a MAP2 preset ID to a Tesira device preset index.
+    When the MAP2 preset is recalled, the Tesira preset is automatically recalled.
+    """
+    __tablename__ = "tesira_interlock_rules"
+
+    id = Column(Integer, primary_key=True)
+    map2_preset_id = Column(Integer, nullable=False, index=True)
+    tesira_device_id = Column(String(64), nullable=False)
+    tesira_preset_index = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class IRCategory(Base):
     """IR category taxonomy (hierarchical)."""
     __tablename__ = "ir_categories"
@@ -991,6 +1320,7 @@ class SpecialSettings(Base):
     enabled = Column(Boolean, nullable=False, default=False)
     hidden_plugins = Column(JSON, default=list)  # List of plugin URIs to hide
     menu_location = Column(String(20), default="top-nav")  # "top-nav" | "mobile-only" | "hidden"
+    promoted_advanced_routes = Column(JSON, default=lambda: ["/welcome", "/grid"])
     
     # Cluster replication metadata
     version = Column(Integer, default=1)  # Incremented on each update

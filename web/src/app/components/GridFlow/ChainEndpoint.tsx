@@ -12,20 +12,30 @@
  */
 
 import { memo } from 'react'
-import { ArrowDown, SpeakerHigh, GearSix } from '@phosphor-icons/react'
+import { ArrowDown, SpeakerHigh, GearSix, ArrowsLeftRight, GitBranch, Shuffle, WaveTriangle, LinkSimple } from '@phosphor-icons/react'
+
+export type RoutingMode =
+  | 'parallel_blend'
+  | 'ab_switch'
+  | 'series'
+  | 'parameter_morph'
+  | 'sidechain'
 
 export interface AudioInterfaceStatus {
   deviceName?: string
   sampleRate?: number
   bufferSize?: number
-  latencyMs?: number
   channels?: number
-  cpuLoad?: number
-  xruns?: number
   isRunning?: boolean
   selectedPorts?: number[]
   selectedAvbEndpoints?: string[]
   totalPorts?: number
+  /** Current routing mode for the signal chain */
+  routingMode?: RoutingMode
+  /** Whether the chain assigned to this endpoint is active */
+  chainActive?: boolean
+  /** Name of the chain assigned to this endpoint */
+  chainName?: string
 }
 
 export interface ChainEndpointProps {
@@ -34,6 +44,18 @@ export interface ChainEndpointProps {
   audioStatus?: AudioInterfaceStatus
   compact?: boolean
   onPortSelectClick?: () => void
+}
+
+const ROUTING_MODE_CONFIG: Record<RoutingMode, { label: string; icon: typeof ArrowsLeftRight; color: string }> = {
+  series: { label: 'Serial', icon: ArrowsLeftRight, color: '#38bdf8' },
+  parallel_blend: { label: 'Parallel', icon: GitBranch, color: '#a78bfa' },
+  ab_switch: { label: 'A/B', icon: Shuffle, color: '#fb923c' },
+  parameter_morph: { label: 'Morph', icon: WaveTriangle, color: '#f472b6' },
+  sidechain: { label: 'Sidechain', icon: LinkSimple, color: '#facc15' },
+}
+
+function formatSampleRate(sr: number): string {
+  return sr >= 1000 ? `${sr / 1000}k` : `${sr}`
 }
 
 export const ChainEndpoint = memo(function ChainEndpoint({
@@ -48,17 +70,15 @@ export const ChainEndpoint = memo(function ChainEndpoint({
 
   const sampleRate = audioStatus?.sampleRate || 48000
   const bufferSize = audioStatus?.bufferSize || 256
-  const latencyMs = audioStatus?.latencyMs || (bufferSize / sampleRate * 1000 * 2)
   const channels = audioStatus?.channels || 2
-  const xruns = audioStatus?.xruns || 0
   const isRunning = audioStatus?.isRunning ?? true
   const selectedPorts = audioStatus?.selectedPorts || []
   const selectedAvbEndpoints = audioStatus?.selectedAvbEndpoints || []
   const totalPorts = audioStatus?.totalPorts || channels
   const totalSelected = selectedPorts.length + selectedAvbEndpoints.length
-
-  const latencyColor =
-    latencyMs < 10 ? '#22c55e' : latencyMs < 20 ? '#f59e0b' : '#ef4444'
+  const routingMode = audioStatus?.routingMode || 'series'
+  const chainActive = audioStatus?.chainActive ?? true
+  const deviceName = audioStatus?.deviceName
 
   const channelLabel =
     totalSelected > 0
@@ -72,7 +92,10 @@ export const ChainEndpoint = memo(function ChainEndpoint({
   const avbDetail = selectedAvbEndpoints.length > 0
     ? `AVB ${selectedAvbEndpoints.length}`
     : null
-  const portDetail = [localPortDetail, avbDetail].filter(Boolean).join(' • ') || null
+  const portDetail = [localPortDetail, avbDetail].filter(Boolean).join(' + ') || null
+
+  const routingCfg = ROUTING_MODE_CONFIG[routingMode]
+  const RoutingIcon = routingCfg.icon
 
   if (compact) {
     return (
@@ -105,7 +128,7 @@ export const ChainEndpoint = memo(function ChainEndpoint({
         display: 'flex',
         flexDirection: 'column',
         gap: 6,
-        width: 116,
+        width: 128,
         padding: '10px 10px 8px',
         background: `linear-gradient(180deg, ${accent}06 0%, rgba(0,0,0,0.18) 100%)`,
         borderRadius: 8,
@@ -120,6 +143,7 @@ export const ChainEndpoint = memo(function ChainEndpoint({
         (e.currentTarget as HTMLElement).style.borderColor = `${accent}30`
       }}
     >
+      {/* Header: icon + label + status dot */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{
           width: 24,
@@ -150,12 +174,13 @@ export const ChainEndpoint = memo(function ChainEndpoint({
           width: 5,
           height: 5,
           borderRadius: '50%',
-          background: isRunning ? '#22c55e' : '#ef4444',
-          boxShadow: isRunning ? '0 0 4px #22c55e60' : '0 0 4px #ef444460',
+          background: isRunning && chainActive ? '#22c55e' : !isRunning ? '#ef4444' : '#f59e0b',
+          boxShadow: isRunning && chainActive ? '0 0 4px #22c55e60' : !isRunning ? '0 0 4px #ef444460' : '0 0 4px #f59e0b60',
           flexShrink: 0,
         }} />
       </div>
 
+      {/* Channel config + port selector */}
       <button
         onClick={onPortSelectClick}
         disabled={!onPortSelectClick}
@@ -211,46 +236,73 @@ export const ChainEndpoint = memo(function ChainEndpoint({
         )}
       </button>
 
+      {/* Routing mode badge */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 4,
+        gap: 3,
+        padding: '2px 6px',
+        background: `${routingCfg.color}12`,
+        borderRadius: 3,
+        border: `1px solid ${routingCfg.color}20`,
       }}>
+        <RoutingIcon size={9} weight="bold" style={{ color: routingCfg.color, flexShrink: 0 }} />
+        <span style={{
+          fontSize: 9,
+          fontWeight: 600,
+          color: routingCfg.color,
+          letterSpacing: '0.3px',
+        }}>
+          {routingCfg.label}
+        </span>
+      </div>
+
+      {/* Device info: sample rate / buffer */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+      }}>
+        {deviceName && (
+          <div style={{
+            fontSize: 8,
+            fontWeight: 500,
+            color: 'rgba(255,255,255,0.4)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+            title={deviceName}
+          >
+            {deviceName}
+          </div>
+        )}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 3,
-          padding: '2px 5px',
-          background: `${latencyColor}12`,
-          borderRadius: 3,
+          gap: 4,
         }}>
-          <svg width="8" height="8" viewBox="0 0 12 12">
-            <circle cx="6" cy="6" r="4.5" fill="none" stroke={latencyColor} strokeWidth="1.2" opacity="0.5" />
-            <path d="M6,3.5 L6,6 L7.8,7" fill="none" stroke={latencyColor} strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
           <span style={{
             fontSize: 9,
             fontWeight: 600,
-            color: latencyColor,
+            color: 'rgba(255,255,255,0.5)',
             fontFeatureSettings: '"tnum"',
           }}>
-            {latencyMs.toFixed(1)}ms
+            {formatSampleRate(sampleRate)}
           </span>
-        </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '2px 5px',
-          background: xruns === 0 ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.12)',
-          borderRadius: 3,
-        }}>
           <span style={{
-            fontSize: 8,
-            fontWeight: 700,
-            color: xruns === 0 ? '#22c55e' : '#ef4444',
+            fontSize: 7,
+            color: 'rgba(255,255,255,0.2)',
+          }}>
+            /
+          </span>
+          <span style={{
+            fontSize: 9,
+            fontWeight: 600,
+            color: 'rgba(255,255,255,0.5)',
             fontFeatureSettings: '"tnum"',
           }}>
-            {xruns === 0 ? '✓' : `⚠ ${xruns}`}
+            {bufferSize}smp
           </span>
         </div>
       </div>

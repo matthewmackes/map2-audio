@@ -10,6 +10,7 @@ import {
   WebSocketTopic,
   ConnectionStatus,
 } from '../websocket';
+import { sanitizeDisplayPayload } from '../displayNames';
 
 /**
  * Hook to manage WebSocket connection
@@ -61,7 +62,9 @@ export function useWebSocketTopic<T = any>(
 
   useEffect(() => {
     const messageHandler = (message: WebSocketMessage) => {
-      handlerRef.current(message.data, message);
+      const sanitizedData = sanitizeDisplayPayload(message.data) as T;
+      const sanitizedMessage = { ...message, data: sanitizedData };
+      handlerRef.current(sanitizedData, sanitizedMessage);
     };
 
     const unsubscribe = client.subscribe(topic, messageHandler);

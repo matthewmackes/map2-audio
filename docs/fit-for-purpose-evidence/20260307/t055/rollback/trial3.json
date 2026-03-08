@@ -1,0 +1,12 @@
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-07T19:49:00-05:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "EDIROL UA-1000 Pro:playback_AUX0",
+      "capture": "EDIROL UA-1000 Pro:capture_AUX0"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}

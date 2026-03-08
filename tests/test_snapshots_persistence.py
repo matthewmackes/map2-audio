@@ -15,6 +15,8 @@ def test_snapshot_store_roundtrip(tmp_path, monkeypatch):
             "name": "Lead Tone",
             "has_data": True,
             "plugin_states": [{"chain_id": 1, "plugins": [{"uri": "urn:test:plugin"}]}],
+            "loop_insertions": [{"chain_id": 1, "insertions": [{"insertion_id": "lin_1"}]}],
+            "effects_loops": [{"chain_id": 1, "loops": [{"loop_id": "loop_1"}]}],
         }
         snapshots._current_snapshot = 2
 
@@ -31,6 +33,8 @@ def test_snapshot_store_roundtrip(tmp_path, monkeypatch):
         assert snapshots._snapshots[2]["name"] == "Lead Tone"
         assert snapshots._snapshots[2]["has_data"] is True
         assert snapshots._snapshots[2]["plugin_states"][0]["chain_id"] == 1
+        assert snapshots._snapshots[2]["loop_insertions"][0]["chain_id"] == 1
+        assert snapshots._snapshots[2]["effects_loops"][0]["loops"][0]["loop_id"] == "loop_1"
 
 
 def test_load_invalid_snapshot_file_keeps_defaults(tmp_path, monkeypatch):
@@ -70,3 +74,5 @@ def test_delete_snapshot_persists_default_slot(tmp_path, monkeypatch):
     assert slot["name"] == "Snapshot 2"
     assert slot["has_data"] is False
     assert slot["plugin_states"] == []
+    assert slot["loop_insertions"] == []
+    assert slot["effects_loops"] == []

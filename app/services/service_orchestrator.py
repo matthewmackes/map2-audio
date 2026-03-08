@@ -108,6 +108,7 @@ class ServiceOrchestrator:
         self._websocket_manager = None
         self._event_callbacks: List[Callable] = []
         self._startup_time: Optional[datetime] = None
+        self._plugin_loader_warm_task: Optional[asyncio.Task] = None
 
         # Register all services
         self._register_all_services()
@@ -146,7 +147,7 @@ class ServiceOrchestrator:
             name="plugin_loader",
             display_name="Plugin Loader",
             description="LV2 plugin discovery and management",
-            priority=ServicePriority.HIGH,
+            priority=ServicePriority.LOW,
             dependencies=["database"],
             start_func=self._start_plugin_loader,
             stop_func=self._stop_plugin_loader,
@@ -154,7 +155,7 @@ class ServiceOrchestrator:
             is_async=True,
             auto_restart=True,
             max_restarts=3,
-            is_critical_for_ready=True,
+            is_critical_for_ready=False,
             startup_retries=3,
         ))
 
@@ -331,10 +332,11 @@ class ServiceOrchestrator:
             stop_func=self._stop_pipewire,
             health_check=self._check_pipewire_health,
             is_async=True,
-            is_optional=False,
+            is_optional=True,
             is_critical_for_ready=False,
             auto_restart=True,
             max_restarts=5,
+            env_enabled_var="MAP2_ENABLE_PIPEWIRE_SERVICE",
         ))
 
         # Calculate startup/shutdown order
@@ -993,15 +995,61 @@ class ServiceOrchestrator:
             return ServiceHealth(healthy=False, message=str(e))
 
     async def _start_plugin_loader(self):
-        """Start plugin loader service."""
+        """Start plugin loader service.
+
+        Keep startup non-blocking by warming the plugin catalog in the
+        background. This allows API readiness before a full filesystem scan.
+        """
         from app.services.plugin_loader_unified import get_plugin_loader
+
         loader = get_plugin_loader()
-        plugins = await loader.discover()
-        self._services["plugin_loader"].health.metrics = {"plugin_count": len(plugins)}
+        cached_count = loader.get_plugin_count()
+        self._services["plugin_loader"].health.metrics = {
+            "plugin_count": cached_count,
+            "scan_state": "warming",
+            "scan_started_at": datetime.now().isoformat(),
+        }
+
+        if self._plugin_loader_warm_task and not self._plugin_loader_warm_task.done():
+            return
+
+        async def _warm_loader() -> None:
+            started = time.time()
+            try:
+                plugins = await asyncio.to_thread(loader.discover_sync, False)
+                elapsed_ms = (time.time() - started) * 1000.0
+                self._services["plugin_loader"].health.metrics = {
+                    "plugin_count": len(plugins),
+                    "scan_state": "ready",
+                    "scan_elapsed_ms": round(elapsed_ms, 2),
+                    "scan_completed_at": datetime.now().isoformat(),
+                }
+                logger.info(
+                    "Plugin loader background warm complete: %s plugins in %.1fms",
+                    len(plugins),
+                    elapsed_ms,
+                )
+            except Exception as e:
+                self._services["plugin_loader"].health.metrics = {
+                    "plugin_count": loader.get_plugin_count(),
+                    "scan_state": "error",
+                    "scan_error": str(e),
+                }
+                logger.warning("Plugin loader background warm failed: %s", e)
+
+        self._plugin_loader_warm_task = asyncio.create_task(_warm_loader())
 
     async def _stop_plugin_loader(self):
         """Stop plugin loader service."""
         try:
+            if self._plugin_loader_warm_task and not self._plugin_loader_warm_task.done():
+                self._plugin_loader_warm_task.cancel()
+                try:
+                    await self._plugin_loader_warm_task
+                except asyncio.CancelledError:
+                    pass
+            self._plugin_loader_warm_task = None
+
             from app.services.plugin_loader_unified import get_plugin_loader
             loader = get_plugin_loader()
             if hasattr(loader, 'clear_cache'):
@@ -1013,14 +1061,26 @@ class ServiceOrchestrator:
     async def _check_plugin_loader_health(self) -> ServiceHealth:
         """Check plugin loader health (lightweight - uses cached count)."""
         try:
-            # Use cached plugin count from startup - don't rediscover
             plugin_status = self._services.get("plugin_loader")
             if plugin_status and plugin_status.health.metrics:
                 count = plugin_status.health.metrics.get("plugin_count", 0)
+                scan_state = plugin_status.health.metrics.get("scan_state", "unknown")
+                if scan_state == "warming":
+                    return ServiceHealth(
+                        healthy=True,
+                        message=f"Background plugin scan running ({count} cached)",
+                        metrics=plugin_status.health.metrics,
+                    )
+                if scan_state == "error":
+                    return ServiceHealth(
+                        healthy=False,
+                        message=f"Plugin scan failed: {plugin_status.health.metrics.get('scan_error', 'unknown error')}",
+                        metrics=plugin_status.health.metrics,
+                    )
                 return ServiceHealth(
-                    healthy=count > 0,
+                    healthy=True,
                     message=f"{count} plugins available",
-                    metrics={"plugin_count": count}
+                    metrics=plugin_status.health.metrics,
                 )
             # Fallback - service hasn't started properly
             return ServiceHealth(

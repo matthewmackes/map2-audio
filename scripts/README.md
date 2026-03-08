@@ -6,6 +6,14 @@ Complete, production-ready installation and deployment automation for MAP2 Audio
 
 ## 📦 Contents
 
+### Audio Clock Sync (MPX1 S/PDIF + AVB)
+
+- `apply_clock_sync_profile.py`
+  - Applies one canonical clock/buffer/bit-depth profile to MAP2 config, PipeWire config, and optional systemd drop-in.
+  - Use `--list-profiles` to inspect the five built-in options.
+- `setup_mpx1_spdif_avb.sh`
+  - Wrapper that can run AVB provisioning (`setup_avb.sh`) and then apply a selected clock-sync profile in one operator flow.
+
 ### Main Installation Scripts
 
 1. **install_cluster_manager.sh** (650 lines)

@@ -59,6 +59,8 @@ class AvbStreamConfig:
     listener_node_id: Optional[str] = None
     talker_endpoint_id: Optional[str] = None
     listener_endpoint_id: Optional[str] = None
+    connection_role: str = "general_route"
+    loop_id: Optional[str] = None
 
 
 @dataclass
@@ -112,6 +114,8 @@ class AvbService:
         "listener_node_id",
         "talker_endpoint_id",
         "listener_endpoint_id",
+        "connection_role",
+        "loop_id",
     )
     _ACTIVE_CONNECTION_METHODS = (
         "get_active_connections",

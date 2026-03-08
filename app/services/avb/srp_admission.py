@@ -25,6 +25,63 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+def _is_udp_endpoint(control_socket: str) -> bool:
+    return str(control_socket or "").strip().lower().startswith("udp://")
+
+
+def _parse_udp_endpoint(control_socket: str) -> Tuple[str, int]:
+    raw = str(control_socket or "").strip()
+    if not _is_udp_endpoint(raw):
+        raise ValueError(f"Unsupported UDP control endpoint: {control_socket}")
+
+    host_port = raw[6:]
+    if ":" not in host_port:
+        raise ValueError(f"Invalid UDP control endpoint: {control_socket}")
+
+    host, port_text = host_port.rsplit(":", 1)
+    host = host.strip() or "127.0.0.1"
+    try:
+        port = int(port_text)
+    except ValueError as exc:
+        raise ValueError(f"Invalid UDP port in control endpoint: {control_socket}") from exc
+
+    if port < 1 or port > 65535:
+        raise ValueError(f"Invalid UDP port in control endpoint: {control_socket}")
+
+    return host, port
+
+
+def _probe_udp_endpoint(control_socket: str, *, timeout_ms: int = 150) -> bool:
+    try:
+        host, port = _parse_udp_endpoint(control_socket)
+    except ValueError:
+        return False
+
+    payload = b"S??\n"
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.settimeout(max(0.05, timeout_ms / 1000.0))
+        sock.sendto(payload, (host, port))
+        response, _ = sock.recvfrom(4096)
+        return bool(response)
+    except Exception:
+        return False
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+
+def _control_endpoint_exists(control_socket: str) -> bool:
+    path = str(control_socket or "").strip()
+    if not path:
+        return False
+    if _is_udp_endpoint(path):
+        return _probe_udp_endpoint(path)
+    return os.path.exists(path)
+
+
 @dataclass
 class SrpAdmissionRequest:
     """Normalized admission request context."""
@@ -107,7 +164,12 @@ class _AdapterExchangeResult:
 
 
 class _UnixSocketTransport:
-    """Performs best-effort daemon command exchange over UNIX sockets."""
+    """Performs best-effort daemon command exchange over UNIX sockets or UDP endpoints."""
+
+    @staticmethod
+    def _decode_response(response: bytes) -> str:
+        # OpenAvnu mrpd often returns fixed-size buffers padded with NUL bytes.
+        return response.decode("utf-8", errors="replace").replace("\x00", "").strip()
 
     @staticmethod
     def _run_dgram_exchange(control_socket: str, message: str, timeout_ms: int) -> str:
@@ -124,7 +186,7 @@ class _UnixSocketTransport:
             sock.bind(client_path)
             sock.sendto(payload, control_socket)
             response = sock.recv(65535)
-            return response.decode("utf-8", errors="replace").strip()
+            return _UnixSocketTransport._decode_response(response)
         finally:
             try:
                 sock.close()
@@ -147,7 +209,25 @@ class _UnixSocketTransport:
             sock.connect(control_socket)
             sock.sendall(payload)
             response = sock.recv(65535)
-            return response.decode("utf-8", errors="replace").strip()
+            return _UnixSocketTransport._decode_response(response)
+        finally:
+            try:
+                sock.close()
+            except Exception:
+                pass
+
+    @staticmethod
+    def _run_udp_exchange(control_socket: str, message: str, timeout_ms: int) -> str:
+        timeout_sec = max(0.1, timeout_ms / 1000.0)
+        payload = f"{message}\n".encode("utf-8", errors="ignore")
+        host, port = _parse_udp_endpoint(control_socket)
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.settimeout(timeout_sec)
+            sock.sendto(payload, (host, port))
+            response, _ = sock.recvfrom(65535)
+            return _UnixSocketTransport._decode_response(response)
         finally:
             try:
                 sock.close()
@@ -156,6 +236,14 @@ class _UnixSocketTransport:
 
     @classmethod
     async def exchange(cls, control_socket: str, message: str, timeout_ms: int) -> str:
+        if _is_udp_endpoint(control_socket):
+            return await asyncio.to_thread(
+                cls._run_udp_exchange,
+                control_socket,
+                message,
+                timeout_ms,
+            )
+
         try:
             return await asyncio.to_thread(
                 cls._run_dgram_exchange,
@@ -566,7 +654,7 @@ class SrpAdmissionService:
 
             socket_path = adapter.resolve_socket(override_socket)
             binary_path = self._find_binary(adapter)
-            socket_exists = bool(socket_path and os.path.exists(socket_path))
+            socket_exists = _control_endpoint_exists(socket_path)
 
             detected.append(
                 {
@@ -597,7 +685,7 @@ class SrpAdmissionService:
                 adapter = self._adapters[daemon_name]
                 socket_path = adapter.resolve_socket(override_socket)
                 binary_path = self._find_binary(adapter)
-                socket_exists = bool(socket_path and os.path.exists(socket_path))
+                socket_exists = _control_endpoint_exists(socket_path)
                 if not any(entry["daemon_type"] == adapter.daemon_type for entry in detected):
                     detected.append(
                         {
@@ -634,6 +722,26 @@ class SrpAdmissionService:
 
         return None, None, None
 
+    def _runtime_control_socket(self, adapter: _BaseSrpAdapter, socket_path: Optional[str]) -> str:
+        resolved = str(socket_path or "").strip()
+        if not adapter or adapter.daemon_type != "mrpd":
+            return resolved
+        if _is_udp_endpoint(resolved):
+            return resolved
+        if _control_endpoint_exists(resolved):
+            return resolved
+        override = self._socket_override()
+        if override and not _is_udp_endpoint(override):
+            # Preserve explicit override when it is valid; otherwise allow
+            # mrpd UDP fallback for legacy UNIX-socket defaults.
+            if _control_endpoint_exists(resolved):
+                return resolved
+
+        udp_candidate = "udp://127.0.0.1:7500"
+        if _control_endpoint_exists(udp_candidate):
+            return udp_candidate
+        return resolved
+
     async def _ping_daemon(
         self,
         adapter: _BaseSrpAdapter,
@@ -641,7 +749,7 @@ class SrpAdmissionService:
     ) -> Tuple[bool, Optional[str]]:
         if not socket_path:
             return False, "SRP control socket path is not configured"
-        if not os.path.exists(socket_path):
+        if not _control_endpoint_exists(socket_path):
             return False, f"SRP control socket not found: {socket_path}"
 
         timeout_ms = min(self._timeout_ms(), 500)
@@ -672,6 +780,8 @@ class SrpAdmissionService:
 
         adapter, socket_path, binary_path, detected = self._resolve_adapter()
         daemon_type = adapter.daemon_type if adapter else "none"
+        if adapter:
+            socket_path = self._runtime_control_socket(adapter, socket_path)
 
         running = False
         status_error: Optional[str] = self._last_error
@@ -779,6 +889,8 @@ class SrpAdmissionService:
             return result
 
         adapter, socket_path, _binary_path, detected = self._resolve_adapter()
+        if adapter:
+            socket_path = self._runtime_control_socket(adapter, socket_path)
         if adapter is None or not socket_path:
             self._last_error = "No SRP daemon detected"
             decision = "denied" if required else "bypass"
@@ -804,7 +916,7 @@ class SrpAdmissionService:
             await self._persist(request, result)
             return result
 
-        if not os.path.exists(socket_path):
+        if not _control_endpoint_exists(socket_path):
             self._last_error = f"SRP socket unavailable: {socket_path}"
             decision = "denied" if required else "bypass"
             reason_code = "SRP_SOCKET_UNAVAILABLE" if required else "SRP_OPTIONAL_BYPASS"
@@ -847,7 +959,9 @@ class SrpAdmissionService:
                 current_daemon_type=adapter.daemon_type,
                 detected=detected,
             )
-            if alt_adapter and alt_socket and os.path.exists(alt_socket):
+            if alt_adapter:
+                alt_socket = self._runtime_control_socket(alt_adapter, alt_socket)
+            if alt_adapter and alt_socket and _control_endpoint_exists(alt_socket):
                 alt_exchange = await alt_adapter.reserve(
                     control_socket=alt_socket,
                     timeout_ms=timeout_ms,
@@ -925,6 +1039,8 @@ class SrpAdmissionService:
             )
 
         adapter, socket_path, _binary_path, detected = self._resolve_adapter()
+        if adapter:
+            socket_path = self._runtime_control_socket(adapter, socket_path)
         if adapter is None or not socket_path:
             result = SrpReleaseResult(
                 success=False,
@@ -956,7 +1072,9 @@ class SrpAdmissionService:
                 current_daemon_type=adapter.daemon_type,
                 detected=detected,
             )
-            if alt_adapter and alt_socket and os.path.exists(alt_socket):
+            if alt_adapter:
+                alt_socket = self._runtime_control_socket(alt_adapter, alt_socket)
+            if alt_adapter and alt_socket and _control_endpoint_exists(alt_socket):
                 alt_exchange = await alt_adapter.release(
                     control_socket=alt_socket,
                     timeout_ms=self._timeout_ms(),

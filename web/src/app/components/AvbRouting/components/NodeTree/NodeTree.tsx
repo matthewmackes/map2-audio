@@ -17,6 +17,7 @@ import React, { useState } from 'react';
 import {
   Box,
   Drawer,
+  Paper,
   List,
   ListItem,
   ListItemButton,
@@ -29,6 +30,8 @@ import {
   Tooltip,
   Divider,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -346,7 +349,12 @@ function NodeTreeItem({
   const talkers = nodeEndpoints.filter((ep) => ep.direction === 'talker');
   const listeners = nodeEndpoints.filter((ep) => ep.direction === 'listener');
 
-  const deviceIcon = node.type.startsWith('map2') ? '🎛️' : '🔌';
+  const deviceIcon = node.type === 'tesira'
+    ? null   // Tesira uses BiampIcon SVG badge below
+    : node.type.startsWith('map2') ? '🎛️' : '🔌';
+
+  // Biamp brand red — used for Tesira node accent
+  const BIAMP_RED = '#E31837';
 
   return (
     <>
@@ -359,10 +367,10 @@ function NodeTreeItem({
         data-node-selected={isSelected ? 'true' : 'false'}
         sx={{
           py: 1,
-          borderLeft: `4px solid ${isSelected ? node.color : 'transparent'}`,
-          bgcolor: isSelected ? `${node.color}11` : 'transparent',
+          borderLeft: `4px solid ${isSelected ? (node.type === 'tesira' ? BIAMP_RED : node.color) : 'transparent'}`,
+          bgcolor: isSelected ? `${node.type === 'tesira' ? BIAMP_RED : node.color}11` : 'transparent',
           '&:hover': {
-            bgcolor: isSelected ? `${node.color}22` : 'action.hover',
+            bgcolor: isSelected ? `${node.type === 'tesira' ? BIAMP_RED : node.color}22` : 'action.hover',
           },
         }}
       >
@@ -392,7 +400,28 @@ function NodeTreeItem({
 
         {/* Device icon + status */}
         <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-          <span style={{ fontSize: 18 }}>{deviceIcon}</span>
+          {node.type === 'tesira' ? (
+            /* Biamp Tesira — inline SVG "b" letterform badge */
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-label="Biamp Tesira"
+              style={{ display: 'block' }}
+            >
+              <rect x="5" y="3" width="3" height="18" rx="1.5" fill={BIAMP_RED} />
+              <path
+                d="M8 10 C8 10 18 10 18 14.5 C18 19 8 19 8 19"
+                stroke={BIAMP_RED}
+                strokeWidth="3"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          ) : (
+            <span style={{ fontSize: 18 }}>{deviceIcon}</span>
+          )}
           <NodeStatusBadge node={node} avbHealth={avbHealth} />
         </Box>
 
@@ -406,10 +435,23 @@ function NodeTreeItem({
               {isLocal && (
                 <Chip label="Local" size="small" sx={{ height: 16, fontSize: 9 }} />
               )}
+              {node.type === 'tesira' && (
+                <Chip
+                  label="Tesira"
+                  size="small"
+                  sx={{
+                    height: 16,
+                    fontSize: 9,
+                    bgcolor: BIAMP_RED,
+                    color: '#fff',
+                    '& .MuiChip-label': { px: 0.75 },
+                  }}
+                />
+              )}
             </Box>
           }
           secondary={
-            <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
               <Tooltip title={`${talkers.length} talkers`}>
                 <Chip
                   icon={<OutputIcon sx={{ fontSize: 12 }} />}
@@ -542,6 +584,8 @@ function NodeTreeItem({
  * Node tree component
  */
 export function NodeTree() {
+  const theme = useTheme();
+  const isCompactLayout = useMediaQuery(theme.breakpoints.down('lg'));
   const { state, dispatch } = useRouting();
   const { data: nodes = [] } = useNodes();
   const { data: avbDevicesData } = useAvbDevices();
@@ -599,21 +643,8 @@ export function NodeTree() {
     });
   };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          position: 'relative',
-          borderRight: 1,
-          borderColor: 'divider',
-        },
-      }}
-    >
+  const content = (
+    <>
       {/* Header */}
       <Box
         sx={{
@@ -679,6 +710,48 @@ export function NodeTree() {
           </ListItemButton>
         </Tooltip>
       </Box>
+    </>
+  );
+
+  if (isCompactLayout) {
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 'clamp(170px, 28vh, 260px)',
+          maxHeight: '40vh',
+          overflow: 'hidden',
+          borderRadius: 0,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {content}
+      </Paper>
+    );
+  }
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: DRAWER_WIDTH,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: DRAWER_WIDTH,
+          boxSizing: 'border-box',
+          position: 'relative',
+          borderRight: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      {content}
     </Drawer>
   );
 }

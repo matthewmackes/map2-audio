@@ -1,0 +1,49 @@
+{
+  "timestamp_utc": "2026-03-07T23:44:20.470479Z",
+  "status": {
+    "available": true,
+    "enabled": true,
+    "configured": true,
+    "operational": true,
+    "interface": "enp11s0",
+    "state": "operational",
+    "ptp_state": "INITIALIZING",
+    "ptp_last_update": "2026-03-07T23:44:26.693349"
+  },
+  "discovery": {
+    "enabled": true,
+    "total_discovered": 0,
+    "talker_nodes": 0,
+    "listener_nodes": 0
+  },
+  "devices": {
+    "count": 2,
+    "device_names": [
+      "AVB Listener (Local)",
+      "AVB Talker (Local)"
+    ],
+    "discovered_count": 0
+  },
+  "streams": {
+    "available": true,
+    "active_stream_count": 0
+  },
+  "gate_eval": {
+    "q04_discovery_churn": {
+      "pass": false,
+      "criteria": "discovered_count > 0"
+    },
+    "q05_ptp_timing": {
+      "pass": false,
+      "criteria": "ptp.state in {MASTER, SLAVE, LISTENING}",
+      "observed_state": "INITIALIZING"
+    },
+    "q06_soak": {
+      "pass": false,
+      "criteria": "active streams present for soak execution",
+      "active_stream_count": 0
+    },
+    "overall_pass": false
+  },
+  "conclusion": "Blocked: external AVB peers/streams are still absent, so Q04-Q06 HIL gates cannot execute."
+}

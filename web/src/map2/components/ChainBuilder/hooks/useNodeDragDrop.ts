@@ -5,6 +5,7 @@
 
 import { DragEvent } from 'react';
 import { Plugin } from '../../../types';
+import { getDisplayPluginName } from '../../../displayNames';
 
 /**
  * Hook for handling plugin drag sources
@@ -17,7 +18,7 @@ export function usePluginDragSource() {
       JSON.stringify({
         type: 'plugin',
         pluginUri: plugin.uri,
-        pluginName: plugin.name,
+        pluginName: getDisplayPluginName(plugin.name, plugin.uri),
       })
     );
   };

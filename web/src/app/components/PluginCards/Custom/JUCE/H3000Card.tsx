@@ -94,7 +94,7 @@ function H3000CardBase({
       compact={compact}
       customHeader={
         <div className="h3000-card-header">
-          <span className="h3000-card-title">H3000</span>
+          <span className="h3000-card-title">ULTRA PITCH</span>
           <span className="h3000-card-subtitle">Ultra-Harmonizer</span>
         </div>
       }

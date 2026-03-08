@@ -1,0 +1,111 @@
+    if(EXISTS "${NAM_CORE_PATH}/NAM/dsp.h")
+        message(STATUS "Neural Amp Modeler Core: ENABLED")
+
+        # NAM Core source files
+        set(NAM_SOURCES
+            ${NAM_CORE_PATH}/NAM/activations.cpp
+            ${NAM_CORE_PATH}/NAM/conv1d.cpp
+            ${NAM_CORE_PATH}/NAM/convnet.cpp
+            ${NAM_CORE_PATH}/NAM/dsp.cpp
+            ${NAM_CORE_PATH}/NAM/get_dsp.cpp
+            ${NAM_CORE_PATH}/NAM/lstm.cpp
+            ${NAM_CORE_PATH}/NAM/ring_buffer.cpp
+            ${NAM_CORE_PATH}/NAM/util.cpp
+            ${NAM_CORE_PATH}/NAM/wavenet.cpp
+        )
+
+        # NAM dependencies paths
+        set(NAM_EIGEN_PATH "${NAM_CORE_PATH}/Dependencies/eigen")
+        set(NAM_JSON_PATH "${NAM_CORE_PATH}/Dependencies/nlohmann")
+    else()
+        message(STATUS "Neural Amp Modeler Core: DISABLED (submodule not found)")
+        message(STATUS "  To enable: git submodule add https://github.com/sdatkinson/NeuralAmpModelerCore.git juce-engine/Modules/NeuralAmpModelerCore")
+        set(USE_NAM OFF)
+    endif()
+endif()
+
+# ========================================
+# AVB/TSN Network Audio Transport (Optional)
+# ========================================
+option(USE_AVB "Enable AVB/TSN network audio transport" ON)
+if(USE_AVB)
+    pkg_check_modules(AVTP avtp QUIET)
+    pkg_check_modules(LIBCAP libcap QUIET)
+
+    if(AVTP_FOUND AND LIBCAP_FOUND)
+        message(STATUS "AVB/TSN: ENABLED (libavtp ${AVTP_VERSION})")
+        set(AVB_AVAILABLE TRUE)
+    else()
+        message(STATUS "AVB/TSN: DISABLED (dependencies not found)")
+        if(NOT AVTP_FOUND)
+            message(STATUS "  Missing: libavtp (install libavtp-dev or build from source)")
+        endif()
+        if(NOT LIBCAP_FOUND)
+            message(STATUS "  Missing: libcap (install libcap-dev)")
+        endif()
+        set(AVB_AVAILABLE FALSE)
+    endif()
+else()
+    message(STATUS "AVB/TSN: DISABLED (USE_AVB=OFF)")
+    set(AVB_AVAILABLE FALSE)
+endif()
+
+# ========================================
+# AVDECC (IEEE 1722.1) Third-Party Interop (Optional)
+# ========================================
+option(USE_AVDECC "Enable AVDECC for third-party AVB device interop" OFF)
+if(USE_AVDECC)
+    if(AVB_AVAILABLE)
+        message(STATUS "AVDECC: ENABLED (IEEE 1722.1 interoperability)")
+        set(AVDECC_AVAILABLE TRUE)
+    else()
+        message(STATUS "AVDECC: DISABLED (requires AVB to be enabled first)")
+        message(STATUS "  Enable AVB first with: cmake -DUSE_AVB=ON -DUSE_AVDECC=ON")
+        set(AVDECC_AVAILABLE FALSE)
+    endif()
+else()
+    message(STATUS "AVDECC: DISABLED (USE_AVDECC=OFF)")
+    set(AVDECC_AVAILABLE FALSE)
+endif()
+
+# ========================================
+# Source files - JUCE-based engine
+# ========================================
+set(SOURCES
+    # Core engine
+    Source/Map2AudioEngine.cpp
+
+    # JUCE-based components (new)
+    Source/JuceAudioIO.cpp
+    Source/JucePluginHost.cpp
+    Source/JuceAudioGraph.cpp
+
+    # Enhanced audio processing (new)
+    Source/ConvolutionProcessor.cpp
+    Source/DynamicsProcessor.cpp
+    Source/FilterProcessor.cpp
+    Source/ParallelMixerProcessor.cpp
+    Source/SpectrumAnalyzer.cpp
+    Source/LufsMeter.cpp
+    Source/PhaseCorrelation.cpp
+    Source/CPUMonitor.cpp
+
+    # Modulation processors
+    Source/ChorusProcessor.cpp
+    Source/PhaserProcessor.cpp
+    Source/PitchShifterProcessor.cpp
+    Source/DelayProcessor.cpp
+    Source/CircularDelayProcessor.cpp
+    Source/CircularDelayUI.cpp
+    Source/IntelliFX8VoiceChorusProcessor.cpp
+    Source/BossXS1PolyShifterProcessor.cpp
+    Source/BossXS1UI.cpp
+    Source/ShoeGazeProcessor.cpp
+    Source/LexiLoveProcessor.cpp
+    Source/H3000Processor.cpp
+    
+    # Multi-Effect Processor
+    Source/EventideH9Processor.cpp
+
+    # Peavey 5150 Block Letter Amp Simulator (NEW)
+    Source/Peavey5150Processor.cpp

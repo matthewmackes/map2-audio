@@ -8,6 +8,7 @@
 import { useState, useMemo } from 'react'
 import { usePluginTags, usePluginMetadata } from '../../hooks/usePluginTags'
 import { Star, Eye, EyeSlash, X, CaretDown, CaretUp, Check } from '@phosphor-icons/react'
+import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 interface TagSelectorProps {
   pluginUri: string
@@ -22,6 +23,7 @@ export function TagSelector({
   onClose,
   compact = false
 }: TagSelectorProps) {
+  const displayPluginName = sanitizeRestrictedDisplayText(pluginName) || 'Plugin Tags'
   const { tagCategories, isLoadingTags } = usePluginTags()
   const { metadata, isLoading, update, isUpdating } = usePluginMetadata(pluginUri)
 
@@ -121,7 +123,7 @@ export function TagSelector({
       {/* Header */}
       <div className="tag-selector-header">
         <div className="tag-selector-title">
-          <h3>{pluginName || 'Plugin Tags'}</h3>
+          <h3>{displayPluginName}</h3>
           {onClose && (
             <button className="close-btn" onClick={onClose} title="Close">
               <X size={18} weight="bold" />

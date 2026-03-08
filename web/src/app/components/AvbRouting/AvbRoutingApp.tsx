@@ -12,6 +12,8 @@
 
 import React from 'react';
 import { Box, CircularProgress, Alert, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { RoutingProvider, useRoutingState } from './context/RoutingContext';
 import { TopBar } from './components/TopBar/TopBar';
 import { NodeTree } from './components/NodeTree/NodeTree';
@@ -23,6 +25,8 @@ import { InspectorPanel } from './components/Inspector/InspectorPanel';
  */
 function AvbRoutingAppInner() {
   const state = useRoutingState();
+  const theme = useTheme();
+  const isCompactLayout = useMediaQuery(theme.breakpoints.down('lg'));
 
   // Loading state
   if (state.loading && Object.keys(state.endpoints).length === 0) {
@@ -88,10 +92,19 @@ function AvbRoutingAppInner() {
           display: 'flex',
           flex: 1,
           overflow: 'hidden',
+          flexDirection: { xs: 'column', lg: 'row' },
+          minHeight: 0,
         }}
       >
         {/* Node tree sidebar (left) */}
-        <NodeTree />
+        <Box
+          sx={{
+            flex: isCompactLayout ? '0 0 auto' : undefined,
+            minHeight: 0,
+          }}
+        >
+          <NodeTree />
+        </Box>
 
         {/* Routing grid (center) */}
         <Box
@@ -101,13 +114,22 @@ function AvbRoutingAppInner() {
             flexDirection: 'column',
             overflow: 'hidden',
             position: 'relative',
+            minHeight: 0,
+            minWidth: 0,
           }}
         >
           <RoutingGrid />
         </Box>
 
         {/* Inspector panel (right) */}
-        <InspectorPanel />
+        <Box
+          sx={{
+            flex: isCompactLayout ? '0 0 auto' : undefined,
+            minHeight: 0,
+          }}
+        >
+          <InspectorPanel />
+        </Box>
       </Box>
 
       {/* Status bar (optional - can be added later) */}

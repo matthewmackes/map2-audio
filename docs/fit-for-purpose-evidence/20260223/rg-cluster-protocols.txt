@@ -1,0 +1,1393 @@
+config/cluster.conf.template:1:# MAP2 Audio Cluster Manager - Default Configuration
+config/cluster.conf.template:3:# This is the default configuration template for cluster management.
+config/cluster.conf.template:4:# Copy to /etc/map2/cluster.conf and customize for your deployment.
+config/cluster.conf.template:7:# Override: Set environment variables with MAP2_ prefix (e.g., MAP2_CLUSTER_NAME=my-cluster)
+config/cluster.conf.template:12:# CLUSTER IDENTITY
+config/cluster.conf.template:14:[cluster]
+config/cluster.conf.template:15:# Cluster name
+config/cluster.conf.template:16:name = map2-cluster
+config/cluster.conf.template:35:# Data directory (cluster database, backups)
+config/cluster.conf.template:38:# Configuration directory (settings, certificates, SSH keys)
+config/cluster.conf.template:48:database_path = /var/lib/map2/database/cluster.db
+config/cluster.conf.template:88:path = /var/lib/map2/database/cluster.db
+config/cluster.conf.template:139:# CLUSTER MANAGEMENT
+config/cluster.conf.template:141:[cluster_management]
+config/cluster.conf.template:172:# Node discovery interval (seconds)
+config/cluster.conf.template:173:discovery_interval = 60
+config/cluster.conf.template:175:# Node discovery TTL (seconds)
+config/cluster.conf.template:176:discovery_ttl = 3600
+config/cluster.conf.template:178:# Maximum nodes in cluster
+config/cluster.conf.template:304:file_path = /var/log/map2/cluster.log
+scripts/map2-cluster-cli.py:3:MAP2 Audio Cluster - CLI Management Tool
+scripts/map2-cluster-cli.py:5:Comprehensive command-line utility for cluster management and operations.
+scripts/map2-cluster-cli.py:18:# from app.services.cluster.registry import ClusterRegistry
+scripts/map2-cluster-cli.py:19:# from app.services.cluster.update_orchestrator import UpdateScheduler
+scripts/map2-cluster-cli.py:34:    """MAP2 Cluster CLI tool."""
+scripts/map2-cluster-cli.py:68:        """Show cluster status."""
+scripts/map2-cluster-cli.py:69:        self.print_header("Cluster Status")
+scripts/map2-cluster-cli.py:73:            "cluster_name": "production-cluster",
+scripts/map2-cluster-cli.py:83:        print(f"Cluster Name:      {Colors.BOLD}{status['cluster_name']}{Colors.RESET}")
+scripts/map2-cluster-cli.py:98:        self.print_header("Cluster Nodes")
+scripts/map2-cluster-cli.py:291:            "cluster": {
+scripts/map2-cluster-cli.py:292:                "name": "production-cluster",
+scripts/map2-cluster-cli.py:333:            {"time": "2024-02-04 03:00:00", "type": "update.started", "node": "cluster", "message": "Fleet update started"},
+scripts/map2-cluster-cli.py:359:        description='MAP2 Audio Cluster Management CLI',
+scripts/map2-cluster-cli.py:363:  map2-cluster-cli status                  # Show cluster status
+scripts/map2-cluster-cli.py:364:  map2-cluster-cli nodes list             # List all nodes
+scripts/map2-cluster-cli.py:365:  map2-cluster-cli nodes info audio-01    # Show node details
+scripts/map2-cluster-cli.py:366:  map2-cluster-cli update status          # Show update status
+scripts/map2-cluster-cli.py:367:  map2-cluster-cli backup create          # Create backup
+scripts/map2-cluster-cli.py:368:  map2-cluster-cli events view --limit 10 # Show recent events
+scripts/map2-cluster-cli.py:375:    status_parser = subparsers.add_parser('status', help='Show cluster status')
+app/services/cluster/clone_reset.py:2:Clone reset + rejoin service for cluster onboarding.
+app/services/cluster/clone_reset.py:8:- Optionally rejoin/register with cluster services
+app/services/cluster/clone_reset.py:101:        ssh_base = Path.home() / ".ssh" / f"map2_{snapshot.basic_node_id}"
+app/services/cluster/clone_reset.py:102:        targets.extend([ssh_base, Path(f"{ssh_base}.pub")])
+app/services/cluster/clone_reset.py:124:        from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/clone_reset.py:126:        registry = get_cluster_registry()
+app/services/cluster/clone_reset.py:168:def _clear_mdns_cache(snapshot: IdentitySnapshot) -> None:
+app/services/cluster/clone_reset.py:170:        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/services/cluster/clone_reset.py:172:        mdns = get_enhanced_mdns_discovery()
+app/services/cluster/clone_reset.py:179:        for node_id in list(mdns.discovered_nodes.keys()):
+app/services/cluster/clone_reset.py:180:            node = mdns.discovered_nodes.get(node_id)
+app/services/cluster/clone_reset.py:184:                mdns.discovered_nodes.pop(node_id, None)
+app/services/cluster/clone_reset.py:187:                mdns.discovered_nodes.pop(node_id, None)
+app/services/cluster/clone_reset.py:189:        logger.debug("Skipping mDNS cache cleanup: %s", exc)
+app/services/cluster/clone_reset.py:194:        from app.services.cluster import enhanced_node_identity as enhanced_identity_module
+app/services/cluster/clone_reset.py:201:        from app.services.cluster import ztp as ztp_module
+app/services/cluster/clone_reset.py:222:            "Reset removes local node identity and cluster trust artifacts only.",
+app/services/cluster/clone_reset.py:255:    _clear_mdns_cache(pre_reset)
+app/services/cluster/clone_reset.py:265:        from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+app/services/cluster/clone_reset.py:299:            from app.services.cluster.ztp import get_ztp_bootstrap
+app/services/cluster/clone_reset.py:303:            rejoin_result["success"] = await ztp.register_with_cluster(
+app/services/cluster/clone_reset.py:307:                rejoin_result["error"] = "Cluster registration returned failure"
+app/services/cluster/ztp.py:2:Zero-Touch Provisioning (ZTP) System for MAP2 Audio Cluster
+app/services/cluster/ztp.py:9:- SSH key provisioning
+app/services/cluster/ztp.py:10:- Initial cluster registration
+app/services/cluster/ztp.py:21:from app.services.cluster.enhanced_node_identity import (
+app/services/cluster/ztp.py:33:    Runs automatically on first boot to configure new cluster nodes
+app/services/cluster/ztp.py:83:            # Step 2: Provision SSH keys
+app/services/cluster/ztp.py:84:            if not await self._provision_ssh_keys():
+app/services/cluster/ztp.py:85:                self.logger.error("ZTP: Failed to provision SSH keys")
+app/services/cluster/ztp.py:140:    async def _provision_ssh_keys(self) -> bool:
+app/services/cluster/ztp.py:142:        Provision SSH keys for node-to-node communication.
+app/services/cluster/ztp.py:148:            self.logger.info("ZTP: Provisioning SSH keys...")
+app/services/cluster/ztp.py:150:            ssh_dir = Path("/etc/map2/ssh")
+app/services/cluster/ztp.py:151:            ssh_dir.mkdir(parents=True, exist_ok=True)
+app/services/cluster/ztp.py:153:            # SSH keys are already generated by enhanced_node_identity
+app/services/cluster/ztp.py:156:            key_path = Path.home() / ".ssh" / f"map2_{node_id}"
+app/services/cluster/ztp.py:160:                    f"ZTP: SSH keys verified for {node_id}"
+app/services/cluster/ztp.py:165:                    f"ZTP: SSH keys not found for {node_id}, will be created on next startup"
+app/services/cluster/ztp.py:170:            self.logger.error(f"ZTP: SSH provisioning failed: {e}", exc_info=True)
+app/services/cluster/ztp.py:186:                "/etc/map2/ssh",
+app/services/cluster/ztp.py:203:            Path("/etc/map2/ssh").chmod(0o700)
+app/services/cluster/ztp.py:243:    async def register_with_cluster(self, management_node_ip: Optional[str] = None) -> bool:
+app/services/cluster/ztp.py:245:        Register this node with the management cluster.
+app/services/cluster/ztp.py:258:            self.logger.info("ZTP: Registering with cluster...")
+app/services/cluster/ztp.py:267:            from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/ztp.py:268:            from app.services.cluster.certificate_authority import get_cluster_ca
+app/services/cluster/ztp.py:269:            from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/services/cluster/ztp.py:271:            registry = get_cluster_registry()
+app/services/cluster/ztp.py:272:            ca = get_cluster_ca()
+app/services/cluster/ztp.py:273:            mdns = get_enhanced_mdns_discovery()
+app/services/cluster/ztp.py:278:            # 1. Register node in cluster registry
+app/services/cluster/ztp.py:294:                    self.logger.info(f"ZTP: Registered {node_id} in cluster registry")
+app/services/cluster/ztp.py:315:            # 3. Broadcast in mDNS discovery cache
+app/services/cluster/ztp.py:317:                mdns.add_discovered_node(
+app/services/cluster/ztp.py:335:                self.logger.info(f"ZTP: Added {node_id} to mDNS discovery cache")
+app/services/cluster/ztp.py:337:                self.logger.warning(f"ZTP: Failed to update mDNS cache: {e}")
+app/services/cluster/ztp.py:341:                from app.services.cluster.prometheus_exporter import get_prometheus_exporter
+app/routes/websocket.py:2:WebSocket Routes - Real-time communication endpoints
+app/routes/websocket.py:8:from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+app/routes/websocket.py:11:from app.services.websocket_manager import ws_manager
+app/routes/websocket.py:17:async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0"):
+app/routes/websocket.py:19:    Common WebSocket connection handler for all versions.
+app/routes/websocket.py:22:        websocket: WebSocket connection
+app/routes/websocket.py:29:    await ws_manager.connect(websocket, client_id)
+app/routes/websocket.py:39:                "message": "Connected to MAP2 Audio WebSocket",
+app/routes/websocket.py:46:                "avb:router:endpoints", # AVB endpoint discovery snapshots
+app/routes/websocket.py:64:            data = await websocket.receive_text()
+app/routes/websocket.py:149:    except WebSocketDisconnect:
+app/routes/websocket.py:154:        logger.error(f"WebSocket error for client {client_id}: {e}")
+app/routes/websocket.py:158:@router.websocket("/ws")
+app/routes/websocket.py:159:async def websocket_endpoint(websocket: WebSocket):
+app/routes/websocket.py:161:    Main WebSocket endpoint for real-time updates (latest version)
+app/routes/websocket.py:185:    await _handle_websocket_connection(websocket, version="1.0")
+app/routes/websocket.py:188:@router.websocket("/ws/v1")
+app/routes/websocket.py:189:async def websocket_endpoint_v1(websocket: WebSocket):
+app/routes/websocket.py:191:    WebSocket endpoint v1 - MAP2 Native Protocol
+app/routes/websocket.py:199:    await _handle_websocket_connection(websocket, version="1.0")
+app/routes/websocket.py:202:@router.websocket("/ws/events")
+app/routes/websocket.py:203:async def websocket_events(websocket: WebSocket):
+app/routes/websocket.py:207:    Used by cluster sync (special settings updates) and other
+app/routes/websocket.py:210:    await _handle_websocket_connection(websocket, version="1.0")
+app/routes/websocket.py:213:@router.websocket("/ws/system/metrics")
+app/routes/websocket.py:214:async def system_metrics_stream(websocket: WebSocket):
+app/routes/websocket.py:216:    Real-time system metrics WebSocket stream
+app/routes/websocket.py:238:    await websocket.accept()
+app/routes/websocket.py:252:                        websocket.receive_text(),
+app/routes/websocket.py:261:                            await websocket.send_json({
+app/routes/websocket.py:277:                        await websocket.send_json({
+app/routes/websocket.py:292:                        await websocket.send_json({
+app/routes/websocket.py:305:                        await websocket.send_json({
+app/routes/websocket.py:319:            except WebSocketDisconnect:
+app/routes/websocket.py:323:        logger.error(f"System metrics WebSocket error for client {client_id}: {e}")
+app/routes/websocket.py:329:async def get_websocket_stats() -> Dict[str, Any]:
+app/routes/websocket.py:331:    Get WebSocket connection statistics
+app/services/cluster/state_replicator.py:2:Cluster State Persistence & Replication
+app/services/cluster/state_replicator.py:4:Synchronizes cluster state to Standby Management Node:
+app/services/cluster/state_replicator.py:5:- Primary maintains authoritative cluster registry
+app/services/cluster/state_replicator.py:11:Ensures cluster metadata survives primary node failure.
+app/services/cluster/state_replicator.py:35:        primary_db_path: str = "/var/lib/map2/cluster.db",
+app/services/cluster/state_replicator.py:39:        standby_db_path: str = "/var/lib/map2/cluster.db",
+app/services/cluster/state_replicator.py:45:            primary_db_path: Path to primary cluster registry database
+app/services/cluster/state_replicator.py:169:                    "Cluster DB missing during failover; creating empty database file"
+app/services/cluster/state_replicator.py:237:        """Get remote sha256 hash via ssh if possible."""
+app/services/cluster/state_replicator.py:238:        cmd = ["ssh", host, "sha256sum", remote_path]
+app/services/cluster/state_replicator.py:281:            from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+app/services/cluster/state_replicator.py:282:            from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/state_replicator.py:285:            registry = get_cluster_registry()
+app/services/cluster/state_replicator.py:315:            from app.services.cluster.distributed_event_bus import (
+app/services/cluster/state_replicator.py:316:                ClusterEvent,
+app/services/cluster/state_replicator.py:323:                ClusterEvent(
+app/services/cluster/node_lifecycle.py:4:Manages complete node lifecycle in the cluster:
+app/services/cluster/node_lifecycle.py:24:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/node_lifecycle.py:25:from app.services.cluster.certificate_authority import get_cluster_ca
+app/services/cluster/node_lifecycle.py:26:from app.services.cluster.distributed_event_bus import (
+app/services/cluster/node_lifecycle.py:30:    ClusterEvent,
+app/services/cluster/node_lifecycle.py:42:    JOINING = "joining"  # In process of joining cluster
+app/services/cluster/node_lifecycle.py:113:        self.registry = get_cluster_registry()
+app/services/cluster/node_lifecycle.py:114:        self.ca = get_cluster_ca()
+app/services/cluster/node_lifecycle.py:275:            # Joining cluster
+app/services/cluster/node_lifecycle.py:287:            # Leaving cluster
+app/services/cluster/node_lifecycle.py:307:            self.logger.info(f"Node {self.node_id} joining cluster...")
+app/services/cluster/node_lifecycle.py:316:            # 2. Register node in cluster registry
+app/services/cluster/node_lifecycle.py:325:            event = ClusterEvent(
+app/services/cluster/node_lifecycle.py:329:                message=f"Node {self.node_id} joined cluster",
+app/services/cluster/node_lifecycle.py:351:            event = ClusterEvent(
+app/services/cluster/node_lifecycle.py:397:            event = ClusterEvent(
+app/services/cluster/node_lifecycle.py:436:                ClusterEvent(
+app/services/cluster/node_lifecycle.py:524:                ClusterEvent(
+app/services/cluster/node_lifecycle.py:574:                ClusterEvent(
+app/services/cluster/node_lifecycle.py:618:                event = ClusterEvent(
+app/services/cluster/node_lifecycle.py:712:class ClusterNodeLifecycleManager:
+app/services/cluster/node_lifecycle.py:714:    Backward-compatible lifecycle facade used by cluster routes.
+app/services/cluster/node_lifecycle.py:721:        self.registry = get_cluster_registry()
+app/services/cluster/node_lifecycle.py:871:_cluster_node_lifecycle_manager: Optional[ClusterNodeLifecycleManager] = None
+app/services/cluster/node_lifecycle.py:874:def get_node_lifecycle_manager() -> ClusterNodeLifecycleManager:
+app/services/cluster/node_lifecycle.py:875:    """Backward-compatible cluster lifecycle manager singleton."""
+app/services/cluster/node_lifecycle.py:876:    global _cluster_node_lifecycle_manager
+app/services/cluster/node_lifecycle.py:877:    if _cluster_node_lifecycle_manager is None:
+app/services/cluster/node_lifecycle.py:878:        _cluster_node_lifecycle_manager = ClusterNodeLifecycleManager()
+app/services/cluster/node_lifecycle.py:879:    return _cluster_node_lifecycle_manager
+app/services/cluster/map2_git_updater.py:4:Handles updating MAP2 application code via git pull across the cluster.
+app/services/cluster/map2_git_updater.py:361:        For remote node: execute via SSH
+app/services/cluster/map2_git_updater.py:365:                from app.services.cluster.integration_helpers import NodeSSHClient
+app/services/cluster/map2_git_updater.py:366:                from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/map2_git_updater.py:368:                registry = get_cluster_registry()
+app/services/cluster/map2_git_updater.py:377:                ssh = NodeSSHClient(node_id=node_id, ip_address=host)
+app/services/cluster/map2_git_updater.py:379:                    ssh.execute_command, command, self.timeout
+app/services/cluster/map2_git_updater.py:382:                    args=f"ssh:{node_id}:{command}",
+app/routes/cluster_admin.py:2:Cluster Management API Endpoints
+app/routes/cluster_admin.py:4:FastAPI routes for cluster administration and monitoring:
+app/routes/cluster_admin.py:5:- GET /api/cluster/nodes - List all nodes with health
+app/routes/cluster_admin.py:6:- GET /api/cluster/health - Aggregate cluster health
+app/routes/cluster_admin.py:7:- GET /api/cluster/status - Overall cluster state
+app/routes/cluster_admin.py:8:- GET /api/cluster/metrics - Time series metrics
+app/routes/cluster_admin.py:9:- POST /api/cluster/nodes/{id}/update - Trigger update
+app/routes/cluster_admin.py:10:- POST /api/cluster/nodes/{id}/reboot - Reboot node
+app/routes/cluster_admin.py:11:- GET /api/cluster/summary - Quick summary
+app/routes/cluster_admin.py:25:from app.services.cluster.registry import get_cluster_registry
+app/routes/cluster_admin.py:26:from app.services.cluster.health_aggregator import get_health_aggregator
+app/routes/cluster_admin.py:27:from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/routes/cluster_admin.py:28:from app.services.cluster.certificate_authority import get_cluster_ca
+app/routes/cluster_admin.py:29:from app.services.cluster.update_orchestrator import get_update_scheduler
+app/routes/cluster_admin.py:30:from app.services.cluster.config_pusher import get_config_sync
+app/routes/cluster_admin.py:31:from app.services.cluster.state_replicator import get_state_replicator
+app/routes/cluster_admin.py:32:from app.services.cluster.distributed_event_bus import get_event_bus, EventType
+app/routes/cluster_admin.py:33:from app.services.cluster.node_lifecycle import get_lifecycle_manager
+app/routes/cluster_admin.py:34:from app.services.cluster.disaster_recovery import get_disaster_recovery
+app/routes/cluster_admin.py:35:from app.services.cluster.network_topology import get_topology_monitor
+app/routes/cluster_admin.py:36:from app.services.cluster.config_manager import get_config_manager
+app/routes/cluster_admin.py:37:from app.services.cluster.deployment_manager import get_deployment_manager
+app/routes/cluster_admin.py:41:router = APIRouter(prefix="/api/cluster", tags=["cluster"])
+app/routes/cluster_admin.py:85:# Cluster Setup & Onboarding
+app/routes/cluster_admin.py:100:        from app.services.cluster.clone_reset import preview_clone_reset
+app/routes/cluster_admin.py:114:    Reset local node clone identity to default state and rejoin cluster.
+app/routes/cluster_admin.py:118:        - rejoin: whether to register with cluster after reset (default: true)
+app/routes/cluster_admin.py:134:        from app.services.cluster.clone_reset import reset_clone_to_default_and_rejoin
+app/routes/cluster_admin.py:152:async def setup_cluster(request: dict):
+app/routes/cluster_admin.py:154:    Complete cluster setup from onboarding wizard.
+app/routes/cluster_admin.py:158:    - cluster_name
+app/routes/cluster_admin.py:171:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:188:        # Update cluster config
+app/routes/cluster_admin.py:191:            "cluster_name": request.get("cluster_name"),
+app/routes/cluster_admin.py:195:            "enable_mdns": request.get("enable_mdns"),
+app/routes/cluster_admin.py:201:            "message": "Cluster setup complete",
+app/routes/cluster_admin.py:226:class ClusterHealthResponse(dict):
+app/routes/cluster_admin.py:227:    """Cluster aggregate health"""
+app/routes/cluster_admin.py:238:async def get_cluster_status() -> Dict:
+app/routes/cluster_admin.py:240:    Get overall cluster status.
+app/routes/cluster_admin.py:243:        Dictionary with cluster state, online nodes, health, etc.
+app/routes/cluster_admin.py:246:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:247:        summary = registry.get_cluster_summary()
+app/routes/cluster_admin.py:256:        logger.error(f"Failed to get cluster status: {e}")
+app/routes/cluster_admin.py:259:            detail="Failed to retrieve cluster status",
+app/routes/cluster_admin.py:266:    List all cluster nodes with their status and health.
+app/routes/cluster_admin.py:276:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:323:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:360:    Get cluster aggregate health information.
+app/routes/cluster_admin.py:367:        health = aggregator.get_cluster_health()
+app/routes/cluster_admin.py:376:        logger.error(f"Failed to get cluster health: {e}")
+app/routes/cluster_admin.py:395:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:438:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:489:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:534:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:572:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/routes/cluster_admin.py:608:    Get quick cluster summary (optimized for dashboards).
+app/routes/cluster_admin.py:611:        Compact summary of cluster state
+app/routes/cluster_admin.py:614:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:617:        cluster_summary = registry.get_cluster_summary()
+app/routes/cluster_admin.py:618:        health = aggregator.get_cluster_health()
+app/routes/cluster_admin.py:623:            "cluster_name": get_config_manager().get("cluster_name", "MAP2 Audio Cluster"),
+app/routes/cluster_admin.py:624:            "total_nodes": cluster_summary.get("total_nodes", 0),
+app/routes/cluster_admin.py:625:            "online_nodes": cluster_summary.get("online_nodes", 0),
+app/routes/cluster_admin.py:626:            "management_nodes": cluster_summary.get("management_nodes", 0),
+app/routes/cluster_admin.py:627:            "audio_nodes": cluster_summary.get("audio_nodes", 0),
+app/routes/cluster_admin.py:633:        logger.error(f"Failed to get cluster summary: {e}")
+app/routes/cluster_admin.py:636:            detail="Failed to retrieve cluster summary",
+app/routes/cluster_admin.py:643:    Get list of discovered nodes from mDNS.
+app/routes/cluster_admin.py:649:        discovery = get_enhanced_mdns_discovery()
+app/routes/cluster_admin.py:650:        summary = discovery.get_cluster_summary()
+app/routes/cluster_admin.py:669:    Get status of cluster certificates.
+app/routes/cluster_admin.py:675:        ca = get_cluster_ca()
+app/routes/cluster_admin.py:676:        registry = get_cluster_registry()
+app/routes/cluster_admin.py:715:    Get recommended update schedule for the cluster.
+app/routes/cluster_admin.py:718:        - total_nodes: Total nodes in cluster
+app/routes/cluster_admin.py:751:            "affected_nodes": len(get_cluster_registry().get_all_nodes()),
+app/routes/cluster_admin.py:765:    Execute cluster-wide package update.
+app/routes/cluster_admin.py:789:    """Cancel ongoing cluster update (graceful)."""
+app/routes/cluster_admin.py:806:    Get history of cluster updates.
+app/routes/cluster_admin.py:886:    Push configuration to all cluster nodes.
+app/routes/cluster_admin.py:904:            nodes = get_cluster_registry().get_all_nodes()
+app/routes/cluster_admin.py:1054:async def cluster_ping() -> Dict:
+app/routes/cluster_admin.py:1058:        "service": "cluster-manager",
+app/routes/cluster_admin.py:1076:    Get cluster events from log.
+app/routes/cluster_admin.py:1103:                from app.services.cluster.distributed_event_bus import EventSeverity
+app/routes/cluster_admin.py:1153:    Get statistics about cluster events.
+app/routes/cluster_admin.py:1256:        from app.services.cluster.node_lifecycle import NodeLifecycleEvent
+app/routes/cluster_admin.py:1418:        - nodes: List of nodes in cluster
+app/services/cluster/management_orchestrator.py:4:Central service that coordinates all cluster management tasks on the Management Node:
+app/services/cluster/management_orchestrator.py:95:        from app.services.cluster.health_aggregator import get_health_aggregator
+app/services/cluster/management_orchestrator.py:101:        from app.services.cluster.distributed_event_bus import (
+app/services/cluster/management_orchestrator.py:102:            ClusterEvent,
+app/services/cluster/management_orchestrator.py:107:        from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/management_orchestrator.py:109:        registry = get_cluster_registry()
+app/services/cluster/management_orchestrator.py:110:        summary = registry.get_cluster_summary()
+app/services/cluster/management_orchestrator.py:114:            ClusterEvent(
+app/services/cluster/management_orchestrator.py:118:                message="Cluster metrics summary refreshed",
+app/services/cluster/management_orchestrator.py:124:        from app.services.cluster.update_orchestrator import get_update_scheduler
+app/services/cluster/management_orchestrator.py:139:        from app.services.cluster.config_distributor import get_config_distributor
+app/services/cluster/management_orchestrator.py:155:        from app.services.cluster.failover_monitor import get_failover_monitor
+app/services/cluster/management_orchestrator.py:156:        from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+app/services/cluster/management_orchestrator.py:165:        from app.services.cluster.distributed_event_bus import get_event_bus as get_distributed_event_bus
+app/services/cluster/management_orchestrator.py:170:            self.logger.info("Rotated cluster event log entries: %s", deleted)
+app/services/cluster/management_orchestrator.py:176:        from app.services.cluster.failover_monitor import get_failover_monitor
+app/services/cluster/management_orchestrator.py:177:        from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+app/services/cluster/health_aggregator.py:2:Health Metrics Aggregator Service for Cluster Management
+app/services/cluster/health_aggregator.py:4:Collects and aggregates Prometheus metrics from all cluster nodes:
+app/services/cluster/health_aggregator.py:23:from app.services.cluster.registry import get_cluster_registry, ClusterRegistry
+app/services/cluster/health_aggregator.py:121:    Aggregates health metrics from all cluster nodes.
+app/services/cluster/health_aggregator.py:136:        self.registry = get_cluster_registry()
+app/services/cluster/health_aggregator.py:191:        In production, this would make HTTP/gRPC calls to node APIs.
+app/services/cluster/health_aggregator.py:341:    def get_cluster_health(self) -> Dict:
+app/services/cluster/health_aggregator.py:342:        """Get overall cluster health summary"""
+app/services/cluster/health_aggregator.py:375:            self.logger.error(f"Failed to get cluster health: {e}")
+app/services/cluster/config_pusher.py:4:Centralized configuration management for the cluster:
+app/services/cluster/config_pusher.py:33:    """Represents a version of cluster configuration"""
+app/services/cluster/config_pusher.py:45:    Manages configuration distribution across cluster.
+app/services/cluster/config_pusher.py:130:            from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/config_pusher.py:132:            registry = get_cluster_registry()
+app/services/cluster/config_pusher.py:364:        url = f"http://{host}:8080/api/cluster/config/status"
+app/services/cluster/config_pusher.py:409:            from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/config_pusher.py:410:            from app.services.cluster.integration_helpers import NodeSSHClient
+app/services/cluster/config_pusher.py:412:            registry = get_cluster_registry()
+app/services/cluster/config_pusher.py:432:                            f"http://{host}:8080/api/cluster/config/push",
+app/services/cluster/config_pusher.py:441:                    # SSH fallback: place changed JSON files and reload.
+app/services/cluster/config_pusher.py:442:                    client = NodeSSHClient(node_id=node_id, ip_address=host)
+app/services/cluster/config_manager.py:2:Cluster Configuration Manager
+app/services/cluster/config_manager.py:4:Manages cluster-wide configuration settings:
+app/services/cluster/config_manager.py:8:- API ports and discovery
+app/services/cluster/config_manager.py:22:    """Manages cluster configuration with persistence."""
+app/services/cluster/config_manager.py:28:            "cluster_name": "map2-cluster",
+app/services/cluster/config_manager.py:32:            "enable_mdns": True,
+app/services/cluster/config_manager.py:43:        """Update cluster configuration with provided values."""
+app/services/cluster/config_manager.py:47:        logger.info(f"Cluster config updated: {list(updates.keys())}")
+app/services/cluster/config_manager.py:50:        """Get current cluster configuration."""
+app/services/cluster/config_manager.py:63:        required = ["cluster_name", "api_port"]
+app/services/cluster/onboarding_portal.py:2:MAP2 Audio Cluster - Node Onboarding Portal
+app/services/cluster/onboarding_portal.py:4:Interactive web-based wizard for onboarding new nodes to the cluster.
+app/services/cluster/onboarding_portal.py:5:Guides users through discovery, configuration, and integration.
+app/services/cluster/onboarding_portal.py:12:from fastapi import APIRouter, HTTPException, WebSocket
+app/services/cluster/onboarding_portal.py:23:    DISCOVERY = "discovery"
+app/services/cluster/onboarding_portal.py:75:    ssh_keys: List[str] = []
+app/services/cluster/onboarding_portal.py:124:    Provides step-by-step wizard for adding new nodes to cluster.
+app/services/cluster/onboarding_portal.py:246:            elif step == OnboardingStep.DISCOVERY:
+app/services/cluster/onboarding_portal.py:247:                await self._process_discovery(session, data)
+app/services/cluster/onboarding_portal.py:287:    async def _process_discovery(self, session: OnboardingSession, data: Dict):
+app/services/cluster/onboarding_portal.py:288:        """Process discovery step - scan for existing cluster."""
+app/services/cluster/onboarding_portal.py:289:        # Simulate cluster discovery
+app/services/cluster/onboarding_portal.py:291:        cluster_found = len(discovered_nodes) > 0
+app/services/cluster/onboarding_portal.py:293:        session.config_data["cluster_discovered"] = cluster_found
+app/services/cluster/onboarding_portal.py:296:        if cluster_found:
+app/services/cluster/onboarding_portal.py:297:            logger.info(f"Discovered {len(discovered_nodes)} cluster nodes")
+app/services/cluster/onboarding_portal.py:344:            OnboardingStep.DISCOVERY,
+app/services/cluster/onboarding_portal.py:364:                "title": "Welcome to MAP2 Cluster",
+app/services/cluster/onboarding_portal.py:368:            OnboardingStep.DISCOVERY: {
+app/services/cluster/onboarding_portal.py:369:                "title": "Cluster Discovery",
+app/services/cluster/onboarding_portal.py:370:                "description": "Scanning for existing cluster nodes...",
+app/services/cluster/onboarding_portal.py:372:                    {"name": "auto_discover", "type": "boolean", "label": "Auto-discover cluster"}
+app/services/cluster/onboarding_portal.py:409:                "description": "Your node is ready to join the cluster",
+app/services/cluster/onboarding_portal.py:438:# WebSocket Support for Real-time Progress
+app/services/cluster/onboarding_portal.py:441:class OnboardingWebSocket:
+app/services/cluster/onboarding_portal.py:442:    """WebSocket handler for real-time onboarding updates."""
+app/services/cluster/onboarding_portal.py:445:        """Initialize WebSocket handler."""
+app/services/cluster/onboarding_portal.py:447:        self.connections: Dict[str, WebSocket] = {}
+app/services/cluster/onboarding_portal.py:449:    async def connect(self, session_id: str, websocket: WebSocket):
+app/services/cluster/onboarding_portal.py:450:        """Connect WebSocket for session."""
+app/services/cluster/onboarding_portal.py:451:        await websocket.accept()
+app/services/cluster/onboarding_portal.py:452:        self.connections[session_id] = websocket
+app/services/cluster/onboarding_portal.py:453:        logger.info(f"WebSocket connected for session {session_id}")
+app/services/cluster/onboarding_portal.py:456:        """Disconnect WebSocket."""
+app/services/cluster/onboarding_portal.py:459:            logger.info(f"WebSocket disconnected for session {session_id}")
+app/services/cluster/onboarding_portal.py:462:        """Send update to WebSocket client."""
+app/services/cluster/onboarding_portal.py:467:                logger.error(f"Failed to send WebSocket update: {e}")
+app/services/cluster/onboarding_portal.py:510:        # Step 2: Discovery
+app/services/cluster/onboarding_portal.py:513:            OnboardingStep.DISCOVERY,
+app/services/cluster/onboarding_portal.py:516:        print(f"✓ Discovery: {msg}")
+app/services/cluster/config_distributor.py:4:Manages cluster configuration via Git repository:
+app/services/cluster/config_distributor.py:10:Uses Raft to ensure consistent state across all management nodes.
+app/services/cluster/config_distributor.py:29:    Distributes cluster configuration to all nodes via Git.
+app/services/cluster/config_distributor.py:200:            from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/config_distributor.py:202:            registry = get_cluster_registry()
+app/services/cluster/config_distributor.py:243:                    f"http://{hostname}:8080/api/cluster/config/push",
+app/routes/avb.py:619:    - avb.discovery.avdecc_enabled
+app/routes/avb.py:629:    return bool(config_get("avb.discovery.avdecc_enabled", False))
+app/routes/avb.py:930:            "description": "Enables third-party AVDECC endpoint discovery and connection APIs.",
+app/routes/avb.py:2131:# Discovery Endpoints
+app/routes/avb.py:2134:@router.get("/discovery")
+app/routes/avb.py:2135:async def get_avb_discovery() -> Dict[str, Any]:
+app/routes/avb.py:2137:    Get AVB device discovery summary.
+app/routes/avb.py:2140:        Discovery summary with:
+app/routes/avb.py:2141:        - enabled: bool (AVB discovery enabled)
+app/routes/avb.py:2147:    This endpoint always returns 200 OK, even when AVB discovery is disabled.
+app/routes/avb.py:2148:    Check the 'enabled' field to determine if discovery is active.
+app/routes/avb.py:2151:        from app.services.avb.avb_discovery import get_avb_discovery_service
+app/routes/avb.py:2153:        discovery = get_avb_discovery_service()
+app/routes/avb.py:2154:        return discovery.get_discovery_summary()
+app/routes/avb.py:2157:        logger.error(f"Error getting AVB discovery summary: {e}", exc_info=True)
+app/routes/avb.py:2168:@router.get("/discovery/nodes")
+app/routes/avb.py:2177:        from app.services.avb.avb_discovery import get_avb_discovery_service
+app/routes/avb.py:2179:        discovery = get_avb_discovery_service()
+app/routes/avb.py:2181:        if not discovery.is_enabled():
+app/routes/avb.py:2185:                "error": "AVB discovery not enabled"
+app/routes/avb.py:2188:        nodes = discovery.get_discovered_nodes()
+app/routes/avb.py:2204:@router.get("/discovery/nodes/{node_id}")
+app/routes/avb.py:2208:        from app.services.avb.avb_discovery import get_avb_discovery_service
+app/routes/avb.py:2210:        discovery = get_avb_discovery_service()
+app/routes/avb.py:2212:        if not discovery.is_enabled():
+app/routes/avb.py:2213:            raise HTTPException(status_code=503, detail="AVB discovery not enabled")
+app/routes/avb.py:2215:        node = discovery.get_discovered_node(node_id)
+app/routes/avb.py:2273:                "error": "AVDECC discovery API unavailable",
+app/routes/avb.py:2337:                raise HTTPException(status_code=503, detail="AVDECC discovery API unavailable")
+app/routes/avb.py:2553:    """Publish AVB routing endpoint/connection snapshots to websocket subscribers."""
+app/routes/avb.py:2571:        logger.warning(f"Failed to publish AVB router state websocket updates: {e}")
+app/routes/avb.py:2589:        logger.warning(f"Failed to publish AVB connection state websocket update: {e}")
+app/services/cluster/update_rollback.py:2:MAP2 Audio Cluster - Automatic Update Rollback System
+app/services/cluster/update_rollback.py:121:            "map2-cluster-agent",
+app/services/cluster/update_rollback.py:127:            "/etc/map2/cluster.conf",
+app/services/cluster/update_rollback.py:385:        db_path = Path("/var/lib/map2/cluster.db")
+app/services/cluster/update_rollback.py:393:        backup_file = backup_dir / "cluster.db.backup"
+app/services/cluster/update_rollback.py:409:            "map2-cluster-agent",
+app/services/cluster/update_rollback.py:455:            "map2-cluster-agent",
+app/services/cluster/update_rollback.py:538:        db_path = Path("/var/lib/map2/cluster.db")
+app/services/cluster/update_rollback.py:564:        for service in ["map2-cluster-agent", "map2-audio-engine"]:
+app/services/cluster/hybrid_update_manager.py:14:from app.services.cluster.map2_git_updater import MAP2GitUpdater, get_git_updater
+app/services/cluster/hybrid_update_manager.py:15:from app.services.cluster.fedora_package_manager import FedoraDNFManager
+app/services/cluster/hybrid_update_manager.py:185:        Trigger full cluster update (system + application).
+app/services/cluster/__init__.py:2:MAP2 Audio Platform - Cluster Management Module
+app/services/cluster/__init__.py:4:Provides distributed cluster management capabilities for multi-node deployments:
+app/services/cluster/__init__.py:5:- Node discovery and registration
+app/services/cluster/__init__.py:6:- Cluster state management
+app/services/cluster/__init__.py:12:This module is optional and loaded only when MAP2_CLUSTER_ENABLED=true.
+app/services/cluster/__init__.py:16:    ClusterNode - Represents a single node in the cluster
+app/services/cluster/__init__.py:17:    ClusterState - Aggregate cluster state
+app/services/cluster/__init__.py:18:    ClusterManager - Central management orchestrator (runs on Management Node only)
+app/services/cluster/__init__.py:21:    from app.services.cluster import ClusterManager
+app/services/cluster/__init__.py:23:    if os.getenv("MAP2_CLUSTER_ENABLED") == "true":
+app/services/cluster/__init__.py:24:        mgr = ClusterManager()
+app/services/cluster/__init__.py:37:    "ClusterNodeRole",
+app/services/cluster/__init__.py:38:    "ClusterNodeStatus",
+app/services/cluster/__init__.py:39:    "ClusterMode",
+app/services/cluster/__init__.py:40:    "ClusterNode",
+app/services/cluster/__init__.py:41:    "ClusterState",
+app/services/cluster/__init__.py:42:    "ClusterManager",
+app/services/cluster/__init__.py:43:    "CLUSTER_ENABLED",
+app/services/cluster/__init__.py:51:class ClusterNodeRole(Enum):
+app/services/cluster/__init__.py:52:    """Role of a node in the cluster"""
+app/services/cluster/__init__.py:59:class ClusterNodeStatus(Enum):
+app/services/cluster/__init__.py:70:class ClusterMode(Enum):
+app/services/cluster/__init__.py:71:    """Overall cluster operational mode"""
+app/services/cluster/__init__.py:83:class ClusterNodeMetadata:
+app/services/cluster/__init__.py:84:    """Extended metadata for a cluster node"""
+app/services/cluster/__init__.py:109:class ClusterNode:
+app/services/cluster/__init__.py:111:    Represents a single node in the cluster.
+app/services/cluster/__init__.py:116:    role: ClusterNodeRole
+app/services/cluster/__init__.py:117:    status: ClusterNodeStatus = ClusterNodeStatus.INITIALIZING
+app/services/cluster/__init__.py:121:    metadata: Optional[ClusterNodeMetadata] = None
+app/services/cluster/__init__.py:144:            ClusterNodeStatus.ONLINE,
+app/services/cluster/__init__.py:145:            ClusterNodeStatus.DEGRADED
+app/services/cluster/__init__.py:152:            ClusterNodeRole.MANAGEMENT_NODE,
+app/services/cluster/__init__.py:153:            ClusterNodeRole.STANDBY_MANAGEMENT,
+app/services/cluster/__init__.py:158:class ClusterState:
+app/services/cluster/__init__.py:160:    Aggregate state of the entire cluster.
+app/services/cluster/__init__.py:161:    Single source of truth for cluster health/configuration.
+app/services/cluster/__init__.py:163:    cluster_name: str
+app/services/cluster/__init__.py:164:    cluster_id: str
+app/services/cluster/__init__.py:165:    mode: ClusterMode = ClusterMode.HEALTHY
+app/services/cluster/__init__.py:170:    all_nodes: Dict[str, ClusterNode] = field(default_factory=dict)
+app/services/cluster/__init__.py:178:    def audio_nodes(self) -> List[ClusterNode]:
+app/services/cluster/__init__.py:179:        """All AUDIO-NODE nodes in cluster"""
+app/services/cluster/__init__.py:182:            if n.role == ClusterNodeRole.AUDIO_NODE
+app/services/cluster/__init__.py:186:    def management_nodes(self) -> List[ClusterNode]:
+app/services/cluster/__init__.py:200:        """Total nodes in cluster"""
+app/services/cluster/__init__.py:217:# CLUSTER MANAGER (Base)
+app/services/cluster/__init__.py:220:class ClusterManager:
+app/services/cluster/__init__.py:222:    Base cluster management orchestrator.
+app/services/cluster/__init__.py:228:    def __init__(self, cluster_state: ClusterState):
+app/services/cluster/__init__.py:229:        self.cluster_state = cluster_state
+app/services/cluster/__init__.py:233:        """Start cluster management services"""
+app/services/cluster/__init__.py:235:            f"Starting Cluster Manager for cluster '{self.cluster_state.cluster_name}'"
+app/services/cluster/__init__.py:239:        """Stop cluster management services"""
+app/services/cluster/__init__.py:240:        self.logger.info("Stopping Cluster Manager")
+app/services/cluster/__init__.py:247:# Check if clustering is enabled
+app/services/cluster/__init__.py:249:CLUSTER_ENABLED = os.getenv("MAP2_CLUSTER_ENABLED", "false").lower() == "true"
+app/services/cluster/__init__.py:251:if CLUSTER_ENABLED:
+app/services/cluster/__init__.py:252:    logger.info("Cluster management module ENABLED")
+app/services/cluster/__init__.py:254:    logger.debug("Cluster management module disabled (set MAP2_CLUSTER_ENABLED=true to enable)")
+app/services/cluster/__init__.py:258:# INTEGRATED CLUSTER SERVICES (Tasks 1-6)
+app/services/cluster/__init__.py:263:    from app.services.cluster.enhanced_node_identity import (
+app/services/cluster/__init__.py:272:    from app.services.cluster.ztp import get_ztp_bootstrap, ZTPBootstrap
+app/services/cluster/__init__.py:278:    from app.services.cluster.mdns_discovery_enhanced import (
+app/services/cluster/__init__.py:279:        get_enhanced_mdns_discovery,
+app/services/cluster/__init__.py:280:        EnhancedMDNSDiscovery,
+app/services/cluster/__init__.py:281:        MDNSNode,
+app/services/cluster/__init__.py:283:    logger.debug("Enhanced mDNS Discovery service imported")
+app/services/cluster/__init__.py:285:    logger.warning(f"Failed to import Enhanced mDNS Discovery: {e}")
+app/services/cluster/__init__.py:288:    from app.services.cluster.registry import get_cluster_registry, ClusterRegistry
+app/services/cluster/__init__.py:289:    logger.debug("Cluster Registry service imported")
+app/services/cluster/__init__.py:291:    logger.warning(f"Failed to import Cluster Registry: {e}")
+app/services/cluster/__init__.py:294:    from app.services.cluster.certificate_authority import (
+app/services/cluster/__init__.py:295:        get_cluster_ca,
+app/services/cluster/__init__.py:296:        ClusterCA,
+app/services/cluster/__init__.py:298:    logger.debug("Cluster CA service imported")
+app/services/cluster/__init__.py:300:    logger.warning(f"Failed to import Cluster CA: {e}")
+app/services/cluster/__init__.py:304:    from app.services.cluster.update_orchestrator import (
+app/services/cluster/__init__.py:317:    from app.services.cluster.config_pusher import ConfigSync, get_config_sync
+app/services/cluster/__init__.py:323:    from app.services.cluster.state_replicator import (
+app/services/cluster/__init__.py:332:    from app.services.cluster.management_orchestrator import main as mgmt_orchestrator
+app/services/cluster/__init__.py:338:    from app.services.cluster.failover_monitor import main as failover_monitor
+app/services/cluster/__init__.py:344:    from app.services.cluster.distributed_event_bus import (
+app/services/cluster/__init__.py:349:        ClusterEvent,
+app/services/cluster/__init__.py:358:    from app.services.cluster.node_lifecycle import (
+app/services/cluster/__init__.py:373:    "get_enhanced_mdns_discovery",
+app/services/cluster/__init__.py:374:    "EnhancedMDNSDiscovery",
+app/services/cluster/__init__.py:375:    "MDNSNode",
+app/services/cluster/__init__.py:376:    "get_cluster_registry",
+app/services/cluster/__init__.py:377:    "ClusterRegistry",
+app/services/cluster/__init__.py:378:    "get_cluster_ca",
+app/services/cluster/__init__.py:379:    "ClusterCA",
+app/services/cluster/__init__.py:394:    "ClusterEvent",
+app/services/cluster/__init__.py:401:logger.info("Cluster management module initialized with all services")
+app/services/cluster/configuration_distributor.py:19:    """Distributes configuration to all cluster nodes."""
+app/services/cluster/configuration_distributor.py:126:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/configuration_distributor.py:140:                if not client.ssh.put_file(str(local_path), remote_path):
+app/services/cluster/configuration_distributor.py:190:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/configuration_distributor.py:246:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/configuration_distributor.py:299:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/configuration_distributor.py:343:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/configuration_distributor.py:374:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/version_manifest.py:2:Cluster Version Manifest Management
+app/services/cluster/version_manifest.py:4:Tracks the golden package set for all cluster nodes and detects drift.
+app/services/cluster/version_manifest.py:15:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/version_manifest.py:16:from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/version_manifest.py:44:        self.registry = get_cluster_registry()
+app/services/cluster/version_manifest.py:68:        """Get package versions for a node via SSH/API or local rpm."""
+app/services/cluster/integration_helpers.py:2:Integration helpers for cluster components
+app/services/cluster/integration_helpers.py:4:These helpers facilitate communication between cluster services.
+app/services/cluster/integration_helpers.py:17:class NodeSSHClient:
+app/services/cluster/integration_helpers.py:18:    """SSH client for node management."""
+app/services/cluster/integration_helpers.py:31:        """Execute command via SSH and return (returncode, stdout, stderr)."""
+app/services/cluster/integration_helpers.py:34:                'ssh',
+app/services/cluster/integration_helpers.py:50:                logger.error(f"SSH command failed on {self.node_id}: {result.stderr}")
+app/services/cluster/integration_helpers.py:56:            logger.error(f"SSH timeout on {self.node_id}")
+app/services/cluster/integration_helpers.py:59:            logger.error(f"SSH error on {self.node_id}: {e}")
+app/services/cluster/integration_helpers.py:150:    """Hybrid SSH+API client for node management."""
+app/services/cluster/integration_helpers.py:154:        self.ssh = NodeSSHClient(node_id, ip_address)
+app/services/cluster/integration_helpers.py:171:        # Fall back to SSH
+app/services/cluster/integration_helpers.py:172:        return self.ssh.execute_command(command, **kwargs)
+app/services/cluster/integration_helpers.py:204:            # Fall back to SSH + local command
+app/services/cluster/post_update_health.py:2:MAP2 Audio Cluster - Post-Update Health Check Service
+app/services/cluster/post_update_health.py:298:        - Integration with cluster stable
+app/services/cluster/avb_cluster.py:2:AVB/TSN Integration with Cluster Services
+app/services/cluster/avb_cluster.py:4:Provides functions to populate AVB-specific data in cluster node metadata.
+app/services/cluster/avb_cluster.py:22:        Dictionary with AVB fields for ClusterNodeMetadata:
+app/services/cluster/avb_cluster.py:66:        logger.debug(f"Failed to get PTP status for cluster metadata: {e}")
+app/services/cluster/avb_cluster.py:79:        logger.debug(f"Failed to get TSN status for cluster metadata: {e}")
+app/services/cluster/avb_cluster.py:88:            # Convert to simplified format for cluster metadata
+app/services/cluster/avb_cluster.py:101:        logger.debug(f"Failed to get AVB streams for cluster metadata: {e}")
+app/services/cluster/avb_cluster.py:114:        Dictionary with AVB fields for ClusterNodeMetadata.
+app/services/cluster/avb_cluster.py:180:def get_avb_cluster_summary(nodes: List) -> Dict:
+app/services/cluster/avb_cluster.py:182:    Get AVB summary across the cluster.
+app/services/cluster/avb_cluster.py:185:        nodes: List of ClusterNode objects
+app/services/cluster/avb_cluster.py:188:        Dictionary with cluster-wide AVB statistics:
+app/services/cluster/deployment_manager.py:2:Cluster Deployment Manager
+app/services/cluster/deployment_manager.py:17:    """Manages cluster deployment mode and transitions."""
+app/services/cluster/update_orchestrator.py:2:Synchronized Package Update Orchestrator for Cluster
+app/services/cluster/update_orchestrator.py:4:Coordinates fleet-wide DNF package updates across all cluster nodes:
+app/services/cluster/update_orchestrator.py:23:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/update_orchestrator.py:24:from app.services.cluster.fedora_package_manager import get_dnf_manager
+app/services/cluster/update_orchestrator.py:25:from app.services.cluster.health_aggregator import get_health_aggregator
+app/services/cluster/update_orchestrator.py:26:from app.services.cluster.update_rollback import UpdateRollbackManager, RollbackReason
+app/services/cluster/update_orchestrator.py:32:    """Phases of cluster-wide update"""
+app/services/cluster/update_orchestrator.py:96:    """Report of cluster-wide update operation"""
+app/services/cluster/update_orchestrator.py:145:    Schedules and orchestrates cluster-wide package updates.
+app/services/cluster/update_orchestrator.py:173:        self.registry = get_cluster_registry()
+app/services/cluster/update_orchestrator.py:195:            self.logger.info("Starting cluster update cycle...")
+app/services/cluster/update_orchestrator.py:395:            # Execute update via SSH/API
+app/services/cluster/update_orchestrator.py:397:                from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/update_orchestrator.py:512:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/update_orchestrator.py:612:            from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/update_orchestrator.py:618:                "systemctl stop map2-cluster-agent map2-audio-engine map2-api-server",
+app/services/cluster/update_orchestrator.py:644:                "systemctl start map2-cluster-agent map2-audio-engine map2-api-server",
+app/services/cluster/update_orchestrator.py:694:    async def trigger_cluster_update(
+app/services/cluster/update_orchestrator.py:698:        Trigger a cluster-wide update and return a response summary.
+app/services/cluster/update_orchestrator.py:758:        Get recommended update schedule for the cluster.
+app/routes/websocket_rt.py:2:Real-Time WebSocket Routes
+app/routes/websocket_rt.py:3:Ultra-low latency WebSocket endpoint for parameter control.
+app/routes/websocket_rt.py:14:from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+app/routes/websocket_rt.py:23:@router.websocket("/ws/rt")
+app/routes/websocket_rt.py:24:async def realtime_websocket_endpoint(
+app/routes/websocket_rt.py:25:    websocket: WebSocket,
+app/routes/websocket_rt.py:29:    Real-time WebSocket endpoint for ultra-low latency parameter control.
+app/routes/websocket_rt.py:88:    await rt_parameter_bridge.connect_client(websocket, client_id, use_binary=binary)
+app/routes/websocket_rt.py:94:                data = await websocket.receive_bytes()
+app/routes/websocket_rt.py:98:                data = await websocket.receive_text()
+app/routes/websocket_rt.py:101:    except WebSocketDisconnect:
+app/routes/websocket_rt.py:106:        logger.error(f"RT WebSocket error for client {client_id}: {e}")
+app/services/cluster/raft_consensus.py:2:Raft Consensus Implementation for Cluster State Replication
+app/services/cluster/raft_consensus.py:4:Provides distributed consensus for management node cluster state.
+app/services/cluster/raft_consensus.py:5:Ensures consistent state across all management nodes via Raft algorithm.
+app/services/cluster/raft_consensus.py:28:class RaftRole(Enum):
+app/services/cluster/raft_consensus.py:29:    """Node role in Raft cluster."""
+app/services/cluster/raft_consensus.py:35:class RaftState(Enum):
+app/services/cluster/raft_consensus.py:36:    """State of a Raft node."""
+app/services/cluster/raft_consensus.py:45:    """Entry in Raft log."""
+app/services/cluster/raft_consensus.py:54:class RaftNodeInfo:
+app/services/cluster/raft_consensus.py:55:    """Information about a Raft node."""
+app/services/cluster/raft_consensus.py:63:class RaftStateMachine:
+app/services/cluster/raft_consensus.py:65:    State machine that applies log entries to cluster state.
+app/services/cluster/raft_consensus.py:66:    Manages the actual cluster state based on committed log entries.
+app/services/cluster/raft_consensus.py:72:        self.logger = logging.getLogger("RaftStateMachine")
+app/services/cluster/raft_consensus.py:124:class RaftConsensus:
+app/services/cluster/raft_consensus.py:126:    Raft consensus engine for cluster state replication.
+app/services/cluster/raft_consensus.py:135:    def __init__(self, node_id: str, cluster_nodes: Dict[str, str]):
+app/services/cluster/raft_consensus.py:137:        Initialize Raft consensus.
+app/services/cluster/raft_consensus.py:141:            cluster_nodes: Dict of {node_id: url} for all cluster nodes
+app/services/cluster/raft_consensus.py:144:        self.cluster_nodes = {n: u for n, u in cluster_nodes.items() if n != node_id}
+app/services/cluster/raft_consensus.py:154:        self.role = RaftRole.FOLLOWER
+app/services/cluster/raft_consensus.py:155:        self.state_machine = RaftStateMachine()
+app/services/cluster/raft_consensus.py:158:        self.next_index: Dict[str, int] = {n: len(self.log) for n in self.cluster_nodes}
+app/services/cluster/raft_consensus.py:159:        self.match_index: Dict[str, int] = {n: 0 for n in self.cluster_nodes}
+app/services/cluster/raft_consensus.py:170:        self.logger = logging.getLogger("RaftConsensus")
+app/services/cluster/raft_consensus.py:181:            from app.services.special_settings_raft import SpecialSettingsStateManager
+app/services/cluster/raft_consensus.py:194:        """Start Raft consensus engine."""
+app/services/cluster/raft_consensus.py:198:        self.logger.info(f"Starting Raft consensus (node_id={self.node_id})")
+app/services/cluster/raft_consensus.py:211:        """Stop Raft consensus engine."""
+app/services/cluster/raft_consensus.py:215:        self.logger.info("Stopping Raft consensus")
+app/services/cluster/raft_consensus.py:235:                if self.role == RaftRole.LEADER:
+app/services/cluster/raft_consensus.py:251:                if self.role == RaftRole.LEADER:
+app/services/cluster/raft_consensus.py:264:        self.role = RaftRole.CANDIDATE
+app/services/cluster/raft_consensus.py:272:        for node_id, node_url in self.cluster_nodes.items():
+app/services/cluster/raft_consensus.py:280:        majority = len(self.cluster_nodes) // 2 + 1
+app/services/cluster/raft_consensus.py:282:            self.logger.info(f"Won election with {votes}/{len(self.cluster_nodes)} votes (term={self.current_term})")
+app/services/cluster/raft_consensus.py:283:            self.role = RaftRole.LEADER
+app/services/cluster/raft_consensus.py:286:            self.next_index = {n: len(self.log) for n in self.cluster_nodes}
+app/services/cluster/raft_consensus.py:287:            self.match_index = {n: 0 for n in self.cluster_nodes}
+app/services/cluster/raft_consensus.py:292:            self.logger.warning(f"Lost election with {votes}/{len(self.cluster_nodes)} votes (term={self.current_term})")
+app/services/cluster/raft_consensus.py:293:            self.role = RaftRole.FOLLOWER
+app/services/cluster/raft_consensus.py:306:                resp = await client.post(f"{node_url}/api/raft/vote", json=payload)
+app/services/cluster/raft_consensus.py:317:        if self.role != RaftRole.LEADER:
+app/services/cluster/raft_consensus.py:320:        for node_id, node_url in self.cluster_nodes.items():
+app/services/cluster/raft_consensus.py:348:                resp = await client.post(f"{node_url}/api/raft/append-entries", json=payload)
+app/services/cluster/raft_consensus.py:363:        if self.role != RaftRole.LEADER:
+app/services/cluster/raft_consensus.py:368:        majority_index = match_indices[len(self.cluster_nodes) // 2]
+app/services/cluster/raft_consensus.py:402:        Replicate a command across the cluster.
+app/services/cluster/raft_consensus.py:405:        if self.role != RaftRole.LEADER:
+app/services/cluster/raft_consensus.py:432:        if self.role == RaftRole.LEADER:
+app/services/cluster/raft_consensus.py:438:        return self.role == RaftRole.LEADER
+app/services/cluster/raft_consensus.py:441:        """Get cluster state."""
+app/services/cluster/raft_consensus.py:454:_raft_consensus: Optional[RaftConsensus] = None
+app/services/cluster/raft_consensus.py:457:def get_raft_consensus() -> RaftConsensus:
+app/services/cluster/raft_consensus.py:458:    """Get or create Raft consensus instance."""
+app/services/cluster/raft_consensus.py:459:    global _raft_consensus
+app/services/cluster/raft_consensus.py:460:    if _raft_consensus is None:
+app/services/cluster/raft_consensus.py:461:        raise RuntimeError("Raft consensus not initialized")
+app/services/cluster/raft_consensus.py:462:    return _raft_consensus
+app/services/cluster/raft_consensus.py:465:def initialize_raft_consensus(node_id: str, cluster_nodes: Dict[str, str]) -> RaftConsensus:
+app/services/cluster/raft_consensus.py:466:    """Initialize Raft consensus."""
+app/services/cluster/raft_consensus.py:467:    global _raft_consensus
+app/services/cluster/raft_consensus.py:468:    _raft_consensus = RaftConsensus(node_id, cluster_nodes)
+app/services/cluster/raft_consensus.py:469:    return _raft_consensus
+app/services/cluster/update_validator.py:2:MAP2 Audio Cluster - Update Validation Engine
+app/services/cluster/update_validator.py:17:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/update_validator.py:18:from app.services.cluster.health_aggregator import get_health_aggregator
+app/services/cluster/update_validator.py:19:from app.services.cluster.fedora_package_manager import get_dnf_manager
+app/services/cluster/update_validator.py:20:from app.services.cluster.integration_helpers import HybridNodeClient
+app/services/cluster/update_validator.py:84:    def __init__(self, cluster_api_url: str = "http://localhost:8080"):
+app/services/cluster/update_validator.py:86:        self.api_url = cluster_api_url
+app/services/cluster/update_validator.py:89:        self.registry = get_cluster_registry()
+app/services/cluster/update_validator.py:114:        self.check_cluster_health()
+app/services/cluster/update_validator.py:134:    def check_cluster_health(self) -> None:
+app/services/cluster/update_validator.py:135:        """Verify cluster health score is acceptable."""
+app/services/cluster/update_validator.py:137:            health_summary = self.aggregator.get_cluster_health() if self.aggregator else {}
+app/services/cluster/update_validator.py:142:                    name="Cluster Health Score",
+app/services/cluster/update_validator.py:145:                    message=f"Cluster health score: {health_score}% (acceptable)"
+app/services/cluster/update_validator.py:149:                    name="Cluster Health Score",
+app/services/cluster/update_validator.py:152:                    message=f"Cluster health score: {health_score}% (degraded)",
+app/services/cluster/update_validator.py:157:                    name="Cluster Health Score",
+app/services/cluster/update_validator.py:160:                    message=f"Cluster health score too low: {health_score}%"
+app/services/cluster/update_validator.py:164:                name="Cluster Health Score",
+app/services/cluster/update_validator.py:167:                message=f"Could not verify cluster health: {str(e)}"
+app/services/cluster/update_validator.py:616:        """Check cluster state consistency."""
+app/services/cluster/update_validator.py:618:            # Verify all nodes agree on cluster state
+app/services/cluster/update_validator.py:625:                message="Cluster state consistent across all nodes" if consistent else "State inconsistency detected"
+app/services/cluster/update_validator.py:645:        self.check_cluster_agent_running(node_id)
+app/services/cluster/update_validator.py:677:            services = ["map2-cluster-agent", "map2-audio-engine", "map2-api-server"]
+app/services/cluster/update_validator.py:716:    def check_cluster_agent_running(self, node_id: Optional[str] = None) -> None:
+app/services/cluster/update_validator.py:717:        """Check cluster agent connectivity."""
+app/services/cluster/update_validator.py:726:                    name="Cluster Agent Connected",
+app/services/cluster/update_validator.py:735:                    name="Cluster Agent Connected",
+app/services/cluster/update_validator.py:738:                    message=f"All {nodes_connected} nodes connected to cluster"
+app/services/cluster/update_validator.py:742:                    name="Cluster Agent Connected",
+app/services/cluster/update_validator.py:749:                name="Cluster Agent Check",
+app/services/cluster/update_validator.py:752:                message=f"Could not verify cluster agent: {str(e)}"
+app/services/cluster/update_validator.py:973:        """Verify cluster health score recovers post-update."""
+app/services/cluster/update_validator.py:975:            health_summary = self.aggregator.get_cluster_health() if self.aggregator else {}
+app/services/cluster/heartbeat_monitor.py:2:Heartbeat Monitoring Service for Cluster Nodes
+app/services/cluster/heartbeat_monitor.py:17:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/heartbeat_monitor.py:36:    Monitors cluster node health via periodic heartbeat checks.
+app/services/cluster/heartbeat_monitor.py:46:        self.registry = get_cluster_registry()
+app/routes/plugin_scanner.py:2:Plugin Scanner Routes - API endpoints for plugin discovery
+app/services/cluster/audio_path_discovery.py:2:Audio Path & Service Discovery for Cluster Nodes
+app/services/cluster/audio_path_discovery.py:11:This service runs on every node and exposes its audio architecture to the cluster.
+app/services/cluster/audio_path_discovery.py:12:The management node aggregates this information for cluster-wide visibility.
+app/services/cluster/audio_path_discovery.py:16:    AudioPathService - Service discovery and monitoring
+app/services/cluster/audio_path_discovery.py:19:    from app.services.cluster.audio_path_discovery import get_audio_path_service
+app/services/cluster/audio_path_discovery.py:207:    Provides REST endpoint for cluster-wide audio path visibility.
+app/routes/system.py:41:        {"id": "ui_api", "label": "UI / API Server", "description": "Web interface, REST API, WebSocket", "category": "System"},
+app/routes/chains.py:390:        # This prevents race conditions where WebSocket listeners refetch
+app/routes/chains.py:486:    # ==================== CLUSTER DEPLOYMENT ====================
+app/routes/chains.py:490:        """Deploy a chain configuration to this node (cluster use).
+app/routes/www.py:283:@router.get("/websocket/stats")
+app/routes/www.py:284:async def get_websocket_stats() -> Dict[str, Any]:
+app/routes/www.py:285:    """Get WebSocket server statistics."""
+app/routes/www.py:287:        from app.services.websocket_manager import ws_manager
+app/routes/www.py:290:        logger.error(f"Failed to get WebSocket stats: {e}")
+app/services/cluster/state_replicator_impl.py:4:Implements Raft-like consensus for cluster state replication.
+app/services/cluster/state_replicator_impl.py:5:Uses a simplified approach suitable for small to medium clusters (1-100 nodes).
+app/services/cluster/state_replicator_impl.py:21:    """Node role in cluster consensus."""
+app/services/cluster/state_replicator_impl.py:38:class ClusterState:
+app/services/cluster/state_replicator_impl.py:39:    """Current cluster state."""
+app/services/cluster/state_replicator_impl.py:46:    nodes: Dict[str, Dict] = field(default_factory=dict)  # Cluster membership
+app/services/cluster/state_replicator_impl.py:52:    Implements consensus replication for cluster state.
+app/services/cluster/state_replicator_impl.py:54:    Uses a simplified Raft algorithm for leader election and state replication.
+app/services/cluster/state_replicator_impl.py:61:        self.state = ClusterState()
+app/services/cluster/state_replicator_impl.py:74:        # Cluster peer nodes
+app/services/cluster/state_replicator_impl.py:77:    async def initialize_cluster(self, peer_nodes: List[str]):
+app/services/cluster/state_replicator_impl.py:78:        """Initialize cluster with peer node IDs."""
+app/services/cluster/state_replicator_impl.py:87:        logger.info(f"Cluster initialized with {len(self.peers)} peers")
+app/services/cluster/prometheus_exporter.py:2:MAP2 Audio Cluster - Prometheus Metrics Exporter
+app/services/cluster/prometheus_exporter.py:4:Exports cluster metrics in Prometheus format for monitoring and alerting.
+app/services/cluster/prometheus_exporter.py:45:class ClusterMetrics:
+app/services/cluster/prometheus_exporter.py:46:    """Metrics definitions for cluster monitoring."""
+app/services/cluster/prometheus_exporter.py:50:        name="map2_cluster_nodes_total",
+app/services/cluster/prometheus_exporter.py:51:        help_text="Total number of nodes in the cluster",
+app/services/cluster/prometheus_exporter.py:56:        name="map2_cluster_nodes_online",
+app/services/cluster/prometheus_exporter.py:62:        name="map2_cluster_nodes_offline",
+app/services/cluster/prometheus_exporter.py:68:        name="map2_cluster_node_up",
+app/services/cluster/prometheus_exporter.py:76:        name="map2_cluster_node_health_score",
+app/services/cluster/prometheus_exporter.py:83:    CLUSTER_HEALTH_SCORE = MetricDefinition(
+app/services/cluster/prometheus_exporter.py:84:        name="map2_cluster_health_score",
+app/services/cluster/prometheus_exporter.py:85:        help_text="Overall cluster health score (0-100)",
+app/services/cluster/prometheus_exporter.py:92:        name="map2_cluster_node_cpu_usage_percent",
+app/services/cluster/prometheus_exporter.py:100:        name="map2_cluster_node_cpu_cores",
+app/services/cluster/prometheus_exporter.py:108:        name="map2_cluster_node_memory_usage_bytes",
+app/services/cluster/prometheus_exporter.py:116:        name="map2_cluster_node_memory_total_bytes",
+app/services/cluster/prometheus_exporter.py:124:        name="map2_cluster_node_memory_usage_percent",
+app/services/cluster/prometheus_exporter.py:133:        name="map2_cluster_node_audio_dsp_load_percent",
+app/services/cluster/prometheus_exporter.py:141:        name="map2_cluster_node_xruns_total",
+app/services/cluster/prometheus_exporter.py:148:        name="map2_cluster_node_xrun_rate_per_minute",
+app/services/cluster/prometheus_exporter.py:155:        name="map2_cluster_node_audio_devices",
+app/services/cluster/prometheus_exporter.py:163:        name="map2_cluster_network_latency_ms",
+app/services/cluster/prometheus_exporter.py:171:        name="map2_cluster_network_packet_loss_percent",
+app/services/cluster/prometheus_exporter.py:180:        name="map2_cluster_updates_total",
+app/services/cluster/prometheus_exporter.py:187:        name="map2_cluster_update_nodes_pending",
+app/services/cluster/prometheus_exporter.py:193:        name="map2_cluster_update_success_rate",
+app/services/cluster/prometheus_exporter.py:201:        name="map2_cluster_failovers_total",
+app/services/cluster/prometheus_exporter.py:207:        name="map2_cluster_failover_duration_seconds",
+app/services/cluster/prometheus_exporter.py:215:        name="map2_cluster_events_logged_total",
+app/services/cluster/prometheus_exporter.py:223:        name="map2_cluster_backups_total",
+app/services/cluster/prometheus_exporter.py:230:        name="map2_cluster_backup_size_bytes",
+app/services/cluster/prometheus_exporter.py:237:        name="map2_cluster_backup_age_seconds",
+app/services/cluster/prometheus_exporter.py:245:        name="map2_cluster_database_queries_total",
+app/services/cluster/prometheus_exporter.py:251:        name="map2_cluster_database_query_duration_ms",
+app/services/cluster/prometheus_exporter.py:259:        name="map2_cluster_api_requests_total",
+app/services/cluster/prometheus_exporter.py:266:        name="map2_cluster_api_request_duration_ms",
+app/services/cluster/prometheus_exporter.py:274:    CLUSTER_UPTIME_SECONDS = MetricDefinition(
+app/services/cluster/prometheus_exporter.py:275:        name="map2_cluster_uptime_seconds",
+app/services/cluster/prometheus_exporter.py:276:        help_text="Cluster uptime in seconds",
+app/services/cluster/prometheus_exporter.py:282:        name="map2_cluster_node_uptime_seconds",
+app/services/cluster/prometheus_exporter.py:390:        lines.append("# HELP cluster_metrics MAP2 Audio Cluster Metrics")
+app/services/cluster/prometheus_exporter.py:391:        lines.append("# TYPE cluster_metrics untyped")
+app/services/cluster/prometheus_exporter.py:422:# Cluster Metrics Collector
+app/services/cluster/prometheus_exporter.py:425:class ClusterMetricsCollector:
+app/services/cluster/prometheus_exporter.py:426:    """Collects cluster-wide metrics."""
+app/services/cluster/prometheus_exporter.py:459:            self.exporter.add_metric(ClusterMetrics.NODES_TOTAL.name, 0)
+app/services/cluster/prometheus_exporter.py:460:            self.exporter.add_metric(ClusterMetrics.NODES_ONLINE.name, 0)
+app/services/cluster/prometheus_exporter.py:461:            self.exporter.add_metric(ClusterMetrics.NODES_OFFLINE.name, 0)
+app/services/cluster/prometheus_exporter.py:466:            ClusterMetrics.NODES_TOTAL.name,
+app/services/cluster/prometheus_exporter.py:475:            ClusterMetrics.NODES_ONLINE.name,
+app/services/cluster/prometheus_exporter.py:479:            ClusterMetrics.NODES_OFFLINE.name,
+app/services/cluster/prometheus_exporter.py:493:                ClusterMetrics.NODE_UP.name,
+app/services/cluster/prometheus_exporter.py:502:                ClusterMetrics.NODE_CPU_USAGE.name,
+app/services/cluster/prometheus_exporter.py:507:                ClusterMetrics.NODE_CPU_CORES.name,
+app/services/cluster/prometheus_exporter.py:518:                ClusterMetrics.NODE_MEMORY_USAGE.name,
+app/services/cluster/prometheus_exporter.py:523:                ClusterMetrics.NODE_MEMORY_TOTAL.name,
+app/services/cluster/prometheus_exporter.py:528:                ClusterMetrics.NODE_MEMORY_PERCENT.name,
+app/services/cluster/prometheus_exporter.py:540:                ClusterMetrics.NODE_AUDIO_DSP_LOAD.name,
+app/services/cluster/prometheus_exporter.py:545:                ClusterMetrics.NODE_XRUNS.name,
+app/services/cluster/prometheus_exporter.py:550:                ClusterMetrics.NODE_XRUN_RATE.name,
+app/services/cluster/prometheus_exporter.py:555:                ClusterMetrics.NODE_AUDIO_DEVICES.name,
+app/services/cluster/prometheus_exporter.py:563:                ClusterMetrics.NODE_UPTIME_SECONDS.name,
+app/services/cluster/prometheus_exporter.py:575:        # Overall cluster health
+app/services/cluster/prometheus_exporter.py:576:        cluster_health = health.get("overall_score", 0)
+app/services/cluster/prometheus_exporter.py:578:            ClusterMetrics.CLUSTER_HEALTH_SCORE.name,
+app/services/cluster/prometheus_exporter.py:579:            cluster_health
+app/services/cluster/prometheus_exporter.py:589:                ClusterMetrics.HEALTH_SCORE.name,
+app/services/cluster/prometheus_exporter.py:607:            ClusterMetrics.UPDATE_SUCCESS_RATE.name,
+app/services/cluster/prometheus_exporter.py:614:            ClusterMetrics.UPDATE_NODES_PENDING.name,
+app/services/cluster/prometheus_exporter.py:622:            ClusterMetrics.CLUSTER_UPTIME_SECONDS.name,
+app/services/cluster/prometheus_exporter.py:664:        self.collector = ClusterMetricsCollector(self.exporter)
+app/routes/cluster_flows.py:2:Cluster Flow Management Routes
+app/routes/cluster_flows.py:3:API endpoints for assigning flows to nodes and listing cluster state.
+app/routes/cluster_flows.py:12:    from app.services.cluster.registry import get_cluster_registry
+app/routes/cluster_flows.py:14:    router = APIRouter(prefix="/api/cluster", tags=["cluster-flows"])
+app/routes/cluster_flows.py:108:    async def get_cluster_nodes():
+app/routes/cluster_flows.py:109:        """List cluster nodes from registry."""
+app/routes/cluster_flows.py:110:        registry = get_cluster_registry()
+app/routes/cluster_flows.py:120:        registry = get_cluster_registry()
+app/routes/prometheus_metrics.py:2:MAP2 Audio Cluster - Prometheus Metrics API Endpoint
+app/routes/prometheus_metrics.py:11:from app.services.cluster.prometheus_exporter import MetricsManager
+app/routes/prometheus_metrics.py:70:        # HELP map2_cluster_nodes_total Total number of nodes in the cluster
+app/routes/prometheus_metrics.py:71:        # TYPE map2_cluster_nodes_total gauge
+app/routes/prometheus_metrics.py:72:        map2_cluster_nodes_total 5 1707123456000
+app/routes/prometheus_metrics.py:74:        # HELP map2_cluster_node_health_score Node health score (0-100)
+app/routes/prometheus_metrics.py:75:        # TYPE map2_cluster_node_health_score gauge
+app/routes/prometheus_metrics.py:76:        map2_cluster_node_health_score{node_id="node-1",hostname="audio-01"} 95 1707123456000
+app/routes/raft_api.py:2:Raft Consensus API Endpoints
+app/routes/raft_api.py:15:from app.services.cluster.raft_consensus import get_raft_consensus, LogEntry
+app/routes/raft_api.py:17:router = APIRouter(prefix="/api/raft", tags=["raft"])
+app/routes/raft_api.py:58:        raft = get_raft_consensus()
+app/routes/raft_api.py:61:        if request.term > raft.current_term:
+app/routes/raft_api.py:62:            raft.current_term = request.term
+app/routes/raft_api.py:63:            raft.voted_for = None
+app/routes/raft_api.py:64:            from app.services.cluster.raft_consensus import RaftRole
+app/routes/raft_api.py:65:            raft.role = RaftRole.FOLLOWER
+app/routes/raft_api.py:71:        if request.term == raft.current_term and raft.voted_for is None:
+app/routes/raft_api.py:73:                request.last_log_term > (raft.log[-1].term if raft.log else 0) or
+app/routes/raft_api.py:74:                (request.last_log_term == (raft.log[-1].term if raft.log else 0) and 
+app/routes/raft_api.py:75:                 request.last_log_index >= len(raft.log) - 1)
+app/routes/raft_api.py:80:                raft.voted_for = request.candidate_id
+app/routes/raft_api.py:82:        return VoteResponse(term=raft.current_term, vote_granted=vote_granted)
+app/routes/raft_api.py:96:        raft = get_raft_consensus()
+app/routes/raft_api.py:99:        if request.term > raft.current_term:
+app/routes/raft_api.py:100:            raft.current_term = request.term
+app/routes/raft_api.py:101:            raft.voted_for = None
+app/routes/raft_api.py:102:            raft.role = raft.RaftRole.FOLLOWER
+app/routes/raft_api.py:105:        if request.term == raft.current_term:
+app/routes/raft_api.py:106:            raft.last_heartbeat = datetime.utcnow()
+app/routes/raft_api.py:112:            request.prev_log_index < len(raft.log) and
+app/routes/raft_api.py:113:            raft.log[request.prev_log_index].term == request.prev_log_term
+app/routes/raft_api.py:121:                if index < len(raft.log):
+app/routes/raft_api.py:123:                    if raft.log[index].term != entry_data["term"]:
+app/routes/raft_api.py:124:                        raft.log = raft.log[:index]
+app/routes/raft_api.py:126:                if index >= len(raft.log):
+app/routes/raft_api.py:128:                    from app.services.cluster.raft_consensus import LogEntry
+app/routes/raft_api.py:135:                    raft.log.append(entry)
+app/routes/raft_api.py:138:            old_commit = raft.commit_index
+app/routes/raft_api.py:139:            raft.commit_index = min(request.leader_commit, len(raft.log) - 1)
+app/routes/raft_api.py:141:            if raft.commit_index > old_commit:
+app/routes/raft_api.py:145:        return AppendEntriesResponse(term=raft.current_term, success=success)
+app/routes/raft_api.py:152:async def get_raft_state():
+app/routes/raft_api.py:153:    """Get Raft consensus state."""
+app/routes/raft_api.py:155:        raft = get_raft_consensus()
+app/routes/raft_api.py:158:            "state": raft.get_state(),
+app/routes/raft_api.py:159:            "is_leader": raft.is_leader(),
+app/routes/raft_api.py:160:            "leader": raft.get_leader(),
+app/routes/raft_api.py:163:        raise HTTPException(500, f"Failed to get Raft state: {e}")
+app/routes/raft_api.py:170:        raft = get_raft_consensus()
+app/routes/raft_api.py:171:        leader = raft.get_leader()
+app/routes/raft_api.py:175:            "is_leader": raft.is_leader(),
+app/routes/raft_api.py:176:            "term": raft.current_term,
+app/services/cluster/config_loader.py:2:MAP2 Audio Cluster - Configuration Validation and Loading
+app/services/cluster/config_loader.py:4:Loads and validates cluster configuration from INI files, environment variables,
+app/services/cluster/config_loader.py:21:from app.services.cluster.config_schema import (
+app/services/cluster/config_loader.py:22:    ClusterConfigSchema,
+app/services/cluster/config_loader.py:23:    ClusterConfig,
+app/services/cluster/config_loader.py:28:    ClusterManagementConfig,
+app/services/cluster/config_loader.py:129:        Example: MAP2_CLUSTER_NAME=my-cluster
+app/services/cluster/config_loader.py:203:    def parse_config(cls, config_dict: Dict[str, Any]) -> ClusterConfigSchema:
+app/services/cluster/config_loader.py:211:            ClusterConfigSchema instance
+app/services/cluster/config_loader.py:217:        cluster_data = config_dict.get('cluster', {})
+app/services/cluster/config_loader.py:218:        cluster = ClusterConfig(
+app/services/cluster/config_loader.py:219:            name=cluster_data.get('name', 'map2-cluster'),
+app/services/cluster/config_loader.py:220:            node_id=cluster_data.get('node_id', ''),
+app/services/cluster/config_loader.py:222:                cluster_data.get('node_role', 'MANAGEMENT-NODE'),
+app/services/cluster/config_loader.py:225:            version=cluster_data.get('version', '1.0.0'),
+app/services/cluster/config_loader.py:226:            environment=cluster_data.get('environment', 'production'),
+app/services/cluster/config_loader.py:235:            database_path=paths_data.get('database_path', '/var/lib/map2/database/cluster.db'),
+app/services/cluster/config_loader.py:254:            path=database_data.get('path', '/var/lib/map2/database/cluster.db'),
+app/services/cluster/config_loader.py:274:        cm_data = config_dict.get('cluster_management', {})
+app/services/cluster/config_loader.py:275:        cluster_management = ClusterManagementConfig(
+app/services/cluster/config_loader.py:286:            discovery_interval=cls.parse_int(cm_data.get('discovery_interval'), 60),
+app/services/cluster/config_loader.py:287:            discovery_ttl=cls.parse_int(cm_data.get('discovery_ttl'), 3600),
+app/services/cluster/config_loader.py:334:            file_path=logging_data.get('file_path', '/var/log/map2/cluster.log'),
+app/services/cluster/config_loader.py:389:        return ClusterConfigSchema(
+app/services/cluster/config_loader.py:390:            cluster=cluster,
+app/services/cluster/config_loader.py:395:            cluster_management=cluster_management,
+app/services/cluster/config_loader.py:419:        self.schema: Optional[ClusterConfigSchema] = None
+app/services/cluster/config_loader.py:421:    def load(self) -> ClusterConfigSchema:
+app/services/cluster/config_loader.py:426:            ClusterConfigSchema instance
+app/services/cluster/config_loader.py:455:    def get(self) -> ClusterConfigSchema:
+app/routes/lcd_events.py:4:REST API and WebSocket endpoints for LCD event system:
+app/routes/lcd_events.py:11:from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+app/routes/lcd_events.py:31:# Active WebSocket connections
+app/routes/lcd_events.py:32:active_connections: List[WebSocket] = []
+app/routes/lcd_events.py:248:@router.websocket("/ws/events")
+app/routes/lcd_events.py:249:async def websocket_events(websocket: WebSocket):
+app/routes/lcd_events.py:251:    WebSocket endpoint for real-time LCD event stream.
+app/routes/lcd_events.py:255:    await websocket.accept()
+app/routes/lcd_events.py:256:    active_connections.append(websocket)
+app/routes/lcd_events.py:258:    logger.info(f"WebSocket client connected (total: {len(active_connections)})")
+app/routes/lcd_events.py:263:            if websocket in active_connections:
+app/routes/lcd_events.py:265:                    await websocket.send_json(event.to_dict())
+app/routes/lcd_events.py:267:                    logger.error(f"Error sending event to WebSocket: {e}")
+app/routes/lcd_events.py:277:            data = await websocket.receive_text()
+app/routes/lcd_events.py:279:    except WebSocketDisconnect:
+app/routes/lcd_events.py:280:        logger.info("WebSocket client disconnected")
+app/routes/lcd_events.py:282:        if websocket in active_connections:
+app/routes/lcd_events.py:283:            active_connections.remove(websocket)
+app/routes/lcd_events.py:333:        "cluster": {
+app/routes/lcd_events.py:335:            "discovered_peers": len(lcd_manager.mdns_discovery.discovered_peers) 
+app/routes/lcd_events.py:336:                                if lcd_manager.mdns_discovery else 0,
+app/routes/lcd_events.py:345:    """Return discovered peers and connection stats for cluster UI."""
+app/routes/lcd_events.py:349:    discovery_enabled = lcd_manager.mdns_discovery is not None
+app/routes/lcd_events.py:350:    discovered = lcd_manager.mdns_discovery.get_discovered_peers() if discovery_enabled else {}
+app/routes/lcd_events.py:361:        "discovery": {
+app/routes/lcd_events.py:362:            "enabled": discovery_enabled,
+app/routes/plugins.py:308:        """Clear the plugin cache, forcing next discovery to rescan."""
+app/routes/deployment_health.py:244:                "requirement": "SSH service",
+app/routes/deployment_health.py:247:                "remediation": "Start SSH service if needed",
+app/routes/deployment_health.py:267:                "requirement": "mDNS discovery",
+app/routes/deployment_health.py:273:                "requirement": "SSH keys configured",
+app/routes/deployment_health.py:276:                "remediation": "Generate SSH keys via API",
+app/routes/deployment_health.py:290:                "requirement": "mDNS discovery",
+app/routes/deployment_health.py:296:                "requirement": "Peer discovery (Audio-Node)",
+app/routes/deployment_health.py:302:                "requirement": "SSH keys configured",
+app/routes/deployment_health.py:305:                "remediation": "Generate SSH keys via API",
+app/routes/nam.py:6:- Model discovery and scanning
+app/routes/peer_discovery.py:2:Enhanced Peer Discovery API
+app/routes/peer_discovery.py:5:- GET /api/peers - Get enhanced peer discovery status with latency and details
+app/routes/peer_discovery.py:8:- POST /api/peers/{peer_id}/link - Link with peer (SSH + mDNS + LCD)
+app/routes/peer_discovery.py:21:router = APIRouter(prefix="/api/peers", tags=["Peer Discovery"])
+app/routes/peer_discovery.py:39:    ssh_url: str
+app/routes/peer_discovery.py:43:    ssh_trusted: bool = False
+app/routes/peer_discovery.py:63:class DiscoveryStatusResponse(BaseModel):
+app/routes/peer_discovery.py:64:    """Peer discovery status"""
+app/routes/peer_discovery.py:66:    discovery_enabled: bool
+app/routes/peer_discovery.py:67:    discovery_uptime: str
+app/routes/peer_discovery.py:78:    setup_ssh: bool = True
+app/routes/peer_discovery.py:86:    ssh_trust: bool = False
+app/routes/peer_discovery.py:94:    if global_lcd_manager and hasattr(global_lcd_manager, 'mdns_discovery'):
+app/routes/peer_discovery.py:95:        return global_lcd_manager.mdns_discovery
+app/routes/peer_discovery.py:168:@router.get("", response_model=DiscoveryStatusResponse)
+app/routes/peer_discovery.py:169:async def get_peer_discovery_status():
+app/routes/peer_discovery.py:170:    """Get comprehensive peer discovery status"""
+app/routes/peer_discovery.py:177:    mdns = global_lcd_manager.mdns_discovery
+app/routes/peer_discovery.py:178:    if not mdns:
+app/routes/peer_discovery.py:179:        raise HTTPException(status_code=503, detail="mDNS discovery not enabled")
+app/routes/peer_discovery.py:181:    discovered = mdns.get_discovered_peers() if hasattr(mdns, 'get_discovered_peers') else getattr(mdns, 'discovered_peers', {})
+app/routes/peer_discovery.py:186:    # Read SSH trust status
+app/routes/peer_discovery.py:194:    trust_file = Path.home() / ".map2" / "ssh_trust" / "trusted_peers.json"
+app/routes/peer_discovery.py:220:            ssh_url=f"ssh://mm@{host}",
+app/routes/peer_discovery.py:224:            ssh_trusted=node_id in trusted_peers,
+app/routes/peer_discovery.py:228:    return DiscoveryStatusResponse(
+app/routes/peer_discovery.py:230:        discovery_enabled=mdns is not None,
+app/routes/peer_discovery.py:231:        discovery_uptime=getattr(mdns, 'discovery_uptime', 'unknown'),
+app/routes/peer_discovery.py:243:    if not global_lcd_manager or not global_lcd_manager.mdns_discovery:
+app/routes/peer_discovery.py:246:    mdns = global_lcd_manager.mdns_discovery
+app/routes/peer_discovery.py:247:    discovered = getattr(mdns, 'discovered_peers', {})
+app/routes/peer_discovery.py:307:    Link with a peer: setup SSH trust + mDNS + LCD routing
+app/routes/peer_discovery.py:310:    1. Exchanges SSH public keys and establishes trust
+app/routes/peer_discovery.py:314:    from app.routes.ssh_trust import add_peer_trust
+app/routes/peer_discovery.py:321:        ssh_success = False
+app/routes/peer_discovery.py:324:        # Step 1: SSH Trust setup
+app/routes/peer_discovery.py:325:        if request.setup_ssh:
+app/routes/peer_discovery.py:327:                # Fetch peer's SSH public key
+app/routes/peer_discovery.py:333:                    async with session.get(f"{peer_api_url}/api/ssh/keys") as resp:
+app/routes/peer_discovery.py:344:                            ssh_success = True
+app/routes/peer_discovery.py:345:                            logger.info(f"SSH trust established with {peer_id}")
+app/routes/peer_discovery.py:347:                logger.warning(f"Failed to setup SSH trust: {e}")
+app/routes/peer_discovery.py:370:        if ssh_success and lcd_success:
+app/routes/peer_discovery.py:373:        elif ssh_success or lcd_success:
+app/routes/peer_discovery.py:375:            message = f"Partial link with {peer_id} (SSH: {ssh_success}, LCD: {lcd_success})"
+app/routes/peer_discovery.py:383:            ssh_trust=ssh_success,
+app/routes/flow_snapshots.py:410:        from app.services.websocket_manager import ws_manager
+app/routes/flow_snapshots.py:540:            # Broadcast WebSocket event for real-time sync
+app/routes/core_plugins.py:440:                "action": "Cache will be repopulated on next plugin discovery"
+app/routes/deployment.py:214:        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/routes/deployment.py:219:        elif service == "mdns_discovery":
+app/routes/deployment.py:220:            discovery = get_enhanced_mdns_discovery()
+app/routes/deployment.py:221:            _ = discovery.get_cluster_summary()
+app/routes/deployment.py:378:async def _check_mdns_discovery() -> HealthCheckResult:
+app/routes/deployment.py:379:    """Check mDNS discovery service"""
+app/routes/deployment.py:381:        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/routes/deployment.py:383:        discovery = get_enhanced_mdns_discovery()
+app/routes/deployment.py:384:        summary = discovery.get_cluster_summary()
+app/routes/deployment.py:387:            check="mdns_discovery",
+app/routes/deployment.py:389:            message=f"mDNS discovery running (online nodes: {summary.get('online_nodes', 0)})",
+app/routes/deployment.py:393:            check="mdns_discovery",
+app/routes/deployment.py:395:            message=f"mDNS discovery check failed: {e}",
+app/routes/deployment.py:399:async def _check_ssh_connectivity() -> HealthCheckResult:
+app/routes/deployment.py:400:    """Check SSH key availability"""
+app/routes/deployment.py:403:        ssh_dir = Path.home() / ".ssh"
+app/routes/deployment.py:404:        ssh_keys = list(ssh_dir.glob("map2_*"))
+app/routes/deployment.py:406:        if ssh_keys:
+app/routes/deployment.py:408:                check="ssh_keys",
+app/routes/deployment.py:410:                message=f"SSH keys available ({len(ssh_keys)} keys)",
+app/routes/deployment.py:414:                check="ssh_keys",
+app/routes/deployment.py:416:                message="No SSH keys found",
+app/routes/deployment.py:420:            check="ssh_keys",
+app/routes/deployment.py:422:            message=f"SSH key check failed: {e}",
+app/routes/deployment.py:434:                message="Peer discovery not required in all-in-one mode",
+app/routes/deployment.py:437:        from app.services.cluster.mdns_discovery_enhanced import get_enhanced_mdns_discovery
+app/routes/deployment.py:439:        discovery = get_enhanced_mdns_discovery()
+app/routes/deployment.py:440:        summary = discovery.get_cluster_summary()
+app/routes/deployment.py:458:            message=f"Peer discovery check failed: {e}",
+app/routes/deployment.py:514:    checks.append(await _check_mdns_discovery())
+app/routes/deployment.py:515:    checks.append(await _check_ssh_connectivity())
+app/routes/websocket_metrics.py:2:WebSocket endpoints for real-time host machine metrics streaming.
+app/routes/websocket_metrics.py:10:from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+app/routes/websocket_metrics.py:17:router = APIRouter(prefix="/ws", tags=["websocket"])
+app/routes/websocket_metrics.py:19:# Store active WebSocket connections
+app/routes/websocket_metrics.py:20:active_connections: Set[WebSocket] = set()
+app/routes/websocket_metrics.py:24:    """Manages WebSocket connections with broadcast capability"""
+app/routes/websocket_metrics.py:27:        self.active_connections: Set[WebSocket] = set()
+app/routes/websocket_metrics.py:29:    async def connect(self, websocket: WebSocket):
+app/routes/websocket_metrics.py:30:        """Add a new WebSocket connection"""
+app/routes/websocket_metrics.py:31:        await websocket.accept()
+app/routes/websocket_metrics.py:32:        self.active_connections.add(websocket)
+app/routes/websocket_metrics.py:34:    async def disconnect(self, websocket: WebSocket):
+app/routes/websocket_metrics.py:35:        """Remove a WebSocket connection"""
+app/routes/websocket_metrics.py:36:        self.active_connections.discard(websocket)
+app/routes/websocket_metrics.py:50:    async def send_personal(self, websocket: WebSocket, message: dict):
+app/routes/websocket_metrics.py:53:            await websocket.send_json(message)
+app/routes/websocket_metrics.py:55:            await self.disconnect(websocket)
+app/routes/websocket_metrics.py:61:@router.websocket("/host-metrics")
+app/routes/websocket_metrics.py:62:async def websocket_host_metrics(websocket: WebSocket):
+app/routes/websocket_metrics.py:64:    WebSocket endpoint for real-time host machine metrics.
+app/routes/websocket_metrics.py:67:    await manager.connect(websocket)
+app/routes/websocket_metrics.py:74:                data = await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
+app/routes/websocket_metrics.py:79:                        websocket,
+app/routes/websocket_metrics.py:109:                    websocket,
+app/routes/websocket_metrics.py:116:    except WebSocketDisconnect:
+app/routes/websocket_metrics.py:117:        await manager.disconnect(websocket)
+app/routes/websocket_metrics.py:119:        print(f"WebSocket error: {e}")
+app/routes/websocket_metrics.py:121:            await manager.disconnect(websocket)
+app/routes/websocket_metrics.py:126:@router.websocket("/metrics-stream")
+app/routes/websocket_metrics.py:127:async def websocket_metrics_stream(websocket: WebSocket):
+app/routes/websocket_metrics.py:129:    Alternative WebSocket endpoint for high-frequency metrics streaming.
+app/routes/websocket_metrics.py:132:    await manager.connect(websocket)
+app/routes/websocket_metrics.py:137:            websocket,
+app/routes/websocket_metrics.py:148:                config_text = await asyncio.wait_for(websocket.receive_text(), timeout=2.0)
+app/routes/websocket_metrics.py:155:                        websocket,
+app/routes/websocket_metrics.py:169:                    await manager.send_personal(websocket, status)
+app/routes/websocket_metrics.py:190:                    websocket,
+app/routes/websocket_metrics.py:195:    except WebSocketDisconnect:
+app/routes/websocket_metrics.py:196:        await manager.disconnect(websocket)
+app/routes/websocket_metrics.py:198:        print(f"WebSocket stream error: {e}")
+app/routes/websocket_metrics.py:200:            await manager.disconnect(websocket)
+app/routes/websocket_metrics.py:236:async def websocket_status():
+app/routes/websocket_metrics.py:237:    """Get WebSocket connection status"""
+app/routes/ssh_trust.py:2:SSH Trust Management API
+app/routes/ssh_trust.py:5:- GET /api/ssh/keys - Get local SSH keys
+app/routes/ssh_trust.py:6:- POST /api/ssh/keys/generate - Generate new SSH key pair
+app/routes/ssh_trust.py:7:- POST /api/ssh/trust/add - Add peer to trusted list
+app/routes/ssh_trust.py:8:- POST /api/ssh/trust/remove - Remove peer from trusted list
+app/routes/ssh_trust.py:9:- GET /api/ssh/trust/status - Get trust status with peers
+app/routes/ssh_trust.py:10:- POST /api/ssh/keys/distribute - Distribute public key to peer
+app/routes/ssh_trust.py:25:router = APIRouter(prefix="/api/ssh", tags=["SSH Trust"])
+app/routes/ssh_trust.py:28:class SSHKeyResponse(BaseModel):
+app/routes/ssh_trust.py:29:    """SSH key information"""
+app/routes/ssh_trust.py:46:    """Request to generate new SSH key"""
+app/routes/ssh_trust.py:65:    """Overall SSH trust status"""
+app/routes/ssh_trust.py:72:# SSH trust configuration directory
+app/routes/ssh_trust.py:73:TRUST_DIR = Path.home() / ".map2" / "ssh_trust"
+app/routes/ssh_trust.py:74:AUTHORIZED_KEYS_FILE = Path.home() / ".ssh" / "authorized_keys"
+app/routes/ssh_trust.py:112:@router.get("/keys", response_model=SSHKeyResponse)
+app/routes/ssh_trust.py:113:async def get_ssh_keys():
+app/routes/ssh_trust.py:114:    """Get current node's SSH keys"""
+app/routes/ssh_trust.py:117:    return SSHKeyResponse(
+app/routes/ssh_trust.py:119:        fingerprint=identity.ssh_fingerprint,
+app/routes/ssh_trust.py:120:        public_key=identity.ssh_public_key,
+app/routes/ssh_trust.py:121:        key_path=str(Path.home() / ".ssh" / f"map2_{identity.node_id}"),
+app/routes/ssh_trust.py:126:@router.post("/keys/generate", response_model=SSHKeyResponse)
+app/routes/ssh_trust.py:127:async def generate_ssh_keys(request: GenerateKeyRequest):
+app/routes/ssh_trust.py:128:    """Generate new SSH key pair"""
+app/routes/ssh_trust.py:131:    ssh_key_path = Path.home() / ".ssh" / f"map2_{identity.node_id}_new"
+app/routes/ssh_trust.py:136:            'ssh-keygen',
+app/routes/ssh_trust.py:139:            '-f', str(ssh_key_path),
+app/routes/ssh_trust.py:144:        logger.info(f"Generated new SSH key: {ssh_key_path}")
+app/routes/ssh_trust.py:147:        with open(f"{ssh_key_path}.pub", 'r') as f:
+app/routes/ssh_trust.py:152:            ['ssh-keygen', '-l', '-f', f"{ssh_key_path}.pub"],
+app/routes/ssh_trust.py:159:        return SSHKeyResponse(
+app/routes/ssh_trust.py:163:            key_path=str(ssh_key_path),
+app/routes/ssh_trust.py:167:        logger.error(f"Failed to generate SSH key: {e}")
+app/routes/ssh_trust.py:168:        raise HTTPException(status_code=500, detail="Failed to generate SSH key")
+app/routes/ssh_trust.py:173:    """Add peer to trusted list and configure SSH access"""
+app/routes/ssh_trust.py:185:            ['ssh-keygen', '-l', '-f', str(temp_key_file)],
+app/routes/ssh_trust.py:283:    """Get SSH trust status"""
+app/routes/ssh_trust.py:299:        local_fingerprint=identity.ssh_fingerprint,
+app/routes/ssh_trust.py:305:async def distribute_ssh_key(request: DistributeKeyRequest):
+app/routes/ssh_trust.py:311:        key_file = Path.home() / ".ssh" / f"map2_{identity.node_id}.pub"
+app/routes/ssh_trust.py:313:            raise HTTPException(status_code=404, detail="Local SSH key not found")
+app/routes/ssh_trust.py:318:        # Try to copy to peer's authorized_keys via SSH
+app/routes/ssh_trust.py:319:        # This assumes SSH key pair is already set up between hosts
+app/routes/ssh_trust.py:321:            f"echo '{public_key}' >> ~/.ssh/authorized_keys && "
+app/routes/ssh_trust.py:322:            "chmod 600 ~/.ssh/authorized_keys"
+app/routes/ssh_trust.py:327:                'ssh',
+app/routes/ssh_trust.py:338:            raise Exception(f"SSH distribution failed: {error_msg}")
+app/routes/ssh_trust.py:340:        logger.info(f"Distributed SSH key to {request.peer_id}@{request.peer_host}")
+app/routes/ssh_trust.py:349:        raise HTTPException(status_code=408, detail="SSH connection timeout")
+app/routes/ssh_trust.py:353:        logger.error(f"Failed to distribute SSH key: {e}")
+app/routes/ssh_trust.py:354:        raise HTTPException(status_code=500, detail=f"Failed to distribute SSH key: {e}")
+app/routes/config_api.py:23:from app.services.cluster.config_distributor import get_config_distributor
+app/routes/config_api.py:25:router = APIRouter(prefix="/api/cluster/config", tags=["config"])
+app/routes/midi_v2.py:499:    # Activity is typically provided via WebSocket for real-time updates
+app/routes/midi_v2.py:504:        "note": "Use WebSocket topic 'midi' for real-time activity",
+app/routes/cluster_nodes.py:13:from app.services.cluster.node_lifecycle import get_node_lifecycle_manager
+app/routes/cluster_nodes.py:15:router = APIRouter(prefix="/api/cluster/nodes", tags=["cluster-nodes"])
+app/routes/cluster_nodes.py:213:async def get_cluster_health_summary():
+app/routes/cluster_nodes.py:215:    Get cluster-wide health summary.
+app/routes/cluster_nodes.py:251:            "cluster_health": int(avg_health),
+app/routes/special_settings.py:10:In cluster mode: Replicates via Raft consensus to all nodes
+app/routes/special_settings.py:28:# Detect if running in cluster mode
+app/routes/special_settings.py:29:CLUSTER_MODE = os.getenv("CLUSTER_MODE", "disabled").lower() == "enabled"
+app/routes/special_settings.py:56:def _get_raft_consensus():
+app/routes/special_settings.py:57:    """Get Raft consensus instance (lazy import to avoid circular deps)."""
+app/routes/special_settings.py:59:        from app.services.cluster.raft_consensus import get_raft_consensus
+app/routes/special_settings.py:60:        return get_raft_consensus()
+app/routes/special_settings.py:62:        logger.debug(f"Raft consensus not available: {e}")
+app/routes/special_settings.py:72:    In cluster mode, this reflects the consensus state.
+app/routes/special_settings.py:102:    CLUSTER MODE: Replicates via Raft consensus to all nodes
+app/routes/special_settings.py:108:        Updated settings or leader redirect (307) in cluster mode
+app/routes/special_settings.py:112:    if CLUSTER_MODE:
+app/routes/special_settings.py:113:        # CLUSTER MODE: Try Raft replication
+app/routes/special_settings.py:114:        raft = _get_raft_consensus()
+app/routes/special_settings.py:116:        if raft:
+app/routes/special_settings.py:118:            if not raft.is_leader():
+app/routes/special_settings.py:120:                leader_id = getattr(raft, 'leader_id', None)
+app/routes/special_settings.py:121:                if leader_id and hasattr(raft, 'cluster_nodes'):
+app/routes/special_settings.py:122:                    leader_url = raft.cluster_nodes.get(leader_id)
+app/routes/special_settings.py:133:                    detail="No cluster leader available. Cluster may be partitioned."
+app/routes/special_settings.py:136:            # Leader: Replicate via Raft
+app/routes/special_settings.py:138:                from app.services.special_settings_raft import replicate_special_settings_to_raft
+app/routes/special_settings.py:141:                    log_index = await replicate_special_settings_to_raft(
+app/routes/special_settings.py:142:                        raft_consensus=raft,
+app/routes/special_settings.py:178:                    detail="Settings replication timeout - cluster may be slow"
+app/routes/special_settings.py:181:                logger.error(f"Raft replication failed: {e}")
+app/routes/special_settings.py:184:            logger.warning("Cluster mode configured but Raft not available - falling back to standalone")
+app/routes/special_settings.py:257:    Called on follower nodes during cluster join or resync.
+app/routes/special_settings.py:258:    Used to synchronize settings across cluster.
+app/routes/audio_path.py:4:Cluster-aware endpoints for exposing audio infrastructure across all nodes.
+app/routes/audio_path.py:9:- WebSocket subscription to audio path changes
+app/routes/audio_path.py:15:from fastapi import APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
+app/routes/audio_path.py:19:from app.services.cluster.audio_path_discovery import get_audio_path_service, AudioPathService
+app/routes/audio_path.py:20:from app.services.cluster.registry import get_cluster_registry
+app/routes/audio_path.py:64:    Get audio paths for all cluster nodes (Management node endpoint).
+app/routes/audio_path.py:66:    Aggregates audio path information from all nodes for cluster-wide visibility.
+app/routes/audio_path.py:71:        - overall_health: Cluster-level audio health
+app/routes/audio_path.py:76:        registry = get_cluster_registry()
+app/routes/audio_path.py:137:        logger.error(f"Failed to get cluster audio paths: {e}", exc_info=True)
+app/routes/audio_path.py:140:            detail=f"Failed to get cluster audio paths: {str(e)}",
+app/routes/audio_path.py:147:    Get audio path for a specific cluster node.
+app/routes/audio_path.py:156:        registry = get_cluster_registry()
+app/routes/audio_path.py:204:        registry = get_cluster_registry()
+app/routes/audio_path.py:274:# WebSocket Real-Time Audio Path Changes
+app/routes/audio_path.py:280:@router.websocket("/ws/changes")
+app/routes/audio_path.py:281:async def websocket_audio_path_changes(websocket: WebSocket):
+app/routes/audio_path.py:283:    WebSocket for real-time audio path status changes.
+app/routes/audio_path.py:301:    await websocket.accept()
+app/routes/audio_path.py:305:        subscriber_list = _audio_path_subscribers.setdefault(websocket.client.host, [])
+app/routes/audio_path.py:306:        subscriber_list.append(websocket)
+app/routes/audio_path.py:308:        logger.info(f"Audio path WebSocket client connected: {websocket.client.host}")
+app/routes/audio_path.py:314:                msg = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+app/routes/audio_path.py:329:    except WebSocketDisconnect:
+app/routes/audio_path.py:330:        logger.info(f"Audio path WebSocket client disconnected: {websocket.client.host}")
+app/routes/audio_path.py:333:        if websocket.client.host in _audio_path_subscribers:
+app/routes/audio_path.py:334:            _audio_path_subscribers[websocket.client.host].remove(websocket)
+app/routes/audio_path.py:339:    Broadcast an audio path change to all WebSocket subscribers.
+app/routes/cluster_update.py:2:Phase 3: Cluster Update Orchestration API Routes
+app/routes/cluster_update.py:4:Handles cluster-wide updates with zero downtime.
+app/routes/cluster_update.py:13:from app.services.cluster.update_orchestrator import get_update_orchestrator
+app/routes/cluster_update.py:14:from app.services.cluster.update_rollback import UpdateRollbackManager, RollbackReason
+app/routes/cluster_update.py:15:from app.services.cluster.version_manifest import get_version_manifest as get_version_manifest_service
+app/routes/cluster_update.py:16:from app.services.cluster.registry import get_cluster_registry
+app/routes/cluster_update.py:18:router = APIRouter(prefix="/api/cluster/update", tags=["cluster-update"])
+app/routes/cluster_update.py:22:    """Cluster update request."""
+app/routes/cluster_update.py:58:async def trigger_cluster_update(request: UpdateRequest):
+app/routes/cluster_update.py:60:    Trigger a cluster-wide update.
+app/routes/cluster_update.py:74:        result = await orchestrator.trigger_cluster_update(
+app/routes/cluster_update.py:153:        result = await orchestrator.trigger_cluster_update(
+app/routes/cluster_update.py:182:        registry = get_cluster_registry()
+app/routes/cluster_update.py:186:            raise HTTPException(404, "No audio nodes in cluster")
+app/routes/cluster_update.py:214:    Stops current update and returns cluster to stable state.
+app/routes/cluster_update.py:240:    List available cluster snapshots for rollback.
+app/routes/cluster_update.py:279:    Manually rollback cluster to a specific snapshot.
+app/routes/cluster_update_hybrid.py:4:Adds application-level update endpoints to the cluster update API.
+app/routes/cluster_update_hybrid.py:11:from app.services.cluster.hybrid_update_manager import (
+app/routes/cluster_update_hybrid.py:17:router = APIRouter(prefix="/api/cluster/update", tags=["cluster-update"])
+app/routes/cluster_update_hybrid.py:120:    Get application versions across cluster nodes.
+app/routes/cluster_update_hybrid.py:128:    Useful for detecting version drift in cluster.
+app/routes/cluster_update_hybrid.py:132:        registry = get_cluster_registry()
+app/routes/cluster_update_hybrid.py:162:    Trigger full cluster update (system packages + application).
+app/routes/cluster_update_hybrid.py:210:        from app.services.cluster.map2_git_updater import get_git_updater
+app/routes/cluster_update_hybrid.py:238:        from app.services.cluster.map2_git_updater import get_git_updater
+app/routes/cluster_update_hybrid.py:269:        from app.services.cluster.map2_git_updater import get_git_updater
+app/routes/cluster_update_hybrid.py:291:def get_cluster_registry():
+app/routes/cluster_update_hybrid.py:292:    """Get cluster registry service."""
+app/routes/cluster_update_hybrid.py:293:    from app.services.cluster.registry import get_cluster_registry as get_registry
+app/routes/network.py:245:            ("sshd", "SSH Server"),
+app/routes/network.py:246:            ("avahi-daemon", "mDNS/DNS-SD"),
+app/routes/network.py:508:    allowed_services = ["NetworkManager", "firewalld", "sshd", "avahi-daemon"]
+app/routes/health_monitor.py:10:- WebSocket integration (for live updates)
+app/routes/health_monitor.py:13:from fastapi import APIRouter, HTTPException, Query, WebSocket
+app/routes/health_monitor.py:349:# WEBSOCKET ENDPOINT FOR LIVE UPDATES
+app/routes/health_monitor.py:352:# Store active WebSocket connections for broadcasting
+app/routes/health_monitor.py:356:@router.websocket("/ws")
+app/routes/health_monitor.py:357:async def websocket_health_updates(websocket: WebSocket):
+app/routes/health_monitor.py:359:    WebSocket endpoint for real-time health updates.
+app/routes/health_monitor.py:363:    await websocket.accept()
+app/routes/health_monitor.py:364:    _ws_connections.add(websocket)
+app/routes/health_monitor.py:373:        await websocket.send_json(status)
+app/routes/health_monitor.py:386:                await websocket.send_json(update)
+app/routes/health_monitor.py:388:                logger.error(f"Error sending WebSocket update: {e}")
+app/routes/health_monitor.py:392:        logger.error(f"WebSocket error: {e}")
+app/routes/health_monitor.py:395:        _ws_connections.discard(websocket)
+app/routes/health_monitor.py:397:            await websocket.close()
+app/routes/health_monitor.py:403:    """Broadcast alert to all connected WebSocket clients."""
+app/services/cluster/fedora_package_manager.py:4:Handles package management and updates across the cluster:
+app/services/cluster/mdns_discovery_enhanced.py:2:Enhanced mDNS Discovery Service with Rich Capability Broadcasting
+app/services/cluster/mdns_discovery_enhanced.py:4:Extends the basic mDNS service to broadcast detailed node capabilities:
+app/services/cluster/mdns_discovery_enhanced.py:14:Nodes discover each other automatically on local network via Avahi/mDNS.
+app/services/cluster/mdns_discovery_enhanced.py:29:class MDNSCapabilities:
+app/services/cluster/mdns_discovery_enhanced.py:30:    """Hardware capabilities to broadcast via mDNS TXT records"""
+app/services/cluster/mdns_discovery_enhanced.py:41:        """Convert to mDNS TXT record dictionary (keep values short for TXT record limits)"""
+app/services/cluster/mdns_discovery_enhanced.py:55:class MDNSNode:
+app/services/cluster/mdns_discovery_enhanced.py:56:    """Discovered node information from mDNS"""
+app/services/cluster/mdns_discovery_enhanced.py:66:    capabilities: Optional[MDNSCapabilities] = None
+app/services/cluster/mdns_discovery_enhanced.py:84:class EnhancedMDNSDiscovery:
+app/services/cluster/mdns_discovery_enhanced.py:86:    Enhanced mDNS discovery with capability broadcasting.
+app/services/cluster/mdns_discovery_enhanced.py:98:        Initialize enhanced mDNS discovery.
+app/services/cluster/mdns_discovery_enhanced.py:101:            service_type: mDNS service type to advertise
+app/services/cluster/mdns_discovery_enhanced.py:106:        self.discovered_nodes: Dict[str, MDNSNode] = {}
+app/services/cluster/mdns_discovery_enhanced.py:144:    ) -> MDNSNode:
+app/services/cluster/mdns_discovery_enhanced.py:152:            txt_records: mDNS TXT records with capabilities
+app/services/cluster/mdns_discovery_enhanced.py:156:            MDNSNode object
+app/services/cluster/mdns_discovery_enhanced.py:163:            node = MDNSNode(
+app/services/cluster/mdns_discovery_enhanced.py:187:    def _parse_capabilities(self, txt_records: Dict[str, str]) -> Optional[MDNSCapabilities]:
+app/services/cluster/mdns_discovery_enhanced.py:190:            return MDNSCapabilities(
+app/services/cluster/mdns_discovery_enhanced.py:205:    def get_discovered_nodes(self, online_only: bool = True) -> List[MDNSNode]:
+app/services/cluster/mdns_discovery_enhanced.py:213:            List of MDNSNode objects
+app/services/cluster/mdns_discovery_enhanced.py:222:    def get_discovered_node(self, node_id: str) -> Optional[MDNSNode]:
+app/services/cluster/mdns_discovery_enhanced.py:229:    def get_management_nodes(self) -> List[MDNSNode]:
+app/services/cluster/mdns_discovery_enhanced.py:233:    def get_audio_nodes(self) -> List[MDNSNode]:
+app/services/cluster/mdns_discovery_enhanced.py:259:    def get_cluster_summary(self) -> Dict:
+app/services/cluster/mdns_discovery_enhanced.py:260:        """Get summary statistics about discovered cluster"""
+app/services/cluster/mdns_discovery_enhanced.py:276:# Global discovery instance
+app/services/cluster/mdns_discovery_enhanced.py:277:_enhanced_mdns_discovery: Optional[EnhancedMDNSDiscovery] = None
+app/services/cluster/mdns_discovery_enhanced.py:280:def get_enhanced_mdns_discovery() -> EnhancedMDNSDiscovery:
+app/services/cluster/mdns_discovery_enhanced.py:281:    """Get or create the enhanced mDNS discovery singleton"""
+app/services/cluster/mdns_discovery_enhanced.py:282:    global _enhanced_mdns_discovery
+app/services/cluster/mdns_discovery_enhanced.py:283:    if _enhanced_mdns_discovery is None:
+app/services/cluster/mdns_discovery_enhanced.py:284:        _enhanced_mdns_discovery = EnhancedMDNSDiscovery()
+app/services/cluster/mdns_discovery_enhanced.py:285:    return _enhanced_mdns_discovery
+app/services/cluster/failover_monitor.py:2:Cluster Failover Monitor & Automatic Flow Reassignment
+app/services/cluster/failover_monitor.py:7:3. Updates cluster registry
+app/services/cluster/failover_monitor.py:8:4. Notifies UI via WebSocket
+app/services/cluster/failover_monitor.py:16:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/failover_monitor.py:17:from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+app/services/cluster/failover_monitor.py:25:    Automatic failover for cluster nodes.
+app/services/cluster/failover_monitor.py:30:        self.registry = get_cluster_registry()
+app/services/cluster/certificate_authority.py:2:Distributed Certificate Authority (CA) System for Cluster mTLS
+app/services/cluster/certificate_authority.py:35:    logger.info("cryptography module not installed — cluster CA disabled")
+app/services/cluster/certificate_authority.py:38:class ClusterCA:
+app/services/cluster/certificate_authority.py:40:    Cluster Certificate Authority for managing mTLS certificates.
+app/services/cluster/certificate_authority.py:100:                    x509.NameAttribute(NameOID.COMMON_NAME, "MAP2 Audio Cluster CA"),
+app/services/cluster/certificate_authority.py:353:_cluster_ca: Optional[ClusterCA] = None
+app/services/cluster/certificate_authority.py:356:def get_cluster_ca() -> ClusterCA:
+app/services/cluster/certificate_authority.py:357:    """Get or create the cluster CA singleton"""
+app/services/cluster/certificate_authority.py:358:    global _cluster_ca
+app/services/cluster/certificate_authority.py:359:    if _cluster_ca is None:
+app/services/cluster/certificate_authority.py:360:        _cluster_ca = ClusterCA()
+app/services/cluster/certificate_authority.py:361:    return _cluster_ca
+app/services/cluster/enhanced_node_identity.py:2:Enhanced Node Identity and Hardware Detection for Cluster Management
+app/services/cluster/enhanced_node_identity.py:53:    ssh_public_key: Optional[str] = None
+app/services/cluster/enhanced_node_identity.py:54:    ssh_fingerprint: Optional[str] = None
+app/services/cluster/enhanced_node_identity.py:267:    Enhanced node identity with cluster awareness.
+app/services/cluster/enhanced_node_identity.py:305:        MANAGEMENT-NODE: Otherwise (can manage cluster)
+app/services/cluster/enhanced_node_identity.py:357:        # Read SSH public key if exists
+app/services/cluster/enhanced_node_identity.py:358:        ssh_pub_key = None
+app/services/cluster/enhanced_node_identity.py:359:        ssh_fingerprint = None
+app/services/cluster/enhanced_node_identity.py:363:            ssh_pub_key = ni.ssh_public_key
+app/services/cluster/enhanced_node_identity.py:364:            ssh_fingerprint = ni.ssh_fingerprint
+app/services/cluster/enhanced_node_identity.py:366:            logger.warning(f"Could not load SSH key: {e}")
+app/services/cluster/enhanced_node_identity.py:378:            ssh_public_key=ssh_pub_key,
+app/services/cluster/enhanced_node_identity.py:379:            ssh_fingerprint=ssh_fingerprint,
+app/services/cluster/disaster_recovery.py:4:Comprehensive backup and restore capabilities for the cluster:
+app/services/cluster/disaster_recovery.py:13:Ensures cluster metadata and configuration survives catastrophic failures.
+app/services/cluster/disaster_recovery.py:27:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/disaster_recovery.py:28:from app.services.cluster.distributed_event_bus import (
+app/services/cluster/disaster_recovery.py:32:    ClusterEvent,
+app/services/cluster/disaster_recovery.py:71:    - Full: Complete cluster state (DB + presets + config)
+app/services/cluster/disaster_recovery.py:93:        self.registry = get_cluster_registry()
+app/services/cluster/disaster_recovery.py:115:        Create complete cluster backup.
+app/services/cluster/disaster_recovery.py:175:            event = ClusterEvent(
+app/services/cluster/disaster_recovery.py:194:            event = ClusterEvent(
+app/services/cluster/disaster_recovery.py:214:                "/var/lib/map2/cluster.db",
+app/services/cluster/disaster_recovery.py:215:                "/var/lib/map2/cluster-events.db",
+app/services/cluster/disaster_recovery.py:269:                "/etc/map2/cluster.conf",
+app/services/cluster/disaster_recovery.py:393:            event = ClusterEvent(
+app/services/cluster/registry.py:2:Cluster Registry (CMDB) - Centralized Node Inventory
+app/services/cluster/registry.py:4:Maintains authoritative database of all cluster nodes:
+app/services/cluster/registry.py:8:- Automatic discovery integration
+app/services/cluster/registry.py:23:from app.services.cluster.mdns_discovery_enhanced import MDNSNode
+app/services/cluster/registry.py:28:class ClusterRegistry:
+app/services/cluster/registry.py:30:    Cluster Registry (CMDB) for storing and managing node inventory.
+app/services/cluster/registry.py:39:    DB_PATH = Path("/var/lib/map2/cluster.db")
+app/services/cluster/registry.py:44:        Initialize cluster registry.
+app/services/cluster/registry.py:47:            db_path: Path to SQLite database (defaults to /var/lib/map2/cluster.db)
+app/services/cluster/registry.py:73:                CREATE TABLE IF NOT EXISTS cluster_nodes (
+app/services/cluster/registry.py:106:                    FOREIGN KEY (node_id) REFERENCES cluster_nodes(id)
+app/services/cluster/registry.py:114:                "CREATE INDEX IF NOT EXISTS idx_nodes_status ON cluster_nodes(status);"
+app/services/cluster/registry.py:117:                "CREATE INDEX IF NOT EXISTS idx_nodes_role ON cluster_nodes(role);"
+app/services/cluster/registry.py:124:            self.logger.info("Cluster registry database initialized")
+app/services/cluster/registry.py:177:            cursor.execute("SELECT id FROM cluster_nodes WHERE id = ?", (node_id,))
+app/services/cluster/registry.py:184:                    UPDATE cluster_nodes SET
+app/services/cluster/registry.py:217:                    INSERT INTO cluster_nodes (
+app/services/cluster/registry.py:260:                UPDATE cluster_nodes SET
+app/services/cluster/registry.py:285:                UPDATE cluster_nodes SET
+app/services/cluster/registry.py:305:            cursor.execute("SELECT * FROM cluster_nodes WHERE id = ?", (node_id,))
+app/services/cluster/registry.py:322:            cursor.execute("SELECT * FROM cluster_nodes ORDER BY id")
+app/services/cluster/registry.py:338:                "SELECT * FROM cluster_nodes WHERE role = ? ORDER BY id", (role,)
+app/services/cluster/registry.py:355:                "SELECT * FROM cluster_nodes WHERE status = ? ORDER BY id", (status,)
+app/services/cluster/registry.py:371:            cursor.execute("DELETE FROM cluster_nodes WHERE id = ?", (node_id,))
+app/services/cluster/registry.py:383:    def get_cluster_summary(self) -> Dict:
+app/services/cluster/registry.py:384:        """Get cluster summary statistics"""
+app/services/cluster/registry.py:404:            self.logger.error(f"Failed to get cluster summary: {e}")
+app/services/cluster/registry.py:467:_cluster_registry: Optional[ClusterRegistry] = None
+app/services/cluster/registry.py:470:def get_cluster_registry() -> ClusterRegistry:
+app/services/cluster/registry.py:471:    """Get or create the cluster registry singleton"""
+app/services/cluster/registry.py:472:    global _cluster_registry
+app/services/cluster/registry.py:473:    if _cluster_registry is None:
+app/services/cluster/registry.py:474:        _cluster_registry = ClusterRegistry()
+app/services/cluster/registry.py:475:    return _cluster_registry
+app/services/cluster/distributed_event_bus.py:4:Enables event-driven architecture across the cluster:
+app/services/cluster/distributed_event_bus.py:9:- Full audit trail of all cluster operations
+app/services/cluster/distributed_event_bus.py:11:Built on existing LCD event bus, extended for cluster distribution.
+app/services/cluster/distributed_event_bus.py:29:    """Types of events that can occur in cluster"""
+app/services/cluster/distributed_event_bus.py:79:class ClusterEvent:
+app/services/cluster/distributed_event_bus.py:80:    """Represents a single cluster event"""
+app/services/cluster/distributed_event_bus.py:105:    def from_dict(data: Dict) -> "ClusterEvent":
+app/services/cluster/distributed_event_bus.py:111:        return ClusterEvent(**data_copy)
+app/services/cluster/distributed_event_bus.py:116:    Manages cluster-wide event bus.
+app/services/cluster/distributed_event_bus.py:121:    def __init__(self, db_path: str = "/var/lib/map2/cluster-events.db"):
+app/services/cluster/distributed_event_bus.py:145:                CREATE TABLE IF NOT EXISTS cluster_events (
+app/services/cluster/distributed_event_bus.py:162:                "CREATE INDEX IF NOT EXISTS idx_timestamp ON cluster_events(timestamp DESC)"
+app/services/cluster/distributed_event_bus.py:167:                "CREATE INDEX IF NOT EXISTS idx_event_type ON cluster_events(event_type)"
+app/services/cluster/distributed_event_bus.py:172:                "CREATE INDEX IF NOT EXISTS idx_severity ON cluster_events(severity)"
+app/services/cluster/distributed_event_bus.py:183:    async def publish_event(self, event: ClusterEvent) -> bool:
+app/services/cluster/distributed_event_bus.py:208:    def _store_event(self, event: ClusterEvent):
+app/services/cluster/distributed_event_bus.py:216:                INSERT INTO cluster_events
+app/services/cluster/distributed_event_bus.py:238:    async def _call_subscribers(self, event: ClusterEvent):
+app/services/cluster/distributed_event_bus.py:286:    ) -> List[ClusterEvent]:
+app/services/cluster/distributed_event_bus.py:304:            query = "SELECT * FROM cluster_events WHERE timestamp > ?"
+app/services/cluster/distributed_event_bus.py:335:    def _row_to_event(self, row: tuple) -> ClusterEvent:
+app/services/cluster/distributed_event_bus.py:350:        return ClusterEvent(
+app/services/cluster/distributed_event_bus.py:366:    ) -> List[ClusterEvent]:
+app/services/cluster/distributed_event_bus.py:384:                SELECT * FROM cluster_events
+app/services/cluster/distributed_event_bus.py:433:                SELECT * FROM cluster_events
+app/services/cluster/distributed_event_bus.py:473:                "DELETE FROM cluster_events WHERE timestamp < ?",
+app/services/cluster/distributed_event_bus.py:506:                "SELECT COUNT(*) FROM cluster_events WHERE timestamp > ?",
+app/services/cluster/distributed_event_bus.py:515:                FROM cluster_events
+app/services/cluster/distributed_event_bus.py:528:                FROM cluster_events
+app/services/cluster/distributed_event_bus.py:540:                FROM cluster_events
+app/routes/cluster_health.py:2:REST API endpoints for cluster heartbeat and health monitoring.
+app/routes/cluster_health.py:8:from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor, NodeHealthStatus
+app/routes/cluster_health.py:10:router = APIRouter(prefix="/api/cluster", tags=["cluster-health"])
+app/routes/cluster_health.py:14:async def get_cluster_health():
+app/routes/cluster_health.py:15:    """Get cluster-wide health status."""
+app/services/cluster/config_schema.py:2:MAP2 Audio Cluster - Configuration Schema Definition
+app/services/cluster/config_schema.py:4:Comprehensive schema and validation for cluster configuration.
+app/services/cluster/config_schema.py:36:    """Update strategies for cluster."""
+app/services/cluster/config_schema.py:48:class ClusterConfig:
+app/services/cluster/config_schema.py:49:    """Cluster identity and metadata."""
+app/services/cluster/config_schema.py:50:    name: str = "map2-cluster"
+app/services/cluster/config_schema.py:64:    database_path: str = "/var/lib/map2/database/cluster.db"
+app/services/cluster/config_schema.py:85:    path: str = "/var/lib/map2/database/cluster.db"
+app/services/cluster/config_schema.py:109:class ClusterManagementConfig:
+app/services/cluster/config_schema.py:110:    """Cluster management behavior."""
+app/services/cluster/config_schema.py:129:    # Discovery
+app/services/cluster/config_schema.py:130:    discovery_interval: int = 60
+app/services/cluster/config_schema.py:131:    discovery_ttl: int = 3600
+app/services/cluster/config_schema.py:219:    file_path: str = "/var/log/map2/cluster.log"
+app/services/cluster/config_schema.py:362:class ClusterConfigSchema:
+app/services/cluster/config_schema.py:363:    """Complete cluster configuration schema."""
+app/services/cluster/config_schema.py:364:    cluster: ClusterConfig = field(default_factory=ClusterConfig)
+app/services/cluster/config_schema.py:369:    cluster_management: ClusterManagementConfig = field(default_factory=ClusterManagementConfig)
+app/services/cluster/config_schema.py:383:            "cluster": self.cluster.__dict__,
+app/services/cluster/config_schema.py:388:            "cluster_management": self.cluster_management.__dict__,
+app/services/cluster/config_schema.py:412:    """Return JSON Schema for cluster configuration validation."""
+app/services/cluster/config_schema.py:414:        "$schema": "http://json-schema.org/draft-07/schema#",
+app/services/cluster/config_schema.py:415:        "title": "MAP2 Audio Cluster Configuration",
+app/services/cluster/config_schema.py:417:        "required": ["cluster"],
+app/services/cluster/config_schema.py:419:            "cluster": {
+app/services/cluster/config_schema.py:467:            "cluster_management": {
+app/services/cluster/network_topology.py:25:from app.services.cluster.registry import get_cluster_registry
+app/services/cluster/network_topology.py:26:from app.services.cluster.distributed_event_bus import (
+app/services/cluster/network_topology.py:30:    ClusterEvent,
+app/services/cluster/network_topology.py:63:    Monitors network topology and performance between cluster nodes.
+app/services/cluster/network_topology.py:96:        self.registry = get_cluster_registry()
+app/services/cluster/network_topology.py:336:                    event = ClusterEvent(
+app/services/cluster/network_topology.py:347:                    event = ClusterEvent(

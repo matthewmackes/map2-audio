@@ -8,7 +8,7 @@
  * - Interactive node selection/hover wired into Inspector
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -20,11 +20,15 @@ import {
   MagnifyingGlass,
   WarningCircle,
 } from '@phosphor-icons/react'
-import { Scene3D } from '../components/GridFlowAdvanced/3d/Scene3D'
 import { useGraphStore, type GraphLink, type GraphNode } from '../stores/graphStore'
 import { chainsApi } from '../../map2/api'
+import { getDisplayPluginName } from '../../map2/displayNames'
 import { useToasts } from '../components/Toasts'
 import type { Chain, ChainPlugin } from '../../map2/types'
+
+const LazyScene3D = lazy(() =>
+  import('../components/GridFlowAdvanced/3d/Scene3D').then((module) => ({ default: module.Scene3D })),
+)
 
 const CHAIN_X_SPACING = 22
 const NODE_Y_SPACING = 8
@@ -115,7 +119,7 @@ function buildGraphFromChains(chains: Chain[], layoutPass: number): { nodes: Gra
 
       nodes.push({
         id: nodeId,
-        label: plugin.name || 'Plugin',
+        label: getDisplayPluginName(plugin.name, plugin.uri),
         pluginUri: plugin.uri,
         chainId: chain.id,
         layer: 0,
@@ -499,6 +503,25 @@ function StateOverlay({ title, detail, action, tone = 'info' }: StateOverlayProp
   )
 }
 
+function SceneLoadingPlaceholder({ title }: { title: string }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'grid',
+        placeItems: 'center',
+        background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.6) 0%, rgba(0, 0, 0, 0.92) 70%)',
+        color: '#94a3b8',
+        fontSize: 13,
+        letterSpacing: '0.05em',
+      }}
+    >
+      {title}
+    </div>
+  )
+}
+
 export function GridFlowAdvancedPage() {
   const { pushToast } = useToasts()
 
@@ -510,6 +533,7 @@ export function GridFlowAdvancedPage() {
 
   const [layoutPass, setLayoutPass] = useState(0)
   const [sceneResetKey, setSceneResetKey] = useState(0)
+  const [shouldLoadScene, setShouldLoadScene] = useState(false)
 
   const {
     data: chainsData,
@@ -542,6 +566,14 @@ export function GridFlowAdvancedPage() {
     }
     setHoveredNode(null)
   }, [chainsData, layoutPass, setLinks, setNodes, setSelectedNode, setHoveredNode])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setShouldLoadScene(true)
+    }, 120)
+
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const handleNodeClick = useCallback(
     (nodeId: string | null) => {
@@ -600,15 +632,21 @@ export function GridFlowAdvancedPage() {
           bottom: 0,
         }}
       >
-        <Scene3D
-          key={sceneResetKey}
-          onNodeClick={handleNodeClick}
-          onNodeHover={handleNodeHover}
-          onBackgroundClick={() => {
-            setSelectedNode(null)
-            setHoveredNode(null)
-          }}
-        />
+        {shouldLoadScene ? (
+          <Suspense fallback={<SceneLoadingPlaceholder title="Loading 3D renderer..." />}>
+            <LazyScene3D
+              key={sceneResetKey}
+              onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
+              onBackgroundClick={() => {
+                setSelectedNode(null)
+                setHoveredNode(null)
+              }}
+            />
+          </Suspense>
+        ) : (
+          <SceneLoadingPlaceholder title="Preparing 3D renderer..." />
+        )}
 
         {isLoading && <StateOverlay title="Loading chain graph..." detail="Fetching real-time chain and plugin topology." />}
 

@@ -10,6 +10,10 @@ jest.mock('./layout/AppShell', () => ({
 
 jest.mock('./components/Toasts', () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useToasts: () => ({
+    pushToast: jest.fn(),
+    dismissToast: jest.fn(),
+  }),
 }))
 
 jest.mock('./hooks/useMidiLearn', () => ({
@@ -18,6 +22,16 @@ jest.mock('./hooks/useMidiLearn', () => ({
 
 jest.mock('@tanstack/react-query-devtools', () => ({
   ReactQueryDevtools: () => null,
+}))
+
+jest.mock('../map2/hooks/useWebSocket', () => ({
+  useWebSocketConnection: () => ({
+    status: 'connected',
+    client: {
+      onReconnectExhausted: () => () => undefined,
+      retryNow: () => undefined,
+    },
+  }),
 }))
 
 jest.mock('./pages/AvbRoutingPage', () => ({

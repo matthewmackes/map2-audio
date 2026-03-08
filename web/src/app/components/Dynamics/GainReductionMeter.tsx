@@ -5,7 +5,7 @@
  * Red bars grow downward from 0 dB to show compression amount.
  */
 
-import { useMemo, useRef } from 'react'
+import { memo, useMemo, useRef } from 'react'
 import { useResponsiveVizSize } from '../PluginCards/Visualizations/useResponsiveVizSize'
 
 interface GainReductionMeterProps {
@@ -17,7 +17,7 @@ interface GainReductionMeterProps {
   showValue?: boolean
 }
 
-export function GainReductionMeter({
+function GainReductionMeterComponent({
   gainReduction,
   maxReduction = 24,
   height,
@@ -168,5 +168,7 @@ export function GainReductionMeter({
     </div>
   )
 }
+
+export const GainReductionMeter = memo(GainReductionMeterComponent)
 
 export default GainReductionMeter

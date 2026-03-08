@@ -1,0 +1,194 @@
+{
+  "timestamp_utc": "2026-02-27T21:16:20.767897+00:00",
+  "status": {
+    "enabled": true,
+    "configured": true,
+    "operational": true,
+    "degraded": false,
+    "available": true,
+    "interface": "enp11s0",
+    "interface_source": "config",
+    "state": "operational",
+    "ptp": {
+      "available": true,
+      "state": "INITIALIZING",
+      "offset_ns": null,
+      "mean_path_delay_ns": null,
+      "grandmaster_id": null,
+      "grandmaster_priority1": null,
+      "grandmaster_clock_class": null,
+      "local_clock_id": null,
+      "domain": null,
+      "last_update": "2026-02-27T21:16:21.016266",
+      "error": null,
+      "readiness": {
+        "enabled": true,
+        "configured": true,
+        "operational": true,
+        "degraded": false,
+        "available": true,
+        "state": "operational",
+        "interface": "enp11s0",
+        "interface_source": "config",
+        "reason": null,
+        "checks": {
+          "config_enabled": true,
+          "marker_present": true,
+          "marker_enabled": true,
+          "env_enabled": false,
+          "marker_interface": "enp11s0",
+          "config_interface": "enp11s0",
+          "interface_present": true,
+          "interface_exists": true,
+          "ptp4l_binary_present": true,
+          "ptp4l_running": true,
+          "ptp4l_probe": "pidof",
+          "engine_bound": true,
+          "engine_avb_available": true,
+          "engine_probe": "is_avb_available"
+        }
+      }
+    },
+    "reason": null,
+    "readiness": {
+      "enabled": true,
+      "configured": true,
+      "operational": true,
+      "degraded": false,
+      "available": true,
+      "state": "operational",
+      "interface": "enp11s0",
+      "interface_source": "config",
+      "reason": null,
+      "checks": {
+        "config_enabled": true,
+        "marker_present": true,
+        "marker_enabled": true,
+        "env_enabled": false,
+        "marker_interface": "enp11s0",
+        "config_interface": "enp11s0",
+        "interface_present": true,
+        "interface_exists": true,
+        "ptp4l_binary_present": true,
+        "ptp4l_running": true,
+        "ptp4l_probe": "pidof",
+        "engine_bound": true,
+        "engine_avb_available": true,
+        "engine_probe": "is_avb_available"
+      }
+    },
+    "compatibility": {
+      "active_profile": "strict_srp_avdecc",
+      "enabled": true,
+      "interface": "enp11s0",
+      "failover": {
+        "policy": "none",
+        "interfaces": []
+      },
+      "flags": {
+        "srp_enabled": true,
+        "srp_required": true,
+        "avdecc_enabled": true
+      },
+      "profiles": [
+        {
+          "profile": "default",
+          "description": "Baseline MAP2-only AVB operation with optional SRP enforcement.",
+          "flags": {
+            "srp_required": false,
+            "avdecc_enabled": false
+          }
+        },
+        {
+          "profile": "strict_srp",
+          "description": "Enforces SRP reservation IDs for admission-controlled stream setup.",
+          "flags": {
+            "srp_required": true,
+            "avdecc_enabled": false
+          }
+        },
+        {
+          "profile": "avdecc_enabled",
+          "description": "Enables third-party AVDECC endpoint discovery and connection APIs.",
+          "flags": {
+            "srp_required": false,
+            "avdecc_enabled": true
+          }
+        },
+        {
+          "profile": "strict_srp_avdecc",
+          "description": "Combines strict SRP admission enforcement with AVDECC interoperability.",
+          "flags": {
+            "srp_required": true,
+            "avdecc_enabled": true
+          }
+        }
+      ]
+    },
+    "config": {
+      "ptp_domain": 0,
+      "ptp_priority1": 128,
+      "auto_connect": false,
+      "max_streams": 8
+    }
+  },
+  "devices": {
+    "available": true,
+    "readiness": {
+      "enabled": true,
+      "configured": true,
+      "operational": true,
+      "degraded": false,
+      "available": true,
+      "state": "operational",
+      "interface": "enp11s0",
+      "interface_source": "config",
+      "reason": null,
+      "checks": {
+        "config_enabled": true,
+        "marker_present": true,
+        "marker_enabled": true,
+        "env_enabled": false,
+        "marker_interface": "enp11s0",
+        "config_interface": "enp11s0",
+        "interface_present": true,
+        "interface_exists": true,
+        "ptp4l_binary_present": true,
+        "ptp4l_running": true,
+        "ptp4l_probe": "pidof",
+        "engine_bound": true,
+        "engine_avb_available": true,
+        "engine_probe": "is_avb_available"
+      }
+    },
+    "count": 2,
+    "device_names": [
+      "AVB Listener (Local)",
+      "AVB Talker (Local)"
+    ],
+    "discovered_count": 0,
+    "discovered_devices": []
+  },
+  "streams": {
+    "available": true,
+    "streams": []
+  },
+  "gate_eval": {
+    "q04_discovery_churn": {
+      "pass": false,
+      "criteria": "discovered_count > 0"
+    },
+    "q05_ptp_timing": {
+      "pass": false,
+      "criteria": "ptp.state in {MASTER, SLAVE, LISTENING}",
+      "observed_state": "INITIALIZING"
+    },
+    "q06_soak": {
+      "pass": false,
+      "criteria": "active streams present for soak execution",
+      "active_stream_count": 0
+    },
+    "overall_pass": false
+  },
+  "conclusion": "Blocked: external AVB peers/streams not present for HIL gate execution."
+}

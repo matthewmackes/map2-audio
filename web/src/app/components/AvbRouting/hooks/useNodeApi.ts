@@ -114,6 +114,31 @@ function assignNodeColor(): string {
   return color;
 }
 
+function normalizePtpState(value: unknown, fallback: PtpState = 'unknown'): PtpState {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'master' ||
+    normalized === 'slave' ||
+    normalized === 'listening' ||
+    normalized === 'passive' ||
+    normalized === 'disabled' ||
+    normalized === 'unknown'
+  ) {
+    return normalized;
+  }
+
+  // Backends may report this alias; map into the canonical enum.
+  if (normalized === 'unsynced') {
+    return 'listening';
+  }
+
+  return fallback;
+}
+
 // ============================================================================
 // Transform Functions
 // ============================================================================
@@ -145,7 +170,7 @@ function transformNodeResponse(raw: NodeResponse, index: number): AvbNode {
     },
     ptp: raw.ptp
       ? {
-          state: (raw.ptp.state as PtpState) || 'unknown',
+          state: normalizePtpState(raw.ptp.state, 'unknown'),
           domain: raw.ptp.domain ?? 0,
           is_master: raw.ptp.is_master ?? false,
           master_clock_id: raw.ptp.master_clock_id ?? null,
@@ -155,7 +180,7 @@ function transformNodeResponse(raw: NodeResponse, index: number): AvbNode {
         }
       : raw.avb_capabilities
         ? {
-            state: ptpSynced ? 'slave' : 'unsynced',
+            state: ptpSynced ? 'slave' : 'listening',
             domain: 0,
             is_master: false,
             master_clock_id: null,

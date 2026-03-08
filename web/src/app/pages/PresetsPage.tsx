@@ -36,6 +36,7 @@ import {
 } from '@phosphor-icons/react'
 import type { Preset, FlowSnapshot } from '../../map2/types'
 import { presetsApi, pluginPresetsApi, flowSnapshotsApi } from '../../map2/api'
+import { sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { PageHeader } from '../components/PageHeader'
 import { useToasts } from '../components/Toasts'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
@@ -381,7 +382,7 @@ export function PresetsPage() {
                     {pluginPresets.map((preset: any) => (
                       <tr key={preset.id}>
                         <td>{preset.name}</td>
-                        <td className="muted">{preset.plugin_name}</td>
+                        <td className="muted">{sanitizeRestrictedDisplayText(preset.plugin_name) || 'Processor'}</td>
                         <td>{preset.category}</td>
                         <td>{preset.usage_count}x</td>
                         <td>

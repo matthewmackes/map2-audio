@@ -19,6 +19,8 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
@@ -36,6 +38,8 @@ const PANEL_WIDTH = 300;
  * Inspector panel component
  */
 export function InspectorPanel() {
+  const theme = useTheme();
+  const isCompactLayout = useMediaQuery(theme.breakpoints.down('lg'));
   const state = useRoutingState();
   const { data: avbDevicesData } = useAvbDevices();
   const { data: avbStreamsData } = useAvbStreams();
@@ -326,17 +330,18 @@ export function InspectorPanel() {
     <Paper
       elevation={2}
       sx={{
-        width: PANEL_WIDTH,
-        minWidth: PANEL_WIDTH,
-        maxWidth: PANEL_WIDTH,
-        height: '100%',
+        width: isCompactLayout ? '100%' : PANEL_WIDTH,
+        minWidth: isCompactLayout ? 0 : PANEL_WIDTH,
+        maxWidth: isCompactLayout ? '100%' : PANEL_WIDTH,
+        height: isCompactLayout ? 'clamp(200px, 34vh, 360px)' : '100%',
         overflow: 'auto',
         borderRadius: 0,
-        borderLeft: '1px solid',
+        borderLeft: isCompactLayout ? 'none' : '1px solid',
+        borderTop: isCompactLayout ? '1px solid' : 'none',
         borderColor: 'divider',
       }}
     >
-      <Box sx={{ p: 2 }}>
+      <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
         <Typography variant="h6" gutterBottom>
           Inspector
         </Typography>

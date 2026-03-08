@@ -14,6 +14,11 @@ export function sortPlugins(
   direction: 'asc' | 'desc'
 ): UnifiedPlugin[] {
   const sorted = [...plugins].sort((a, b) => {
+    // Hardware plugins always sort first
+    const aHw = a.format === 'hardware' ? 0 : 1
+    const bHw = b.format === 'hardware' ? 0 : 1
+    if (aHw !== bHw) return aHw - bHw
+
     let comparison = 0
 
     switch (sortBy) {

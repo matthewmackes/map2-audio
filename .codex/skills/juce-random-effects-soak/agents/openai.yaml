@@ -1,0 +1,4 @@
+interface:
+  display_name: "JUCE Random FX Soak"
+  short_description: "Run randomized 10-effect JUCE soak with rotating blends."
+  default_prompt: "Run a full JUCE soak with 10 random effects active, rotating chain and flow layouts, varying blend types across flows, then emit pass/fail artifacts and metrics."

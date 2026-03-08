@@ -87,6 +87,7 @@ import { ConfirmationDialog } from '../components/GridFlow/ConfirmationDialog'
 import { ButtonGroup } from '../components/GridFlow/ButtonGroup'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
 import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot } from '../../map2/types'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -846,34 +847,39 @@ export function GridFlowPage() {
   const portRouting = routingQuery.data
   const portsInfo = portsQuery.data
 
+  const activeFlowChain = useMemo(() => {
+    const slot = flowSlots[activeFlowIndex]
+    return slot ? chains.find(c => c.id === slot.chainId) : undefined
+  }, [flowSlots, activeFlowIndex, chains])
+
   const audioInterfaceStatus: AudioInterfaceStatus = useMemo(() => ({
     deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
-    latencyMs: jackMetrics ? (jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000 * 2 : 5.3,
     channels: (portRouting?.input_ports?.length || 0) + (portRouting?.input_avb_endpoints?.length || 0) || 2,
-    cpuLoad: cpuMetrics.totalCpuPercent,
-    xruns: cpuMetrics.xrunCount,
     isRunning: audioStatus?.running ?? true,
     selectedPorts: portRouting?.input_ports || [],
     selectedAvbEndpoints: portRouting?.input_avb_endpoints || [],
     totalPorts: portsInfo?.input_count || 2,
-  }), [audioStatus, jackMetrics, cpuMetrics, portRouting, portsInfo])
+    routingMode: routing.mode,
+    chainActive: activeFlowChain?.is_active ?? false,
+    chainName: activeFlowChain?.name,
+  }), [audioStatus, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
   // Create separate output status with output port info
   const audioOutputStatus: AudioInterfaceStatus = useMemo(() => ({
     deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
-    latencyMs: jackMetrics ? (jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000 * 2 : 5.3,
     channels: (portRouting?.output_ports?.length || 0) + (portRouting?.output_avb_endpoints?.length || 0) || 2,
-    cpuLoad: cpuMetrics.totalCpuPercent,
-    xruns: cpuMetrics.xrunCount,
     isRunning: audioStatus?.running ?? true,
     selectedPorts: portRouting?.output_ports || [],
     selectedAvbEndpoints: portRouting?.output_avb_endpoints || [],
     totalPorts: portsInfo?.output_count || 2,
-  }), [audioStatus, jackMetrics, cpuMetrics, portRouting, portsInfo])
+    routingMode: routing.mode,
+    chainActive: activeFlowChain?.is_active ?? false,
+    chainName: activeFlowChain?.name,
+  }), [audioStatus, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
   // ============================================================================
   // Mutations
@@ -2183,6 +2189,7 @@ export function GridFlowPage() {
                   <div className="grid-flow-modal-native-grid">
                     {nativeProcessors.map((plugin) => {
                       const catConfig = getCategoryConfig(plugin.category)
+                      const displayName = getDisplayPluginName(plugin.name, plugin.uri)
                       return (
                         <button
                           key={plugin.uri}
@@ -2194,7 +2201,7 @@ export function GridFlowPage() {
                           }}
                           style={{ '--accent': catConfig.color } as React.CSSProperties}
                         >
-                          <span className="grid-flow-modal-native-name">{plugin.name}</span>
+                          <span className="grid-flow-modal-native-name">{displayName}</span>
                           <span className="grid-flow-modal-native-category" style={{ color: catConfig.color }}>
                             {plugin.category}
                           </span>
@@ -2261,7 +2268,7 @@ export function GridFlowPage() {
                                 }
                               }}
                             >
-                              <span className="grid-flow-modal-item-name">{plugin.name}</span>
+                              <span className="grid-flow-modal-item-name">{getDisplayPluginName(plugin.name, plugin.uri)}</span>
                               <span className="grid-flow-modal-item-meta">
                                 <span
                                   className="grid-flow-modal-item-category"
@@ -2269,7 +2276,7 @@ export function GridFlowPage() {
                                 >
                                   {plugin.category}
                                 </span>
-                                {plugin.author && <span className="grid-flow-modal-item-author">{plugin.author}</span>}
+                                {plugin.author && <span className="grid-flow-modal-item-author">{sanitizeRestrictedDisplayText(plugin.author)}</span>}
                               </span>
                             </button>
 
@@ -2541,7 +2548,7 @@ export function GridFlowPage() {
                 <div className="grid-flow-lane-picker-plugins">
                   {currentChain.plugins.map((plugin) => (
                     <div key={plugin.uri} className="grid-flow-lane-picker-plugin">
-                      <div className="grid-flow-lane-picker-plugin-name">{plugin.name}</div>
+                      <div className="grid-flow-lane-picker-plugin-name">{getDisplayPluginName(plugin.name, plugin.uri)}</div>
                       <div className="grid-flow-lane-picker-params">
                         {Object.entries(plugin.parameters || {}).map(([symbol, value]) => {
                           const param = { symbol, value }
@@ -2554,7 +2561,7 @@ export function GridFlowPage() {
                                 const newLane: AutomationLane = {
                                   id: `${plugin.uri}:${param.symbol}`,
                                   parameterName: param.symbol,
-                                  pluginName: plugin.name,
+                                  pluginName: getDisplayPluginName(plugin.name, plugin.uri),
                                   pluginUri: plugin.uri,
                                   parameterSymbol: param.symbol,
                                   points: [],

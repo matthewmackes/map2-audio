@@ -10,10 +10,12 @@ Environment="XDG_RUNTIME_DIR=/run/user/1000"
 Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
 Environment="PIPEWIRE_REMOTE=pipewire-0"
 Environment="JACK_DEFAULT_SERVER=pipewire"
-ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 128
+# ORDER REMARK: PipeWire resets quantum when force-rate changes.
+# Always apply rate first, then quantum.
 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
+ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 128
 Environment="PIPEWIRE_LATENCY=128/48000"
-ExecStart=/usr/bin/python3 -m uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8080
+ExecStart=/usr/bin/python3 -m uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8080 --no-access-log
 Restart=on-failure
 RestartSec=5
 

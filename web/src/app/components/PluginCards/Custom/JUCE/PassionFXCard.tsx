@@ -143,15 +143,15 @@ function pitchLabel(semitones: number): string {
 
 // Signal chain module definitions
 const SIGNAL_CHAIN = [
-  { id: 'gate', label: 'GATE', mfr: 'BOSS', color: '#4caf50' },
+  { id: 'gate', label: 'GATE', mfr: 'Classic', color: '#4caf50' },
   { id: 'comp', label: 'COMP', mfr: 'UREI', color: '#66bb6a' },
   { id: 'wah', label: 'WAH', mfr: 'Cry Baby', color: '#81c784' },
   { id: 'phaser', label: 'PHASE', mfr: 'MXR', color: '#a5d6a7' },
   { id: 'chorus', label: 'CHOR', mfr: 'TC', color: '#00e676' },
   { id: 'pitch', label: 'PITCH', mfr: 'DigiTech', color: '#69f0ae' },
-  { id: 'harm', label: 'HARM', mfr: 'Eventide', color: '#00c853' },
+  { id: 'harm', label: 'HARM', mfr: 'Studio', color: '#00c853' },
   { id: 'delay', label: 'DELAY', mfr: 'TC 2290', color: '#00bfa5' },
-  { id: 'reverb', label: 'VERB', mfr: 'Lexicon', color: '#1de9b6' },
+  { id: 'reverb', label: 'VERB', mfr: 'Rack', color: '#1de9b6' },
   { id: 'eq', label: 'EQ', mfr: 'API', color: '#64ffda' },
   { id: 'exciter', label: 'EXCITE', mfr: 'Aphex', color: '#a7ffeb' },
   { id: 'trem', label: 'TREM', mfr: 'Fender', color: '#b9f6ca' },
@@ -371,7 +371,7 @@ function PassionFXCardBase({
         collapsible
         defaultCollapsed={!parameters.gateEnabled}
       >
-        <div className="passionfx-section-mfr">BOSS</div>
+        <div className="passionfx-section-mfr">CLASSIC</div>
         <ParameterRow>
           <ParameterKnob
             label="Threshold"
@@ -599,7 +599,7 @@ function PassionFXCardBase({
         collapsible
         defaultCollapsed={!parameters.harmEnabled}
       >
-        <div className="passionfx-section-mfr">Eventide</div>
+        <div className="passionfx-section-mfr">STUDIO</div>
         <ParameterRow>
           <ParameterKnob
             label="Voice 1"
@@ -697,7 +697,7 @@ function PassionFXCardBase({
         collapsible
         defaultCollapsed={!parameters.reverbEnabled}
       >
-        <div className="passionfx-section-mfr">Lexicon</div>
+        <div className="passionfx-section-mfr">RACK</div>
         <ParameterRow>
           <ParameterKnob
             label="Decay"

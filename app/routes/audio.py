@@ -8,7 +8,12 @@ Includes new audio health monitoring endpoints.
 import asyncio
 import json
 import logging
+import os
 import subprocess
+import threading
+import time
+from dataclasses import asdict
+from datetime import datetime, timezone
 
 try:
     from fastapi import APIRouter, HTTPException, Query
@@ -34,9 +39,152 @@ try:
 
     router = APIRouter(prefix="/api/audio", tags=["audio"])
 
+    def _coerce_int(raw_value: Any, default: int) -> int:
+        try:
+            return int(raw_value)
+        except Exception:
+            return default
+
+    def _coerce_float(raw_value: Any, default: float) -> float:
+        try:
+            return float(raw_value)
+        except Exception:
+            return default
+
+    def _normalize_rate_list(raw_value: Any, fallback: List[int]) -> List[int]:
+        if not isinstance(raw_value, list):
+            return list(fallback)
+
+        normalized: List[int] = []
+        seen: set[int] = set()
+        for item in raw_value:
+            try:
+                rate = int(item)
+            except Exception:
+                continue
+            if rate <= 0 or rate in seen:
+                continue
+            normalized.append(rate)
+            seen.add(rate)
+
+        return normalized or list(fallback)
+
+    def _append_issue(
+        issues: List[Dict[str, Any]],
+        *,
+        issue_id: str,
+        severity: str,
+        message: str,
+        expected: Any = None,
+        actual: Any = None,
+    ) -> None:
+        payload: Dict[str, Any] = {
+            "id": issue_id,
+            "severity": severity,
+            "message": message,
+        }
+        if expected is not None:
+            payload["expected"] = expected
+        if actual is not None:
+            payload["actual"] = actual
+        issues.append(payload)
+
+    _AUDIO_LEVELS_CACHE_TTL_SECONDS = _coerce_float(
+        os.getenv("MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS", "0.20"),
+        0.20,
+    )
+    _AUDIO_LEVELS_TIMEOUT_SECONDS = _coerce_float(
+        os.getenv("MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS", "0.04"),
+        0.04,
+    )
+    _AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS = _coerce_float(
+        os.getenv("MAP2_AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS", "0.25"),
+        0.25,
+    )
+    _AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS = _coerce_float(
+        os.getenv("MAP2_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS", "0.06"),
+        0.06,
+    )
+    _AUDIO_LATENCY_CACHE_TTL_SECONDS = _coerce_float(
+        os.getenv("MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS", "0.50"),
+        0.50,
+    )
+    _AUDIO_STATUS_CACHE_TTL_SECONDS = _coerce_float(
+        os.getenv("MAP2_AUDIO_STATUS_CACHE_TTL_SECONDS", "0.20"),
+        0.20,
+    )
+    _audio_levels_cache: Optional[Dict[str, Any]] = None
+    _audio_levels_cache_at = 0.0
+    _audio_levels_cache_lock = threading.Lock()
+    _audio_levels_refresh_lock: Optional[asyncio.Lock] = None
+
+    _audio_plugin_levels_cache: Optional[List[Dict[str, Any]]] = None
+    _audio_plugin_levels_cache_at = 0.0
+    _audio_plugin_levels_cache_lock = threading.Lock()
+    _audio_plugin_levels_refresh_lock: Optional[asyncio.Lock] = None
+    _audio_latency_cache: Optional[Dict[str, Any]] = None
+    _audio_latency_cache_at = 0.0
+    _audio_latency_cache_lock = threading.Lock()
+    _audio_status_cache: Optional[Dict[str, Any]] = None
+    _audio_status_cache_at = 0.0
+    _audio_status_cache_lock = threading.Lock()
+
+    def _get_audio_levels_refresh_lock() -> asyncio.Lock:
+        global _audio_levels_refresh_lock
+        lock = _audio_levels_refresh_lock
+        if lock is None:
+            lock = asyncio.Lock()
+            _audio_levels_refresh_lock = lock
+        return lock
+
+    def _get_audio_plugin_levels_refresh_lock() -> asyncio.Lock:
+        global _audio_plugin_levels_refresh_lock
+        lock = _audio_plugin_levels_refresh_lock
+        if lock is None:
+            lock = asyncio.Lock()
+            _audio_plugin_levels_refresh_lock = lock
+        return lock
+
+    async def _refresh_audio_levels_cache(service) -> None:
+        global _audio_levels_cache, _audio_levels_cache_at
+        lock = _get_audio_levels_refresh_lock()
+        if lock.locked():
+            return
+        async with lock:
+            try:
+                levels = await asyncio.wait_for(
+                    service.get_vu_levels(),
+                    timeout=_AUDIO_LEVELS_TIMEOUT_SECONDS,
+                )
+            except Exception:
+                return
+            if isinstance(levels, dict):
+                with _audio_levels_cache_lock:
+                    _audio_levels_cache = dict(levels)
+                    _audio_levels_cache_at = time.monotonic()
+
+    async def _refresh_audio_plugin_levels_cache(service) -> None:
+        global _audio_plugin_levels_cache, _audio_plugin_levels_cache_at
+        lock = _get_audio_plugin_levels_refresh_lock()
+        if lock.locked():
+            return
+        async with lock:
+            try:
+                levels = await asyncio.wait_for(
+                    service.get_plugin_vu_levels(),
+                    timeout=_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS,
+                )
+            except Exception:
+                return
+            if isinstance(levels, list):
+                with _audio_plugin_levels_cache_lock:
+                    _audio_plugin_levels_cache = list(levels)
+                    _audio_plugin_levels_cache_at = time.monotonic()
+
     @router.get("/status")
     async def get_audio_status_route():
         """Get audio engine status from JUCE."""
+        global _audio_status_cache, _audio_status_cache_at
         service = get_audio_engine()
 
         if not service.is_available:
@@ -50,10 +198,28 @@ try:
                 "available": False
             }
 
-        # Get JUCE system info
-        info = service.get_system_info()
+        now = time.monotonic()
+        with _audio_status_cache_lock:
+            if (
+                _audio_status_cache is not None
+                and (now - _audio_status_cache_at) < _AUDIO_STATUS_CACHE_TTL_SECONDS
+            ):
+                return dict(_audio_status_cache)
 
-        return {
+        try:
+            info = await asyncio.wait_for(
+                asyncio.to_thread(service.get_system_info),
+                timeout=0.05,
+            )
+        except Exception:
+            with _audio_status_cache_lock:
+                stale = dict(_audio_status_cache) if _audio_status_cache is not None else None
+            if stale is not None:
+                stale["stale"] = True
+                return stale
+            info = {}
+
+        payload = {
             "running": service.is_audio_running(),
             "sample_rate": info.get("sample_rate", 48000),
             "buffer_size": info.get("buffer_size", 128),
@@ -63,6 +229,311 @@ try:
             "plugin_count": info.get("plugin_count", 0),
             "active_pedalboard": info.get("active_pedalboard", None),
             "available": True
+        }
+        with _audio_status_cache_lock:
+            _audio_status_cache = dict(payload)
+            _audio_status_cache_at = time.monotonic()
+        return payload
+
+    @router.get("/source-of-truth")
+    async def get_audio_source_of_truth() -> Dict[str, Any]:
+        """
+        Single Source of Truth for bitrate and audio configuration.
+
+        This endpoint intentionally combines config intent and runtime state from
+        JUCE + PipeWire + AVB so `/engine` can display one canonical map and
+        identify drift/mismatches quickly.
+        """
+        from app.config import config_get
+        from app.services.avb import get_avb_readiness
+
+        service = get_audio_engine()
+        info = service.get_system_info() if service.is_available else {}
+
+        selected_profile = str(
+            config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k"))
+        )
+        profile_version = str(config_get("clock_sync.profile_version", "") or "")
+        clock_master = str(config_get("clock_sync.clock_master", config_get("audio.clock_master", "internal")) or "internal")
+
+        engine_rate_hz = _coerce_int(
+            config_get("clock_sync.engine_rate_hz", config_get("audio.sample_rate", 48000)),
+            48000,
+        )
+        avb_stream_rate_hz = _coerce_int(
+            config_get("clock_sync.avb_stream_rate_hz", engine_rate_hz),
+            engine_rate_hz,
+        )
+        spdif_rate_hz = _coerce_int(
+            config_get("clock_sync.spdif_rate_hz", config_get("spdif.sample_rate_hz", engine_rate_hz)),
+            engine_rate_hz,
+        )
+        bits_per_sample = _coerce_int(
+            config_get("clock_sync.bits_per_sample", config_get("audio.bits_per_sample", 24)),
+            24,
+        )
+        buffer_size_samples = _coerce_int(
+            config_get("clock_sync.buffer_size_samples", config_get("audio.buffer_size", 64)),
+            64,
+        )
+        allowed_rates_hz = _normalize_rate_list(
+            config_get("clock_sync.allowed_rates_hz", config_get("audio.allowed_rates_hz", [engine_rate_hz])),
+            [engine_rate_hz],
+        )
+
+        strict_lock = bool(config_get("clock_sync.require_hard_lock", config_get("spdif.require_hard_lock", True)))
+        allow_resampler = bool(config_get("clock_sync.allow_resampler", config_get("spdif.allow_resampler", False)))
+
+        runtime_sample_rate_hz = _coerce_int(info.get("sample_rate", 0), 0)
+        runtime_buffer_size_samples = _coerce_int(info.get("buffer_size", 0), 0)
+        runtime_cpu_load = _coerce_float(info.get("cpu_load", 0.0), 0.0)
+
+        pipewire_runtime: Dict[str, Any] = {
+            "available": False,
+            "clock_rate_hz": 0,
+            "clock_force_rate_hz": 0,
+            "clock_quantum_samples": 0,
+            "clock_force_quantum_samples": 0,
+            "clock_allowed_rates_hz": [],
+            "effective_rate_hz": 0,
+            "effective_quantum_samples": 0,
+        }
+        try:
+            from app.services.pipewire_service import get_pipewire_service
+
+            pipewire_settings = await get_pipewire_service().get_settings()
+            settings = asdict(pipewire_settings)
+            pipewire_runtime = {
+                "available": True,
+                "clock_rate_hz": _coerce_int(settings.get("clock_rate", 0), 0),
+                "clock_force_rate_hz": _coerce_int(settings.get("clock_force_rate", 0), 0),
+                "clock_quantum_samples": _coerce_int(settings.get("clock_quantum", 0), 0),
+                "clock_force_quantum_samples": _coerce_int(settings.get("clock_force_quantum", 0), 0),
+                "clock_allowed_rates_hz": _normalize_rate_list(settings.get("clock_allowed_rates", []), []),
+                "effective_rate_hz": _coerce_int(settings.get("clock_force_rate", 0), 0)
+                or _coerce_int(settings.get("clock_rate", 0), 0),
+                "effective_quantum_samples": _coerce_int(settings.get("clock_force_quantum", 0), 0)
+                or _coerce_int(settings.get("clock_quantum", 0), 0),
+            }
+        except Exception as exc:
+            pipewire_runtime["error"] = str(exc)
+
+        avb_readiness = get_avb_readiness(engine=getattr(service, "_engine", None))
+        avb_runtime: Dict[str, Any] = {
+            "enabled": bool(config_get("avb.enabled", False)),
+            "interface": str(config_get("avb.interface", "") or "").strip(),
+            "auto_connect": bool(config_get("avb.auto_connect", False)),
+            "available": bool(avb_readiness.get("available", False)),
+            "state": str(avb_readiness.get("state", "disabled") or "disabled"),
+            "reason": avb_readiness.get("reason"),
+            "ptp": {"available": False},
+        }
+
+        try:
+            from app.services.avb.ptp_monitor import get_ptp_monitor
+
+            ptp_status = await get_ptp_monitor().get_status()
+            avb_runtime["ptp"] = ptp_status.to_dict() if hasattr(ptp_status, "to_dict") else {}
+        except Exception as exc:
+            avb_runtime["ptp"] = {"available": False, "error": str(exc)}
+
+        issues: List[Dict[str, Any]] = []
+        checks: Dict[str, bool] = {}
+
+        engine_available = bool(service.is_available)
+        checks["engine_available"] = engine_available
+        if not engine_available:
+            _append_issue(
+                issues,
+                issue_id="engine_unavailable",
+                severity="error",
+                message="JUCE audio engine is unavailable; runtime rate cannot be verified.",
+            )
+        else:
+            engine_rate_match = runtime_sample_rate_hz == engine_rate_hz
+            checks["engine_rate_match"] = engine_rate_match
+            if not engine_rate_match:
+                _append_issue(
+                    issues,
+                    issue_id="engine_rate_mismatch",
+                    severity="error" if strict_lock else "warning",
+                    message="JUCE runtime sample rate differs from selected profile.",
+                    expected=engine_rate_hz,
+                    actual=runtime_sample_rate_hz,
+                )
+
+            engine_buffer_match = runtime_buffer_size_samples == buffer_size_samples
+            checks["engine_buffer_match"] = engine_buffer_match
+            if not engine_buffer_match:
+                _append_issue(
+                    issues,
+                    issue_id="engine_buffer_mismatch",
+                    severity="warning",
+                    message="JUCE runtime buffer size differs from selected profile.",
+                    expected=buffer_size_samples,
+                    actual=runtime_buffer_size_samples,
+                )
+
+        pipewire_available = bool(pipewire_runtime.get("available", False))
+        checks["pipewire_available"] = pipewire_available
+        if not pipewire_available:
+            _append_issue(
+                issues,
+                issue_id="pipewire_unavailable",
+                severity="warning",
+                message="PipeWire settings unavailable; lock verification is partial.",
+            )
+        else:
+            pw_rate_match = _coerce_int(pipewire_runtime.get("effective_rate_hz", 0), 0) == engine_rate_hz
+            checks["pipewire_rate_match"] = pw_rate_match
+            if not pw_rate_match:
+                _append_issue(
+                    issues,
+                    issue_id="pipewire_rate_mismatch",
+                    severity="error" if strict_lock else "warning",
+                    message="PipeWire effective rate differs from selected profile.",
+                    expected=engine_rate_hz,
+                    actual=pipewire_runtime.get("effective_rate_hz"),
+                )
+
+            pw_quantum_match = _coerce_int(pipewire_runtime.get("effective_quantum_samples", 0), 0) == buffer_size_samples
+            checks["pipewire_quantum_match"] = pw_quantum_match
+            if not pw_quantum_match:
+                _append_issue(
+                    issues,
+                    issue_id="pipewire_quantum_mismatch",
+                    severity="warning",
+                    message="PipeWire effective quantum differs from selected profile.",
+                    expected=buffer_size_samples,
+                    actual=pipewire_runtime.get("effective_quantum_samples"),
+                )
+
+            configured_rates = set(allowed_rates_hz)
+            pipewire_rates = set(_normalize_rate_list(pipewire_runtime.get("clock_allowed_rates_hz", []), []))
+            allowed_rates_match = configured_rates.issubset(pipewire_rates) if configured_rates else True
+            checks["pipewire_allowed_rates_match"] = allowed_rates_match
+            if not allowed_rates_match:
+                _append_issue(
+                    issues,
+                    issue_id="pipewire_allowed_rates_mismatch",
+                    severity="warning",
+                    message="PipeWire allowed-rates list does not include all profile rates.",
+                    expected=sorted(configured_rates),
+                    actual=sorted(pipewire_rates),
+                )
+
+        spdif_enabled = bool(config_get("spdif.enabled", False))
+        spdif_rate_match = (spdif_rate_hz == engine_rate_hz) or allow_resampler
+        checks["spdif_rate_map_match"] = spdif_rate_match
+        if spdif_enabled and not spdif_rate_match:
+            _append_issue(
+                issues,
+                issue_id="spdif_rate_map_mismatch",
+                severity="error" if strict_lock else "warning",
+                message="Configured S/PDIF rate does not map to engine rate.",
+                expected=engine_rate_hz,
+                actual=spdif_rate_hz,
+            )
+
+        avb_enabled = bool(config_get("avb.enabled", False))
+        avb_rate_match = avb_stream_rate_hz == engine_rate_hz
+        checks["avb_rate_map_match"] = avb_rate_match
+        if avb_enabled and not avb_rate_match:
+            _append_issue(
+                issues,
+                issue_id="avb_rate_map_mismatch",
+                severity="error" if strict_lock else "warning",
+                message="Configured AVB stream rate does not map to engine rate.",
+                expected=engine_rate_hz,
+                actual=avb_stream_rate_hz,
+            )
+
+        checks["bits_per_sample_valid"] = bits_per_sample in {16, 20, 24, 32}
+        if not checks["bits_per_sample_valid"]:
+            _append_issue(
+                issues,
+                issue_id="bits_per_sample_invalid",
+                severity="error",
+                message="Bit-depth is outside supported digital transport values (16/20/24/32).",
+                actual=bits_per_sample,
+            )
+
+        if avb_enabled and not avb_runtime["available"]:
+            _append_issue(
+                issues,
+                issue_id="avb_not_operational",
+                severity="warning",
+                message="AVB is enabled but readiness is not operational.",
+                actual=avb_runtime.get("reason") or avb_runtime.get("state"),
+            )
+
+        if avb_enabled and bool(avb_runtime.get("ptp", {}).get("available")):
+            ptp_state = str(avb_runtime["ptp"].get("state", "") or "")
+            checks["ptp_lock_state_valid"] = ptp_state in {"SLAVE", "MASTER"}
+            if not checks["ptp_lock_state_valid"]:
+                _append_issue(
+                    issues,
+                    issue_id="ptp_not_locked",
+                    severity="warning",
+                    message="PTP state is not SLAVE/MASTER; AVB clock lock may be incomplete.",
+                    actual=ptp_state or "unknown",
+                )
+
+        severity_rank = {"info": 0, "warning": 1, "error": 2}
+        highest = max((severity_rank.get(issue.get("severity", "info"), 0) for issue in issues), default=0)
+        status = "aligned" if highest == 0 else "warning" if highest == 1 else "error"
+
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": status,
+            "profile": {
+                "selected_profile": selected_profile,
+                "profile_version": profile_version,
+                "clock_master": clock_master,
+                "remarks": config_get("clock_sync.remarks", []),
+            },
+            "configured": {
+                "engine_rate_hz": engine_rate_hz,
+                "avb_stream_rate_hz": avb_stream_rate_hz,
+                "spdif_rate_hz": spdif_rate_hz,
+                "buffer_size_samples": buffer_size_samples,
+                "bits_per_sample": bits_per_sample,
+                "allowed_rates_hz": allowed_rates_hz,
+                "require_hard_lock": strict_lock,
+                "allow_resampler": allow_resampler,
+                "spdif": {
+                    "enabled": spdif_enabled,
+                    "device": config_get("spdif.device", "Lexicon MPX1"),
+                    "transport_mode": config_get("spdif.transport_mode", "send_return"),
+                    "allow_resampler": bool(config_get("spdif.allow_resampler", False)),
+                    "require_hard_lock": bool(config_get("spdif.require_hard_lock", True)),
+                    "remarks": config_get("spdif.remarks", []),
+                },
+                "avb": {
+                    "enabled": avb_enabled,
+                    "interface": str(config_get("avb.interface", "") or "").strip(),
+                    "auto_connect": bool(config_get("avb.auto_connect", False)),
+                    "ptp_domain": _coerce_int(config_get("avb.ptp_domain", 0), 0),
+                    "max_streams": _coerce_int(config_get("avb.max_streams", 8), 8),
+                },
+            },
+            "runtime": {
+                "engine": {
+                    "available": engine_available,
+                    "running": bool(service.is_audio_running() if service.is_available else False),
+                    "sample_rate_hz": runtime_sample_rate_hz,
+                    "buffer_size_samples": runtime_buffer_size_samples,
+                    "cpu_load_percent": runtime_cpu_load,
+                    "audio_device": str(info.get("audio_device") or info.get("alsa_device") or ""),
+                },
+                "pipewire": pipewire_runtime,
+                "avb": avb_runtime,
+            },
+            "consistency": {
+                "checks": checks,
+                "issues": issues,
+                "issue_count": len(issues),
+            },
         }
 
     @router.post("/start")
@@ -104,18 +575,42 @@ try:
     @router.get("/latency")
     async def get_latency():
         """Get audio latency in milliseconds."""
+        global _audio_latency_cache, _audio_latency_cache_at
         service = get_audio_engine()
 
         if not service.is_available:
             return {"latency_ms": 0.0}
 
-        info = service.get_system_info()
+        now = time.monotonic()
+        with _audio_latency_cache_lock:
+            if (
+                _audio_latency_cache is not None
+                and (now - _audio_latency_cache_at) < _AUDIO_LATENCY_CACHE_TTL_SECONDS
+            ):
+                return dict(_audio_latency_cache)
+
+        try:
+            info = await asyncio.wait_for(
+                asyncio.to_thread(service.get_system_info),
+                timeout=0.05,
+            )
+        except Exception:
+            with _audio_latency_cache_lock:
+                stale = dict(_audio_latency_cache) if _audio_latency_cache is not None else None
+            if stale is not None:
+                stale["stale"] = True
+                return stale
+            info = {}
         # Calculate latency from buffer size and sample rate
         buffer_size = info.get("buffer_size", 128)
         sample_rate = info.get("sample_rate", 48000)
         latency_ms = (buffer_size / sample_rate) * 1000.0 if sample_rate > 0 else 0.0
 
-        return {"latency_ms": latency_ms}
+        payload = {"latency_ms": latency_ms}
+        with _audio_latency_cache_lock:
+            _audio_latency_cache = dict(payload)
+            _audio_latency_cache_at = time.monotonic()
+        return payload
 
     @router.get("/pipedal")
     async def get_pipedal_metrics():
@@ -156,6 +651,7 @@ try:
     @router.get("/levels")
     async def get_levels():
         """Get current audio levels from JUCE VU meters."""
+        global _audio_levels_cache, _audio_levels_cache_at
         service = get_audio_engine()
 
         if not service.is_available:
@@ -166,19 +662,157 @@ try:
                 "output_right": 0.0
             }
 
-        levels = await service.get_vu_levels()
-        return levels
+        now = time.monotonic()
+        with _audio_levels_cache_lock:
+            if (
+                _audio_levels_cache is not None
+                and (now - _audio_levels_cache_at) < _AUDIO_LEVELS_CACHE_TTL_SECONDS
+            ):
+                return dict(_audio_levels_cache)
+
+            stale = dict(_audio_levels_cache) if _audio_levels_cache is not None else None
+
+        if stale is not None:
+            if not _get_audio_levels_refresh_lock().locked():
+                asyncio.create_task(_refresh_audio_levels_cache(service))
+            stale["stale"] = True
+            return stale
+
+        refresh_lock = _get_audio_levels_refresh_lock()
+        if refresh_lock.locked():
+            with _audio_levels_cache_lock:
+                stale = dict(_audio_levels_cache) if _audio_levels_cache is not None else None
+            if stale is not None:
+                stale["stale"] = True
+                return stale
+
+        async with refresh_lock:
+            now = time.monotonic()
+            with _audio_levels_cache_lock:
+                if (
+                    _audio_levels_cache is not None
+                    and (now - _audio_levels_cache_at) < _AUDIO_LEVELS_CACHE_TTL_SECONDS
+                ):
+                    return dict(_audio_levels_cache)
+
+            try:
+                levels = await asyncio.wait_for(
+                    service.get_vu_levels(),
+                    timeout=_AUDIO_LEVELS_TIMEOUT_SECONDS,
+                )
+            except asyncio.TimeoutError:
+                with _audio_levels_cache_lock:
+                    stale = dict(_audio_levels_cache) if _audio_levels_cache is not None else None
+                if stale is not None:
+                    stale["stale"] = True
+                    return stale
+                return {
+                    "input_left": 0.0,
+                    "input_right": 0.0,
+                    "output_left": 0.0,
+                    "output_right": 0.0,
+                    "deferred": True,
+                }
+            except Exception:
+                with _audio_levels_cache_lock:
+                    stale = dict(_audio_levels_cache) if _audio_levels_cache is not None else None
+                if stale is not None:
+                    stale["stale"] = True
+                    return stale
+                return {
+                    "input_left": 0.0,
+                    "input_right": 0.0,
+                    "output_left": 0.0,
+                    "output_right": 0.0,
+                    "deferred": True,
+                }
+
+            if isinstance(levels, dict):
+                with _audio_levels_cache_lock:
+                    _audio_levels_cache = dict(levels)
+                    _audio_levels_cache_at = time.monotonic()
+                return levels
+            return levels
 
     @router.get("/levels/plugins")
     async def get_plugin_levels():
         """Get per-plugin VU levels from JUCE."""
+        global _audio_plugin_levels_cache, _audio_plugin_levels_cache_at
         service = get_audio_engine()
 
         if not service.is_available:
             return {"plugins": []}
 
-        levels = await service.get_plugin_vu_levels()
-        return {"plugins": levels}
+        now = time.monotonic()
+        with _audio_plugin_levels_cache_lock:
+            if (
+                _audio_plugin_levels_cache is not None
+                and (now - _audio_plugin_levels_cache_at) < _AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS
+            ):
+                return {"plugins": list(_audio_plugin_levels_cache)}
+
+            stale = (
+                list(_audio_plugin_levels_cache)
+                if _audio_plugin_levels_cache is not None
+                else None
+            )
+
+        if stale is not None:
+            if not _get_audio_plugin_levels_refresh_lock().locked():
+                asyncio.create_task(_refresh_audio_plugin_levels_cache(service))
+            return {"plugins": stale, "stale": True}
+
+        refresh_lock = _get_audio_plugin_levels_refresh_lock()
+        if refresh_lock.locked():
+            with _audio_plugin_levels_cache_lock:
+                stale = (
+                    list(_audio_plugin_levels_cache)
+                    if _audio_plugin_levels_cache is not None
+                    else None
+                )
+            if stale is not None:
+                return {"plugins": stale, "stale": True}
+
+        async with refresh_lock:
+            now = time.monotonic()
+            with _audio_plugin_levels_cache_lock:
+                if (
+                    _audio_plugin_levels_cache is not None
+                    and (now - _audio_plugin_levels_cache_at) < _AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS
+                ):
+                    return {"plugins": list(_audio_plugin_levels_cache)}
+
+            try:
+                levels = await asyncio.wait_for(
+                    service.get_plugin_vu_levels(),
+                    timeout=_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS,
+                )
+            except asyncio.TimeoutError:
+                with _audio_plugin_levels_cache_lock:
+                    stale = (
+                        list(_audio_plugin_levels_cache)
+                        if _audio_plugin_levels_cache is not None
+                        else None
+                    )
+                if stale is not None:
+                    return {"plugins": stale, "stale": True}
+                return {"plugins": [], "deferred": True}
+            except Exception:
+                with _audio_plugin_levels_cache_lock:
+                    stale = (
+                        list(_audio_plugin_levels_cache)
+                        if _audio_plugin_levels_cache is not None
+                        else None
+                    )
+                if stale is not None:
+                    return {"plugins": stale, "stale": True}
+                return {"plugins": [], "deferred": True}
+
+            if isinstance(levels, list):
+                with _audio_plugin_levels_cache_lock:
+                    _audio_plugin_levels_cache = list(levels)
+                    _audio_plugin_levels_cache_at = time.monotonic()
+            return {"plugins": levels}
 
     @router.get("/juce")
     async def get_juce_metrics():

@@ -42,6 +42,7 @@ import {
   ExpandLess as CollapseIcon,
 } from '@mui/icons-material';
 import { useTheme, alpha, keyframes } from '@mui/material/styles';
+import { sanitizeRestrictedDisplayText } from '../../displayNames';
 
 // ============================================================================
 // Types
@@ -324,7 +325,7 @@ const MidiMappingsPanel = memo(({
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap sx={{ maxWidth: 120 }}>
-                        {mapping.pluginName}
+                        {sanitizeRestrictedDisplayText(mapping.pluginName) || 'Processor'}
                       </Typography>
                     </TableCell>
                     <TableCell>

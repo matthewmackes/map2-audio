@@ -1,0 +1,59 @@
+{
+  "timestamp_utc": "2026-02-27T17:59:24.837448Z",
+  "state_before": {
+    "connected": true,
+    "input_port_index": 1,
+    "output_port_index": 1,
+    "current_program": 44,
+    "shadow_state_count": 601,
+    "pending_realtime_updates": 0,
+    "rtmidi_available": true,
+    "active_midi_map_id": null,
+    "midi_map_count": 0,
+    "learn_target_param_id": null,
+    "drift_status": "clean",
+    "verify_pass": 0,
+    "verify_fail": 0,
+    "writer_client_id": null,
+    "pending_readbacks": 0
+  },
+  "runs": [
+    {
+      "requested_program": 3,
+      "set_response": {
+        "status": "ok",
+        "program": 3
+      },
+      "events": [
+        {
+          "timestamp": 1772215163.2362165,
+          "type": "rx_program_sysex",
+          "hex": "F0 06 09 00 01 02 00 00 00 03 00 00 00 03 00 00 00 00 00 00 00 03 01 00 00 09 00 00 00 F7",
+          "program": 3
+        }
+      ],
+      "state_current_program_after": 3
+    },
+    {
+      "requested_program": 19,
+      "set_response": {
+        "status": "ok",
+        "program": 19
+      },
+      "events": [
+        {
+          "timestamp": 1772215164.3820806,
+          "type": "rx_program_sysex",
+          "hex": "F0 06 09 00 01 02 00 00 00 03 01 00 00 03 00 00 00 00 00 00 00 03 01 00 00 09 00 00 00 F7",
+          "program": 19
+        }
+      ],
+      "state_current_program_after": 19
+    }
+  ],
+  "summary": {
+    "runs": 2,
+    "rx_program_sysex_events": 2,
+    "rx_sysex_unknown_events": 0
+  }
+}

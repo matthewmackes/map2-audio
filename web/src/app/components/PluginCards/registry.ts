@@ -77,6 +77,17 @@ export function registerTemplateLazy(
   TEMPLATE_LOADER_REGISTRY.set(template, loader)
 }
 
+function normalizeLookupUri(uri: string): string {
+  const trimmed = uri.trim()
+  if (!trimmed.startsWith('map2://')) {
+    return trimmed
+  }
+
+  const noQuery = trimmed.split(/[?#]/)[0] || trimmed
+  const noTrailingSlash = noQuery.endsWith('/') ? noQuery.slice(0, -1) : noQuery
+  return noTrailingSlash.toLowerCase()
+}
+
 // ==================== Lookup Functions ====================
 
 /**
@@ -87,16 +98,28 @@ export function getPluginCardConfig(
   uri: string,
   category: string
 ): PluginCardConfig | null {
+  const normalizedUri = normalizeLookupUri(uri)
+
   // 1. Check exact URI match
   const exactMatch = PLUGIN_REGISTRY.get(uri)
+    ?? (normalizedUri !== uri ? PLUGIN_REGISTRY.get(normalizedUri) : undefined)
   if (exactMatch) {
     return exactMatch
   }
 
   // 2. Check pattern matches
   for (const { pattern, config } of PATTERN_REGISTRY) {
-    if (pattern.test(uri)) {
+    if (pattern.test(uri) || (normalizedUri !== uri && pattern.test(normalizedUri))) {
       return config
+    }
+  }
+
+  // 2b. Safety net: always resolve SynthForge to its dedicated card.
+  const uriLower = uri.toLowerCase()
+  if (uriLower.includes('synthforge') || normalizedUri.includes('synthforge')) {
+    const synthForgeConfig = PLUGIN_REGISTRY.get('map2://juce/synthforge')
+    if (synthForgeConfig) {
+      return synthForgeConfig
     }
   }
 
@@ -395,6 +418,16 @@ registerPluginCard('map2://juce/multieffect/passionfx', {
 registerPluginCard('map2://juce/drums', {
   loader: () => import('./Custom/JUCE/DrumMachineCard'),
 })
+
+// JUCE Instrument - SynthForge multitimbral sampler/module
+const synthForgeCardConfig: PluginCardConfig = {
+  loader: () => import('./Custom/JUCE/SynthForgeCard'),
+}
+
+registerPluginCard('map2://juce/synthforge', synthForgeCardConfig)
+registerPluginCard('map2://juce/synthforge/', synthForgeCardConfig)
+registerPluginCard('map2://juce/instrument/synthforge', synthForgeCardConfig)
+registerPluginPattern(/map2:\/\/juce\/.*synthforge/i, synthForgeCardConfig)
 
 // ==================== Dragonfly Reverbs ====================
 // Best-in-class algorithmic reverbs

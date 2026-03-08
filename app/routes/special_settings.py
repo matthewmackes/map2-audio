@@ -27,6 +27,31 @@ router = APIRouter(prefix="/api/settings/special", tags=["special"])
 
 # Detect if running in cluster mode
 CLUSTER_MODE = os.getenv("CLUSTER_MODE", "disabled").lower() == "enabled"
+DEFAULT_PROMOTED_ADVANCED_ROUTES = ["/welcome", "/grid"]
+
+
+def _normalize_promoted_routes(routes: Optional[list]) -> list[str]:
+    if not routes:
+        return []
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+
+    for raw_route in routes:
+        if not isinstance(raw_route, str):
+            continue
+
+        route = raw_route.strip()
+        if not route or not route.startswith("/"):
+            continue
+
+        if route in seen:
+            continue
+
+        seen.add(route)
+        normalized.append(route)
+
+    return normalized
 
 
 async def get_special_settings_db(session: AsyncSession) -> Optional[SpecialSettings]:
@@ -44,6 +69,7 @@ async def create_default_special_settings(session: AsyncSession) -> SpecialSetti
         enabled=False,
         hidden_plugins=[],
         menu_location="top-nav",
+        promoted_advanced_routes=DEFAULT_PROMOTED_ADVANCED_ROUTES.copy(),
         version=1,
         last_updated=datetime.utcnow(),
         updated_by_node=None
@@ -83,6 +109,9 @@ async def get_special_settings():
                 enabled=settings.enabled,
                 hidden_plugins=settings.hidden_plugins or [],
                 menu_location=settings.menu_location,
+                promoted_advanced_routes=_normalize_promoted_routes(
+                    settings.promoted_advanced_routes if settings.promoted_advanced_routes is not None else DEFAULT_PROMOTED_ADVANCED_ROUTES
+                ),
                 version=settings.version,
                 last_updated=settings.last_updated.isoformat() if settings.last_updated else None,
                 updated_by_node=settings.updated_by_node
@@ -144,6 +173,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         enabled=request.enabled,
                         hidden_plugins=request.hidden_plugins,
                         menu_location=request.menu_location,
+                        promoted_advanced_routes=_normalize_promoted_routes(request.promoted_advanced_routes),
                         node_id=node_id
                     )
                     
@@ -154,6 +184,9 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         enabled=settings.enabled,
                         hidden_plugins=settings.hidden_plugins or [],
                         menu_location=settings.menu_location,
+                        promoted_advanced_routes=_normalize_promoted_routes(
+                            settings.promoted_advanced_routes if settings.promoted_advanced_routes is not None else DEFAULT_PROMOTED_ADVANCED_ROUTES
+                        ),
                         version=settings.version,
                         last_updated=settings.last_updated.isoformat(),
                         updated_by_node=settings.updated_by_node
@@ -169,6 +202,9 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                             enabled=settings.enabled,
                             hidden_plugins=settings.hidden_plugins or [],
                             menu_location=settings.menu_location,
+                            promoted_advanced_routes=_normalize_promoted_routes(
+                                settings.promoted_advanced_routes if settings.promoted_advanced_routes is not None else DEFAULT_PROMOTED_ADVANCED_ROUTES
+                            ),
                             version=settings.version,
                             last_updated=settings.last_updated.isoformat(),
                             updated_by_node=settings.updated_by_node
@@ -195,6 +231,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
             settings.enabled = request.enabled
             settings.hidden_plugins = request.hidden_plugins
             settings.menu_location = request.menu_location
+            settings.promoted_advanced_routes = _normalize_promoted_routes(request.promoted_advanced_routes)
             settings.version += 1
             settings.last_updated = datetime.utcnow()
             settings.updated_by_node = node_id
@@ -204,13 +241,17 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
             logger.info(
                 f"Special settings updated (standalone): enabled={settings.enabled}, "
                 f"hidden_plugins={len(settings.hidden_plugins)}, "
-                f"menu_location={settings.menu_location}"
+                f"menu_location={settings.menu_location}, "
+                f"promoted_routes={len(settings.promoted_advanced_routes or [])}"
             )
             
             return SpecialSettingsResponse(
                 enabled=settings.enabled,
                 hidden_plugins=settings.hidden_plugins or [],
                 menu_location=settings.menu_location,
+                promoted_advanced_routes=_normalize_promoted_routes(
+                    settings.promoted_advanced_routes if settings.promoted_advanced_routes is not None else DEFAULT_PROMOTED_ADVANCED_ROUTES
+                ),
                 version=settings.version,
                 last_updated=settings.last_updated.isoformat(),
                 updated_by_node=settings.updated_by_node
@@ -236,6 +277,7 @@ async def reset_special_settings():
                 settings.enabled = False
                 settings.hidden_plugins = []
                 settings.menu_location = "top-nav"
+                settings.promoted_advanced_routes = DEFAULT_PROMOTED_ADVANCED_ROUTES.copy()
                 settings.version += 1
                 settings.last_updated = datetime.utcnow()
                 

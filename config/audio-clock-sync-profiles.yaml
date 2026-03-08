@@ -1,0 +1,136 @@
+# MAP2 Clock-Sync Profile Catalog
+# =================================
+# Canonical profile source for synchronized sample-rate/bit-depth mapping
+# across:
+# - MAP2 engine config (~/.map2/config.json)
+# - PipeWire graph defaults
+# - map2-backend systemd force-rate/force-quantum
+# - AVB stream defaults and SRP posture
+# - Lexicon MPX1 S/PDIF assumptions
+#
+# IMPORTANT FOR FUTURE AI MAINTAINERS:
+# - Keep exactly one profile selected at a time.
+# - Use scripts/apply_clock_sync_profile.py to apply any profile.
+# - Do not hand-edit generated files unless actively debugging.
+# - Any new profile must include explicit remarks and rate mapping.
+
+version: 1
+generated_for: "MAP2 MPX1 S/PDIF + AVB synchronization"
+updated_utc: "2026-03-01T00:00:00Z"
+
+remarks:
+  - "Profile names are stable API-like identifiers; do not rename lightly."
+  - "Bitrate mapping here means sample rate + bits-per-sample + buffer quantum."
+  - "Lexicon MPX1 default expectation is 24-bit digital path at 44.1kHz or 48kHz."
+  - "When AVB and S/PDIF disagree on rate, explicit SRC policy is mandatory."
+
+profiles:
+  spdif_master_48k:
+    title: "S/PDIF Master 48k (Direct Lock)"
+    summary: "Lexicon MPX1 drives digital clock at 48k; AVB follows 48k."
+    enabled_transports: [spdif, avb]
+    clock_master: spdif
+    engine_rate_hz: 48000
+    avb_stream_rate_hz: 48000
+    spdif_rate_hz: 48000
+    bits_per_sample: 24
+    buffer_size_samples: 64
+    allowed_rates_hz: [48000]
+    require_hard_lock: true
+    allow_resampler: false
+    avb_enabled: true
+    avb_auto_connect: true
+    avb_ptp_priority1: 128
+    avb_srp_required: true
+    remarks:
+      - "Use when MPX1 is the studio clock authority."
+      - "No sample-rate conversion in this profile."
+      - "Best for deterministic insert behavior with compatible AVB peers."
+
+  spdif_master_44k1:
+    title: "S/PDIF Master 44.1k (Vintage Program Compatibility)"
+    summary: "Lexicon MPX1 drives digital clock at 44.1k; MAP2 + AVB map to 44.1k."
+    enabled_transports: [spdif, avb]
+    clock_master: spdif
+    engine_rate_hz: 44100
+    avb_stream_rate_hz: 44100
+    spdif_rate_hz: 44100
+    bits_per_sample: 24
+    buffer_size_samples: 64
+    allowed_rates_hz: [44100]
+    require_hard_lock: true
+    allow_resampler: false
+    avb_enabled: true
+    avb_auto_connect: false
+    avb_ptp_priority1: 128
+    avb_srp_required: true
+    remarks:
+      - "Use when legacy MPX1 content must remain natively 44.1k."
+      - "Some AVB ecosystems are 48k-first; verify peer acceptance before live use."
+      - "No sample-rate conversion in this profile."
+
+  avb_master_48k:
+    title: "AVB Master 48k (PTP-First Network)"
+    summary: "AVB gPTP is authoritative at 48k; S/PDIF is resampled when mismatched."
+    enabled_transports: [spdif, avb]
+    clock_master: avb
+    engine_rate_hz: 48000
+    avb_stream_rate_hz: 48000
+    spdif_rate_hz: 48000
+    bits_per_sample: 24
+    buffer_size_samples: 64
+    allowed_rates_hz: [48000]
+    require_hard_lock: false
+    allow_resampler: true
+    avb_enabled: true
+    avb_auto_connect: true
+    avb_ptp_priority1: 96
+    avb_srp_required: true
+    remarks:
+      - "Use for AVB-centric systems that require stable PTP lock."
+      - "Enables controlled SRC on S/PDIF path if MPX1 differs."
+      - "Best for multi-node AVB deployments with external talkers/listeners."
+
+  dual_locked_48k:
+    title: "Dual Transport 48k Strict Lock (Fail Closed)"
+    summary: "Both S/PDIF and AVB must be 48k/24-bit; reject mismatch."
+    enabled_transports: [spdif, avb]
+    clock_master: hybrid
+    engine_rate_hz: 48000
+    avb_stream_rate_hz: 48000
+    spdif_rate_hz: 48000
+    bits_per_sample: 24
+    buffer_size_samples: 64
+    allowed_rates_hz: [48000]
+    require_hard_lock: true
+    allow_resampler: false
+    avb_enabled: true
+    avb_auto_connect: true
+    avb_ptp_priority1: 96
+    avb_srp_required: true
+    remarks:
+      - "Use for stage rigs where deterministic failure is preferred over hidden SRC."
+      - "If either transport drifts from 48k, operators should fail over manually."
+      - "Most conservative profile for production reliability."
+
+  hybrid_adaptive_44k1_48k:
+    title: "Hybrid Adaptive 44.1/48k (Interchange Mode)"
+    summary: "Engine prefers 48k but allows 44.1k fallback; SRC enabled for dual transport interop."
+    enabled_transports: [spdif, avb]
+    clock_master: internal
+    engine_rate_hz: 48000
+    avb_stream_rate_hz: 48000
+    spdif_rate_hz: 44100
+    bits_per_sample: 24
+    buffer_size_samples: 128
+    allowed_rates_hz: [44100, 48000]
+    require_hard_lock: false
+    allow_resampler: true
+    avb_enabled: true
+    avb_auto_connect: false
+    avb_ptp_priority1: 128
+    avb_srp_required: false
+    remarks:
+      - "Use for labs and mixed-rate studios where transport flexibility matters most."
+      - "Higher buffer (128) intentionally increases stability when SRC is active."
+      - "Not recommended as first-choice profile for lowest-latency live use."

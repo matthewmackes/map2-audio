@@ -9,6 +9,7 @@ import { useCallback, useState, memo } from 'react'
 import { X, Power } from '@phosphor-icons/react'
 import { getCategoryConfig, getCategoryIcon } from './categoryConfig'
 import type { ChainPlugin, Plugin } from '../../../map2/types'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 export interface GridPluginBlockProps {
   plugin: ChainPlugin
@@ -44,10 +45,11 @@ export const GridPluginBlock = memo(function GridPluginBlock({
   const [isHovered, setIsHovered] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
-  const category = meta?.category || 'Utility'
+  const isHardware = meta?.format === 'Hardware' || meta?.is_hardware || plugin.uri.startsWith('hardware://')
+  const category = isHardware ? 'Hardware' : (meta?.category || 'Utility')
   const { color, bg } = getCategoryConfig(category)
   const Icon = getCategoryIcon(category)
-  const name = meta?.name || plugin.name || 'Unknown'
+  const name = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
   const shortName = name.length > 12 ? name.substring(0, 10) + '...' : name
 
   const handleDragStart = useCallback(
@@ -121,7 +123,11 @@ export const GridPluginBlock = memo(function GridPluginBlock({
 
       {/* Icon */}
       <div className="grid-plugin-icon">
-        <Icon size={20} />
+        {isHardware ? (
+          <img src="/img/fx_lexicon.svg" alt="HW" width={20} height={20} style={{ display: 'block' }} />
+        ) : (
+          <Icon size={20} />
+        )}
       </div>
 
       {/* Name (shown on hover or select) */}

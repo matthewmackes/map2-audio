@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { X, Sliders, FloppyDisk, Trash, WarningCircle } from '@phosphor-icons/react'
 import type { Plugin, PluginParameter, MIDIMappingV2, MIDICurveType } from '../../../../map2/types'
 import { midiApiV2 } from '../../../../map2/api'
+import { getDisplayPluginName } from '../../../../map2/displayNames'
 
 interface MidiMappingDialogProps {
   isOpen: boolean
@@ -48,6 +49,7 @@ export function MidiMappingDialog({
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const displayPluginName = useMemo(() => getDisplayPluginName(plugin.name, plugin.uri), [plugin.name, plugin.uri])
 
   // Track if we've already fetched for this dialog session
   const hasFetchedRef = useRef(false)
@@ -200,7 +202,7 @@ export function MidiMappingDialog({
             feedback_enabled: false,
             is_learned: false,
             is_enabled: row.isEnabled,
-            name: `${plugin.name} - ${row.paramName}`,
+            name: `${displayPluginName} - ${row.paramName}`,
           })
         }
       }
@@ -253,7 +255,7 @@ export function MidiMappingDialog({
         <div className="midi-mapping-dialog-header">
           <div className="midi-mapping-dialog-title">
             <Sliders size={18} weight="duotone" />
-            <span>MIDI Mappings - {plugin.name}</span>
+            <span>MIDI Mappings - {displayPluginName}</span>
           </div>
           <button
             className="midi-mapping-dialog-close"

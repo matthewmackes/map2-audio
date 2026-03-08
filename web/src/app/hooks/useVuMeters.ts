@@ -133,7 +133,9 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
     }
   }, [useWebSocket])
 
-  // Polling — always enabled for initial load + fallback
+  // Polling is only needed before WebSocket connects or when WS is disabled.
+  const shouldPoll = !useWebSocket || !isConnected
+
   const pollingQuery = useQuery<VuLevels>({
     queryKey: ['vu-meters'],
     queryFn: async () => {
@@ -148,8 +150,8 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
         running: data.running ?? false
       }
     },
-    refetchInterval: useWebSocket ? 5000 : pollingInterval,
-    enabled: true
+    refetchInterval: shouldPoll ? pollingInterval : false,
+    enabled: shouldPoll
   })
 
   const wsHasData = useWebSocket && levels.running

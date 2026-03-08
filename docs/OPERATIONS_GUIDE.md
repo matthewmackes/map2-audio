@@ -211,10 +211,42 @@ All accessible at `http://localhost:8080/api/*`:
 | `/deployment/health` | Health checks for deployment config |
 | `/cluster/health` | Cluster overview and status |
 | `/cluster/online-nodes` | List of peer nodes in cluster |
+| `/plugins/engine-ops/status` | Deferred plugin engine-op queue depth/health |
 
 **Test connectivity**:
 ```bash
 curl http://localhost:8080/api/health | python3 -m json.tool
+```
+
+---
+
+## 6.1 PLUGIN ENGINE-OP MODES (LOAD/UNLOAD/PARAM APPLY)
+
+These environment variables control how `/api/plugins/load`, `/api/plugins/unload`,
+and `/api/plugins/batch/parameters` interact with the JUCE engine:
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `MAP2_ENABLE_ENGINE_PLUGIN_OPS` | `false` | Enables/disables engine-side plugin operations from HTTP routes |
+| `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS` | `false` | When enabled (and plugin ops enabled), route waits for immediate engine apply |
+| `MAP2_ENGINE_OP_QUEUE_MAX` | `2048` | Max deferred engine operations buffered in async mode |
+| `MAP2_ENGINE_OP_MAX_RETRIES` | `6` | Retry attempts for deferred ops when engine is temporarily unavailable |
+| `MAP2_ENGINE_OP_RETRY_BASE_DELAY` | `0.05` | Exponential backoff base delay (seconds) for deferred op retries |
+
+Mode behavior:
+
+1. `MAP2_ENABLE_ENGINE_PLUGIN_OPS=false`:
+   API updates metadata only; no engine load/unload/parameter execution.
+2. `MAP2_ENABLE_ENGINE_PLUGIN_OPS=true` and `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS=false`:
+   Non-blocking mode. Requests return quickly with `engine_deferred=true`, and a bounded worker queue applies operations in the background.
+3. `MAP2_ENABLE_ENGINE_PLUGIN_OPS=true` and `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS=true`:
+   Synchronous mode. Request path applies engine operations inline before returning.
+
+Recommended production mode for load resilience: `true/false` (enabled + non-blocking queue).
+
+Quick status check:
+```bash
+curl -s http://localhost:8080/api/plugins/engine-ops/status | python3 -m json.tool
 ```
 
 ---

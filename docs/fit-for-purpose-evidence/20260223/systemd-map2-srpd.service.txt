@@ -1,0 +1,20 @@
+[Unit]
+Description=MAP2 SRP/MSRP Admission Daemon
+Documentation=https://github.com/matthewmackes/map2-audio
+ConditionPathExists=/etc/map2/avb-enabled
+PartOf=map2-avb.target
+After=network-online.target
+Wants=network-online.target
+Before=map2-backend.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/map2-srpd
+ExecStart=/bin/bash -lc '${MAP2_SRPD_BIN:-/usr/sbin/mrpd} ${MAP2_SRPD_ARGS}'
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=map2-avb.target

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# MAP2 Audio Platform — Installer Entry Point
+# Usage:
+#   ./install                  # Launch interactive TUI
+#   ./install --tui            # Same as above
+#   ./install --dry-run        # TUI in dry-run mode
+#   ./install --unattended <ks.yaml>  # Headless install from Kickstart file
+#   ./install --generate-ks [mode]   # Print template Kickstart YAML
+#   ./install --validate-ks <ks.yaml>
+#   ./install --help
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Use project venv if available; otherwise fall back to system python3
+if [[ -x "${SCRIPT_DIR}/.venv/bin/python3" ]]; then
+    PYTHON="${SCRIPT_DIR}/.venv/bin/python3"
+else
+    PYTHON="python3"
+fi
+
+# Ensure installer deps are importable
+if ! "${PYTHON}" -c "import textual" 2>/dev/null; then
+    echo "[MAP2 Installer] Installing installer dependencies…"
+    "${PYTHON}" -m pip install -r "${SCRIPT_DIR}/requirements-installer.txt" --quiet
+fi
+
+exec "${PYTHON}" -m installer "$@"

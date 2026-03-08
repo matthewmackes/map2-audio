@@ -123,5 +123,6 @@ export type FxIconName =
   | 'fx_spectral'
   | 'fx_split_a'
   | 'fx_split_b'
+  | 'fx_lexicon'
   | 'fx_terminal'
   | 'fx_utility'

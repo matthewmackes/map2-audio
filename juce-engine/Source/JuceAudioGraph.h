@@ -323,6 +323,8 @@ private:
     void createIONodes();
     juce::AudioProcessorGraph::NodeID addPluginNode(InstanceId instanceId);
     void removePluginNode(InstanceId instanceId);
+    bool isPluginInParallelGroupsUnlocked(InstanceId instanceId) const;
+    bool isPluginReferencedUnlocked(InstanceId instanceId) const;
     void updateMeters(const juce::AudioBuffer<float>& buffer, bool isInput);
 };
 

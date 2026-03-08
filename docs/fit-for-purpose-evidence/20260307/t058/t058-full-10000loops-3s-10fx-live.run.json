@@ -1,0 +1,9 @@
+{
+  "started_at": "2026-03-07T21:20:16-05:00",
+  "expected_end_at": "2026-03-08T05:40:16-05:00",
+  "duration_seconds": 30000,
+  "session_id": 67077,
+  "pid": 247955,
+  "json_output": "docs/fit-for-purpose-evidence/20260307/t058/t058-full-10000loops-3s-10fx-live.json",
+  "md_output": "docs/fit-for-purpose-evidence/20260307/t058/t058-full-10000loops-3s-10fx-live.md"
+}

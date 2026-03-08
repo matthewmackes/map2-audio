@@ -43,6 +43,11 @@ class EventType(str, Enum):
     AVB_CONNECTIONS_UPDATED = "avb_connections_updated"
     AVB_CONNECTION_STATE_CHANGED = "avb_connection_state_changed"
 
+    # Effects loop events
+    EFFECTS_LOOP_STATE = "effects_loop_state"
+    EFFECTS_LOOP_METRICS = "effects_loop_metrics"
+    EFFECTS_LOOP_CALIBRATION_PROGRESS = "effects_loop_calibration_progress"
+
     # System events
     SYSTEM_STATUS = "system_status"
     AUDIO_ENGINE_STATUS = "audio_engine_status"

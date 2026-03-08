@@ -27,13 +27,14 @@
 #endif
 
 #ifdef HAS_AVDECC
-#include "AvdeccEntity.h"
+#include "AvdeccController.h"
 #endif
 
 #ifdef HAS_AVB
 namespace Map2Audio {
 class AvbAudioIODevice;
 }
+#include "TesiraAvbNode.h"
 #endif
 
 #include "ChorusProcessor.h"
@@ -47,6 +48,8 @@ class AvbAudioIODevice;
 #include "Peavey5150Processor.h"
 #include "TweedBassmanProcessor.h"
 #include "PassionFXProcessor.h"
+#include "SynthForge/SynthForgeProcessor.h"
+#include "LexiconHardwareProcessor.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
@@ -54,6 +57,8 @@ class AvbAudioIODevice;
 #include <array>
 #include <chrono>
 #include <cstring>
+#include <memory>
+#include <vector>
 
 namespace map2 {
 
@@ -194,6 +199,52 @@ public:
     void clearAvbDiscoveredDevices();
 
     // ========================================
+    // External Effects Loops (Tesira AVB)
+    // ========================================
+
+    struct ExternalLoopDefinition {
+        std::string loopId;
+        std::string name;
+        int channels = 2;
+        std::string topology = "serial_insert";
+        std::string sendEndpointId;
+        std::string returnEndpointId;
+        double targetAddedLatencyMs = 0.5;
+        double measuredAddedLatencyMs = 0.0;
+        int compensationSamples = 0;
+        bool bypass = false;
+    };
+
+    struct ExternalLoopInsertion {
+        std::string insertionId;
+        std::string loopId;
+        int slotIndex = 0;
+        bool enabled = true;
+        std::string mode = "serial_insert";
+        float blendPct = 100.0f;
+        float sendGainDb = 0.0f;
+        float returnGainDb = 0.0f;
+        int crossfadeMs = 12;
+        std::vector<float> bandSplitHz;
+    };
+
+    struct ExternalLoopMetrics {
+        std::string loopId;
+        bool active = false;
+        bool bypass = false;
+        int channels = 0;
+        double targetAddedLatencyMs = 0.5;
+        double measuredAddedLatencyMs = 0.0;
+        int compensationSamples = 0;
+    };
+
+    bool setExternalLoopDefinitions(const std::vector<ExternalLoopDefinition>& loops);
+    bool setChainLoopInsertions(int chainId, const std::vector<ExternalLoopInsertion>& insertions);
+    bool setLoopBypass(const std::string& loopId, bool bypass);
+    bool calibrateLoop(const std::string& loopId, int calibrationFrames = 0);
+    std::vector<ExternalLoopMetrics> getLoopMetrics(const std::string& loopId = "") const;
+
+    // ========================================
     // Configuration
     // ========================================
 
@@ -241,6 +292,26 @@ public:
     bool reorderChain(const std::vector<InstanceId>& order);
 
     // ========================================
+    // Lexicon MPX-1 Hardware Plugin
+    // ========================================
+
+    /**
+     * Load the Lexicon MPX-1 as a hardware plugin in the graph.
+     * Singleton: returns existing instance ID if already loaded.
+     * @return Instance ID, or INVALID_INSTANCE_ID on failure
+     */
+    InstanceId loadLexiconPlugin();
+    bool unloadLexiconPlugin();
+    bool isLexiconLoaded() const;
+    InstanceId getLexiconInstanceId() const;
+
+    /**
+     * Measure S/PDIF round-trip latency via impulse response.
+     * Updates the processor's reported latency for JUCE PDC.
+     */
+    bool calibrateLexiconLatency();
+
+    // ========================================
     // Sidechain Routing (NEW)
     // ========================================
 
@@ -275,6 +346,8 @@ public:
     bool isMidiEnabled() const;
     std::vector<std::string> getMidiDevices() const;
     bool setMidiDevice(const std::string& device);
+    bool injectMidiNoteOn(int channel, int note, int velocity);
+    bool injectMidiNoteOff(int channel, int note, int velocity = 0);
 
     // ========================================
     // VU Meters (Legacy)
@@ -345,6 +418,11 @@ public:
      * Reset xrun counter without resetting other stats
      */
     void resetXrunCounter();
+
+    /**
+     * Reset full audio I/O runtime stats (xrun/jitter/duration counters)
+     */
+    void resetAudioIOStats();
 
     /**
      * Set measured round-trip latency (from external loopback test)
@@ -1135,6 +1213,59 @@ public:
     PassionFXProcessor& getPassionFX() { return passionFX_; }
 
     // ========================================
+    // SynthForge (Phase 1 scaffold)
+    // ========================================
+
+    std::vector<synthforge::PartConfig> getSynthForgePartsConfig() const;
+    bool setSynthForgePartConfig(int partIndex, const synthforge::PartConfig& config);
+
+    bool setSynthForgePartChannel(int partIndex, int midiChannel);
+    int getSynthForgePartChannel(int partIndex) const;
+
+    std::map<std::string, float> getSynthForgePartParameters(int partIndex) const;
+    bool setSynthForgeParameter(int partIndex, const std::string& param, float value);
+    bool loadSynthForgeSfz(int partIndex, const std::string& sfzPath);
+    synthforge::SampleLoadStatus getSynthForgePartSampleStatus(int partIndex) const;
+    bool reloadSynthForgePartSfzIfChanged(int partIndex);
+
+    bool setSynthForgePartSamplerBackend(int partIndex, const std::string& backend);
+    std::string getSynthForgePartSamplerBackend(int partIndex) const;
+
+    bool setSynthForgePartStreamingConfig(int partIndex, const synthforge::StreamingConfig& config);
+    synthforge::StreamingConfig getSynthForgePartStreamingConfig(int partIndex) const;
+
+    bool setSynthForgePartHotReload(int partIndex, bool enabled, int intervalMs);
+    synthforge::HotReloadStatus getSynthForgePartHotReloadStatus(int partIndex) const;
+
+    bool loadSynthForgePartScalaTuning(int partIndex, const std::string& scalaPath, int rootKey, float referenceHz);
+    synthforge::ScalaTuningConfig getSynthForgePartScalaTuning(int partIndex) const;
+
+    bool setSynthForgePartMpeConfig(int partIndex, const synthforge::MpeConfig& config);
+    synthforge::MpeConfig getSynthForgePartMpeConfig(int partIndex) const;
+
+    bool setSynthForgePartModMatrixRoutes(int partIndex, const std::vector<synthforge::ModMatrixRoute>& routes);
+    std::vector<synthforge::ModMatrixRoute> getSynthForgePartModMatrixRoutes(int partIndex) const;
+
+    bool setSynthForgePartFreeze(int partIndex, bool enabled);
+    synthforge::FreezeRenderStatus getSynthForgePartFreezeStatus(int partIndex) const;
+    bool renderSynthForgePartToFile(int partIndex, const std::string& outputPath, int durationMs);
+
+    synthforge::SamplerAnalyzerFrame getSynthForgePartAnalyzerFrame(int partIndex) const;
+    std::vector<synthforge::SamplerAnalyzerFrame> getSynthForgeAnalyzerFrames() const;
+    synthforge::SfzBackendStatus getSynthForgePartBackendStatus(int partIndex) const;
+    std::vector<synthforge::SfzBackendStatus> getSynthForgeBackendStatus() const;
+
+    std::vector<synthforge::PatchInfo> getSynthForgePatches(
+        const std::string& category = "") const;
+    bool loadSynthForgePatch(int partIndex, int bank, int program);
+    bool saveSynthForgePatch(int partIndex, int bank, int program, const std::string& name);
+
+    synthforge::VoiceMetrics getSynthForgeVoiceMetrics() const;
+    synthforge::Metering getSynthForgeMetering() const;
+
+    synthforge::SynthForgeProcessor& getSynthForge() { return synthForge_; }
+
+    // ========================================
     // Component Access (for advanced use)
     // ========================================
 
@@ -1149,9 +1280,32 @@ public:
     CPUMonitor& getCPUMonitor() { return cpuMonitor_; }
 
 #ifdef HAS_AVDECC
-    // AVDECC Entity accessor (Phase 10)
-    Map2Audio::AvdeccEntity* getAvdeccEntity() { return avdeccEntity_.get(); }
-    const Map2Audio::AvdeccEntity* getAvdeccEntity() const { return avdeccEntity_.get(); }
+    // AVDECC Controller accessor
+    Map2Audio::Map2AvdeccController* getAvdeccController() { return avdeccController_.get(); }
+    const Map2Audio::Map2AvdeccController* getAvdeccController() const { return avdeccController_.get(); }
+#endif
+
+#ifdef HAS_AVB
+    // ========================================
+    // Tesira AVB Node (per-channel gain/mute bridge for Biamp Tesira Forte AVB)
+    // Thread-safe: set*() calls may come from any Python/network thread;
+    // processDevice() is called from the RT audio thread.
+    // ========================================
+
+    /** Set dB level for one channel of one Tesira device (0 dB = unity). */
+    bool setTesiraDeviceLevel(int deviceIdx, int channel, float levelDb);
+
+    /** Mute/unmute one channel of one Tesira device. */
+    bool setTesiraDeviceMute(int deviceIdx, int channel, bool muted);
+
+    /** Mark a Tesira device slot as connected (true) or disconnected (false). */
+    bool setTesiraDeviceConnected(int deviceIdx, bool connected);
+
+    /** Update the active preset index for a Tesira device (-1 = none). */
+    bool setTesiraDevicePreset(int deviceIdx, int presetIndex);
+
+    /** Read the latest peak output level (dBFS) for a channel. Returns -120 if unavailable. */
+    float getTesiraOutputLevel(int deviceIdx, int channel) const;
 #endif
 
 private:
@@ -1160,6 +1314,11 @@ private:
     JucePluginHost pluginHost_;
     std::unique_ptr<JuceAudioGraph> audioGraph_;
     juce::AudioBuffer<float> callbackBuffer_;
+
+    // Lexicon MPX-1 Hardware Plugin
+    // Raw pointer (non-owning) — lifetime managed by pluginHost_.hardwareInstances_
+    LexiconHardwareProcessor* lexiconProcessor_ = nullptr;
+    InstanceId lexiconInstanceId_ = INVALID_INSTANCE_ID;
 
     // Native Processors (NEW)
     ConvolutionProcessor cabinetProcessor_;
@@ -1185,6 +1344,7 @@ private:
     Peavey5150Processor peavey5150_;
     TweedBassmanProcessor tweedBassman_;
     PassionFXProcessor passionFX_;
+    synthforge::SynthForgeProcessor synthForge_;
 
 #ifdef HAS_NAM
     // Neural Amp Modeler (NEW - RT-safe)
@@ -1192,8 +1352,13 @@ private:
 #endif
 
 #ifdef HAS_AVDECC
-    // AVDECC Entity for network audio discovery/enumeration (Phase 10)
-    std::unique_ptr<Map2Audio::AvdeccEntity> avdeccEntity_;
+    // AVDECC Controller (la_avdecc-backed)
+    std::unique_ptr<Map2Audio::Map2AvdeccController> avdeccController_;
+#endif
+
+#ifdef HAS_AVB
+    // Tesira Forte AVB bridge (RT-safe per-channel gain/mute for up to 5 units)
+    TesiraAvbNode tesiraNode_;
 #endif
 
     // Metering (NEW) - OFF AUDIO THREAD (Option 3)
@@ -1250,6 +1415,48 @@ private:
     std::map<std::string, AvbManagedStream> avbStreams_;
     mutable std::mutex avbDiscoveredDevicesMutex_;
     std::vector<AvbDiscoveredDeviceInfo> avbDiscoveredDevices_;
+    mutable std::mutex effectsLoopsMutex_;
+    std::map<std::string, ExternalLoopDefinition> externalLoops_;
+    std::map<int, std::vector<ExternalLoopInsertion>> chainLoopInsertions_;
+    std::map<std::string, ExternalLoopMetrics> externalLoopMetrics_;
+
+    struct ExternalLoopRuntimeLoop {
+        std::string loopId;
+        bool active = false;
+        bool bypass = false;
+        int channels = 2;
+        int compensationSamples = 0;
+        std::vector<std::vector<float>> delayLines;
+        int delayWriteIndex = 0;
+    };
+
+    struct ExternalLoopRuntimeInsertion {
+        std::string insertionId;
+        std::string loopId;
+        int chainId = 0;
+        int slotIndex = 0;
+        bool enabled = false;
+        std::string mode = "serial_insert";
+        float targetBlend = 1.0f;
+        float currentBlend = 1.0f;
+        float targetSendGainLinear = 1.0f;
+        float currentSendGainLinear = 1.0f;
+        float targetReturnGainLinear = 1.0f;
+        float currentReturnGainLinear = 1.0f;
+        float smoothingAlpha = 1.0f;
+    };
+
+    struct ExternalLoopProcessingState {
+        std::map<std::string, ExternalLoopRuntimeLoop> loops;
+        std::vector<ExternalLoopRuntimeInsertion> orderedInsertions;
+    };
+
+    void rebuildExternalLoopProcessingStateLocked();
+    void processExternalLoopInsertions(juce::AudioBuffer<float>& buffer, int numSamples);
+
+    std::shared_ptr<ExternalLoopProcessingState> externalLoopProcessingState_;
+    juce::AudioBuffer<float> externalLoopDryBuffer_;
+    juce::AudioBuffer<float> externalLoopWetBuffer_;
 
     // Configuration
     double sampleRate_ = DEFAULT_SAMPLE_RATE;
@@ -1263,8 +1470,21 @@ private:
     void audioCallback(const float* const* inputs, int numInputs,
                       float* const* outputs, int numOutputs,
                       int numSamples);
-    
-    // Fix #4: Unified processor preparation helper\n    void prepareAllProcessors(double sampleRate, int bufferSize, int numChannels);
+
+    // Lock-free MIDI handoff from MIDI thread to audio callback.
+    void enqueueMidiEvent(const MidiMessage& msg);
+    void drainMidiEvents(juce::MidiBuffer& midiBuffer, int numSamples);
+
+    static constexpr int MIDI_RING_SIZE = 512;
+    struct QueuedMidiEvent {
+        uint8_t status = 0;
+        uint8_t data1 = 0;
+        uint8_t data2 = 0;
+        int sampleOffset = 0;
+    };
+    std::array<QueuedMidiEvent, MIDI_RING_SIZE> midiRing_;
+    juce::AbstractFifo midiFifo_{MIDI_RING_SIZE};
+    std::atomic<bool> midiDataReady_{false};
 };
 
 } // namespace map2

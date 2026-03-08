@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { usePluginBrowser, PluginFormat, PluginInfo } from '../../hooks/usePluginBrowser';
 import { MagnifyingGlass, ArrowsClockwise, Funnel, Plus, CaretDown, Package } from '@phosphor-icons/react';
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../map2/displayNames';
 
 interface PluginBrowserProps {
   /** Callback when a plugin is loaded */
@@ -36,6 +37,8 @@ const PluginCard: React.FC<{
   compact: boolean;
 }> = ({ plugin, onLoad, isLoading, compact }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const displayName = getDisplayPluginName(plugin.name, plugin.uri);
+  const displayBrand = sanitizeRestrictedDisplayText(plugin.brand || plugin.author);
 
   return (
     <div
@@ -79,7 +82,7 @@ const PluginCard: React.FC<{
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}>
-          {plugin.name}
+          {displayName}
         </div>
         <div style={{
           fontSize: compact ? 10 : 11,
@@ -89,7 +92,7 @@ const PluginCard: React.FC<{
           gap: 8,
           marginTop: 2,
         }}>
-          <span>{plugin.brand || plugin.author}</span>
+          <span>{displayBrand}</span>
           {!compact && plugin.category && (
             <>
               <span>•</span>

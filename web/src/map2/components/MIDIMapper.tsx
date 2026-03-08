@@ -72,6 +72,7 @@ import {
 } from '@mui/icons-material';
 import { midiApi, pluginsApi } from '../api';
 import type { MIDIMapping, MIDIDevice, Plugin } from '../types';
+import { getDisplayPluginName } from '../displayNames';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -1022,7 +1023,7 @@ export default function MIDIMapper() {
             >
               {plugins.map((plugin) => (
                 <MenuItem key={plugin.uri} value={plugin.uri}>
-                  {plugin.name}
+                  {getDisplayPluginName(plugin.name, plugin.uri)}
                 </MenuItem>
               ))}
             </TextField>

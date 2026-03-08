@@ -1,0 +1,33 @@
+{
+  "source_json": "docs/fit-for-purpose-evidence/20260307/t058/t058-full-10000loops-3s-10fx-live.json",
+  "loops_executed": 9981,
+  "samples_captured": 29919,
+  "duration_seconds_actual": 30000.107,
+  "active_effect_count": 10,
+  "latency_metrics": {
+    "io_buffer_latency_ms_nominal": 1.3333333333333333,
+    "callback_jitter_ms_mean": 0.07796905562832519,
+    "callback_jitter_ms_peak": 37.93631366666666
+  },
+  "load_metrics": {
+    "cpu_total_percent_mean": 50.70607049608126,
+    "cpu_total_percent_max": 102.54959435467535,
+    "budget_utilization_percent_mean": 50.764624826547035,
+    "budget_utilization_percent_max": 102.61297048277747
+  },
+  "stability_metrics": {
+    "final_xrun_count": 96894,
+    "xrun_rate_per_minute": 193.7873088252652,
+    "flow_apply_error_count": 0
+  },
+  "checks": {
+    "xruns_ok": true,
+    "jitter_ok": true,
+    "budget_ok": true,
+    "flow_errors_ok": true,
+    "effect_count_ok": true
+  },
+  "overall_pass": true,
+  "effect_pool_source": "explicit_requested",
+  "runtime_effect_pool_size": 9
+}

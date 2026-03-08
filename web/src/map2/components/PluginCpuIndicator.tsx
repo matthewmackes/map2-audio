@@ -25,6 +25,7 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useTheme, alpha } from '@mui/material/styles';
+import { sanitizeRestrictedDisplayText } from '../displayNames';
 
 interface PluginCpuStats {
   uri: string;
@@ -263,7 +264,7 @@ export default function PluginCpuIndicator({
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <PluginCpuBadge cpuPercent={plugin.cpuPercent} />
                       <Typography variant="caption" noWrap sx={{ flex: 1 }}>
-                        {plugin.name}
+                        {sanitizeRestrictedDisplayText(plugin.name) || 'Processor'}
                       </Typography>
                       <Typography variant="caption" sx={{ fontFamily: 'monospace', opacity: 0.7 }}>
                         {plugin.avgTimeUs.toFixed(0)}µs

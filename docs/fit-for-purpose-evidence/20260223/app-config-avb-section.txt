@@ -1,0 +1,191 @@
+        description="System IR files directory",
+        value_type=str,
+    ),
+    "storage.extra_nam_paths": ConfigOption(
+        key="storage.extra_nam_paths",
+        default=["~/NAM", "~/NAM/models", "~/nam", "~/.local/share/NAM", "/usr/share/map2/nam", "~/Documents/NAM", "~/Downloads/NAM"],
+        description="Additional NAM discovery paths",
+        value_type=list,
+    ),
+    "storage.extra_ir_paths": ConfigOption(
+        key="storage.extra_ir_paths",
+        default=["~/Impulses", "~/IRs", "/usr/share/map2/ir", "/usr/share/impulses"],
+        description="Additional IR discovery paths",
+        value_type=list,
+    ),
+
+    # AVB/TSN Network Audio Transport settings
+    "avb.enabled": ConfigOption(
+        key="avb.enabled",
+        default=False,
+        description="Enable AVB/TSN network audio transport (requires compatible NIC)",
+        value_type=bool,
+        env_var="MAP2_AVB_ENABLED",
+        restart_required=True,
+    ),
+    "avb.interface": ConfigOption(
+        key="avb.interface",
+        default="",
+        description="Network interface for AVB/TSN (e.g., enp3s0, eth0)",
+        value_type=str,
+        env_var="MAP2_AVB_INTERFACE",
+        restart_required=True,
+    ),
+    "avb.ptp_domain": ConfigOption(
+        key="avb.ptp_domain",
+        default=0,
+        description="PTP domain number (0-255)",
+        value_type=int,
+        min_value=0,
+        max_value=255,
+        restart_required=True,
+    ),
+    "avb.ptp_priority1": ConfigOption(
+        key="avb.ptp_priority1",
+        default=128,
+        description="PTP priority1 for grandmaster election (lower = higher priority)",
+        value_type=int,
+        min_value=0,
+        max_value=255,
+        restart_required=True,
+    ),
+    "avb.auto_connect": ConfigOption(
+        key="avb.auto_connect",
+        default=False,
+        description="Automatically connect to discovered AVB streams on startup",
+        value_type=bool,
+    ),
+    "avb.avdecc_enabled": ConfigOption(
+        key="avb.avdecc_enabled",
+        default=False,
+        description="Enable AVDECC (IEEE 1722.1) discovery/control for third-party AVB devices",
+        value_type=bool,
+        env_var="MAP2_AVDECC_ENABLED",
+        restart_required=True,
+    ),
+    "avb.max_streams": ConfigOption(
+        key="avb.max_streams",
+        default=8,
+        description="Maximum number of concurrent AVB streams",
+        value_type=int,
+        min_value=1,
+        max_value=32,
+    ),
+    "avb.default_buffer_depth": ConfigOption(
+        key="avb.default_buffer_depth",
+        default=8,
+        description="Ring buffer depth in periods (higher = more latency but safer)",
+        value_type=int,
+        min_value=2,
+        max_value=16,
+    ),
+    "avb.presentation_offset_us": ConfigOption(
+        key="avb.presentation_offset_us",
+        default=2000,
+        description="Presentation time offset in microseconds",
+        value_type=int,
+        min_value=500,
+        max_value=10000,
+    ),
+    "avb.failover_policy": ConfigOption(
+        key="avb.failover_policy",
+        default="none",
+        description="Stream interface failover policy (none, prefer_primary, round_robin, manual)",
+        value_type=str,
+        choices=["none", "prefer_primary", "round_robin", "manual"],
+        env_var="MAP2_AVB_FAILOVER_POLICY",
+    ),
+    "avb.failover_interfaces": ConfigOption(
+        key="avb.failover_interfaces",
+        default=[],
+        description="Ordered interface candidates for AVB stream failover",
+        value_type=list,
+        env_var="MAP2_AVB_FAILOVER_INTERFACES",
+    ),
+    "avb.srp.enabled": ConfigOption(
+        key="avb.srp.enabled",
+        default=True,
+        description="Enable SRP/MSRP admission control for AVB connection paths",
+        value_type=bool,
+        env_var="MAP2_AVB_SRP_ENABLED",
+    ),
+    "avb.srp.required": ConfigOption(
+        key="avb.srp.required",
+        default=True,
+        description="Fail closed when SRP admission cannot be acquired",
+        value_type=bool,
+        env_var="MAP2_AVB_SRP_REQUIRED",
+    ),
+    "avb.srp.daemon": ConfigOption(
+        key="avb.srp.daemon",
+        default="auto",
+        description="SRP daemon selection (auto-detect mrpd/msrpd)",
+        value_type=str,
+        choices=["auto", "mrpd", "msrpd"],
+        env_var="MAP2_AVB_SRP_DAEMON",
+        restart_required=True,
+    ),
+    "avb.srp.control_socket": ConfigOption(
+        key="avb.srp.control_socket",
+        default="",
+        description="SRP daemon control socket override (daemon defaults when empty)",
+        value_type=str,
+        env_var="MAP2_AVB_SRP_CONTROL_SOCKET",
+    ),
+    "avb.srp.timeout_ms": ConfigOption(
+        key="avb.srp.timeout_ms",
+        default=2000,
+        description="Timeout in milliseconds for SRP daemon admission requests",
+        value_type=int,
+        min_value=100,
+        max_value=15000,
+    ),
+    "avb.srp.vlan_id": ConfigOption(
+        key="avb.srp.vlan_id",
+        default=2,
+        description="Default VLAN ID for SRP reservations",
+        value_type=int,
+        min_value=1,
+        max_value=4094,
+    ),
+    "avb.srp.class": ConfigOption(
+        key="avb.srp.class",
+        default="A",
+        description="Default SR traffic class for SRP reservations",
+        value_type=str,
+        choices=["A", "B"],
+    ),
+}
+
+
+# ============================================================================
+# Configuration Manager
+# ============================================================================
+
+class ConfigManager:
+    """
+    Centralized configuration management with file, environment, and database support.
+
+    Features:
+    - JSON file persistence with automatic backup
+    - Environment variable overrides (MAP2_* prefix)
+    - Type-safe accessors with validation
+    - Observer pattern for change notifications
+    - Schema definition with defaults and descriptions
+    """
+
+    _instance: Optional['ConfigManager'] = None
+    CONFIG_DIR = Path.home() / ".map2"
+    CONFIG_FILE = Path.home() / ".map2" / "config.json"
+    CONFIG_BACKUP = Path.home() / ".map2" / "config.backup.json"
+
+    def __init__(self, config_path: Optional[Path] = None):
+        """Initialize configuration manager.
+
+        Args:
+            config_path: Custom config file path (default: ~/.map2/config.json)
+        """
+        self.config_path = config_path or self.CONFIG_FILE
+        self.config_backup_path = self.CONFIG_BACKUP
+        self._config: Dict[str, Any] = {}
+        self._observers: Dict[str, Set[Callable[[str, Any, Any], None]]] = {}

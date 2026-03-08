@@ -131,7 +131,7 @@ function BossXS1CardBase({
       compact={compact}
       customHeader={
         <div className="boss-card-header">
-          <span className="boss-card-title">BOSS XS-1</span>
+          <span className="boss-card-title">POLY XS-1</span>
           <span className="boss-subtitle">Polyphonic Pitch Shifter</span>
         </div>
       }
@@ -348,7 +348,7 @@ function BossXS1CardBase({
           <span>OUT: {metering.outputLevel.toFixed(1)} dB</span>
         </div>
         <div className="boss-source-note">
-          Boss XS-1 Style Polyphonic Pitch Shifter
+          Polyphonic Pitch Shifter
         </div>
       </div>
     </PluginCardShell>

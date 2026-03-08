@@ -22,7 +22,16 @@ set -euo pipefail
 
 MAP2_DIR="/home/mm/map2-audio"
 SYSTEMD_SERVICE="$MAP2_DIR/systemd/map2-backend.service"
-PIPEWIRE_CONF="$HOME/.config/pipewire/pipewire.conf.d/10-low-latency.conf"
+# PIPEWIRE_CONF: path to the single authoritative PipeWire low-latency fragment.
+# "10-low-latency.conf" was the legacy name (written by older versions of this
+# script). It has been superseded by "99-map2-audio-latency.conf" for two reasons:
+#   1. The higher sort number (99 > 10) makes load order unambiguous — the RT
+#      config always wins over any lower-numbered session defaults.
+#   2. The old file set min-quantum=32 while a co-existing 99- file set min-
+#      quantum=64, creating a silent conflict (99- file won, 10- was dead letter).
+# fix_pipewire_config() below will delete 10-low-latency.conf if it still exists.
+PIPEWIRE_CONF="$HOME/.config/pipewire/pipewire.conf.d/99-map2-audio-latency.conf"
+PIPEWIRE_CONF_LEGACY="$HOME/.config/pipewire/pipewire.conf.d/10-low-latency.conf"
 COMMON_H="$MAP2_DIR/juce-engine/Source/Common.h"
 AUDIO_IO_CPP="$MAP2_DIR/juce-engine/Source/JuceAudioIO.cpp"
 ENGINE_CPP="$MAP2_DIR/juce-engine/Source/Map2AudioEngine.cpp"
@@ -555,28 +564,70 @@ fix_pipewire_config() {
     conf_dir=$(dirname "$PIPEWIRE_CONF")
     mkdir -p "$conf_dir"
 
+    # Remove the legacy fragment if it exists. "10-low-latency.conf" (written by older
+    # versions of this script) is superseded by "99-map2-audio-latency.conf". Having both
+    # files present creates a silent conflict: 99- wins on all settings (higher sort order),
+    # but the 10- file appears to document the config while actually having no effect.
+    # Removing it makes the active configuration unambiguously visible.
+    if [ -f "$PIPEWIRE_CONF_LEGACY" ]; then
+        echo -e "  ${DIM}Removing legacy fragment: $PIPEWIRE_CONF_LEGACY${NC}"
+        rm -f "$PIPEWIRE_CONF_LEGACY"
+        apply_ok "Removed legacy 10-low-latency.conf (superseded)"
+    fi
+
     if [ -f "$PIPEWIRE_CONF" ]; then
         backup_file "$PIPEWIRE_CONF"
     fi
 
-    cat > "$PIPEWIRE_CONF" << 'PWEOF'
-# MAP2 Audio - Low-Latency PipeWire Configuration
-# Applied by map2-latency-optimizer.sh
+    # Write the consolidated authoritative fragment.
+    # IMPORTANT — what does NOT go here:
+    #   clock.force-quantum: Must NOT be in a .conf file. Values placed here are
+    #   locked at PipeWire load time and cannot be overridden by pw-metadata at
+    #   runtime. The force-quantum=${TARGET_QUANTUM} is applied by systemd ExecStartPre.
+    #   See: systemd/map2-backend.service and the override.conf drop-in.
+    #
+    # allowed-rates: Only 48000 listed (not 96000). A single allowed rate eliminates
+    # on-the-fly resampling entirely. Before adding 96000, verify the UA-1000 UAC1
+    # driver handles 96 kHz without renegotiating the ALSA period size unexpectedly.
+    cat > "$PIPEWIRE_CONF" << PWEOF
+# MAP2 Audio Platform — PipeWire Realtime-Latency Configuration
+# $PIPEWIRE_CONF
+# Applied by: map2-latency-optimizer.sh
+#
+# Single authoritative PipeWire fragment for the MAP2 session.
+# Targeting: <4 ms RTL on Edirol UA-1000 (UAC1 USB) at 48 kHz.
+#
+# NOTE: clock.force-quantum is NOT set here — it would lock the quantum at
+# PipeWire load time and block runtime overrides via pw-metadata. The
+# force-quantum=${TARGET_QUANTUM} is set by systemd ExecStartPre at service start.
+
 context.properties = {
-    default.clock.quantum       = 64        # 1.33ms at 48kHz
-    default.clock.min-quantum   = 32        # 0.67ms minimum
-    default.clock.max-quantum   = 256       # Cap to prevent latency spikes
-    default.clock.rate          = 48000
-    default.clock.allowed-rates = [ 48000 96000 ]
+    # Fixed 48 kHz — single rate eliminates resampling latency and CPU overhead.
+    default.clock.rate          = ${TARGET_RATE}
+    default.clock.allowed-rates = [ ${TARGET_RATE} ]
+
+    # min-quantum=32: floor for 32-sample (0.67 ms) operation when system is stable.
+    # Hard floor for UAC1 hardware is ~48 samples (1 ms USB frame); test before
+    # reducing force-quantum below 64.
+    # max-quantum=256: prevents JACK clients dragging the graph to 5.33 ms periods.
+    default.clock.min-quantum   = 32
+    default.clock.quantum       = ${TARGET_QUANTUM}
+    default.clock.max-quantum   = 256
+
+    # period-num=2: 2 ALSA periods (default 3). Saves one period of ALSA buffering
+    # (~1.33 ms) from the RTL. headroom=0: no extra padding at the ALSA layer.
+    api.alsa.period-num         = 2
+    api.alsa.headroom           = 0
+
+    # Lock PipeWire memory — prevents page faults in the audio callback path.
+    # Requires memlock=unlimited in /etc/security/limits.d/ (setup_realtime.sh Phase 1).
     mem.allow-mlock             = true
     mem.mlock-all               = true
-    api.alsa.period-num         = 2         # 2 periods (minimal)
-    api.alsa.headroom           = 0         # No extra headroom
 }
 PWEOF
 
-    if grep -q "quantum.*=.*64" "$PIPEWIRE_CONF"; then
-        apply_ok "PipeWire config: quantum=64, min=32, max=256"
+    if grep -q "quantum.*=.*${TARGET_QUANTUM}" "$PIPEWIRE_CONF"; then
+        apply_ok "PipeWire config: quantum=${TARGET_QUANTUM}, min=32, max=256 → $PIPEWIRE_CONF"
         NEED_PIPEWIRE_RESTART=true
     else
         apply_err "Failed to write PipeWire config"

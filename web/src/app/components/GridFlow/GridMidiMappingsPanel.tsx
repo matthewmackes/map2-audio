@@ -5,6 +5,7 @@
 
 import { memo } from 'react'
 import { MusicNote, X, Trash, GearSix } from '@phosphor-icons/react'
+import { sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 
 export interface MidiMapping {
   id: string
@@ -56,7 +57,7 @@ export const GridMidiMappingsPanel = memo(function GridMidiMappingsPanel({
               <div key={mapping.id} className="grid-midi-mapping-item">
                 <div className="grid-midi-mapping-info">
                   <div className="grid-midi-mapping-param">{mapping.parameterName}</div>
-                  <div className="grid-midi-mapping-plugin">{mapping.pluginName}</div>
+                  <div className="grid-midi-mapping-plugin">{sanitizeRestrictedDisplayText(mapping.pluginName) || 'Processor'}</div>
                 </div>
                 <div className="grid-midi-mapping-cc">
                   <span className="grid-midi-cc-label">CC</span>

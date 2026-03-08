@@ -1,0 +1,260 @@
+"""
+Important Disclaimer
+This educational platform and its associated code, documentation, or examples
+may reference trademarks, product names, brand names, manufacturers, or
+commercial software/hardware.
+Any such references are for identification, commentary, comparison, and
+technical explanation only. This project has no affiliation with, endorsement
+from, or official connection to those companies, products, or brands.
+MAP2-owned code is licensed under AGPLv3 (`AGPL-3.0-only`). Educational intent
+statements describe project goals and do not add restrictions beyond AGPLv3.
+Third-party components remain under their original licenses.
+"""
+
+"""
+FastAPI Application Factory
+Main entry point with router registration and lifecycle management.
+Utility functions for error handling and service startup/shutdown.
+"""
+
+def log_and_raise_critical(logger, message, exc: Exception = None):
+    """Log a critical error and raise."""
+    import traceback
+    if exc:
+        logger.critical(f"{message}: {exc}", exc_info=True)
+        logger.critical(traceback.format_exc())
+    else:
+        logger.critical(message)
+    raise RuntimeError(message)
+
+async def safe_start_service(logger, name, start_coro):
+    try:
+        await start_coro()
+        logger.info(f"{name} started successfully")
+    except Exception as e:
+        log_and_raise_critical(logger, f"Failed to start {name}", e)
+
+async def safe_stop_service(logger, name, stop_coro):
+    try:
+        await stop_coro()
+        logger.info(f"{name} stopped successfully")
+    except Exception as e:
+        logger.warning(f"Failed to stop {name}: {e}")
+
+import logging
+from contextlib import asynccontextmanager
+from fastapi.responses import JSONResponse
+
+from app.services.db_pool_manager import get_pool_manager, ConnectionPoolConfig
+from app.utils.health_metrics import init_health_metrics
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    """
+    FastAPI application lifespan.
+    Handles startup and shutdown of all services asynchronously.
+    Prevents blocking the RT thread during initialization.
+    """
+    try:
+        # ===== STARTUP =====
+        logger.info("Starting MAP2 Audio Platform services...")
+        
+        # Initialize health metrics
+        init_health_metrics()
+        logger.info("Health metrics initialized")
+        
+        # Initialize database connection pool
+        logger.info("Initializing database connection pool...")
+        import os
+        
+        pool_manager = get_pool_manager()
+        from app.database import get_default_database_url
+        database_url = get_default_database_url(async_mode=True)
+        pool_manager.initialize(
+            database_url,
+            ConnectionPoolConfig(pool_size=10, max_overflow=20)
+        )
+        logger.info(f"Database URL configured: {database_url}")
+        await safe_start_service(logger, "Database tables", pool_manager.ensure_tables_created)
+        
+        # Validate audio engine configuration BEFORE starting services
+        import os
+        if os.getenv("MAP2_TEST_MODE", "false").lower() in ("1", "true", "yes"):
+            logger.info("Skipping audio engine validation in test mode")
+        else:
+            logger.info("Validating audio engine configuration...")
+            from app.services.audio_engine_validator import validate_audio_engine
+            try:
+                if not validate_audio_engine():
+                    # Don't fail startup - log warnings but continue
+                    logger.warning(
+                        "Audio engine configuration has issues. "
+                        "The system will continue but may have degraded audio functionality. "
+                        "See logs above for details."
+                    )
+            except Exception as e:
+                logger.error(f"Audio engine validation error: {e}. Continuing with degraded audio support.")
+        
+        from app.services.metrics_daemon import start_metrics_daemon, stop_metrics_daemon
+        from app.services.service_orchestrator import get_orchestrator
+        from app.services.websocket_manager import ws_manager
+        from app.services.realtime_parameter_bridge import rt_parameter_bridge
+        from app.services.parameter_routing import connect_parameter_routing, disconnect_parameter_routing
+        from app.services.plugin_preset_lifecycle import get_preset_lifecycle
+        from app.services.metering_broadcast import start_metering_broadcast, stop_metering_broadcast
+        from app.services.midi_broadcast import start_midi_broadcast, stop_midi_broadcast
+        from app.database import checkpoint_database
+        from app.services.lcd_manager import LCDManager
+        from app.services.event_producers import (
+            AudioEventProducer,
+            SystemHealthProducer,
+            NetworkEventProducer,
+            PluginEventProducer,
+            DatabaseEventProducer,
+        )
+        from app.services.lcd_event_persistence import LCDEventPersistence, set_lcd_persistence
+        from app.services.mdns_discovery import MDNSPeerDiscovery
+        from app.services.node_identity import NodeIdentity
+        from app.database_session import get_session
+        from app.routes.lcd_events import init_lcd_routes
+        avb_router = None
+
+        # Initialize deployment configuration
+        logger.info("Initializing deployment configuration...")
+        from app.deployment.deployment import initialize_deployment_config, get_deployment_config
+        import os
+        
+        # Set initial mode from environment
+        deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE").upper()
+        
+        # Initialize config (will create ~/.map2/deployment.json if not exists)
+        initialize_deployment_config()
+        deployment_config = get_deployment_config()
+        logger.info(f"Deployment mode: {deployment_config.mode.value}")
+
+        # Initialize frontend-only graceful degradation integration.
+        try:
+            from app.services.frontend_degradation import initialize_frontend_degradation
+            initialize_frontend_degradation(os.getenv("MAP2_REMOTE_BACKEND_URL"))
+        except Exception as e:
+            logger.warning(f"Failed to initialize frontend degradation: {e}")
+        
+        # Initialize LCD Event System
+        logger.info("Initializing LCD Event System...")
+        use_mock_lcd = os.getenv("MAP2_USE_MOCK_LCD", "true").lower() in ("1", "true", "yes")
+        api_port = int(os.getenv("MAP2_API_PORT", "8080"))
+
+        identity = NodeIdentity(mode=deployment_mode)
+        node_id = identity.node_id
+        node_label = identity.node_id
+
+        # Persistence layer
+        lcd_persistence = LCDEventPersistence(get_session)
+        set_lcd_persistence(lcd_persistence)
+        await safe_start_service(logger, "LCD Event Persistence", lcd_persistence.start)
+
+        # mDNS discovery
+        mdns_discovery = MDNSPeerDiscovery(node_id, deployment_mode, port=api_port)
+
+        # LCD manager
+        lcd_manager = LCDManager(
+            node_id,
+            node_label,
+            use_mock_lcd=use_mock_lcd,
+            persistence=lcd_persistence,
+            mdns_discovery=mdns_discovery,
+        )
+        await safe_start_service(logger, "LCD Manager", lcd_manager.start)
+        
+        # Initialize event producers
+        audio_producer = AudioEventProducer(lcd_manager.event_bus)
+        system_producer = SystemHealthProducer(lcd_manager.event_bus)
+        network_producer = NetworkEventProducer(lcd_manager.event_bus)
+        plugin_producer = PluginEventProducer(lcd_manager.event_bus)
+        database_producer = DatabaseEventProducer(lcd_manager.event_bus)
+
+        # Wire mDNS discoveries into network monitoring
+        import asyncio
+
+        def _mdns_peer_callback(action: str, peer_node_id: str, info: dict):
+            if action == 'discovered':
+                peer_http = f"http://{info.get('host')}:{info.get('port')}"
+                asyncio.create_task(network_producer.register_peer(peer_node_id, peer_http))
+
+        mdns_discovery.subscribe(_mdns_peer_callback)
+        
+        await safe_start_service(logger, "Audio Event Producer", audio_producer.start)
+        await safe_start_service(logger, "System Health Producer", system_producer.start)
+        await safe_start_service(logger, "Network Event Producer", network_producer.start)
+        await safe_start_service(logger, "Plugin Event Producer", plugin_producer.start)
+        await safe_start_service(logger, "Database Event Producer", database_producer.start)
+        
+        # System startup event
+        import time
+        boot_time = time.time() - __import__('psutil').boot_time()
+        await system_producer.on_startup_complete(boot_time)
+
+        # Start metrics daemon
+        await safe_start_service(logger, "Metrics daemon", start_metrics_daemon)
+
+        orchestrator = get_orchestrator()
+        orchestrator.set_websocket_manager(ws_manager)
+        # Start all services in dependency order
+        results = await orchestrator.start_all()
+
+        # Start real-time parameter bridge
+        await safe_start_service(logger, "Real-time parameter bridge", rt_parameter_bridge.start)
+        # Connect parameter routing
+        await safe_start_service(logger, "Parameter routing", connect_parameter_routing)
+        # Start plugin preset lifecycle manager
+        preset_lifecycle = get_preset_lifecycle()
+        await safe_start_service(logger, "Plugin preset lifecycle manager", preset_lifecycle.startup)
+        # Start metering broadcast service (spectrum, LUFS, CPU via WebSocket)
+        await safe_start_service(logger, "Metering broadcast service", start_metering_broadcast)
+        # Start MIDI broadcast service (real-time MIDI events via WebSocket)
+        await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
+
+        # Start PipeWire crash recovery watchdog (opt-in only).
+        # In current production builds this path can trigger unsafe low-level
+        # engine restarts and destabilize the backend when JACK probes misfire.
+        enable_pw_recovery = os.getenv("MAP2_ENABLE_PIPEWIRE_RECOVERY", "true").lower() in {
+            "1", "true", "yes", "on"
+        }
+        if enable_pw_recovery:
+            try:
+                from app.services.pipewire_recovery import get_pipewire_recovery_service
+                pw_recovery = get_pipewire_recovery_service()
+                # Connect to JUCE engine if available
+                try:
+                    from app.services.juce_engine_service import get_audio_engine
+                    from app.services.avb.avb_service import get_avb_service
+
+                    engine_svc = get_audio_engine()
+                    # PipeWire recovery expects service-level controls and can
+                    # safely handle async/sync wrappers.
+                    pw_recovery.set_engine(engine_svc)
+
+                    engine = getattr(engine_svc, "_engine", None)
+                    if engine is not None:
+                        # AVB service still needs the low-level engine object.
+                        get_avb_service().set_engine(engine)
+                except Exception:
+                    pass
+                await safe_start_service(logger, "PipeWire recovery watchdog", pw_recovery.start)
+            except Exception as e:
+                logger.warning(f"PipeWire recovery watchdog not started: {e}")
+        else:
+            logger.info("PipeWire recovery watchdog disabled (MAP2_ENABLE_PIPEWIRE_RECOVERY not enabled)")
+
+        # Start cluster monitoring services (only in multi-node modes)
+        heartbeat = None
+        failover = None
+        cluster_enabled = os.getenv("MAP2_CLUSTER_ENABLED", "false").lower() == "true"
+        
+        if cluster_enabled:
+            from app.services.cluster.heartbeat_monitor import get_heartbeat_monitor
+            from app.services.cluster.failover_monitor import get_failover_monitor
+            from app.services.cluster.raft_consensus import initialize_raft_consensus, get_raft_consensus

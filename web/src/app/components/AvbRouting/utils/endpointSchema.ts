@@ -1,4 +1,5 @@
 import type {
+  AvbStreamDiagnostics,
   AvbStreamOwnership,
   AvbStreamPayload,
   DeviceType,
@@ -177,7 +178,7 @@ export function normalizeEndpointsResponse(rawResponse: unknown): EndpointsRespo
   };
 }
 
-function toTransportStats(raw: unknown): Record<string, number> | undefined {
+function toTransportStats(raw: unknown): AvbStreamDiagnostics['transport'] {
   const obj = asRecord(raw);
   if (Object.keys(obj).length === 0) return undefined;
   const read = (key: string, fallback = 0): number => toNonNegativeInt(readWithAliases(obj, key), fallback);
@@ -278,7 +279,7 @@ export function normalizeStreamPayload(rawStream: unknown): AvbStreamPayload {
   if (stream.diagnostics && typeof stream.diagnostics === 'object') {
     const diag = asRecord(stream.diagnostics);
     const transport = toTransportStats(diag.transport);
-    normalized.diagnostics = { ...diag, transport };
+    normalized.diagnostics = { ...diag, transport } as AvbStreamDiagnostics;
   }
   return normalized;
 }

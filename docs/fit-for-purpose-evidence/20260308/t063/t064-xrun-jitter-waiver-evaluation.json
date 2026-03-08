@@ -1,0 +1,155 @@
+{
+  "task_id": "T064",
+  "generated_at_utc": "2026-03-08T15:20:00Z",
+  "decision": {
+    "type": "GO_WITH_OPERATIONAL_WAIVER",
+    "scope": "Release default rollout for features 1/3/5/7 on this host profile",
+    "notes": [
+      "Strict hard-RT certification gates remain red and are not waived for marketing/performance claims.",
+      "Operational release-default gate is waived to normalized xrun-rate and sampled-jitter thresholds."
+    ]
+  },
+  "strict_gate": {
+    "max_xruns": 0,
+    "max_peak_jitter_ms": 0.35,
+    "max_budget_utilization_percent": 80.0,
+    "max_flow_errors": 0
+  },
+  "waived_gate": {
+    "max_xruns_per_second": 1.35,
+    "max_callback_jitter_max_ms": 2.0,
+    "max_callback_jitter_p95_ms": 0.3,
+    "max_budget_utilization_percent": 80.0,
+    "max_flow_errors": 0
+  },
+  "runs": [
+    {
+      "run_id": "t063-subC-steady-state",
+      "artifact_json": "docs/fit-for-purpose-evidence/20260308/t063/t063-subC-steady-state.json",
+      "duration_seconds": 180.015,
+      "flow_count": 15,
+      "sample_count": 359,
+      "final_xrun_count": 175,
+      "xrun_rate_per_second": 0.9721412104546844,
+      "callback_jitter_max_ms": 0.9650067915122643,
+      "callback_jitter_p95_ms": 0.11136480925210816,
+      "callback_jitter_mean_ms": 0.06446851485404277,
+      "peak_callback_jitter_ms": 27.281262666666667,
+      "budget_utilization_max_percent": 41.71771256943455,
+      "flow_apply_error_count": 0,
+      "strict_checks": {
+        "xruns_ok": false,
+        "peak_jitter_ok": false,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "waived_checks": {
+        "xrun_rate_ok": true,
+        "callback_jitter_max_ok": true,
+        "callback_jitter_p95_ok": true,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "strict_overall_pass": false,
+      "waived_overall_pass": true
+    },
+    {
+      "run_id": "t063-subC-edit-churn",
+      "artifact_json": "docs/fit-for-purpose-evidence/20260308/t063/t063-subC-edit-churn.json",
+      "duration_seconds": 180.013,
+      "flow_count": 23,
+      "sample_count": 359,
+      "final_xrun_count": 232,
+      "xrun_rate_per_second": 1.2887958091915583,
+      "callback_jitter_max_ms": 0.9993647146981318,
+      "callback_jitter_p95_ms": 0.2538619503422082,
+      "callback_jitter_mean_ms": 0.08874047961590051,
+      "peak_callback_jitter_ms": 37.875715666666665,
+      "budget_utilization_max_percent": 68.0680437662424,
+      "flow_apply_error_count": 0,
+      "strict_checks": {
+        "xruns_ok": false,
+        "peak_jitter_ok": false,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "waived_checks": {
+        "xrun_rate_ok": true,
+        "callback_jitter_max_ok": true,
+        "callback_jitter_p95_ok": true,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "strict_overall_pass": false,
+      "waived_overall_pass": true
+    },
+    {
+      "run_id": "t064-steady-rerun",
+      "artifact_json": "docs/fit-for-purpose-evidence/20260308/t063/t064-steady-rerun.json",
+      "duration_seconds": 180.01,
+      "flow_count": 15,
+      "sample_count": 359,
+      "final_xrun_count": 154,
+      "xrun_rate_per_second": 0.855508027331815,
+      "callback_jitter_max_ms": 1.750663408085706,
+      "callback_jitter_p95_ms": 0.15595561125461596,
+      "callback_jitter_mean_ms": 0.0728727371532871,
+      "peak_callback_jitter_ms": 34.997985666666665,
+      "budget_utilization_max_percent": 45.58205055581955,
+      "flow_apply_error_count": 0,
+      "strict_checks": {
+        "xruns_ok": false,
+        "peak_jitter_ok": false,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "waived_checks": {
+        "xrun_rate_ok": true,
+        "callback_jitter_max_ok": true,
+        "callback_jitter_p95_ok": true,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "strict_overall_pass": false,
+      "waived_overall_pass": true
+    },
+    {
+      "run_id": "t064-edit-churn-rerun",
+      "artifact_json": "docs/fit-for-purpose-evidence/20260308/t063/t064-edit-churn-rerun.json",
+      "duration_seconds": 180.016,
+      "flow_count": 23,
+      "sample_count": 359,
+      "final_xrun_count": 187,
+      "xrun_rate_per_second": 1.0387965514176518,
+      "callback_jitter_max_ms": 0.6297428345202615,
+      "callback_jitter_p95_ms": 0.08976931985757577,
+      "callback_jitter_mean_ms": 0.05186787871298983,
+      "peak_callback_jitter_ms": 37.30860766666666,
+      "budget_utilization_max_percent": 47.941299572156936,
+      "flow_apply_error_count": 0,
+      "strict_checks": {
+        "xruns_ok": false,
+        "peak_jitter_ok": false,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "waived_checks": {
+        "xrun_rate_ok": true,
+        "callback_jitter_max_ok": true,
+        "callback_jitter_p95_ok": true,
+        "budget_ok": true,
+        "flow_errors_ok": true
+      },
+      "strict_overall_pass": false,
+      "waived_overall_pass": true
+    }
+  ],
+  "aggregate": {
+    "strict_overall_pass": false,
+    "waived_overall_pass": true,
+    "max_xrun_rate_per_second": 1.2887958091915583,
+    "max_callback_jitter_max_ms": 1.750663408085706,
+    "max_callback_jitter_p95_ms": 0.2538619503422082,
+    "max_budget_utilization_percent": 68.0680437662424
+  }
+}

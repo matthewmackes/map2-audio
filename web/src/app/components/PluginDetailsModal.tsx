@@ -2,6 +2,7 @@ import { Dialog, DialogDismiss, DialogHeading, DialogProvider, useDialogStore } 
 import { Copy, X } from '@phosphor-icons/react'
 import type { Plugin } from '../../map2/types'
 import { useToasts } from './Toasts'
+import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
 interface PluginDetailsModalProps {
   plugin: Plugin | null
@@ -22,12 +23,14 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
   }
 
   if (!plugin) return null
+  const displayName = getDisplayPluginName(plugin.name, plugin.uri)
+  const displayAuthor = sanitizeRestrictedDisplayText(plugin.author)
 
   return (
     <DialogProvider store={dialog}>
       <Dialog store={dialog} className="modal" backdrop={<div className="modal-backdrop" />}>
         <div className="modal-header">
-          <DialogHeading className="modal-title">{plugin.name}</DialogHeading>
+          <DialogHeading className="modal-title">{displayName}</DialogHeading>
           <DialogDismiss className="btn btn-ghost btn-sm">
             <X size={16} weight="bold" />
           </DialogDismiss>
@@ -35,7 +38,7 @@ export function PluginDetailsModal({ plugin, open, onClose, onAdd }: PluginDetai
 
         <div className="modal-body">
           <div className="flex-between" style={{ marginBottom: 16 }}>
-            <span className="muted">{plugin.author}</span>
+            <span className="muted">{displayAuthor}</span>
             <span className="pill">{plugin.category}</span>
           </div>
 

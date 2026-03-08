@@ -1,0 +1,320 @@
+"""
+AVB Stream Management Service
+
+Manages AVB/TSN audio streams:
+- Stream creation/deletion
+- Stream status monitoring
+- Integration with JUCE audio engine
+- Cluster-aware stream routing
+"""
+
+import logging
+from typing import Dict, List, Optional, Any, Tuple
+from urllib.parse import urlparse
+from dataclasses import dataclass, asdict, field
+from enum import Enum
+
+from app.services.avb.readiness import get_avb_readiness
+
+logger = logging.getLogger(__name__)
+
+
+class StreamDirection(Enum):
+    """AVB stream direction"""
+    TALKER = "talker"
+    LISTENER = "listener"
+
+
+class StreamState(Enum):
+    """AVB stream state"""
+    STOPPED = "stopped"
+    STARTING = "starting"
+    RUNNING = "running"
+    STOPPING = "stopping"
+    ERROR = "error"
+
+
+@dataclass
+class AvbStreamConfig:
+    """AVB stream configuration"""
+    stream_id: str
+    direction: StreamDirection
+    channels: int
+    sample_rate: int
+    buffer_size: int
+    interface: str
+    dest_mac: Optional[str] = None  # For talkers
+    presentation_offset_us: int = 2000
+    priority: int = 3  # 802.1Q SR Class A
+    failover_policy: str = "none"
+    failover_interfaces: List[str] = field(default_factory=list)
+    srp_reservation_id: Optional[str] = None
+    srp_admission_id: Optional[str] = None
+    srp_metadata: Dict[str, Any] = field(default_factory=dict)
+    owner_node_id: Optional[str] = None
+    peer_node_id: Optional[str] = None
+    owner_endpoint_id: Optional[str] = None
+    peer_endpoint_id: Optional[str] = None
+    talker_node_id: Optional[str] = None
+    listener_node_id: Optional[str] = None
+    talker_endpoint_id: Optional[str] = None
+    listener_endpoint_id: Optional[str] = None
+
+
+@dataclass
+class AvbStreamStats:
+    """AVB stream statistics"""
+    frames_sent: int = 0
+    frames_received: int = 0
+    send_errors: int = 0
+    receive_errors: int = 0
+    underruns: int = 0
+    overruns: int = 0
+    timestamp_errors: int = 0
+    sequence_errors: int = 0
+    sequence_gap_events: int = 0
+    timestamp_skew_events: int = 0
+    decode_errors: int = 0
+    max_timestamp_skew_ns: int = 0
+    bytes_transferred: int = 0
+    max_latency_ns: int = 0
+    min_latency_ns: int = 0
+
+
+@dataclass
+class AvbStreamInfo:
+    """Complete AVB stream information"""
+    stream_id: str
+    direction: StreamDirection
+    state: StreamState
+    config: AvbStreamConfig
+    stats: AvbStreamStats
+    error: Optional[str] = None
+
+
+class AvbService:
+    """
+    AVB Stream Management Service
+
+    Singleton service for managing AVB audio streams.
+    Integrates with JUCE audio engine for actual stream I/O.
+    """
+
+    _ENGINE_ONLY_CONFIG_FIELDS = (
+        "srp_reservation_id",
+        "srp_admission_id",
+        "srp_metadata",
+        "owner_node_id",
+        "peer_node_id",
+        "owner_endpoint_id",
+        "peer_endpoint_id",
+        "talker_node_id",
+        "listener_node_id",
+        "talker_endpoint_id",
+        "listener_endpoint_id",
+    )
+    _ACTIVE_CONNECTION_METHODS = (
+        "get_active_connections",
+        "getActiveConnections",
+    )
+    _AVDECC_INTERFACE_NAME = "avdecc"
+    _UA1000_INPUTS = [
+        "Input 1 (Analog)",
+        "Input 2 (Analog)",
+        "Input 3 (Analog)",
+        "Input 4 (Analog)",
+        "S/PDIF L",
+        "S/PDIF R",
+        "ADAT 1",
+        "ADAT 2",
+        "ADAT 3",
+        "ADAT 4",
+    ]
+    _UA1000_OUTPUTS = [
+        "Output 1 (Main L)",
+        "Output 2 (Main R)",
+        "Output 3",
+        "Output 4",
+        "Output 5",
+        "Output 6",
+        "Output 7",
+        "Output 8",
+        "S/PDIF L",
+        "S/PDIF R",
+    ]
+
+    def __init__(self):
+        self.streams: Dict[str, AvbStreamInfo] = {}
+        self._srp_bindings: Dict[str, Dict[str, Any]] = {}
+        self._engine = None  # Will be set by juce_engine_service
+
+    def set_engine(self, engine):
+        """Set JUCE audio engine reference"""
+        self._engine = engine
+
+    def _ensure_engine_bound(self) -> None:
+        """Lazily bind to JUCE engine if available."""
+        if self._engine is not None:
+            return
+
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+
+            engine_service = get_audio_engine()
+            engine = getattr(engine_service, "_engine", None)
+            if engine is not None:
+                self._engine = engine
+        except Exception as e:
+            logger.debug(f"AVB engine bind skipped: {e}")
+
+    def is_available(self) -> bool:
+        """
+        Check if AVB is available.
+
+        Availability is derived from canonical readiness evaluation.
+        """
+        readiness = self.get_readiness()
+        if bool(readiness.get("available", False)):
+            return True
+
+        # Preserve legacy unit-test behavior in MAP2_TEST_MODE where host-level
+        # AVB prerequisites may be intentionally absent.
+        import os
+
+        test_mode = str(os.getenv("MAP2_TEST_MODE", "")).lower() in {"1", "true", "yes"}
+        if test_mode:
+            checks = readiness.get("checks", {}) if isinstance(readiness, dict) else {}
+            probe_value = checks.get("engine_avb_available") if isinstance(checks, dict) else None
+            if probe_value is not None:
+                return bool(probe_value)
+            return self._engine_reports_avb_available()
+
+        return False
+
+    def get_readiness(self) -> Dict[str, Any]:
+        """Get canonical AVB readiness using the currently bound JUCE engine."""
+        self._ensure_engine_bound()
+        return get_avb_readiness(engine=self._engine)
+
+    def _engine_reports_avb_available(self) -> bool:
+        if self._engine is None:
+            return False
+        for method_name in ("is_avb_available", "isAvbAvailable"):
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+            try:
+                return bool(method())
+            except Exception as exc:
+                logger.debug("Engine AVB probe failed via %s: %s", method_name, exc)
+                return False
+        return False
+
+    def _call_engine_stream_api(
+        self,
+        method_candidates: List[str],
+        *args: Any,
+    ) -> Tuple[bool, bool, Optional[str]]:
+        """
+        Try calling a stream-related engine method by candidate names.
+
+        Returns:
+            (method_found, success, error_message)
+        """
+        self._ensure_engine_bound()
+        if self._engine is None:
+            return False, False, "Engine not initialized"
+
+        for method_name in method_candidates:
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+
+            try:
+                result = method(*args)
+
+                if isinstance(result, bool):
+                    return True, result, None if result else f"{method_name} returned False"
+
+                if isinstance(result, dict):
+                    if result.get("error"):
+                        return True, False, str(result.get("error"))
+                    if "success" in result:
+                        ok = bool(result.get("success"))
+                        return True, ok, None if ok else str(result.get("message", "engine call failed"))
+                    return True, True, None
+
+                if result is None:
+                    return True, True, None
+
+                ok = bool(result)
+                return True, ok, None if ok else f"{method_name} returned falsy result"
+
+            except Exception as exc:
+                return True, False, str(exc)
+
+        return False, False, None
+
+    def _call_engine_stream_data_api(
+        self,
+        method_candidates: List[str],
+        *args: Any,
+    ) -> Tuple[bool, Optional[Any], Optional[str]]:
+        """
+        Try calling a stream-related engine method that returns data.
+
+        Returns:
+            (method_found, data, error_message)
+        """
+        self._ensure_engine_bound()
+        if self._engine is None:
+            return False, None, "Engine not initialized"
+
+        for method_name in method_candidates:
+            method = getattr(self._engine, method_name, None)
+            if not callable(method):
+                continue
+
+            try:
+                return True, method(*args), None
+            except Exception as exc:
+                return True, None, str(exc)
+
+        return False, None, None
+
+    @staticmethod
+    def _missing_engine_stream_api_error(operation: str) -> Dict[str, Any]:
+        """Standardized error payload for unavailable engine AVB stream hooks."""
+        return {
+            "error": f"Engine AVB stream {operation} API unavailable",
+            "code": "ENGINE_METHOD_UNAVAILABLE",
+        }
+
+    @staticmethod
+    def _engine_not_ready_error(message: Optional[str]) -> Dict[str, Any]:
+        """Standardized error payload when JUCE engine is not ready."""
+        return {
+            "error": message or "Engine not initialized",
+            "code": "ENGINE_NOT_READY",
+        }
+
+    @staticmethod
+    def _coerce_non_negative_int(value: Any, default: int) -> int:
+        """Coerce values into non-negative integers, preserving defaults on failure."""
+        try:
+            parsed = int(value)
+            if parsed < 0:
+                return default
+            return parsed
+        except Exception:
+            return default
+
+    @classmethod
+    def _normalize_stream_stats(
+        cls,
+        raw_stats: Any,
+        fallback: AvbStreamStats,
+    ) -> AvbStreamStats:
+        """Normalize engine stats payload (dict/object) into AvbStreamStats."""
+        values = asdict(fallback)
+        aliases = {

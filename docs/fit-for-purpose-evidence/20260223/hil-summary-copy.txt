@@ -1,0 +1,15 @@
+q04_multi_node_discovery_route_churn=BLOCKED
+q05_ptp_lock_transport_timing=BLOCKED
+q06_24h_endurance_soak=SKIPPED
+q04_reason=AVB status reports enabled=false available=false
+q05_reason=AVB status reports enabled=false available=false
+q06_reason=
+interface=enp0s25
+capture_seconds=30
+soak_hours=24
+soak_checkpoint_minutes=60
+output_dir=docs/fit-for-purpose-evidence/20260223/hil-wrapper
+api_base=http://localhost:8080/api/avb
+q04_log=docs/fit-for-purpose-evidence/20260223/hil-wrapper/q04_pytest.log
+q05_log=docs/fit-for-purpose-evidence/20260223/hil-wrapper/q05_capture.log
+q06_log=docs/fit-for-purpose-evidence/20260223/hil-wrapper/q06_soak.log

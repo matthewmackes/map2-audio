@@ -28,8 +28,21 @@ export type WebSocketTopic =
   | 'cpu'
   | 'phase'
   | 'latency'
+  // MIDI monitor topics
+  | 'midi_activity'
   // PipeWire audio server
-  | 'pipewire';
+  | 'pipewire'
+  // Biamp Tesira Forte AVB fleet
+  | 'tesira:meters'        // {device_id, instance_tag, levels_dbu: number[], timestamp}
+  | 'tesira:device_state'  // {device_id, event: 'connected'|'disconnected'|'fault'|'preset_changed'|'adopted', detail?}
+  | 'tesira:preset_change' // {device_id, preset_index, map2_preset_id, timestamp}
+  | 'tesira:preset_reverse_sync' // {device_id, preset_index, matched, map2_preset_ids[], rule_ids[], timestamp}
+  | 'tesira:ptp'           // {device_id, state, offset_ns, grandmaster_id, timestamp}
+  | 'tesira:discovery'     // {event: 'device_found'|'scan_complete'|'scan_error', device?, total_found?, error?}
+  // Effects loops (Tesira AVB external send/return)
+  | 'effects_loop_state'
+  | 'effects_loop_metrics'
+  | 'effects_loop_calibration_progress';
 
 export type ConnectionStatus =
   | 'disconnected'
@@ -66,6 +79,7 @@ export class Map2WebSocket {
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private status: ConnectionStatus = 'disconnected';
   private statusHandlers = new Set<(status: ConnectionStatus) => void>();
+  private reconnectExhaustedHandlers = new Set<() => void>();
   private requestHandlers = new Map<string, (data: any) => void>();
 
   constructor(config: WebSocketConfig) {
@@ -125,6 +139,9 @@ export class Map2WebSocket {
           if (this.config.reconnect && this.reconnectAttempts < this.config.maxReconnectAttempts) {
             this.scheduleReconnect();
           } else {
+            if (this.config.reconnect && this.reconnectAttempts >= this.config.maxReconnectAttempts) {
+              this.notifyReconnectExhausted();
+            }
             this.updateStatus('disconnected');
           }
         };
@@ -247,6 +264,14 @@ export class Map2WebSocket {
   }
 
   /**
+   * Register reconnect-exhausted handler
+   */
+  onReconnectExhausted(handler: () => void): () => void {
+    this.reconnectExhaustedHandlers.add(handler);
+    return () => this.reconnectExhaustedHandlers.delete(handler);
+  }
+
+  /**
    * Get current connection status
    */
   getStatus(): ConnectionStatus {
@@ -258,6 +283,24 @@ export class Map2WebSocket {
    */
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Trigger immediate manual reconnect attempt.
+   */
+  retryNow(): void {
+    if (this.ws?.readyState === WebSocket.OPEN || this.status === 'connecting') {
+      return;
+    }
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    this.reconnectAttempts = 0;
+    this.config.reconnect = true;
+    this.connect().catch(console.error);
   }
 
   /**
@@ -377,6 +420,16 @@ export class Map2WebSocket {
         }
       });
     }
+  }
+
+  private notifyReconnectExhausted(): void {
+    this.reconnectExhaustedHandlers.forEach((handler) => {
+      try {
+        handler();
+      } catch (error) {
+        console.error('Error in reconnect-exhausted handler:', error);
+      }
+    });
   }
 }
 

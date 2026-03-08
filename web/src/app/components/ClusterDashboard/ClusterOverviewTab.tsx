@@ -26,6 +26,16 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
     },
   })
 
+  const { data: runtimeProfile } = useQuery({
+    queryKey: ['runtime-profiles', 'status'],
+    queryFn: async () => {
+      const res = await fetch('/api/runtime-profiles/status')
+      if (!res.ok) throw new Error('Failed to fetch runtime profile status')
+      return res.json()
+    },
+    refetchInterval: 5000,
+  })
+
   const { data: clusterMetrics } = useQuery({
     queryKey: ['cluster', 'metrics'],
     queryFn: async () => {
@@ -265,6 +275,15 @@ export function ClusterOverviewTab({ simulationMode }: ClusterOverviewTabProps) 
         >
           <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 8 }}>Deployment Mode</div>
           <div style={{ fontSize: 18, fontWeight: 600, color: '#2563eb' }}>{deploymentMode.mode}</div>
+          {runtimeProfile && (
+            <div style={{ marginTop: 12, fontSize: 12, color: '#e5e7eb', lineHeight: 1.6 }}>
+              Runtime Profile: <strong>{runtimeProfile.current_profile}</strong>
+              {' · '}
+              Graph Policy: <strong>{runtimeProfile.profile_policy?.graph_mutation_policy ?? 'unknown'}</strong>
+              {' · '}
+              Residency: <strong>{runtimeProfile.profile_policy?.effect_residency_default ? 'on' : 'off'}</strong>
+            </div>
+          )}
           <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 12, lineHeight: 1.6 }}>
             {deploymentMode.mode === 'ALL-IN-ONE' &&
               'All services running on a single node. Multi-node deployments provide redundancy and load distribution.'}

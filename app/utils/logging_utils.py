@@ -36,6 +36,34 @@ class StructuredLogger:
         """
         self.logger = logging.getLogger(name)
         self.name = name
+
+    @staticmethod
+    def _build_log_kwargs(kwargs: Dict[str, Any], *, default_exc_info: Any = None) -> Dict[str, Any]:
+        """Normalize StructuredLogger kwargs into stdlib logging kwargs safely."""
+        log_kwargs: Dict[str, Any] = {}
+
+        exc_info = kwargs.pop("exc_info", default_exc_info)
+        if exc_info is not None:
+            log_kwargs["exc_info"] = exc_info
+
+        stack_info = kwargs.pop("stack_info", None)
+        if stack_info is not None:
+            log_kwargs["stack_info"] = stack_info
+
+        stacklevel = kwargs.pop("stacklevel", None)
+        if stacklevel is not None:
+            log_kwargs["stacklevel"] = stacklevel
+
+        explicit_extra = kwargs.pop("extra", None)
+        merged_extra: Dict[str, Any] = {}
+        if isinstance(explicit_extra, dict):
+            merged_extra.update(explicit_extra)
+        merged_extra.update(kwargs)
+
+        if merged_extra:
+            log_kwargs["extra"] = merged_extra
+
+        return log_kwargs
     
     def service_started(self, service_name: str, **kwargs):
         """Log service startup with success indicator."""
@@ -65,27 +93,33 @@ class StructuredLogger:
             exc: Optional exception object
             **kwargs: Additional structured data
         """
-        self.logger.error(f"❌ {msg}", exc_info=exc, extra=kwargs)
+        self.logger.error(
+            f"❌ {msg}",
+            **self._build_log_kwargs(kwargs, default_exc_info=exc),
+        )
     
     def warning(self, msg: str, **kwargs):
         """Log warning with indicator."""
-        self.logger.warning(f"⚠️  {msg}", extra=kwargs)
+        self.logger.warning(f"⚠️  {msg}", **self._build_log_kwargs(kwargs))
     
     def info(self, msg: str, **kwargs):
         """Log info message."""
-        self.logger.info(msg, extra=kwargs)
+        self.logger.info(msg, **self._build_log_kwargs(kwargs))
     
     def debug(self, msg: str, **kwargs):
         """Log debug message."""
-        self.logger.debug(msg, extra=kwargs)
+        self.logger.debug(msg, **self._build_log_kwargs(kwargs))
     
     def success(self, msg: str, **kwargs):
         """Log success message with indicator."""
-        self.logger.info(f"✅ {msg}", extra=kwargs)
+        self.logger.info(f"✅ {msg}", **self._build_log_kwargs(kwargs))
     
     def critical(self, msg: str, exc: Optional[Exception] = None, **kwargs):
         """Log critical error."""
-        self.logger.critical(f"🚨 {msg}", exc_info=exc, extra=kwargs)
+        self.logger.critical(
+            f"🚨 {msg}",
+            **self._build_log_kwargs(kwargs, default_exc_info=exc),
+        )
     
     def plugin_loaded(self, plugin_name: str, plugin_uri: str, **kwargs):
         """Log plugin loading."""

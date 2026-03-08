@@ -1,0 +1,20 @@
+# MAP2 Installer dependencies
+# Pin major versions for reproducibility; allow minor/patch updates.
+#
+# Install with:
+#   pip install -r requirements-installer.txt
+#
+# Or into the project venv:
+#   .venv/bin/pip install -r requirements-installer.txt
+
+# TUI framework — Anaconda/curses equivalent for modern Python
+textual>=7.3.0,<8.0.0
+
+# Config validation — Pydantic v2 (strict typing, validators, JSON schema)
+pydantic>=2.0.0,<3.0.0
+
+# YAML serialisation for Kickstart files
+PyYAML>=6.0.0,<7.0.0
+
+# Rich terminal output (used by Textual internally + fallback text mode)
+rich>=13.0.0,<15.0.0

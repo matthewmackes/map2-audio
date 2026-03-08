@@ -1,0 +1,74 @@
+docs/AVB_QUALIFICATION_MATRIX.md:4:Scope: AVB/AVDECC release-readiness gates for MAP2 with software and hardware evidence.
+docs/AVB_QUALIFICATION_MATRIX.md:19:| Q03 | JUCE C++ | AVB + AVDECC model harness | `cmake --build juce-engine/build --target check-avb -j4` | `avb_tests` and `avdecc_model_tests` both pass | Both suites passed, including AVTP init/teardown hardening coverage (2026-02-21) | PASS |
+docs/AVB_STANDARDS_RATING_REPORT.md:6:**Methodology**: Static analysis of 13 Python AVB test files (~7,554 lines), 3 AVDECC test files, TypeScript component tests, C++ source, and documentation
+docs/AVB_STANDARDS_RATING_REPORT.md:12:The MAP2 Audio Platform achieves **Tier 2 — Professional / Production-Ready AVB** status across IEEE 1722 and IEEE 1722.1 standards. It demonstrates full lifecycle coverage of AVTP audio transport, AVDECC device discovery and control, SRP resource reservation, and multi-node routing — all with defensive programming patterns (transactional rollback, idempotent APIs, fail-closed SRP semantics) suitable for live audio and broadcast deployment.
+docs/AVB_STANDARDS_RATING_REPORT.md:21:| **IEEE 1722.1-2021** | AVDECC — Discovery, Enumeration, Connection Mgmt | Entity discovery, AEM descriptor tree, ACMP stream connect/disconnect | ⭐⭐⭐⭐ |
+docs/AVB_STANDARDS_RATING_REPORT.md:22:| **IEEE 1722.1 AEM** | Audio Entity Model — Descriptor Encoding | Full format descriptor decode (0x02000008… AAF pattern), version-aware cache | ⭐⭐⭐⭐⭐ |
+docs/AVB_STANDARDS_RATING_REPORT.md:23:| **IEEE 1722.1 ACMP** | Audio Video Control Message Protocol | Connect/disconnect with talker+listener entity+stream index binding | ⭐⭐⭐⭐ |
+docs/AVB_STANDARDS_RATING_REPORT.md:24:| **IEEE 1722.1 SRP** | Stream Reservation Protocol integration | Strict mode, optional bypass, admit/release lifecycle, fail-closed semantics | ⭐⭐⭐⭐⭐ |
+docs/AVB_STANDARDS_RATING_REPORT.md:46:| Tier 1 — Consumer / Hobbyist | Basic AVTP TX/RX, no SRP, no AVDECC, no error recovery |
+docs/AVB_STANDARDS_RATING_REPORT.md:47:| **Tier 2 — Professional / Production** | Full SRP, AVDECC discovery, stream format negotiation, error recovery, observability |
+docs/AVB_STANDARDS_RATING_REPORT.md:49:| Tier 4 — Standards Certification | AVnu Certification Program test suite pass, third-party lab verification |
+docs/AVB_STANDARDS_RATING_REPORT.md:69:### 3.2 AVDECC Discovery & Control (IEEE 1722.1) — Rating: 8.5 / 10
+docs/AVB_STANDARDS_RATING_REPORT.md:77:- Third-party AVDECC connections projected into stream inventory (`source="avdecc_connection"`)
+docs/AVB_STANDARDS_RATING_REPORT.md:79:**Gap to 10/10:** Full AECP (AVDECC Enumeration and Control Protocol) write command coverage; Milan Mode AEM profile not yet exercised
+docs/AVB_STANDARDS_RATING_REPORT.md:81:### 3.3 SRP Resource Reservation (IEEE 1722.1) — Rating: 9.5 / 10
+docs/AVB_STANDARDS_RATING_REPORT.md:148:| AVDECC Mock Integration | 1 | 243 | 22 | 100% (mocked) |
+docs/AVB_STANDARDS_RATING_REPORT.md:150:| AVDECC Entity Model | 1 | ~300 | ~20 | 100% (mocked) |
+docs/AVB_STANDARDS_RATING_REPORT.md:154:> **Note**: "Mocked" indicates tests use in-process stubs rather than live hardware. Hardware interop testing with real AVB switches (e.g., Cisco Catalyst 9000, Extreme Networks) and certified endpoints is the next qualification phase.
+docs/AVB_STANDARDS_RATING_REPORT.md:164:### Milan (AVDECC Profile)
+docs/AVB_STANDARDS_RATING_REPORT.md:165:- MAP2 exercises the base AVDECC entity model and ACMP. Milan Mode adds mandatory AECP write commands, redundancy descriptors, and connection matrix responses.
+docs/AVB_STANDARDS_RATING_REPORT.md:166:- **Rating**: Base AVDECC compatible; Milan Mode in progress
+docs/AVB_STANDARDS_RATING_REPORT.md:183:| AVDECC Discovery & Control | 8.5 / 10 |
+docs/AVB_STANDARDS_RATING_REPORT.md:197:1. **Hardware interop testing** — Connect MAP2 to a certified AVB switch (Extreme Networks, Cisco) and a certified endpoint (MOTU AVB, PreSonus StudioLive) and run the full ACMP connection sequence
+docs/AVB_STANDARDS_RATING_REPORT.md:198:2. **AVnu Certification Test Suite** — Run the AVnu Alliance test harness (ATS) for AVDECC and SRP compliance
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1:# AVDECC Future Implementation Guide
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:6:**Target Audience:** Future AI assistants continuing AVDECC development
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:29:- **Network Audio:** IEEE 1722 AVTP (AVB) and IEEE 1722.1 AVDECC for multi-node streaming
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:32:### AVDECC Implementation Status (as of Phase 10 Completion)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:35:- IEEE 1722.1 AVDECC protocol stack (ADP, AECP, ACMP foundations)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:49:- AVDECC Controller mode (currently Talker+Listener only)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:53:#### C++ AVDECC Stack
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:54:- `juce-engine/Source/AvdeccEntity.h/cpp` - Main AVDECC entity (ADP, AECP, ACMP)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:55:- `juce-engine/Source/AvdeccDescriptors.h` - IEEE 1722.1 descriptor structures
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:59:- `juce-engine/Source/PythonBindings.cpp` - Python bindings (lines 3854-3907 for AVDECC)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:60:- `juce-engine/CMakeLists.txt` - Build system (USE_AVDECC flag)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:65:- `app/routes/avb.py` - REST API endpoints (lines 1000-1091: AVDECC endpoints)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:81:option(USE_AVDECC "Enable AVDECC network audio discovery" OFF)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:83:# When ON, defines HAS_AVDECC=1 preprocessor macro
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:84:# All AVDECC code guarded by #ifdef HAS_AVDECC
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:88:- `MAP2_AVB_INTERFACE` - Network interface for AVDECC (default: eth0)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:239:- Does not extract real format from AVDECC entity model
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:245:#### Step 1: Understand IEEE 1722.1 Stream Format
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:273:    """Parse IEEE 1722.1 stream format."""
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:324:        entity_id: AVDECC entity ID
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:393:**Goal:** Implement ACMP (AVDECC Connection Management Protocol) to dynamically connect/disconnect AVTP streams between Talkers and Listeners.
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:397:**IEEE 1722.1 Spec Section:** Clause 8.2 (ACMP)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:434:// ACMP PDU (IEEE 1722.1 Clause 8.2.1.5)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:645:        raise HTTPException(503, "AVDECC not enabled")
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:733:#ifdef HAS_AVDECC
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:846:# Integration test with mock AVDECC device
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:910:**IEEE 1722.1 Spec Section:** Clause 7.4.9 (SET_STREAM_FORMAT)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1028:    # Build IEEE 1722.1 format value
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1082:#ifdef HAS_AVDECC
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1156:### Mock AVDECC Entity for Testing
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1158:**Goal:** Create a Python-based mock AVDECC device that responds to discovery, enumeration, and ACMP commands for testing without hardware.
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1165:Mock AVDECC Entity for testing.
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1167:Simulates a simple AVDECC device (e.g., MOTU 828es) that responds to:
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1262:        print(f"Mock AVDECC device started: entity_id=0x{self.entity_id:016x}")
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1271:        print("Mock AVDECC device stopped")
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1313:        """Parse and respond to AVDECC packets."""
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1471:# Verify AVDECC multicast group membership
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1478:journalctl -u map2-backend | grep AVDECC
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1533:#### Issue 4: Build Errors with USE_AVDECC=ON
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1554:cmake -B build -DUSE_AVDECC=ON
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1609:// Descriptor Types (IEEE 1722.1 Table 7.1)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1622:# AVDECC entity lifecycle
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1623:journalctl -u map2-backend | grep "AVDECC Entity: Started"
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1626:journalctl -u map2-backend | grep "Discovered new AVDECC entity"
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1635:journalctl -u map2-backend | grep -E "AVDECC|ACMP|AECP|ADP" | grep -i error
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1641:# List all AVDECC entities
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1653:# Analyze captures (Wireshark has AVDECC dissector)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1666:4. **Testing Framework** - Mock AVDECC device for integration tests
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1673:1. Complete Phase 10 hardware validation (when Intel I210 + AVDECC devices available)
+docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md:1676:4. Build mock AVDECC device for CI/CD testing

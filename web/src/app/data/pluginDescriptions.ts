@@ -3,6 +3,8 @@
  * Curated descriptions for common LV2 plugins based on official documentation
  */
 
+import { sanitizeRestrictedDisplayText } from '../../map2/displayNames'
+
 // Pattern-based descriptions (matches plugin name patterns)
 export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   // Neural Amp Modeler
@@ -61,6 +63,7 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   'Keyboard Sampler': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
   'Sfizz': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
   'sfizz': 'Professional keyboard sampler with integrated soundfont browser. Supports SFZ v1/v2 and SF2 formats with ARIA extensions.',
+  'SynthForge': '16-part multitimbral synth/sampler with SFZ loading, macro performance controls, mapping workflow, and hot-reload focused instrument design.',
 
   // REEV-R Reverb
   'REEV-R': 'Algorithmic reverb with smooth decay, rich modulation, and space presets inspired by FabFilter Pro-R.',
@@ -306,7 +309,7 @@ export const PLUGIN_DESCRIPTIONS: Record<string, string> = {
 export function getPluginDescription(pluginName: string): string | null {
   // Try exact match first
   if (PLUGIN_DESCRIPTIONS[pluginName]) {
-    return PLUGIN_DESCRIPTIONS[pluginName]
+    return sanitizeRestrictedDisplayText(PLUGIN_DESCRIPTIONS[pluginName]) || null
   }
 
   // Try partial matches (plugin name contains key or key contains plugin name)
@@ -314,7 +317,7 @@ export function getPluginDescription(pluginName: string): string | null {
   for (const [key, description] of Object.entries(PLUGIN_DESCRIPTIONS)) {
     const keyLower = key.toLowerCase()
     if (nameLower.includes(keyLower) || keyLower.includes(nameLower)) {
-      return description
+      return sanitizeRestrictedDisplayText(description) || null
     }
   }
 
@@ -325,7 +328,7 @@ export function getPluginDescription(pluginName: string): string | null {
       const wordLower = word.toLowerCase()
       for (const [key, description] of Object.entries(PLUGIN_DESCRIPTIONS)) {
         if (key.toLowerCase() === wordLower) {
-          return description
+          return sanitizeRestrictedDisplayText(description) || null
         }
       }
     }

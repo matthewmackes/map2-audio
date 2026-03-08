@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences
+GET,/api/chains/{id},HTTPError('503 Server Error: Service Unavailable for url: /api/chains/{id}'),3

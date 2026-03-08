@@ -12,8 +12,10 @@ Performance optimizations:
 - Class-level shared cache across all instances
 """
 
+import asyncio
 import json
 import logging
+import os
 import time
 from typing import List, Dict, Any, Optional, ClassVar
 from sqlalchemy import select, delete
@@ -22,6 +24,26 @@ from .command_queue import CommandQueue, CommandType
 from app.services.plugin_loader_unified import get_plugin_loader
 
 logger = logging.getLogger(__name__)
+
+_ENABLE_ENGINE_CHAIN_DEPLOY = os.getenv("MAP2_ENABLE_ENGINE_CHAIN_DEPLOY", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+_CHAIN_DEPLOY_API_WARNING_EMITTED = False
+
+
+def _warn_chain_deploy_api_once(missing_methods: List[str]) -> None:
+    """Emit chain-deploy API incompatibility warning only once per process."""
+    global _CHAIN_DEPLOY_API_WARNING_EMITTED
+    if _CHAIN_DEPLOY_API_WARNING_EMITTED:
+        return
+    _CHAIN_DEPLOY_API_WARNING_EMITTED = True
+    logger.warning(
+        "Skipping JUCE chain deployment: engine missing required APIs (%s).",
+        ", ".join(missing_methods),
+    )
 
 
 class ChainService:
@@ -205,6 +227,47 @@ class ChainService:
 
         return {}
 
+    @staticmethod
+    def _serialize_effects_loop(loop: Any) -> Dict[str, Any]:
+        return {
+            "loop_id": loop.loop_id,
+            "name": loop.name,
+            "channels": loop.channels,
+            "topology": loop.topology,
+            "tesira_device_id": loop.tesira_device_id,
+            "template_id": loop.template_id,
+            "send_endpoint_id": loop.send_endpoint_id,
+            "return_endpoint_id": loop.return_endpoint_id,
+            "state_desired": loop.state_desired,
+            "state_actual": loop.state_actual,
+            "health_status": loop.health_status,
+            "health_reason": loop.health_reason,
+            "target_added_latency_ms": loop.target_added_latency_ms,
+            "measured_added_latency_ms": loop.measured_added_latency_ms,
+            "compensation_samples": loop.compensation_samples,
+            "calibration_status": loop.calibration_status,
+            "created_at": loop.created_at.isoformat() if loop.created_at else None,
+            "updated_at": loop.updated_at.isoformat() if loop.updated_at else None,
+        }
+
+    @staticmethod
+    def _serialize_loop_insertion(insertion: Any) -> Dict[str, Any]:
+        return {
+            "insertion_id": insertion.insertion_id,
+            "chain_id": insertion.chain_id,
+            "loop_id": insertion.loop_id,
+            "slot_index": insertion.slot_index,
+            "enabled": insertion.enabled,
+            "mode": insertion.mode,
+            "blend_pct": insertion.blend_pct,
+            "send_gain_db": insertion.send_gain_db,
+            "return_gain_db": insertion.return_gain_db,
+            "crossfade_ms": insertion.crossfade_ms,
+            "band_split_hz": insertion.band_split_hz or [],
+            "created_at": insertion.created_at.isoformat() if insertion.created_at else None,
+            "updated_at": insertion.updated_at.isoformat() if insertion.updated_at else None,
+        }
+
     async def create_chain(self, name: str) -> Optional[Dict[str, Any]]:
         """Create a new signal chain.
         
@@ -252,7 +315,7 @@ class ChainService:
             if not self.session:
                 return None
             
-            from app.database import Chain, ChainPlugin
+            from app.database import Chain, ChainPlugin, EffectsLoop, EffectsLoopInsertion
             
             result = await self.session.execute(
                 select(Chain).filter(Chain.id == chain_id)
@@ -285,11 +348,29 @@ class ChainService:
                     "parameters": {},
                 })
 
+            insertion_result = await self.session.execute(
+                select(EffectsLoopInsertion)
+                .filter(EffectsLoopInsertion.chain_id == chain_id)
+                .order_by(EffectsLoopInsertion.slot_index.asc(), EffectsLoopInsertion.id.asc())
+            )
+            insertions = list(insertion_result.scalars().all())
+            loop_ids = sorted({ins.loop_id for ins in insertions if ins.loop_id})
+
+            effects_loops: Dict[str, Dict[str, Any]] = {}
+            if loop_ids:
+                loops_result = await self.session.execute(
+                    select(EffectsLoop).filter(EffectsLoop.loop_id.in_(loop_ids))
+                )
+                for loop in loops_result.scalars().all():
+                    effects_loops[loop.loop_id] = self._serialize_effects_loop(loop)
+
             return {
                 "id": chain.id,
                 "name": chain.name,
                 "is_active": chain.is_active,
                 "plugins": plugins_list,
+                "loop_insertions": [self._serialize_loop_insertion(ins) for ins in insertions],
+                "effects_loops": [effects_loops[loop_id] for loop_id in loop_ids if loop_id in effects_loops],
                 "created_at": chain.created_at.isoformat() if chain.created_at else None,
                 "updated_at": chain.updated_at.isoformat() if chain.updated_at else None
             }
@@ -307,7 +388,7 @@ class ChainService:
             if not self.session:
                 return []
 
-            from app.database import Chain, ChainPlugin
+            from app.database import Chain, ChainPlugin, EffectsLoop, EffectsLoopInsertion
 
             # Get all chains
             result = await self.session.execute(select(Chain))
@@ -328,6 +409,8 @@ class ChainService:
                     "name": chain.name,
                     "is_active": chain.is_active,
                     "plugins": [],
+                    "loop_insertions": [],
+                    "effects_loops": [],
                     "plugin_count": len(plugins),
                     "created_at": chain.created_at.isoformat() if chain.created_at else None
                 }
@@ -344,6 +427,23 @@ class ChainService:
                         "out_ports": meta.get("out_port_count", 0),
                         "parameters": {},
                     })
+
+                insertion_result = await self.session.execute(
+                    select(EffectsLoopInsertion)
+                    .filter(EffectsLoopInsertion.chain_id == chain.id)
+                    .order_by(EffectsLoopInsertion.slot_index.asc(), EffectsLoopInsertion.id.asc())
+                )
+                insertions = list(insertion_result.scalars().all())
+                chain_data["loop_insertions"] = [self._serialize_loop_insertion(ins) for ins in insertions]
+
+                loop_ids = sorted({ins.loop_id for ins in insertions if ins.loop_id})
+                if loop_ids:
+                    loops_result = await self.session.execute(
+                        select(EffectsLoop).filter(EffectsLoop.loop_id.in_(loop_ids))
+                    )
+                    loop_map = {loop.loop_id: self._serialize_effects_loop(loop) for loop in loops_result.scalars().all()}
+                    chain_data["effects_loops"] = [loop_map[loop_id] for loop_id in loop_ids if loop_id in loop_map]
+
                 chains_list.append(chain_data)
 
             return chains_list
@@ -748,36 +848,54 @@ class ChainService:
             )
             chain_plugins = plugins_result.scalars().all()
             
-            # FIX #8: Deploy chain to JUCE engine
-            try:
-                from app.services.juce_engine_service import JuceEngineService
-                engine_service = JuceEngineService.get_instance()
-                
-                if engine_service and engine_service._engine:
-                    # Clear existing chain in engine
-                    engine_service._engine.clear_chain()
-                    
-                    # Load and add each plugin to the engine chain
-                    for chain_plugin in chain_plugins:
-                        try:
-                            # Load plugin by URI
-                            instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
-                            
-                            if instance_id >= 0:
-                                # Add to engine chain at the correct position
-                                engine_service._engine.add_to_chain(instance_id, chain_plugin.position)
-                                logger.info(f"Deployed plugin {chain_plugin.plugin_uri} to chain position {chain_plugin.position}")
-                            else:
-                                logger.warning(f"Failed to load plugin {chain_plugin.plugin_uri}")
-                        except Exception as e:
-                            logger.error(f"Error deploying plugin {chain_plugin.plugin_uri}: {e}")
-                    
-                    logger.info(f"Chain {chain_id} deployed to JUCE engine with {len(chain_plugins)} plugins")
-                else:
-                    logger.warning("JUCE engine not available for chain deployment")
-            except Exception as e:
-                logger.error(f"Error deploying chain to JUCE engine: {e}")
-                # Don't fail the database update if engine deployment fails
+            # Deploy to JUCE only when explicitly enabled; default keeps route fast/stable.
+            if _ENABLE_ENGINE_CHAIN_DEPLOY:
+                try:
+                    from app.services.juce_engine_service import JuceEngineService
+
+                    engine_service = JuceEngineService.get_instance()
+                    engine = getattr(engine_service, "_engine", None) if engine_service else None
+
+                    if engine:
+                        missing_methods = [
+                            method
+                            for method in ("clear_chain", "add_to_chain")
+                            if not hasattr(engine, method)
+                        ]
+
+                        if missing_methods:
+                            _warn_chain_deploy_api_once(missing_methods)
+                        else:
+                            await asyncio.to_thread(engine.clear_chain)
+                            for chain_plugin in chain_plugins:
+                                try:
+                                    instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
+                                    if instance_id >= 0:
+                                        await asyncio.to_thread(
+                                            engine.add_to_chain, instance_id, chain_plugin.position
+                                        )
+                                        logger.info(
+                                            "Deployed plugin %s to chain position %s",
+                                            chain_plugin.plugin_uri,
+                                            chain_plugin.position,
+                                        )
+                                    else:
+                                        logger.warning("Failed to load plugin %s", chain_plugin.plugin_uri)
+                                except Exception as e:
+                                    logger.error(f"Error deploying plugin {chain_plugin.plugin_uri}: {e}")
+
+                            logger.info(
+                                "Chain %s deployed to JUCE engine with %s plugins",
+                                chain_id,
+                                len(chain_plugins),
+                            )
+                    else:
+                        logger.debug("JUCE engine unavailable; skipping chain deployment")
+                except Exception as e:
+                    logger.error(f"Error deploying chain to JUCE engine: {e}")
+                    # Don't fail the database update if engine deployment fails
+            else:
+                logger.debug("Skipping JUCE chain deployment (MAP2_ENABLE_ENGINE_CHAIN_DEPLOY disabled)")
             
             logger.info(f"Activated chain {chain_id}")
             return True

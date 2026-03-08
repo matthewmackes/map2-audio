@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-03-07T20:42:53-05:00",
+  "interface": "Jogg USB Audio",
+  "paths_tested": [
+    "playback_FL -> capture_MONO",
+    "playback_FR -> capture_MONO"
+  ],
+  "ok_count": 0,
+  "failed_count": 2,
+  "details": "docs/fit-for-purpose-evidence/20260307/t055/jogg-usb-restart/combined.txt"
+}

@@ -6,6 +6,7 @@ import { useState, useRef, useCallback } from 'react'
 import { Power, Trash, Link } from '@phosphor-icons/react'
 import type { HorizontalPluginNodeProps } from './types'
 import { getIconForCategory } from './icons'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 export function HorizontalPluginNode({
   plugin,
@@ -24,7 +25,7 @@ export function HorizontalPluginNode({
   const nodeRef = useRef<HTMLDivElement>(null)
 
   const Icon = getIconForCategory(meta?.category || meta?.class_label)
-  const name = meta?.name || plugin.name || plugin.uri.split('/').pop() || 'Unknown'
+  const name = getDisplayPluginName(meta?.name || plugin.name || plugin.uri.split('/').pop() || 'Unknown', plugin.uri)
 
   const handleDragStart = useCallback(
     (e: React.DragEvent) => {

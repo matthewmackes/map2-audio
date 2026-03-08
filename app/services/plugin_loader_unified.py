@@ -800,40 +800,43 @@ class UnifiedPluginLoader:
 
     def discover_sync(self, force_refresh: bool = False) -> List[LV2Plugin]:
         """Synchronous version of discover for non-async contexts."""
-        # Check in-memory cache
-        if not force_refresh and self._plugins and self._initialized:
-            cache_age = time.time() - self._in_memory_timestamp
-            if cache_age < self.CACHE_TTL_SECONDS:
+        # Keep sync discovery single-flight under contention to avoid
+        # concurrent filesystem scans and cache races.
+        with self._lock:
+            # Check in-memory cache
+            if not force_refresh and self._plugins and self._initialized:
+                cache_age = time.time() - self._in_memory_timestamp
+                if cache_age < self.CACHE_TTL_SECONDS:
+                    return list(self._plugins.values())
+
+            # Try loading from persistent cache
+            if not force_refresh and self._load_from_cache():
+                self._initialized = True
                 return list(self._plugins.values())
 
-        # Try loading from persistent cache
-        if not force_refresh and self._load_from_cache():
+            # Discover from system
+            self._plugins.clear()
+
+            # Try lilv first, then fallback if no plugins found
+            if LILV_AVAILABLE and self._lilv_world:
+                try:
+                    self._discover_with_lilv()
+                except Exception as e:
+                    logger.warning(f"lilv discovery failed: {e}, using fallback")
+                    self._plugins.clear()
+
+            # Use fallback if lilv didn't find plugins or failed
+            if not self._plugins:
+                logger.debug("Using fallback discovery...")
+                self._discover_fallback()
+
+            # Build indexes and save cache
+            self._build_category_index()
+            self._save_to_cache()
+            self._in_memory_timestamp = time.time()
             self._initialized = True
+
             return list(self._plugins.values())
-
-        # Discover from system
-        self._plugins.clear()
-
-        # Try lilv first, then fallback if no plugins found
-        if LILV_AVAILABLE and self._lilv_world:
-            try:
-                self._discover_with_lilv()
-            except Exception as e:
-                logger.warning(f"lilv discovery failed: {e}, using fallback")
-                self._plugins.clear()
-        
-        # Use fallback if lilv didn't find plugins or failed
-        if not self._plugins:
-            logger.debug("Using fallback discovery...")
-            self._discover_fallback()
-
-        # Build indexes and save cache
-        self._build_category_index()
-        self._save_to_cache()
-        self._in_memory_timestamp = time.time()
-        self._initialized = True
-
-        return list(self._plugins.values())
 
     def discover_plugins(self, force_refresh: bool = False) -> List[LV2Plugin]:
         """Sync wrapper for API compatibility."""

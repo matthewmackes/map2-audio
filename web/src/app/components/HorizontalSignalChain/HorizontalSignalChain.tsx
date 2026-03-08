@@ -9,6 +9,7 @@ import { useState, useCallback, useRef } from 'react'
 import type { HorizontalSignalChainProps } from './types'
 import { HorizontalPluginNode } from './HorizontalPluginNode'
 import { SidechainConnector } from './SidechainConnector'
+import { getDisplayPluginName } from '../../../map2/displayNames'
 
 interface SignalInfo {
   channels: number
@@ -215,8 +216,8 @@ export function HorizontalSignalChain({
             {index < plugins.length - 1 && (
               <SignalArrow
                 isActive={pluginActive}
-                fromPlugin={meta?.name || plugin.name}
-                toPlugin={pluginMeta[nextPlugin?.uri]?.name || nextPlugin?.name}
+                fromPlugin={getDisplayPluginName(meta?.name || plugin.name, plugin.uri)}
+                toPlugin={getDisplayPluginName(pluginMeta[nextPlugin?.uri]?.name || nextPlugin?.name, nextPlugin?.uri)}
                 channels={outChannels}
               />
             )}

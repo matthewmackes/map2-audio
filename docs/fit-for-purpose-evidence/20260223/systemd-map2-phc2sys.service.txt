@@ -1,0 +1,20 @@
+[Unit]
+Description=MAP2 PHC2SYS System Clock Synchronization
+Documentation=https://github.com/matthewmackes/map2-audio
+ConditionPathExists=/etc/map2/avb-enabled
+PartOf=map2-avb.target
+After=map2-ptp4l.service
+Requires=map2-ptp4l.service
+
+[Service]
+Type=simple
+# Synchronize system clock to PTP hardware clock
+# -a: auto-select PTP clock
+# -r: synchronize system clock to PHC (reverse of default)
+# -m: print messages to stdout (goes to journal)
+ExecStart=/usr/sbin/phc2sys -a -r -m
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=map2-avb.target

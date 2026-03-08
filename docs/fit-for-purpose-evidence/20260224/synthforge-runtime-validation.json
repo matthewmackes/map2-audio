@@ -1,0 +1,328 @@
+{
+  "init_ok": true,
+  "start_ok": true,
+  "baseline": {
+    "voice_metrics": {
+      "active_voices": 0,
+      "peak_voices": 0,
+      "cpu_percent": 0.0,
+      "voices_per_part": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "cpu_metrics": {
+      "total_cpu_percent": 34.75358383921845,
+      "audio_callback_percent": 34.75358383921845,
+      "peak_cpu_percent": 55.872,
+      "average_cpu_percent": 35.413661968085115,
+      "xrun_count": 0,
+      "budget_ms": 1.3333333333333333,
+      "current_callback_ms": 0.440389,
+      "headroom_percent": 65.24641616078155,
+      "per_plugin_percent": {}
+    },
+    "xrun_count": 0
+  },
+  "runs": [
+    {
+      "requested_notes": 8,
+      "accepted_note_on": 8,
+      "accepted_note_off": 8,
+      "on_metrics": {
+        "active_voices": 8,
+        "peak_voices": 8,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "cpu_metrics": {
+        "total_cpu_percent": 35.136570170947245,
+        "audio_callback_percent": 35.136570170947245,
+        "peak_cpu_percent": 55.872,
+        "average_cpu_percent": 35.74617115384617,
+        "xrun_count": 0,
+        "budget_ms": 1.3333333333333333,
+        "current_callback_ms": 0.45223,
+        "headroom_percent": 64.86342982905276,
+        "per_plugin_percent": {}
+      },
+      "xrun_after_on": 0,
+      "off_metrics": {
+        "active_voices": 0,
+        "peak_voices": 8,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "xrun_after_off": 0
+    },
+    {
+      "requested_notes": 16,
+      "accepted_note_on": 16,
+      "accepted_note_off": 16,
+      "on_metrics": {
+        "active_voices": 16,
+        "peak_voices": 16,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "cpu_metrics": {
+        "total_cpu_percent": 36.380871078716865,
+        "audio_callback_percent": 36.380871078716865,
+        "peak_cpu_percent": 56.700525,
+        "average_cpu_percent": 35.433020333333324,
+        "xrun_count": 0,
+        "budget_ms": 1.3333333333333333,
+        "current_callback_ms": 0.56233,
+        "headroom_percent": 63.619128921283135,
+        "per_plugin_percent": {}
+      },
+      "xrun_after_on": 0,
+      "off_metrics": {
+        "active_voices": 0,
+        "peak_voices": 16,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "xrun_after_off": 0
+    },
+    {
+      "requested_notes": 32,
+      "accepted_note_on": 32,
+      "accepted_note_off": 32,
+      "on_metrics": {
+        "active_voices": 32,
+        "peak_voices": 32,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          32,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "cpu_metrics": {
+        "total_cpu_percent": 36.051984503134896,
+        "audio_callback_percent": 36.051984503134896,
+        "peak_cpu_percent": 56.94030000000001,
+        "average_cpu_percent": 35.84286603260869,
+        "xrun_count": 0,
+        "budget_ms": 1.3333333333333333,
+        "current_callback_ms": 0.461151,
+        "headroom_percent": 63.948015496865104,
+        "per_plugin_percent": {}
+      },
+      "xrun_after_on": 0,
+      "off_metrics": {
+        "active_voices": 0,
+        "peak_voices": 32,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "xrun_after_off": 0
+    },
+    {
+      "requested_notes": 64,
+      "accepted_note_on": 64,
+      "accepted_note_off": 64,
+      "on_metrics": {
+        "active_voices": 64,
+        "peak_voices": 64,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          64,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "cpu_metrics": {
+        "total_cpu_percent": 38.15631952807311,
+        "audio_callback_percent": 38.15631952807311,
+        "peak_cpu_percent": 61.31617500000001,
+        "average_cpu_percent": 35.8308761111111,
+        "xrun_count": 0,
+        "budget_ms": 1.3333333333333333,
+        "current_callback_ms": 0.48216899999999996,
+        "headroom_percent": 61.84368047192689,
+        "per_plugin_percent": {}
+      },
+      "xrun_after_on": 0,
+      "off_metrics": {
+        "active_voices": 0,
+        "peak_voices": 64,
+        "cpu_percent": 0.0,
+        "voices_per_part": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "xrun_after_off": 0
+    }
+  ],
+  "final_cpu_metrics": {
+    "total_cpu_percent": 37.81922690569284,
+    "audio_callback_percent": 37.81922690569284,
+    "peak_cpu_percent": 61.31617500000001,
+    "average_cpu_percent": 36.22821929453832,
+    "xrun_count": 0,
+    "budget_ms": 1.3333333333333333,
+    "current_callback_ms": 0.46022499999999994,
+    "headroom_percent": 62.18077309430716,
+    "per_plugin_percent": {}
+  },
+  "final_xrun_count": 0,
+  "system_info": {
+    "version": "2.0.0-juce",
+    "sample_rate": 48000.0,
+    "buffer_size": 64,
+    "audio_device": "Default ALSA Output (currently PipeWire Media Server)",
+    "lv2_path": "/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2",
+    "running": true,
+    "audio_running": true,
+    "plugin_count": 9,
+    "midi_enabled": true,
+    "total_latency_samples": 0,
+    "total_latency_ms": 0.0,
+    "input_channels": 2,
+    "output_channels": 2,
+    "available": true,
+    "initialized": true
+  }
+}
