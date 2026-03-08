@@ -1718,16 +1718,67 @@ ID: T059
 Status: [>] In Progress
 Title: Standardize dual runtime profiles (Edit vs Performance) as first-class platform feature
 Description:
-- Goal / acceptance criteria: Implement explicit `Edit` and `Performance` runtime modes with deterministic profile switching (buffer/period, graph mutation policy, safety limits), exposed in backend API + UI + startup config. Edit mode must prioritize safe graph changes; Performance mode must prioritize minimum xruns.
-- Why it matters: Real-time reliability requires different constraints during graph authoring versus live playback.
+- Goal / acceptance criteria: Implement explicit `Edit` and `Performance` runtime modes with deterministic profile switching (buffer/period, graph mutation policy, safety limits), but make policy explicitly node-type aware using the Node Types model (`ALL-IN-ONE`, `AUDIO-NODE`, `CONTROL-NODE`, `FRONTEND-ONLY`). Audio-capable node types must support deterministic Edit/Performance transitions; non-audio node types must report profile capability as control-only (`N/A`) and reject audio-profile mutation requests.
+- Why it matters: Real-time reliability requires different constraints during graph authoring versus live playback, and Node Types define different service surfaces/latency goals so one runtime policy cannot apply universally.
 - Dependencies: T058
 - Estimated effort: High
-- Required outputs: Mode model/schema updates, API routes, UI controls, persisted config, migration notes, and A/B validation artifacts.
+- Required outputs: NodeType->Profile capability matrix, mode model/schema updates, backend resolver + API routes, UI controls, persisted config, migration notes, and A/B validation artifacts by node type.
+Subtasks:
+ID: T059-subA
+Status: [ ] Todo
+Title: Define Node Type to runtime-profile capability matrix
+Description:
+- Goal / acceptance criteria: Publish one canonical matrix mapping `ALL-IN-ONE`, `AUDIO-NODE`, `CONTROL-NODE`, and `FRONTEND-ONLY` to allowed runtime profiles, startup default, and transition preflight gates.
+- Why it matters: Aligns runtime-profile behavior with Node Types service boundaries and avoids ambiguous mode semantics on non-audio nodes.
+- Dependencies: T058
+- Estimated effort: Medium
+- Required outputs: Matrix table in docs/config schema, default-selection rules, and explicit rejection semantics for unsupported transitions.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-08 09:28 - Codex
+ID: T059-subB
+Status: [ ] Todo
+Title: Implement backend node-type-aware profile resolver and policy guards
+Description:
+- Goal / acceptance criteria: Add backend policy resolver that derives profile eligibility/defaults from node type and enforces guardrails for profile switching + unsupported requests.
+- Why it matters: Prevents control-plane/API paths from applying audio-runtime changes on node types that do not run the audio engine.
+- Dependencies: T059-subA
+- Estimated effort: Medium
+- Required outputs: Service/policy module updates, API validation behavior, config persistence wiring, and unit tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-08 09:28 - Codex
+ID: T059-subC
+Status: [ ] Todo
+Title: Surface node-type runtime-profile capability in UI and status APIs
+Description:
+- Goal / acceptance criteria: Expose runtime-profile capability and current/default mode in dashboard/status surfaces, with disabled controls and clear messaging for non-audio node types.
+- Why it matters: Operators need predictable behavior when managing mixed clusters containing control-only and audio-capable nodes.
+- Dependencies: T059-subB
+- Estimated effort: Medium
+- Required outputs: UI capability badges/toggles, API response contract updates, and route/component tests.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-08 09:28 - Codex
+ID: T059-subD
+Status: [ ] Todo
+Title: Validate Edit/Performance behavior per node type and publish evidence
+Description:
+- Goal / acceptance criteria: Run validation matrix across node types demonstrating profile transition outcomes, latency/xrun deltas on audio-capable nodes, and expected no-op/rejection behavior on control-only nodes.
+- Why it matters: Confirms Node Types policy is enforced end-to-end instead of only documented.
+- Dependencies: T059-subC
+- Estimated effort: High
+- Required outputs: Evidence artifacts (`json` + markdown), pass/fail matrix, and follow-up defect list (if any).
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 09:14 - Codex
+Last updated: 2026-03-08 09:28 - Codex
+Assigned to: Codex + Lab
+Last updated: 2026-03-08 09:28 - Codex
 - Planning notes:
-  - Default policy target: boot into `Performance` when running headless/live, fallback to `Edit` for active graph editing sessions.
+  - Node Types alignment target:
+    - `AUDIO-NODE`: default `Performance`; allow temporary `Edit` windows with guarded transitions.
+    - `ALL-IN-ONE`: support both profiles, default based on active workflow (`Edit` during authoring, `Performance` for live/headless runs).
+    - `CONTROL-NODE` and `FRONTEND-ONLY`: expose runtime profile as control-only (`N/A`) with no audio-policy mutation.
   - Gate profile transitions with explicit preflight checks and rollback-on-failure.
 
 
@@ -1788,11 +1839,72 @@ Description:
 - Dependencies: T059, T060, T061, T062
 - Estimated effort: High
 - Required outputs: Rollout plan, feature-flag defaults, acceptance threshold matrix, release notes, and final go/no-go report.
+Subtasks:
+ID: T063-subA
+Status: [ ] Todo
+Title: Define standard-default matrix for features 1/3/5/7 across environments
+Description:
+- Goal / acceptance criteria: Publish one canonical defaults matrix for `dev`, `lab`, and `release` covering runtime profile (feature 1), effect residency (feature 3), RT hardening policy (feature 5), and native JUCE inventory gate (feature 7), including explicit kill-switch flags.
+- Why it matters: Prevents drift and ambiguous runtime behavior during staged rollout.
+- Dependencies: T059, T060, T061, T062
+- Estimated effort: Medium
+- Required outputs: Config/defaults table, feature-flag map, and documented rollback toggles.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 09:14 - Codex
+Last updated: 2026-03-08 09:24 - Codex
+ID: T063-subB
+Status: [ ] Todo
+Title: Execute dev-stage rollout with automated gates and rollback validation
+Description:
+- Goal / acceptance criteria: Enable the standard defaults in `dev`, run route/service tests plus native URI readiness checks, then validate rollback path returns system to pre-rollout behavior.
+- Why it matters: Catches integration regressions before hardware/lab qualification cycles.
+- Dependencies: T063-subA
+- Estimated effort: Medium
+- Required outputs: Dev rollout checklist, test logs, rollback proof, and issue list.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-08 09:24 - Codex
+ID: T063-subC
+Status: [ ] Todo
+Title: Execute lab-stage qualification with steady-state and edit-churn evidence
+Description:
+- Goal / acceptance criteria: Run lab gates for both steady-state live load and controlled edit-churn workload under standard defaults, including xrun/jitter/cpu/latency evidence and pass/fail against thresholds.
+- Why it matters: Confirms defaults improve real-world behavior, not only synthetic tests.
+- Dependencies: T063-subB
+- Estimated effort: High
+- Required outputs: Lab evidence pack (`json` + markdown), threshold matrix, and delta vs pre-rollout baseline.
+Subtasks: None
+Assigned to: Codex + Lab
+Last updated: 2026-03-08 09:24 - Codex
+ID: T063-subD
+Status: [ ] Todo
+Title: Prepare release-stage controls (docs, observability, rollback runbook)
+Description:
+- Goal / acceptance criteria: Finalize operator-facing docs and API/UI observability fields for the new defaults, with explicit rollback runbook and release note callouts.
+- Why it matters: Production adoption fails without clear operations and recovery guidance.
+- Dependencies: T063-subC
+- Estimated effort: Medium
+- Required outputs: Release notes draft, operations guide updates, telemetry field list, rollback runbook.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-08 09:24 - Codex
+ID: T063-subE
+Status: [ ] Todo
+Title: Produce final go/no-go packet and set defaults to standard in release
+Description:
+- Goal / acceptance criteria: Compile the full acceptance packet, confirm all gates green (or explicitly waived), and switch release defaults for features 1/3/5/7 to standard values.
+- Why it matters: Converts validated improvements into durable platform defaults.
+- Dependencies: T063-subD
+- Estimated effort: Medium
+- Required outputs: Go/no-go decision record, final defaults commit, and sign-off summary.
+Subtasks: None
+Assigned to: Codex + Lab
+Last updated: 2026-03-08 09:24 - Codex
+Assigned to: Codex + Lab
+Last updated: 2026-03-08 09:24 - Codex
 - Planning notes:
-  - Final gate should include both steady-state live workload and controlled edit-churn workload evidence.
+  - Rollout order is fixed: `T063-subA -> T063-subB -> T063-subC -> T063-subD -> T063-subE`.
+  - Final gate must include both steady-state live workload and controlled edit-churn workload evidence.
 
 
 ID: T900  
