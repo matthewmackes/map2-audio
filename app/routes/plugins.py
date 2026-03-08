@@ -186,6 +186,7 @@ try:
     # In-memory cache of discovered and loaded plugins with TTL
     _discovered_plugins = []
     _loaded_plugins = {}
+    _resident_plugins = {}
     _cache_timestamp = 0
     _cache_ttl = 300  # 5 minutes cache TTL
     _plugin_cache_lock = threading.RLock()
@@ -200,6 +201,37 @@ try:
         "dropped": 0,
         "last_error": None,
     }
+    _residency_stats: Dict[str, int] = {
+        "parked": 0,
+        "reused": 0,
+        "destroyed": 0,
+    }
+
+    def _runtime_profile_status() -> Dict[str, Any]:
+        try:
+            from app.services.runtime_profiles import get_runtime_profile_status
+
+            return get_runtime_profile_status()
+        except Exception:
+            return {
+                "node_type": "ALL-IN-ONE",
+                "current_profile": "Edit",
+                "profile_policy": {"effect_residency_default": False},
+            }
+
+    def _is_effect_residency_enabled() -> bool:
+        status = _runtime_profile_status()
+        current_profile = str(status.get("current_profile", "Edit"))
+        profile_policy = status.get("profile_policy", {})
+        default_enabled = bool(profile_policy.get("effect_residency_default", False))
+
+        try:
+            from app.config import config_get
+
+            configured = config_get("plugins.effect_residency", default_enabled)
+            return bool(configured) and current_profile == "Performance"
+        except Exception:
+            return default_enabled and current_profile == "Performance"
 
     def _get_plugin_discovery_lock() -> asyncio.Lock:
         global _plugin_discovery_lock
@@ -525,6 +557,40 @@ try:
         else:
             response.headers["Cache-Control"] = "public, max-age=60"
 
+    def _native_inventory_snapshot(plugins: List[Dict[str, Any]]) -> Dict[str, Any]:
+        try:
+            from app.config import config_get
+            from app.services.native_inventory import filter_native_uris, load_native_catalog
+
+            catalog = load_native_catalog()
+            discovered = filter_native_uris([str(p.get("uri", "")) for p in plugins if isinstance(p, dict)])
+            missing = [uri for uri in catalog if uri not in set(discovered)]
+            minimum = int(config_get("plugins.native_inventory_min_loadable", 1))
+            required = bool(config_get("plugins.native_inventory_required", True))
+            ready = len(discovered) >= max(1, minimum)
+            return {
+                "catalog_count": len(catalog),
+                "discovered_count": len(discovered),
+                "missing_count": len(missing),
+                "missing_uris": missing,
+                "required": required,
+                "minimum_loadable": minimum,
+                "ready": ready,
+                "gate_pass": ready or not required,
+            }
+        except Exception as exc:
+            return {
+                "catalog_count": 0,
+                "discovered_count": 0,
+                "missing_count": 0,
+                "missing_uris": [],
+                "required": True,
+                "minimum_loadable": 1,
+                "ready": False,
+                "gate_pass": False,
+                "error": str(exc),
+            }
+
     @router.get("/discover")
     async def discover_plugins(
         response: Response,
@@ -549,7 +615,12 @@ try:
                 cached_plugins = list(_discovered_plugins)
             logger.debug(f"Returning {len(cached_plugins)} cached plugins")
             logger.debug(f"Cached plugins: {[p.get('uri') for p in cached_plugins]}")
-            return {"plugins": cached_plugins, "count": len(cached_plugins), "cached": True}
+            return {
+                "plugins": cached_plugins,
+                "count": len(cached_plugins),
+                "cached": True,
+                "native_inventory": _native_inventory_snapshot(cached_plugins),
+            }
 
         discovery_lock = _get_plugin_discovery_lock()
         # Avoid stampeding on startup: concurrent callers return current cache/fallback
@@ -563,6 +634,7 @@ try:
                     "count": len(warm_plugins),
                     "cached": True,
                     "stale": True,
+                    "native_inventory": _native_inventory_snapshot(warm_plugins),
                 }
 
             fallback_plugins = _get_hardware_plugins() + _get_juce_processors()
@@ -572,6 +644,7 @@ try:
                     "count": len(fallback_plugins),
                     "cached": False,
                     "deferred_scan": True,
+                    "native_inventory": _native_inventory_snapshot(fallback_plugins),
                 }
 
         # Collapse concurrent discovery refreshes to one in-flight scan.
@@ -581,7 +654,12 @@ try:
                 with _plugin_cache_lock:
                     cached_plugins = list(_discovered_plugins)
                 logger.debug(f"Returning {len(cached_plugins)} cached plugins after single-flight wait")
-                return {"plugins": cached_plugins, "count": len(cached_plugins), "cached": True}
+                return {
+                    "plugins": cached_plugins,
+                    "count": len(cached_plugins),
+                    "cached": True,
+                    "native_inventory": _native_inventory_snapshot(cached_plugins),
+                }
 
             # Always include JUCE native processors (best-in-class built-in effects)
             # Clear JUCE cache on refresh to pick up config changes
@@ -606,6 +684,7 @@ try:
                         "count": len(fallback_plugins),
                         "cached": False,
                         "warning": "LV2 loader not available, showing JUCE + hardware processors only",
+                        "native_inventory": _native_inventory_snapshot(fallback_plugins),
                     }
                 # If we have cached data, return it anyway
                 with _plugin_cache_lock:
@@ -617,6 +696,7 @@ try:
                         "count": len(stale_plugins),
                         "cached": True,
                         "warning": "Plugin loader not available, showing cached data",
+                        "native_inventory": _native_inventory_snapshot(stale_plugins),
                     }
                 return {"plugins": [], "count": 0, "error": "Plugin loader not available"}
 
@@ -644,7 +724,12 @@ try:
 
                 logger.info(f"Discovered {len(combined_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
                 logger.info(f"Plugin URIs: {[p.get('uri') for p in combined_plugins]}")
-                return {"plugins": combined_plugins, "count": len(combined_plugins), "cached": False}
+                return {
+                    "plugins": combined_plugins,
+                    "count": len(combined_plugins),
+                    "cached": False,
+                    "native_inventory": _native_inventory_snapshot(combined_plugins),
+                }
             except Exception as e:
                 logger.error(f"Error discovering plugins: {e}")
                 # Return JUCE processors + cached data on error if available
@@ -652,7 +737,13 @@ try:
                     cached_plugins = list(_discovered_plugins)
                 if juce_processors or cached_plugins:
                     fallback = juce_processors if juce_processors else cached_plugins
-                    return {"plugins": fallback, "count": len(fallback), "cached": True, "error": str(e)}
+                    return {
+                        "plugins": fallback,
+                        "count": len(fallback),
+                        "cached": True,
+                        "error": str(e),
+                        "native_inventory": _native_inventory_snapshot(fallback),
+                    }
                 return {"plugins": [], "count": 0, "error": str(e)}
 
     @router.post("/refresh")
@@ -677,6 +768,7 @@ try:
         response.headers["Cache-Control"] = "public, max-age=60"
         with _plugin_cache_lock:
             loaded_entries = list(_loaded_plugins.items())
+            parked_entries = list(_resident_plugins.items())
         loaded = [
             {
                 "uri": uri,
@@ -685,17 +777,62 @@ try:
             }
             for uri, info in loaded_entries
         ]
-        return {"loaded": loaded, "count": len(loaded)}
+        parked = [
+            {
+                "uri": uri,
+                "name": info.get("name", uri),
+                "category": info.get("category", "Unknown"),
+            }
+            for uri, info in parked_entries
+        ]
+        return {
+            "loaded": loaded,
+            "count": len(loaded),
+            "parked": parked,
+            "parked_count": len(parked),
+        }
 
     @router.get("/engine-ops/status")
     async def get_engine_ops_status():
         """Return current deferred engine-op queue state."""
         return _capture_engine_op_stats()
 
+    @router.get("/residency/status")
+    async def get_residency_status():
+        status = _runtime_profile_status()
+        with _plugin_cache_lock:
+            parked_count = len(_resident_plugins)
+            loaded_count = len(_loaded_plugins)
+        return {
+            "enabled": _is_effect_residency_enabled(),
+            "current_profile": status.get("current_profile"),
+            "node_type": status.get("node_type"),
+            "loaded_count": loaded_count,
+            "parked_count": parked_count,
+            "stats": dict(_residency_stats),
+        }
+
     @router.post("/load")
     async def load_plugin(uri: str):
         """Load a plugin by URI."""
         global _loaded_plugins
+
+        # In performance mode, reuse parked plugin instances to avoid churn.
+        if _is_effect_residency_enabled():
+            with _plugin_cache_lock:
+                parked_entry = _resident_plugins.pop(uri, None)
+                if parked_entry is not None:
+                    parked_entry["engine_deferred"] = False
+                    parked_entry["engine_last_error"] = None
+                    _loaded_plugins[uri] = parked_entry
+                    _residency_stats["reused"] += 1
+                    return {
+                        "status": "loaded",
+                        "plugin": parked_entry,
+                        "engine_loaded": bool(parked_entry.get("engine_loaded", True)),
+                        "engine_deferred": False,
+                        "engine_resident_reused": True,
+                    }
 
         # Find plugin in discovered list
         with _plugin_cache_lock:
@@ -742,15 +879,37 @@ try:
         }
 
     @router.post("/unload")
-    async def unload_plugin(uri: str):
+    async def unload_plugin(
+        uri: str,
+        destroy_instance: bool = Query(
+            False,
+            description="Force plugin destruction instead of residency parking.",
+        ),
+    ):
         """Unload a plugin."""
         global _loaded_plugins
 
         with _plugin_cache_lock:
-            loaded_entry = _loaded_plugins.get(uri)
+            existing_entry = _loaded_plugins.get(uri)
+            loaded_entry = dict(existing_entry) if isinstance(existing_entry, dict) else None
         if loaded_entry is None:
             # Idempotent unload keeps high-frequency churn from surfacing benign 404 races.
             return {"status": "not_loaded", "uri": uri, "engine_unloaded": False}
+
+        if _is_effect_residency_enabled() and not destroy_instance:
+            loaded_entry["engine_parked"] = True
+            loaded_entry["engine_deferred"] = False
+            with _plugin_cache_lock:
+                _loaded_plugins.pop(uri, None)
+                _resident_plugins[uri] = loaded_entry
+                _residency_stats["parked"] += 1
+            return {
+                "status": "parked",
+                "uri": uri,
+                "engine_unloaded": False,
+                "engine_deferred": False,
+                "engine_parked": True,
+            }
 
         # Remove from audio engine
         engine_unloaded = False
@@ -792,6 +951,8 @@ try:
 
         with _plugin_cache_lock:
             _loaded_plugins.pop(uri, None)
+            _resident_plugins.pop(uri, None)
+            _residency_stats["destroyed"] += 1
         return {
             "status": "unloaded",
             "uri": uri,

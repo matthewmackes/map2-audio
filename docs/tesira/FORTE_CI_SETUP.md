@@ -2,7 +2,9 @@
 
 > **Use case**: AVB I/O expander — additional analog inputs/outputs for MAP2 signal chains, transported over AVB.
 >
-> **Environment**: Linux / MAP2 only (no Biamp Tesira Software on Windows).
+> **Two paths documented**:
+> - **Path A** (Steps 1-8): Linux / MAP2 only — works if the used unit already has a DSP config with AVB streams
+> - **Path B** ([Appendix](#appendix--windows-path-using-biamp-tesira-software)): Windows + Biamp Tesira Software — required for firmware updates, factory-reset recovery, and creating a new DSP config
 
 ---
 
@@ -14,6 +16,7 @@
 | **AVB NIC** | Intel I210 or I225 on the MAP2 host, with PTP/TSN qdiscs set up |
 | **Network** | AVB-capable managed switch **or** direct Ethernet cable between Forte CI AVB port and MAP2 NIC |
 | **Control network** | Forte CI control port on same subnet as MAP2 host (DHCP or link-local) |
+| **Biamp Tesira Software** *(optional)* | Free download from [biamp.com/support/downloads](https://www.biamp.com/support/downloads?products=Tesira&resources=Software/Firmware) — requires Windows 10/11. Needed **only if**: firmware update required, factory reset wiped the DSP config, or you want to create a custom DSP design. See [Appendix](#appendix--windows-path-using-biamp-tesira-software) for full steps. |
 
 ---
 
@@ -26,6 +29,8 @@ A **used** Forte CI likely has a compiled DSP configuration with AVB stream bloc
 | TTP port 23 is accessible and AVB streams exist | **Skip factory reset** — go straight to [Step 3](#step-3--verify-ttp-access) |
 | TTP port 23 is closed and you can't control the unit | **Factory reset** — then see [Step 5](#step-5--dsp-configuration-caveat) for DSP config options |
 | You have security concerns about the previous config | **Factory reset** — accept that you'll need Windows access for DSP recompile |
+
+> **Need Biamp Tesira Software?** It's a single free application (no license key) — download it from [biamp.com/support/downloads](https://www.biamp.com/support/downloads?products=Tesira&resources=Software/Firmware). Runs on Windows 10/11 only. You'll need it for firmware updates, DSP config creation after a factory reset, or enabling TTP on a locked-down unit. Full walkthrough in the [Windows Appendix](#appendix--windows-path-using-biamp-tesira-software).
 
 **Quick test** — plug in the control port and try:
 ```bash
@@ -126,7 +131,7 @@ device get version
 Expected format: `+OK value="X.Y.Z"`
 
 - **Firmware >= 3.12**: proceed to next step
-- **Firmware < 3.12**: firmware update is required for reliable AVB and TTP operation. Unfortunately, firmware updates **require Biamp Tesira Software on Windows**. Use the [firmware update path calculator](https://support.biamp.com/Tesira/Software-Firmware/Tesira_firmware_update_path_calculator) to determine the upgrade path.
+- **Firmware < 3.12**: firmware update is required for reliable AVB and TTP operation. Firmware updates **require Biamp Tesira Software on Windows** — see [Appendix W2](#w2--update-firmware-if-needed). Use the [firmware update path calculator](https://support.biamp.com/Tesira/Software-Firmware/Tesira_firmware_update_path_calculator) to determine the upgrade path.
 
 ---
 
@@ -321,6 +326,97 @@ In the MAP2 GridFlow UI:
 
 ---
 
+## Appendix — Windows Path Using Biamp Tesira Software
+
+Use this path when:
+- You performed a factory reset and need to create a new DSP config with AVB stream blocks
+- Firmware is below 3.12 and needs updating
+- You want to enable TTP on a configured unit without factory-resetting
+- You want full control over the DSP routing (EQ, mixing, AEC, etc.)
+
+### What You Need
+
+| Item | Details |
+|------|---------|
+| **Windows PC** | Windows 10 or 11 (64-bit) |
+| **Biamp Tesira Software** | Download from [biamp.com/support/downloads](https://www.biamp.com/support/downloads?products=Tesira&resources=Software/Firmware) — free, no license required |
+| **Firmware file** | `.tfa` or `.tfa2` file from the same downloads page (match to your target version) |
+| **Ethernet** | Cat5e cable from Windows PC to Forte CI **control port** (direct or via switch) |
+| **Network config** | PC set to DHCP ("Obtain an IP address automatically") |
+
+### W1 — Install Tesira Software and Connect
+
+1. Download and install the latest **Biamp Tesira Software** from the [downloads page](https://www.biamp.com/support/downloads?products=Tesira&resources=Software/Firmware)
+2. Connect the Windows PC to the Forte CI **control port** via Ethernet (direct cable or same switch/subnet)
+3. Set the PC's Ethernet adapter to **DHCP** — both PC and Forte CI will auto-negotiate link-local addresses if no DHCP server is present (169.254.x.x range, may take up to 60 seconds)
+4. Open Tesira Software — it should auto-discover the Forte CI via the network
+   - If not found: go to **Tools > Options > Application Settings > Network > Device Discovery** and verify the correct network interface is selected
+
+**Reference**: [TesiraFORTE Quickstart](https://support.biamp.com/Tesira/Programming/TesiraFORTE_Quickstart)
+
+### W2 — Update Firmware (if needed)
+
+> Skip if `device get version` already shows >= 3.12.
+
+1. Check the [firmware update path calculator](https://support.biamp.com/Tesira/Software-Firmware/Tesira_firmware_update_path_calculator) — enter your current version to see if intermediate updates are required
+2. Download the required `.tfa` / `.tfa2` firmware files from the [downloads page](https://www.biamp.com/support/downloads?products=Tesira&resources=Software/Firmware)
+3. In Tesira Software: **System > Network > Perform Device Maintenance** (or click the **Device Maintenance** button)
+4. Select the Forte CI device
+5. Click **Update Firmware**, browse to the `.tfa` / `.tfa2` file
+6. Wait for the update to complete (5-15 minutes) — **do not disconnect power or Ethernet during this process**
+7. If an intermediate version was required, repeat with the next firmware file in the upgrade path
+8. After final update, verify: **Device Maintenance > Device Info** should show the target version
+
+**Reference**: [Tesira firmware update instructions](https://support.biamp.com/Tesira/Miscellaneous/Tesira_firmware_update_instructions)
+
+### W3 — Enable TTP (Telnet) for Linux/MAP2 Control
+
+> Factory-reset units already have TTP open. This step is only needed if you're keeping an existing DSP config where TTP was disabled.
+
+1. In Tesira Software: **System > Network > Perform Device Maintenance**
+2. Select the Forte CI
+3. Go to **Network Settings**
+4. Enable **Telnet** (TTP on port 23)
+5. Click **Apply**
+6. Verify from your Linux box: `telnet <forte-ip> 23` → `device get hostname` → `+OK`
+
+### W4 — Create a Minimal AVB I/O DSP Configuration
+
+> Skip if the used unit already has a working DSP config with AVB streams (check via TTP: `ExplicitAVBOutStream1 get numChannels`).
+
+This creates a clean config that routes all 12 analog inputs out over AVB, and routes AVB audio in to all 8 analog outputs.
+
+1. In Tesira Software: **File > New** to create a blank system design
+2. From the **Device** palette, drag a **TesiraFORTE AVB CI** onto the canvas
+3. Double-click the device to open the DSP block editor
+4. Add the following blocks from the palette:
+
+   **Input side** (Forte CI analog → AVB network):
+   - **Input** block: 12-channel analog input (this represents the Forte CI's physical mic/line inputs)
+   - **AVB.1 Output** block (`ExplicitAVBOutStream1`): set to desired channel count (e.g., 8 or 12 channels)
+   - Wire: Input → AVB.1 Output
+
+   **Output side** (AVB network → Forte CI analog):
+   - **AVB.1 Input** block (`ExplicitAVBInStream1`): set to desired channel count (e.g., 8 channels)
+   - **Output** block: 8-channel analog output (this represents the Forte CI's physical line outputs)
+   - Wire: AVB.1 Input → Output
+
+5. **Compile**: click the **Compile** button (or Ctrl+F7) — resolve any errors
+6. **Deploy**: click **Go Live** (or press F5) — this pushes the compiled config to the Forte CI
+7. The device will restart its DSP engine — front-panel LCD should show normal operation within a few seconds
+
+### W5 — Save and Export
+
+1. **Save the `.sdx` file** — keep this somewhere safe for future re-deploys
+2. Optionally save presets on the device: **System > Presets > Store Preset**
+
+### W6 — Return to Linux Path
+
+Once the DSP config is deployed and TTP is enabled, disconnect the Windows PC and return to the Linux guide:
+- Continue from [Step 6 — AVB Network Setup](#step-6--avb-network-setup) to connect the AVB port and register in MAP2
+
+---
+
 ## References
 
 - [Biamp — Factory reset procedure](https://support.biamp.com/Tesira/Miscellaneous/How_to_reset_a_Tesira_device_to_factory_defaults)
@@ -328,4 +424,8 @@ In the MAP2 GridFlow UI:
 - [Biamp — Network ports and protocols](https://support.biamp.com/Tesira/Control/Tesira_network_ports_and_protocols)
 - [Biamp — Firmware update path calculator](https://support.biamp.com/Tesira/Software-Firmware/Tesira_firmware_update_path_calculator)
 - [Biamp — Separated or converged AVB networks](https://support.biamp.com/Tesira/AVB/Separated_or_converged_Control_and_AVB_networks)
+- [Biamp — AVB streams (IEEE 1722.1)](https://support.biamp.com/Tesira/AVB/AVB_streams_(IEEE_1722.1))
+- [Biamp — Tesira Software & Firmware downloads](https://www.biamp.com/support/downloads?products=Tesira&resources=Software/Firmware)
+- [Biamp — Firmware update instructions](https://support.biamp.com/Tesira/Miscellaneous/Tesira_firmware_update_instructions)
+- [Biamp — Forte CI data sheet](https://downloads.biamp.com/assets/docs/default-source/data-sheets/biamp_data_sheet_tesiraforte_avb_ci.pdf)
 - MAP2 AVB setup: `docs/avb-setup.md`

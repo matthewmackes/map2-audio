@@ -267,6 +267,53 @@ class DeploymentModeHealthChecker:
                 status=CheckStatus.WARN,
                 message=f"ALSA config check failed: {e}",
             )
+
+    async def check_rt_hardening(self) -> HealthCheckResult:
+        """Check managed RT hardening verification state."""
+        if self.config.mode not in [DeploymentMode.AUDIO_NODE, DeploymentMode.ALL_IN_ONE]:
+            return HealthCheckResult(
+                check_name="rt_hardening",
+                status=CheckStatus.PASS,
+                message="RT hardening check not needed in this mode",
+            )
+
+        try:
+            from app.services.rt_hardening import verify_rt_hardening
+            from app.services.runtime_profiles import get_runtime_profile_status
+
+            verify = await asyncio.to_thread(verify_rt_hardening, quick=True)
+            profile_status = get_runtime_profile_status(self.config.mode.value)
+            profile = str(profile_status.get("current_profile", "Edit"))
+            grade = str(verify.get("grade") or "").strip()
+
+            if verify.get("ok") and grade:
+                return HealthCheckResult(
+                    check_name="rt_hardening",
+                    status=CheckStatus.PASS,
+                    message=f"RT hardening verified (grade {grade})",
+                )
+
+            if profile == "Performance":
+                return HealthCheckResult(
+                    check_name="rt_hardening",
+                    status=CheckStatus.FAIL,
+                    message=f"RT hardening verification failed in Performance profile (grade={grade or 'unknown'})",
+                    remediation="Run /api/runtime-profiles/rt-harden/verify and /api/runtime-profiles/rt-harden/apply",
+                )
+
+            return HealthCheckResult(
+                check_name="rt_hardening",
+                status=CheckStatus.WARN,
+                message=f"RT hardening not verified (grade={grade or 'unknown'})",
+                remediation="Run /api/runtime-profiles/rt-harden/verify",
+            )
+        except Exception as e:
+            return HealthCheckResult(
+                check_name="rt_hardening",
+                status=CheckStatus.WARN,
+                message=f"RT hardening check failed: {e}",
+                remediation="Verify scripts/verify_rt_config.sh is available and executable",
+            )
     
     async def check_peers_discovered(self) -> HealthCheckResult:
         """Check if any peers have been discovered (for multi-node modes)"""
@@ -323,6 +370,7 @@ class DeploymentModeHealthChecker:
             checks.extend([
                 self.check_audio_hardware(),
                 self.check_alsa_config(),
+                self.check_rt_hardening(),
             ])
         
         if self.config.mode != DeploymentMode.ALL_IN_ONE:

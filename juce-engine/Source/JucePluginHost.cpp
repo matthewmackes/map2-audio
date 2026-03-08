@@ -10,6 +10,122 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <string_view>
+
+namespace {
+
+constexpr std::string_view kMap2NativePrefix = "map2://juce/";
+
+bool isMap2NativeUri(const std::string& pluginId) {
+    return pluginId.compare(0, kMap2NativePrefix.size(), kMap2NativePrefix) == 0;
+}
+
+std::string titleCaseFromSlug(std::string slug) {
+    std::replace(slug.begin(), slug.end(), '-', ' ');
+    std::replace(slug.begin(), slug.end(), '_', ' ');
+
+    bool upperNext = true;
+    for (char& c : slug) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
+            upperNext = true;
+            continue;
+        }
+        c = upperNext
+            ? static_cast<char>(std::toupper(static_cast<unsigned char>(c)))
+            : static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        upperNext = false;
+    }
+    return slug;
+}
+
+std::string buildNativeDisplayName(const std::string& uri) {
+    if (!isMap2NativeUri(uri)) {
+        return "MAP2 Native";
+    }
+
+    std::string slug(uri.substr(kMap2NativePrefix.size()));
+    const auto slash = slug.find('/');
+    if (slash != std::string::npos && slash + 1 < slug.size()) {
+        slug = slug.substr(slash + 1);
+    }
+    if (slug.empty()) {
+        slug = "native";
+    }
+    return titleCaseFromSlug(slug);
+}
+
+map2::PluginInfo buildNativePluginInfo(const std::string& uri) {
+    map2::PluginInfo info;
+    info.uri = uri;
+    info.name = buildNativeDisplayName(uri);
+    info.author = "MAP2 Audio";
+    info.brand = "MAP2";
+    info.version = "1.0";
+    info.license = "AGPL-3.0-only";
+    info.audioInputs = 2;
+    info.audioOutputs = 2;
+    info.hasMidiInput = true;
+    info.hasMidiOutput = false;
+    info.format = map2::PluginFormat::Hardware;
+    info.formatName = "JUCE Native";
+
+    if (isMap2NativeUri(uri)) {
+        std::string category(uri.substr(kMap2NativePrefix.size()));
+        const auto slash = category.find('/');
+        if (slash != std::string::npos) {
+            category = category.substr(0, slash);
+        }
+        info.category = category.empty() ? "native" : category;
+    } else {
+        info.category = "native";
+    }
+
+    return info;
+}
+
+class NativeUriPassthroughProcessor final : public juce::AudioProcessor {
+public:
+    explicit NativeUriPassthroughProcessor(const juce::String& displayName)
+        : juce::AudioProcessor(
+            BusesProperties()
+                .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                .withOutput("Output", juce::AudioChannelSet::stereo(), true))
+        , name_(displayName.isNotEmpty() ? displayName : juce::String("MAP2 Native"))
+    {}
+
+    const juce::String getName() const override { return name_; }
+    void prepareToPlay(double, int) override {}
+    void releaseResources() override {}
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
+    double getTailLengthSeconds() const override { return 0.0; }
+
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override {
+        const auto& input = layouts.getMainInputChannelSet();
+        const auto& output = layouts.getMainOutputChannelSet();
+        return !input.isDisabled() && input == output;
+    }
+
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return false; }
+    bool isMidiEffect() const override { return false; }
+
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const juce::String getProgramName(int) override { return {}; }
+    void changeProgramName(int, const juce::String&) override {}
+
+    void getStateInformation(juce::MemoryBlock&) override {}
+    void setStateInformation(const void*, int) override {}
+
+private:
+    juce::String name_;
+};
+
+} // namespace
 
 namespace map2 {
 
@@ -191,6 +307,10 @@ std::vector<PluginInfo> JucePluginHost::discoverPlugins(PluginFormat format) con
 }
 
 std::optional<PluginInfo> JucePluginHost::getPluginInfo(const std::string& pluginId) const {
+    if (isMap2NativeUri(pluginId)) {
+        return buildNativePluginInfo(pluginId);
+    }
+
     // Search by unique ID or name
     for (const auto& desc : knownPlugins_.getTypes()) {
         if (desc.fileOrIdentifier.toStdString() == pluginId ||
@@ -210,6 +330,12 @@ InstanceId JucePluginHost::loadPlugin(const std::string& pluginId,
                                       double sampleRate,
                                       int blockSize) {
     if (!initialized_) return INVALID_INSTANCE_ID;
+
+    if (isMap2NativeUri(pluginId)) {
+        auto info = buildNativePluginInfo(pluginId);
+        auto processor = std::make_unique<NativeUriPassthroughProcessor>(info.name);
+        return registerHardwarePlugin(std::move(processor), info);
+    }
 
     // Find the plugin description
     juce::PluginDescription desc;
@@ -337,8 +463,12 @@ InstanceId JucePluginHost::registerHardwarePlugin(
     entry->id = nextInstanceId_++;
     entry->processor = std::move(processor);
     entry->info = info;
-    entry->info.format = PluginFormat::Hardware;
-    entry->info.formatName = "Hardware";
+    if (entry->info.format == PluginFormat::Unknown) {
+        entry->info.format = PluginFormat::Hardware;
+    }
+    if (entry->info.formatName.empty()) {
+        entry->info.formatName = "Hardware";
+    }
 
     InstanceId id = entry->id;
     hardwareInstances_[id] = std::move(entry);
@@ -422,7 +552,7 @@ PluginFormat JucePluginHost::getPluginFormat(InstanceId instanceId) const {
 
     auto hwIt = hardwareInstances_.find(instanceId);
     if (hwIt != hardwareInstances_.end())
-        return PluginFormat::Hardware;
+        return hwIt->second->info.format;
 
     return PluginFormat::Unknown;
 }
