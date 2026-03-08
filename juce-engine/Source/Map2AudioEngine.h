@@ -49,6 +49,7 @@ class AvbAudioIODevice;
 #include "TweedBassmanProcessor.h"
 #include "PassionFXProcessor.h"
 #include "SynthForge/SynthForgeProcessor.h"
+#include "LexiconHardwareProcessor.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <thread>
@@ -289,6 +290,26 @@ public:
     bool addToChain(InstanceId instanceId, int position = -1);
     bool removeFromChain(InstanceId instanceId);
     bool reorderChain(const std::vector<InstanceId>& order);
+
+    // ========================================
+    // Lexicon MPX-1 Hardware Plugin
+    // ========================================
+
+    /**
+     * Load the Lexicon MPX-1 as a hardware plugin in the graph.
+     * Singleton: returns existing instance ID if already loaded.
+     * @return Instance ID, or INVALID_INSTANCE_ID on failure
+     */
+    InstanceId loadLexiconPlugin();
+    bool unloadLexiconPlugin();
+    bool isLexiconLoaded() const;
+    InstanceId getLexiconInstanceId() const;
+
+    /**
+     * Measure S/PDIF round-trip latency via impulse response.
+     * Updates the processor's reported latency for JUCE PDC.
+     */
+    bool calibrateLexiconLatency();
 
     // ========================================
     // Sidechain Routing (NEW)
@@ -1293,6 +1314,11 @@ private:
     JucePluginHost pluginHost_;
     std::unique_ptr<JuceAudioGraph> audioGraph_;
     juce::AudioBuffer<float> callbackBuffer_;
+
+    // Lexicon MPX-1 Hardware Plugin
+    // Raw pointer (non-owning) — lifetime managed by pluginHost_.hardwareInstances_
+    LexiconHardwareProcessor* lexiconProcessor_ = nullptr;
+    InstanceId lexiconInstanceId_ = INVALID_INSTANCE_ID;
 
     // Native Processors (NEW)
     ConvolutionProcessor cabinetProcessor_;

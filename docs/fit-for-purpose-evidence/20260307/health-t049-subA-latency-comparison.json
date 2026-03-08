@@ -1,0 +1,23 @@
+{
+  "benchmark": "GET /api/health",
+  "date": "2026-03-07",
+  "method": "urllib.request sequential loop against localhost:8080",
+  "before_restart_old_handler": {
+    "count": 80,
+    "p50_ms": 102.41,
+    "p95_ms": 160.289,
+    "p99_ms": 364.262,
+    "max_ms": 1139.666,
+    "mean_ms": 129.067,
+    "notes": "Measured before restarting backend after subA code change; process still running old 100ms blocking handler"
+  },
+  "after_restart_warm": {
+    "count": 120,
+    "p50_ms": 1.078,
+    "p95_ms": 1.149,
+    "p99_ms": 1.195,
+    "max_ms": 1.231,
+    "mean_ms": 1.084,
+    "notes": "Measured after restart with cached MetricsCollector CPU path active"
+  }
+}

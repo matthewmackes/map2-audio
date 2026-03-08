@@ -32,6 +32,93 @@ export interface PluginLevels {
   output: number;
 }
 
+export type AudioSourceTruthSeverity = 'info' | 'warning' | 'error';
+export type AudioSourceTruthStatus = 'aligned' | 'warning' | 'error';
+
+export interface AudioSourceTruthIssue {
+  id: string;
+  severity: AudioSourceTruthSeverity;
+  message: string;
+  expected?: string | number | boolean | string[] | number[];
+  actual?: string | number | boolean | string[] | number[];
+}
+
+export interface AudioSourceTruthPayload {
+  timestamp: string;
+  status: AudioSourceTruthStatus;
+  profile: {
+    selected_profile: string;
+    profile_version: string;
+    clock_master: string;
+    remarks: string[];
+  };
+  configured: {
+    engine_rate_hz: number;
+    avb_stream_rate_hz: number;
+    spdif_rate_hz: number;
+    buffer_size_samples: number;
+    bits_per_sample: number;
+    allowed_rates_hz: number[];
+    require_hard_lock: boolean;
+    allow_resampler: boolean;
+    spdif: {
+      enabled: boolean;
+      device: string;
+      transport_mode: string;
+      allow_resampler: boolean;
+      require_hard_lock: boolean;
+      remarks: string[];
+    };
+    avb: {
+      enabled: boolean;
+      interface: string;
+      auto_connect: boolean;
+      ptp_domain: number;
+      max_streams: number;
+    };
+  };
+  runtime: {
+    engine: {
+      available: boolean;
+      running: boolean;
+      sample_rate_hz: number;
+      buffer_size_samples: number;
+      cpu_load_percent: number;
+      audio_device: string;
+    };
+    pipewire: {
+      available: boolean;
+      clock_rate_hz: number;
+      clock_force_rate_hz: number;
+      clock_quantum_samples: number;
+      clock_force_quantum_samples: number;
+      clock_allowed_rates_hz: number[];
+      effective_rate_hz: number;
+      effective_quantum_samples: number;
+      error?: string;
+    };
+    avb: {
+      enabled: boolean;
+      interface: string;
+      auto_connect: boolean;
+      available: boolean;
+      state: string;
+      reason?: string | null;
+      ptp: {
+        available: boolean;
+        state?: string;
+        offset_ns?: number;
+        error?: string;
+      };
+    };
+  };
+  consistency: {
+    checks: Record<string, boolean>;
+    issues: AudioSourceTruthIssue[];
+    issue_count: number;
+  };
+}
+
 // ==================== Chain Types ====================
 
 export interface EffectsLoop {
@@ -111,7 +198,7 @@ export interface ChainTemplate {
 // ==================== Plugin Types ====================
 
 /** Supported plugin formats (JUCE multi-format support) */
-export type PluginFormat = 'VST3' | 'AudioUnit' | 'LV2' | 'LADSPA' | 'Unknown';
+export type PluginFormat = 'VST3' | 'AudioUnit' | 'LV2' | 'LADSPA' | 'Hardware' | 'Unknown';
 
 export interface PluginParameter {
   index: number;
@@ -150,6 +237,7 @@ export interface Plugin {
   supports_double_precision?: boolean;
   sidechain_buses?: number;
   sidechain_bus_names?: string[];
+  is_hardware?: boolean;
 }
 
 // ==================== Preset Types ====================

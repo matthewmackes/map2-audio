@@ -1487,6 +1487,23 @@ img {
   word-break: break-word;
 }
 
+.notification-action {
+  margin-top: 6px;
+  align-self: flex-start;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.16);
+  color: #dbeafe;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.notification-action:hover {
+  background: rgba(59, 130, 246, 0.24);
+}
+
 .notification-time {
   font-size: 11px;
   color: #9ca3af;

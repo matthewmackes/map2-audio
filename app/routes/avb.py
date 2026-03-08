@@ -1242,6 +1242,12 @@ async def get_avb_status() -> Dict[str, Any]:
                 "ptp_priority1": config_get("avb.ptp_priority1", 128),
                 "auto_connect": config_get("avb.auto_connect", False),
                 "max_streams": config_get("avb.max_streams", 8),
+                "clock_sync_profile": config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")),
+                "clock_master": config_get("clock_sync.clock_master", config_get("audio.clock_master", "internal")),
+                "engine_rate_hz": config_get("clock_sync.engine_rate_hz", config_get("audio.sample_rate", 48000)),
+                "avb_stream_rate_hz": config_get("clock_sync.avb_stream_rate_hz", config_get("audio.sample_rate", 48000)),
+                "spdif_rate_hz": config_get("clock_sync.spdif_rate_hz", config_get("spdif.sample_rate_hz", 48000)),
+                "bits_per_sample": config_get("clock_sync.bits_per_sample", config_get("audio.bits_per_sample", 24)),
             }
         }
 

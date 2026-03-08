@@ -250,8 +250,51 @@ export function CategorySidebar({ onCollapse }: CategorySidebarProps) {
 
         <Divider sx={{ my: 0.5 }} />
 
+        {/* Hardware Effects Section */}
+        {plugins.some(p => p.format === 'hardware') && (
+          <>
+            {!state.sidebarCollapsed && (
+              <Typography
+                variant="caption"
+                sx={{ px: 2, py: 0.5, display: 'block', color: '#C8A951', fontWeight: 600 }}
+              >
+                HARDWARE
+              </Typography>
+            )}
+            <ListItemButton
+              selected={state.selectedCategory === 'lexicon'}
+              onClick={() => handleCategoryClick('lexicon')}
+              sx={{
+                py: 0.5,
+                minHeight: 36,
+                '&.Mui-selected': {
+                  bgcolor: 'rgba(200,169,81,0.15)',
+                  '&:hover': { bgcolor: 'rgba(200,169,81,0.25)' },
+                },
+                '&:hover': { bgcolor: 'rgba(200,169,81,0.08)' },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <img src="/img/fx_lexicon.svg" alt="" width={18} height={18} style={{ display: 'block' }} />
+              </ListItemIcon>
+              {!state.sidebarCollapsed && (
+                <>
+                  <ListItemText
+                    primary="Lexicon MPX-1"
+                    primaryTypographyProps={{ fontSize: '0.8rem', noWrap: true, sx: { color: '#C8A951' } }}
+                  />
+                  <Typography variant="caption" sx={{ color: '#C8A951' }}>
+                    {plugins.filter(p => p.format === 'hardware').length}
+                  </Typography>
+                </>
+              )}
+            </ListItemButton>
+            <Divider sx={{ my: 0.5 }} />
+          </>
+        )}
+
         {/* Plugin Categories */}
-        {categoryTree.map(category => (
+        {categoryTree.filter(c => c.name.toLowerCase() !== 'lexicon').map(category => (
           <ListItemButton
             key={category.id}
             selected={state.selectedCategory === category.name}

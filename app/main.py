@@ -396,6 +396,16 @@ def create_app():
             lifespan=lifespan  # Use async lifespan instead of startup/shutdown events
         )
 
+        # Disable uvicorn access logs by default to avoid request-path logging
+        # contention during high-rate WebSocket/HTTP soak tests.
+        disable_access_log = os.getenv("MAP2_DISABLE_UVICORN_ACCESS_LOG", "true").lower() in {
+            "1", "true", "yes", "on"
+        }
+        if disable_access_log:
+            access_logger = logging.getLogger("uvicorn.access")
+            access_logger.disabled = True
+            access_logger.propagate = False
+
         # CORS middleware
         app.add_middleware(
             CORSMiddleware,
@@ -404,6 +414,10 @@ def create_app():
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+        # Capture request durations for route-group percentile observability.
+        from app.middleware.request_logging import RequestLoggingMiddleware
+        app.add_middleware(RequestLoggingMiddleware, enabled=False)
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)

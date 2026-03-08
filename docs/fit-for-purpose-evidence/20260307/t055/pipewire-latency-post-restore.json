@@ -1,0 +1,1 @@
+{"settings":{"clock_rate":48000,"clock_force_rate":48000,"clock_quantum":64,"clock_force_quantum":64,"clock_min_quantum":32,"clock_max_quantum":256,"clock_allowed_rates":[48000]},"graph_latency_ms":1.333,"driver_latency_ms":1.333,"total_latency_ms":2.667}

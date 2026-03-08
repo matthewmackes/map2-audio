@@ -8,8 +8,10 @@ import logging
 import inspect
 import json
 import threading
+import asyncio
+import os
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from app.response_models import PluginLoadResponse, PluginUnloadResponse
 from app.exceptions import PluginNotFoundException, PluginLoadException
@@ -117,8 +119,53 @@ def _get_juce_processors() -> List[Dict[str, Any]]:
         _juce_processors_cache = _load_juce_processors()
     return _juce_processors_cache
 
+
+# Hardware plugin constants
+_LEXICON_MPX1_URI = "hardware://lexicon-mpx1-spdif"
+_ENABLE_ENGINE_PLUGIN_OPS = os.getenv("MAP2_ENABLE_ENGINE_PLUGIN_OPS", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+_ENABLE_SYNC_ENGINE_PLUGIN_OPS = os.getenv("MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+_ENGINE_OP_QUEUE_MAX = max(32, int(os.getenv("MAP2_ENGINE_OP_QUEUE_MAX", "2048")))
+_ENGINE_OP_MAX_RETRIES = max(0, int(os.getenv("MAP2_ENGINE_OP_MAX_RETRIES", "6")))
+_ENGINE_OP_RETRY_BASE_DELAY = max(0.01, float(os.getenv("MAP2_ENGINE_OP_RETRY_BASE_DELAY", "0.05")))
+
+
+def _get_hardware_plugins() -> List[Dict[str, Any]]:
+    """Return hardware effect plugins (Lexicon MPX-1 via S/PDIF)."""
+    return [
+        {
+            "uri": _LEXICON_MPX1_URI,
+            "name": "Lexicon MPX-1",
+            "author": "Lexicon / Harman",
+            "category": "lexicon",
+            "class_label": "Hardware Effect",
+            "version": "1.0",
+            "license": "Proprietary",
+            "has_ui": False,
+            "in_ports": 2,
+            "out_ports": 2,
+            "format": "Hardware",
+            "format_name": "Hardware S/PDIF",
+            "brand": "Lexicon",
+            "is_hardware": True,
+            "has_midi_input": True,
+            "has_midi_output": True,
+            "parameters": [],
+            "priority": 1,
+        }
+    ]
+
 try:
-    from fastapi import APIRouter, HTTPException, Query
+    from fastapi import APIRouter, HTTPException, Query, Response, Body
     from pydantic import BaseModel
     from app.services import service_manager
     from app.services.event_publisher import event_publisher, EventType
@@ -142,6 +189,272 @@ try:
     _cache_timestamp = 0
     _cache_ttl = 300  # 5 minutes cache TTL
     _plugin_cache_lock = threading.RLock()
+    _plugin_discovery_lock = None
+    _engine_op_queue: Optional[asyncio.Queue] = None
+    _engine_op_worker_task: Optional[asyncio.Task] = None
+    _engine_op_stats: Dict[str, Any] = {
+        "enqueued": 0,
+        "processed": 0,
+        "failed": 0,
+        "retries": 0,
+        "dropped": 0,
+        "last_error": None,
+    }
+
+    def _get_plugin_discovery_lock() -> asyncio.Lock:
+        global _plugin_discovery_lock
+        if _plugin_discovery_lock is None:
+            _plugin_discovery_lock = asyncio.Lock()
+        return _plugin_discovery_lock
+
+    def _get_engine_op_queue() -> asyncio.Queue:
+        global _engine_op_queue
+        if _engine_op_queue is None:
+            _engine_op_queue = asyncio.Queue(maxsize=_ENGINE_OP_QUEUE_MAX)
+        return _engine_op_queue
+
+    def _capture_engine_op_stats() -> Dict[str, Any]:
+        queue = _get_engine_op_queue()
+        snapshot = dict(_engine_op_stats)
+        snapshot["queue_depth"] = queue.qsize()
+        worker = _engine_op_worker_task
+        snapshot["worker_running"] = bool(worker and not worker.done())
+        snapshot["queue_max"] = _ENGINE_OP_QUEUE_MAX
+        snapshot["max_retries"] = _ENGINE_OP_MAX_RETRIES
+        return snapshot
+
+    def _schedule_engine_op_worker() -> None:
+        global _engine_op_worker_task
+        worker = _engine_op_worker_task
+        if worker is not None and not worker.done():
+            return
+        _engine_op_worker_task = asyncio.create_task(_run_engine_op_worker(), name="plugins-engine-ops")
+
+    def _mark_loaded_plugin_engine_error(uri: str, error: str) -> None:
+        with _plugin_cache_lock:
+            loaded = _loaded_plugins.get(uri)
+            if loaded is None:
+                return
+            loaded["engine_loaded"] = False
+            loaded["engine_deferred"] = False
+            loaded["engine_last_error"] = error
+
+    def _mark_loaded_plugin_engine_loaded(uri: str, instance_id: int) -> None:
+        with _plugin_cache_lock:
+            loaded = _loaded_plugins.get(uri)
+            if loaded is None:
+                return
+            loaded["instance_id"] = instance_id
+            loaded["engine_loaded"] = instance_id > 0
+            loaded["engine_deferred"] = False
+            loaded["engine_last_error"] = None
+
+    async def _get_running_audio_engine():
+        from app.services.juce_engine_service import get_audio_engine
+
+        engine = get_audio_engine()
+        if not (engine and engine.is_available and engine.is_running):
+            return None
+        return engine
+
+    async def _resolve_instance_id_for_uri(
+        engine,
+        plugin_uri: str,
+        fallback_instance_id: Optional[int] = None,
+    ) -> Optional[int]:
+        if isinstance(fallback_instance_id, int) and fallback_instance_id > 0:
+            return fallback_instance_id
+
+        with _plugin_cache_lock:
+            loaded = _loaded_plugins.get(plugin_uri)
+            if loaded:
+                cached_instance = loaded.get("instance_id")
+                if isinstance(cached_instance, int) and cached_instance > 0:
+                    return cached_instance
+
+        resolver = getattr(engine, "_get_instance_id_for_uri", None)
+        if callable(resolver):
+            try:
+                resolved = await asyncio.to_thread(resolver, plugin_uri)
+                if isinstance(resolved, int) and resolved > 0:
+                    return resolved
+            except Exception:
+                return None
+        return None
+
+    async def _apply_engine_parameter_batch(engine, updates: List[Dict[str, Any]]) -> int:
+        if not updates:
+            return 0
+
+        resolver = getattr(engine, "_get_instance_id_for_uri", None)
+        instance_id_cache: Dict[str, Optional[int]] = {}
+        direct_updates: List[tuple[int, str, float]] = []
+
+        for update in updates:
+            plugin_uri = str(update.get("plugin_uri", ""))
+            symbol = str(update.get("symbol", ""))
+            value = float(update.get("value", 0.0))
+            if not plugin_uri or not symbol:
+                continue
+
+            instance_id = update.get("instance_id")
+            if not isinstance(instance_id, int) or instance_id <= 0:
+                if plugin_uri in instance_id_cache:
+                    instance_id = instance_id_cache[plugin_uri]
+                else:
+                    instance_id = None
+                    with _plugin_cache_lock:
+                        loaded = _loaded_plugins.get(plugin_uri)
+                        if loaded:
+                            cached_instance = loaded.get("instance_id")
+                            if isinstance(cached_instance, int) and cached_instance > 0:
+                                instance_id = cached_instance
+                    if instance_id is None and callable(resolver):
+                        try:
+                            resolved = await asyncio.to_thread(resolver, plugin_uri)
+                            if isinstance(resolved, int) and resolved > 0:
+                                instance_id = resolved
+                        except Exception:
+                            instance_id = None
+                    instance_id_cache[plugin_uri] = instance_id
+
+            if isinstance(instance_id, int) and instance_id > 0:
+                direct_updates.append((instance_id, symbol, value))
+
+        if not direct_updates:
+            return 0
+
+        return await engine.set_parameter_batch_direct(direct_updates)
+
+    async def _process_engine_op(op: Dict[str, Any]) -> None:
+        op_type = op.get("type")
+        engine = await _get_running_audio_engine()
+        if engine is None:
+            raise RuntimeError("Audio engine not running")
+
+        if op_type == "load":
+            uri = str(op.get("uri", ""))
+            if not uri:
+                return
+            instance_id = await engine.load_plugin(uri)
+            if not isinstance(instance_id, int) or instance_id <= 0:
+                raise RuntimeError(f"Engine failed to load plugin: {uri}")
+            _mark_loaded_plugin_engine_loaded(uri, instance_id)
+            return
+
+        if op_type == "unload":
+            uri = str(op.get("uri", ""))
+            if not uri:
+                return
+            instance_id = await _resolve_instance_id_for_uri(
+                engine,
+                uri,
+                op.get("instance_id"),
+            )
+            if not isinstance(instance_id, int) or instance_id <= 0:
+                # Treat unknown instance as idempotent success.
+                return
+            unloaded = await engine.unload_plugin(instance_id)
+            if not unloaded:
+                raise RuntimeError(f"Engine failed to unload plugin: {uri}")
+            return
+
+        if op_type == "parameter_batch":
+            updates = op.get("updates") or []
+            if not isinstance(updates, list):
+                return
+            applied = await _apply_engine_parameter_batch(engine, updates)
+            expected = sum(1 for update in updates if update.get("symbol"))
+            if applied < expected:
+                logger.warning(
+                    "Deferred engine parameter batch partial apply: applied=%s expected=%s",
+                    applied,
+                    expected,
+                )
+            return
+
+        raise RuntimeError(f"Unsupported engine op type: {op_type}")
+
+    async def _run_engine_op_worker() -> None:
+        global _engine_op_worker_task
+        queue = _get_engine_op_queue()
+        try:
+            while True:
+                try:
+                    op = queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+
+                try:
+                    await _process_engine_op(op)
+                    _engine_op_stats["processed"] += 1
+                except Exception as e:
+                    retries = int(op.get("retries", 0))
+                    uri = str(op.get("uri", ""))
+                    if retries < _ENGINE_OP_MAX_RETRIES:
+                        op["retries"] = retries + 1
+                        _engine_op_stats["retries"] += 1
+                        retry_delay = min(1.0, _ENGINE_OP_RETRY_BASE_DELAY * (2 ** retries))
+                        await asyncio.sleep(retry_delay)
+                        try:
+                            queue.put_nowait(op)
+                        except asyncio.QueueFull:
+                            _engine_op_stats["dropped"] += 1
+                            _engine_op_stats["failed"] += 1
+                            _engine_op_stats["last_error"] = f"Queue full while retrying op: {op.get('type')}"
+                            if uri:
+                                _mark_loaded_plugin_engine_error(uri, str(e))
+                    else:
+                        _engine_op_stats["failed"] += 1
+                        _engine_op_stats["last_error"] = str(e)
+                        if uri:
+                            _mark_loaded_plugin_engine_error(uri, str(e))
+                        logger.warning(
+                            "Deferred engine op failed after retries (type=%s uri=%s): %s",
+                            op.get("type"),
+                            uri,
+                            e,
+                        )
+                finally:
+                    queue.task_done()
+        finally:
+            _engine_op_worker_task = None
+            if not queue.empty():
+                _schedule_engine_op_worker()
+
+    def _enqueue_engine_op(op: Dict[str, Any]) -> bool:
+        queue = _get_engine_op_queue()
+        try:
+            queue.put_nowait(dict(op))
+        except asyncio.QueueFull:
+            _engine_op_stats["dropped"] += 1
+            _engine_op_stats["last_error"] = f"Queue full while enqueuing op: {op.get('type')}"
+            return False
+
+        _engine_op_stats["enqueued"] += 1
+        _schedule_engine_op_worker()
+        return True
+
+    def _discover_plugins_sync(loader, refresh: bool):
+        """Run loader discovery in a worker thread with compatibility fallbacks."""
+        if hasattr(loader, "discover_plugins_sync"):
+            discover_sync = loader.discover_plugins_sync
+            try:
+                return discover_sync(force_refresh=refresh)
+            except TypeError:
+                try:
+                    return discover_sync(refresh=refresh)
+                except TypeError:
+                    return discover_sync()
+
+        discover = loader.discover_plugins
+        try:
+            return discover(force_refresh=refresh)
+        except TypeError:
+            try:
+                return discover(refresh=refresh)
+            except TypeError:
+                return discover()
 
     def _is_cache_valid() -> bool:
         """Check if plugin cache is still valid."""
@@ -206,8 +519,17 @@ try:
             ] if hasattr(p, 'parameters') else []
         }
 
+    def _set_plugins_cache_header(response: Response, refresh: bool) -> None:
+        if refresh:
+            response.headers["Cache-Control"] = "no-store"
+        else:
+            response.headers["Cache-Control"] = "public, max-age=60"
+
     @router.get("/discover")
-    async def discover_plugins(refresh: bool = Query(False, description="Force refresh of plugin cache")):
+    async def discover_plugins(
+        response: Response,
+        refresh: bool = Query(False, description="Force refresh of plugin cache"),
+    ):
         """Discover available plugins (JUCE native + LV2).
 
         Args:
@@ -219,6 +541,8 @@ try:
         """
         global _discovered_plugins, _cache_timestamp
 
+        _set_plugins_cache_header(response, refresh)
+
         # Return cached plugins if valid and not forcing refresh
         if not refresh and _is_cache_valid():
             with _plugin_cache_lock:
@@ -227,81 +551,114 @@ try:
             logger.debug(f"Cached plugins: {[p.get('uri') for p in cached_plugins]}")
             return {"plugins": cached_plugins, "count": len(cached_plugins), "cached": True}
 
-        # Always include JUCE native processors (best-in-class built-in effects)
-        # Clear JUCE cache on refresh to pick up config changes
-        if refresh:
-            global _juce_processors_cache
-            _juce_processors_cache = []
-        juce_processors = _get_juce_processors()
-        logger.info(f"Including {len(juce_processors)} JUCE native processors")
-
-        loader = service_manager.get_plugin_loader()
-        if not loader:
-            # If loader not available, return JUCE processors only
-            if juce_processors:
-                with _plugin_cache_lock:
-                    _discovered_plugins = list(juce_processors)
-                    _cache_timestamp = time.time()
-                logger.warning("Plugin loader not available, returning JUCE processors only")
-                return {
-                    "plugins": juce_processors,
-                    "count": len(juce_processors),
-                    "cached": False,
-                    "warning": "LV2 loader not available, showing JUCE processors only",
-                }
-            # If we have cached data, return it anyway
+        discovery_lock = _get_plugin_discovery_lock()
+        # Avoid stampeding on startup: concurrent callers return current cache/fallback
+        # while the first discovery request is still in-flight.
+        if not refresh and discovery_lock.locked():
             with _plugin_cache_lock:
-                stale_plugins = list(_discovered_plugins)
-            if stale_plugins:
-                logger.warning("Plugin loader not available, returning stale cache")
+                warm_plugins = list(_discovered_plugins)
+            if warm_plugins:
                 return {
-                    "plugins": stale_plugins,
-                    "count": len(stale_plugins),
+                    "plugins": warm_plugins,
+                    "count": len(warm_plugins),
                     "cached": True,
-                    "warning": "Plugin loader not available, showing cached data",
+                    "stale": True,
                 }
-            return {"plugins": [], "count": 0, "error": "Plugin loader not available"}
 
-        try:
-            # Check if the loader has async or sync discover method
-            if hasattr(loader, 'discover_plugins_sync'):
-                # Use sync version
-                plugins = loader.discover_plugins_sync()
-            else:
-                # Use async version (this is for the unified loader)
-                # Check if discover_plugins is coroutine
-                if inspect.iscoroutinefunction(loader.discover_plugins):
-                    plugins = await loader.discover_plugins(force_refresh=refresh)
+            fallback_plugins = _get_hardware_plugins() + _get_juce_processors()
+            if fallback_plugins:
+                return {
+                    "plugins": fallback_plugins,
+                    "count": len(fallback_plugins),
+                    "cached": False,
+                    "deferred_scan": True,
+                }
+
+        # Collapse concurrent discovery refreshes to one in-flight scan.
+        async with discovery_lock:
+            # Re-check cache after waiting for any active discovery.
+            if not refresh and _is_cache_valid():
+                with _plugin_cache_lock:
+                    cached_plugins = list(_discovered_plugins)
+                logger.debug(f"Returning {len(cached_plugins)} cached plugins after single-flight wait")
+                return {"plugins": cached_plugins, "count": len(cached_plugins), "cached": True}
+
+            # Always include JUCE native processors (best-in-class built-in effects)
+            # Clear JUCE cache on refresh to pick up config changes
+            if refresh:
+                global _juce_processors_cache
+                _juce_processors_cache = []
+            juce_processors = _get_juce_processors()
+            hardware_plugins = _get_hardware_plugins()
+            logger.info(f"Including {len(juce_processors)} JUCE native processors, {len(hardware_plugins)} hardware plugins")
+
+            loader = service_manager.get_plugin_loader()
+            if not loader:
+                # If loader not available, return JUCE + hardware processors only
+                fallback_plugins = hardware_plugins + juce_processors
+                if fallback_plugins:
+                    with _plugin_cache_lock:
+                        _discovered_plugins = list(fallback_plugins)
+                        _cache_timestamp = time.time()
+                    logger.warning("Plugin loader not available, returning JUCE + hardware processors only")
+                    return {
+                        "plugins": fallback_plugins,
+                        "count": len(fallback_plugins),
+                        "cached": False,
+                        "warning": "LV2 loader not available, showing JUCE + hardware processors only",
+                    }
+                # If we have cached data, return it anyway
+                with _plugin_cache_lock:
+                    stale_plugins = list(_discovered_plugins)
+                if stale_plugins:
+                    logger.warning("Plugin loader not available, returning stale cache")
+                    return {
+                        "plugins": stale_plugins,
+                        "count": len(stale_plugins),
+                        "cached": True,
+                        "warning": "Plugin loader not available, showing cached data",
+                    }
+                return {"plugins": [], "count": 0, "error": "Plugin loader not available"}
+
+            try:
+                discover_fn = getattr(loader, "discover_plugins", None)
+                if discover_fn and inspect.iscoroutinefunction(discover_fn):
+                    try:
+                        plugins = await discover_fn(force_refresh=refresh)
+                    except TypeError:
+                        try:
+                            plugins = await discover_fn(refresh=refresh)
+                        except TypeError:
+                            plugins = await discover_fn()
                 else:
-                    plugins = loader.discover_plugins(force_refresh=refresh)
+                    plugins = await asyncio.to_thread(_discover_plugins_sync, loader, refresh)
 
-            logger.debug(f"Raw plugins from loader: {[(p.uri if hasattr(p, 'uri') else str(p)) for p in plugins]}")
-            lv2_plugins = [_transform_plugin(p) for p in plugins]
+                logger.debug(f"Raw plugins from loader: {[(p.uri if hasattr(p, 'uri') else str(p)) for p in plugins]}")
+                lv2_plugins = [_transform_plugin(p) for p in plugins]
 
-            # Combine JUCE processors (first, highest priority) with LV2 plugins
-            # JUCE processors are preferred as they are optimized native implementations
-            combined_plugins = juce_processors + lv2_plugins
-            with _plugin_cache_lock:
-                _discovered_plugins = combined_plugins
-                _cache_timestamp = time.time()
+                # Combine: Hardware plugins (top), JUCE processors, then LV2 plugins
+                combined_plugins = hardware_plugins + juce_processors + lv2_plugins
+                with _plugin_cache_lock:
+                    _discovered_plugins = combined_plugins
+                    _cache_timestamp = time.time()
 
-            logger.info(f"Discovered {len(combined_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
-            logger.info(f"Plugin URIs: {[p.get('uri') for p in combined_plugins]}")
-            return {"plugins": combined_plugins, "count": len(combined_plugins), "cached": False}
-        except Exception as e:
-            logger.error(f"Error discovering plugins: {e}")
-            # Return JUCE processors + cached data on error if available
-            with _plugin_cache_lock:
-                cached_plugins = list(_discovered_plugins)
-            if juce_processors or cached_plugins:
-                fallback = juce_processors if juce_processors else cached_plugins
-                return {"plugins": fallback, "count": len(fallback), "cached": True, "error": str(e)}
-            return {"plugins": [], "count": 0, "error": str(e)}
+                logger.info(f"Discovered {len(combined_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
+                logger.info(f"Plugin URIs: {[p.get('uri') for p in combined_plugins]}")
+                return {"plugins": combined_plugins, "count": len(combined_plugins), "cached": False}
+            except Exception as e:
+                logger.error(f"Error discovering plugins: {e}")
+                # Return JUCE processors + cached data on error if available
+                with _plugin_cache_lock:
+                    cached_plugins = list(_discovered_plugins)
+                if juce_processors or cached_plugins:
+                    fallback = juce_processors if juce_processors else cached_plugins
+                    return {"plugins": fallback, "count": len(fallback), "cached": True, "error": str(e)}
+                return {"plugins": [], "count": 0, "error": str(e)}
 
     @router.post("/refresh")
-    async def refresh_plugins():
+    async def refresh_plugins(response: Response):
         """Force refresh of plugin cache and return updated list."""
-        return await discover_plugins(refresh=True)
+        return await discover_plugins(response=response, refresh=True)
 
     @router.delete("/cache")
     async def clear_plugin_cache():
@@ -315,8 +672,9 @@ try:
         return {"status": "cleared", "plugins_cleared": count}
 
     @router.get("/list")
-    async def list_plugins():
+    async def list_plugins(response: Response):
         """List currently loaded plugins."""
+        response.headers["Cache-Control"] = "public, max-age=60"
         with _plugin_cache_lock:
             loaded_entries = list(_loaded_plugins.items())
         loaded = [
@@ -328,6 +686,11 @@ try:
             for uri, info in loaded_entries
         ]
         return {"loaded": loaded, "count": len(loaded)}
+
+    @router.get("/engine-ops/status")
+    async def get_engine_ops_status():
+        """Return current deferred engine-op queue state."""
+        return _capture_engine_op_stats()
 
     @router.post("/load")
     async def load_plugin(uri: str):
@@ -343,25 +706,40 @@ try:
 
         # Instantiate the plugin in the audio engine
         engine_loaded = False
+        engine_deferred = False
         instance_id = None
-        try:
-            from app.services.juce_engine_service import get_audio_engine
-            engine = get_audio_engine()
-            if engine.is_available and engine.is_running:
-                instance_id = await engine.load_plugin(uri)
-                engine_loaded = instance_id > 0
-                if not engine_loaded:
-                    logger.warning(f"Failed to load plugin in audio engine: {uri}")
-        except Exception as e:
-            logger.error(f"Error loading plugin in audio engine: {e}")
+        if _ENABLE_ENGINE_PLUGIN_OPS and _ENABLE_SYNC_ENGINE_PLUGIN_OPS:
+            try:
+                from app.services.juce_engine_service import get_audio_engine
+                engine = get_audio_engine()
+                if engine.is_available and engine.is_running:
+                    instance_id = await engine.load_plugin(uri)
+                    engine_loaded = instance_id > 0
+                    if not engine_loaded:
+                        logger.warning(f"Failed to load plugin in audio engine: {uri}")
+            except Exception as e:
+                logger.error(f"Error loading plugin in audio engine: {e}")
+        elif _ENABLE_ENGINE_PLUGIN_OPS:
+            engine_deferred = _enqueue_engine_op({"type": "load", "uri": uri, "retries": 0})
+            if not engine_deferred:
+                raise HTTPException(status_code=503, detail="Engine operation queue is saturated")
+        else:
+            logger.debug("Skipping engine plugin load (MAP2_ENABLE_ENGINE_PLUGIN_OPS disabled)")
 
         loaded_plugin = dict(plugin_info)
         loaded_plugin["instance_id"] = instance_id
         loaded_plugin["engine_loaded"] = engine_loaded
+        loaded_plugin["engine_deferred"] = engine_deferred
+        loaded_plugin["engine_last_error"] = None
 
         with _plugin_cache_lock:
             _loaded_plugins[uri] = loaded_plugin
-        return {"status": "loaded", "plugin": loaded_plugin, "engine_loaded": engine_loaded}
+        return {
+            "status": "loaded",
+            "plugin": loaded_plugin,
+            "engine_loaded": engine_loaded,
+            "engine_deferred": engine_deferred,
+        }
 
     @router.post("/unload")
     async def unload_plugin(uri: str):
@@ -371,34 +749,55 @@ try:
         with _plugin_cache_lock:
             loaded_entry = _loaded_plugins.get(uri)
         if loaded_entry is None:
-            raise HTTPException(status_code=404, detail="Plugin not loaded")
+            # Idempotent unload keeps high-frequency churn from surfacing benign 404 races.
+            return {"status": "not_loaded", "uri": uri, "engine_unloaded": False}
 
         # Remove from audio engine
         engine_unloaded = False
-        try:
-            from app.services.juce_engine_service import get_audio_engine
-            engine = get_audio_engine()
-            if engine.is_available and engine.is_running:
-                instance_id = loaded_entry.get("instance_id")
+        engine_deferred = False
+        if _ENABLE_ENGINE_PLUGIN_OPS and _ENABLE_SYNC_ENGINE_PLUGIN_OPS:
+            try:
+                from app.services.juce_engine_service import get_audio_engine
+                engine = get_audio_engine()
+                if engine.is_available and engine.is_running:
+                    instance_id = loaded_entry.get("instance_id")
 
-                if not isinstance(instance_id, int) or instance_id <= 0:
-                    resolver = getattr(engine, "_get_instance_id_for_uri", None)
-                    if callable(resolver):
-                        instance_id = resolver(uri)
+                    if not isinstance(instance_id, int) or instance_id <= 0:
+                        resolver = getattr(engine, "_get_instance_id_for_uri", None)
+                        if callable(resolver):
+                            instance_id = resolver(uri)
 
-                if isinstance(instance_id, int) and instance_id > 0:
-                    engine_unloaded = await engine.unload_plugin(instance_id)
-                else:
-                    logger.warning(f"No instance_id found for loaded plugin {uri}; skipping engine unload")
+                    if isinstance(instance_id, int) and instance_id > 0:
+                        engine_unloaded = await engine.unload_plugin(instance_id)
+                    else:
+                        logger.warning(f"No instance_id found for loaded plugin {uri}; skipping engine unload")
 
-                if not engine_unloaded:
-                    logger.warning(f"Failed to unload plugin from audio engine: {uri}")
-        except Exception as e:
-            logger.error(f"Error unloading plugin from audio engine: {e}")
+                    if not engine_unloaded:
+                        logger.warning(f"Failed to unload plugin from audio engine: {uri}")
+            except Exception as e:
+                logger.error(f"Error unloading plugin from audio engine: {e}")
+        elif _ENABLE_ENGINE_PLUGIN_OPS:
+            engine_deferred = _enqueue_engine_op(
+                {
+                    "type": "unload",
+                    "uri": uri,
+                    "instance_id": loaded_entry.get("instance_id"),
+                    "retries": 0,
+                }
+            )
+            if not engine_deferred:
+                raise HTTPException(status_code=503, detail="Engine operation queue is saturated")
+        else:
+            logger.debug("Skipping engine plugin unload (MAP2_ENABLE_ENGINE_PLUGIN_OPS disabled)")
 
         with _plugin_cache_lock:
             _loaded_plugins.pop(uri, None)
-        return {"status": "unloaded", "uri": uri, "engine_unloaded": engine_unloaded}
+        return {
+            "status": "unloaded",
+            "uri": uri,
+            "engine_unloaded": engine_unloaded,
+            "engine_deferred": engine_deferred,
+        }
 
     @router.delete("/{uri:path}")
     async def delete_plugin(uri: str):
@@ -605,37 +1004,81 @@ try:
         return {"uri": uri, "param": param_index, "value": value, "engine_set": engine_set}
 
     @router.post("/batch/parameters")
-    async def batch_set_parameters(request: BatchParameterRequest):
+    async def batch_set_parameters(payload: Dict[str, Any] = Body(...)):
         """Set multiple plugin parameters in a single request.
 
         This endpoint reduces network overhead for real-time parameter updates
         by batching multiple parameter changes into a single API call.
 
         Args:
-            request: BatchParameterRequest containing list of parameter updates
+            payload: JSON body with `updates` list
 
         Returns:
             Summary of applied updates and any errors
         """
+        updates_raw = payload.get("updates")
+        if not isinstance(updates_raw, list):
+            raise HTTPException(status_code=400, detail="updates must be a list")
+
+        requested_count = len(updates_raw)
         results = []
         errors = []
 
-        for update in request.updates:
+        deduped_updates: Dict[tuple[str, int], tuple[str, int, float]] = {}
+        for raw in updates_raw:
+            if not isinstance(raw, dict):
+                continue
+            plugin_uri = raw.get("plugin_uri")
+            param_index_raw = raw.get("param_index")
+            value_raw = raw.get("value")
+
+            if not isinstance(plugin_uri, str) or not plugin_uri:
+                continue
             try:
-                if update.param_index < 0:
+                param_index = int(param_index_raw)
+            except Exception:
+                continue
+            try:
+                value = float(value_raw)
+            except Exception:
+                continue
+
+            deduped_updates[(plugin_uri, param_index)] = (plugin_uri, param_index, value)
+
+        unique_updates = list(deduped_updates.values())
+
+        with _plugin_cache_lock:
+            loaded_snapshot = {uri: dict(info) for uri, info in _loaded_plugins.items()}
+
+        sync_engine_ops = _ENABLE_ENGINE_PLUGIN_OPS and _ENABLE_SYNC_ENGINE_PLUGIN_OPS
+        engine = None
+        resolver = None
+        instance_id_cache: Dict[str, Optional[int]] = {}
+        sync_engine_updates: List[tuple[int, str, float]] = []
+        deferred_engine_updates: List[Dict[str, Any]] = []
+        if sync_engine_ops:
+            try:
+                from app.services.juce_engine_service import get_audio_engine
+                engine = get_audio_engine()
+                resolver = getattr(engine, "_get_instance_id_for_uri", None)
+            except Exception:
+                engine = None
+
+        for plugin_uri, param_index, value in unique_updates:
+            try:
+                if param_index < 0:
                     errors.append({
-                        "plugin_uri": update.plugin_uri,
-                        "param_index": update.param_index,
+                        "plugin_uri": plugin_uri,
+                        "param_index": param_index,
                         "error": "Parameter index must be >= 0"
                     })
                     continue
 
-                with _plugin_cache_lock:
-                    plugin_info = dict(_loaded_plugins.get(update.plugin_uri, {}))
+                plugin_info = loaded_snapshot.get(plugin_uri, {})
                 if not plugin_info:
                     errors.append({
-                        "plugin_uri": update.plugin_uri,
-                        "param_index": update.param_index,
+                        "plugin_uri": plugin_uri,
+                        "param_index": param_index,
                         "error": "Plugin not loaded"
                     })
                     continue
@@ -644,41 +1087,93 @@ try:
                 parameters = plugin_info.get("parameters", [])
                 symbol = None
 
-                if update.param_index < len(parameters):
-                    symbol = parameters[update.param_index].get("symbol", "")
+                if param_index < len(parameters):
+                    symbol = parameters[param_index].get("symbol", "")
 
-                try:
-                    from app.services.juce_engine_service import get_audio_engine
-                    engine = get_audio_engine()
-                    if engine.is_available and engine.is_running and symbol:
-                        await engine.set_parameter(update.plugin_uri, symbol, update.value)
-                except Exception as e:
-                    logger.warning(f"Error setting batch parameter: {e}")
+                if symbol and _ENABLE_ENGINE_PLUGIN_OPS:
+                    if sync_engine_ops and engine and engine.is_available and engine.is_running:
+                        if plugin_uri not in instance_id_cache:
+                            instance_id = plugin_info.get("instance_id")
+                            if not isinstance(instance_id, int) or instance_id <= 0:
+                                instance_id = None
+                                if callable(resolver):
+                                    instance_id = await asyncio.to_thread(resolver, plugin_uri)
+                            instance_id_cache[plugin_uri] = instance_id
+
+                        instance_id = instance_id_cache.get(plugin_uri)
+                        if isinstance(instance_id, int) and instance_id > 0:
+                            sync_engine_updates.append((instance_id, symbol, value))
+                    elif not sync_engine_ops:
+                        deferred_engine_updates.append(
+                            {
+                                "plugin_uri": plugin_uri,
+                                "symbol": symbol,
+                                "value": value,
+                                "instance_id": plugin_info.get("instance_id"),
+                            }
+                        )
 
                 results.append({
-                    "plugin_uri": update.plugin_uri,
-                    "param_index": update.param_index,
-                    "value": update.value
+                    "plugin_uri": plugin_uri,
+                    "param_index": param_index,
+                    "value": value
                 })
 
             except Exception as e:
                 errors.append({
-                    "plugin_uri": update.plugin_uri,
-                    "param_index": update.param_index,
+                    "plugin_uri": plugin_uri,
+                    "param_index": param_index,
                     "error": str(e)
                 })
 
+        engine_applied = 0
+        engine_deferred = False
+        if sync_engine_updates and sync_engine_ops:
+            if engine and engine.is_available and engine.is_running:
+                try:
+                    engine_applied = await engine.set_parameter_batch_direct(sync_engine_updates)
+                except Exception as e:
+                    logger.warning(f"Error applying sync batch parameters: {e}")
+            else:
+                logger.warning("Sync plugin engine ops enabled but engine is unavailable")
+        elif deferred_engine_updates and _ENABLE_ENGINE_PLUGIN_OPS and not sync_engine_ops:
+            engine_deferred = _enqueue_engine_op(
+                {
+                    "type": "parameter_batch",
+                    "updates": deferred_engine_updates,
+                    "retries": 0,
+                }
+            )
+            if not engine_deferred:
+                errors.append(
+                    {
+                        "plugin_uri": None,
+                        "param_index": None,
+                        "error": "Engine operation queue is saturated",
+                    }
+                )
+
         # Publish batch parameter change event (single event for all changes)
         if results:
-            await event_publisher.publish(
-                "plugin_params",
-                EventType.PLUGIN_PARAMETER_CHANGED,
-                {"batch": True, "updates": results}
-            )
+            async def _publish_batch_event(batch_updates: List[Dict[str, Any]]) -> None:
+                try:
+                    await event_publisher.publish(
+                        "plugin_params",
+                        EventType.PLUGIN_PARAMETER_CHANGED,
+                        {"batch": True, "updates": batch_updates},
+                    )
+                except Exception:
+                    pass
+
+            asyncio.create_task(_publish_batch_event(list(results)))
 
         return {
             "status": "batch_complete",
+            "requested": requested_count,
+            "deduplicated": len(unique_updates),
             "applied": len(results),
+            "engine_applied": engine_applied,
+            "engine_deferred": engine_deferred,
             "errors": len(errors),
             "results": results,
             "error_details": errors if errors else None

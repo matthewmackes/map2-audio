@@ -89,6 +89,12 @@ class AudioEngineConfig:
     config_file: str = ""
 
 
+# Lexicon MPX-1 Hardware Plugin Constants
+LEXICON_MPX1_URI = "hardware://lexicon-mpx1-spdif"
+LEXICON_MPX1_NAME = "Lexicon MPX-1"
+LEXICON_MPX1_CATEGORY = "lexicon"
+
+
 class JuceEngineService(Singleton):
     """JUCE Audio Engine Service - MAP2 audio processing engine"""
 
@@ -206,26 +212,123 @@ class JuceEngineService(Singleton):
     # Plugin Management
     
     async def list_plugins(self) -> List[Dict[str, Any]]:
-        """List available LV2 plugins"""
+        """List available plugins (LV2/VST3 + hardware)"""
         if not self._engine:
             return []
         # FIX #7: Wrap blocking plugin listing in asyncio.to_thread()
-        return await asyncio.to_thread(self._engine.list_plugins)
-    
+        plugins = await asyncio.to_thread(self._engine.list_plugins)
+        # Inject Lexicon MPX-1 as a discoverable hardware plugin (deduplicated).
+        if not any((p or {}).get("uri") == LEXICON_MPX1_URI for p in plugins):
+            plugins.append({
+                "uri": LEXICON_MPX1_URI,
+                "name": LEXICON_MPX1_NAME,
+                "author": "Lexicon / Harman",
+                "brand": "Lexicon",
+                "category": LEXICON_MPX1_CATEGORY,
+                "license": "",
+                "version": "1.0",
+                "format": "Hardware",
+                "format_name": "Hardware S/PDIF",
+                "file_path": "",
+                "audio_inputs": 2,
+                "audio_outputs": 2,
+                "has_midi_input": True,
+                "has_midi_output": True,
+                "latency_samples": 0,
+                "parameters": [],
+                "ports": [],
+                "is_hardware": True,
+            })
+        return plugins
+
     async def load_plugin(self, uri: str) -> int:
         """Load a plugin by URI, returns instance ID"""
         if not self._engine:
             return -1
+        # Intercept Lexicon MPX-1 hardware plugin URI
+        if uri == LEXICON_MPX1_URI and hasattr(self._engine, "load_lexicon_plugin"):
+            return await self.load_lexicon_plugin()
         # FIX #7: Wrap blocking plugin loading in asyncio.to_thread()
         # Plugin loading involves disk I/O and DSP initialization - can take hundreds of ms
         return await asyncio.to_thread(self._engine.load_plugin, uri)
-    
+
     async def unload_plugin(self, instance_id: int) -> bool:
         """Unload a plugin by instance ID"""
         if not self._engine:
             return False
+        # Check if this is the Lexicon hardware plugin
+        try:
+            is_lexicon_loaded = bool(getattr(self._engine, "is_lexicon_loaded", lambda: False)())
+            lexicon_instance_id = int(getattr(self._engine, "get_lexicon_instance_id", lambda: -1)())
+            if is_lexicon_loaded and lexicon_instance_id == instance_id:
+                return await self.unload_lexicon_plugin()
+        except Exception:
+            # Fall through to generic unload path.
+            pass
         # FIX #7: Wrap blocking plugin unloading in asyncio.to_thread()
         return await asyncio.to_thread(self._engine.unload_plugin, instance_id)
+
+    # ========================================
+    # Lexicon MPX-1 Hardware Plugin
+    # ========================================
+
+    async def load_lexicon_plugin(self) -> int:
+        """Load Lexicon MPX-1 hardware plugin. Returns instance_id."""
+        if not self._engine or not hasattr(self._engine, "load_lexicon_plugin"):
+            return -1
+        # Singleton guard
+        if hasattr(self._engine, "is_lexicon_loaded") and self._engine.is_lexicon_loaded():
+            return self._engine.get_lexicon_instance_id()
+        instance_id = await asyncio.to_thread(self._engine.load_lexicon_plugin)
+        if instance_id != -1 and hasattr(self._engine, "calibrate_lexicon_latency"):
+            # Auto-calibrate S/PDIF latency
+            await asyncio.to_thread(self._engine.calibrate_lexicon_latency)
+            logger.info(
+                f"Lexicon MPX-1 loaded as instance {instance_id}, "
+                f"S/PDIF latency calibrated"
+            )
+        return instance_id
+
+    async def unload_lexicon_plugin(self) -> bool:
+        """Unload Lexicon MPX-1 hardware plugin."""
+        if not self._engine or not hasattr(self._engine, "unload_lexicon_plugin"):
+            return False
+        return await asyncio.to_thread(self._engine.unload_lexicon_plugin)
+
+    async def calibrate_lexicon_latency(self) -> bool:
+        """Measure S/PDIF round-trip latency via impulse response."""
+        if (
+            not self._engine
+            or not hasattr(self._engine, "is_lexicon_loaded")
+            or not hasattr(self._engine, "calibrate_lexicon_latency")
+            or not self._engine.is_lexicon_loaded()
+        ):
+            return False
+        return await asyncio.to_thread(self._engine.calibrate_lexicon_latency)
+
+    async def set_lexicon_bypass(self, bypass: bool) -> bool:
+        """Set Lexicon MPX-1 bypass state."""
+        if not self._engine or not hasattr(self._engine, "set_lexicon_bypass"):
+            return False
+        return await asyncio.to_thread(self._engine.set_lexicon_bypass, bypass)
+
+    async def set_lexicon_mix(self, mix: float) -> bool:
+        """Set Lexicon MPX-1 wet/dry mix (0.0=dry, 1.0=wet)."""
+        if not self._engine or not hasattr(self._engine, "set_lexicon_mix"):
+            return False
+        return await asyncio.to_thread(self._engine.set_lexicon_mix, mix)
+
+    async def set_lexicon_send_gain(self, gain_db: float) -> bool:
+        """Set Lexicon MPX-1 S/PDIF send gain in dB."""
+        if not self._engine or not hasattr(self._engine, "set_lexicon_send_gain"):
+            return False
+        return await asyncio.to_thread(self._engine.set_lexicon_send_gain, gain_db)
+
+    async def set_lexicon_return_gain(self, gain_db: float) -> bool:
+        """Set Lexicon MPX-1 S/PDIF return gain in dB."""
+        if not self._engine or not hasattr(self._engine, "set_lexicon_return_gain"):
+            return False
+        return await asyncio.to_thread(self._engine.set_lexicon_return_gain, gain_db)
     
     # Pedalboard Management
     
@@ -269,13 +372,18 @@ class JuceEngineService(Singleton):
         if not self._engine:
             logger.error("Cannot set parameter: engine not initialized")
             return False
-        instance_id = self._get_instance_id_for_uri(plugin_uri)
+        instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri)
         if instance_id is None:
             logger.error(f"Plugin not found in chain: {plugin_uri}")
             return False
         logger.debug(f"Setting parameter: instance_id={instance_id}, param={param_name}, value={value}")
         try:
-            result = self._engine.set_parameter_by_name(instance_id, param_name, value)
+            result = await asyncio.to_thread(
+                self._engine.set_parameter_by_name,
+                instance_id,
+                param_name,
+                value,
+            )
             if not result:
                 logger.error(f"Engine returned False for set_parameter({instance_id}, {param_name}, {value})")
             return result
@@ -287,17 +395,46 @@ class JuceEngineService(Singleton):
         """Set a plugin parameter directly by instance ID"""
         if not self._engine:
             return False
-        return self._engine.set_parameter_by_name(instance_id, param_name, value)
+        return await asyncio.to_thread(
+            self._engine.set_parameter_by_name,
+            instance_id,
+            param_name,
+            value,
+        )
+
+    def _set_parameter_batch_direct_sync(self, updates: list[tuple[int, str, float]]) -> int:
+        """Apply a list of parameter updates in one worker-thread dispatch."""
+        if not self._engine:
+            return 0
+
+        applied = 0
+        for instance_id, param_name, value in updates:
+            try:
+                if self._engine.set_parameter_by_name(instance_id, param_name, value):
+                    applied += 1
+            except Exception:
+                continue
+        return applied
+
+    async def set_parameter_batch_direct(self, updates: list[tuple[int, str, float]]) -> int:
+        """Set many plugin parameters with a single threadpool hop."""
+        if not self._engine or not updates:
+            return 0
+        return await asyncio.to_thread(self._set_parameter_batch_direct_sync, updates)
 
     async def get_parameter(self, plugin_uri: str, param_name: str) -> float:
         """Get a plugin parameter value"""
         if not self._engine:
             return 0.0
-        instance_id = self._get_instance_id_for_uri(plugin_uri)
+        instance_id = await asyncio.to_thread(self._get_instance_id_for_uri, plugin_uri)
         if instance_id is None:
             logger.error(f"Plugin not found in chain: {plugin_uri}")
             return 0.0
-        return self._engine.get_parameter_by_name(instance_id, param_name)
+        return await asyncio.to_thread(
+            self._engine.get_parameter_by_name,
+            instance_id,
+            param_name,
+        )
 
     async def set_bypass(self, instance_id: int, bypass: bool) -> bool:
         """Set plugin bypass state"""
@@ -529,13 +666,13 @@ class JuceEngineService(Singleton):
                 "output_left": 0.0,
                 "output_right": 0.0
             }
-        return self._engine.get_vu_levels()
+        return await asyncio.to_thread(self._engine.get_vu_levels)
 
     async def get_plugin_vu_levels(self) -> List[Dict[str, Any]]:
         """Get per-plugin VU levels"""
         if not self._engine:
             return []
-        return self._engine.get_plugin_vu_levels()
+        return await asyncio.to_thread(self._engine.get_plugin_vu_levels)
 
     # ========================================
     # Spectrum Analysis (NEW)

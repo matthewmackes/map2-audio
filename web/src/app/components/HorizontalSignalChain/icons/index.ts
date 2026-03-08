@@ -27,6 +27,7 @@ import FxFunction from './fx_function.svg?react'
 import FxGate from './fx_gate.svg?react'
 import FxGenerator from './fx_generator.svg?react'
 import FxInstrument from './fx_instrument.svg?react'
+import FxLexicon from './fx_lexicon.svg?react'
 import FxLimiter from './fx_limiter.svg?react'
 import FxLr from './fx_lr.svg?react'
 import FxMixer from './fx_mixer.svg?react'
@@ -68,6 +69,7 @@ export const FX_ICONS: Record<FxIconName, React.FC<React.SVGProps<SVGSVGElement>
   fx_gate: FxGate,
   fx_generator: FxGenerator,
   fx_instrument: FxInstrument,
+  fx_lexicon: FxLexicon,
   fx_limiter: FxLimiter,
   fx_lr: FxLr,
   fx_mixer: FxMixer,
@@ -202,6 +204,13 @@ export const CATEGORY_ICON_MAP: Record<string, FxIconName> = {
   autotune: 'fx_pitch',
   'auto-tune': 'fx_pitch',
 
+  // Hardware Effects
+  lexicon: 'fx_lexicon',
+  'lexicon mpx-1': 'fx_lexicon',
+  'mpx-1': 'fx_lexicon',
+  mpx1: 'fx_lexicon',
+  hardware: 'fx_lexicon',
+
   // Neural/ML
   nam: 'fx_nam',
   'neural amp': 'fx_nam',
@@ -285,6 +294,7 @@ export {
   FxGate,
   FxGenerator,
   FxInstrument,
+  FxLexicon,
   FxLimiter,
   FxLr,
   FxMixer,

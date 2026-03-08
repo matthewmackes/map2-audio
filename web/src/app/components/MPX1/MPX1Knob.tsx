@@ -7,6 +7,8 @@ interface MPX1KnobProps {
   max: number
   step?: number
   disabled?: boolean
+  size?: number
+  compact?: boolean
   formatter?: (value: number) => string
   onChange: (value: number) => void
 }
@@ -39,12 +41,15 @@ export function MPX1Knob({
   max,
   step = 0,
   disabled = false,
+  size = 96,
+  compact = false,
   formatter,
   onChange,
 }: MPX1KnobProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const knobSize = Math.max(56, Math.min(132, Number.isFinite(size) ? size : 96))
 
   const range = Math.max(0.0001, max - min)
   const normalized = clamp((value - min) / range, 0, 1)
@@ -61,26 +66,25 @@ export function MPX1Knob({
     if (!canvas) return
 
     const dpr = window.devicePixelRatio || 1
-    const size = 96
-    canvas.width = Math.floor(size * dpr)
-    canvas.height = Math.floor(size * dpr)
-    canvas.style.width = `${size}px`
-    canvas.style.height = `${size}px`
+    canvas.width = Math.floor(knobSize * dpr)
+    canvas.height = Math.floor(knobSize * dpr)
+    canvas.style.width = `${knobSize}px`
+    canvas.style.height = `${knobSize}px`
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    ctx.clearRect(0, 0, size, size)
+    ctx.clearRect(0, 0, knobSize, knobSize)
 
-    const centerX = size / 2
-    const centerY = size / 2
-    const radius = 31
+    const centerX = knobSize / 2
+    const centerY = knobSize / 2
+    const radius = knobSize * 0.323
     const startAngle = Math.PI * 0.72
     const endAngle = Math.PI * 2.28
 
     // Track ring
-    ctx.lineWidth = 7
+    ctx.lineWidth = Math.max(4, knobSize * 0.073)
     ctx.strokeStyle = 'rgba(148, 163, 184, 0.24)'
     ctx.beginPath()
     ctx.arc(centerX, centerY, radius, startAngle, endAngle, false)
@@ -95,14 +99,14 @@ export function MPX1Knob({
     ctx.stroke()
 
     // Knob body
-    const knobRadius = 22
+    const knobRadius = knobSize * 0.229
     const knobGradient = ctx.createRadialGradient(
-      centerX - 5,
-      centerY - 6,
-      6,
+      centerX - knobSize * 0.052,
+      centerY - knobSize * 0.062,
+      Math.max(4, knobSize * 0.062),
       centerX,
       centerY,
-      knobRadius
+      Math.max(10, knobRadius)
     )
     knobGradient.addColorStop(0, disabled ? '#223045' : '#2b3b54')
     knobGradient.addColorStop(1, disabled ? '#0f172a' : '#111827')
@@ -117,14 +121,14 @@ export function MPX1Knob({
 
     // Pointer dot
     const pointerAngle = toAngle(normalized)
-    const pointerRadius = 16
+    const pointerRadius = knobSize * 0.167
     const pointerX = centerX + Math.cos(pointerAngle) * pointerRadius
     const pointerY = centerY + Math.sin(pointerAngle) * pointerRadius
     ctx.fillStyle = disabled ? 'rgba(148, 163, 184, 0.62)' : 'rgba(248, 250, 252, 0.95)'
     ctx.beginPath()
-    ctx.arc(pointerX, pointerY, 3.2, 0, Math.PI * 2)
+    ctx.arc(pointerX, pointerY, Math.max(2, knobSize * 0.033), 0, Math.PI * 2)
     ctx.fill()
-  }, [disabled, normalized])
+  }, [disabled, knobSize, normalized])
 
   useEffect(() => {
     if (!isDragging) {
@@ -185,7 +189,9 @@ export function MPX1Knob({
   }
 
   return (
-    <div className={`mpx1-knob${disabled ? ' is-disabled' : ''}`}>
+    <div
+      className={`mpx1-knob${disabled ? ' is-disabled' : ''}${compact ? ' is-compact' : ''}`}
+    >
       <canvas
         ref={canvasRef}
         className="mpx1-knob__canvas"

@@ -1,9 +1,11 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from './layout/AppShell'
-import { ToastProvider } from './components/Toasts'
+import { ToastProvider, useToasts } from './components/Toasts'
 import { MidiLearnProvider } from './hooks/useMidiLearn'
+import ErrorBoundary from './components/ErrorBoundary'
+import { useWebSocketConnection } from '../map2/hooks/useWebSocket'
 
 // Lazy-load devtools so they don't bloat the production shell chunk
 const ReactQueryDevtools = lazy(() =>
@@ -108,56 +110,118 @@ const queryClient = new QueryClient({
   },
 })
 
+const RETRYING_TOAST_ID = 'backend-retrying'
+const UNREACHABLE_TOAST_ID = 'backend-unreachable'
+
+function BackendConnectionMonitor() {
+  const { status, client } = useWebSocketConnection()
+  const { pushToast, dismissToast } = useToasts()
+
+  useEffect(() => {
+    const unsubscribe = client.onReconnectExhausted(() => {
+      dismissToast(RETRYING_TOAST_ID)
+      pushToast('Backend unreachable - click to retry.', 'error', {
+        id: UNREACHABLE_TOAST_ID,
+        persistent: true,
+        action: {
+          label: 'Retry now',
+          onClick: () => client.retryNow(),
+        },
+      })
+    })
+
+    return () => unsubscribe()
+  }, [client, dismissToast, pushToast])
+
+  useEffect(() => {
+    if (status === 'connected') {
+      dismissToast(RETRYING_TOAST_ID)
+      dismissToast(UNREACHABLE_TOAST_ID)
+      return
+    }
+
+    if (status === 'reconnecting') {
+      dismissToast(UNREACHABLE_TOAST_ID)
+      pushToast('Backend connection lost - retrying...', 'warn', {
+        id: RETRYING_TOAST_ID,
+        persistent: true,
+      })
+      return
+    }
+
+    dismissToast(RETRYING_TOAST_ID)
+  }, [status, dismissToast, pushToast])
+
+  return null
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <MidiLearnProvider>
           <ToastProvider>
-            <AppShell>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/chains" element={<ChainsPage />} />
-                  <Route path="/presets" element={<PresetsPage />} />
-                  <Route path="/legacy" element={<LegacyPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/plugins" element={<LV2PluginsPage />} />
-                  <Route path="/library" element={<LibraryPage />} />
-                  <Route path="/midi" element={<MIDIPage />} />
-                  <Route path="/grid" element={<GridFlowPage />} />
-                  <Route path="/grid-3d" element={<GridFlowAdvancedPage />} />
-                  <Route path="/dsp" element={<DSPPage />} />
-                  <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
-                  <Route path="/motu-rme" element={<MOTURMEPage />} />
-                  <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
-                  <Route path="/host-machine" element={<HostMachinePage />} />
-                  <Route path="/cpu-performance" element={<CPUPerformancePage />} />
-                  <Route path="/engine" element={<AudioEnginePage />} />
-                  <Route path="/metering" element={<MeteringPage />} />
-                  <Route path="/pipewire" element={<PipeWirePage />} />
-                  <Route path="/welcome" element={<WelcomePage />} />
-                  <Route path="/lcd" element={<LCDPage />} />
-                  <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
-                  <Route path="/drums" element={<DrumsPage />} />
-                  <Route path="/multi-system" element={<MultiSystemDashboard />} />
-                  <Route path="/avb-routing" element={<AvbRoutingPage />} />
-                  <Route path="/tesira" element={<TesiraPage />} />
-                  <Route path="/mpx1/*" element={<MPX1Page />}>
-                    <Route index element={<Navigate to="panel" replace />} />
-                    <Route path="panel" element={<MPX1PanelView />} />
-                    <Route path="editor" element={<MPX1EditorView />} />
-                    <Route path="midi-map" element={<MPX1MidiMapView />} />
-                    <Route path="matrix" element={<MPX1MatrixView />} />
-                    <Route path="library" element={<MPX1LibraryView />} />
-                    <Route path="perform" element={<MPX1PerformView />} />
-                    <Route path="diag" element={<MPX1DiagView />} />
-                    <Route path="flow" element={<MPX1FlowView />} />
-                  </Route>
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </AppShell>
+            <BackendConnectionMonitor />
+            <ErrorBoundary title="MAP2 UI crashed" actionLabel="Try again">
+              <AppShell>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/chains" element={<ChainsPage />} />
+                    <Route path="/presets" element={<PresetsPage />} />
+                    <Route path="/legacy" element={<LegacyPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/plugins" element={<LV2PluginsPage />} />
+                    <Route path="/library" element={<LibraryPage />} />
+                    <Route path="/midi" element={<MIDIPage />} />
+                    <Route path="/grid" element={<GridFlowPage />} />
+                    <Route
+                      path="/grid-3d"
+                      element={
+                        <ErrorBoundary title="3D view crashed" actionLabel="Reload 3D view">
+                          <GridFlowAdvancedPage />
+                        </ErrorBoundary>
+                      }
+                    />
+                    <Route path="/dsp" element={<DSPPage />} />
+                    <Route path="/edirol-ua1000" element={<EdirolUA1000Page />} />
+                    <Route path="/motu-rme" element={<MOTURMEPage />} />
+                    <Route path="/hotone-jogg" element={<HoToneJoGGPage />} />
+                    <Route path="/host-machine" element={<HostMachinePage />} />
+                    <Route path="/cpu-performance" element={<CPUPerformancePage />} />
+                    <Route path="/engine" element={<AudioEnginePage />} />
+                    <Route path="/metering" element={<MeteringPage />} />
+                    <Route path="/pipewire" element={<PipeWirePage />} />
+                    <Route path="/welcome" element={<WelcomePage />} />
+                    <Route path="/lcd" element={<LCDPage />} />
+                    <Route path="/cluster-dashboard" element={<ClusterDashboardPage />} />
+                    <Route path="/drums" element={<DrumsPage />} />
+                    <Route path="/multi-system" element={<MultiSystemDashboard />} />
+                    <Route path="/avb-routing" element={<AvbRoutingPage />} />
+                    <Route path="/tesira" element={<TesiraPage />} />
+                    <Route path="/mpx1/*" element={<MPX1Page />}>
+                      <Route index element={<Navigate to="panel" replace />} />
+                      <Route path="panel" element={<MPX1PanelView />} />
+                      <Route path="editor" element={<MPX1EditorView />} />
+                      <Route path="midi-map" element={<MPX1MidiMapView />} />
+                      <Route path="matrix" element={<MPX1MatrixView />} />
+                      <Route path="library" element={<MPX1LibraryView />} />
+                      <Route path="perform" element={<MPX1PerformView />} />
+                      <Route path="diag" element={<MPX1DiagView />} />
+                      <Route
+                        path="flow"
+                        element={
+                          <ErrorBoundary title="MPX1 flow view crashed" actionLabel="Reload flow view">
+                            <MPX1FlowView />
+                          </ErrorBoundary>
+                        }
+                      />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </AppShell>
+            </ErrorBoundary>
           </ToastProvider>
         </MidiLearnProvider>
       </BrowserRouter>

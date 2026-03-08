@@ -1,0 +1,51 @@
+{
+  "task_id": "T052",
+  "date": "2026-03-07",
+  "status": "pass",
+  "notes": [
+    "v1 artifacts were captured before backend restart and are superseded by v2 artifacts."
+  ],
+  "workload": {
+    "ws_clients": 100,
+    "soak_seconds_target": 300,
+    "locust_users": 10,
+    "spawn_rate": 2,
+    "runtime_seconds": 310,
+    "midi_burst_updates": 500
+  },
+  "smoke_gate": {
+    "artifact_prefix": "docs/fit-for-purpose-evidence/20260307/t052/locust-smoke-65s-v2",
+    "rest_p95_ms": 20.0,
+    "ws_drops": 0,
+    "ws_spread_p95_ms": 0.2144980026059784,
+    "pass": true
+  },
+  "gates": {
+    "rest_p95_ms": {
+      "value": 18.0,
+      "threshold": 50.0,
+      "pass": true
+    },
+    "rest_failures": {
+      "value": 0,
+      "pass": true
+    },
+    "ws_drops": {
+      "value": 0,
+      "threshold": 0,
+      "pass": true
+    },
+    "ws_spread_p95_ms": {
+      "value": 0.18701800217968412,
+      "pass": true
+    }
+  },
+  "artifacts": {
+    "qualification_markdown": "docs/fit-for-purpose-evidence/20260307/t052/T052_LOAD_QUALIFICATION.md",
+    "log": "docs/fit-for-purpose-evidence/20260307/t052/locust-final-310s-v2.log",
+    "stats_csv": "docs/fit-for-purpose-evidence/20260307/t052/locust-final-310s-v2_stats.csv",
+    "stats_history_csv": "docs/fit-for-purpose-evidence/20260307/t052/locust-final-310s-v2_stats_history.csv",
+    "failures_csv": "docs/fit-for-purpose-evidence/20260307/t052/locust-final-310s-v2_failures.csv",
+    "exceptions_csv": "docs/fit-for-purpose-evidence/20260307/t052/locust-final-310s-v2_exceptions.csv"
+  }
+}

@@ -103,6 +103,8 @@ export function chainToABFlow(
       name: inputName,
       channels: inputChannels,
       kind: 'input',
+      sampleRate: options?.sampleRate,
+      chainActive: chainA.is_active || chainB.is_active,
     }, { x: START_X, y: (PATH_A_Y + PATH_B_Y) / 2 })
   );
 
@@ -189,6 +191,8 @@ export function chainToABFlow(
       name: outputName,
       channels: outputChannels,
       kind: 'output',
+      sampleRate: options?.sampleRate,
+      chainActive: chainA.is_active || chainB.is_active,
     }, { x: outputX, y: (PATH_A_Y + PATH_B_Y) / 2 })
   );
 
@@ -353,6 +357,7 @@ function createPluginNodes(
       outputPorts: plugin.out_ports || 0,
       compact,
       meters: pluginMeters?.[plugin.uri],
+      isHardware: plugin.format === 'Hardware' || plugin.uri.startsWith('hardware://'),
       cpuPercent: perf?.cpuPercent ?? plugin.cpu_percent,
       latencySamples: perf?.latencySamples ?? plugin.latency_samples,
       sampleRate,

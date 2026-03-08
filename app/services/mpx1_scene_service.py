@@ -40,6 +40,11 @@ class MPX1Scene:
     param_overrides: Dict[str, float]
     created_at: str
     tags: List[str] = field(default_factory=list)
+    # Chain integration (T043): position in effects chain and audio routing params
+    chain_position: Optional[int] = None
+    send_gain_db: float = 0.0
+    return_gain_db: float = 0.0
+    dry_wet_mix: float = 1.0
 
 
 @dataclass
@@ -98,6 +103,9 @@ class MPX1SceneService:
         self._apply_params: Any = None      # async (Dict[str, float]) -> None
         self._apply_program: Any = None     # async (int) -> None
         self._is_realtime_safe: Any = None  # (param_id: str) -> bool
+        # Chain integration hooks (T043)
+        self._get_chain_state: Any = None   # () -> Dict[str, Any] | None
+        self._apply_chain_state: Any = None # async (Dict[str, Any]) -> None
         self._load()
 
     # -----------------------------------------------------------------------
@@ -112,12 +120,16 @@ class MPX1SceneService:
         apply_params: Any,
         apply_program: Any,
         is_realtime_safe: Any,
+        get_chain_state: Any = None,
+        apply_chain_state: Any = None,
     ) -> None:
         self._get_shadow = get_shadow
         self._get_program = get_program
         self._apply_params = apply_params
         self._apply_program = apply_program
         self._is_realtime_safe = is_realtime_safe
+        self._get_chain_state = get_chain_state
+        self._apply_chain_state = apply_chain_state
 
     # -----------------------------------------------------------------------
     # Persistence
@@ -163,6 +175,8 @@ class MPX1SceneService:
         """Snapshot the current shadow state into a new scene."""
         shadow: Dict[str, float] = self._get_shadow() if self._get_shadow else {}
         program: int = self._get_program() if self._get_program else 0
+        # Capture chain integration state (T043)
+        chain_state = self._get_chain_state() if self._get_chain_state else {}
         scene = MPX1Scene(
             id=str(uuid.uuid4()),
             name=name,
@@ -170,6 +184,10 @@ class MPX1SceneService:
             param_overrides=dict(shadow),
             created_at=_iso_now(),
             tags=list(tags or []),
+            chain_position=chain_state.get("chain_position"),
+            send_gain_db=chain_state.get("send_gain_db", 0.0),
+            return_gain_db=chain_state.get("return_gain_db", 0.0),
+            dry_wet_mix=chain_state.get("dry_wet_mix", 1.0),
         )
         self._scenes[scene.id] = scene
         self._save()
@@ -207,6 +225,15 @@ class MPX1SceneService:
             await self._apply_program(scene.program)
         if self._apply_params and scene.param_overrides:
             await self._apply_params(scene.param_overrides)
+        # Restore chain integration state (T043)
+        if self._apply_chain_state:
+            chain_state = {
+                "chain_position": scene.chain_position,
+                "send_gain_db": scene.send_gain_db,
+                "return_gain_db": scene.return_gain_db,
+                "dry_wet_mix": scene.dry_wet_mix,
+            }
+            await self._apply_chain_state(chain_state)
         return {"recalled": scene_id, "program": scene.program}
 
     def diff_scenes(self, scene_id_a: str, scene_id_b: str) -> List[Dict[str, Any]]:
@@ -417,6 +444,10 @@ def _scene_to_dict(s: MPX1Scene) -> Dict[str, Any]:
         "param_count": len(s.param_overrides),
         "created_at": s.created_at,
         "tags": s.tags,
+        "chain_position": s.chain_position,
+        "send_gain_db": s.send_gain_db,
+        "return_gain_db": s.return_gain_db,
+        "dry_wet_mix": s.dry_wet_mix,
     }
 
 

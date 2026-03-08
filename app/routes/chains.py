@@ -3,8 +3,14 @@ Signal Chain Route Handlers with Database Persistence
 API endpoints for creating and managing audio signal chains.
 """
 
+import hashlib
+import json
+import asyncio
+import time
+import threading
+
 try:
-    from fastapi import APIRouter, HTTPException, Query, Body
+    from fastapi import APIRouter, HTTPException, Query, Body, Request, Response
     from pydantic import BaseModel
     from typing import List
     from app.services.chain_service import ChainService
@@ -25,6 +31,22 @@ try:
         plugins: List[dict] = []
         mode: str = "active"  # active | standby
         activate: bool = True
+
+    _CHAIN_ROUTE_TIMEOUT_SECONDS = 0.09
+    _CHAIN_LIST_CACHE_TTL_SECONDS = 30.0
+    _CHAIN_DETAILS_CACHE_TTL_SECONDS = 30.0
+    _CHAIN_TOGGLE_MIN_INTERVAL_SECONDS = 0.45
+    _chain_list_cache = None
+    _chain_list_cache_etag = None
+    _chain_list_cache_at = 0.0
+    _chain_list_cache_lock = threading.Lock()
+    _chain_list_refresh_lock = None
+    _chain_details_cache: dict[int, tuple[float, dict]] = {}
+    _chain_details_cache_lock = threading.Lock()
+    _chain_details_refresh_locks: dict[int, asyncio.Lock] = {}
+    _chain_details_refresh_locks_lock = threading.Lock()
+    _chain_toggle_at: dict[int, float] = {}
+    _chain_toggle_lock = threading.Lock()
 
     def _normalize_deploy_plugins(plugins: List[dict]) -> List[dict]:
         """Normalize deploy payload plugins into DB-ready entries."""
@@ -49,14 +71,232 @@ try:
         """Validate chain name (1-256 characters)."""
         return name and isinstance(name, str) and 1 <= len(name) <= 256
 
+    def _allow_chain_toggle(chain_id: int) -> bool:
+        now = time.monotonic()
+        with _chain_toggle_lock:
+            last = _chain_toggle_at.get(chain_id, 0.0)
+            if (now - last) < _CHAIN_TOGGLE_MIN_INTERVAL_SECONDS:
+                return False
+            _chain_toggle_at[chain_id] = now
+        return True
+
+    def _get_chain_list_refresh_lock() -> asyncio.Lock:
+        global _chain_list_refresh_lock
+        if _chain_list_refresh_lock is None:
+            _chain_list_refresh_lock = asyncio.Lock()
+        return _chain_list_refresh_lock
+
+    def _open_read_session(get_session_factory):
+        try:
+            return get_session_factory(read_only=True)
+        except TypeError:
+            # Backward-compat for tests/mocks that expose a no-arg factory.
+            return get_session_factory()
+
+    def _get_chain_details_refresh_lock(chain_id: int) -> asyncio.Lock:
+        with _chain_details_refresh_locks_lock:
+            lock = _chain_details_refresh_locks.get(chain_id)
+            if lock is None:
+                lock = asyncio.Lock()
+                _chain_details_refresh_locks[chain_id] = lock
+            return lock
+
+    def _chain_list_etag(payload: dict) -> str:
+        return '"' + hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest() + '"'
+
+    def _get_cached_chain_details(chain_id: int):
+        now = time.monotonic()
+        with _chain_details_cache_lock:
+            cached = _chain_details_cache.get(chain_id)
+            if not cached:
+                return None
+            cached_at, payload = cached
+            if (now - cached_at) > _CHAIN_DETAILS_CACHE_TTL_SECONDS:
+                return None
+            return dict(payload)
+
+    def _get_stale_chain_details(chain_id: int):
+        with _chain_details_cache_lock:
+            cached = _chain_details_cache.get(chain_id)
+            if not cached:
+                return None
+            return dict(cached[1])
+
+    def _set_cached_chain_details(chain_id: int, payload: dict) -> None:
+        with _chain_details_cache_lock:
+            _chain_details_cache[chain_id] = (time.monotonic(), dict(payload))
+
+    def _deferred_chain_payload(chain_id: int) -> dict:
+        return {
+            "id": chain_id,
+            "name": f"Chain {chain_id}",
+            "is_active": False,
+            "plugins": [],
+            "effects_loops": [],
+            "loop_insertions": [],
+            "deferred": True,
+        }
+
+    def _refresh_chain_state_cache(chain_id: int, is_active: bool) -> None:
+        global _chain_list_cache, _chain_list_cache_etag, _chain_list_cache_at
+        with _chain_details_cache_lock:
+            cached = _chain_details_cache.get(chain_id)
+            if cached:
+                _, payload = cached
+                updated = dict(payload)
+                updated["is_active"] = is_active
+                _chain_details_cache[chain_id] = (time.monotonic(), updated)
+
+        with _chain_list_cache_lock:
+            if not isinstance(_chain_list_cache, dict):
+                return
+            chains = _chain_list_cache.get("chains")
+            if not isinstance(chains, list):
+                return
+
+            updated_chains = []
+            changed = False
+            for chain in chains:
+                if isinstance(chain, dict) and chain.get("id") == chain_id:
+                    updated_chain = dict(chain)
+                    updated_chain["is_active"] = is_active
+                    updated_chains.append(updated_chain)
+                    changed = True
+                else:
+                    updated_chains.append(chain)
+
+            if not changed:
+                return
+
+            payload = dict(_chain_list_cache)
+            payload["chains"] = updated_chains
+            _chain_list_cache = payload
+            _chain_list_cache_etag = _chain_list_etag(payload)
+            _chain_list_cache_at = time.monotonic()
+
+    def _schedule_chain_event(channel: str, event_type: EventType, payload: dict) -> None:
+        async def _publish() -> None:
+            try:
+                await event_publisher.publish(channel, event_type, payload)
+            except Exception:
+                pass
+
+        asyncio.create_task(_publish())
+
     @router.get("/")
-    async def list_chains():
+    async def list_chains(request: Request, response: Response):
         """List all signal chains from database."""
-        from app.database import get_session
-        async with get_session() as session:
-            service = ChainService(session)
-            chains = await service.list_chains()
-            return {"chains": chains, "count": len(chains)}
+        global _chain_list_cache, _chain_list_cache_etag, _chain_list_cache_at
+        now = time.monotonic()
+        with _chain_list_cache_lock:
+            cache_fresh = (
+                _chain_list_cache is not None
+                and (now - _chain_list_cache_at) < _CHAIN_LIST_CACHE_TTL_SECONDS
+            )
+            if cache_fresh:
+                payload = _chain_list_cache
+                etag = _chain_list_cache_etag
+            else:
+                payload = None
+                etag = None
+
+        if payload is not None and etag is not None:
+            response.headers["Cache-Control"] = "public, max-age=60"
+            response.headers["ETag"] = etag
+            if request.headers.get("if-none-match") == etag:
+                return Response(
+                    status_code=304,
+                    headers={
+                        "Cache-Control": "public, max-age=60",
+                        "ETag": etag,
+                    },
+                )
+            return payload
+
+        refresh_lock = _get_chain_list_refresh_lock()
+        if refresh_lock.locked():
+            with _chain_list_cache_lock:
+                stale_payload = _chain_list_cache
+                stale_etag = _chain_list_cache_etag
+            if stale_payload is not None and stale_etag is not None:
+                response.headers["Cache-Control"] = "public, max-age=60"
+                response.headers["ETag"] = stale_etag
+                response.headers["X-Chain-Cache-Stale"] = "1"
+                return stale_payload
+
+        # Single-flight cache refresh: concurrent misses wait on one DB fetch.
+        async with refresh_lock:
+            now = time.monotonic()
+            with _chain_list_cache_lock:
+                cache_fresh = (
+                    _chain_list_cache is not None
+                    and (now - _chain_list_cache_at) < _CHAIN_LIST_CACHE_TTL_SECONDS
+                )
+                if cache_fresh:
+                    payload = _chain_list_cache
+                    etag = _chain_list_cache_etag
+                else:
+                    payload = None
+                    etag = None
+
+            if payload is None or etag is None:
+                from app.database import get_session
+                chains = None
+                try:
+                    async with _open_read_session(get_session) as session:
+                        service = ChainService(session)
+                        try:
+                            chains = await asyncio.wait_for(
+                                service.list_chains(),
+                                timeout=_CHAIN_ROUTE_TIMEOUT_SECONDS,
+                            )
+                        except asyncio.TimeoutError:
+                            try:
+                                await session.rollback()
+                            except Exception:
+                                pass
+                        except Exception:
+                            try:
+                                await session.rollback()
+                            except Exception:
+                                pass
+                except Exception:
+                    chains = None
+
+                if chains is None:
+                    with _chain_list_cache_lock:
+                        stale_payload = _chain_list_cache
+                        stale_etag = _chain_list_cache_etag
+                    if stale_payload is not None and stale_etag is not None:
+                        response.headers["Cache-Control"] = "public, max-age=60"
+                        response.headers["ETag"] = stale_etag
+                        response.headers["X-Chain-Cache-Stale"] = "1"
+                        return stale_payload
+                    return {"chains": [], "count": 0, "deferred": True}
+
+                payload = {"chains": chains, "count": len(chains)}
+                etag = _chain_list_etag(payload)
+
+                with _chain_list_cache_lock:
+                    _chain_list_cache = payload
+                    _chain_list_cache_etag = etag
+                    _chain_list_cache_at = time.monotonic()
+
+        response.headers["Cache-Control"] = "public, max-age=60"
+        response.headers["ETag"] = etag
+
+        if request.headers.get("if-none-match") == etag:
+            return Response(
+                status_code=304,
+                headers={
+                    "Cache-Control": "public, max-age=60",
+                    "ETag": etag,
+                },
+            )
+
+        return payload
 
     @router.post("/")
     async def create_chain(chain: ChainCreate):
@@ -133,13 +373,69 @@ try:
     @router.get("/{chain_id}")
     async def get_chain(chain_id: int):
         """Get signal chain details."""
+        cached = _get_cached_chain_details(chain_id)
+        if cached is not None:
+            return cached
+
+        refresh_lock = _get_chain_details_refresh_lock(chain_id)
+        stale = _get_stale_chain_details(chain_id)
+        if refresh_lock.locked():
+            if stale is not None:
+                stale["stale"] = True
+                return stale
+            return _deferred_chain_payload(chain_id)
+
+        deferred_payload = _deferred_chain_payload(chain_id)
+
         from app.database import get_session
-        async with get_session() as session:
-            service = ChainService(session)
-            result = await service.get_chain(chain_id)
-        if result is None:
-            raise HTTPException(status_code=404, detail="Chain not found")
-        return result
+        async with refresh_lock:
+            cached = _get_cached_chain_details(chain_id)
+            if cached is not None:
+                return cached
+
+            try:
+                async with _open_read_session(get_session) as session:
+                    service = ChainService(session)
+                    try:
+                        result = await asyncio.wait_for(
+                            service.get_chain(chain_id),
+                            timeout=_CHAIN_ROUTE_TIMEOUT_SECONDS,
+                        )
+                    except asyncio.TimeoutError:
+                        try:
+                            await session.rollback()
+                        except Exception:
+                            pass
+                        stale = _get_stale_chain_details(chain_id)
+                        if stale is not None:
+                            stale["stale"] = True
+                            return stale
+                        _set_cached_chain_details(chain_id, deferred_payload)
+                        return deferred_payload
+                    except Exception:
+                        try:
+                            await session.rollback()
+                        except Exception:
+                            pass
+                        stale = _get_stale_chain_details(chain_id)
+                        if stale is not None:
+                            stale["stale"] = True
+                            return stale
+                        _set_cached_chain_details(chain_id, deferred_payload)
+                        return deferred_payload
+            except Exception:
+                stale = _get_stale_chain_details(chain_id)
+                if stale is not None:
+                    stale["stale"] = True
+                    return stale
+                _set_cached_chain_details(chain_id, deferred_payload)
+                return deferred_payload
+
+            if result is None:
+                raise HTTPException(status_code=404, detail="Chain not found")
+
+            _set_cached_chain_details(chain_id, result)
+            return result
 
     @router.get("/{chain_id}/analysis")
     async def get_chain_analysis(chain_id: int):
@@ -341,38 +637,78 @@ try:
     @router.post("/{chain_id}/activate")
     async def activate_chain(chain_id: int):
         """Activate signal chain."""
-        from app.database import get_session
-        async with get_session() as session:
-            service = ChainService(session)
-            success = await service.activate_chain(chain_id)
-            if not success:
-                raise HTTPException(status_code=404, detail="Chain not found")
+        if not _allow_chain_toggle(chain_id):
+            return {"status": "activate_throttled", "chain_id": chain_id, "deferred": True}
 
-        # Publish chain activation event AFTER session commits
-        await event_publisher.publish(
-            "chain_updates",
-            EventType.CHAIN_ACTIVATED,
-            {"chain_id": chain_id}
-        )
+        from app.database import get_session
+        try:
+            async with get_session() as session:
+                service = ChainService(session)
+                try:
+                    success = await asyncio.wait_for(
+                        service.activate_chain(chain_id),
+                        timeout=_CHAIN_ROUTE_TIMEOUT_SECONDS,
+                    )
+                except asyncio.TimeoutError:
+                    try:
+                        await session.rollback()
+                    except Exception:
+                        pass
+                    return {"status": "activate_deferred", "chain_id": chain_id, "deferred": True}
+                except Exception:
+                    try:
+                        await session.rollback()
+                    except Exception:
+                        pass
+                    return {"status": "activate_deferred", "chain_id": chain_id, "deferred": True}
+                if not success:
+                    raise HTTPException(status_code=404, detail="Chain not found")
+        except HTTPException:
+            raise
+        except Exception:
+            return {"status": "activate_deferred", "chain_id": chain_id, "deferred": True}
+
+        _refresh_chain_state_cache(chain_id, True)
+        _schedule_chain_event("chain_updates", EventType.CHAIN_ACTIVATED, {"chain_id": chain_id})
 
         return {"status": "activated", "chain_id": chain_id}
 
     @router.post("/{chain_id}/deactivate")
     async def deactivate_chain(chain_id: int):
         """Deactivate signal chain."""
-        from app.database import get_session
-        async with get_session() as session:
-            service = ChainService(session)
-            success = await service.deactivate_chain(chain_id)
-            if not success:
-                raise HTTPException(status_code=404, detail="Chain not found")
+        if not _allow_chain_toggle(chain_id):
+            return {"status": "deactivate_throttled", "chain_id": chain_id, "deferred": True}
 
-        # Publish chain deactivation event AFTER session commits
-        await event_publisher.publish(
-            "chain_updates",
-            EventType.CHAIN_DEACTIVATED,
-            {"chain_id": chain_id}
-        )
+        from app.database import get_session
+        try:
+            async with get_session() as session:
+                service = ChainService(session)
+                try:
+                    success = await asyncio.wait_for(
+                        service.deactivate_chain(chain_id),
+                        timeout=_CHAIN_ROUTE_TIMEOUT_SECONDS,
+                    )
+                except asyncio.TimeoutError:
+                    try:
+                        await session.rollback()
+                    except Exception:
+                        pass
+                    return {"status": "deactivate_deferred", "chain_id": chain_id, "deferred": True}
+                except Exception:
+                    try:
+                        await session.rollback()
+                    except Exception:
+                        pass
+                    return {"status": "deactivate_deferred", "chain_id": chain_id, "deferred": True}
+                if not success:
+                    raise HTTPException(status_code=404, detail="Chain not found")
+        except HTTPException:
+            raise
+        except Exception:
+            return {"status": "deactivate_deferred", "chain_id": chain_id, "deferred": True}
+
+        _refresh_chain_state_cache(chain_id, False)
+        _schedule_chain_event("chain_updates", EventType.CHAIN_DEACTIVATED, {"chain_id": chain_id})
 
         return {"status": "deactivated", "chain_id": chain_id}
 
@@ -665,6 +1001,54 @@ try:
                 "status": "template_loaded",
                 "chain": chain
             }
+
+    # ========================================
+    # Lexicon MPX-1 Hardware Plugin Endpoints
+    # ========================================
+
+    @router.post("/lexicon/calibrate")
+    async def calibrate_lexicon():
+        """Calibrate S/PDIF round-trip latency for Lexicon MPX-1."""
+        from app.services.juce_engine_service import JuceEngineService
+        engine = JuceEngineService()
+        result = await engine.calibrate_lexicon_latency()
+        return {"success": result}
+
+    @router.post("/lexicon/mix")
+    async def set_lexicon_mix(body: dict = Body(...)):
+        """Set Lexicon MPX-1 wet/dry mix (0.0=dry, 1.0=wet)."""
+        from app.services.juce_engine_service import JuceEngineService
+        engine = JuceEngineService()
+        mix = float(body.get("mix", 1.0))
+        result = await engine.set_lexicon_mix(mix)
+        return {"success": result, "mix": mix}
+
+    @router.post("/lexicon/bypass")
+    async def set_lexicon_bypass(body: dict = Body(...)):
+        """Set Lexicon MPX-1 bypass state."""
+        from app.services.juce_engine_service import JuceEngineService
+        engine = JuceEngineService()
+        bypass = bool(body.get("bypass", False))
+        result = await engine.set_lexicon_bypass(bypass)
+        return {"success": result, "bypass": bypass}
+
+    @router.post("/lexicon/send-gain")
+    async def set_lexicon_send_gain(body: dict = Body(...)):
+        """Set Lexicon MPX-1 S/PDIF send gain in dB."""
+        from app.services.juce_engine_service import JuceEngineService
+        engine = JuceEngineService()
+        db = float(body.get("gain_db", 0.0))
+        result = await engine.set_lexicon_send_gain(db)
+        return {"success": result, "gain_db": db}
+
+    @router.post("/lexicon/return-gain")
+    async def set_lexicon_return_gain(body: dict = Body(...)):
+        """Set Lexicon MPX-1 S/PDIF return gain in dB."""
+        from app.services.juce_engine_service import JuceEngineService
+        engine = JuceEngineService()
+        db = float(body.get("gain_db", 0.0))
+        result = await engine.set_lexicon_return_gain(db)
+        return {"success": result, "gain_db": db}
 
 except ImportError:
     router = None

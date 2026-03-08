@@ -4,7 +4,7 @@ API endpoints for system health and metadata.
 """
 
 try:
-    from fastapi import APIRouter
+    from fastapi import APIRouter, Response
     import time
     import psutil
     import os
@@ -23,14 +23,19 @@ try:
         memory_mb = memory_info.rss / (1024 * 1024)  # Convert bytes to MB
         memory_percent = psutil.virtual_memory().percent
 
-        # Get CPU percentage (interval=0.1 for quick sampling)
-        cpu_percent = psutil.cpu_percent(interval=0.1)
+        # CPU percentage comes from cached performance metrics to avoid
+        # blocking the event loop with synchronous psutil sampling.
+        cpu_percent = 0.0
 
         # Get service status from orchestrator
         audio_running = False
         plugins_loaded = 0
         services_running = 0
         services_total = 0
+        services_required_running = 0
+        services_required_total = 0
+        services_optional_running = 0
+        services_optional_total = 0
         dependency_errors = []
         try:
             from app.services.service_orchestrator import get_orchestrator
@@ -40,11 +45,23 @@ try:
             # Count running services
             for service in status.get("services", {}).values():
                 services_total += 1
-                if service.get("state") == "running":
+                service_state = service.get("state")
+                is_optional = bool(service.get("is_optional", False))
+
+                if is_optional:
+                    services_optional_total += 1
+                else:
+                    services_required_total += 1
+
+                if service_state == "running":
                     services_running += 1
+                    if is_optional:
+                        services_optional_running += 1
+                    else:
+                        services_required_running += 1
 
             # Check audio engine specifically
-            audio_status = orchestrator.get_service_status("audio_engine")
+            audio_status = orchestrator.get_service_status("juce_engine")
             if audio_status and audio_status.get("state") == "running":
                 audio_running = True
 
@@ -62,11 +79,18 @@ try:
         try:
             from app.services.performance_metrics import get_metrics_collector
             collector = await get_metrics_collector()
-            buffer_underruns = collector.buffer_underrun_count
+            latest_cpu_sample = collector.cpu_history[-1]["value"] if collector.cpu_history else None
+            if latest_cpu_sample is not None:
+                cpu_percent = float(latest_cpu_sample)
+            else:
+                current_metrics = collector.get_current_metrics()
+                cpu_percent = float(current_metrics.get("cpu_percent", 0.0))
+            buffer_underruns = collector.buffer_underruns
             history_samples = collector.max_history
             active_alerts = len(collector.get_alerts())
         except Exception as e:
             dependency_errors.append(f"performance_metrics: {e}")
+            cpu_percent = float(psutil.cpu_percent(interval=None))
 
         # Get NAM status (via JUCE C++ engine, no GPU - uses CPU-based NeuralAmpModelerCore)
         nam_available = False
@@ -90,9 +114,9 @@ try:
 
         if services_total == 0:
             issues.append("No orchestrator service data available")
-        elif services_running < services_total:
+        elif services_required_total > 0 and services_required_running < services_required_total:
             issues.append(
-                f"Only {services_running}/{services_total} orchestrator services are running"
+                f"Only {services_required_running}/{services_required_total} required orchestrator services are running"
             )
 
         if not audio_running:
@@ -110,7 +134,7 @@ try:
 
         if issues:
             status = "degraded"
-        if services_total > 0 and services_running == 0:
+        if services_required_total > 0 and services_required_running == 0:
             status = "critical"
 
         return {
@@ -123,6 +147,10 @@ try:
             "plugins_loaded": plugins_loaded,
             "services_running": services_running,
             "services_total": services_total,
+            "services_required_running": services_required_running,
+            "services_required_total": services_required_total,
+            "services_optional_running": services_optional_running,
+            "services_optional_total": services_optional_total,
             # Performance monitoring
             "buffer_underruns": buffer_underruns,
             "history_samples": history_samples,
@@ -137,8 +165,9 @@ try:
         }
 
     @router.get("/version")
-    async def get_version():
+    async def get_version(response: Response):
         """Get application version."""
+        response.headers["Cache-Control"] = "public, max-age=60"
         return {
             "app": "Mackes Audio Platform V2",
             "version": "1.24.25.1",
@@ -146,8 +175,9 @@ try:
         }
 
     @router.get("/config")
-    async def get_config():
+    async def get_config(response: Response):
         """Get system configuration."""
+        response.headers["Cache-Control"] = "public, max-age=60"
         return {
             "sample_rates": [44100, 48000, 96000],
             "buffer_sizes": [128, 256, 512, 1024],

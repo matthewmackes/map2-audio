@@ -167,24 +167,36 @@ async def get_pipewire_settings():
 @router.post("/quantum")
 async def set_pipewire_quantum(req: SetQuantumRequest):
     """Set PipeWire DSP quantum (buffer period). LOCKED for Tier A performance."""
-    # Tier A: Quantum is locked at 64 via systemd service ExecStartPre
+    from app.config import config_get
+    target_quantum = int(config_get("audio.buffer_size", 64))
+    target_rate = int(config_get("audio.sample_rate", 48000))
+    profile = str(config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")))
+
     raise HTTPException(
         status_code=403,
-        detail="PipeWire quantum is LOCKED at 64 samples for Tier A performance (<3ms latency). "
+        detail=f"PipeWire quantum is LOCKED at {target_quantum} samples for Tier A performance (<3ms latency). "
                "Changes must be made in systemd service (map2-backend.service) and service restarted. "
-               "Current quantum is enforced via ExecStartPre: pw-metadata -n settings 0 clock.force-quantum 64"
+               f"Current profile={profile}; enforced order: "
+               f"'pw-metadata -n settings 0 clock.force-rate {target_rate}' then "
+               f"'pw-metadata -n settings 0 clock.force-quantum {target_quantum}'."
     )
 
 
 @router.post("/rate")
 async def set_pipewire_rate(req: SetRateRequest):
     """Set PipeWire forced sample rate. LOCKED for Tier A performance."""
-    # Tier A: Sample rate is locked at 48000 Hz via systemd service ExecStartPre
+    from app.config import config_get
+    target_quantum = int(config_get("audio.buffer_size", 64))
+    target_rate = int(config_get("audio.sample_rate", 48000))
+    profile = str(config_get("clock_sync.selected_profile", config_get("audio.sync_profile", "legacy_fixed_48k")))
+
     raise HTTPException(
         status_code=403,
-        detail="PipeWire sample rate is LOCKED at 48000 Hz for Tier A performance. "
+        detail=f"PipeWire sample rate is LOCKED at {target_rate} Hz for Tier A performance. "
                "Changes must be made in systemd service (map2-backend.service) and service restarted. "
-               "Current rate is enforced via ExecStartPre: pw-metadata -n settings 0 clock.force-rate 48000"
+               f"Current profile={profile}; enforced order: "
+               f"'pw-metadata -n settings 0 clock.force-rate {target_rate}' then "
+               f"'pw-metadata -n settings 0 clock.force-quantum {target_quantum}'."
     )
 
 

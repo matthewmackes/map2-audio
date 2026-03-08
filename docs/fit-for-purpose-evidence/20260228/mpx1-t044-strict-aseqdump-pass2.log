@@ -1,0 +1,4 @@
+Waiting for data. Press Ctrl+C to end.
+Source  Event                  Ch  Data
+ 24:0   System exclusive           F0 06 09 00 01 02 00 00 00 00 00 00 00 03 00 00 00 00 00 00 00 03 01 00 00 09 00 00 00 F7
+ 24:0   System exclusive           F0 06 09 00 01 02 00 00 00 01 00 00 00 03 00 00 00 00 00 00 00 03 01 00 00 09 00 00 00 F7

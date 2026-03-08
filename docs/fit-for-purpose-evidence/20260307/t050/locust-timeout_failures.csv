@@ -1,0 +1,44 @@
+Method,Name,Error,Occurrences
+POST,/api/plugins/unload?uri,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",3
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f0466776be0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d4db350>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04668ca360>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/chains/,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d4db240>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/chains/{id}/deactivate,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f0466776e00>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/chains/{id}/activate,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",4
+GET,/api/chains/,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667a3ac0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04668ca690>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/chains/,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d673680>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665e8af0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels/plugins,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667a09e0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665e8160>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667a1150>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/plugins/unload?uri,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d4da030>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/chains/,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665e88d0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels/plugins,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667a0270>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/chains/,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",9
+GET,/api/audio/status,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665ebf00>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667a1370>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels/plugins,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f046670aad0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f0466777570>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/plugins/unload?uri,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d6719d0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/chains/{id}/deactivate,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",3
+GET,/api/audio/levels,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",18
+GET,/api/chains/{id},"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667088d0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels (during plugin swap),"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",5
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d672030>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665e87c0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d672140>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/chains/{id},"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",4
+POST,/api/plugins/load?uri,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f0466776360>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/plugins/unload?uri,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f044d671260>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665eb680>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels/plugins,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",3
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f0466634d10>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/status,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",4
+GET,/api/audio/latency,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665e8e20>, 'Connection to localhost timed out. (connect timeout=8)')",1
+POST,/api/chains/{id}/activate,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04667a3680>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels (during plugin swap),"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04665eae00>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/levels,"ConnectTimeoutError(<HTTPConnection(host='localhost', port=8080) at 0x7f04668c99d0>, 'Connection to localhost timed out. (connect timeout=8)')",1
+GET,/api/audio/latency,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",16
+POST,/api/plugins/load?uri,"ReadTimeout(ReadTimeoutError(""HTTPConnectionPool(host='localhost', port=8080): Read timed out. (read timeout=8)""))",5

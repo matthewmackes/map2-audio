@@ -1,0 +1,40 @@
+{
+  "task_id": "T051",
+  "date": "2026-03-07",
+  "status": "pass",
+  "workload": {
+    "ws_clients": 100,
+    "soak_seconds_target": 300,
+    "locust_users": 10,
+    "spawn_rate": 2,
+    "runtime_seconds": 310,
+    "midi_burst_updates": 500
+  },
+  "gates": {
+    "rest_p95_ms": {
+      "value": 18.0,
+      "threshold": 50.0,
+      "pass": true
+    },
+    "rest_failures": {
+      "value": 0,
+      "pass": true
+    },
+    "ws_drops": {
+      "value": 0,
+      "threshold": 0,
+      "pass": true
+    },
+    "ws_spread_p95_ms": {
+      "value": 0.20995300292270258,
+      "pass": true
+    }
+  },
+  "artifacts": {
+    "log": "docs/fit-for-purpose-evidence/20260307/t051/locust-final-310s-v1.log",
+    "stats_csv": "docs/fit-for-purpose-evidence/20260307/t051/locust-final-310s-v1_stats.csv",
+    "stats_history_csv": "docs/fit-for-purpose-evidence/20260307/t051/locust-final-310s-v1_stats_history.csv",
+    "failures_csv": "docs/fit-for-purpose-evidence/20260307/t051/locust-final-310s-v1_failures.csv",
+    "exceptions_csv": "docs/fit-for-purpose-evidence/20260307/t051/locust-final-310s-v1_exceptions.csv"
+  }
+}

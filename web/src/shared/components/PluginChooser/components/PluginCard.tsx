@@ -109,6 +109,8 @@ export const PluginCard = memo(function PluginCard({
     )
   }
 
+  const isHardware = plugin.format === 'hardware'
+
   return (
     <Card
       onClick={handleClick}
@@ -118,12 +120,12 @@ export const PluginCard = memo(function PluginCard({
       sx={{
         cursor: draggable ? 'grab' : 'pointer',
         border: 2,
-        borderColor: selected ? 'primary.main' : 'divider',
-        bgcolor: selected ? 'action.selected' : 'background.paper',
+        borderColor: selected ? 'primary.main' : isHardware ? '#C8A951' : 'divider',
+        bgcolor: selected ? 'action.selected' : isHardware ? 'rgba(200,169,81,0.06)' : 'background.paper',
         transition: 'all 0.15s ease',
         '&:hover': {
-          borderColor: 'primary.light',
-          boxShadow: 4,
+          borderColor: isHardware ? '#D4B86A' : 'primary.light',
+          boxShadow: isHardware ? '0 0 12px rgba(200,169,81,0.3)' : 4,
           transform: 'translateY(-1px)',
         },
         '&:active': {
@@ -148,7 +150,11 @@ export const PluginCard = memo(function PluginCard({
 
           {/* Plugin icon */}
           <Box sx={{ flexShrink: 0, mt: 0.25 }}>
-            <PluginIcon pluginType={plugin.pluginType} size={20} opacity={0.8} />
+            {isHardware ? (
+              <img src="/img/fx_lexicon.svg" alt="Hardware" width={20} height={20} style={{ display: 'block' }} />
+            ) : (
+              <PluginIcon pluginType={plugin.pluginType} size={20} opacity={0.8} />
+            )}
           </Box>
 
           {/* Name and format */}
@@ -212,13 +218,15 @@ export const PluginCard = memo(function PluginCard({
 
         {/* Category pill */}
         <Chip
-          label={plugin.category}
+          label={isHardware ? 'Hardware Effect' : plugin.category}
           size="small"
           sx={{
             height: 18,
             fontSize: '0.6rem',
             mb: 0.75,
-            bgcolor: 'action.selected',
+            bgcolor: isHardware ? 'rgba(200,169,81,0.2)' : 'action.selected',
+            color: isHardware ? '#C8A951' : undefined,
+            border: isHardware ? '1px solid rgba(200,169,81,0.4)' : undefined,
             '& .MuiChip-label': { px: 0.75 },
           }}
         />
@@ -229,13 +237,13 @@ export const PluginCard = memo(function PluginCard({
         <Stack direction="row" spacing={0.5} alignItems="center" mb={1} flexWrap="wrap" gap={0.5}>
           <Chip
             icon={<TuneIcon sx={{ fontSize: '0.7rem !important' }} />}
-            label={`${plugin.parameterCount} params`}
+            label={isHardware ? 'MPX1 Panel' : `${plugin.parameterCount} params`}
             size="small"
             sx={{
               height: 18,
               fontSize: '0.55rem',
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
+              bgcolor: isHardware ? '#C8A951' : 'primary.main',
+              color: isHardware ? '#1A1A1A' : 'primary.contrastText',
               '& .MuiChip-label': { px: 0.5 },
               '& .MuiChip-icon': { ml: 0.25, mr: -0.25, color: 'inherit' },
             }}
@@ -515,6 +523,8 @@ function CompactPluginCard({
     onAdd?.(plugin.uri)
   }
 
+  const isHardware = plugin.format === 'hardware'
+
   return (
     <Box
       onClick={handleClick}
@@ -528,19 +538,23 @@ function CompactPluginCard({
         px: 1.5,
         py: 1,
         cursor: draggable ? 'grab' : 'pointer',
-        bgcolor: selected ? 'action.selected' : 'transparent',
+        bgcolor: selected ? 'action.selected' : isHardware ? 'rgba(200,169,81,0.06)' : 'transparent',
         borderRadius: 1,
         borderBottom: 1,
-        borderColor: 'divider',
+        borderColor: isHardware ? 'rgba(200,169,81,0.3)' : 'divider',
         transition: 'background-color 0.15s',
-        '&:hover': { bgcolor: 'action.hover' },
+        '&:hover': { bgcolor: isHardware ? 'rgba(200,169,81,0.12)' : 'action.hover' },
       }}
     >
       {draggable && (
         <DragIcon sx={{ fontSize: 14, color: 'text.disabled', flexShrink: 0 }} />
       )}
 
-      <PluginIcon pluginType={plugin.pluginType} size={18} opacity={0.7} />
+      {isHardware ? (
+        <img src="/img/fx_lexicon.svg" alt="Hardware" width={18} height={18} style={{ display: 'block', flexShrink: 0 }} />
+      ) : (
+        <PluginIcon pluginType={plugin.pluginType} size={18} opacity={0.7} />
+      )}
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -555,25 +569,29 @@ function CompactPluginCard({
       </Box>
 
       <Chip
-        label={plugin.category}
+        label={isHardware ? 'Hardware Effect' : plugin.category}
         size="small"
         sx={{
           height: 18,
           fontSize: '0.6rem',
-          bgcolor: 'action.selected',
+          bgcolor: isHardware ? 'rgba(200,169,81,0.2)' : 'action.selected',
+          color: isHardware ? '#C8A951' : undefined,
+          border: isHardware ? '1px solid rgba(200,169,81,0.4)' : undefined,
           '& .MuiChip-label': { px: 0.5 },
         }}
       />
 
       <Chip
-        label={`${plugin.parameterCount}`}
+        label={isHardware ? 'MPX1' : `${plugin.parameterCount}`}
         size="small"
         icon={<TuneIcon sx={{ fontSize: '0.65rem !important' }} />}
         sx={{
           height: 18,
           fontSize: '0.6rem',
+          bgcolor: isHardware ? '#C8A951' : undefined,
+          color: isHardware ? '#1A1A1A' : undefined,
           '& .MuiChip-label': { px: 0.25 },
-          '& .MuiChip-icon': { ml: 0.25 },
+          '& .MuiChip-icon': { ml: 0.25, color: isHardware ? '#1A1A1A' : undefined },
         }}
       />
 

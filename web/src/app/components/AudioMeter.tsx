@@ -90,7 +90,7 @@ export interface AudioMeterProps {
   variant?: 'default' | 'compact' | 'mini';
 }
 
-export const AudioMeter: React.FC<AudioMeterProps> = ({
+const AudioMeterComponent: React.FC<AudioMeterProps> = ({
   peak,
   rms = 0,
   holdPeak,
@@ -368,6 +368,8 @@ export const AudioMeter: React.FC<AudioMeterProps> = ({
   );
 };
 
+export const AudioMeter = React.memo(AudioMeterComponent);
+
 /**
  * StereoMeter - Stereo pair of meters with labels
  */
@@ -389,7 +391,7 @@ export interface StereoMeterProps {
   variant?: 'default' | 'compact' | 'mini';
 }
 
-export const StereoMeter: React.FC<StereoMeterProps> = ({
+const StereoMeterComponent: React.FC<StereoMeterProps> = ({
   leftPeak,
   rightPeak,
   leftRms,
@@ -450,6 +452,8 @@ export const StereoMeter: React.FC<StereoMeterProps> = ({
   );
 };
 
+export const StereoMeter = React.memo(StereoMeterComponent);
+
 /**
  * GainReductionMeter - Specialized meter for compressor gain reduction
  */
@@ -469,7 +473,7 @@ export interface GainReductionMeterProps {
   style?: React.CSSProperties;
 }
 
-export const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
+const GainReductionMeterComponent: React.FC<GainReductionMeterProps> = ({
   gainReduction,
   maxReduction = 24,
   orientation = 'vertical',
@@ -544,5 +548,7 @@ export const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
     </div>
   );
 };
+
+export const GainReductionMeter = React.memo(GainReductionMeterComponent);
 
 export default AudioMeter;

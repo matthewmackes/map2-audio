@@ -19,12 +19,19 @@ const LV2_BG = 'rgba(139, 92, 246, 0.15)'
 const VST3_COLOR = '#FF6B35'
 const VST3_BG = 'rgba(255, 107, 53, 0.15)'
 
+// Hardware colors - Lexicon gold
+const HW_COLOR = '#C8A951'
+const HW_BG = 'rgba(200, 169, 81, 0.15)'
+
 export function PluginFormatBadge({ format, size = 'small' }: PluginFormatBadgeProps) {
   const isLV2 = format === 'lv2'
-  const color = isLV2 ? LV2_COLOR : VST3_COLOR
-  const bgColor = isLV2 ? LV2_BG : VST3_BG
-  const label = isLV2 ? 'LV2' : 'VST3'
-  const tooltip = isLV2
+  const isHW = format === 'hardware'
+  const color = isHW ? HW_COLOR : isLV2 ? LV2_COLOR : VST3_COLOR
+  const bgColor = isHW ? HW_BG : isLV2 ? LV2_BG : VST3_BG
+  const label = isHW ? 'HW' : isLV2 ? 'LV2' : 'VST3'
+  const tooltip = isHW
+    ? 'Hardware Effect (S/PDIF)'
+    : isLV2
     ? 'LV2 Audio Plugin'
     : 'VST3 Audio Plugin'
 

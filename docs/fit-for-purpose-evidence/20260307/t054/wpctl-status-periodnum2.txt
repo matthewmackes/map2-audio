@@ -1,0 +1,50 @@
+PipeWire 'pipewire-0' [1.4.10, mm@MAP2-TESTBED, cookie:654111556]
+ └─ Clients:
+        32. WirePlumber                         [1.4.10, mm@MAP2-TESTBED, pid:194984]
+        33. pipewire                            [1.4.10, mm@MAP2-TESTBED, pid:194985]
+        46. WirePlumber [export]                [1.4.10, mm@MAP2-TESTBED, pid:194984]
+        53. python3.14                          [1.4.10, mm@MAP2-TESTBED, pid:195179]
+        80. PipeWire ALSA [python3.14]          [1.4.10, mm@MAP2-TESTBED, pid:195179]
+        83. PipeWire ALSA [python3.14]          [1.4.10, mm@MAP2-TESTBED, pid:195179]
+        91. wpctl                               [1.4.10, mm@MAP2-TESTBED, pid:195425]
+
+Audio
+ ├─ Devices:
+ │      47. Ellesmere HDMI Audio [Radeon RX 470/480 / 570/580/590] [alsa]
+ │      48. EDIROL UA-1000                      [alsa]
+ │      49. Built-in Audio                      [alsa]
+ │  
+ ├─ Sinks:
+ │      34. Built-in Audio Analog Stereo        [vol: 0.40]
+ │  
+ ├─ Sources:
+ │      45. Built-in Audio Analog Stereo        [vol: 1.00]
+ │  
+ ├─ Filters:
+ │    - pro-audio-2                                                 
+ │  *   58. alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0       [Audio/Sink]
+ │  *   59. alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0         [Audio/Source]
+ │  
+ └─ Streams:
+        78. PipeWire ALSA [python3.14]                                  
+             79. output_FL       > UA-1000:playback_AUX0	[active]
+             82. output_FR       > UA-1000:playback_AUX1	[active]
+        84. PipeWire ALSA [python3.14]                                  
+             85. input_FR        < UA-1000:capture_AUX1	[active]
+             86. input_FL        < UA-1000:capture_AUX0	[active]
+             87. monitor_FR     
+             88. monitor_FL     
+
+Video
+ ├─ Devices:
+ │  
+ ├─ Sinks:
+ │  
+ ├─ Sources:
+ │  
+ ├─ Filters:
+ │  
+ └─ Streams:
+
+Settings
+ └─ Default Configured Devices:

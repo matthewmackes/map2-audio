@@ -1063,7 +1063,12 @@ ${BLUE}Next Steps:${NC}
 5. ${YELLOW}Restart MAP2 backend to enable AVB:${NC}
    sudo systemctl restart map2-backend
 
-6. ${YELLOW}Access AVB dashboard:${NC}
+6. ${YELLOW}Apply synchronized S/PDIF + AVB bitrate profile (recommended):${NC}
+   sudo python3 scripts/apply_clock_sync_profile.py --profile dual_locked_48k --avb-interface ${AVB_INTERFACE} --restart-backend
+   # Or run one-shot wrapper:
+   sudo bash scripts/setup_mpx1_spdif_avb.sh --interface ${AVB_INTERFACE} --profile dual_locked_48k --yes
+
+7. ${YELLOW}Access AVB dashboard:${NC}
    Web:  http://localhost:3000/avb
    TUI:  python -m tui.node_console (AVB tab)
 

@@ -1,0 +1,57 @@
+PipeWire 'pipewire-0' [1.4.10, mm@MAP2-TESTBED, cookie:312302104]
+ └─ Clients:
+        32. WirePlumber                         [1.4.10, mm@MAP2-TESTBED, pid:1372]
+        33. pipewire                            [1.4.10, mm@MAP2-TESTBED, pid:1373]
+        46. WirePlumber [export]                [1.4.10, mm@MAP2-TESTBED, pid:1372]
+        76. python3.14                          [1.4.10, mm@MAP2-TESTBED, pid:183292]
+        84. PipeWire ALSA [python3.14]          [1.4.10, mm@MAP2-TESTBED, pid:183292]
+        91. PipeWire ALSA [python3.14]          [1.4.10, mm@MAP2-TESTBED, pid:183292]
+       101. wpctl                               [1.4.10, mm@MAP2-TESTBED, pid:194252]
+       104. wpctl                               [1.4.10, mm@MAP2-TESTBED, pid:194247]
+       105. wpctl                               [1.4.10, mm@MAP2-TESTBED, pid:194255]
+
+Audio
+ ├─ Devices:
+ │      47. Ellesmere HDMI Audio [Radeon RX 470/480 / 570/580/590] [alsa]
+ │      48. EDIROL UA-1000                      [alsa]
+ │      49. Built-in Audio                      [alsa]
+ │  
+ ├─ Sinks:
+ │      34. Built-in Audio Analog Stereo        [vol: 0.40]
+ │  *   55. EDIROL UA-1000 Multichannel         [vol: 1.00]
+ │  
+ ├─ Sources:
+ │      45. Built-in Audio Analog Stereo        [vol: 1.00]
+ │  *   56. EDIROL UA-1000 Multichannel         [vol: 1.00]
+ │  
+ ├─ Filters:
+ │  
+ └─ Streams:
+        80. PipeWire ALSA [python3.14]                                  
+             81. output_FL       > UA-1000:playback_FL	[active]
+             86. output_RR       > UA-1000:playback_RR	[active]
+             88. output_RL       > UA-1000:playback_RL	[active]
+             98. output_FR       > UA-1000:playback_FR	[active]
+        87. PipeWire ALSA [python3.14]                                  
+             73. monitor_FL     
+             78. input_FR        < UA-1000:capture_FR	[active]
+             82. monitor_RL     
+             85. monitor_RR     
+             92. input_FL        < UA-1000:capture_FL	[active]
+             94. input_RR        < UA-1000:capture_RR	[active]
+             95. input_RL        < UA-1000:capture_RL	[active]
+             96. monitor_FR     
+
+Video
+ ├─ Devices:
+ │  
+ ├─ Sinks:
+ │  
+ ├─ Sources:
+ │  
+ ├─ Filters:
+ │  
+ └─ Streams:
+
+Settings
+ └─ Default Configured Devices:

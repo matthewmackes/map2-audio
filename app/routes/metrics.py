@@ -6,6 +6,7 @@ Provides endpoints for system metrics, performance monitoring, and Prometheus ex
 try:
     from fastapi import APIRouter
     from app.services.performance_metrics import get_metrics_collector
+    from app.services.request_latency_metrics import get_request_latency_collector
     from app.services.jack_audio import get_jack_client
 
     router = APIRouter(prefix="/api/metrics", tags=["metrics"])
@@ -63,7 +64,11 @@ try:
         Returns list of latency samples in milliseconds.
         """
         collector = await get_metrics_collector()
-        return {"history": collector.get_metrics_history("latency", limit)}
+        route_latency = get_request_latency_collector().snapshot()
+        return {
+            "history": collector.get_metrics_history("latency", limit),
+            "routes": route_latency,
+        }
 
     @router.get("/prometheus")
     async def get_prometheus_metrics():

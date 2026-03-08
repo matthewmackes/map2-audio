@@ -45,7 +45,8 @@ export const GridPluginBlock = memo(function GridPluginBlock({
   const [isHovered, setIsHovered] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
-  const category = meta?.category || 'Utility'
+  const isHardware = meta?.format === 'Hardware' || meta?.is_hardware || plugin.uri.startsWith('hardware://')
+  const category = isHardware ? 'Hardware' : (meta?.category || 'Utility')
   const { color, bg } = getCategoryConfig(category)
   const Icon = getCategoryIcon(category)
   const name = getDisplayPluginName(meta?.name || plugin.name || 'Unknown', plugin.uri)
@@ -122,7 +123,11 @@ export const GridPluginBlock = memo(function GridPluginBlock({
 
       {/* Icon */}
       <div className="grid-plugin-icon">
-        <Icon size={20} />
+        {isHardware ? (
+          <img src="/img/fx_lexicon.svg" alt="HW" width={20} height={20} style={{ display: 'block' }} />
+        ) : (
+          <Icon size={20} />
+        )}
       </div>
 
       {/* Name (shown on hover or select) */}

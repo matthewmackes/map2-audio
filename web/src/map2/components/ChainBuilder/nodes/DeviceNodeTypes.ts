@@ -11,6 +11,10 @@ export interface DeviceNodeData {
   name: string;
   channels: number;
   kind: DeviceNodeKind;
+  sampleRate?: number;
+  bufferSize?: number;
+  isRunning?: boolean;
+  chainActive?: boolean;
 }
 
 export type DeviceNode = Node<DeviceNodeData, 'deviceNode'>;

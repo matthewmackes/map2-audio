@@ -362,3 +362,89 @@ class TestSetlists:
 def test_module_import() -> None:
     from app.services.mpx1_scene_service import get_scene_service, MPX1SceneService
     assert MPX1SceneService is not None
+
+
+# ---------------------------------------------------------------------------
+# Chain Integration (T043)
+# ---------------------------------------------------------------------------
+
+
+def _make_service_with_chain(tmp_path: Path) -> tuple:
+    """Create a wired scene service with chain integration hooks."""
+    scenes_path = tmp_path / "scenes.json"
+    svc = MPX1SceneService(scenes_path)
+
+    shadow: Dict[str, float] = {"reverb.mix": 0.5, "pitch.semi": 3.0}
+    program: int = 7
+    chain_state: Dict[str, Any] = {
+        "chain_position": 2,
+        "send_gain_db": -3.0,
+        "return_gain_db": 1.5,
+        "dry_wet_mix": 0.8,
+    }
+    applied_chain: Dict[str, Any] = {}
+
+    async def _apply_params(params: Dict[str, float]) -> None:
+        shadow.update(params)
+
+    async def _apply_program(prog: int) -> None:
+        nonlocal program
+        program = prog
+
+    async def _apply_chain_state(state: Dict[str, Any]) -> None:
+        applied_chain.update(state)
+
+    svc.wire(
+        get_shadow=lambda: dict(shadow),
+        get_program=lambda: program,
+        apply_params=_apply_params,
+        apply_program=_apply_program,
+        is_realtime_safe=lambda pid: True,
+        get_chain_state=lambda: dict(chain_state),
+        apply_chain_state=_apply_chain_state,
+    )
+    return svc, chain_state, applied_chain
+
+
+class TestChainIntegration:
+    def test_capture_includes_chain_state(self, tmp_path: Path) -> None:
+        svc, _, _ = _make_service_with_chain(tmp_path)
+        scene = svc.capture_scene("Chain Scene")
+        assert scene["chain_position"] == 2
+        assert scene["send_gain_db"] == pytest.approx(-3.0)
+        assert scene["return_gain_db"] == pytest.approx(1.5)
+        assert scene["dry_wet_mix"] == pytest.approx(0.8)
+
+    def test_recall_restores_chain_state(self, tmp_path: Path) -> None:
+        svc, _, applied = _make_service_with_chain(tmp_path)
+        scene = svc.capture_scene("Recall Chain")
+        asyncio.run(svc.recall_scene(scene["id"]))
+        assert applied["chain_position"] == 2
+        assert applied["send_gain_db"] == pytest.approx(-3.0)
+        assert applied["return_gain_db"] == pytest.approx(1.5)
+        assert applied["dry_wet_mix"] == pytest.approx(0.8)
+
+    def test_chain_defaults_for_old_scenes(self, tmp_path: Path) -> None:
+        """Old scenes without chain fields should get sensible defaults."""
+        svc = _make_service(tmp_path)
+        scene = svc.capture_scene("Legacy")
+        assert scene.get("chain_position") is None
+        assert scene.get("send_gain_db", 0.0) == pytest.approx(0.0)
+        assert scene.get("return_gain_db", 0.0) == pytest.approx(0.0)
+        assert scene.get("dry_wet_mix", 1.0) == pytest.approx(1.0)
+
+    def test_chain_state_persists_across_reload(self, tmp_path: Path) -> None:
+        svc1, _, _ = _make_service_with_chain(tmp_path)
+        scene = svc1.capture_scene("Persist Chain")
+        svc2 = MPX1SceneService(tmp_path / "scenes.json")
+        loaded = svc2.get_scene(scene["id"])
+        assert loaded.chain_position == 2
+        assert loaded.send_gain_db == pytest.approx(-3.0)
+        assert loaded.dry_wet_mix == pytest.approx(0.8)
+
+    def test_no_chain_hooks_skips_restore(self, tmp_path: Path) -> None:
+        """If no chain hooks wired, recall still succeeds (no crash)."""
+        svc = _make_service(tmp_path)  # No chain hooks
+        scene = svc.capture_scene("No Chain Hooks")
+        result = asyncio.run(svc.recall_scene(scene["id"]))
+        assert "recalled" in result

@@ -22,6 +22,7 @@ export interface RTClientConfig {
   useBinary?: boolean;
   reconnect?: boolean;
   reconnectDelay?: number;
+  maxReconnectDelay?: number;
   maxReconnectAttempts?: number;
 }
 
@@ -60,6 +61,7 @@ export class RTParameterClient {
       useBinary: config.useBinary ?? false,
       reconnect: config.reconnect ?? true,
       reconnectDelay: config.reconnectDelay ?? 1000,
+      maxReconnectDelay: config.maxReconnectDelay ?? 10000,
       maxReconnectAttempts: config.maxReconnectAttempts ?? 10,
     };
   }
@@ -408,7 +410,7 @@ export class RTParameterClient {
 
     const delay = Math.min(
       this.config.reconnectDelay * Math.pow(1.5, this.reconnectAttempts),
-      10000
+      this.config.maxReconnectDelay
     );
 
     console.log(`[RT] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1})`);

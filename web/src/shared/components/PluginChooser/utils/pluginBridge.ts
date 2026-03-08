@@ -105,8 +105,13 @@ function generateAutoTagsFromMap2(plugin: Plugin): string[] {
     tags.push('Has-UI')
   }
 
-  // Default to LV2 for Map2 plugins
-  tags.push('LV2')
+  // Format tags
+  if (plugin.is_hardware || plugin.format === 'Hardware') {
+    tags.push('Hardware')
+    tags.push('S/PDIF')
+  } else {
+    tags.push('LV2')
+  }
 
   return tags
 }
@@ -189,20 +194,22 @@ export function normalizeMap2Plugin(
   favorites: string[] = [],
   stats?: { lastUsed?: number; usageCount?: number; customTags?: string[]; folders?: string[] }
 ): UnifiedPlugin {
+  const isHw = plugin.is_hardware || plugin.format === 'Hardware';
+  const format: PluginFormat = isHw ? 'hardware' : 'lv2';
   return {
     uri: plugin.uri,
     name: getDisplayPluginName(plugin.name, plugin.uri),
-    format: 'lv2' as PluginFormat, // Map2 API doesn't distinguish
+    format,
     authorName: sanitizeRestrictedDisplayText(plugin.author || 'Unknown'),
     authorHomepage: undefined,
     category: plugin.category || 'Plugin',
-    displayType: plugin.class_label || plugin.category || 'Plugin',
+    displayType: isHw ? 'Hardware Effect' : (plugin.class_label || plugin.category || 'Plugin'),
     pluginType: categoryToPluginType(plugin.category || ''),
     tags: generateAutoTagsFromMap2(plugin),
     audioInputs: plugin.in_ports,
     audioOutputs: plugin.out_ports,
-    hasMidiInput: false, // Not available in Map2 type
-    hasMidiOutput: false,
+    hasMidiInput: plugin.has_midi_input ?? false,
+    hasMidiOutput: plugin.has_midi_output ?? false,
     isStereo: plugin.in_ports >= 2 && plugin.out_ports >= 2,
     hasUi: plugin.has_ui,
     hasModGui: false,
@@ -250,6 +257,18 @@ export function isVirtualPlugin(uri: string): boolean {
     uri === 'urn:map2:ir-reverb'
   )
 }
+
+/**
+ * Check if a plugin is a hardware effect (S/PDIF send/return)
+ */
+export function isHardwarePlugin(uri: string): boolean {
+  return uri.startsWith('hardware://')
+}
+
+/**
+ * Lexicon MPX-1 hardware URI constant
+ */
+export const LEXICON_MPX1_URI = 'hardware://lexicon-mpx1-spdif'
 
 /**
  * Get display name for I/O configuration

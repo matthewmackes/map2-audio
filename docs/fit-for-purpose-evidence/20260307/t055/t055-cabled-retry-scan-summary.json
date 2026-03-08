@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-03-07T20:00:00-05:00",
+  "scan_file": "/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260307/t055/aux-pair-scan-cabled.txt",
+  "pairs_tested": 16,
+  "no_signal_pairs": 16,
+  "measured_pairs": 0,
+  "no_output_pairs": 0,
+  "all_pairs": [
+    {
+      "playback_aux": 0,
+      "capture_aux": 0,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 0,
+      "capture_aux": 1,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 0,
+      "capture_aux": 2,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 0,
+      "capture_aux": 3,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 1,
+      "capture_aux": 0,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 1,
+      "capture_aux": 1,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 1,
+      "capture_aux": 2,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 1,
+      "capture_aux": 3,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 2,
+      "capture_aux": 0,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 2,
+      "capture_aux": 1,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 2,
+      "capture_aux": 2,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 2,
+      "capture_aux": 3,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 3,
+      "capture_aux": 0,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 3,
+      "capture_aux": 1,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 3,
+      "capture_aux": 2,
+      "result": "NO_SIGNAL"
+    },
+    {
+      "playback_aux": 3,
+      "capture_aux": 3,
+      "result": "NO_SIGNAL"
+    }
+  ],
+  "conclusion": "No analog loopback signal detected on any AUX playback/capture pair in cabled retry."
+}

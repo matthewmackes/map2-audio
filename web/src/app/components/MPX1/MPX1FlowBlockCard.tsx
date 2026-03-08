@@ -10,7 +10,7 @@ interface MPX1FlowBlockCardProps {
   onBypassToggle: (blockIndex: number, shouldBypass: boolean) => void
 }
 
-export const MPX1FlowBlockCard = React.forwardRef<HTMLDivElement, MPX1FlowBlockCardProps>(
+const MPX1FlowBlockCardBase = React.forwardRef<HTMLDivElement, MPX1FlowBlockCardProps>(
   function MPX1FlowBlockCard({ block, selected, level = 0, onSelect, onBypassToggle }, ref) {
     const safeLevel = Math.min(1, Math.max(0, level))
 
@@ -60,3 +60,7 @@ export const MPX1FlowBlockCard = React.forwardRef<HTMLDivElement, MPX1FlowBlockC
     )
   },
 )
+MPX1FlowBlockCardBase.displayName = 'MPX1FlowBlockCard'
+
+export const MPX1FlowBlockCard = React.memo(MPX1FlowBlockCardBase)
+MPX1FlowBlockCard.displayName = 'Memo(MPX1FlowBlockCard)'

@@ -13,12 +13,15 @@
  */
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Pulse, Broadcast, Cpu, Link, SpeakerHigh, Microphone, Warning,
   CheckCircle, XCircle, SpeakerX, GearSix, Lightning,
   ChartBar, Stack, GitBranch, CaretDown, CaretUp
 } from '@phosphor-icons/react'
 import { usePipeWire } from '../hooks/usePipeWire'
+import { audioApi } from '../../map2/api'
+import type { AudioSourceTruthPayload } from '../../map2/types'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
 import { CPUMeterPanel } from '../components/Visualizations/CPUMeterPanel'
@@ -119,6 +122,134 @@ const TABS: { id: Tab; label: string; icon: any; color: string }[] = [
   { id: 'routing',     label: 'Signal Path',     icon: GitBranch,  color: T.purple },
   { id: 'diagnostics', label: 'Diagnostics',     icon: GearSix,    color: T.amber },
 ]
+
+function SOTCell({ label, value, color = T.text }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{ background: T.surface, borderRadius: 6, padding: '10px 12px', border: `1px solid ${T.border}` }}>
+      <div style={{ fontSize: 10, color: T.dim, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 13, color, fontFamily: T.mono, fontWeight: 600, overflowWrap: 'anywhere' }}>{value}</div>
+    </div>
+  )
+}
+
+function SourceOfTruthPanel() {
+  const sot = useQuery<AudioSourceTruthPayload>({
+    queryKey: ['audio-source-of-truth'],
+    queryFn: audioApi.getSourceOfTruth,
+    refetchInterval: 5000,
+    staleTime: 2000,
+  })
+
+  if (sot.isLoading && !sot.data) {
+    return (
+      <Panel borderColor={`${T.accent}35`} style={{ marginBottom: 22 }}>
+        <SectionLabel color={T.accent}><Pulse size={13} weight="duotone" /> Single Source Of Truth</SectionLabel>
+        <span style={{ fontSize: 12, color: T.muted }}>Loading bitrate and clock map…</span>
+      </Panel>
+    )
+  }
+
+  if (!sot.data) {
+    return (
+      <Panel borderColor={`${T.red}35`} style={{ marginBottom: 22 }}>
+        <SectionLabel color={T.red}><Pulse size={13} weight="duotone" /> Single Source Of Truth</SectionLabel>
+        <span style={{ fontSize: 12, color: T.red }}>
+          Unavailable: {sot.error instanceof Error ? sot.error.message : 'API error'}
+        </span>
+      </Panel>
+    )
+  }
+
+  const payload = sot.data
+  const statusColor = payload.status === 'aligned' ? T.green : payload.status === 'warning' ? T.amber : T.red
+  const issuePreview = payload.consistency.issues.slice(0, 3)
+
+  return (
+    <Panel borderColor={`${statusColor}35`} style={{ marginBottom: 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+        <SectionLabel color={statusColor}>
+          <Pulse size={13} weight="duotone" /> Single Source Of Truth
+        </SectionLabel>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            padding: '3px 10px',
+            borderRadius: 4,
+            fontSize: 11,
+            fontWeight: 700,
+            fontFamily: T.mono,
+            color: statusColor,
+            border: `1px solid ${statusColor}40`,
+            background: `${statusColor}14`,
+          }}>
+            {payload.status.toUpperCase()}
+          </span>
+          <span style={{ fontSize: 11, color: T.dim }}>
+            {new Date(payload.timestamp).toLocaleTimeString()}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+        <SOTCell label="Profile" value={payload.profile.selected_profile} />
+        <SOTCell label="Clock Master" value={payload.profile.clock_master} />
+        <SOTCell label="Target Rate" value={`${payload.configured.engine_rate_hz} Hz`} color={T.accent} />
+        <SOTCell label="Target Buffer" value={`${payload.configured.buffer_size_samples} smp`} />
+        <SOTCell label="Bit Depth" value={`${payload.configured.bits_per_sample}-bit`} />
+        <SOTCell
+          label="Engine Runtime"
+          value={`${payload.runtime.engine.sample_rate_hz || 0} Hz / ${payload.runtime.engine.buffer_size_samples || 0} smp`}
+          color={payload.runtime.engine.running ? T.green : T.amber}
+        />
+        <SOTCell
+          label="PipeWire Runtime"
+          value={`${payload.runtime.pipewire.effective_rate_hz || 0} Hz / ${payload.runtime.pipewire.effective_quantum_samples || 0} smp`}
+          color={payload.runtime.pipewire.available ? T.purple : T.red}
+        />
+        <SOTCell
+          label="S/PDIF Map"
+          value={`${payload.configured.spdif.enabled ? 'ON' : 'OFF'} · ${payload.configured.spdif_rate_hz} Hz`}
+          color={payload.configured.spdif.enabled ? T.cyan : T.dim}
+        />
+        <SOTCell
+          label="AVB State"
+          value={`${payload.runtime.avb.enabled ? 'ON' : 'OFF'} · ${payload.runtime.avb.state}`}
+          color={payload.runtime.avb.available ? T.green : T.amber}
+        />
+        <SOTCell label="Allowed Rates" value={payload.configured.allowed_rates_hz.join(', ')} />
+      </div>
+
+      {issuePreview.length > 0 && (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {issuePreview.map((issue) => {
+            const c = issue.severity === 'error' ? T.red : issue.severity === 'warning' ? T.amber : T.accent
+            return (
+              <div key={issue.id} style={{
+                border: `1px solid ${c}35`,
+                background: `${c}12`,
+                color: c,
+                borderRadius: 6,
+                padding: '8px 10px',
+                fontSize: 12,
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 10,
+                flexWrap: 'wrap',
+              }}>
+                <span>{issue.message}</span>
+                <span style={{ fontFamily: T.mono, opacity: 0.9 }}>{issue.id}</span>
+              </div>
+            )
+          })}
+          {payload.consistency.issue_count > issuePreview.length && (
+            <span style={{ fontSize: 11, color: T.dim }}>
+              +{payload.consistency.issue_count - issuePreview.length} more issue(s) in API payload
+            </span>
+          )}
+        </div>
+      )}
+    </Panel>
+  )
+}
 
 // ============================================================================
 // LAYER 1 — Engine Cluster Overview
@@ -646,6 +777,9 @@ export function AudioEnginePage() {
           )
         })}
       </nav>
+
+      {/* ── Single Source of Truth ── */}
+      <SourceOfTruthPanel />
 
       {/* ── Layer Content ── */}
       <div>

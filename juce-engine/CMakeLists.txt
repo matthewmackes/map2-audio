@@ -272,7 +272,8 @@ set(SOURCES
     Source/ShoeGazeProcessor.cpp
     Source/LexiLoveProcessor.cpp
     Source/H3000Processor.cpp
-    
+    Source/LexiconHardwareProcessor.cpp
+
     # Multi-Effect Processor
     Source/EventideH9Processor.cpp
 

@@ -1,0 +1,371 @@
+{
+  "timestamp_utc": "2026-02-28T16:38:19.234476+00:00",
+  "connection": {
+    "health_before": {
+      "status": "ok",
+      "rtmidi_available": true,
+      "connected": false,
+      "ws_subscribers": 0,
+      "active_dump_jobs": [],
+      "coalesce_window_ms": 40,
+      "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+      "library_path": "/home/mm/.map2/mpx1_library.json",
+      "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+      "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+      "active_midi_map_id": null,
+      "midi_map_count": 0,
+      "learn_target_param_id": null,
+      "packet_error_count": 0,
+      "last_heartbeat": 1772296584.6606536
+    },
+    "ports": {
+      "rtmidi_available": true,
+      "inputs": [
+        {
+          "index": 0,
+          "name": "Midi Through:Midi Through Port-0 14:0",
+          "connected": false
+        },
+        {
+          "index": 1,
+          "name": "UA-1000:UA-1000 MIDI 24:0",
+          "connected": false
+        },
+        {
+          "index": 2,
+          "name": "MAP2 Audio Engine:MIDI Out 136:1",
+          "connected": false
+        },
+        {
+          "index": 3,
+          "name": "MAP2 Audio Engine:MIDI Out 145:1",
+          "connected": false
+        }
+      ],
+      "outputs": [
+        {
+          "index": 0,
+          "name": "Midi Through:Midi Through Port-0 14:0",
+          "connected": false
+        },
+        {
+          "index": 1,
+          "name": "UA-1000:UA-1000 MIDI 24:0",
+          "connected": false
+        },
+        {
+          "index": 2,
+          "name": "RtMidiIn Client:RtMidi input 135:0",
+          "connected": false
+        },
+        {
+          "index": 3,
+          "name": "MAP2 Audio Engine:MIDI In 136:0",
+          "connected": false
+        },
+        {
+          "index": 4,
+          "name": "RtMidiIn Client:RtMidi input 144:0",
+          "connected": false
+        },
+        {
+          "index": 5,
+          "name": "MAP2 Audio Engine:MIDI In 145:0",
+          "connected": false
+        },
+        {
+          "index": 6,
+          "name": "aseqdump:aseqdump 152:0",
+          "connected": false
+        }
+      ],
+      "recommended_input_index": null,
+      "recommended_output_index": null,
+      "probe_errors": []
+    },
+    "connect_result": {
+      "status": "ok",
+      "connected": true
+    },
+    "state_after_connect": {
+      "connected": true,
+      "input_port_index": 1,
+      "output_port_index": 1,
+      "current_program": 99,
+      "shadow_state_count": 601,
+      "pending_realtime_updates": 0,
+      "rtmidi_available": true,
+      "active_midi_map_id": null,
+      "midi_map_count": 0,
+      "learn_target_param_id": null,
+      "drift_status": "unknown",
+      "verify_pass": 0,
+      "verify_fail": 0,
+      "writer_client_id": null,
+      "pending_readbacks": 0
+    }
+  },
+  "ui_sweep": {
+    "param_id": "pitch.alg_00.mix",
+    "updates_sent": 120,
+    "interval_ms": 40,
+    "packet_error_before": 0,
+    "packet_error_after": 0,
+    "packet_error_delta": 0
+  },
+  "physical_capture": {
+    "duration_sec": 90.0,
+    "ws_event_count": 13,
+    "panel_status_count": 0,
+    "param_rx_count": 0,
+    "program_changed_count": 3,
+    "panel_control_values": [],
+    "latency_ms": {
+      "sample_count": 0,
+      "min": null,
+      "avg": null,
+      "max": null,
+      "p99": null
+    },
+    "sample_events": [
+      {
+        "type": "mpx1:state",
+        "timestamp": 1772296609.729717,
+        "received_ts": 1772296609.729717,
+        "delay_ms": 0.0,
+        "data": {
+          "connected": true,
+          "input_port_index": 1,
+          "output_port_index": 1,
+          "current_program": 99,
+          "shadow_state_count": 601,
+          "pending_realtime_updates": 0,
+          "rtmidi_available": true,
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "drift_status": "unknown",
+          "verify_pass": 0,
+          "verify_fail": 0,
+          "writer_client_id": null,
+          "pending_readbacks": 0
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296619.7343729,
+        "received_ts": 1772296619.7343729,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296609.2284997
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296629.7343926,
+        "received_ts": 1772296629.7343926,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296609.2284997
+        }
+      },
+      {
+        "type": "mpx1:drift_status",
+        "timestamp": 1772296631.2138755,
+        "received_ts": 1772296631.215829,
+        "delay_ms": 1.9533634185791016,
+        "data": {
+          "status": "clean"
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296641.216068,
+        "received_ts": 1772296641.216068,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296631.2138746
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296651.2428503,
+        "received_ts": 1772296651.2428503,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296631.2138746
+        }
+      },
+      {
+        "type": "mpx1:program_changed",
+        "timestamp": 1772296660.1408486,
+        "received_ts": 1772296660.1413548,
+        "delay_ms": 0.5061626434326172,
+        "data": {
+          "program": 115,
+          "source": "midi_sysex"
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296670.140906,
+        "received_ts": 1772296670.140906,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296660.1408482
+        }
+      },
+      {
+        "type": "mpx1:program_changed",
+        "timestamp": 1772296670.939465,
+        "received_ts": 1772296670.9398692,
+        "delay_ms": 0.40411949157714844,
+        "data": {
+          "program": 105,
+          "source": "midi_sysex"
+        }
+      },
+      {
+        "type": "mpx1:program_changed",
+        "timestamp": 1772296676.0335898,
+        "received_ts": 1772296676.034024,
+        "delay_ms": 0.4341602325439453,
+        "data": {
+          "program": 73,
+          "source": "midi_sysex"
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296686.0339534,
+        "received_ts": 1772296686.0339534,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296676.0335896
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296696.033964,
+        "received_ts": 1772296696.033964,
+        "delay_ms": 0.0,
+        "data": {
+          "status": "ok",
+          "rtmidi_available": true,
+          "connected": true,
+          "ws_subscribers": 1,
+          "active_dump_jobs": [],
+          "coalesce_window_ms": 40,
+          "shadow_path": "/home/mm/.map2/mpx1_shadow.json",
+          "library_path": "/home/mm/.map2/mpx1_library.json",
+          "registry_path": "/home/mm/map2-audio/app/data/mpx1_params.json",
+          "midi_maps_path": "/home/mm/.map2/mpx1_midi_maps.json",
+          "active_midi_map_id": null,
+          "midi_map_count": 0,
+          "learn_target_param_id": null,
+          "packet_error_count": 0,
+          "last_heartbeat": 1772296676.0335896
+        }
+      },
+      {
+        "type": "mpx1:heartbeat",
+        "timestamp": 1772296697.854714,
+        "received_ts": 1772296697.8551815,
+        "delay_ms": 0.46753883361816406,
+        "data": {}
+      }
+    ]
+  },
+  "acceptance": {
+    "connected": true,
+    "ui_knob_drag_no_packet_errors": true,
+    "physical_knob_inbound_detected": false,
+    "physical_knob_latency_lt_threshold": false,
+    "latency_threshold_ms": 150.0,
+    "overall_pass": false
+  }
+}

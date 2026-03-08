@@ -95,6 +95,39 @@ def test_extended_program_status_sysex_updates_current_program(tmp_path: Path) -
     assert service.current_program == 33
 
 
+def test_extended_program_status_sysex_emits_inferred_panel_status(tmp_path: Path) -> None:
+    service = MPX1Service(
+        registry_path=_registry_path(),
+        shadow_path=tmp_path / "shadow-program-status-events.json",
+        library_path=tmp_path / "library-program-status-events.json",
+    )
+
+    message = [
+        0xF0, 0x06, 0x09, 0x00, 0x01, 0x02,
+        0x00, 0x00, 0x00, 0x01, 0x02,  # 0x21 = 33
+        0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
+        0xF7,
+    ]
+
+    async def _run() -> list[Dict[str, Any]]:
+        queue = await service.register_ws_client("test-program-status-events")
+        await service.handle_incoming_sysex(message)
+        events: list[Dict[str, Any]] = []
+        while not queue.empty():
+            events.append(queue.get_nowait())
+        service.unregister_ws_client("test-program-status-events")
+        return events
+
+    events = asyncio.run(_run())
+    program_events = [event for event in events if event.get("type") == "mpx1:program_changed"]
+    panel_events = [event for event in events if event.get("type") == "mpx1:panel_status"]
+    assert len(program_events) == 1
+    assert len(panel_events) == 1
+    assert panel_events[0]["data"]["inferred_from"] == "program_status"
+    assert panel_events[0]["data"]["control"] == "program_select"
+    assert panel_events[0]["data"]["control_value"] == 33
+
+
 def test_extended_panel_status_sysex_decodes_control_value(tmp_path: Path) -> None:
     service = MPX1Service(
         registry_path=_registry_path(),

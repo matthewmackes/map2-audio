@@ -183,7 +183,59 @@ export function KnobParameterPanel({
     )
   }
 
-  const accentColor = getCategoryConfig(meta.category).color
+  const isHardware = meta.format === 'Hardware' || meta.is_hardware || plugin.uri.startsWith('hardware://')
+  const accentColor = isHardware ? '#C8A951' : getCategoryConfig(meta.category).color
+
+  // Hardware plugin → show link to MPX-1 Panel instead of empty params
+  if (isHardware) {
+    return (
+      <div className="knob-param-panel">
+        <div className="knob-param-panel-header">
+          <div className="knob-param-panel-title">
+            <span className="knob-param-panel-category" style={{ color: '#C8A951' }}>
+              HARDWARE
+            </span>
+            <span className="knob-param-panel-name">{meta.name}</span>
+          </div>
+          {onToggleBypass && (
+            <button
+              className={`knob-param-panel-power ${plugin.bypassed ? 'bypassed' : 'active'}`}
+              onClick={onToggleBypass}
+              title={plugin.bypassed ? 'Enable plugin' : 'Bypass plugin'}
+              style={{ '--accent': '#C8A951' } as React.CSSProperties}
+            >
+              <Power size={18} weight="duotone" />
+            </button>
+          )}
+        </div>
+        <div className="knob-param-panel-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
+          <img src="/img/fx_lexicon.svg" alt="Lexicon MPX-1" width={48} height={48} />
+          <p style={{ color: '#C8A951', fontWeight: 600, fontSize: 14, margin: 0 }}>
+            Lexicon MPX-1 Hardware Effect
+          </p>
+          <p style={{ color: '#888', fontSize: 12, margin: 0, textAlign: 'center' }}>
+            601 parameters controlled via MIDI SysEx
+          </p>
+          <button
+            onClick={() => { window.location.href = '/mpx1/panel' }}
+            style={{
+              background: '#C8A951',
+              color: '#1A1A1A',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 20px',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
+              marginTop: 4,
+            }}
+          >
+            Open MPX-1 Panel
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Use custom card component if available
   if (CardComponent) {

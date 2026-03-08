@@ -80,6 +80,7 @@ const AudioPluginNode = memo(
       sidechainBusNames,
       meterPanelExpanded,
       onToggleMeterPanel,
+      isHardware,
     } = data;
 
     const [isDeleting, setIsDeleting] = useState(false);
@@ -184,14 +185,18 @@ const AudioPluginNode = memo(
             width: compact ? 180 : 260,
             minHeight: compact ? 110 : 160,
             border: 2,
-            borderColor: isDeleting ? 'error.main' : selected ? 'primary.main' : 'divider',
+            borderColor: isDeleting ? 'error.main'
+              : isHardware ? '#C8A951'
+              : selected ? 'primary.main' : 'divider',
             opacity: isDeleting ? 0.3 : isBypassed ? 0.5 : 1,
-            bgcolor: isDeleting ? 'error.dark' : selected ? alpha(theme.palette.primary.main, 0.1) : 'background.paper',
+            bgcolor: isDeleting ? 'error.dark'
+              : isHardware ? alpha('#C8A951', 0.06)
+              : selected ? alpha(theme.palette.primary.main, 0.1) : 'background.paper',
             transition: 'all 300ms ease-out',
             cursor: 'grab',
             '&:hover': {
-              borderColor: isDeleting ? 'error.main' : 'primary.light',
-              boxShadow: isDeleting ? 2 : 4,
+              borderColor: isDeleting ? 'error.main' : isHardware ? '#D4B86A' : 'primary.light',
+              boxShadow: isDeleting ? 2 : isHardware ? '0 0 12px rgba(200,169,81,0.3)' : 4,
             },
             '&:active': {
               cursor: 'grabbing',
@@ -241,6 +246,23 @@ const AudioPluginNode = memo(
                   </Typography>
                 )}
               </Box>
+              {/* Hardware plugin badge */}
+              {isHardware && (
+                <Tooltip title="Hardware Effect (S/PDIF Send/Return)">
+                  <Chip
+                    label="HW"
+                    size="small"
+                    sx={{
+                      height: 18,
+                      fontSize: '0.6rem',
+                      fontWeight: 'bold',
+                      bgcolor: '#C8A951',
+                      color: '#1A1A1A',
+                      '& .MuiChip-label': { px: 0.5 },
+                    }}
+                  />
+                </Tooltip>
+              )}
               {/* Sidechain indicator if has sidechain buses */}
               {sidechainBuses && sidechainBuses > 0 && (
                 <Tooltip title={`${sidechainBuses} sidechain input${sidechainBuses > 1 ? 's' : ''}`}>

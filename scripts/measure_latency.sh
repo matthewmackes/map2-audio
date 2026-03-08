@@ -35,6 +35,8 @@ SAMPLE_RATE=48000
 BUFFER_SIZE=64
 RESULTS_FILE="/tmp/map2_latency_results.json"
 VERBOSE=false
+JACK_PLAYBACK_PORT=""
+JACK_CAPTURE_PORT=""
 
 # Colors
 RED='\033[0;31m'
@@ -53,9 +55,11 @@ while [[ $# -gt 0 ]]; do
         --json)      JSON_OUTPUT=true; shift ;;
         --rate)      SAMPLE_RATE="$2"; shift 2 ;;
         --buffer)    BUFFER_SIZE="$2"; shift 2 ;;
+        --jack-playback-port) JACK_PLAYBACK_PORT="$2"; shift 2 ;;
+        --jack-capture-port)  JACK_CAPTURE_PORT="$2"; shift 2 ;;
         --verbose)   VERBOSE=true; shift ;;
         --help|-h)
-            echo "Usage: $0 [--jack|--internal|--alsa] [--duration N] [--json] [--rate N] [--buffer N]"
+            echo "Usage: $0 [--jack|--internal|--alsa] [--duration N] [--json] [--rate N] [--buffer N] [--jack-playback-port PORT] [--jack-capture-port PORT]"
             exit 0
             ;;
         *) echo "Unknown option: $1"; exit 1 ;;
@@ -140,45 +144,130 @@ preflight() {
 # Method 1: JACK iodelay (Gold Standard)
 # ==============================================================================
 
+first_jack_port_match() {
+    local pattern="$1"
+    jack_lsp 2>/dev/null | grep -E "$pattern" | head -1 || true
+}
+
+detect_jack_playback_port() {
+    if [[ -n "$JACK_PLAYBACK_PORT" ]]; then
+        echo "$JACK_PLAYBACK_PORT"
+        return 0
+    fi
+
+    local port=""
+    port=$(first_jack_port_match 'UA-1000.*:playback_AUX0$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match 'UA-1000.*:playback_1$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^system:playback_1$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match ':playback_FL$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match ':playback_1$')
+    echo "$port"
+}
+
+detect_jack_capture_port() {
+    if [[ -n "$JACK_CAPTURE_PORT" ]]; then
+        echo "$JACK_CAPTURE_PORT"
+        return 0
+    fi
+
+    local port=""
+    port=$(first_jack_port_match 'UA-1000.*:capture_AUX0$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match 'UA-1000.*:capture_1$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^system:capture_1$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match ':capture_FL$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match ':capture_1$')
+    echo "$port"
+}
+
+detect_iodelay_out_port() {
+    local port=""
+    port=$(first_jack_port_match '^jack_iodelay:output$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_iodelay:out$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay:out$')
+    echo "$port"
+}
+
+detect_iodelay_in_port() {
+    local port=""
+    port=$(first_jack_port_match '^jack_iodelay:input$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_iodelay:in$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay:in$')
+    echo "$port"
+}
+
+connect_jack_ports() {
+    local source_port="$1"
+    local target_port="$2"
+
+    if command -v jack_connect &>/dev/null; then
+        jack_connect "$source_port" "$target_port" 2>/dev/null || true
+        return 0
+    fi
+
+    if command -v pw-jack &>/dev/null; then
+        pw-jack jack_connect "$source_port" "$target_port" 2>/dev/null || true
+        return 0
+    fi
+
+    return 1
+}
+
 measure_jack() {
     log "${YELLOW}▶ JACK iodelay measurement (${DURATION}s)${NC}"
     log "  Requires loopback cable: Output → Input"
     log ""
 
-    # Check if jack_iodelay is available
-    local iodelay_cmd="jack_iodelay"
     if ! command -v jack_iodelay &>/dev/null; then
-        if command -v pw-jack &>/dev/null; then
-            iodelay_cmd="pw-jack jack_iodelay"
-        else
-            log "${RED}✗${NC} jack_iodelay not found. Install jack-example-tools"
-            return 1
-        fi
+        log "${RED}✗${NC} jack_iodelay not found. Install jack-tools"
+        return 1
     fi
 
-    # Create JACK connections for loopback
-    # Connect system:capture_1 → jack_iodelay:input
-    # Connect jack_iodelay:output → system:playback_1
+    if ! command -v jack_lsp &>/dev/null; then
+        log "${RED}✗${NC} jack_lsp not found. Install jack-tools"
+        return 1
+    fi
+
+    local use_pw_jack=false
+    if command -v pw-jack &>/dev/null; then
+        use_pw_jack=true
+    fi
 
     local tmpfile
     tmpfile=$(mktemp /tmp/map2_iodelay.XXXXXX)
 
     # Run jack_iodelay for the specified duration
     log "  Running jack_iodelay..."
-    timeout "${DURATION}" $iodelay_cmd 2>"$tmpfile" &
+    if [[ "$use_pw_jack" == true ]]; then
+        timeout "${DURATION}" pw-jack jack_iodelay >"$tmpfile" 2>&1 &
+    else
+        timeout "${DURATION}" jack_iodelay >"$tmpfile" 2>&1 &
+    fi
     local pid=$!
 
     # Wait a moment for it to start
     sleep 2
 
-    # Connect ports (PipeWire JACK)
-    if command -v jack_connect &>/dev/null; then
-        jack_connect jack_iodelay:output system:playback_1 2>/dev/null || true
-        jack_connect system:capture_1 jack_iodelay:input 2>/dev/null || true
-    elif command -v pw-jack &>/dev/null; then
-        pw-jack jack_connect jack_iodelay:output system:playback_1 2>/dev/null || true
-        pw-jack jack_connect system:capture_1 jack_iodelay:input 2>/dev/null || true
+    local iodelay_out_port
+    local iodelay_in_port
+    local playback_port
+    local capture_port
+
+    iodelay_out_port=$(detect_iodelay_out_port)
+    iodelay_in_port=$(detect_iodelay_in_port)
+    playback_port=$(detect_jack_playback_port)
+    capture_port=$(detect_jack_capture_port)
+
+    if [[ -n "$iodelay_out_port" ]] && [[ -n "$playback_port" ]]; then
+        connect_jack_ports "$iodelay_out_port" "$playback_port"
     fi
+    if [[ -n "$capture_port" ]] && [[ -n "$iodelay_in_port" ]]; then
+        connect_jack_ports "$capture_port" "$iodelay_in_port"
+    fi
+
+    log_verbose "  iodelay out: $iodelay_out_port"
+    log_verbose "  iodelay in:  $iodelay_in_port"
+    log_verbose "  playback:    $playback_port"
+    log_verbose "  capture:     $capture_port"
 
     # Wait for measurement to complete
     wait $pid 2>/dev/null || true
@@ -225,6 +314,12 @@ measure_jack() {
     "round_trip_ms": ${total_ms},
     "round_trip_frames": ${total_frames:-0},
     "extra_loopback_frames": ${extra_frames:-0},
+    "jack_ports": {
+      "iodelay_output": "${iodelay_out_port}",
+      "iodelay_input": "${iodelay_in_port}",
+      "playback": "${playback_port}",
+      "capture": "${capture_port}"
+    },
     "buffer_size": ${BUFFER_SIZE},
     "sample_rate": ${SAMPLE_RATE},
     "buffer_latency_ms": ${buffer_latency_ms},
@@ -247,6 +342,12 @@ EOF
 {
     "method": "jack_iodelay",
     "timestamp": "$(date -Iseconds)",
+    "jack_ports": {
+      "iodelay_output": "${iodelay_out_port}",
+      "iodelay_input": "${iodelay_in_port}",
+      "playback": "${playback_port}",
+      "capture": "${capture_port}"
+    },
     "status": "failed",
     "error": "No loopback signal detected. Connect output to input with a cable."
 }
@@ -280,8 +381,8 @@ measure_internal() {
         local tmpfile
         tmpfile=$(mktemp /tmp/map2_pwtop.XXXXXX)
 
-        # Capture pw-top output
-        timeout "$DURATION" pw-top -b 2>"$tmpfile" &
+        # Capture pw-top output without polluting stdout in --json mode
+        timeout "$DURATION" pw-top -b >"$tmpfile" 2>&1 &
         local pid=$!
         sleep "$DURATION"
         kill $pid 2>/dev/null || true

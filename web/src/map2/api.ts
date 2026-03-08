@@ -6,6 +6,7 @@
 import type {
   AudioStatus,
   AudioLevels,
+  AudioSourceTruthPayload,
   PluginLevels,
   Chain,
   EffectsLoop,
@@ -284,6 +285,8 @@ export const audioApi = {
   getPluginLevels: () => fetchJson<{ plugins: PluginLevels[] }>(`${API_BASE}/audio/levels/plugins`),
 
   getPipedalMetrics: () => fetchJson<Record<string, unknown>>(`${API_BASE}/audio/pipedal`),
+
+  getSourceOfTruth: () => fetchJson<AudioSourceTruthPayload>(`${API_BASE}/audio/source-of-truth`),
 
   configure: (config: { sampleRate?: number; bufferSize?: number }) => {
     const params = new URLSearchParams();

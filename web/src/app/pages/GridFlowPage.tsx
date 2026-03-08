@@ -847,34 +847,39 @@ export function GridFlowPage() {
   const portRouting = routingQuery.data
   const portsInfo = portsQuery.data
 
+  const activeFlowChain = useMemo(() => {
+    const slot = flowSlots[activeFlowIndex]
+    return slot ? chains.find(c => c.id === slot.chainId) : undefined
+  }, [flowSlots, activeFlowIndex, chains])
+
   const audioInterfaceStatus: AudioInterfaceStatus = useMemo(() => ({
     deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
-    latencyMs: jackMetrics ? (jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000 * 2 : 5.3,
     channels: (portRouting?.input_ports?.length || 0) + (portRouting?.input_avb_endpoints?.length || 0) || 2,
-    cpuLoad: cpuMetrics.totalCpuPercent,
-    xruns: cpuMetrics.xrunCount,
     isRunning: audioStatus?.running ?? true,
     selectedPorts: portRouting?.input_ports || [],
     selectedAvbEndpoints: portRouting?.input_avb_endpoints || [],
     totalPorts: portsInfo?.input_count || 2,
-  }), [audioStatus, jackMetrics, cpuMetrics, portRouting, portsInfo])
+    routingMode: routing.mode,
+    chainActive: activeFlowChain?.is_active ?? false,
+    chainName: activeFlowChain?.name,
+  }), [audioStatus, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
   // Create separate output status with output port info
   const audioOutputStatus: AudioInterfaceStatus = useMemo(() => ({
     deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
     sampleRate: jackMetrics?.sample_rate || 48000,
     bufferSize: jackMetrics?.buffer_size || 256,
-    latencyMs: jackMetrics ? (jackMetrics.buffer_size / jackMetrics.sample_rate) * 1000 * 2 : 5.3,
     channels: (portRouting?.output_ports?.length || 0) + (portRouting?.output_avb_endpoints?.length || 0) || 2,
-    cpuLoad: cpuMetrics.totalCpuPercent,
-    xruns: cpuMetrics.xrunCount,
     isRunning: audioStatus?.running ?? true,
     selectedPorts: portRouting?.output_ports || [],
     selectedAvbEndpoints: portRouting?.output_avb_endpoints || [],
     totalPorts: portsInfo?.output_count || 2,
-  }), [audioStatus, jackMetrics, cpuMetrics, portRouting, portsInfo])
+    routingMode: routing.mode,
+    chainActive: activeFlowChain?.is_active ?? false,
+    chainName: activeFlowChain?.name,
+  }), [audioStatus, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
 
   // ============================================================================
   // Mutations

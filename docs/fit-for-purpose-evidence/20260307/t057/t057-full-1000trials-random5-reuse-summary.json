@@ -1,0 +1,33 @@
+{
+  "source_json": "docs/fit-for-purpose-evidence/20260307/t057/t057-full-1000trials-random5-reuse-20260307-205715.json",
+  "loops_executed": 999,
+  "samples_captured": 998,
+  "duration_seconds_actual": 1005.076,
+  "active_effect_count": 5,
+  "latency_metrics": {
+    "io_buffer_latency_ms_nominal": 1.333333,
+    "callback_jitter_ms_mean": 0.11221697096286246,
+    "callback_jitter_ms_peak": 134.68739266666665
+  },
+  "load_metrics": {
+    "cpu_total_percent_mean": 53.36181705776837,
+    "cpu_total_percent_max": 75.31765427486017,
+    "budget_utilization_percent_mean": 53.41243754778542,
+    "budget_utilization_percent_max": 75.38765454618755
+  },
+  "stability_metrics": {
+    "final_xrun_count": 2922,
+    "xrun_rate_per_minute": 174.43457012206042,
+    "flow_apply_error_count": 0
+  },
+  "checks": {
+    "xruns_ok": true,
+    "jitter_ok": false,
+    "budget_ok": true,
+    "flow_errors_ok": true,
+    "effect_count_ok": true
+  },
+  "overall_pass": false,
+  "effect_pool_source": "runtime_discovered_fallback_after_load_failure",
+  "runtime_effect_pool_size": 9
+}

@@ -34,6 +34,8 @@ interface DeviceIOConfig {
   outputChannels: number;
   inputName?: string;
   outputName?: string;
+  bufferSize?: number;
+  isRunning?: boolean;
 }
 
 interface PluginPerformanceData {
@@ -89,6 +91,10 @@ export function chainToFlow(
       name: inputName,
       channels: inputChannels,
       kind: 'input',
+      sampleRate: options?.sampleRate,
+      bufferSize: deviceIO?.bufferSize,
+      isRunning: deviceIO?.isRunning,
+      chainActive: chain.is_active,
     }, savedPositions[inputNodeId] || { x: 0, y: 0 })
   );
 
@@ -104,6 +110,8 @@ export function chainToFlow(
     const sidechainBuses = sidechain?.sidechainBuses ?? meta?.sidechain_buses ?? plugin.sidechain_bus ?? 0;
     const sidechainBusNames = sidechain?.sidechainBusNames ?? meta?.sidechain_bus_names;
 
+    const isHardware = plugin.format === 'Hardware' || plugin.uri.startsWith('hardware://');
+
     const nodeData: AudioPluginNodeData = {
       plugin,
       isSelected: false,
@@ -113,6 +121,7 @@ export function chainToFlow(
       compact: options?.compact,
       meters: options?.pluginMeters?.[plugin.uri],
       meterPanelExpanded: options?.expandedMeterPanels?.has(plugin.uri),
+      isHardware,
       // Performance and modulation indicators
       cpuPercent: perf?.cpuPercent ?? plugin.cpu_percent,
       latencySamples: perf?.latencySamples ?? plugin.latency_samples,
@@ -168,6 +177,10 @@ export function chainToFlow(
       name: outputName,
       channels: outputChannels,
       kind: 'output',
+      sampleRate: options?.sampleRate,
+      bufferSize: deviceIO?.bufferSize,
+      isRunning: deviceIO?.isRunning,
+      chainActive: chain.is_active,
     }, savedPositions[outputNodeId] || { x: (pluginNodes.length + 1) * 320, y: 0 })
   );
 

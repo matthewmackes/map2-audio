@@ -1,0 +1,106 @@
+  Object: size 160, type Spa:Pod:Object:Param:Profile (262151), id Spa:Enum:ParamId:EnumProfile (8)
+    Prop: key Spa:Pod:Object:Param:Profile:index (1), flags 00000000
+      Int 0
+    Prop: key Spa:Pod:Object:Param:Profile:name (2), flags 00000000
+      String "off"
+    Prop: key Spa:Pod:Object:Param:Profile:description (3), flags 00000000
+      String "Off"
+    Prop: key Spa:Pod:Object:Param:Profile:priority (4), flags 00000000
+      Int 0
+    Prop: key Spa:Pod:Object:Param:Profile:available (5), flags 00000000
+      Id 2        (Spa:Enum:ParamAvailability:yes)
+    Prop: key Spa:Pod:Object:Param:Profile:classes (7), flags 00000000
+      Struct: size 16
+        Int 0
+  Object: size 432, type Spa:Pod:Object:Param:Profile (262151), id Spa:Enum:ParamId:EnumProfile (8)
+    Prop: key Spa:Pod:Object:Param:Profile:index (1), flags 00000000
+      Int 1
+    Prop: key Spa:Pod:Object:Param:Profile:name (2), flags 00000000
+      String "output:multichannel-output+input:multichannel-input"
+    Prop: key Spa:Pod:Object:Param:Profile:description (3), flags 00000000
+      String "Multichannel Duplex"
+    Prop: key Spa:Pod:Object:Param:Profile:priority (4), flags 00000000
+      Int 101
+    Prop: key Spa:Pod:Object:Param:Profile:available (5), flags 00000000
+      Id 0        (Spa:Enum:ParamAvailability:unknown)
+    Prop: key Spa:Pod:Object:Param:Profile:classes (7), flags 00000000
+      Struct: size 224
+        Int 2
+        Struct: size 96
+          String "Audio/Source"
+          Int 1
+          String "card.profile.devices"
+          Array: child.size 4, child.type Spa:Int
+            Int 2
+        Struct: size 96
+          String "Audio/Sink"
+          Int 1
+          String "card.profile.devices"
+          Array: child.size 4, child.type Spa:Int
+            Int 3
+  Object: size 304, type Spa:Pod:Object:Param:Profile (262151), id Spa:Enum:ParamId:EnumProfile (8)
+    Prop: key Spa:Pod:Object:Param:Profile:index (1), flags 00000000
+      Int 2
+    Prop: key Spa:Pod:Object:Param:Profile:name (2), flags 00000000
+      String "output:multichannel-output"
+    Prop: key Spa:Pod:Object:Param:Profile:description (3), flags 00000000
+      String "Multichannel Output"
+    Prop: key Spa:Pod:Object:Param:Profile:priority (4), flags 00000000
+      Int 100
+    Prop: key Spa:Pod:Object:Param:Profile:available (5), flags 00000000
+      Id 0        (Spa:Enum:ParamAvailability:unknown)
+    Prop: key Spa:Pod:Object:Param:Profile:classes (7), flags 00000000
+      Struct: size 120
+        Int 1
+        Struct: size 96
+          String "Audio/Sink"
+          Int 1
+          String "card.profile.devices"
+          Array: child.size 4, child.type Spa:Int
+            Int 3
+  Object: size 384, type Spa:Pod:Object:Param:Profile (262151), id Spa:Enum:ParamId:EnumProfile (8)
+    Prop: key Spa:Pod:Object:Param:Profile:index (1), flags 00000000
+      Int 3
+    Prop: key Spa:Pod:Object:Param:Profile:name (2), flags 00000000
+      String "pro-audio"
+    Prop: key Spa:Pod:Object:Param:Profile:description (3), flags 00000000
+      String "Pro Audio"
+    Prop: key Spa:Pod:Object:Param:Profile:priority (4), flags 00000000
+      Int 1
+    Prop: key Spa:Pod:Object:Param:Profile:available (5), flags 00000000
+      Id 2        (Spa:Enum:ParamAvailability:yes)
+    Prop: key Spa:Pod:Object:Param:Profile:classes (7), flags 00000000
+      Struct: size 224
+        Int 2
+        Struct: size 96
+          String "Audio/Source"
+          Int 1
+          String "card.profile.devices"
+          Array: child.size 4, child.type Spa:Int
+            Int 1
+        Struct: size 96
+          String "Audio/Sink"
+          Int 1
+          String "card.profile.devices"
+          Array: child.size 4, child.type Spa:Int
+            Int 0
+  Object: size 304, type Spa:Pod:Object:Param:Profile (262151), id Spa:Enum:ParamId:EnumProfile (8)
+    Prop: key Spa:Pod:Object:Param:Profile:index (1), flags 00000000
+      Int 4
+    Prop: key Spa:Pod:Object:Param:Profile:name (2), flags 00000000
+      String "input:multichannel-input"
+    Prop: key Spa:Pod:Object:Param:Profile:description (3), flags 00000000
+      String "Multichannel Input"
+    Prop: key Spa:Pod:Object:Param:Profile:priority (4), flags 00000000
+      Int 1
+    Prop: key Spa:Pod:Object:Param:Profile:available (5), flags 00000000
+      Id 0        (Spa:Enum:ParamAvailability:unknown)
+    Prop: key Spa:Pod:Object:Param:Profile:classes (7), flags 00000000
+      Struct: size 120
+        Int 1
+        Struct: size 96
+          String "Audio/Source"
+          Int 1
+          String "card.profile.devices"
+          Array: child.size 4, child.type Spa:Int
+            Int 2

@@ -35,6 +35,8 @@ export {
   normalizeUiPlugins,
   normalizeMap2Plugins,
   isVirtualPlugin,
+  isHardwarePlugin,
+  LEXICON_MPX1_URI,
   getIODisplayName,
   getIOBadgeColor,
 } from './utils/pluginBridge'

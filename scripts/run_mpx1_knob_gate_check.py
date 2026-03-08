@@ -80,10 +80,36 @@ def main() -> int:
     parser.add_argument("--input-port-index", type=int, default=1, help="MPX input port index")
     parser.add_argument("--output-port-index", type=int, default=1, help="MPX output port index")
     parser.add_argument("--name-hint", default="mpx", help="Port match hint")
+    parser.add_argument(
+        "--connect-mode",
+        choices=["auto", "always", "never"],
+        default="auto",
+        help=(
+            "MIDI connect behavior: "
+            "'auto' reuses an existing matching connection when possible, "
+            "'always' forces reconnect, "
+            "'never' skips connect entirely."
+        ),
+    )
+    parser.add_argument(
+        "--probe-midi-ports",
+        action="store_true",
+        help="Include /api/mpx1/midi/ports probe in report (disabled by default to reduce ALSA churn).",
+    )
     parser.add_argument("--sweep-param-id", default="pitch.alg_00.mix", help="Param id for zipper-free sweep")
     parser.add_argument("--sweep-updates", type=int, default=120, help="Number of 40ms sweep updates")
     parser.add_argument("--capture-seconds", type=float, default=45.0, help="Inbound WS capture duration")
     parser.add_argument("--latency-threshold-ms", type=float, default=150.0, help="Pass threshold for latency")
+    parser.add_argument(
+        "--inbound-mode",
+        choices=["strict", "program_fallback"],
+        default="strict",
+        help=(
+            "Inbound event qualification mode. "
+            "'strict' requires panel_status/param_rx. "
+            "'program_fallback' also accepts program_changed as knob telemetry."
+        ),
+    )
     parser.add_argument("--output-json", required=True, help="Output JSON path")
     parser.add_argument("--output-md", required=True, help="Output markdown path")
     args = parser.parse_args()
@@ -97,16 +123,39 @@ def main() -> int:
     output_md.parent.mkdir(parents=True, exist_ok=True)
 
     health_before = _api_get(base_url, "/api/mpx1/health")
-    ports = _api_get(base_url, "/api/mpx1/midi/ports")
-    connect = _api_post(
-        base_url,
-        "/api/mpx1/midi/connect",
-        {
-            "input_port_index": args.input_port_index,
-            "output_port_index": args.output_port_index,
-            "name_hint": args.name_hint,
-        },
-    )
+    state_before = _api_get(base_url, "/api/mpx1/state")
+    ports: Dict[str, Any] = {"skipped": True}
+    if args.probe_midi_ports:
+        ports = _api_get(base_url, "/api/mpx1/midi/ports")
+
+    should_connect = args.connect_mode == "always"
+    if args.connect_mode == "auto":
+        connected_before = bool(state_before.get("connected", False))
+        input_before = state_before.get("input_port_index")
+        output_before = state_before.get("output_port_index")
+        matches = (
+            connected_before
+            and input_before is not None
+            and output_before is not None
+            and int(input_before) == int(args.input_port_index)
+            and int(output_before) == int(args.output_port_index)
+        )
+        should_connect = not matches
+
+    connect: Dict[str, Any]
+    if should_connect:
+        connect = _api_post(
+            base_url,
+            "/api/mpx1/midi/connect",
+            {
+                "input_port_index": args.input_port_index,
+                "output_port_index": args.output_port_index,
+                "name_hint": args.name_hint,
+            },
+        )
+    else:
+        connect = {"skipped": True, "mode": args.connect_mode}
+
     state = _api_get(base_url, "/api/mpx1/state")
 
     diagnostics_before = _api_get(base_url, "/api/mpx1/diagnostics?limit=500")
@@ -126,15 +175,21 @@ def main() -> int:
     param_rx_events = [event for event in ws_events if event.get("type") == "mpx1:param_rx"]
     program_events = [event for event in ws_events if event.get("type") == "mpx1:program_changed"]
 
-    combined_delays = [float(event["delay_ms"]) for event in panel_events + param_rx_events]
-    inbound_detected = len(panel_events) + len(param_rx_events) > 0
+    qualified_events = panel_events + param_rx_events
+    if args.inbound_mode == "program_fallback":
+        qualified_events = qualified_events + program_events
+
+    combined_delays = [float(event["delay_ms"]) for event in qualified_events]
+    inbound_detected = len(qualified_events) > 0
     latency_ok = inbound_detected and (max(combined_delays) <= float(args.latency_threshold_ms))
 
     summary = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "connection": {
             "health_before": health_before,
+            "state_before": state_before,
             "ports": ports,
+            "connect_mode": args.connect_mode,
             "connect_result": connect,
             "state_after_connect": state,
         },
@@ -148,10 +203,12 @@ def main() -> int:
         },
         "physical_capture": {
             "duration_sec": args.capture_seconds,
+            "inbound_mode": args.inbound_mode,
             "ws_event_count": len(ws_events),
             "panel_status_count": len(panel_events),
             "param_rx_count": len(param_rx_events),
             "program_changed_count": len(program_events),
+            "qualified_event_count": len(qualified_events),
             "panel_control_values": [event.get("data", {}).get("control_value") for event in panel_events[:40]],
             "latency_ms": {
                 "sample_count": len(combined_delays),
@@ -195,9 +252,11 @@ def main() -> int:
         "",
         "## Physical Inbound Capture (WebSocket)",
         f"- Duration: `{args.capture_seconds:.0f}s`",
+        f"- Inbound mode: `{args.inbound_mode}`",
         f"- `mpx1:panel_status` events: `{len(panel_events)}`",
         f"- `mpx1:param_rx` events: `{len(param_rx_events)}`",
         f"- `mpx1:program_changed` events: `{len(program_events)}`",
+        f"- Qualified inbound events: `{len(qualified_events)}`",
     ]
     if combined_delays:
         lines.append(

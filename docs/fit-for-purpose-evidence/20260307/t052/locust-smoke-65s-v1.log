@@ -1,0 +1,9 @@
+[load_test] started WS soak with target=100 clients
+[load_test] WS summary: {
+  "connected": 100.0,
+  "drops": 0.0,
+  "samples": 5000.0,
+  "spread_mean_ms": 0.16485717819159618,
+  "spread_p95_ms": 0.22111499856691808
+}
+[load_test] PASS: REST p95=21.00ms, WS target clients=100, soak=65s

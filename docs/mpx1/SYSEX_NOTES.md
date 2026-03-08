@@ -19,6 +19,12 @@ Known decoded long-form command classes:
 - `... 01 02 ...`: program status frame (decoded to `current_program`)
 - `... 01 01 ...`: panel status frame (decoded to `control_value` telemetry)
 
+Strict-telemetry bridge behavior:
+
+- When only `01 02` frames are present, service also emits `mpx1:panel_status`
+  inferred telemetry (`control=program_select`, `inferred_from=program_status`)
+  so strict inbound qualification can observe hardware-origin panel activity.
+
 ## Value Encoding
 - Encode: `value -> lo = value & 0x7F`, `hi = (value >> 7) & 0x7F`
 - Decode: `(hi << 7) | lo`
@@ -38,6 +44,7 @@ Known decoded long-form command classes:
 - Service captures traffic ring-buffer entries (`tx_sysex`, `rx_sysex`, `rx_cc`, errors).
 - `/api/mpx1/diagnostics` returns recent entries with hex strings for UI display.
 - `/api/mpx1/diagnostics/ping` provides API-path latency estimate.
+- Inferred strict-bridge entries are logged as `rx_sysex_panel_inferred`.
 
 ## Known Quirks
 - Registry coverage is complete, but not all inbound SysEx classes are currently

@@ -119,8 +119,9 @@ void JucePluginHost::shutdown() {
     // Fix #5: Save plugin cache before shutdown
     savePluginCache();
 
-    // Unload all plugins
+    // Unload all plugins (regular and hardware)
     instances_.clear();
+    hardwareInstances_.clear();
     initialized_ = false;
 }
 
@@ -283,17 +284,27 @@ bool JucePluginHost::unloadPlugin(InstanceId instanceId) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) {
-        return false;
+    if (it != instances_.end()) {
+        // Release resources
+        if (it->second->instance) {
+            it->second->instance->releaseResources();
+        }
+
+        instances_.erase(it);
+        return true;
     }
 
-    // Release resources
-    if (it->second->instance) {
-        it->second->instance->releaseResources();
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end()) {
+        if (hwIt->second->processor) {
+            hwIt->second->processor->releaseResources();
+        }
+
+        hardwareInstances_.erase(hwIt);
+        return true;
     }
 
-    instances_.erase(it);
-    return true;
+    return false;
 }
 
 juce::AudioPluginInstance* JucePluginHost::getInstance(InstanceId instanceId) {
@@ -310,6 +321,65 @@ const juce::AudioPluginInstance* JucePluginHost::getInstance(InstanceId instance
     return it->second->instance.get();
 }
 
+// ========================================
+// Hardware plugin registration
+// ========================================
+
+InstanceId JucePluginHost::registerHardwarePlugin(
+    std::unique_ptr<juce::AudioProcessor> processor,
+    const PluginInfo& info)
+{
+    if (processor == nullptr) return INVALID_INSTANCE_ID;
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto entry = std::make_unique<HardwarePluginEntry>();
+    entry->id = nextInstanceId_++;
+    entry->processor = std::move(processor);
+    entry->info = info;
+    entry->info.format = PluginFormat::Hardware;
+    entry->info.formatName = "Hardware";
+
+    InstanceId id = entry->id;
+    hardwareInstances_[id] = std::move(entry);
+    return id;
+}
+
+juce::AudioProcessor* JucePluginHost::getProcessor(InstanceId instanceId) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // Check regular plugins first
+    auto it = instances_.find(instanceId);
+    if (it != instances_.end())
+        return it->second->instance.get();
+
+    // Check hardware plugins
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end())
+        return hwIt->second->processor.get();
+
+    return nullptr;
+}
+
+const juce::AudioProcessor* JucePluginHost::getProcessor(InstanceId instanceId) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto it = instances_.find(instanceId);
+    if (it != instances_.end())
+        return it->second->instance.get();
+
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end())
+        return hwIt->second->processor.get();
+
+    return nullptr;
+}
+
+bool JucePluginHost::isHardwarePlugin(InstanceId instanceId) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return hardwareInstances_.find(instanceId) != hardwareInstances_.end();
+}
+
 std::vector<PluginInstance> JucePluginHost::getLoadedPlugins() const {
     std::vector<PluginInstance> result;
     std::lock_guard<std::mutex> lock(mutex_);
@@ -321,7 +391,23 @@ std::vector<PluginInstance> JucePluginHost::getLoadedPlugins() const {
         pi.name = entry->info.name;
         pi.state = PluginState::Active;
         pi.bypassed = entry->bypassed;
-        pi.parameterValues = getAllParameters(id);
+        if (entry->instance != nullptr) {
+            auto& params = entry->instance->getParameters();
+            for (int i = 0; i < params.size(); ++i) {
+                pi.parameterValues[params[i]->getName(256).toStdString()] = params[i]->getValue();
+            }
+        }
+        result.push_back(pi);
+    }
+
+    // Include hardware plugins
+    for (const auto& [id, entry] : hardwareInstances_) {
+        PluginInstance pi;
+        pi.id = id;
+        pi.uri = entry->info.uri;
+        pi.name = entry->info.name;
+        pi.state = PluginState::Active;
+        pi.bypassed = entry->bypassed;
         result.push_back(pi);
     }
 
@@ -331,8 +417,14 @@ std::vector<PluginInstance> JucePluginHost::getLoadedPlugins() const {
 PluginFormat JucePluginHost::getPluginFormat(InstanceId instanceId) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return PluginFormat::Unknown;
-    return it->second->format;
+    if (it != instances_.end())
+        return it->second->format;
+
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end())
+        return PluginFormat::Hardware;
+
+    return PluginFormat::Unknown;
 }
 
 bool JucePluginHost::setParameter(InstanceId instanceId, int paramIndex, float value) {
@@ -406,71 +498,130 @@ std::map<std::string, float> JucePluginHost::getAllParameters(InstanceId instanc
 
 bool JucePluginHost::setBypass(InstanceId instanceId, bool bypass) {
     std::lock_guard<std::mutex> lock(mutex_);
+
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return false;
+    if (it != instances_.end()) {
+        it->second->bypassed = bypass;
 
-    it->second->bypassed = bypass;
+        // Also set bypass parameter if the plugin has one
+        if (auto* bp = it->second->instance->getBypassParameter()) {
+            bp->setValue(bypass ? 1.0f : 0.0f);
+        }
 
-    // Also set bypass parameter if the plugin has one
-    if (auto* bp = it->second->instance->getBypassParameter()) {
-        bp->setValue(bypass ? 1.0f : 0.0f);
+        return true;
     }
 
-    return true;
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end()) {
+        hwIt->second->bypassed = bypass;
+
+        // If the processor exposes a bypass parameter, sync it.
+        if (hwIt->second->processor != nullptr) {
+            if (auto* bp = hwIt->second->processor->getBypassParameter()) {
+                bp->setValue(bypass ? 1.0f : 0.0f);
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 bool JucePluginHost::isBypassed(InstanceId instanceId) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return false;
-    return it->second->bypassed;
+    if (it != instances_.end()) return it->second->bypassed;
+
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end()) return hwIt->second->bypassed;
+
+    return false;
 }
 
 std::vector<uint8_t> JucePluginHost::getPluginState(InstanceId instanceId) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return {};
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return {};
 
-    auto* instance = it->second->instance.get();
-    if (instance == nullptr) return {};
+        juce::MemoryBlock state;
+        instance->getStateInformation(state);
+        return std::vector<uint8_t>(
+            static_cast<const uint8_t*>(state.getData()),
+            static_cast<const uint8_t*>(state.getData()) + state.getSize()
+        );
+    }
 
-    juce::MemoryBlock state;
-    instance->getStateInformation(state);
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end()) {
+        auto* processor = hwIt->second->processor.get();
+        if (processor == nullptr) return {};
 
-    return std::vector<uint8_t>(
-        static_cast<const uint8_t*>(state.getData()),
-        static_cast<const uint8_t*>(state.getData()) + state.getSize()
-    );
+        juce::MemoryBlock state;
+        processor->getStateInformation(state);
+        return std::vector<uint8_t>(
+            static_cast<const uint8_t*>(state.getData()),
+            static_cast<const uint8_t*>(state.getData()) + state.getSize()
+        );
+    }
+
+    return {};
 }
 
 bool JucePluginHost::setPluginState(InstanceId instanceId, const std::vector<uint8_t>& state) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return false;
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return false;
 
-    auto* instance = it->second->instance.get();
-    if (instance == nullptr) return false;
+        instance->setStateInformation(state.data(), static_cast<int>(state.size()));
+        return true;
+    }
 
-    instance->setStateInformation(state.data(), static_cast<int>(state.size()));
-    return true;
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end()) {
+        auto* processor = hwIt->second->processor.get();
+        if (processor == nullptr) return false;
+
+        processor->setStateInformation(state.data(), static_cast<int>(state.size()));
+        return true;
+    }
+
+    return false;
 }
 
 int JucePluginHost::getPluginLatency(InstanceId instanceId) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return 0;
+    if (it != instances_.end()) {
+        auto* instance = it->second->instance.get();
+        if (instance == nullptr) return 0;
+        return instance->getLatencySamples();
+    }
 
-    auto* instance = it->second->instance.get();
-    if (instance == nullptr) return 0;
+    auto hwIt = hardwareInstances_.find(instanceId);
+    if (hwIt != hardwareInstances_.end()) {
+        auto* processor = hwIt->second->processor.get();
+        if (processor == nullptr) return 0;
+        return processor->getLatencySamples();
+    }
 
-    return instance->getLatencySamples();
+    return 0;
 }
 
 double JucePluginHost::getPluginCpuUsage(InstanceId instanceId) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = instances_.find(instanceId);
-    if (it == instances_.end()) return 0.0;
-    return it->second->cpuUsage.load();
+    if (it != instances_.end()) return it->second->cpuUsage.load();
+
+    if (hardwareInstances_.find(instanceId) != hardwareInstances_.end()) {
+        return 0.0;
+    }
+
+    return 0.0;
 }
 
 void JucePluginHost::beginPluginProcessing(InstanceId instanceId) {
@@ -502,26 +653,34 @@ void JucePluginHost::endPluginProcessing(InstanceId instanceId) {
 void JucePluginHost::process(InstanceId instanceId,
                              juce::AudioBuffer<float>& buffer,
                              juce::MidiBuffer& midiMessages) {
-    PluginEntry* entry = nullptr;
+    juce::AudioProcessor* processor = nullptr;
+    bool bypassed = false;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = instances_.find(instanceId);
-        if (it == instances_.end()) return;
-        entry = it->second.get();
+        if (it != instances_.end()) {
+            processor = it->second->instance.get();
+            bypassed = it->second->bypassed;
+        } else {
+            auto hwIt = hardwareInstances_.find(instanceId);
+            if (hwIt == hardwareInstances_.end()) return;
+            processor = hwIt->second->processor.get();
+            bypassed = hwIt->second->bypassed;
+        }
     }
 
-    if (entry == nullptr || entry->instance == nullptr) return;
+    if (processor == nullptr) return;
 
     // Handle bypass
-    if (entry->bypassed) {
+    if (bypassed) {
         // Pass through - audio buffer unchanged
         return;
     }
 
     // Process
     beginPluginProcessing(instanceId);
-    entry->instance->processBlock(buffer, midiMessages);
+    processor->processBlock(buffer, midiMessages);
     endPluginProcessing(instanceId);
 }
 

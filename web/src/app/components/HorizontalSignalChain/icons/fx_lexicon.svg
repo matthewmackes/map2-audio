@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+     width="48px" height="48px" viewBox="0 0 48 48" xml:space="preserve">
+  <!-- Lexicon MPX-1 Hardware Effect Icon -->
+  <!-- Gold "L" with reverb wave arcs on dark background -->
+  <g id="lexicon-icon">
+    <!-- Background rounded rectangle -->
+    <rect x="1" y="1" width="46" height="46" rx="6" ry="6"
+          fill="#1A1A1A" stroke="#C8A951" stroke-width="1.5"/>
+    <!-- Bold serif "L" in Lexicon gold -->
+    <text x="10" y="37" font-family="Georgia, 'Times New Roman', serif"
+          font-weight="bold" font-size="34" fill="#C8A951"
+          letter-spacing="-1">L</text>
+    <!-- Reverb wave arcs emanating from the L -->
+    <path d="M28,14 Q36,24 28,34" fill="none" stroke="#C8A951"
+          stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+    <path d="M33,10 Q43,24 33,38" fill="none" stroke="#C8A951"
+          stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M38,7 Q48,24 38,41" fill="none" stroke="#C8A951"
+          stroke-width="1.2" stroke-linecap="round" opacity="0.35"/>
+    <!-- Small "HW" badge indicator -->
+    <rect x="33" y="1" width="14" height="9" rx="3" ry="3" fill="#C8A951"/>
+    <text x="35" y="8" font-family="Arial, sans-serif" font-weight="bold"
+          font-size="6" fill="#1A1A1A">HW</text>
+  </g>
+</svg>

@@ -1,0 +1,128 @@
+[38;2;0;122;204m
+╔═══════════════════════════════════════════════════════════════════════╗
+║                                                                       ║
+║    ███╗   ███╗ █████╗ ██████╗ ██████╗      █████╗ ██╗   ██╗██████╗  ║
+║    ████╗ ████║██╔══██╗██╔══██╗╚════██╗    ██╔══██╗██║   ██║██╔══██╗ ║
+║    ██╔████╔██║███████║██████╔╝ █████╔╝    ███████║██║   ██║██║  ██║ ║
+║    ██║╚██╔╝██║██╔══██║██╔═══╝ ██╔═══╝     ██╔══██║██║   ██║██║  ██║ ║
+║    ██║ ╚═╝ ██║██║  ██║██║     ███████╗    ██║  ██║╚██████╔╝██████╔╝ ║
+║    ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝     ╚══════╝    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ║
+║                                                                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
+[0m
+[38;2;212;212;212mProfessional Real-Time Audio Processing System[0m
+[38;2;128;128;128mMackes Audio Platform — February 2026[0m
+
+[38;2;78;201;176m  ✓ Platform logo: MACKESAUDIOPLATFORM.png[0m
+[38;2;128;128;128m    Boot splash and branding assets ready[0m
+
+[38;2;0;122;204m┌─────────────────────────────────────────────────────────────────────┐[0m
+[38;2;0;122;204m│[0m                    [38;2;220;220;170mNODE STATUS GRID[0m                              [38;2;0;122;204m│[0m
+[38;2;0;122;204m├─────────────────────────────────────────────────────────────────────┤[0m
+[38;2;0;122;204m│[0m  Hostname:              [38;2;212;212;212mMAP2-TESTBED[0m
+[38;2;0;122;204m│[0m  Node Mode:             [38;2;220;220;170mall-in-one[0m
+[38;2;0;122;204m│[0m  IP Address:            [38;2;212;212;212m172.20.146.234[0m
+[38;2;0;122;204m│[0m  Backend API:           [38;2;78;201;176mOnline[0m
+[38;2;0;122;204m│[0m  Services:              [38;2;212;212;212m13/15 running[0m
+[38;2;0;122;204m│[0m  Connected Nodes:       [38;2;212;212;212m1[0m
+[38;2;0;122;204m│[0m  API Version:           [38;2;212;212;212m1.24.25.1[0m
+[38;2;0;122;204m└─────────────────────────────────────────────────────────────────────┘[0m
+
+[38;2;220;220;170m♪ Hardware Status[0m
+[38;2;128;128;128m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [38;2;78;201;176m✓[0m Real-Time Audio:  [38;2;78;201;176mConfigured[0m
+  [38;2;78;201;176m✓[0m Audio Devices:    [38;2;78;201;176m8 detected[0m
+  [38;2;78;201;176m✓[0m MIDI Devices:     [38;2;78;201;176m1 detected[0m
+  [38;2;212;212;212m●[0m CPU:              [38;2;212;212;212m12 cores[0m [38;2;128;128;128m(Intel(R) Xeon(R) CPU E5-1650 v4 @ 3.60GH)[0m
+
+[38;2;220;220;170m♪ Core Services[0m
+[38;2;128;128;128m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [38;2;78;201;176m✓ Running[0m  [38;2;212;212;212mBackend API[0m         [38;2;128;128;128mhttp://localhost:8080[0m
+       [38;2;128;128;128m└─ FastAPI + Service Orchestrator, Plugin Management, MIDI Routing[0m
+       [38;2;128;128;128m└─ API Docs: http://localhost:8080/docs[0m
+  [38;2;78;201;176m✓ Running[0m  [38;2;212;212;212mWeb Dashboard[0m       [38;2;128;128;128mhttp://localhost:3000[0m
+       [38;2;128;128;128m└─ React pedalboard editor with real-time meters and plugin controls[0m
+  [38;2;128;128;128m○ Stopped[0m  [38;2;212;212;212mNode Console[0m        [38;2;128;128;128mSSH/headless monitoring[0m
+       [38;2;128;128;128m└─ Dashboard, Audio, Cluster, Mode, Logs, Help tabs[0m
+  [38;2;128;128;128m○ Not detected[0m  [38;2;212;212;212mLCD Display[0m         [38;2;128;128;128mI2C hardware display[0m
+       [38;2;128;128;128m└─ Dual 20x2 character displays for standalone pedal mode[0m
+
+[38;2;220;220;170m♪ Service Scripts[0m
+[38;2;128;128;128m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [38;2;0;122;204msystemctl start map2-backend[0m
+       [38;2;128;128;128m└─ Unified backend via systemd (recommended for production)[0m
+       [38;2;128;128;128m└─ /etc/systemd/system/map2-backend.service[0m
+
+  [38;2;0;122;204m/home/mm/map2-audio/scripts/start_web.sh[0m
+       [38;2;128;128;128m└─ Vite development server for web UI (port 3000)[0m
+
+  [38;2;0;122;204mpython -m tui.node_console[0m
+       [38;2;128;128;128m└─ Professional Node Console: health, audio, cluster, mode, logs[0m
+       [38;2;128;128;128m└─ Textual TUI optimized for SSH & 80×24 terminals[0m
+
+[38;2;220;220;170m♪ Model & IR File Paths[0m
+[38;2;128;128;128m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [38;2;0;122;204mNAM Models:[0m     [38;2;212;212;212m~/.local/share/map2/nam[0m
+  [38;2;0;122;204mCabinet IRs:[0m    [38;2;212;212;212m~/.local/share/map2/ir/cabinets[0m
+  [38;2;0;122;204mReverb IRs:[0m     [38;2;212;212;212m~/.local/share/map2/ir/reverbs[0m
+
+[38;2;220;220;170m♪ Quick Commands[0m
+[38;2;128;128;128m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [38;2;0;122;204mmap2-restart[0m      Full stack restart (backend + frontend)
+  [38;2;0;122;204mmap2-logs[0m         Tail both backend and frontend logs
+  [38;2;0;122;204mmap2-status[0m       Show service status
+  [38;2;0;122;204mmap2-stop[0m         Stop all MAP2 services
+
+[38;2;220;220;170m♪ Mode Management  [38;2;128;128;128m(current: [38;2;220;220;170mall-in-one[0m[38;2;128;128;128m)[0m
+[38;2;128;128;128m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  [38;2;212;212;212mModes:[0m  [38;2;78;201;176maudio[0m (<3ms)  [38;2;220;220;170mall-in-one[0m (4-5ms)  [38;2;0;122;204mmanagement[0m (no audio)
+
+  [38;2;0;122;204mmap2-mode status[0m                   Show current mode and service health
+  [38;2;0;122;204msudo map2-mode set audio[0m           Switch to dedicated audio mode
+  [38;2;0;122;204msudo map2-mode set all-in-one[0m      Switch to audio + web UI mode
+  [38;2;0;122;204msudo map2-mode set management[0m      Switch to control-only mode
+  [38;2;0;122;204mmap2-mode chart[0m                    Compare all modes side-by-side
+  [38;2;0;122;204mmap2-mode verify[0m                   Check all config stores agree
+  [38;2;0;122;204msudo map2-mode apply[0m               Re-apply current mode (fix drift)
+
+[38;2;128;128;128mDocumentation: README.md | API: http://localhost:8080/docs[0m
+[38;2;128;128;128m════════════════════════════════════════════════════════════════════════════[0m
+]11;#FFFFFF\]10;#1565C0\Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 2 inputs, 2 outputs
+  Available audio device types:
+    - ALSA
+    - JACK
+  Using default audio backend/device type (set MAP2_AUDIO_PREFER_JACK=1 to force JACK).
+  All memory locked to RAM (mlockall)
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+  SynthForge: Phase 1 scaffold initialized (16-part MIDI/voice core)
+[AVDECC] Controller creation failed: enp11s0: You don't have permission to perform this capture on that device (Attempt to create packet socket failed - CAP_NET_RAW may be required)
+Warning: Failed to start AVDECC controller (non-fatal)
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 64 samples
+  Audio Device: Default ALSA Output (currently PipeWire Media Server)
+  Plugins Found: 9
+Audio processing started
+Audio processing stopped
+Audio processing started

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Run a JUCE soak with 10 random effects active at once.
+Run a JUCE soak with a configurable number of random effects active at once.
 
 Core behavior:
-- Keep exactly 10 random effects active per flow epoch.
+- Keep exactly N random effects active per flow epoch.
 - Rotate chain/parallel flow topology every flow interval.
 - Rotate blend strategy between flow epochs.
 - Collect callback/xrun/CPU evidence and emit pass/fail artifacts.
@@ -24,8 +24,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, TypeVar
 
-
-ACTIVE_EFFECT_COUNT = 10
+DEFAULT_ACTIVE_EFFECT_COUNT = 10
 
 
 DEFAULT_EFFECT_FALLBACK = [
@@ -71,12 +70,31 @@ class FlowTemplate:
         return self.serial_count + sum(a + b for a, b in self.parallel_groups)
 
 
-FLOW_TEMPLATES = (
-    FlowTemplate(name="serial4_parallel3x3", serial_count=4, parallel_groups=((3, 3),)),
-    FlowTemplate(name="serial2_parallel4x4", serial_count=2, parallel_groups=((4, 4),)),
-    FlowTemplate(name="parallel5x5", serial_count=0, parallel_groups=((5, 5),)),
-    FlowTemplate(name="parallel3x2_then3x2", serial_count=0, parallel_groups=((3, 2), (3, 2))),
-)
+def build_flow_templates(active_effect_count: int) -> tuple[FlowTemplate, ...]:
+    if active_effect_count == 10:
+        return (
+            FlowTemplate(name="serial4_parallel3x3", serial_count=4, parallel_groups=((3, 3),)),
+            FlowTemplate(name="serial2_parallel4x4", serial_count=2, parallel_groups=((4, 4),)),
+            FlowTemplate(name="parallel5x5", serial_count=0, parallel_groups=((5, 5),)),
+            FlowTemplate(name="parallel3x2_then3x2", serial_count=0, parallel_groups=((3, 2), (3, 2))),
+        )
+
+    if active_effect_count == 5:
+        return (
+            FlowTemplate(name="serial5", serial_count=5, parallel_groups=()),
+            FlowTemplate(name="serial3_parallel1x1", serial_count=3, parallel_groups=((1, 1),)),
+            FlowTemplate(name="serial1_parallel2x2", serial_count=1, parallel_groups=((2, 2),)),
+            FlowTemplate(name="parallel2x1_then1x1", serial_count=0, parallel_groups=((2, 1), (1, 1))),
+        )
+
+    parallel_a = max(1, active_effect_count // 2)
+    parallel_b = max(1, active_effect_count - parallel_a)
+    serial_pref = max(0, active_effect_count - 2)
+    return (
+        FlowTemplate(name=f"serial{active_effect_count}", serial_count=active_effect_count, parallel_groups=()),
+        FlowTemplate(name=f"serial{serial_pref}_parallel1x1", serial_count=serial_pref, parallel_groups=((1, 1),)),
+        FlowTemplate(name=f"parallel{parallel_a}x{parallel_b}", serial_count=0, parallel_groups=((parallel_a, parallel_b),)),
+    )
 
 T = TypeVar("T")
 
@@ -128,7 +146,7 @@ def unique_preserve_order(values: Iterable[str]) -> list[str]:
     return ordered
 
 
-def discover_default_effect_pool(catalog_path: Path) -> list[str]:
+def discover_default_effect_pool(catalog_path: Path, active_effect_count: int) -> list[str]:
     if not catalog_path.exists():
         return DEFAULT_EFFECT_FALLBACK
 
@@ -161,7 +179,7 @@ def discover_default_effect_pool(catalog_path: Path) -> list[str]:
         pool.append(uri)
 
     pool = unique_preserve_order(pool)
-    if len(pool) < ACTIVE_EFFECT_COUNT:
+    if len(pool) < active_effect_count:
         return DEFAULT_EFFECT_FALLBACK
     return pool
 
@@ -254,7 +272,7 @@ def load_effects(
     engine: Any,
     effect_pool: list[str],
     rng: random.Random,
-    target_count: int = ACTIVE_EFFECT_COUNT,
+    target_count: int = DEFAULT_ACTIVE_EFFECT_COUNT,
     allow_duplicates: bool = False,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     loaded: list[dict[str, Any]] = []
@@ -430,7 +448,7 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
         f"- Peak callback jitter <= {thresholds['max_peak_jitter_ms']} ms: `{check_mark(checks['jitter_ok'])}`",
         f"- Peak budget utilization <= {thresholds['max_budget_utilization_percent']}%: `{check_mark(checks['budget_ok'])}`",
         f"- Flow apply errors <= {thresholds['max_flow_errors']}: `{check_mark(checks['flow_errors_ok'])}`",
-        f"- Effect count always 10: `{check_mark(checks['effect_count_ok'])}`",
+        f"- Effect count always {result['config']['active_effect_count']}: `{check_mark(checks['effect_count_ok'])}`",
         "",
         "## Key Metrics",
         f"- CPU total percent (min/max/mean): `{summary['cpu_total_percent']}`",
@@ -458,8 +476,14 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
 def parse_args(repo_root: Path) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run a JUCE randomized soak with 10 active effects, rotating flow topology and blend types."
+            "Run a JUCE randomized soak with configurable active effects, rotating flow topology and blend types."
         )
+    )
+    parser.add_argument(
+        "--active-effect-count",
+        type=int,
+        default=DEFAULT_ACTIVE_EFFECT_COUNT,
+        help="Number of effects kept active per flow (recommended range: 3-10).",
     )
     parser.add_argument("--duration-seconds", type=int, default=1800, help="Total soak duration.")
     parser.add_argument("--sample-interval-seconds", type=float, default=1.0, help="Metrics sample interval.")
@@ -537,14 +561,27 @@ def run() -> int:
     repo_root = Path(__file__).resolve().parents[4]
     args = parse_args(repo_root)
 
-    for template in FLOW_TEMPLATES:
-        if template.total_effects != ACTIVE_EFFECT_COUNT:
-            raise SystemExit(f"invalid flow template {template.name}: expected total {ACTIVE_EFFECT_COUNT}")
+    active_effect_count = int(args.active_effect_count)
+    if active_effect_count < 1:
+        raise SystemExit("active effect count must be >= 1")
+    if active_effect_count > len(DEFAULT_EFFECT_FALLBACK):
+        raise SystemExit(
+            f"active effect count {active_effect_count} exceeds fallback pool size {len(DEFAULT_EFFECT_FALLBACK)}"
+        )
+
+    flow_templates = build_flow_templates(active_effect_count)
+    for template in flow_templates:
+        if template.total_effects != active_effect_count:
+            raise SystemExit(f"invalid flow template {template.name}: expected total {active_effect_count}")
 
     if not args.module_dir.exists():
         raise SystemExit(f"module dir does not exist: {args.module_dir}")
 
-    effect_pool = unique_preserve_order(args.effect_uri) if args.effect_uri else discover_default_effect_pool(args.processor_catalog)
+    effect_pool = (
+        unique_preserve_order(args.effect_uri)
+        if args.effect_uri
+        else discover_default_effect_pool(args.processor_catalog, active_effect_count)
+    )
     if not effect_pool:
         raise SystemExit("effect pool is empty")
 
@@ -601,7 +638,11 @@ def run() -> int:
 
         runtime_discovered = discover_runtime_loadable_pool(engine)
         runtime_effect_pool = list(effect_pool)
-        if runtime_discovered:
+        if args.effect_uri:
+            # For explicit pools, preserve user-provided mix (e.g., native + external)
+            # and let load failures naturally prune unavailable entries.
+            effect_pool_source = "explicit_requested"
+        elif runtime_discovered:
             runtime_set = set(runtime_discovered)
             intersection = [uri for uri in effect_pool if uri in runtime_set]
             if intersection:
@@ -617,10 +658,10 @@ def run() -> int:
         if (
             not reuse_effects
             and runtime_effect_pool
-            and all(uri.startswith("LV2-") for uri in runtime_effect_pool)
-        ):
-            reuse_effects = True
-            auto_reuse_reason = "all_effects_are_lv2_runtime_plugins"
+                            and all(uri.startswith("LV2-") for uri in runtime_effect_pool)
+                        ):
+                            reuse_effects = True
+                            auto_reuse_reason = "all_effects_are_lv2_runtime_plugins"
 
         time.sleep(max(0.0, args.warmup_seconds))
         if args.reset_stats_after_warmup:
@@ -668,26 +709,26 @@ def run() -> int:
                     active_effects = []
 
                 if not active_effects:
-                    allow_duplicates = len(runtime_effect_pool) < ACTIVE_EFFECT_COUNT
+                    allow_duplicates = len(runtime_effect_pool) < active_effect_count
                     try:
                         active_effects, load_errors = load_effects(
                             engine,
                             runtime_effect_pool,
                             rng,
-                            ACTIVE_EFFECT_COUNT,
+                            active_effect_count,
                             allow_duplicates=allow_duplicates,
                         )
                     except RuntimeError as exc:
                         fallback_used = False
                         if runtime_discovered and runtime_effect_pool != runtime_discovered:
                             fallback_pool = unique_preserve_order(runtime_discovered)
-                            fallback_allow_duplicates = len(fallback_pool) < ACTIVE_EFFECT_COUNT
+                            fallback_allow_duplicates = len(fallback_pool) < active_effect_count
                             try:
                                 active_effects, load_errors = load_effects(
                                     engine,
                                     fallback_pool,
                                     rng,
-                                    ACTIVE_EFFECT_COUNT,
+                                    active_effect_count,
                                     allow_duplicates=fallback_allow_duplicates,
                                 )
                                 runtime_effect_pool = fallback_pool
@@ -709,7 +750,7 @@ def run() -> int:
                 effect_order = [int(entry["instance_id"]) for entry in active_effects]
                 rng.shuffle(effect_order)
 
-                current_flow_template = choose_different(FLOW_TEMPLATES, current_flow_template, rng)
+                current_flow_template = choose_different(flow_templates, current_flow_template, rng)
                 current_blend_type = choose_different(BLEND_TYPES, current_blend_type, rng)
                 current_group_ids, apply_failures = apply_flow(engine, current_flow_template, effect_order)
                 flow_apply_failures.extend(apply_failures)
@@ -843,7 +884,7 @@ def run() -> int:
     for event in flow_events:
         blend = str(event.get("blend_type", ""))
         blend_usage[blend] = blend_usage.get(blend, 0) + 1
-        if int(event.get("active_effect_count", -1)) != ACTIVE_EFFECT_COUNT:
+        if int(event.get("active_effect_count", -1)) != active_effect_count:
             effect_count_ok = False
 
     checks = {
@@ -878,13 +919,13 @@ def run() -> int:
             "reset_stats_after_warmup": bool(args.reset_stats_after_warmup),
             "reuse_effects": bool(reuse_effects),
             "auto_reuse_reason": auto_reuse_reason,
-            "active_effect_count": ACTIVE_EFFECT_COUNT,
             "requested_effect_pool_size": len(effect_pool),
             "requested_effect_pool": effect_pool,
             "runtime_effect_pool_size": len(runtime_effect_pool),
             "runtime_effect_pool": runtime_effect_pool,
             "effect_pool_source": effect_pool_source,
-            "flow_templates": [t.name for t in FLOW_TEMPLATES],
+            "active_effect_count": active_effect_count,
+            "flow_templates": [t.name for t in flow_templates],
             "blend_types": list(BLEND_TYPES),
         },
         "thresholds": {

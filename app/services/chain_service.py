@@ -12,8 +12,10 @@ Performance optimizations:
 - Class-level shared cache across all instances
 """
 
+import asyncio
 import json
 import logging
+import os
 import time
 from typing import List, Dict, Any, Optional, ClassVar
 from sqlalchemy import select, delete
@@ -22,6 +24,26 @@ from .command_queue import CommandQueue, CommandType
 from app.services.plugin_loader_unified import get_plugin_loader
 
 logger = logging.getLogger(__name__)
+
+_ENABLE_ENGINE_CHAIN_DEPLOY = os.getenv("MAP2_ENABLE_ENGINE_CHAIN_DEPLOY", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+_CHAIN_DEPLOY_API_WARNING_EMITTED = False
+
+
+def _warn_chain_deploy_api_once(missing_methods: List[str]) -> None:
+    """Emit chain-deploy API incompatibility warning only once per process."""
+    global _CHAIN_DEPLOY_API_WARNING_EMITTED
+    if _CHAIN_DEPLOY_API_WARNING_EMITTED:
+        return
+    _CHAIN_DEPLOY_API_WARNING_EMITTED = True
+    logger.warning(
+        "Skipping JUCE chain deployment: engine missing required APIs (%s).",
+        ", ".join(missing_methods),
+    )
 
 
 class ChainService:
@@ -826,36 +848,54 @@ class ChainService:
             )
             chain_plugins = plugins_result.scalars().all()
             
-            # FIX #8: Deploy chain to JUCE engine
-            try:
-                from app.services.juce_engine_service import JuceEngineService
-                engine_service = JuceEngineService.get_instance()
-                
-                if engine_service and engine_service._engine:
-                    # Clear existing chain in engine
-                    engine_service._engine.clear_chain()
-                    
-                    # Load and add each plugin to the engine chain
-                    for chain_plugin in chain_plugins:
-                        try:
-                            # Load plugin by URI
-                            instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
-                            
-                            if instance_id >= 0:
-                                # Add to engine chain at the correct position
-                                engine_service._engine.add_to_chain(instance_id, chain_plugin.position)
-                                logger.info(f"Deployed plugin {chain_plugin.plugin_uri} to chain position {chain_plugin.position}")
-                            else:
-                                logger.warning(f"Failed to load plugin {chain_plugin.plugin_uri}")
-                        except Exception as e:
-                            logger.error(f"Error deploying plugin {chain_plugin.plugin_uri}: {e}")
-                    
-                    logger.info(f"Chain {chain_id} deployed to JUCE engine with {len(chain_plugins)} plugins")
-                else:
-                    logger.warning("JUCE engine not available for chain deployment")
-            except Exception as e:
-                logger.error(f"Error deploying chain to JUCE engine: {e}")
-                # Don't fail the database update if engine deployment fails
+            # Deploy to JUCE only when explicitly enabled; default keeps route fast/stable.
+            if _ENABLE_ENGINE_CHAIN_DEPLOY:
+                try:
+                    from app.services.juce_engine_service import JuceEngineService
+
+                    engine_service = JuceEngineService.get_instance()
+                    engine = getattr(engine_service, "_engine", None) if engine_service else None
+
+                    if engine:
+                        missing_methods = [
+                            method
+                            for method in ("clear_chain", "add_to_chain")
+                            if not hasattr(engine, method)
+                        ]
+
+                        if missing_methods:
+                            _warn_chain_deploy_api_once(missing_methods)
+                        else:
+                            await asyncio.to_thread(engine.clear_chain)
+                            for chain_plugin in chain_plugins:
+                                try:
+                                    instance_id = await engine_service.load_plugin(chain_plugin.plugin_uri)
+                                    if instance_id >= 0:
+                                        await asyncio.to_thread(
+                                            engine.add_to_chain, instance_id, chain_plugin.position
+                                        )
+                                        logger.info(
+                                            "Deployed plugin %s to chain position %s",
+                                            chain_plugin.plugin_uri,
+                                            chain_plugin.position,
+                                        )
+                                    else:
+                                        logger.warning("Failed to load plugin %s", chain_plugin.plugin_uri)
+                                except Exception as e:
+                                    logger.error(f"Error deploying plugin {chain_plugin.plugin_uri}: {e}")
+
+                            logger.info(
+                                "Chain %s deployed to JUCE engine with %s plugins",
+                                chain_id,
+                                len(chain_plugins),
+                            )
+                    else:
+                        logger.debug("JUCE engine unavailable; skipping chain deployment")
+                except Exception as e:
+                    logger.error(f"Error deploying chain to JUCE engine: {e}")
+                    # Don't fail the database update if engine deployment fails
+            else:
+                logger.debug("Skipping JUCE chain deployment (MAP2_ENABLE_ENGINE_CHAIN_DEPLOY disabled)")
             
             logger.info(f"Activated chain {chain_id}")
             return True

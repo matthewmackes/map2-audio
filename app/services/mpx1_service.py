@@ -984,6 +984,24 @@ class MPX1Service:
                     "mpx1:program_changed",
                     {"program": program, "source": "midi_sysex"},
                 )
+                # Some MPX front panels emit only long-form 01 02 status frames during
+                # local interaction. Publish inferred panel telemetry so strict inbound
+                # gates can still observe hardware-origin status activity.
+                self._record_traffic(
+                    "rx_sysex_panel_inferred",
+                    message,
+                    control="program_select",
+                    control_value=program,
+                )
+                await self._publish_event(
+                    "mpx1:panel_status",
+                    {
+                        "control": "program_select",
+                        "control_value": program,
+                        "inferred_from": "program_status",
+                        "source": "midi_sysex",
+                    },
+                )
                 return extended
 
             if frame_type == "panel_status":

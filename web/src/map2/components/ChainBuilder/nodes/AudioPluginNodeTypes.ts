@@ -19,6 +19,7 @@ export interface AudioPluginNodeData {
   isBypassed: boolean;
   compact?: boolean;
   meterPanelExpanded?: boolean;  // Whether the meter panel is shown
+  isHardware?: boolean;          // Whether this is a hardware effect (e.g., Lexicon MPX-1)
 
   // Metering
   meters?: {

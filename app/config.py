@@ -61,6 +61,8 @@ class ConfigSection(Enum):
     BACKUP = "backup"
     STORAGE = "storage"
     AVB = "avb"  # AVB/TSN network audio transport
+    SPDIF = "spdif"  # Digital S/PDIF transport configuration
+    CLOCK_SYNC = "clock_sync"  # Cross-transport sample-rate/clock profile mapping
 
 
 # Configuration schema with all options
@@ -174,6 +176,32 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         value_type=float,
         min_value=-100.0,
         max_value=100.0,
+    ),
+    "audio.sync_profile": ConfigOption(
+        key="audio.sync_profile",
+        default="legacy_fixed_48k",
+        description="Named audio synchronization profile identifier",
+        value_type=str,
+    ),
+    "audio.clock_master": ConfigOption(
+        key="audio.clock_master",
+        default="internal",
+        description="Clock authority for transport mapping (internal, spdif, avb, hybrid)",
+        value_type=str,
+        choices=["internal", "spdif", "avb", "hybrid"],
+    ),
+    "audio.bits_per_sample": ConfigOption(
+        key="audio.bits_per_sample",
+        default=24,
+        description="Default PCM bit depth for digital transport mapping",
+        value_type=int,
+        choices=[16, 20, 24, 32],
+    ),
+    "audio.allowed_rates_hz": ConfigOption(
+        key="audio.allowed_rates_hz",
+        default=[48000],
+        description="Allowed sample-rate set for profile-driven PipeWire mapping",
+        value_type=list,
     ),
 
     # MIDI settings
@@ -583,6 +611,130 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         description="Default SR traffic class for SRP reservations",
         value_type=str,
         choices=["A", "B"],
+    ),
+    "spdif.enabled": ConfigOption(
+        key="spdif.enabled",
+        default=False,
+        description="Enable S/PDIF transport mapping for external digital processors",
+        value_type=bool,
+    ),
+    "spdif.device": ConfigOption(
+        key="spdif.device",
+        default="Lexicon MPX1",
+        description="S/PDIF device label used for route/ops documentation",
+        value_type=str,
+    ),
+    "spdif.sample_rate_hz": ConfigOption(
+        key="spdif.sample_rate_hz",
+        default=48000,
+        description="Target S/PDIF sample rate for profile-driven mapping",
+        value_type=int,
+        choices=[44100, 48000, 88200, 96000],
+    ),
+    "spdif.bits_per_sample": ConfigOption(
+        key="spdif.bits_per_sample",
+        default=24,
+        description="Target S/PDIF bits per sample",
+        value_type=int,
+        choices=[16, 20, 24, 32],
+    ),
+    "spdif.allow_resampler": ConfigOption(
+        key="spdif.allow_resampler",
+        default=False,
+        description="Allow asynchronous sample-rate conversion on S/PDIF path",
+        value_type=bool,
+    ),
+    "spdif.require_hard_lock": ConfigOption(
+        key="spdif.require_hard_lock",
+        default=True,
+        description="Require strict lock and fail closed on S/PDIF rate mismatch",
+        value_type=bool,
+    ),
+    "spdif.transport_mode": ConfigOption(
+        key="spdif.transport_mode",
+        default="send_return",
+        description="S/PDIF usage mode (send_return, send_only, return_only)",
+        value_type=str,
+        choices=["send_return", "send_only", "return_only"],
+    ),
+    "spdif.remarks": ConfigOption(
+        key="spdif.remarks",
+        default=[],
+        description="Operator/AI notes for S/PDIF routing and lock behavior",
+        value_type=list,
+    ),
+    "clock_sync.selected_profile": ConfigOption(
+        key="clock_sync.selected_profile",
+        default="legacy_fixed_48k",
+        description="Canonical cross-transport synchronization profile identifier",
+        value_type=str,
+    ),
+    "clock_sync.profile_version": ConfigOption(
+        key="clock_sync.profile_version",
+        default="",
+        description="Version stamp for the profile catalog used to apply settings",
+        value_type=str,
+    ),
+    "clock_sync.clock_master": ConfigOption(
+        key="clock_sync.clock_master",
+        default="internal",
+        description="Resolved clock master after profile application",
+        value_type=str,
+        choices=["internal", "spdif", "avb", "hybrid"],
+    ),
+    "clock_sync.engine_rate_hz": ConfigOption(
+        key="clock_sync.engine_rate_hz",
+        default=48000,
+        description="Resolved MAP2 engine sample rate from selected profile",
+        value_type=int,
+    ),
+    "clock_sync.avb_stream_rate_hz": ConfigOption(
+        key="clock_sync.avb_stream_rate_hz",
+        default=48000,
+        description="Resolved AVB stream sample rate from selected profile",
+        value_type=int,
+    ),
+    "clock_sync.spdif_rate_hz": ConfigOption(
+        key="clock_sync.spdif_rate_hz",
+        default=48000,
+        description="Resolved S/PDIF rate from selected profile",
+        value_type=int,
+    ),
+    "clock_sync.bits_per_sample": ConfigOption(
+        key="clock_sync.bits_per_sample",
+        default=24,
+        description="Resolved digital transport bit depth from selected profile",
+        value_type=int,
+    ),
+    "clock_sync.buffer_size_samples": ConfigOption(
+        key="clock_sync.buffer_size_samples",
+        default=64,
+        description="Resolved buffer quantum for synchronized profile mapping",
+        value_type=int,
+    ),
+    "clock_sync.allowed_rates_hz": ConfigOption(
+        key="clock_sync.allowed_rates_hz",
+        default=[48000],
+        description="Resolved allowed sample-rate list from selected profile",
+        value_type=list,
+    ),
+    "clock_sync.require_hard_lock": ConfigOption(
+        key="clock_sync.require_hard_lock",
+        default=True,
+        description="Whether selected profile fails closed on transport mismatch",
+        value_type=bool,
+    ),
+    "clock_sync.allow_resampler": ConfigOption(
+        key="clock_sync.allow_resampler",
+        default=False,
+        description="Whether selected profile allows asynchronous resampling",
+        value_type=bool,
+    ),
+    "clock_sync.remarks": ConfigOption(
+        key="clock_sync.remarks",
+        default=[],
+        description="Operator/AI remarks explaining current synchronization strategy",
+        value_type=list,
     ),
 
     # ── Tesira Forte AVB ─────────────────────────────────────────────────────

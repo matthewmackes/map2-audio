@@ -1,0 +1,55 @@
+{
+  "task_id": "T053",
+  "date": "2026-03-07",
+  "status": "pass",
+  "reboot": {
+    "type": "service_stack_restart",
+    "command": "sudo systemctl restart map2-boot-manager.service map2-ptp4l.service map2-phc2sys.service map2-srpd.service map2-backend.service map2-web-prod.service map2-web-dev.service map2-port80-proxy.service",
+    "services_restarted": [
+      "map2-boot-manager.service",
+      "map2-ptp4l.service",
+      "map2-phc2sys.service",
+      "map2-srpd.service",
+      "map2-backend.service",
+      "map2-web-prod.service",
+      "map2-web-dev.service",
+      "map2-port80-proxy.service"
+    ],
+    "post_reboot_health": {
+      "api_health_reachable": true,
+      "backend_uptime_reset_observed": true
+    }
+  },
+  "workload": {
+    "ws_clients": 100,
+    "locust_users": 10,
+    "spawn_rate": 2,
+    "midi_burst_updates": 500
+  },
+  "smoke_gate": {
+    "soak_seconds": 65,
+    "rest_p95_ms": 21.0,
+    "ws_drops": 0,
+    "ws_spread_p95_ms": 0.21801300317747518,
+    "pass": true
+  },
+  "full_gate": {
+    "soak_seconds": 300,
+    "runtime_seconds": 310,
+    "rest_p95_ms": 18.0,
+    "rest_failures": 0,
+    "ws_drops": 0,
+    "ws_spread_p95_ms": 0.20848900021519512,
+    "pass": true
+  },
+  "artifacts": {
+    "qualification_markdown": "docs/fit-for-purpose-evidence/20260307/t053/T053_REBOOT_PERFORMANCE_QUALIFICATION.md",
+    "smoke_log": "docs/fit-for-purpose-evidence/20260307/t053/locust-smoke-65s.log",
+    "smoke_stats_csv": "docs/fit-for-purpose-evidence/20260307/t053/locust-smoke-65s_stats.csv",
+    "full_log": "docs/fit-for-purpose-evidence/20260307/t053/locust-final-310s.log",
+    "full_stats_csv": "docs/fit-for-purpose-evidence/20260307/t053/locust-final-310s_stats.csv",
+    "full_stats_history_csv": "docs/fit-for-purpose-evidence/20260307/t053/locust-final-310s_stats_history.csv",
+    "full_failures_csv": "docs/fit-for-purpose-evidence/20260307/t053/locust-final-310s_failures.csv",
+    "full_exceptions_csv": "docs/fit-for-purpose-evidence/20260307/t053/locust-final-310s_exceptions.csv"
+  }
+}

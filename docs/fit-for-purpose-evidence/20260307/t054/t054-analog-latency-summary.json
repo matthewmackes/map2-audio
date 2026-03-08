@@ -1,0 +1,56 @@
+{
+  "task_id": "T054",
+  "timestamp": "2026-03-07T19:19:00-05:00",
+  "device": "EDIROL UA-1000",
+  "baseline": {
+    "profile": "multichannel-duplex",
+    "latency": {
+      "buffer_latency_ms": 1.333,
+      "device_input_latency_ms": 4.0,
+      "device_output_latency_ms": 4.0,
+      "device_total_latency_ms": 9.333,
+      "pipewire_total_latency_ms": 2.667
+    }
+  },
+  "pro_audio": {
+    "profile": "pro-audio",
+    "node_geometry": {
+      "period_size": 64,
+      "period_num": 3,
+      "headroom": 0
+    },
+    "latency": {
+      "buffer_latency_ms": 1.333,
+      "device_input_latency_ms": 4.0,
+      "device_output_latency_ms": 4.0,
+      "device_total_latency_ms": 9.333,
+      "pipewire_total_latency_ms": 2.667
+    },
+    "xruns": 0
+  },
+  "pro_audio_periodnum2": {
+    "wireplumber_override": "~/.config/wireplumber/wireplumber.conf.d/51-ua1000-low-latency.conf",
+    "node_geometry": {
+      "period_size": 64,
+      "period_num": 2,
+      "headroom": 0
+    },
+    "latency": {
+      "buffer_latency_ms": 1.333,
+      "device_input_latency_ms": 4.0,
+      "device_output_latency_ms": 4.0,
+      "device_total_latency_ms": 9.333,
+      "pipewire_total_latency_ms": 2.667
+    },
+    "xruns": 0
+  },
+  "result": {
+    "kept_changes": [
+      "UA-1000 profile set to pro-audio",
+      "UA-1000 WirePlumber override with period-size=64, period-num=2, headroom=0"
+    ],
+    "measurable_latency_reduction_via_api": false,
+    "stability_regression": false,
+    "notes": "PipeWire node properties confirm lower hardware period count; backend API latency diagnostics remained unchanged in this run."
+  }
+}

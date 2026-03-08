@@ -96,7 +96,7 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
     return (
       <button
         type="button"
-        className={`mpx1-flow-sidebar__toggle${active ? ' is-active' : ''}`}
+        className={`mpx1-flow-sidebar__control mpx1-flow-sidebar__toggle${active ? ' is-active' : ''}`}
         onClick={() => onChange(active ? 0 : 1)}
       >
         <span className="mpx1-flow-sidebar__toggle-name">{param.display_name}</span>
@@ -108,7 +108,7 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
   if (param.type === 'enum' || param.widget === 'select') {
     const options = buildEnumValues(param)
     return (
-      <label className="mpx1-flow-sidebar__select-wrap">
+      <label className="mpx1-flow-sidebar__control mpx1-flow-sidebar__select-wrap">
         <span className="mpx1-flow-sidebar__label">{param.display_name}</span>
         <select
           value={Math.round(value)}
@@ -126,7 +126,7 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
 
   if (param.widget === 'slider' || param.type === 'linear') {
     return (
-      <label className="mpx1-flow-sidebar__slider-wrap">
+      <label className="mpx1-flow-sidebar__control mpx1-flow-sidebar__slider-wrap">
         <span className="mpx1-flow-sidebar__label">{param.display_name}</span>
         <input
           type="range"
@@ -149,6 +149,8 @@ function ParamControl({ param, value, onChange }: ParamControlProps) {
       max={max}
       step={Math.max(0.01, (max - min) / 200)}
       formatter={(v) => formatValue(param, v)}
+      size={62}
+      compact
       onChange={onChange}
     />
   )

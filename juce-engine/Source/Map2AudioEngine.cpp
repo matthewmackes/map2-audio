@@ -456,6 +456,11 @@ void Map2AudioEngine::shutdown() {
     }
 
     midiHandler_.shutdown();
+
+    // Reset non-owning hardware processor pointers before host teardown.
+    lexiconProcessor_ = nullptr;
+    lexiconInstanceId_ = INVALID_INSTANCE_ID;
+
     pluginHost_.shutdown();
     audioIO_.shutdown();
 
@@ -1545,6 +1550,13 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // Process SynthForge Phase 1 MIDI/voice tracking.
     synthForge_.processBlock(buffer, midiBuffer);
 
+    // Pass raw hardware I/O pointers to Lexicon processor so it can
+    // access S/PDIF channels during graph processing
+    if (lexiconProcessor_) {
+        lexiconProcessor_->setHardwareBuffers(inputs, outputs,
+                                              numInputs, numOutputs);
+    }
+
     // Process through plugin graph (includes automatic PDC)
     audioGraph_->process(buffer, midiBuffer);
 
@@ -1869,7 +1881,14 @@ InstanceId Map2AudioEngine::loadPlugin(const std::string& uri) {
 bool Map2AudioEngine::unloadPlugin(InstanceId instanceId) {
     audioGraph_->removePlugin(instanceId);
     cpuMonitor_.removePlugin(instanceId);
-    return pluginHost_.unloadPlugin(instanceId);
+
+    const bool unloaded = pluginHost_.unloadPlugin(instanceId);
+    if (unloaded && instanceId == lexiconInstanceId_) {
+        lexiconProcessor_ = nullptr;
+        lexiconInstanceId_ = INVALID_INSTANCE_ID;
+    }
+
+    return unloaded;
 }
 
 void Map2AudioEngine::scanForPlugins(bool rescanAll) {
@@ -1894,6 +1913,89 @@ bool Map2AudioEngine::removeFromChain(InstanceId instanceId) {
 
 bool Map2AudioEngine::reorderChain(const std::vector<InstanceId>& order) {
     return audioGraph_->reorderPlugins(order);
+}
+
+// ========================================
+// Lexicon MPX-1 Hardware Plugin
+// ========================================
+
+InstanceId Map2AudioEngine::loadLexiconPlugin() {
+    // Singleton guard — only one MPX-1 can exist
+    if (lexiconProcessor_ != nullptr) {
+        return lexiconInstanceId_;
+    }
+
+    // Create the hardware processor
+    auto processor = std::make_unique<LexiconHardwareProcessor>();
+    processor->prepareToPlay(sampleRate_, bufferSize_);
+
+    // Build PluginInfo metadata
+    PluginInfo info;
+    info.uri = LexiconHardwareProcessor::PLUGIN_URI;
+    info.name = LexiconHardwareProcessor::PLUGIN_NAME;
+    info.author = "Lexicon / Harman";
+    info.brand = "Lexicon";
+    info.category = "lexicon";
+    info.format = PluginFormat::Hardware;
+    info.formatName = "Hardware";
+    info.audioInputs = 2;
+    info.audioOutputs = 2;
+    info.hasMidiInput = true;
+    info.hasMidiOutput = true;
+    info.latencySamples = 0;  // Updated after calibration
+
+    // Store raw pointer before moving ownership to host
+    lexiconProcessor_ = processor.get();
+
+    // Register with plugin host (transfers ownership)
+    lexiconInstanceId_ = pluginHost_.registerHardwarePlugin(
+        std::move(processor), info);
+
+    if (lexiconInstanceId_ == INVALID_INSTANCE_ID) {
+        lexiconProcessor_ = nullptr;
+        return INVALID_INSTANCE_ID;
+    }
+
+    return lexiconInstanceId_;
+}
+
+bool Map2AudioEngine::unloadLexiconPlugin() {
+    if (lexiconProcessor_ == nullptr) {
+        return false;
+    }
+
+    // Remove from chain if present
+    audioGraph_->removePlugin(lexiconInstanceId_);
+    cpuMonitor_.removePlugin(lexiconInstanceId_);
+
+    const InstanceId instanceId = lexiconInstanceId_;
+    const bool unloaded = pluginHost_.unloadPlugin(instanceId);
+    if (!unloaded) {
+        return false;
+    }
+
+    lexiconProcessor_ = nullptr;
+    lexiconInstanceId_ = INVALID_INSTANCE_ID;
+    return true;
+}
+
+bool Map2AudioEngine::isLexiconLoaded() const {
+    return lexiconProcessor_ != nullptr;
+}
+
+InstanceId Map2AudioEngine::getLexiconInstanceId() const {
+    return lexiconInstanceId_;
+}
+
+bool Map2AudioEngine::calibrateLexiconLatency() {
+    if (lexiconProcessor_ == nullptr) return false;
+
+    // TODO: Implement impulse-response calibration
+    // For now, set a conservative default based on typical S/PDIF round-trip
+    // (~3ms at 48kHz = 144 samples for DA + processing + AD)
+    constexpr int DEFAULT_SPDIF_LATENCY_SAMPLES = 144;
+    lexiconProcessor_->setMeasuredLatencySamples(DEFAULT_SPDIF_LATENCY_SAMPLES);
+    return true;
 }
 
 // ========================================
@@ -1933,6 +2035,9 @@ float Map2AudioEngine::getParameterByName(InstanceId instanceId, const std::stri
 }
 
 bool Map2AudioEngine::setBypass(InstanceId instanceId, bool bypass) {
+    if (instanceId == lexiconInstanceId_ && lexiconProcessor_ != nullptr) {
+        lexiconProcessor_->setBypass(bypass);
+    }
     return pluginHost_.setBypass(instanceId, bypass);
 }
 

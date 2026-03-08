@@ -227,8 +227,8 @@ async def _ensure_tables_created() -> None:
 
 
 @asynccontextmanager
-async def get_session() -> "AsyncSession":
-    """Get async database session context manager with automatic commit/rollback."""
+async def get_session(read_only: bool = False) -> "AsyncSession":
+    """Get async database session context manager with automatic transaction handling."""
     if _async_session_maker is None:
         init_async_db()
 
@@ -238,8 +238,12 @@ async def get_session() -> "AsyncSession":
     async with _async_session_maker() as session:
         try:
             yield session
-            await session.commit()
-        except Exception:
+            if read_only:
+                # End read-only transactions without forcing commit/write locks.
+                await session.rollback()
+            else:
+                await session.commit()
+        except BaseException:
             await session.rollback()
             raise
 

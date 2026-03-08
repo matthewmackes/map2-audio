@@ -78,6 +78,7 @@ export class Map2WebSocket {
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private status: ConnectionStatus = 'disconnected';
   private statusHandlers = new Set<(status: ConnectionStatus) => void>();
+  private reconnectExhaustedHandlers = new Set<() => void>();
   private requestHandlers = new Map<string, (data: any) => void>();
 
   constructor(config: WebSocketConfig) {
@@ -137,6 +138,9 @@ export class Map2WebSocket {
           if (this.config.reconnect && this.reconnectAttempts < this.config.maxReconnectAttempts) {
             this.scheduleReconnect();
           } else {
+            if (this.config.reconnect && this.reconnectAttempts >= this.config.maxReconnectAttempts) {
+              this.notifyReconnectExhausted();
+            }
             this.updateStatus('disconnected');
           }
         };
@@ -259,6 +263,14 @@ export class Map2WebSocket {
   }
 
   /**
+   * Register reconnect-exhausted handler
+   */
+  onReconnectExhausted(handler: () => void): () => void {
+    this.reconnectExhaustedHandlers.add(handler);
+    return () => this.reconnectExhaustedHandlers.delete(handler);
+  }
+
+  /**
    * Get current connection status
    */
   getStatus(): ConnectionStatus {
@@ -270,6 +282,24 @@ export class Map2WebSocket {
    */
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Trigger immediate manual reconnect attempt.
+   */
+  retryNow(): void {
+    if (this.ws?.readyState === WebSocket.OPEN || this.status === 'connecting') {
+      return;
+    }
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
+    this.reconnectAttempts = 0;
+    this.config.reconnect = true;
+    this.connect().catch(console.error);
   }
 
   /**
@@ -389,6 +419,16 @@ export class Map2WebSocket {
         }
       });
     }
+  }
+
+  private notifyReconnectExhausted(): void {
+    this.reconnectExhaustedHandlers.forEach((handler) => {
+      try {
+        handler();
+      } catch (error) {
+        console.error('Error in reconnect-exhausted handler:', error);
+      }
+    });
   }
 }
 

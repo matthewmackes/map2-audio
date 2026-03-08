@@ -270,88 +270,72 @@ juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId insta
         return existing->second;
     }
 
-    auto* pluginInstance = host_.getInstance(instanceId);
-    if (pluginInstance == nullptr) {
-        return juce::AudioProcessorGraph::NodeID();
-    }
-
-    // Ensure instance is prepared before it can enter active processing.
-    // This avoids format/processor crashes from unprepared processBlock calls.
-    pluginInstance->setRateAndBufferSizeDetails(sampleRate_, bufferSize_);
-    pluginInstance->setNonRealtime(false);
-    pluginInstance->prepareToPlay(sampleRate_, bufferSize_);
-
-    // FIX #1: Use non-owning wrapper to prevent double-free
-    // The plugin instance is owned by PluginHost and stored in host_.getInstance()
-    // We wrap it without transferring ownership
+    // Non-owning wrapper: delegates all AudioProcessor calls to the
+    // wrapped pointer without transferring ownership.
+    // Works for both AudioPluginInstance* and AudioProcessor* (hardware plugins).
     class NonOwningPluginWrapper : public juce::AudioProcessor {
     public:
-        NonOwningPluginWrapper(juce::AudioPluginInstance* wrapped) 
-            : juce::AudioProcessor(createBusesProperties(wrapped))
-            , wrapped_(wrapped) {
-            // Don't take ownership - just wrap
-        }
+        NonOwningPluginWrapper(juce::AudioProcessor* wrapped)
+            : juce::AudioProcessor(createBusesPropertiesFromProcessor(wrapped))
+            , wrapped_(wrapped) {}
 
         ~NonOwningPluginWrapper() override {
-            // DON'T delete wrapped_ - we don't own it
-            wrapped_ = nullptr;
+            wrapped_ = nullptr;  // DON'T delete — we don't own it
         }
 
-        const juce::String getName() const override { 
-            return wrapped_ ? wrapped_->getName() : juce::String(); 
+        const juce::String getName() const override {
+            return wrapped_ ? wrapped_->getName() : juce::String();
         }
-        void prepareToPlay(double sr, int bs) override { 
-            if (wrapped_) wrapped_->prepareToPlay(sr, bs); 
+        void prepareToPlay(double sr, int bs) override {
+            if (wrapped_) wrapped_->prepareToPlay(sr, bs);
         }
-        void releaseResources() override { 
-            if (wrapped_) wrapped_->releaseResources(); 
+        void releaseResources() override {
+            if (wrapped_) wrapped_->releaseResources();
         }
         void processBlock(juce::AudioBuffer<float>& b, juce::MidiBuffer& m) override {
             if (wrapped_) wrapped_->processBlock(b, m);
         }
-        double getTailLengthSeconds() const override { 
-            return wrapped_ ? wrapped_->getTailLengthSeconds() : 0.0; 
+        double getTailLengthSeconds() const override {
+            return wrapped_ ? wrapped_->getTailLengthSeconds() : 0.0;
         }
         bool isBusesLayoutSupported(const BusesLayout& layouts) const override {
             return wrapped_ ? wrapped_->checkBusesLayoutSupported(layouts) : false;
         }
-        bool acceptsMidi() const override { 
-            return wrapped_ ? wrapped_->acceptsMidi() : false; 
+        bool acceptsMidi() const override {
+            return wrapped_ ? wrapped_->acceptsMidi() : false;
         }
-        bool producesMidi() const override { 
-            return wrapped_ ? wrapped_->producesMidi() : false; 
+        bool producesMidi() const override {
+            return wrapped_ ? wrapped_->producesMidi() : false;
         }
         juce::AudioProcessorEditor* createEditor() override { return nullptr; }
         bool hasEditor() const override { return false; }
-        int getNumPrograms() override { 
-            return wrapped_ ? wrapped_->getNumPrograms() : 1; 
+        int getNumPrograms() override {
+            return wrapped_ ? wrapped_->getNumPrograms() : 1;
         }
-        int getCurrentProgram() override { 
-            return wrapped_ ? wrapped_->getCurrentProgram() : 0; 
+        int getCurrentProgram() override {
+            return wrapped_ ? wrapped_->getCurrentProgram() : 0;
         }
-        void setCurrentProgram(int i) override { 
-            if (wrapped_) wrapped_->setCurrentProgram(i); 
+        void setCurrentProgram(int i) override {
+            if (wrapped_) wrapped_->setCurrentProgram(i);
         }
-        const juce::String getProgramName(int i) override { 
-            return wrapped_ ? wrapped_->getProgramName(i) : juce::String(); 
+        const juce::String getProgramName(int i) override {
+            return wrapped_ ? wrapped_->getProgramName(i) : juce::String();
         }
-        void changeProgramName(int i, const juce::String& n) override { 
-            if (wrapped_) wrapped_->changeProgramName(i, n); 
+        void changeProgramName(int i, const juce::String& n) override {
+            if (wrapped_) wrapped_->changeProgramName(i, n);
         }
-        void getStateInformation(juce::MemoryBlock& b) override { 
-            if (wrapped_) wrapped_->getStateInformation(b); 
+        void getStateInformation(juce::MemoryBlock& b) override {
+            if (wrapped_) wrapped_->getStateInformation(b);
         }
-        void setStateInformation(const void* d, int s) override { 
-            if (wrapped_) wrapped_->setStateInformation(d, s); 
+        void setStateInformation(const void* d, int s) override {
+            if (wrapped_) wrapped_->setStateInformation(d, s);
         }
 
     private:
-        static juce::AudioProcessor::BusesProperties createBusesProperties(
-            juce::AudioPluginInstance* wrapped) {
+        static juce::AudioProcessor::BusesProperties createBusesPropertiesFromProcessor(
+            juce::AudioProcessor* wrapped) {
             juce::AudioProcessor::BusesProperties props;
-            if (wrapped == nullptr) {
-                return props;
-            }
+            if (wrapped == nullptr) return props;
 
             const int numInputs = wrapped->getBusCount(true);
             for (int i = 0; i < numInputs; ++i) {
@@ -370,12 +354,23 @@ juce::AudioProcessorGraph::NodeID JuceAudioGraph::addPluginNode(InstanceId insta
             return props;
         }
 
-        juce::AudioPluginInstance* wrapped_;
+        juce::AudioProcessor* wrapped_;  // Non-owned pointer
     };
 
+    // Resolve the processor — check both regular and hardware plugins
+    juce::AudioProcessor* processor = host_.getProcessor(instanceId);
+    if (processor == nullptr) {
+        return juce::AudioProcessorGraph::NodeID();
+    }
+
+    // Ensure processor is prepared before entering the active graph
+    processor->setRateAndBufferSizeDetails(sampleRate_, bufferSize_);
+    processor->setNonRealtime(false);
+    processor->prepareToPlay(sampleRate_, bufferSize_);
+
     // Create the non-owning wrapper and add to graph
-    // Now the graph owns the wrapper, not the underlying plugin instance
-    auto node = graph_->addNode(std::make_unique<NonOwningPluginWrapper>(pluginInstance));
+    // The graph owns the wrapper, not the underlying processor
+    auto node = graph_->addNode(std::make_unique<NonOwningPluginWrapper>(processor));
 
     if (node == nullptr) {
         return juce::AudioProcessorGraph::NodeID();

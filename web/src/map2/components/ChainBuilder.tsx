@@ -537,6 +537,11 @@ export default function ChainBuilder() {
         onRemove: handleRemovePlugin,
         onToggleBypass: handleToggleBypass,
         onOpenParameters: (plugin: any) => {
+          // Route hardware plugins to their dedicated editors
+          if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
+            window.location.href = '/mpx1/panel';
+            return;
+          }
           setSelectedPlugin(plugin);
           setParametersPanelOpen(true);
         },
@@ -631,6 +636,10 @@ export default function ChainBuilder() {
         onRemove: handleRemovePluginB,
         onToggleBypass: handleToggleBypassB,
         onOpenParameters: (plugin: any) => {
+          if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
+            window.location.href = '/mpx1/panel';
+            return;
+          }
           setSelectedPlugin(plugin);
           setParametersPanelOpen(true);
         },
@@ -680,10 +689,18 @@ export default function ChainBuilder() {
           onToggleBypassA: handleToggleBypass,
           onToggleBypassB: handleToggleBypassB,
           onOpenParametersA: (plugin: any) => {
+            if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
+              window.location.href = '/mpx1/panel';
+              return;
+            }
             setSelectedPlugin(plugin);
             setParametersPanelOpen(true);
           },
           onOpenParametersB: (plugin: any) => {
+            if (plugin.uri === 'hardware://lexicon-mpx1-spdif') {
+              window.location.href = '/mpx1/panel';
+              return;
+            }
             setSelectedPlugin(plugin);
             setParametersPanelOpen(true);
           },

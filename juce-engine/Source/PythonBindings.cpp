@@ -27,6 +27,7 @@
 #include "LexiLoveProcessor.h"
 #include "H3000Processor.h"
 #include "SynthForge/Common/Types.h"
+#include "LexiconHardwareProcessor.h"
 
 #include <memory>
 
@@ -2518,6 +2519,65 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             }
             return result;
         }, py::arg("loop_id") = "", "Get external loop metrics (single loop or all)")
+
+        // ========================================
+        // Lexicon MPX-1 Hardware Plugin
+        // ========================================
+
+        .def("load_lexicon_plugin", &Map2AudioEngine::loadLexiconPlugin,
+             "Load Lexicon MPX-1 hardware plugin, returns instance_id (-1 on failure)")
+
+        .def("unload_lexicon_plugin", &Map2AudioEngine::unloadLexiconPlugin,
+             "Unload Lexicon MPX-1 hardware plugin")
+
+        .def("is_lexicon_loaded", &Map2AudioEngine::isLexiconLoaded,
+             "Check if Lexicon MPX-1 is loaded")
+
+        .def("get_lexicon_instance_id", &Map2AudioEngine::getLexiconInstanceId,
+             "Get Lexicon MPX-1 instance ID (-1 if not loaded)")
+
+        .def("calibrate_lexicon_latency", &Map2AudioEngine::calibrateLexiconLatency,
+             "Measure S/PDIF round-trip latency via impulse response")
+
+        .def("set_lexicon_bypass", [](Map2AudioEngine& self, bool bypass) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                lex->setBypass(bypass);
+                return true;
+            }
+            return false;
+        }, py::arg("bypass"), "Set Lexicon MPX-1 bypass state")
+
+        .def("set_lexicon_mix", [](Map2AudioEngine& self, float mix) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                lex->setDryWetMix(mix);
+                return true;
+            }
+            return false;
+        }, py::arg("mix"), "Set Lexicon MPX-1 wet/dry mix (0.0=dry, 1.0=wet)")
+
+        .def("set_lexicon_send_gain", [](Map2AudioEngine& self, float db) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                lex->setSendGainDb(db);
+                return true;
+            }
+            return false;
+        }, py::arg("gain_db"), "Set Lexicon MPX-1 send gain in dB")
+
+        .def("set_lexicon_return_gain", [](Map2AudioEngine& self, float db) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                lex->setReturnGainDb(db);
+                return true;
+            }
+            return false;
+        }, py::arg("gain_db"), "Set Lexicon MPX-1 return gain in dB")
 
         // ========================================
         // Plugin Management (Multi-Format)
