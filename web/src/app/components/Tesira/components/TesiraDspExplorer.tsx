@@ -36,7 +36,9 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
     if (!needle) return blocks
     return blocks.filter((block) =>
       block.instance_tag.toLowerCase().includes(needle) ||
-      block.block_type.toLowerCase().includes(needle)
+      block.block_type.toLowerCase().includes(needle) ||
+      String(block.title || '').toLowerCase().includes(needle) ||
+      String(block.category || '').toLowerCase().includes(needle)
     )
   }, [blocks, search])
 
@@ -106,6 +108,7 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
               <TableRow>
                 <TableCell>Instance Tag</TableCell>
                 <TableCell>Type</TableCell>
+                <TableCell>Family</TableCell>
                 <TableCell>Channels</TableCell>
                 <TableCell>Params</TableCell>
                 <TableCell>Source</TableCell>
@@ -121,7 +124,8 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
                   sx={{ cursor: 'pointer' }}
                 >
                   <TableCell>{block.instance_tag}</TableCell>
-                  <TableCell>{block.block_type}</TableCell>
+                  <TableCell>{block.title ? `${block.title} (${block.block_type})` : block.block_type}</TableCell>
+                  <TableCell>{block.category || 'processing'}</TableCell>
                   <TableCell>{block.channel_count}</TableCell>
                   <TableCell>{Object.keys(block.parameter_map || {}).length}</TableCell>
                   <TableCell>{block.is_probed ? 'Probed' : 'Declared'}</TableCell>
@@ -129,7 +133,7 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
               ))}
               {filteredBlocks.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <Typography variant="body2" color="text.secondary">
                       No DSP blocks matched this filter.
                     </Typography>

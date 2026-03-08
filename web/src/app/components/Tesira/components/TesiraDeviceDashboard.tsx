@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Box, Paper, Typography, Grid, CircularProgress, Button, Chip } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import { useTesiraDevice } from '../hooks/useTesiraApi'
 import { TesiraFleetHealth } from './TesiraFleetHealth'
 import { TesiraPtpTopology } from './TesiraPtpTopology'
+import { TesiraDeployDialog } from './TesiraDeployDialog'
 
 interface TesiraDeviceDashboardProps {
   deviceId: string
@@ -11,6 +12,7 @@ interface TesiraDeviceDashboardProps {
 
 export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) {
   const { data: device, isLoading } = useTesiraDevice(deviceId)
+  const [deployOpen, setDeployOpen] = useState(false)
 
   if (isLoading || !device) {
     return (
@@ -55,8 +57,10 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/mixer`} variant="outlined">Mixer</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/eq`} variant="outlined">EQ</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/presets`} variant="outlined">Presets</Button>
+        <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/design`} variant="outlined">Design</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/dsp`} variant="outlined">DSP</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/settings`} variant="outlined">Settings</Button>
+        <Button size="small" onClick={() => setDeployOpen(true)} variant="outlined">Deploy Chain</Button>
         <Button size="small" component={RouterLink} to="/avb-routing" variant="outlined">AVB Routing</Button>
       </Box>
 
@@ -84,6 +88,12 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
           <TesiraPtpTopology />
         </Grid>
       </Grid>
+
+      <TesiraDeployDialog
+        deviceId={deviceId}
+        open={deployOpen}
+        onClose={() => setDeployOpen(false)}
+      />
     </Box>
   )
 }

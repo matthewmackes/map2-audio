@@ -934,6 +934,105 @@ class TesiraSceneSnapshot(Base):
     )
 
 
+class TesiraLayoutArtifact(Base):
+    """Catalog entry for a precompiled Tesira layout artifact."""
+    __tablename__ = "tesira_layout_artifacts"
+
+    id = Column(Integer, primary_key=True)
+    layout_id = Column(String(128), nullable=False, index=True)
+    version = Column(String(64), nullable=False, default="1.0.0")
+    name = Column(String(255), nullable=False, default="Unnamed Layout")
+    device_family = Column(String(128), nullable=False, default="UNKNOWN")
+    channel_profile = Column(String(128), nullable=True)
+    required_firmware = Column(String(64), nullable=True)
+    checksum = Column(String(128), nullable=False)
+    artifact_uri = Column(String(1024), nullable=True)
+    instance_tag_map = Column(JSON, default=dict)
+    feature_flags = Column(JSON, default=list)
+    notes = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_layout_artifact_unique", "layout_id", "version", unique=True),
+        Index("idx_tesira_layout_family", "device_family"),
+        Index("idx_tesira_layout_active", "is_active"),
+    )
+
+
+class TesiraDesignWorkspace(Base):
+    """Persisted MAP2-native Tesira design graph workspace."""
+    __tablename__ = "tesira_design_workspaces"
+
+    id = Column(Integer, primary_key=True)
+    design_id = Column(String(128), nullable=False, unique=True, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    name = Column(String(255), nullable=False, default="Untitled Design")
+    description = Column(Text, nullable=True)
+    graph = Column(JSON, default=dict)
+    is_template = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    compile_status = Column(String(32), nullable=False, default="UNCOMPILED")
+    compile_revision = Column(Integer, nullable=False, default=0)
+    compiled_graph_hash = Column(String(128), nullable=True)
+    compile_diagnostics = Column(JSON, default=dict)
+    last_compiled_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_design_device_created", "device_id", "created_at"),
+        Index("idx_tesira_design_device_active", "device_id", "is_active"),
+    )
+
+
+class TesiraDeploymentJob(Base):
+    """Deployment transaction state for Tesira layout orchestration."""
+    __tablename__ = "tesira_deployment_jobs"
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(String(64), nullable=False, unique=True, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    layout_id = Column(String(128), nullable=False)
+    layout_version = Column(String(64), nullable=False, default="1.0.0")
+    rollback_layout_id = Column(String(128), nullable=True)
+    rollback_layout_version = Column(String(64), nullable=True)
+    requested_by = Column(String(128), nullable=True)
+    dry_run = Column(Boolean, default=False)
+    status = Column(String(32), nullable=False, default="queued")
+    stage = Column(String(32), nullable=False, default="queued")
+    sagevue_job_id = Column(String(128), nullable=True)
+    error_detail = Column(Text, nullable=True)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_deploy_device_created", "device_id", "created_at"),
+        Index("idx_tesira_deploy_status", "status"),
+    )
+
+
+class TesiraDeploymentEvent(Base):
+    """Timeline event emitted during Tesira deployment orchestration."""
+    __tablename__ = "tesira_deployment_events"
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(String(64), nullable=False, index=True)
+    sequence = Column(Integer, nullable=False)
+    stage = Column(String(32), nullable=False)
+    status = Column(String(32), nullable=False)
+    message = Column(Text, nullable=False)
+    payload = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_deploy_event_job_seq_unique", "job_id", "sequence", unique=True),
+    )
+
+
 class TesiraInterlockRule(Base):
     """
     Maps a MAP2 preset ID to a Tesira device preset index.

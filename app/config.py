@@ -820,6 +820,45 @@ CONFIG_SCHEMA: Dict[str, ConfigOption] = {
         ),
         value_type=bool,
     ),
+    "tesira.sagevue_enabled": ConfigOption(
+        key="tesira.sagevue_enabled",
+        default=False,
+        description="Enable SageVue REST integration for Tesira layout deployment",
+        value_type=bool,
+    ),
+    "tesira.sagevue_base_url": ConfigOption(
+        key="tesira.sagevue_base_url",
+        default="",
+        description="Base URL for SageVue API (for example: https://sagevue.local)",
+        value_type=str,
+    ),
+    "tesira.sagevue_api_token": ConfigOption(
+        key="tesira.sagevue_api_token",
+        default="",
+        description="Bearer API token for SageVue integration",
+        value_type=str,
+        sensitive=True,
+    ),
+    "tesira.sagevue_verify_ssl": ConfigOption(
+        key="tesira.sagevue_verify_ssl",
+        default=True,
+        description="Verify TLS certificate when calling SageVue APIs",
+        value_type=bool,
+    ),
+    "tesira.sagevue_timeout_s": ConfigOption(
+        key="tesira.sagevue_timeout_s",
+        default=15.0,
+        description="SageVue API timeout in seconds",
+        value_type=float,
+        min_value=1.0,
+        max_value=120.0,
+    ),
+    "tesira.sagevue_deploy_path": ConfigOption(
+        key="tesira.sagevue_deploy_path",
+        default="/api/tesira/layouts/deploy",
+        description="Relative SageVue API path used to trigger layout deployment jobs",
+        value_type=str,
+    ),
 }
 
 

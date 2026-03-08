@@ -8,6 +8,7 @@ import { TesiraFleetPanel } from './components/TesiraFleetPanel'
 import { TesiraDeviceHeader } from './components/TesiraDeviceHeader'
 import { TesiraDeviceDashboard } from './components/TesiraDeviceDashboard'
 import { TesiraDspExplorer } from './components/TesiraDspExplorer'
+import { TesiraDesignCanvas } from './components/TesiraDesignCanvas'
 import { TesiraDeviceSettings } from './components/TesiraDeviceSettings'
 import { TesiraLevelsTab } from './components/TesiraLevelsTab'
 import { TesiraMixerTab } from './components/TesiraMixerTab'
@@ -74,6 +75,7 @@ function TesiraRoutePanel() {
       <Route index element={<FleetLanding />} />
       <Route path=":deviceId" element={<Navigate to="dashboard" replace />} />
       <Route path=":deviceId/dashboard" element={<DeviceRouteView render={(id) => <TesiraDeviceDashboard deviceId={id} />} />} />
+      <Route path=":deviceId/design" element={<DeviceRouteView render={(id) => <TesiraDesignCanvas deviceId={id} />} />} />
       <Route path=":deviceId/dsp" element={<DeviceRouteView render={(id) => <TesiraDspExplorer deviceId={id} />} />} />
       <Route path=":deviceId/levels" element={<DeviceRouteView render={(id) => <TesiraLevelsTab deviceId={id} />} />} />
       <Route path=":deviceId/mixer" element={<DeviceRouteView render={(id) => <TesiraMixerTab deviceId={id} />} />} />

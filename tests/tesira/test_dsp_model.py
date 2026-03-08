@@ -44,6 +44,9 @@ async def test_probe_device_discovers_known_blocks():
     assert "LevelControl1" in tags
     assert "PEQ1" in tags
     assert result.discovered_count >= 2
+    level_block = next(b for b in result.blocks if b.instance_tag == "LevelControl1")
+    assert level_block.category == "gain"
+    assert level_block.editor.get("family") == "level"
 
 
 @pytest.mark.asyncio

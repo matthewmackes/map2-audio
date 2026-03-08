@@ -13,6 +13,8 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from sqlalchemy import select
 
+from app.services.tesira.tesira_block_registry import list_probe_profiles
+
 
 @dataclass
 class TesiraDspBlock:
@@ -20,6 +22,9 @@ class TesiraDspBlock:
     block_type: str
     channel_count: int
     parameter_map: Dict[str, Dict[str, Any]]
+    title: Optional[str]
+    category: Optional[str]
+    editor: Dict[str, Any]
     is_probed: bool
     last_probed_at: str
 
@@ -47,55 +52,6 @@ class ProbeResult:
         }
 
 
-_BLOCK_PROFILES: Dict[str, Dict[str, Any]] = {
-    "LevelControl": {
-        "block_type": "LEVEL",
-        "probe_attribute": "numChannels",
-        "default_channels": 1,
-        "parameter_map": {
-            "level": {"value_type": "FLOAT", "indexed": True, "unit": "dB"},
-            "mute": {"value_type": "BOOL", "indexed": True, "unit": ""},
-        },
-    },
-    "Mixer": {
-        "block_type": "MIXER",
-        "probe_attribute": "numInputChannels",
-        "default_channels": 8,
-        "parameter_map": {
-            "crosspointLevelOut": {"value_type": "FLOAT", "indexed": True, "unit": "dB"},
-            "crosspointMute": {"value_type": "BOOL", "indexed": True, "unit": ""},
-        },
-    },
-    "PEQ": {
-        "block_type": "PEQ",
-        "probe_attribute": "numBands",
-        "default_channels": 8,
-        "parameter_map": {
-            "eqBandFrequency": {"value_type": "FLOAT", "indexed": True, "unit": "Hz"},
-            "eqBandGain": {"value_type": "FLOAT", "indexed": True, "unit": "dB"},
-            "eqBandQ": {"value_type": "FLOAT", "indexed": True, "unit": ""},
-        },
-    },
-    "LogicState": {
-        "block_type": "GPIO",
-        "probe_attribute": "state",
-        "default_channels": 1,
-        "parameter_map": {
-            "state": {"value_type": "BOOL", "indexed": True, "unit": ""},
-        },
-    },
-    "Router": {
-        "block_type": "ROUTER",
-        "probe_attribute": "numInputs",
-        "default_channels": 8,
-        "parameter_map": {
-            "crosspointLevelOut": {"value_type": "FLOAT", "indexed": True, "unit": "dB"},
-            "crosspointMute": {"value_type": "BOOL", "indexed": True, "unit": ""},
-        },
-    },
-}
-
-
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -116,13 +72,21 @@ def _serialize_value(value: Any) -> str:
     return str(value)
 
 
+def _profile_for_instance(instance_tag: str, profiles: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    for prefix, profile in profiles.items():
+        if instance_tag.startswith(prefix):
+            return profile
+    return {}
+
+
 class TesiraDspModel:
     async def probe_device(self, device: Any, max_instances: int = 32) -> ProbeResult:
         started_at = _now_iso()
         discovered: List[TesiraDspBlock] = []
         errors: List[str] = []
+        block_profiles = list_probe_profiles()
 
-        for prefix, profile in _BLOCK_PROFILES.items():
+        for prefix, profile in block_profiles.items():
             misses = 0
             probe_attr = str(profile["probe_attribute"])
             for idx in range(1, max_instances + 1):
@@ -149,6 +113,9 @@ class TesiraDspModel:
                         block_type=str(profile["block_type"]),
                         channel_count=_coerce_count(response.value, int(profile["default_channels"])),
                         parameter_map=dict(profile["parameter_map"]),
+                        title=str(profile.get("title", prefix)),
+                        category=str(profile.get("category", "processing")),
+                        editor=dict(profile.get("editor") or {}),
                         is_probed=True,
                         last_probed_at=_now_iso(),
                     )
@@ -167,6 +134,7 @@ class TesiraDspModel:
     async def list_blocks(self, device_id: str) -> List[Dict[str, Any]]:
         from app.database import TesiraBlockDeclaration, get_session
 
+        block_profiles = list_probe_profiles()
         async with get_session(read_only=True) as session:
             rows = (
                 await session.execute(
@@ -176,17 +144,23 @@ class TesiraDspModel:
                 )
             ).scalars().all()
 
-        return [
-            {
-                "instance_tag": r.instance_tag,
-                "block_type": r.block_type,
-                "channel_count": r.channel_count,
-                "parameter_map": dict(r.parameter_map or {}),
-                "is_probed": bool(r.is_probed),
-                "last_probed_at": r.last_probed_at.isoformat() if r.last_probed_at else None,
-            }
-            for r in rows
-        ]
+        payload: List[Dict[str, Any]] = []
+        for row in rows:
+            profile = _profile_for_instance(row.instance_tag, block_profiles)
+            payload.append(
+                {
+                    "instance_tag": row.instance_tag,
+                    "block_type": row.block_type,
+                    "channel_count": row.channel_count,
+                    "parameter_map": dict(row.parameter_map or {}),
+                    "title": str(profile.get("title", row.instance_tag)),
+                    "category": str(profile.get("category", "processing")),
+                    "editor": dict(profile.get("editor") or {}),
+                    "is_probed": bool(row.is_probed),
+                    "last_probed_at": row.last_probed_at.isoformat() if row.last_probed_at else None,
+                }
+            )
+        return payload
 
     async def get_block(self, device_id: str, instance_tag: str) -> Optional[Dict[str, Any]]:
         from app.database import TesiraBlockDeclaration, get_session
@@ -204,11 +178,15 @@ class TesiraDspModel:
         if row is None:
             return None
 
+        profile = _profile_for_instance(instance_tag, list_probe_profiles())
         return {
             "instance_tag": row.instance_tag,
             "block_type": row.block_type,
             "channel_count": row.channel_count,
             "parameter_map": dict(row.parameter_map or {}),
+            "title": str(profile.get("title", row.instance_tag)),
+            "category": str(profile.get("category", "processing")),
+            "editor": dict(profile.get("editor") or {}),
             "is_probed": bool(row.is_probed),
             "last_probed_at": row.last_probed_at.isoformat() if row.last_probed_at else None,
         }
@@ -322,4 +300,3 @@ class TesiraDspModel:
                 row.parameter_map = dict(block.parameter_map)
                 row.is_probed = True
                 row.last_probed_at = datetime.now(timezone.utc)
-

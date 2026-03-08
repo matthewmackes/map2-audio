@@ -87,6 +87,15 @@ import type {
   TesiraDspProbeResult,
   TesiraDeviceDetail,
   TesiraDeviceSummary,
+  TesiraDesignGraph,
+  TesiraDesignCompileBatchResponse,
+  TesiraDesignCompileResponse,
+  TesiraDesignDiagnosticsResponse,
+  TesiraDesignLibraryResponse,
+  TesiraDesignMutationResponse,
+  TesiraDesignValidateResponse,
+  TesiraDesignWorkspaceDetailResponse,
+  TesiraDesignWorkspaceListResponse,
   TesiraFleetHealth,
   TesiraFirmwareStatus,
   TesiraGpioListResponse,
@@ -94,6 +103,10 @@ import type {
   TesiraMeterHistoryResponse,
   TesiraMeterPeakResponse,
   TesiraMutationResponse,
+  TesiraLayoutArtifact,
+  TesiraLayoutListResponse,
+  TesiraSageVueStatus,
+  TesiraDeploymentJob,
   TesiraPtpTopologyResponse,
   TesiraPTPStatus,
   TesiraPresetInfo,
@@ -3614,6 +3627,188 @@ export const tesiraApi = {
   // Device management
   listDevices: (): Promise<TesiraDeviceSummary[]> =>
     fetch(`${BASE}/devices`).then((r) => _json<TesiraDeviceSummary[]>(r)),
+
+  listDesigns: (deviceId: string, params?: { includeInactive?: boolean; includeTemplates?: boolean }): Promise<TesiraDesignWorkspaceListResponse> => {
+    const search = new URLSearchParams()
+    if (params?.includeInactive) search.set('include_inactive', 'true')
+    if (params?.includeTemplates === false) search.set('include_templates', 'false')
+    const query = search.toString()
+    return fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs${query ? `?${query}` : ''}`)
+      .then((r) => _json<TesiraDesignWorkspaceListResponse>(r))
+  },
+
+  getDesignLibrary: (deviceId: string, profile?: string): Promise<TesiraDesignLibraryResponse> => {
+    const search = new URLSearchParams()
+    if (profile) search.set('profile', profile)
+    const query = search.toString()
+    return fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/library${query ? `?${query}` : ''}`)
+      .then((r) => _json<TesiraDesignLibraryResponse>(r)),
+  },
+
+  createDesign: (deviceId: string, body: {
+    design_id?: string
+    name: string
+    description?: string | null
+    graph?: TesiraDesignGraph
+    is_template?: boolean
+    is_active?: boolean
+  }): Promise<TesiraDesignMutationResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<TesiraDesignMutationResponse>(r)),
+
+  getDesign: (deviceId: string, designId: string): Promise<TesiraDesignWorkspaceDetailResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}`)
+      .then((r) => _json<TesiraDesignWorkspaceDetailResponse>(r)),
+
+  updateDesign: (deviceId: string, designId: string, body: {
+    name?: string
+    description?: string | null
+    graph?: TesiraDesignGraph
+    is_template?: boolean
+    is_active?: boolean
+  }): Promise<TesiraDesignMutationResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<TesiraDesignMutationResponse>(r)),
+
+  deleteDesign: (deviceId: string, designId: string): Promise<{ ok: boolean; device_id: string; design_id: string }> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}`, {
+      method: 'DELETE',
+    }).then((r) => _json<{ ok: boolean; device_id: string; design_id: string }>(r)),
+
+  validateDesign: (deviceId: string, designId: string, graph?: TesiraDesignGraph): Promise<TesiraDesignValidateResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(graph ? { graph } : {}),
+    }).then((r) => _json<TesiraDesignValidateResponse>(r)),
+
+  compileDesign: (
+    deviceId: string,
+    designId: string,
+    body?: { optimize?: boolean; recompile?: boolean }
+  ): Promise<TesiraDesignCompileResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/compile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileResponse>(r)),
+
+  recompileDesign: (
+    deviceId: string,
+    designId: string,
+    body?: { optimize?: boolean }
+  ): Promise<TesiraDesignCompileResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/recompile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileResponse>(r)),
+
+  compileActiveDesign: (
+    deviceId: string,
+    body?: { optimize?: boolean; recompile?: boolean }
+  ): Promise<TesiraDesignCompileBatchResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/compile-active`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileBatchResponse>(r)),
+
+  compileAllDesigns: (
+    deviceId: string,
+    body?: { optimize?: boolean; recompile?: boolean; include_templates?: boolean }
+  ): Promise<TesiraDesignCompileBatchResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/compile-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileBatchResponse>(r)),
+
+  compileUncompiledDesigns: (
+    deviceId: string,
+    body?: { optimize?: boolean; recompile?: boolean; include_templates?: boolean }
+  ): Promise<TesiraDesignCompileBatchResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/compile-uncompiled`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDesignCompileBatchResponse>(r)),
+
+  getDesignDiagnostics: (deviceId: string, designId: string): Promise<TesiraDesignDiagnosticsResponse> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/${encodeURIComponent(designId)}/diagnostics`)
+      .then((r) => _json<TesiraDesignDiagnosticsResponse>(r)),
+
+  listLayouts: (params?: { deviceFamily?: string; includeInactive?: boolean }): Promise<TesiraLayoutListResponse> => {
+    const search = new URLSearchParams()
+    if (params?.deviceFamily) search.set('device_family', params.deviceFamily)
+    if (params?.includeInactive) search.set('include_inactive', 'true')
+    const query = search.toString()
+    return fetch(`${BASE}/layouts${query ? `?${query}` : ''}`).then((r) => _json<TesiraLayoutListResponse>(r))
+  },
+
+  getLayout: (layoutId: string, version?: string): Promise<TesiraLayoutArtifact> => {
+    const query = version ? `?version=${encodeURIComponent(version)}` : ''
+    return fetch(`${BASE}/layouts/${encodeURIComponent(layoutId)}${query}`)
+      .then((r) => _json<TesiraLayoutArtifact>(r))
+  },
+
+  importLayout: (body: {
+    layout_id: string
+    version?: string
+    name: string
+    device_family: string
+    channel_profile?: string | null
+    required_firmware?: string | null
+    checksum: string
+    artifact_uri?: string | null
+    instance_tag_map?: Record<string, unknown>
+    feature_flags?: string[]
+    notes?: string | null
+    is_active?: boolean
+  }): Promise<{ status: string; layout: TesiraLayoutArtifact }> =>
+    fetch(`${BASE}/layouts/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<{ status: string; layout: TesiraLayoutArtifact }>(r)),
+
+  getSageVueStatus: (): Promise<TesiraSageVueStatus> =>
+    fetch(`${BASE}/sagevue/status`).then((r) => _json<TesiraSageVueStatus>(r)),
+
+  startDeployment: (deviceId: string, body: {
+    layout_id: string
+    layout_version?: string
+    dry_run?: boolean
+    requested_by?: string | null
+    rollback_layout_id?: string | null
+    rollback_layout_version?: string | null
+  }): Promise<TesiraDeploymentJob> =>
+    fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/deploy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => _json<TesiraDeploymentJob>(r)),
+
+  getDeployment: (jobId: string): Promise<TesiraDeploymentJob> =>
+    fetch(`${BASE}/deployments/${encodeURIComponent(jobId)}`)
+      .then((r) => _json<TesiraDeploymentJob>(r)),
+
+  rollbackDeployment: (jobId: string, body?: {
+    requested_by?: string | null
+    layout_id?: string | null
+    layout_version?: string | null
+  }): Promise<TesiraDeploymentJob> =>
+    fetch(`${BASE}/deployments/${encodeURIComponent(jobId)}/rollback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    }).then((r) => _json<TesiraDeploymentJob>(r)),
 
   getFleetHealth: (): Promise<TesiraFleetHealth> =>
     fetch(`${BASE}/fleet/health`).then((r) => _json<TesiraFleetHealth>(r)),

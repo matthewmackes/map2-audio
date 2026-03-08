@@ -23,8 +23,14 @@ from app.services.tesira import (
     get_tesira_discovery,
     get_tesira_dsp_model,
     get_tesira_metrics_store,
+    get_tesira_layout_catalog,
+    get_tesira_sagevue_client,
+    get_tesira_deploy_orchestrator,
+    get_tesira_design_workspace,
+    get_tesira_design_compiler,
 )
 from app.services.tesira.preset_interlock import TesiraPresetInterlock
+from app.services.tesira.tesira_block_registry import list_profiles as list_block_registry_profiles
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +140,68 @@ class PresetInterlockRuleOut(BaseModel):
     created_at: str
 
 
+class TesiraLayoutImportRequest(BaseModel):
+    layout_id: str = Field(..., min_length=1, max_length=128)
+    version: str = Field(default="1.0.0", min_length=1, max_length=64)
+    name: str = Field(..., min_length=1, max_length=255)
+    device_family: str = Field(..., min_length=1, max_length=128)
+    channel_profile: Optional[str] = Field(default=None, max_length=128)
+    required_firmware: Optional[str] = Field(default=None, max_length=64)
+    checksum: str = Field(..., min_length=1, max_length=128)
+    artifact_uri: Optional[str] = Field(default=None, max_length=1024)
+    instance_tag_map: Dict[str, Any] = Field(default_factory=dict)
+    feature_flags: List[str] = Field(default_factory=list)
+    notes: Optional[str] = None
+    is_active: bool = True
+
+
+class TesiraDeploymentStartRequest(BaseModel):
+    layout_id: str = Field(..., min_length=1, max_length=128)
+    layout_version: str = Field(default="1.0.0", min_length=1, max_length=64)
+    dry_run: bool = False
+    requested_by: Optional[str] = Field(default=None, max_length=128)
+    rollback_layout_id: Optional[str] = Field(default=None, max_length=128)
+    rollback_layout_version: Optional[str] = Field(default=None, max_length=64)
+
+
+class TesiraDeploymentRollbackRequest(BaseModel):
+    requested_by: Optional[str] = Field(default=None, max_length=128)
+    layout_id: Optional[str] = Field(default=None, max_length=128)
+    layout_version: Optional[str] = Field(default=None, max_length=64)
+
+
+class TesiraDesignCreateRequest(BaseModel):
+    design_id: Optional[str] = Field(default=None, max_length=128)
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    graph: Dict[str, Any] = Field(default_factory=dict)
+    is_template: bool = False
+    is_active: bool = True
+
+
+class TesiraDesignUpdateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    graph: Optional[Dict[str, Any]] = None
+    is_template: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+class TesiraDesignValidateRequest(BaseModel):
+    graph: Optional[Dict[str, Any]] = None
+
+
+class TesiraDesignCompileRequest(BaseModel):
+    optimize: bool = False
+    recompile: bool = False
+
+
+class TesiraDesignCompileBatchRequest(BaseModel):
+    optimize: bool = False
+    recompile: bool = False
+    include_templates: bool = False
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Fleet helpers
 # ──────────────────────────────────────────────────────────────────────────────
@@ -171,6 +239,26 @@ def _get_dsp_model():
 
 def _get_metrics_store():
     return get_tesira_metrics_store()
+
+
+def _get_layout_catalog():
+    return get_tesira_layout_catalog()
+
+
+def _get_sagevue_client():
+    return get_tesira_sagevue_client()
+
+
+def _get_deploy_orchestrator():
+    return get_tesira_deploy_orchestrator()
+
+
+def _get_design_workspace():
+    return get_tesira_design_workspace()
+
+
+def _get_design_compiler():
+    return get_tesira_design_compiler()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1275,3 +1363,295 @@ async def reconnect_device(device_id: str = FPath(..., description="Device ID"))
         "probe": probe_result,
         "message": "Connected" if connected_now else "Still offline — TTP not reachable",
     }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Layout catalog + SageVue adapter endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+
+@router.get("/layouts", summary="List Tesira layout artifacts in catalog")
+async def list_layouts(
+    device_family: Optional[str] = None,
+    include_inactive: bool = False,
+):
+    catalog = _get_layout_catalog()
+    layouts = await catalog.list_layouts(
+        device_family=device_family,
+        include_inactive=include_inactive,
+    )
+    return {"count": len(layouts), "layouts": layouts}
+
+
+@router.get("/layouts/{layout_id}", summary="Get a Tesira layout artifact")
+async def get_layout(layout_id: str, version: Optional[str] = None):
+    catalog = _get_layout_catalog()
+    layout = await catalog.get_layout(layout_id=layout_id, version=version)
+    if layout is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Layout '{layout_id}'{f' version {version}' if version else ''} not found",
+        )
+    return layout
+
+
+@router.post("/layouts/import", summary="Import or update Tesira layout artifact")
+async def import_layout(req: TesiraLayoutImportRequest = Body(...)):
+    catalog = _get_layout_catalog()
+    try:
+        layout = await catalog.import_layout(req.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Tesira layout import failed")
+        raise HTTPException(status_code=500, detail=f"Layout import failed: {exc}")
+
+    return {"status": "imported", "layout": layout}
+
+
+@router.get("/sagevue/status", summary="Get SageVue integration status")
+async def get_sagevue_status():
+    client = _get_sagevue_client()
+    base_url = client.base_url
+    if not client.enabled:
+        return {
+            "enabled": False,
+            "configured": bool(base_url),
+            "base_url": base_url,
+            "healthy": False,
+            "detail": "SageVue integration disabled",
+        }
+
+    try:
+        health = await client.health_check()
+        return {
+            "enabled": True,
+            "configured": bool(base_url),
+            "base_url": base_url,
+            "has_token": client.has_token,
+            "healthy": True,
+            "health": health,
+        }
+    except Exception as exc:
+        return {
+            "enabled": True,
+            "configured": bool(base_url),
+            "base_url": base_url,
+            "has_token": client.has_token,
+            "healthy": False,
+            "detail": str(exc),
+        }
+
+
+@router.post("/devices/{device_id}/deploy", summary="Start Tesira deployment job")
+async def start_deployment(
+    device_id: str,
+    req: TesiraDeploymentStartRequest = Body(...),
+):
+    orchestrator = _get_deploy_orchestrator()
+    try:
+        job = await orchestrator.start_deployment(
+            device_id=device_id,
+            layout_id=req.layout_id,
+            layout_version=req.layout_version,
+            dry_run=req.dry_run,
+            requested_by=req.requested_by,
+            rollback_layout_id=req.rollback_layout_id,
+            rollback_layout_version=req.rollback_layout_version,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Tesira deployment start failed")
+        raise HTTPException(status_code=500, detail=f"Deployment start failed: {exc}")
+    return job
+
+
+@router.get("/deployments/{job_id}", summary="Get Tesira deployment job")
+async def get_deployment(job_id: str):
+    orchestrator = _get_deploy_orchestrator()
+    job = await orchestrator.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Deployment job '{job_id}' not found")
+    return job
+
+
+@router.post("/deployments/{job_id}/rollback", summary="Rollback Tesira deployment job")
+async def rollback_deployment(
+    job_id: str,
+    req: TesiraDeploymentRollbackRequest = Body(default=TesiraDeploymentRollbackRequest()),
+):
+    orchestrator = _get_deploy_orchestrator()
+    try:
+        job = await orchestrator.rollback_job(
+            job_id=job_id,
+            requested_by=req.requested_by,
+            layout_id=req.layout_id,
+            layout_version=req.layout_version,
+        )
+    except ValueError as exc:
+        message = str(exc)
+        if "not found" in message.lower():
+            raise HTTPException(status_code=404, detail=message)
+        raise HTTPException(status_code=400, detail=message)
+    except Exception as exc:
+        logger.exception("Tesira deployment rollback failed")
+        raise HTTPException(status_code=500, detail=f"Deployment rollback failed: {exc}")
+    return job
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# MAP2-native Tesira design workspace endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+
+@router.get("/devices/{device_id}/designs", summary="List MAP2 Tesira design workspaces")
+async def list_designs(
+    device_id: str,
+    include_inactive: bool = False,
+    include_templates: bool = True,
+):
+    svc = _get_design_workspace()
+    designs = await svc.list_designs(
+        device_id=device_id,
+        include_inactive=include_inactive,
+        include_templates=include_templates,
+    )
+    return {"device_id": device_id, "count": len(designs), "designs": designs}
+
+
+@router.get("/devices/{device_id}/designs/library", summary="Get design block palette/library")
+async def get_design_block_library(device_id: str, profile: Optional[str] = None):
+    svc = _get_design_workspace()
+    try:
+        blocks = svc.design_block_library(profile)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {
+        "device_id": device_id,
+        "profile": profile or "forte_ci_v1",
+        "available_profiles": list_block_registry_profiles(),
+        "count": len(blocks),
+        "blocks": blocks,
+    }
+
+
+@router.post("/devices/{device_id}/designs", summary="Create MAP2 Tesira design workspace")
+async def create_design(device_id: str, req: TesiraDesignCreateRequest = Body(...)):
+    svc = _get_design_workspace()
+    design = await svc.create_design(device_id=device_id, payload=req.model_dump(exclude_none=True))
+    validation = svc.validate_graph(design.get("graph", {}))
+    return {"device_id": device_id, "design": design, "validation": validation}
+
+
+@router.get("/devices/{device_id}/designs/{design_id}", summary="Get Tesira design workspace")
+async def get_design(device_id: str, design_id: str):
+    svc = _get_design_workspace()
+    design = await svc.get_design(device_id=device_id, design_id=design_id)
+    if design is None:
+        raise HTTPException(status_code=404, detail=f"Design '{design_id}' not found")
+    return {"device_id": device_id, "design": design}
+
+
+@router.put("/devices/{device_id}/designs/{design_id}", summary="Update Tesira design workspace")
+async def update_design(device_id: str, design_id: str, req: TesiraDesignUpdateRequest = Body(...)):
+    svc = _get_design_workspace()
+    design = await svc.update_design(
+        device_id=device_id,
+        design_id=design_id,
+        payload=req.model_dump(exclude_none=True),
+    )
+    if design is None:
+        raise HTTPException(status_code=404, detail=f"Design '{design_id}' not found")
+    validation = svc.validate_graph(design.get("graph", {}))
+    return {"device_id": device_id, "design": design, "validation": validation}
+
+
+@router.delete("/devices/{device_id}/designs/{design_id}", summary="Delete Tesira design workspace")
+async def delete_design(device_id: str, design_id: str):
+    svc = _get_design_workspace()
+    deleted = await svc.delete_design(device_id=device_id, design_id=design_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Design '{design_id}' not found")
+    return {"ok": True, "device_id": device_id, "design_id": design_id}
+
+
+@router.post("/devices/{device_id}/designs/{design_id}/validate", summary="Validate Tesira design graph")
+async def validate_design(device_id: str, design_id: str, req: TesiraDesignValidateRequest = Body(default=TesiraDesignValidateRequest())):
+    svc = _get_design_workspace()
+    design = await svc.get_design(device_id=device_id, design_id=design_id)
+    if design is None:
+        raise HTTPException(status_code=404, detail=f"Design '{design_id}' not found")
+    graph = req.graph if req.graph is not None else design.get("graph", {})
+    validation = svc.validate_graph(graph)
+    return {"device_id": device_id, "design_id": design_id, "validation": validation}
+
+
+@router.post("/devices/{device_id}/designs/{design_id}/compile", summary="Compile or recompile one design")
+async def compile_design(device_id: str, design_id: str, req: TesiraDesignCompileRequest = Body(default=TesiraDesignCompileRequest())):
+    compiler = _get_design_compiler()
+    try:
+        result = await compiler.compile_design(
+            device_id=device_id,
+            design_id=design_id,
+            optimize=bool(req.optimize),
+            recompile=bool(req.recompile),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return result
+
+
+@router.post("/devices/{device_id}/designs/{design_id}/recompile", summary="Force recompile one design")
+async def recompile_design(device_id: str, design_id: str, req: TesiraDesignCompileRequest = Body(default=TesiraDesignCompileRequest())):
+    compiler = _get_design_compiler()
+    try:
+        result = await compiler.compile_design(
+            device_id=device_id,
+            design_id=design_id,
+            optimize=bool(req.optimize),
+            recompile=True,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return result
+
+
+@router.post("/devices/{device_id}/designs/compile-active", summary="Compile active design")
+async def compile_active_design(device_id: str, req: TesiraDesignCompileRequest = Body(default=TesiraDesignCompileRequest())):
+    compiler = _get_design_compiler()
+    return await compiler.compile_active(
+        device_id=device_id,
+        optimize=bool(req.optimize),
+        recompile=bool(req.recompile),
+    )
+
+
+@router.post("/devices/{device_id}/designs/compile-all", summary="Compile all designs")
+async def compile_all_designs(device_id: str, req: TesiraDesignCompileBatchRequest = Body(default=TesiraDesignCompileBatchRequest())):
+    compiler = _get_design_compiler()
+    return await compiler.compile_all(
+        device_id=device_id,
+        optimize=bool(req.optimize),
+        recompile=bool(req.recompile),
+        include_templates=bool(req.include_templates),
+    )
+
+
+@router.post("/devices/{device_id}/designs/compile-uncompiled", summary="Compile only uncompiled designs")
+async def compile_uncompiled_designs(device_id: str, req: TesiraDesignCompileBatchRequest = Body(default=TesiraDesignCompileBatchRequest())):
+    compiler = _get_design_compiler()
+    return await compiler.compile_all(
+        device_id=device_id,
+        optimize=bool(req.optimize),
+        recompile=bool(req.recompile),
+        only_uncompiled=True,
+        include_templates=bool(req.include_templates),
+    )
+
+
+@router.get("/devices/{device_id}/designs/{design_id}/diagnostics", summary="Get design compile diagnostics")
+async def get_design_diagnostics(device_id: str, design_id: str):
+    compiler = _get_design_compiler()
+    try:
+        return await compiler.get_diagnostics(device_id=device_id, design_id=design_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))

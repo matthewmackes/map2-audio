@@ -2537,7 +2537,7 @@ Last updated: 2026-03-08 - Codex
   - Suggested next tasks: T069, T070, T071, T072.
 
 ID: T069
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement MAP2-native Tesira design canvas and signal-chain authoring model
 Description:
 - Goal / acceptance criteria: Deliver a native Tesira-compatible design workspace in MAP2 with block placement, wiring, grouping, instance-tag management, and reusable template/custom-block structures sufficient to author new configurations without external Tesira software.
@@ -2547,10 +2547,15 @@ Description:
 - Required outputs: Backend graph model/schema, canvas UI with persisted topology editing, validation rules for block/link compatibility, and integration tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-08 18:18 - Codex
+- Completion notes:
+  - What was done: Implemented MAP2-native Tesira design workspace persistence (`TesiraDesignWorkspace`), graph CRUD + validation service (`tesira_design_workspace.py`), full REST routes for design list/create/get/update/delete/validate and block library, plus frontend design canvas (`TesiraDesignCanvas`) with route wiring (`/tesira/:deviceId/design`) and dashboard navigation.
+  - Key findings: The graph validation contract now enforces node/edge/group integrity, instance-tag uniqueness, and port-domain compatibility (`audio` vs `control`) with channel mismatch/cycle warnings to guide authoring.
+  - Files/links produced: `app/database.py`, `app/services/tesira/tesira_design_workspace.py`, `app/services/tesira/__init__.py`, `app/routes/tesira.py`, `web/src/app/components/Tesira/components/TesiraDesignCanvas.tsx`, `web/src/app/components/Tesira/TesiraApp.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/types.ts`, `web/src/map2/api.ts`, `tests/tesira/test_design_workspace_service.py`, `tests/tesira/test_routes_tesira_extended.py`.
+  - Suggested next tasks: T070, T071.
 
 ID: T070
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement MAP2-native Tesira compile/recompile and diagnostics pipeline
 Description:
 - Goal / acceptance criteria: Add compiler-equivalent workflows (`compile active/all/uncompiled`, `recompile`, optimization pass, compile diagnostics) with deterministic results and actionable error/warning output references.
@@ -2560,10 +2565,18 @@ Description:
 - Required outputs: Compile service/API, diagnostics report model, test suite for compile-path correctness, and documentation/runbook.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-08 20:45 - Codex
+- Completion notes:
+  - What was done: Integrated MAP2-native compile pipeline service (`tesira_design_compiler.py`) with deterministic graph hashing, optimize/recompile behaviors, compile-active/all/uncompiled workflows, and compile diagnostics retrieval.
+  - What was done: Wired backend singletons and REST routes for compile/recompile/diagnostics, and extended design workspace payloads with compile metadata (`compile_status`, revision, hash, diagnostics, compiled timestamp) plus graph-change invalidation.
+  - What was done: Added frontend API/hooks and design-canvas controls for compile/recompile/batch compile actions with optimize toggle and diagnostics visibility.
+  - What was done: Added dedicated runbook and tests covering service behavior and route contracts.
+  - Files/links produced: `app/services/tesira/tesira_design_compiler.py`, `app/services/tesira/tesira_design_workspace.py`, `app/services/tesira/__init__.py`, `app/routes/tesira.py`, `web/src/map2/api.ts`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/types.ts`, `web/src/app/components/Tesira/components/TesiraDesignCanvas.tsx`, `tests/tesira/test_design_compiler_service.py`, `tests/tesira/test_routes_tesira_extended.py`, `docs/tesira/TESIRA_DESIGN_COMPILE_RUNBOOK.md`.
+  - Validation: `pytest tests/tesira/test_design_compiler_service.py tests/tesira/test_design_workspace_service.py tests/tesira/test_routes_tesira_extended.py tests/tesira/test_layout_catalog.py tests/tesira/test_sagevue_client.py tests/tesira/test_deploy_orchestrator.py tests/tesira/test_routes_tesira.py` (29 passed), `npm --prefix web run typecheck` (pass).
+  - Suggested next tasks: T071, T072.
 
 ID: T071
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Expand DSP block registry to full Tesira processing-library parity
 Description:
 - Goal / acceptance criteria: Extend block definitions, discovery/declaration, parameter schemas, and editors from the current limited profile set to full processing-library families required for integrator workflows.
@@ -2573,10 +2586,16 @@ Description:
 - Required outputs: Versioned block-definition registry, expanded parameter adapters/routes, UI editors by family, and coverage tests across all supported families.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-08 21:03 - Codex
+- Progress notes:
+  - Delivered a versioned shared registry (`tesira_block_registry.py`) and rewired both design-library generation and runtime DSP probing to use the same profile-backed definitions.
+  - Expanded palette/probe family coverage to 25+ block types across I/O, gain, metering, routing, EQ/filter, dynamics, AEC, logic/control, network/streams, and generators.
+  - Added profile-aware design-library API behavior (`?profile=`) with available profile metadata, plus frontend profile selection in the design canvas.
+  - Added family metadata surfacing in DSP explorer/block panel (title/category/editor family) and coverage tests (`test_block_registry.py`, updated `test_dsp_model.py` + `test_design_workspace_service.py`).
+  - Remaining closure for full-parity acceptance: complete long-tail block families and deepen per-family editors beyond shared parameter controls where Tesira-specific UX semantics differ.
 
 ID: T072
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Complete Tesira full-parity HIL certification matrix and release unblock
 Description:
 - Goal / acceptance criteria: Execute full HIL validation matrix (AVB routing, PTP behavior, live DSP control, compile/deploy lifecycle, multi-unit reliability) and publish pass/fail evidence to clear `T065-subG`/`T065-subH` release blockers.
@@ -2586,7 +2605,11 @@ Description:
 - Required outputs: HIL evidence bundle, waiver/defect log, updated go/no-go packet, and unblock decision for `T065`.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-08 22:15 - Codex
+- Blocked notes:
+  - 2026-03-08 live precheck confirms Tesira control plane is online (`2` connected Tesira devices), but AVB/PTP certification prerequisites remain unmet: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` reports `0` streams, and `/api/avb/ptp/status` remains `INITIALIZING` with no grandmaster lock data.
+  - HIL gate impact: AVB/PTP topology and under-load routing certification cannot proceed until active AVB entities/streams and stable PTP telemetry are present.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.md`.
 
 ID: T073
 Status: [✓] Done
@@ -2607,7 +2630,7 @@ Last updated: 2026-03-08 17:24 - Codex
   - Suggested next tasks: T074, T075, T076.
 
 ID: T074
-Status: [ ] Todo
+Status: [✓] Done
 Title: Implement SageVue deployment adapter and layout artifact catalog in MAP2
 Description:
 - Goal / acceptance criteria: Implement backend integration for SageVue-authenticated layout deployment plus a MAP2-managed signed layout catalog (import/list/version/compatibility metadata).
@@ -2617,10 +2640,15 @@ Description:
 - Required outputs: `sagevue_client.py`, `layout_catalog.py`, DB models/migrations for layout artifacts, and API routes for catalog import/list/get.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 17:24 - Codex
+Last updated: 2026-03-08 18:01 - Codex
+- Completion notes:
+  - What was done: Added `TesiraLayoutArtifact` persistence model, implemented `layout_catalog.py` service (import/list/get), implemented `sagevue_client.py` adapter with config-driven auth/timeout/SSL options, and added new Tesira routes (`/layouts`, `/layouts/{layout_id}`, `/layouts/import`, `/sagevue/status`).
+  - Key findings: Catalog import/list/get works deterministically with update-in-place by `(layout_id, version)`; SageVue adapter can be validated independently via mocked HTTP transport.
+  - Files/links produced: `app/database.py`, `app/config.py`, `app/services/tesira/layout_catalog.py`, `app/services/tesira/sagevue_client.py`, `app/services/tesira/__init__.py`, `app/routes/tesira.py`, `tests/tesira/test_layout_catalog.py`, `tests/tesira/test_sagevue_client.py`, `tests/tesira/test_routes_tesira_extended.py`.
+  - Suggested next tasks: T075, T076.
 
 ID: T075
-Status: [ ] Todo
+Status: [✓] Done
 Title: Build Tesira deployment orchestrator with verification and rollback
 Description:
 - Goal / acceptance criteria: Implement transactional deploy pipeline (`preflight -> deploy -> hydrate -> verify -> commit/rollback`) per device with persistent job state and event timeline.
@@ -2630,10 +2658,15 @@ Description:
 - Required outputs: `tesira_deploy_orchestrator.py`, deployment job tables/routes, websocket progress events, rollback path, and integration tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 17:24 - Codex
+Last updated: 2026-03-08 18:01 - Codex
+- Completion notes:
+  - What was done: Added deployment persistence models (`TesiraDeploymentJob`, `TesiraDeploymentEvent`), implemented async orchestrator (`tesira_deploy_orchestrator.py`) with staged transaction flow and websocket topic publishing, and added API routes (`POST /devices/{id}/deploy`, `GET /deployments/{job_id}`, `POST /deployments/{job_id}/rollback`).
+  - Key findings: Background-run deployments with persisted timeline events give deterministic status polling and rollback control without blocking request threads.
+  - Files/links produced: `app/database.py`, `app/services/tesira/tesira_deploy_orchestrator.py`, `app/services/tesira/__init__.py`, `app/routes/tesira.py`, `tests/tesira/test_deploy_orchestrator.py`, `tests/tesira/test_routes_tesira_extended.py`.
+  - Suggested next tasks: T076.
 
 ID: T076
-Status: [ ] Todo
+Status: [✗] Blocked
 Title: Deliver MAP2 deploy-chain UX and HIL certification for direct deployment
 Description:
 - Goal / acceptance criteria: Add operator UI for layout selection, dry-run compatibility report, live deployment timeline, and rollback action; run 2-unit HIL validation and archive evidence.
@@ -2643,4 +2676,8 @@ Description:
 - Required outputs: Deploy dialog/timeline UI components, route wiring, HIL evidence bundle under `docs/fit-for-purpose-evidence/`, and go/no-go criteria update.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 17:24 - Codex
+Last updated: 2026-03-08 18:01 - Codex
+- Blocked notes:
+  - Software scope delivered: added Tesira deploy UI controls (`Deploy Chain` dialog), layout/status hooks, deployment polling hooks, rollback action wiring, and API client support for new deployment/catalog endpoints.
+  - Remaining blocker: 2-unit HIL deployment certification requires live hardware/lab availability from `T004`.
+  - Software files completed: `web/src/app/components/Tesira/types.ts`, `web/src/map2/api.ts`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/components/TesiraDeployDialog.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`.

@@ -40,6 +40,10 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
 
   const values = (params.data?.values || {}) as ParamValues
   const sortedKeys = useMemo(() => Object.keys(values).sort(), [values])
+  const editorFamily = useMemo(() => {
+    const family = (block.data?.editor as Record<string, unknown> | undefined)?.family
+    return typeof family === 'string' && family.trim() ? family : 'generic'
+  }, [block.data?.editor])
 
   useEffect(() => {
     setDrafts(
@@ -69,6 +73,9 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {instanceTag}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Editor: {editorFamily}
         </Typography>
         <Button
           size="small"

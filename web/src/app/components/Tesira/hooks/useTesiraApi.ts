@@ -8,6 +8,16 @@ import { tesiraApi } from '../../../../map2/api'
 import type {
   TesiraCapabilityEnvelope,
   TesiraCrosspointMatrix,
+  TesiraDesignCompileBatchResponse,
+  TesiraDesignCompileResponse,
+  TesiraDesignDiagnosticsResponse,
+  TesiraDesignGraph,
+  TesiraDesignLibraryResponse,
+  TesiraDesignMutationResponse,
+  TesiraDesignValidateResponse,
+  TesiraDesignWorkspaceDetailResponse,
+  TesiraDesignWorkspaceListResponse,
+  TesiraDeploymentJob,
   TesiraDeviceSummary,
   TesiraDeviceDetail,
   TesiraDspBlock,
@@ -22,6 +32,9 @@ import type {
   TesiraPtpTopologyResponse,
   TesiraPresetInfo,
   TesiraPTPStatus,
+  TesiraLayoutArtifact,
+  TesiraLayoutListResponse,
+  TesiraSageVueStatus,
   TesiraStreamInfo,
   PresetInterlockRule,
   DiscoveryScanStatus,
@@ -52,6 +65,16 @@ export const TESIRA_KEYS = {
   meterHistory:   (id: string, tag: string, limit: number) =>
     ['tesira', 'devices', id, 'meters', tag, 'history', limit] as const,
   meterPeak:      (id: string, tag: string) => ['tesira', 'devices', id, 'meters', tag, 'peak'] as const,
+  layouts:        ['tesira', 'layouts'] as const,
+  layout:         (layoutId: string, version?: string) => ['tesira', 'layouts', layoutId, version ?? 'latest'] as const,
+  sagevueStatus:  ['tesira', 'sagevue', 'status'] as const,
+  deployment:     (jobId: string) => ['tesira', 'deployments', jobId] as const,
+  designs:        (deviceId: string) => ['tesira', 'devices', deviceId, 'designs'] as const,
+  design:         (deviceId: string, designId: string) => ['tesira', 'devices', deviceId, 'designs', designId] as const,
+  designLibrary:  (deviceId: string, profile?: string) =>
+    ['tesira', 'devices', deviceId, 'designs', 'library', profile ?? 'forte_ci_v1'] as const,
+  designDiagnostics: (deviceId: string, designId: string) =>
+    ['tesira', 'devices', deviceId, 'designs', designId, 'diagnostics'] as const,
   interlock:      ['tesira', 'preset_interlock'] as const,
   discoveryStatus: ['tesira', 'discovery', 'status'] as const,
   firmwareLatest: ['tesira', 'firmware', 'latest'] as const,
@@ -364,6 +387,289 @@ export function useTesiraCapabilities(deviceId: string) {
     queryKey: TESIRA_KEYS.capabilities(deviceId),
     queryFn: () => tesiraApi.getCapabilities(deviceId),
     enabled: !!deviceId,
+  })
+}
+
+export function useTesiraLayouts(params?: { deviceFamily?: string; includeInactive?: boolean }) {
+  return useQuery<TesiraLayoutListResponse>({
+    queryKey: [...TESIRA_KEYS.layouts, params?.deviceFamily ?? 'all', params?.includeInactive ? 'with-inactive' : 'active'],
+    queryFn: () => tesiraApi.listLayouts(params),
+  })
+}
+
+export function useTesiraLayout(layoutId: string, version?: string) {
+  return useQuery<TesiraLayoutArtifact>({
+    queryKey: TESIRA_KEYS.layout(layoutId, version),
+    queryFn: () => tesiraApi.getLayout(layoutId, version),
+    enabled: !!layoutId,
+  })
+}
+
+export function useTesiraSageVueStatus() {
+  const visible = usePageVisible()
+  return useQuery<TesiraSageVueStatus>({
+    queryKey: TESIRA_KEYS.sagevueStatus,
+    queryFn: () => tesiraApi.getSageVueStatus(),
+    refetchInterval: visible ? 15_000 : false,
+  })
+}
+
+export function useStartTesiraDeployment() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDeploymentJob, Error, {
+    deviceId: string
+    layoutId: string
+    layoutVersion?: string
+    dryRun?: boolean
+    requestedBy?: string
+    rollbackLayoutId?: string
+    rollbackLayoutVersion?: string
+  }>({
+    mutationFn: ({
+      deviceId,
+      layoutId,
+      layoutVersion = '1.0.0',
+      dryRun = true,
+      requestedBy,
+      rollbackLayoutId,
+      rollbackLayoutVersion,
+    }) =>
+      tesiraApi.startDeployment(deviceId, {
+        layout_id: layoutId,
+        layout_version: layoutVersion,
+        dry_run: dryRun,
+        requested_by: requestedBy ?? null,
+        rollback_layout_id: rollbackLayoutId ?? null,
+        rollback_layout_version: rollbackLayoutVersion ?? null,
+      }),
+    onSuccess: (job) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.device(job.device_id) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.layouts })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.deployment(job.job_id) })
+    },
+  })
+}
+
+export function useTesiraDeployment(jobId: string) {
+  const visible = usePageVisible()
+  return useQuery<TesiraDeploymentJob>({
+    queryKey: TESIRA_KEYS.deployment(jobId),
+    queryFn: () => tesiraApi.getDeployment(jobId),
+    enabled: !!jobId,
+    refetchInterval: (query) => {
+      if (!visible || !query.state.data) return false
+      const status = query.state.data.status
+      if (status === 'succeeded' || status === 'failed' || status === 'rolled_back') return false
+      return 1500
+    },
+  })
+}
+
+export function useRollbackTesiraDeployment() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDeploymentJob, Error, {
+    jobId: string
+    requestedBy?: string
+    layoutId?: string
+    layoutVersion?: string
+  }>({
+    mutationFn: ({ jobId, requestedBy, layoutId, layoutVersion }) =>
+      tesiraApi.rollbackDeployment(jobId, {
+        requested_by: requestedBy ?? null,
+        layout_id: layoutId ?? null,
+        layout_version: layoutVersion ?? null,
+      }),
+    onSuccess: (job) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.deployment(job.job_id) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.device(job.device_id) })
+    },
+  })
+}
+
+export function useTesiraDesigns(deviceId: string) {
+  return useQuery<TesiraDesignWorkspaceListResponse>({
+    queryKey: TESIRA_KEYS.designs(deviceId),
+    queryFn: () => tesiraApi.listDesigns(deviceId),
+    enabled: !!deviceId,
+  })
+}
+
+export function useTesiraDesign(deviceId: string, designId: string) {
+  return useQuery<TesiraDesignWorkspaceDetailResponse>({
+    queryKey: TESIRA_KEYS.design(deviceId, designId),
+    queryFn: () => tesiraApi.getDesign(deviceId, designId),
+    enabled: !!deviceId && !!designId,
+  })
+}
+
+export function useTesiraDesignLibrary(deviceId: string, profile?: string) {
+  return useQuery<TesiraDesignLibraryResponse>({
+    queryKey: TESIRA_KEYS.designLibrary(deviceId, profile),
+    queryFn: () => tesiraApi.getDesignLibrary(deviceId, profile),
+    enabled: !!deviceId,
+  })
+}
+
+export function useCreateTesiraDesign() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignMutationResponse, Error, {
+    deviceId: string
+    name: string
+    description?: string
+    graph?: TesiraDesignGraph
+  }>({
+    mutationFn: ({ deviceId, name, description, graph }) =>
+      tesiraApi.createDesign(deviceId, {
+        name,
+        description: description ?? null,
+        graph: graph ?? { nodes: [], edges: [], groups: [] },
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+    },
+  })
+}
+
+export function useUpdateTesiraDesign() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignMutationResponse, Error, {
+    deviceId: string
+    designId: string
+    name?: string
+    description?: string
+    graph?: TesiraDesignGraph
+  }>({
+    mutationFn: ({ deviceId, designId, name, description, graph }) =>
+      tesiraApi.updateDesign(deviceId, designId, {
+        name,
+        description: description ?? null,
+        graph,
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.design(vars.deviceId, vars.designId) })
+    },
+  })
+}
+
+export function useDeleteTesiraDesign() {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean; device_id: string; design_id: string }, Error, {
+    deviceId: string
+    designId: string
+  }>({
+    mutationFn: ({ deviceId, designId }) => tesiraApi.deleteDesign(deviceId, designId),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+    },
+  })
+}
+
+export function useValidateTesiraDesign() {
+  return useMutation<TesiraDesignValidateResponse, Error, {
+    deviceId: string
+    designId: string
+    graph?: TesiraDesignGraph
+  }>({
+    mutationFn: ({ deviceId, designId, graph }) => tesiraApi.validateDesign(deviceId, designId, graph),
+  })
+}
+
+export function useTesiraDesignDiagnostics(deviceId: string, designId: string) {
+  return useQuery<TesiraDesignDiagnosticsResponse>({
+    queryKey: TESIRA_KEYS.designDiagnostics(deviceId, designId),
+    queryFn: () => tesiraApi.getDesignDiagnostics(deviceId, designId),
+    enabled: !!deviceId && !!designId,
+  })
+}
+
+export function useCompileTesiraDesign() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignCompileResponse, Error, {
+    deviceId: string
+    designId: string
+    optimize?: boolean
+    recompile?: boolean
+  }>({
+    mutationFn: ({ deviceId, designId, optimize = false, recompile = false }) =>
+      tesiraApi.compileDesign(deviceId, designId, { optimize, recompile }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.design(vars.deviceId, vars.designId) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designDiagnostics(vars.deviceId, vars.designId) })
+    },
+  })
+}
+
+export function useRecompileTesiraDesign() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignCompileResponse, Error, {
+    deviceId: string
+    designId: string
+    optimize?: boolean
+  }>({
+    mutationFn: ({ deviceId, designId, optimize = false }) =>
+      tesiraApi.recompileDesign(deviceId, designId, { optimize }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.design(vars.deviceId, vars.designId) })
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designDiagnostics(vars.deviceId, vars.designId) })
+    },
+  })
+}
+
+export function useCompileActiveTesiraDesign() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignCompileBatchResponse, Error, {
+    deviceId: string
+    optimize?: boolean
+    recompile?: boolean
+  }>({
+    mutationFn: ({ deviceId, optimize = false, recompile = false }) =>
+      tesiraApi.compileActiveDesign(deviceId, { optimize, recompile }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+    },
+  })
+}
+
+export function useCompileAllTesiraDesigns() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignCompileBatchResponse, Error, {
+    deviceId: string
+    optimize?: boolean
+    recompile?: boolean
+    includeTemplates?: boolean
+  }>({
+    mutationFn: ({ deviceId, optimize = false, recompile = false, includeTemplates = false }) =>
+      tesiraApi.compileAllDesigns(deviceId, {
+        optimize,
+        recompile,
+        include_templates: includeTemplates,
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+    },
+  })
+}
+
+export function useCompileUncompiledTesiraDesigns() {
+  const qc = useQueryClient()
+  return useMutation<TesiraDesignCompileBatchResponse, Error, {
+    deviceId: string
+    optimize?: boolean
+    recompile?: boolean
+    includeTemplates?: boolean
+  }>({
+    mutationFn: ({ deviceId, optimize = false, recompile = false, includeTemplates = false }) =>
+      tesiraApi.compileUncompiledDesigns(deviceId, {
+        optimize,
+        recompile,
+        include_templates: includeTemplates,
+      }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.designs(vars.deviceId) })
+    },
   })
 }
 
