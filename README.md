@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**561** Python | **821** TypeScript | **255** C++/H | **103** Docs | **342** total commits | **0** stars | **0** forks | **0** open issues
+**697** Python | **950** TypeScript | **282** C++/H | **108** Docs | **370** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -169,12 +169,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [LEGAL DISCLAIMER - IMPORTANT NOTICE](https://github.com/matthewmackes/map2-audio/blob/master/docs/# LEGAL DISCLAIMER – IMPORTANT NOTICE.md) | 2026-02-22 |
-| [AVB 8-Stream 24h Soak Template](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_24H_SOAK_TEMPLATE.md) | 2026-02-22 |
-| [AVB Milestone Checkpoint - 2026-02-21](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_CHECKPOINT_2026-02-21.md) | 2026-02-22 |
-| [AVB Endpoint Canonical Schema](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_ENDPOINT_SCHEMA.md) | 2026-02-22 |
-| [AVB First-Class Integration Plans](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_FIRST_CLASS_INTEGRATION_PLANS_2026-02-22.md) | 2026-02-22 |
-| [AVB + JUCE Availability and Channel Integration Plan](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_JUCE_AVAILABILITY_INTEGRATION_PLAN_2026-02-22.md) | 2026-02-22 |
+| [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-03-08 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-08 |
+| [Runtime Profile Release Controls (Features 1/3/5/7)](https://github.com/matthewmackes/map2-audio/blob/master/docs/RUNTIME_PROFILE_RELEASE_CONTROLS.md) | 2026-03-08 |
+| [AVB Canonical Worklist (Single Source of Truth)](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_MASTER_WORK_PLAN.md) | 2026-02-27 |
+| [AVB Qualification Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_QUALIFICATION_MATRIX.md) | 2026-02-27 |
+| [AVB Latency Optimizer](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVB_LATENCY_OPTIMIZER.md) | 2026-02-26 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`95b324af`](https://github.com/matthewmackes/map2-audio/commit/95b324af1bb3749d9272208ad4bf6214774a232f) | merge: close feature/t009-callback-hardening into master | Map2 Audio | 2026-03-08 |
+| [`ba15f8f3`](https://github.com/matthewmackes/map2-audio/commit/ba15f8f3ebc6a0ac63e259b6a6d11ef015415022) | feat(tesira): deliver native design compile pipeline and ... | Map2 Audio | 2026-03-08 |
+| [`03fc6475`](https://github.com/matthewmackes/map2-audio/commit/03fc64752a2ed0d6397c1214584497cc831a9a35) | feat: T066 native MIDI Hub plan + T065 Tesira parity impl... | Map2 Audio | 2026-03-08 |
+| [`c7390157`](https://github.com/matthewmackes/map2-audio/commit/c7390157d0ef06d5cf647b1c1dd40d4cd744c1b4) | feat: finalize runtime profile rollout evidence and nativ... | Map2 Audio | 2026-03-08 |
+| [`754166a7`](https://github.com/matthewmackes/map2-audio/commit/754166a73dea4e08e76af0fda09705f4c969227d) | docs(worklist): connect T059 runtime profiles to node types | Map2 Audio | 2026-03-08 |
+| [`0b171fd0`](https://github.com/matthewmackes/map2-audio/commit/0b171fd03c0f8eb419b5619efd39137241748456) | chore: checkpoint all current workspace updates | Map2 Audio | 2026-03-08 |
+| [`24796cda`](https://github.com/matthewmackes/map2-audio/commit/24796cdabfc94b018a7341a8d21b62ad495dc9f8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-08 |
 | [`10f34534`](https://github.com/matthewmackes/map2-audio/commit/10f34534d306312dbc91ff4af40b5d9d6291fafb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-07 |
-| [`afd1ea29`](https://github.com/matthewmackes/map2-audio/commit/afd1ea29394443b03196e619dda6f71c3fb18400) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-06 |
-| [`acd532d4`](https://github.com/matthewmackes/map2-audio/commit/acd532d4e9363e57859f8019bc9a78bce42ca6d6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-05 |
-| [`3d835db4`](https://github.com/matthewmackes/map2-audio/commit/3d835db4607bb8c002017129b4719397e200a88a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-04 |
-| [`ff54c5c0`](https://github.com/matthewmackes/map2-audio/commit/ff54c5c0ac5ce824a35d3176172ff4ef7f88b518) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-03 |
-| [`bb79c816`](https://github.com/matthewmackes/map2-audio/commit/bb79c816d58619da1c813aa984f34d6d17e54922) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-02 |
-| [`e5a36977`](https://github.com/matthewmackes/map2-audio/commit/e5a36977a21b9be8801cf279349da03b3ed2e6b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-01 |
-| [`2719f1e1`](https://github.com/matthewmackes/map2-audio/commit/2719f1e18e35b1d841c6c90933384c3cffb141c8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-02-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -226,7 +226,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **16** more open-source packages from PyPI and npm.
+...and **20** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
