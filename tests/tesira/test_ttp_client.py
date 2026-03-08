@@ -15,13 +15,19 @@ from app.services.tesira.ttp_client import TTPClient, TTPResponse
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def make_reader_writer(lines: list[str]):
-    """Return (reader, writer) mocks that feed `lines` as ASCII responses."""
+def make_reader_writer(chunks: list[bytes]):
+    """Return (reader, writer) mocks that feed byte chunks to StreamReader.read()."""
     reader = AsyncMock()
-    # readline() returns lines in sequence; raise StopAsyncIteration after last
-    reader.readline = AsyncMock(side_effect=[
-        (line.encode() + b"\r\n") for line in lines
-    ] + [asyncio.CancelledError()])
+
+    queue = list(chunks)
+
+    async def _read(_size: int = -1) -> bytes:
+        if queue:
+            return queue.pop(0)
+        await asyncio.sleep(10.0)
+        return b""
+
+    reader.read = AsyncMock(side_effect=_read)
 
     writer = MagicMock()
     writer.write = MagicMock()
@@ -38,7 +44,7 @@ def make_reader_writer(lines: list[str]):
 async def test_send_get_parses_ok_value():
     """send() returns TTPResponse.ok=True and parses value from +OK response."""
     reader, writer = make_reader_writer([
-        '+OK value=1.234',
+        b'+OK value=1.234\r\n',
     ])
 
     client = TTPClient(host='192.168.1.10')
@@ -46,6 +52,7 @@ async def test_send_get_parses_ok_value():
     with patch('asyncio.open_connection', return_value=(reader, writer)):
         await client.connect()
         resp = await client.send('LevelControl1', 'get', 'level', 0)
+        await client.disconnect()
 
     assert resp.ok is True
     assert abs(float(resp.value) - 1.234) < 1e-5
@@ -57,7 +64,7 @@ async def test_send_get_parses_ok_value():
 async def test_send_error_response():
     """-ERR response sets ok=False and captures the error code."""
     reader, writer = make_reader_writer([
-        '-ERR INSTANCE_TAG_NOT_FOUND',
+        b'-ERR INSTANCE_TAG_NOT_FOUND\r\n',
     ])
 
     client = TTPClient(host='192.168.1.10')
@@ -65,6 +72,7 @@ async def test_send_error_response():
     with patch('asyncio.open_connection', return_value=(reader, writer)):
         await client.connect()
         resp = await client.send('BadTag', 'get', 'level', 0)
+        await client.disconnect()
 
     assert resp.ok is False
     assert 'INSTANCE_TAG_NOT_FOUND' in (resp.error_code or resp.raw)
@@ -81,7 +89,7 @@ async def test_push_notification_dispatched():
         push_events.append((instance_tag, attribute, value))
 
     reader, writer = make_reader_writer([
-        '! LevelControl1 level 0.75',
+        b'! LevelControl1 level 0.75\r\n',
     ])
 
     client = TTPClient(host='192.168.1.10')
@@ -91,6 +99,7 @@ async def test_push_notification_dispatched():
         await client.connect()
         # Let read loop process the push line
         await asyncio.sleep(0.05)
+        await client.disconnect()
 
     assert len(push_events) == 1
     assert push_events[0][0] == 'LevelControl1'
@@ -101,9 +110,14 @@ async def test_push_notification_dispatched():
 
 @pytest.mark.asyncio
 async def test_send_timeout():
-    """send() raises asyncio.TimeoutError if no response within read_timeout."""
+    """send() returns a timeout response when no line arrives within read_timeout."""
     reader = AsyncMock()
-    reader.readline = AsyncMock(side_effect=asyncio.TimeoutError())
+
+    async def _read(_size: int = -1) -> bytes:
+        await asyncio.sleep(1.0)
+        return b""
+
+    reader.read = AsyncMock(side_effect=_read)
 
     writer = MagicMock()
     writer.write = MagicMock()
@@ -116,5 +130,8 @@ async def test_send_timeout():
 
     with patch('asyncio.open_connection', return_value=(reader, writer)):
         await client.connect()
-        with pytest.raises((asyncio.TimeoutError, Exception)):
-            await client.send('LevelControl1', 'get', 'level', 0)
+        response = await client.send('LevelControl1', 'get', 'level', 0)
+        await client.disconnect()
+
+    assert response.ok is False
+    assert response.error_code == 'TIMEOUT'

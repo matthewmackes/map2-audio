@@ -198,7 +198,7 @@ export function App() {
                     <Route path="/drums" element={<DrumsPage />} />
                     <Route path="/multi-system" element={<MultiSystemDashboard />} />
                     <Route path="/avb-routing" element={<AvbRoutingPage />} />
-                    <Route path="/tesira" element={<TesiraPage />} />
+                    <Route path="/tesira/*" element={<TesiraPage />} />
                     <Route path="/mpx1/*" element={<MPX1Page />}>
                       <Route index element={<Navigate to="panel" replace />} />
                       <Route path="panel" element={<MPX1PanelView />} />

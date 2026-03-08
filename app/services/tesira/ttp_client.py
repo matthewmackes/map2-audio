@@ -18,20 +18,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
-# Regex patterns for TTP response parsing
-_OK_RE = re.compile(r'^\+OK(?:\s+value=(.+))?$')
-_ERR_RE = re.compile(r'^-ERR\s+(\S+)(?:\s+(.*))?$')
-_PUSH_RE = re.compile(r'^!\s+(\S+)\s+(\S+)\s+(.+)$')
-
 # Telnet negotiation bytes to swallow on connect (IAC sequences)
 _IAC = b'\xff'
+_IAC_BYTE = 0xFF
+_DO = 0xFD
+_DONT = 0xFE
+_WILL = 0xFB
+_WONT = 0xFC
+_SB = 0xFA
+_SE = 0xF0
 
 
 @dataclass
@@ -56,7 +57,7 @@ class TTPClient:
         host: str,
         port: int = 23,
         connect_timeout: float = 5.0,
-        read_timeout: float = 2.0,
+        read_timeout: float = 5.0,
         reconnect_min_s: float = 1.0,
         reconnect_max_s: float = 30.0,
         max_reconnect_attempts: int = 0,    # 0 = unlimited
@@ -75,12 +76,15 @@ class TTPClient:
         self._connected = False
         self._stopping = False
         self._read_task: Optional[asyncio.Task] = None
+        self._response_queue: asyncio.Queue[str] = asyncio.Queue()
+        self._telnet_pending = bytearray()
+        self._line_buffer = bytearray()
 
         # Push-notification callbacks: List[Callable[[instance_tag, attribute, value], None]]
         self._push_callbacks: list[Callable[[str, str, Any], None]] = []
 
-        # Active subscriptions: set of (instance_tag, attribute) tuples
-        self._subscriptions: set[tuple[str, str]] = set()
+        # Active subscriptions: (instance_tag, attribute) -> interval_ms
+        self._subscriptions: dict[tuple[str, str], int] = {}
 
     # ──────────────────────────────────────────────────────────────────────────
     # Connection lifecycle
@@ -115,6 +119,13 @@ class TTPClient:
                 pass
         self._reader = None
         self._writer = None
+        self._telnet_pending.clear()
+        self._line_buffer.clear()
+        while not self._response_queue.empty():
+            try:
+                self._response_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
         logger.info("TTPClient[%s:%d] disconnected", self.host, self.port)
 
     async def _do_connect(self) -> None:
@@ -124,36 +135,42 @@ class TTPClient:
             asyncio.open_connection(self.host, self.port),
             timeout=self.connect_timeout,
         )
-        # Drain any Telnet negotiation bytes (IAC sequences) the server sends
         await self._drain_telnet_negotiation()
         self._connected = True
         logger.info("TTPClient[%s:%d] connected", self.host, self.port)
-
-        # Re-subscribe to any active subscriptions after reconnect
-        for instance_tag, attribute in list(self._subscriptions):
-            try:
-                await self._raw_send(f"{instance_tag} subscribe {attribute}")
-            except Exception as exc:
-                logger.warning("Re-subscribe %s.%s failed: %s", instance_tag, attribute, exc)
 
         # Start background read loop
         self._read_task = asyncio.create_task(
             self._read_loop(), name=f"ttp_read_{self.host}"
         )
 
+        # Re-subscribe to any active subscriptions after reconnect
+        for (instance_tag, attribute), interval_ms in list(self._subscriptions.items()):
+            try:
+                await self.send(instance_tag, "subscribe", attribute, interval_ms)
+            except Exception as exc:
+                logger.warning("Re-subscribe %s.%s failed: %s", instance_tag, attribute, exc)
+
     async def _drain_telnet_negotiation(self) -> None:
         """
-        Consume any initial Telnet IAC option negotiation bytes.
-        Tesira sends an IS ALIVE prompt; we discard it until we see a newline.
-        Timeout-guarded so we do not block indefinitely.
+        Handle initial Telnet option negotiation and discard any banner text.
+        Tesira sends IAC DO/WILL bytes that require client replies before it
+        processes TTP commands. We respond with conservative WONT/DONT replies.
         """
-        try:
-            await asyncio.wait_for(
-                self._reader.readuntil(b'\n'),  # type: ignore[union-attr]
-                timeout=2.0,
-            )
-        except (asyncio.TimeoutError, asyncio.IncompleteReadError):
-            pass
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            try:
+                chunk = await asyncio.wait_for(
+                    self._reader.read(1024),  # type: ignore[union-attr]
+                    timeout=0.2,
+                )
+            except asyncio.TimeoutError:
+                break
+            if not chunk:
+                break
+            plain = await self._extract_plain_text(chunk)
+            if plain:
+                self._consume_plain_bytes(plain)
 
     async def _reconnect_loop(self) -> None:
         """Attempt reconnection with exponential backoff."""
@@ -203,6 +220,8 @@ class TTPClient:
                 level_db = float(resp.value)
         """
         parts = [instance_tag, service, attribute]
+        if instance_tag.lower() == "device":
+            parts[0] = "DEVICE"
         for a in args:
             parts.append(str(a).lower() if isinstance(a, bool) else str(a))
         command = ' '.join(parts)
@@ -212,9 +231,7 @@ class TTPClient:
                 return TTPResponse(ok=False, error_code="NOT_CONNECTED", raw='')
             try:
                 await self._raw_send(command)
-                raw = await asyncio.wait_for(
-                    self._read_response_line(), timeout=self.read_timeout
-                )
+                raw = await asyncio.wait_for(self._response_queue.get(), timeout=self.read_timeout)
                 return self._parse_response(raw)
             except asyncio.TimeoutError:
                 logger.warning("TTPClient[%s] timeout waiting for response to: %s", self.host, command)
@@ -225,39 +242,43 @@ class TTPClient:
 
     async def _raw_send(self, command: str) -> None:
         """Write a command line to the TCP stream."""
-        line = (command + '\n').encode('ascii', errors='replace')
+        line = (command + '\r\n').encode('ascii', errors='replace')
         self._writer.write(line)  # type: ignore[union-attr]
         await self._writer.drain()  # type: ignore[union-attr]
-
-    async def _read_response_line(self) -> str:
-        """Read until a '+OK' or '-ERR' line, skipping push notifications."""
-        while True:
-            raw = await self._reader.readline()  # type: ignore[union-attr]
-            line = raw.decode('ascii', errors='replace').strip()
-            if not line:
-                continue
-            if line.startswith('!'):
-                # Push notification arrived mid-command — dispatch and keep waiting
-                self._dispatch_push_line(line)
-                continue
-            return line
 
     @staticmethod
     def _parse_response(raw: str) -> TTPResponse:
         """Parse a TTP response line into a TTPResponse."""
-        m = _OK_RE.match(raw)
-        if m:
-            value_str = m.group(1)
+        if raw.startswith("+OK"):
+            payload = raw[3:].strip()
+            value_str: Optional[str] = None
+            if payload:
+                if payload.startswith("value="):
+                    value_str = payload[len("value="):]
+                elif payload.startswith('"value":'):
+                    value_str = payload[len('"value":'):]
+                elif '"value":' in payload:
+                    value_str = payload.split('"value":', 1)[1].strip()
+                else:
+                    value_str = payload
             value = _parse_value(value_str) if value_str is not None else None
             return TTPResponse(ok=True, value=value, raw=raw)
 
-        m = _ERR_RE.match(raw)
-        if m:
+        if raw.startswith("-ERR"):
+            payload = raw[4:].strip()
+            if ":" in payload:
+                code_part, detail_part = payload.split(":", 1)
+                code = code_part.strip().split()[0] if code_part.strip() else "ERR"
+                detail = detail_part.strip() or None
+            else:
+                parts = payload.split(None, 1)
+                code = parts[0] if parts else "ERR"
+                detail = parts[1] if len(parts) > 1 else None
             return TTPResponse(
                 ok=False,
                 raw=raw,
-                error_code=m.group(1),
-                error_detail=m.group(2),
+                error_code=code,
+                error_detail=detail,
             )
 
         # Unexpected format — treat as error
@@ -280,29 +301,22 @@ class TTPClient:
         Server pushes: '! <instance_tag> <attribute> <value>' at the given interval.
         """
         key = (instance_tag, attribute)
-        self._subscriptions.add(key)
+        self._subscriptions[key] = interval_ms
         if not self._connected:
             return  # Will be re-sent on reconnect via _do_connect()
-        command = f"{instance_tag} subscribe {attribute} {interval_ms}"
-        try:
-            self._writer.write((command + '\n').encode('ascii', errors='replace'))  # type: ignore[union-attr]
-            await self._writer.drain()  # type: ignore[union-attr]
-            logger.debug("Subscribed: %s.%s @ %dms", instance_tag, attribute, interval_ms)
-        except Exception as exc:
-            logger.warning("Subscribe %s.%s failed: %s", instance_tag, attribute, exc)
+        resp = await self.send(instance_tag, 'subscribe', attribute, interval_ms)
+        if not resp.ok:
+            logger.warning("Subscribe %s.%s failed: %s", instance_tag, attribute, resp.error_code)
 
     async def unsubscribe(self, instance_tag: str, attribute: str) -> None:
         """Cancel a push subscription."""
         key = (instance_tag, attribute)
-        self._subscriptions.discard(key)
+        self._subscriptions.pop(key, None)
         if not self._connected:
             return
-        command = f"{instance_tag} unsubscribe {attribute}"
-        try:
-            self._writer.write((command + '\n').encode('ascii', errors='replace'))  # type: ignore[union-attr]
-            await self._writer.drain()  # type: ignore[union-attr]
-        except Exception as exc:
-            logger.warning("Unsubscribe %s.%s failed: %s", instance_tag, attribute, exc)
+        resp = await self.send(instance_tag, 'unsubscribe', attribute)
+        if not resp.ok:
+            logger.warning("Unsubscribe %s.%s failed: %s", instance_tag, attribute, resp.error_code)
 
     def on_push(self, callback: Callable[[str, str, Any], None]) -> None:
         """Register a callback for push notifications: callback(instance_tag, attribute, value)."""
@@ -310,17 +324,98 @@ class TTPClient:
 
     def _dispatch_push_line(self, line: str) -> None:
         """Parse and dispatch a '! <tag> <attr> <value>' push line."""
-        m = _PUSH_RE.match(line)
-        if not m:
+        parts = line.split(maxsplit=3)
+        if len(parts) < 4 or parts[0] != "!":
             logger.debug("Unrecognised push line: %r", line)
             return
-        instance_tag, attribute, value_str = m.group(1), m.group(2), m.group(3)
+        instance_tag, attribute, value_str = parts[1], parts[2], parts[3]
         value = _parse_value(value_str)
         for cb in self._push_callbacks:
             try:
                 cb(instance_tag, attribute, value)
             except Exception as exc:
                 logger.error("Push callback error: %s", exc)
+
+    async def _extract_plain_text(self, chunk: bytes) -> bytes:
+        """
+        Strip Telnet IAC control sequences and send protocol-level replies.
+        Returns only plain ASCII payload bytes.
+        """
+        self._telnet_pending.extend(chunk)
+        plain = bytearray()
+        replies = bytearray()
+
+        i = 0
+        while i < len(self._telnet_pending):
+            b = self._telnet_pending[i]
+            if b != _IAC_BYTE:
+                plain.append(b)
+                i += 1
+                continue
+
+            if i + 1 >= len(self._telnet_pending):
+                break
+            cmd = self._telnet_pending[i + 1]
+
+            if cmd == _IAC_BYTE:
+                plain.append(_IAC_BYTE)
+                i += 2
+                continue
+
+            if cmd in (_DO, _DONT, _WILL, _WONT):
+                if i + 2 >= len(self._telnet_pending):
+                    break
+                opt = self._telnet_pending[i + 2]
+                if cmd == _DO:
+                    replies.extend((_IAC_BYTE, _WONT, opt))
+                elif cmd == _WILL:
+                    replies.extend((_IAC_BYTE, _DONT, opt))
+                i += 3
+                continue
+
+            if cmd == _SB:
+                end = i + 2
+                while end + 1 < len(self._telnet_pending):
+                    if self._telnet_pending[end] == _IAC_BYTE and self._telnet_pending[end + 1] == _SE:
+                        break
+                    end += 1
+                if end + 1 >= len(self._telnet_pending):
+                    break
+                i = end + 2
+                continue
+
+            # Unsupported Telnet command: skip IAC <cmd>.
+            i += 2
+
+        if i:
+            del self._telnet_pending[:i]
+
+        if replies and self._writer is not None:
+            self._writer.write(bytes(replies))
+            await self._writer.drain()
+
+        return bytes(plain)
+
+    def _consume_plain_bytes(self, plain: bytes) -> None:
+        """Parse plain ASCII bytes into line-based TTP messages."""
+        self._line_buffer.extend(plain)
+
+        while True:
+            nl = self._line_buffer.find(b'\n')
+            if nl < 0:
+                break
+            line_bytes = self._line_buffer[:nl + 1]
+            del self._line_buffer[:nl + 1]
+
+            line = line_bytes.decode('ascii', errors='replace').strip()
+            if not line:
+                continue
+            if line.startswith('!'):
+                self._dispatch_push_line(line)
+                continue
+            if line.startswith('+OK') or line.startswith('-ERR'):
+                self._response_queue.put_nowait(line)
+                continue
 
     # ──────────────────────────────────────────────────────────────────────────
     # Background read loop
@@ -333,14 +428,13 @@ class TTPClient:
         """
         try:
             while not self._stopping:
-                raw = await self._reader.readline()  # type: ignore[union-attr]
-                if not raw:
-                    # EOF — server closed connection
+                chunk = await self._reader.read(4096)  # type: ignore[union-attr]
+                if not chunk:
                     break
-                line = raw.decode('ascii', errors='replace').strip()
-                if line.startswith('!'):
-                    self._dispatch_push_line(line)
-                # '+OK'/'-ERR' lines while not in a send() call are logged and dropped
+                plain = await self._extract_plain_text(chunk)
+                if not plain:
+                    continue
+                self._consume_plain_bytes(plain)
         except asyncio.CancelledError:
             pass
         except Exception as exc:

@@ -36,6 +36,7 @@ export type WebSocketTopic =
   | 'tesira:meters'        // {device_id, instance_tag, levels_dbu: number[], timestamp}
   | 'tesira:device_state'  // {device_id, event: 'connected'|'disconnected'|'fault'|'preset_changed'|'adopted', detail?}
   | 'tesira:preset_change' // {device_id, preset_index, map2_preset_id, timestamp}
+  | 'tesira:preset_reverse_sync' // {device_id, preset_index, matched, map2_preset_ids[], rule_ids[], timestamp}
   | 'tesira:ptp'           // {device_id, state, offset_ns, grandmaster_id, timestamp}
   | 'tesira:discovery'     // {event: 'device_found'|'scan_complete'|'scan_error', device?, total_found?, error?}
   // Effects loops (Tesira AVB external send/return)

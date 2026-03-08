@@ -1,0 +1,32 @@
+{
+  "task_id": "T065-subG",
+  "date": "2026-03-08",
+  "automated_validation": {
+    "backend_tesira_pytest": {
+      "command": "pytest -q tests/tesira",
+      "status": "pass",
+      "summary": "34 passed"
+    },
+    "frontend_tesira_jest": {
+      "command": "node ./node_modules/jest/bin/jest.js web/src/app/components/Tesira/components/TesiraDspExplorer.test.tsx web/src/app/components/Tesira/components/TesiraDeviceSettings.test.tsx --runInBand",
+      "status": "pass",
+      "summary": "2 passed"
+    },
+    "frontend_typecheck": {
+      "command": "npm --prefix web run -s typecheck",
+      "status": "pass"
+    },
+    "frontend_build": {
+      "command": "npm --prefix web run -s build",
+      "status": "pass"
+    }
+  },
+  "hil_validation": {
+    "status": "blocked",
+    "blocked_by": [
+      "T030",
+      "T004"
+    ],
+    "reason": "Hardware AVB/PTP/Tesira lab evidence prerequisites unavailable in current environment"
+  }
+}

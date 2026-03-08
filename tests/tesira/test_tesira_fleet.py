@@ -52,7 +52,10 @@ async def test_fleet_connects_all_configured_devices():
         fleet._devices[dev.device_id] = dev
 
     fleet._connect_device = fake_connect  # type: ignore
+    fleet._load_config = MagicMock()  # keep test-local configs
     fleet._ptp_poll_loop = AsyncMock()  # suppress background task
+    fleet._offline_retry_loop = AsyncMock()
+    fleet._preset_poll_loop = AsyncMock()
 
     # Patch create_task to avoid real asyncio task
     with patch('asyncio.create_task') as mock_task:

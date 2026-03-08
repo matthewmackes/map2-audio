@@ -75,15 +75,30 @@ import type {
   FlowSnapshotData,
 } from './types';
 import type {
+  TesiraCapabilityEnvelope,
+  TesiraCrosspointMatrix,
   DiscoveryScanStatus,
   PresetInterlockRule,
+  TesiraDspBlock,
+  TesiraDspBlockListResponse,
+  TesiraDspBulkOperation,
+  TesiraDspBulkResult,
+  TesiraDspParamsResponse,
+  TesiraDspProbeResult,
   TesiraDeviceDetail,
   TesiraDeviceSummary,
+  TesiraFleetHealth,
   TesiraFirmwareStatus,
+  TesiraGpioListResponse,
   TesiraLatestFirmware,
+  TesiraMeterHistoryResponse,
+  TesiraMeterPeakResponse,
   TesiraMutationResponse,
+  TesiraPtpTopologyResponse,
   TesiraPTPStatus,
   TesiraPresetInfo,
+  TesiraSceneDetail,
+  TesiraSceneListResponse,
   TesiraStreamInfo,
 } from '../app/components/Tesira/types';
 import { sanitizeDisplayPayload } from './displayNames';
@@ -3600,8 +3615,17 @@ export const tesiraApi = {
   listDevices: (): Promise<TesiraDeviceSummary[]> =>
     fetch(`${BASE}/devices`).then((r) => _json<TesiraDeviceSummary[]>(r)),
 
+  getFleetHealth: (): Promise<TesiraFleetHealth> =>
+    fetch(`${BASE}/fleet/health`).then((r) => _json<TesiraFleetHealth>(r)),
+
+  getPtpTopology: (): Promise<TesiraPtpTopologyResponse> =>
+    fetch(`${BASE}/fleet/ptp-topology`).then((r) => _json<TesiraPtpTopologyResponse>(r)),
+
   getDevice: (deviceId: string): Promise<TesiraDeviceDetail> =>
     fetch(`${BASE}/devices/${deviceId}`).then((r) => _json<TesiraDeviceDetail>(r)),
+
+  getCapabilities: (deviceId: string): Promise<TesiraCapabilityEnvelope> =>
+    fetch(`${BASE}/devices/${deviceId}/capabilities`).then((r) => _json<TesiraCapabilityEnvelope>(r)),
 
   connectDevice: (deviceId: string): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/connect`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
@@ -3640,6 +3664,60 @@ export const tesiraApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ row, col, gain_db: gainDb }),
     }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  getCrosspointMatrix: (deviceId: string, tag: string, rows: number, cols: number): Promise<TesiraCrosspointMatrix> =>
+    fetch(`${BASE}/devices/${deviceId}/crosspoint/${tag}?rows=${rows}&cols=${cols}`)
+      .then((r) => _json<TesiraCrosspointMatrix>(r)),
+
+  setCrosspointMute: (deviceId: string, tag: string, row: number, col: number, muted: boolean): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/crosspoint/${tag}/mute`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ row, col, muted }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // DSP model
+  probeDspBlocks: (deviceId: string, maxInstances: number = 32): Promise<TesiraDspProbeResult> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/probe?max_instances=${maxInstances}`, { method: 'POST' })
+      .then((r) => _json<TesiraDspProbeResult>(r)),
+
+  listDspBlocks: (deviceId: string): Promise<TesiraDspBlockListResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/blocks`).then((r) => _json<TesiraDspBlockListResponse>(r)),
+
+  getDspBlock: (deviceId: string, instanceTag: string): Promise<{ device_id: string } & TesiraDspBlock> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/blocks/${encodeURIComponent(instanceTag)}`)
+      .then((r) => _json<{ device_id: string } & TesiraDspBlock>(r)),
+
+  getDspParams: (deviceId: string, instanceTag: string): Promise<TesiraDspParamsResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/${encodeURIComponent(instanceTag)}/params`)
+      .then((r) => _json<TesiraDspParamsResponse>(r)),
+
+  setDspParam: (
+    deviceId: string,
+    instanceTag: string,
+    attribute: string,
+    value: unknown,
+    args: unknown[] = [],
+  ): Promise<TesiraMutationResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/${encodeURIComponent(instanceTag)}/params`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attribute, value, args }),
+    }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  dspBulkGet: (deviceId: string, operations: TesiraDspBulkOperation[]): Promise<{ device_id: string; count: number; results: TesiraDspBulkResult[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/bulk-get`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operations }),
+    }).then((r) => _json<{ device_id: string; count: number; results: TesiraDspBulkResult[] }>(r)),
+
+  dspBulkSet: (deviceId: string, operations: TesiraDspBulkOperation[]): Promise<{ device_id: string; count: number; results: TesiraDspBulkResult[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/dsp/bulk-set`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operations }),
+    }).then((r) => _json<{ device_id: string; count: number; results: TesiraDspBulkResult[] }>(r)),
 
   // EQ
   setEQBandFreq: (deviceId: string, tag: string, band: number, freqHz: number): Promise<TesiraMutationResponse> =>
@@ -3682,11 +3760,55 @@ export const tesiraApi = {
   getMeters: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/meters/${tag}`).then((r) => _json<TesiraMutationResponse>(r)),
 
+  getMeterHistory: (deviceId: string, tag: string, limit: number = 300): Promise<TesiraMeterHistoryResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${encodeURIComponent(tag)}/history?limit=${limit}`)
+      .then((r) => _json<TesiraMeterHistoryResponse>(r)),
+
+  getMeterPeak: (deviceId: string, tag: string): Promise<TesiraMeterPeakResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/meters/${encodeURIComponent(tag)}/peak`)
+      .then((r) => _json<TesiraMeterPeakResponse>(r)),
+
   startMetering: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/meters/${tag}/start`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
 
   stopMetering: (deviceId: string, tag: string): Promise<TesiraMutationResponse> =>
     fetch(`${BASE}/devices/${deviceId}/meters/${tag}/stop`, { method: 'POST' }).then((r) => _json<TesiraMutationResponse>(r)),
+
+  // GPIO
+  listGpio: (deviceId: string): Promise<TesiraGpioListResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/gpio`).then((r) => _json<TesiraGpioListResponse>(r)),
+
+  getGpioPin: (deviceId: string, pin: number): Promise<{ device_id: string; pin: number; state: boolean }> =>
+    fetch(`${BASE}/devices/${deviceId}/gpio/${pin}`).then((r) => _json<{ device_id: string; pin: number; state: boolean }>(r)),
+
+  setGpioPin: (deviceId: string, pin: number, state: boolean): Promise<{ ok: boolean; device_id: string; pin: number; state: boolean }> =>
+    fetch(`${BASE}/devices/${deviceId}/gpio/${pin}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state }),
+    }).then((r) => _json<{ ok: boolean; device_id: string; pin: number; state: boolean }>(r)),
+
+  // Scene snapshots
+  captureScene: (deviceId: string, name: string): Promise<{ ok: boolean; device_id: string; scene_id: string; name: string; block_count: number }> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    }).then((r) => _json<{ ok: boolean; device_id: string; scene_id: string; name: string; block_count: number }>(r)),
+
+  listScenes: (deviceId: string): Promise<TesiraSceneListResponse> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes`).then((r) => _json<TesiraSceneListResponse>(r)),
+
+  getScene: (deviceId: string, sceneId: string): Promise<TesiraSceneDetail> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/${encodeURIComponent(sceneId)}`).then((r) => _json<TesiraSceneDetail>(r)),
+
+  recallScene: (deviceId: string, sceneId: string): Promise<{ ok: boolean; device_id: string; scene_id: string; applied: number; failed: string[] }> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/${encodeURIComponent(sceneId)}/recall`, { method: 'POST' })
+      .then((r) => _json<{ ok: boolean; device_id: string; scene_id: string; applied: number; failed: string[] }>(r)),
+
+  deleteScene: (deviceId: string, sceneId: string): Promise<{ ok: boolean; device_id: string; scene_id: string }> =>
+    fetch(`${BASE}/devices/${deviceId}/scenes/${encodeURIComponent(sceneId)}`, { method: 'DELETE' })
+      .then((r) => _json<{ ok: boolean; device_id: string; scene_id: string }>(r)),
 
   // Preset interlock
   listInterlockRules: (): Promise<PresetInterlockRule[]> =>

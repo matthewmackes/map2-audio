@@ -1,0 +1,68 @@
+{
+  "task_id": "T055",
+  "checked_at_utc": "2026-03-08T15:27:29Z",
+  "interface_context": "Jogg USB Audio active; UA-1000 not currently present in JACK port graph",
+  "probes": {
+    "auto_probe": {
+      "method": "jack_iodelay",
+      "timestamp": "2026-03-08T11:25:00-04:00",
+      "jack_ports": {
+        "iodelay_output": "jack_delay:out",
+        "iodelay_input": "jack_delay:in",
+        "playback": "Jogg USB Audio Analog Stereo:playback_FL",
+        "capture": "Built-in Audio Analog Stereo:capture_FL"
+      },
+      "status": "failed",
+      "error": "No loopback signal detected. Connect output to input with a cable."
+    },
+    "jogg_fl_to_mono_probe": {
+      "method": "jack_iodelay",
+      "timestamp": "2026-03-08T11:25:25-04:00",
+      "round_trip_ms": 23.823,
+      "round_trip_frames": 1143.516,
+      "extra_loopback_frames": 919,
+      "jack_ports": {
+        "iodelay_output": "jack_delay:out",
+        "iodelay_input": "jack_delay:in",
+        "playback": "Jogg USB Audio Analog Stereo:playback_FL",
+        "capture": "Jogg USB Audio Mono:capture_MONO"
+      },
+      "buffer_size": 64,
+      "sample_rate": 48000,
+      "buffer_latency_ms": 1.333,
+      "one_way_estimate_ms": 11.911,
+      "duration_seconds": 15,
+      "status": "measured"
+    },
+    "jogg_fr_to_mono_probe": {
+      "method": "jack_iodelay",
+      "timestamp": "2026-03-08T11:25:25-04:00",
+      "jack_ports": {
+        "iodelay_output": "jack_delay:out",
+        "iodelay_input": "jack_delay:in",
+        "playback": "Jogg USB Audio Analog Stereo:playback_FR",
+        "capture": "Jogg USB Audio Mono:capture_MONO"
+      },
+      "status": "failed",
+      "error": "No loopback signal detected. Connect output to input with a cable."
+    }
+  },
+  "repeatability_fl_to_mono": {
+    "trial_files": [
+      "t055-jogg-fl-to-mono-trial1.json",
+      "t055-jogg-fl-to-mono-trial2.json",
+      "t055-jogg-fl-to-mono-trial3.json"
+    ],
+    "round_trip_ms_values": [
+      23.845,
+      23.951,
+      24.072
+    ],
+    "mean_round_trip_ms": 23.956,
+    "p95_round_trip_ms": 24.0599,
+    "min_round_trip_ms": 23.845,
+    "max_round_trip_ms": 24.072
+  },
+  "acceptance_on_ua1000_met": false,
+  "blocked_reason": "UA-1000-specific tuned vs rollback matrix cannot execute because UA-1000 ports are absent on current host session."
+}

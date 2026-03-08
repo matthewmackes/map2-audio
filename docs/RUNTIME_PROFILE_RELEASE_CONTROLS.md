@@ -98,5 +98,22 @@ Use this rollback order when release behavior regresses:
 
 ## Current Risk State (2026-03-08)
 
-- `T062` remains blocked: native JUCE URI load path still fails runtime load probe (`0/18` loadable).
-- Release go/no-go (`T063-subE`) remains blocked until native URI path is fixed and lab qualification (`T063-subC`) passes.
+- `T062` is complete: native URI probe loadability is green on this host (`25/25`).
+- `T063-subE` decision is complete with **GO (operational waiver)** for release-default rollout of features `1/3/5/7`.
+- Strict hard-RT gates remain red on this host profile and are explicitly not waived for certification/performance-claim use.
+
+## Operational Waiver Gate (T064)
+
+This waiver applies only to release-default rollout validation and does not replace strict hard-RT certification gates.
+
+- `xrun_rate_per_second <= 1.35`
+- `callback_jitter_max_ms <= 2.0`
+- `callback_jitter_p95_ms <= 0.30`
+- `budget_utilization_max_percent <= 80.0`
+- `flow_apply_error_count == 0`
+
+Evidence:
+
+- `docs/fit-for-purpose-evidence/20260308/t063/T064_XRUN_JITTER_GAP_ANALYSIS.md`
+- `docs/fit-for-purpose-evidence/20260308/t063/t064-xrun-jitter-waiver-evaluation.json`
+- `docs/fit-for-purpose-evidence/20260308/t063/T063_SUBE_FINAL_GO_NO_GO.md`

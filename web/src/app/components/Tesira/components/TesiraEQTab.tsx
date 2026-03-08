@@ -16,6 +16,25 @@ const BANDS = [
   { label: 'High', band: 3, defaultFreq: 10000 },
 ]
 
+function buildEqPath(bands: Array<{ freq: number; gain: number; q: number }>, width: number, height: number) {
+  const points: string[] = []
+  for (let i = 0; i <= 96; i += 1) {
+    const t = i / 96
+    const freq = 20 * Math.pow(1000, t) // log scale: 20Hz..20kHz
+    let gain = 0
+    for (const band of bands) {
+      const ratio = Math.log2(Math.max(freq, 1) / Math.max(band.freq, 1))
+      const spread = Math.max(0.08, 1 / Math.max(band.q, 0.1))
+      gain += band.gain * Math.exp(-(ratio * ratio) / (2 * spread * spread))
+    }
+    const clamped = Math.max(-15, Math.min(15, gain))
+    const x = t * width
+    const y = ((15 - clamped) / 30) * height
+    points.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
+  }
+  return points.join(' ')
+}
+
 export function TesiraEQTab({ deviceId }: TesiraEQTabProps) {
   const [instanceTag, setInstanceTag] = useState('EQControl1')
 
@@ -52,6 +71,22 @@ export function TesiraEQTab({ deviceId }: TesiraEQTabProps) {
       </Box>
 
       <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, p: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              EQ Response Preview
+            </Typography>
+            <svg width="100%" height="120" viewBox="0 0 720 120" preserveAspectRatio="none">
+              <line x1="0" y1="60" x2="720" y2="60" stroke="rgba(255,255,255,0.2)" strokeDasharray="4 4" />
+              <path
+                d={buildEqPath(bandState, 720, 120)}
+                fill="none"
+                stroke="#E31837"
+                strokeWidth="2.2"
+              />
+            </svg>
+          </Box>
+        </Grid>
         {BANDS.map((band, idx) => (
           <Grid item xs={6} md={3} key={band.band}>
             <Box

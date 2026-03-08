@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
-from app.services.tesira.ttp_client import TTPClient, TTPResponse
+from app.services.tesira.ttp_client import TTPClient
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,8 @@ class TesiraDeviceInfo:
     mac_address: str
     model: str
     ip_address: str
+    transport: str
+    transport_port: int
 
 
 @dataclass
@@ -83,27 +86,36 @@ class TesiraDevice:
         host: str,
         port: int = 23,
         name: str = '',
+        transport: str = "auto",
+        ssh_enabled: bool = True,
+        ssh_port: int = 22,
+        ssh_username: str = "default",
+        ssh_password: str = "default",
         connect_timeout: float = 5.0,
-        read_timeout: float = 2.0,
+        read_timeout: float = 5.0,
     ) -> None:
         self.host = host
         self.port = port
         self.name = name or host
-        self._client = TTPClient(
-            host=host,
-            port=port,
-            connect_timeout=connect_timeout,
-            read_timeout=read_timeout,
-        )
+        self._transport_preference = (transport or "auto").lower()
+        self._ssh_enabled = bool(ssh_enabled)
+        self._ssh_port = int(ssh_port)
+        self._ssh_username = ssh_username
+        self._ssh_password = ssh_password
+        self._connect_timeout = connect_timeout
+        self._read_timeout = read_timeout
+
+        self._active_transport: str = "telnet"
+        self._active_port: int = port
+        self._client: Any = self._build_telnet_client()
         # Populated after successful connect + identity fetch
         self.device_id: str = f"tesira_{host.replace('.', '_')}"
         self.info: Optional[TesiraDeviceInfo] = None
-        self._connected = False
 
         # Push-notification callbacks registered by TesiraFleet
         self._push_callbacks: list[Callable[[str, str, str, Any], None]] = []
 
-        # Wire the TTPClient push dispatcher to include device_id
+        # Wire transport push dispatcher to include device_id
         self._client.on_push(self._on_client_push)
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -114,9 +126,36 @@ class TesiraDevice:
     def connected(self) -> bool:
         return self._client.connected
 
+    @property
+    def transport(self) -> str:
+        return self._active_transport
+
+    @property
+    def transport_port(self) -> int:
+        return self._active_port
+
     async def connect(self) -> None:
-        """Open TCP connection and fetch device identity."""
-        await self._client.connect()
+        """Open transport connection (Telnet/SSH) and fetch device identity."""
+        connect_error: Optional[Exception] = None
+        candidates = self._resolve_transport_candidates()
+
+        for candidate in candidates:
+            try:
+                await self._connect_via_transport(candidate)
+                connect_error = None
+                break
+            except Exception as exc:
+                connect_error = exc
+                logger.warning(
+                    "TesiraDevice[%s] %s connect failed: %s",
+                    self.host,
+                    candidate,
+                    exc,
+                )
+
+        if connect_error is not None and not self.connected:
+            raise connect_error
+
         try:
             self.info = await self._fetch_identity()
             if self.info.serial_number:
@@ -124,8 +163,13 @@ class TesiraDevice:
             if not self.name or self.name == self.host:
                 self.name = self.info.hostname or self.host
             logger.info(
-                "TesiraDevice[%s] connected: %s SN=%s FW=%s",
-                self.host, self.info.hostname, self.info.serial_number, self.info.firmware_version,
+                "TesiraDevice[%s] connected via %s:%d: %s SN=%s FW=%s",
+                self.host,
+                self._active_transport,
+                self._active_port,
+                self.info.hostname,
+                self.info.serial_number,
+                self.info.firmware_version,
             )
         except Exception as exc:
             logger.warning("TesiraDevice[%s] identity fetch failed: %s", self.host, exc)
@@ -135,6 +179,59 @@ class TesiraDevice:
         await self._client.disconnect()
         logger.info("TesiraDevice[%s] disconnected", self.host)
 
+    def _build_telnet_client(self) -> TTPClient:
+        return TTPClient(
+            host=self.host,
+            port=self.port,
+            connect_timeout=self._connect_timeout,
+            read_timeout=self._read_timeout,
+        )
+
+    def _build_ssh_client(self):
+        from app.services.tesira.ttp_ssh_client import TTPSSHClient
+
+        return TTPSSHClient(
+            host=self.host,
+            port=self._ssh_port,
+            username=self._ssh_username,
+            password=self._ssh_password,
+            connect_timeout=self._connect_timeout,
+            read_timeout=self._read_timeout,
+        )
+
+    def _resolve_transport_candidates(self) -> List[str]:
+        pref = self._transport_preference
+        if pref == "telnet":
+            return ["telnet"]
+        if pref == "ssh":
+            if not self._ssh_enabled:
+                raise RuntimeError("SSH transport requested but tesira.ssh_enabled is false")
+            return ["ssh"]
+        if self._ssh_enabled:
+            return ["telnet", "ssh"]
+        return ["telnet"]
+
+    async def _connect_via_transport(self, transport: str) -> None:
+        if transport == "telnet":
+            self._client = self._build_telnet_client()
+            self._active_transport = "telnet"
+            self._active_port = self.port
+            self._client.on_push(self._on_client_push)
+            await self._client.connect()
+            return
+
+        if transport == "ssh":
+            if not self._ssh_enabled:
+                raise RuntimeError("SSH transport disabled")
+            self._client = self._build_ssh_client()
+            self._active_transport = "ssh"
+            self._active_port = self._ssh_port
+            self._client.on_push(self._on_client_push)
+            await self._client.connect()
+            return
+
+        raise RuntimeError(f"Unsupported Tesira transport: {transport!r}")
+
     # ──────────────────────────────────────────────────────────────────────────
     # Identity
     # ──────────────────────────────────────────────────────────────────────────
@@ -142,7 +239,7 @@ class TesiraDevice:
     async def _fetch_identity(self) -> TesiraDeviceInfo:
         """Query key device attributes and return a TesiraDeviceInfo."""
         async def _get(attribute: str) -> str:
-            resp = await self._client.send('device', 'get', attribute)
+            resp = await self._client.send('DEVICE', 'get', attribute)
             return str(resp.value) if resp.ok and resp.value is not None else ''
 
         hostname = await _get('hostname')
@@ -158,6 +255,8 @@ class TesiraDevice:
             mac_address=mac,
             model=model,
             ip_address=self.host,
+            transport=self._active_transport,
+            transport_port=self._active_port,
         )
 
     async def get_info(self) -> Dict[str, Any]:
@@ -178,6 +277,8 @@ class TesiraDevice:
             'firmware_version': self.info.firmware_version,
             'mac_address': self.info.mac_address,
             'model': self.info.model,
+            'transport': self.info.transport,
+            'transport_port': self.info.transport_port,
         }
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -304,7 +405,7 @@ class TesiraDevice:
         Response value is a list of quoted preset names.
         Index corresponds to position in the list (1-based on device).
         """
-        resp = await self._client.send('device', 'get', 'presetList')
+        resp = await self._client.send('DEVICE', 'get', 'presetList')
         if not resp.ok:
             logger.warning("list_presets failed: %s", resp.error_code)
             return []
@@ -316,8 +417,27 @@ class TesiraDevice:
 
     async def reboot(self) -> None:
         """Send DEVICE reboot via TTP. The device will disconnect and reconnect."""
-        await self._client.send('device', 'reboot')
+        await self._client.send('DEVICE', 'reboot')
         logger.info("TesiraDevice[%s] reboot command sent", self.host)
+
+    async def get_active_preset(self) -> Optional[int]:
+        """
+        Return the currently active Tesira preset index if readable.
+
+        Different firmware revisions expose different attribute names; probe a
+        short list and return the first valid integer value.
+        """
+        for attribute in ("activePreset", "currentPreset", "preset"):
+            resp = await self._client.send("DEVICE", "get", attribute)
+            if not resp.ok or resp.value is None:
+                continue
+            try:
+                value = int(str(resp.value).strip())
+                if value >= 0:
+                    return value
+            except Exception:
+                continue
+        return None
 
     async def recall_preset(self, preset_index: int) -> None:
         """
@@ -325,7 +445,7 @@ class TesiraDevice:
 
         TTP: 'device recallPreset <index>'
         """
-        resp = await self._client.send('device', 'recallPreset', '', preset_index)
+        resp = await self._client.send('DEVICE', 'recallPreset', '', preset_index)
         if not resp.ok:
             raise RuntimeError(
                 f"recall_preset {preset_index} failed: {resp.error_code} {resp.error_detail}"
@@ -393,6 +513,18 @@ class TesiraDevice:
         """Query PTP synchronisation status from 'AVBInterface1'."""
         resp = await self._client.send('AVBInterface1', 'get', 'ptpStatus')
         if not resp.ok:
+            # Some Forte CI builds do not expose AVBInterface1 in TTP.
+            # Fallback to networkStatus-based link state so UI can show
+            # deterministic availability instead of generic UNKNOWN.
+            if resp.error_code == "address":
+                network = await self._client.send("DEVICE", "get", "networkStatus")
+                if network.ok and isinstance(network.value, str):
+                    link_status = self._extract_media_link_status(network.value)
+                    if link_status == "LINK_NONE":
+                        return {'state': 'NO_LINK', 'offset_ns': None, 'grandmaster_id': None}
+                    if link_status:
+                        return {'state': 'LINK_UP', 'offset_ns': None, 'grandmaster_id': None}
+                    return {'state': 'UNAVAILABLE', 'offset_ns': None, 'grandmaster_id': None}
             return {'state': 'UNKNOWN', 'offset_ns': None, 'grandmaster_id': None}
         # Value is typically a string like "MASTER" or "SLAVE"
         state = str(resp.value).upper() if resp.value else 'UNKNOWN'
@@ -406,6 +538,23 @@ class TesiraDevice:
             'offset_ns': offset_ns,
             'grandmaster_id': gm_id,
         }
+
+    @staticmethod
+    def _extract_media_link_status(network_status_payload: str) -> Optional[str]:
+        """
+        Extract media AVB link token from DEVICE networkStatus payload.
+        Payload uses Tesira pseudo-JSON tokens (enums are unquoted), so parse
+        with regex instead of json.loads.
+        """
+        m = re.search(
+            r'"interfaceId":"media_avb_[^"]*".*?"linkStatus":([A-Z0-9_]+)',
+            network_status_payload,
+            flags=re.DOTALL,
+        )
+        if m:
+            return m.group(1).strip()
+        m = re.search(r'"linkStatus":([A-Z0-9_]+)', network_status_payload)
+        return m.group(1).strip() if m else None
 
     # ──────────────────────────────────────────────────────────────────────────
     # Metering subscriptions
@@ -432,7 +581,7 @@ class TesiraDevice:
 
     async def get_fault_list(self) -> List[str]:
         """Return the device fault list as a list of strings."""
-        resp = await self._client.send('device', 'get', 'faultList')
+        resp = await self._client.send('DEVICE', 'get', 'faultList')
         if not resp.ok:
             return []
         if isinstance(resp.value, list):

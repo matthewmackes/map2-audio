@@ -3,10 +3,23 @@
  * All hooks use the tesiraApi object from map2/api.ts.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { tesiraApi } from '../../../../map2/api'
 import type {
+  TesiraCapabilityEnvelope,
+  TesiraCrosspointMatrix,
   TesiraDeviceSummary,
   TesiraDeviceDetail,
+  TesiraDspBlock,
+  TesiraDspBulkResult,
+  TesiraDspBulkOperation,
+  TesiraDspParamsResponse,
+  TesiraDspProbeResult,
+  TesiraFleetHealth,
+  TesiraGpioListResponse,
+  TesiraMeterHistoryResponse,
+  TesiraMeterPeakResponse,
+  TesiraPtpTopologyResponse,
   TesiraPresetInfo,
   TesiraPTPStatus,
   TesiraStreamInfo,
@@ -15,6 +28,7 @@ import type {
   TesiraFirmwareStatus,
   TesiraLatestFirmware,
   TesiraMutationResponse,
+  TesiraSceneListResponse,
 } from '../types'
 
 // ── Query keys ────────────────────────────────────────────────────────────────
@@ -23,30 +37,57 @@ export const TESIRA_KEYS = {
   device:         (id: string) => ['tesira', 'devices', id] as const,
   presets:        (id: string) => ['tesira', 'devices', id, 'presets'] as const,
   faults:         (id: string) => ['tesira', 'devices', id, 'faults'] as const,
+  capabilities:   (id: string) => ['tesira', 'devices', id, 'capabilities'] as const,
   avbStreams:     (id: string) => ['tesira', 'devices', id, 'avb', 'streams'] as const,
   ptp:            (id: string) => ['tesira', 'devices', id, 'avb', 'ptp'] as const,
+  fleetHealth:    ['tesira', 'fleet', 'health'] as const,
+  ptpTopology:    ['tesira', 'fleet', 'ptp-topology'] as const,
+  crosspoint:     (id: string, tag: string, rows: number, cols: number) =>
+    ['tesira', 'devices', id, 'crosspoint', tag, rows, cols] as const,
+  dspBlocks:      (id: string) => ['tesira', 'devices', id, 'dsp', 'blocks'] as const,
+  dspBlock:       (id: string, tag: string) => ['tesira', 'devices', id, 'dsp', 'blocks', tag] as const,
+  dspParams:      (id: string, tag: string) => ['tesira', 'devices', id, 'dsp', tag, 'params'] as const,
+  gpio:           (id: string) => ['tesira', 'devices', id, 'gpio'] as const,
+  scenes:         (id: string) => ['tesira', 'devices', id, 'scenes'] as const,
+  meterHistory:   (id: string, tag: string, limit: number) =>
+    ['tesira', 'devices', id, 'meters', tag, 'history', limit] as const,
+  meterPeak:      (id: string, tag: string) => ['tesira', 'devices', id, 'meters', tag, 'peak'] as const,
   interlock:      ['tesira', 'preset_interlock'] as const,
   discoveryStatus: ['tesira', 'discovery', 'status'] as const,
   firmwareLatest: ['tesira', 'firmware', 'latest'] as const,
   deviceFirmware: (id: string) => ['tesira', 'devices', id, 'firmware'] as const,
 }
 
+function usePageVisible(): boolean {
+  const [visible, setVisible] = useState<boolean>(typeof document === 'undefined' ? true : !document.hidden)
+
+  useEffect(() => {
+    const onVisibility = () => setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+
+  return visible
+}
+
 // ── Device listing ────────────────────────────────────────────────────────────
 
 export function useTesiraDevices() {
+  const visible = usePageVisible()
   return useQuery<TesiraDeviceSummary[]>({
     queryKey: TESIRA_KEYS.devices,
     queryFn:  () => tesiraApi.listDevices(),
-    refetchInterval: 10_000,
+    refetchInterval: visible ? 10_000 : false,
   })
 }
 
 export function useTesiraDevice(deviceId: string) {
+  const visible = usePageVisible()
   return useQuery<TesiraDeviceDetail>({
     queryKey: TESIRA_KEYS.device(deviceId),
     queryFn:  () => tesiraApi.getDevice(deviceId),
     enabled:  !!deviceId,
-    refetchInterval: 5_000,
+    refetchInterval: visible ? 5_000 : false,
   })
 }
 
@@ -59,11 +100,12 @@ export function useTesiraPresets(deviceId: string) {
 }
 
 export function useTesiraFaults(deviceId: string) {
+  const visible = usePageVisible()
   return useQuery<{ device_id: string; faults: string[] }>({
     queryKey: TESIRA_KEYS.faults(deviceId),
     queryFn:  () => tesiraApi.getFaults(deviceId),
     enabled:  !!deviceId,
-    refetchInterval: 30_000,
+    refetchInterval: visible ? 30_000 : false,
   })
 }
 
@@ -76,11 +118,12 @@ export function useTesiraAvbStreams(deviceId: string) {
 }
 
 export function useTesiraPTP(deviceId: string) {
+  const visible = usePageVisible()
   return useQuery<TesiraPTPStatus>({
     queryKey: TESIRA_KEYS.ptp(deviceId),
     queryFn:  () => tesiraApi.getPtp(deviceId),
     enabled:  !!deviceId,
-    refetchInterval: 2_000,
+    refetchInterval: visible ? 2_000 : false,
   })
 }
 
@@ -114,10 +157,16 @@ export function useSetMute() {
 }
 
 export function useSetCrosspoint() {
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ deviceId, tag, row, col, gainDb }: {
-      deviceId: string; tag: string; row: number; col: number; gainDb: number
+      deviceId: string; tag: string; row: number; col: number; gainDb: number; rows?: number; cols?: number
     }) => tesiraApi.setCrosspoint(deviceId, tag, row, col, gainDb),
+    onSuccess: (_data, vars) => {
+      if (vars.rows && vars.cols) {
+        qc.invalidateQueries({ queryKey: TESIRA_KEYS.crosspoint(vars.deviceId, vars.tag, vars.rows, vars.cols) })
+      }
+    },
   })
 }
 
@@ -188,10 +237,11 @@ export function useStartDiscovery() {
  * Automatically re-fetches every second while is_scanning=true.
  */
 export function useDiscoveryStatus() {
+  const visible = usePageVisible()
   return useQuery<DiscoveryScanStatus>({
     queryKey: TESIRA_KEYS.discoveryStatus,
     queryFn:  () => tesiraApi.getDiscoveryStatus(),
-    refetchInterval: (q) => (q.state.data?.is_scanning ? 1000 : false),
+    refetchInterval: (q) => (visible && q.state.data?.is_scanning ? 1000 : false),
   })
 }
 
@@ -245,11 +295,12 @@ export function useFirmwareLatest() {
  * update_available flag, and useful links.
  */
 export function useDeviceFirmware(deviceId: string) {
+  const visible = usePageVisible()
   return useQuery<TesiraFirmwareStatus>({
     queryKey: TESIRA_KEYS.deviceFirmware(deviceId),
     queryFn:  () => tesiraApi.getDeviceFirmware(deviceId),
     enabled:  !!deviceId,
-    refetchInterval: 5 * 60 * 1000, // 5 min
+    refetchInterval: visible ? 5 * 60 * 1000 : false, // 5 min
   })
 }
 
@@ -285,5 +336,218 @@ export function useReconnectDevice() {
         qc.invalidateQueries({ queryKey: TESIRA_KEYS.device(deviceId) })
       }, 3000)
     },
+  })
+}
+
+// ── Fleet + topology ─────────────────────────────────────────────────────────
+
+export function useTesiraFleetHealth() {
+  const visible = usePageVisible()
+  return useQuery<TesiraFleetHealth>({
+    queryKey: TESIRA_KEYS.fleetHealth,
+    queryFn: () => tesiraApi.getFleetHealth(),
+    refetchInterval: visible ? 5000 : false,
+  })
+}
+
+export function useTesiraPtpTopology() {
+  const visible = usePageVisible()
+  return useQuery<TesiraPtpTopologyResponse>({
+    queryKey: TESIRA_KEYS.ptpTopology,
+    queryFn: () => tesiraApi.getPtpTopology(),
+    refetchInterval: visible ? 2000 : false,
+  })
+}
+
+export function useTesiraCapabilities(deviceId: string) {
+  return useQuery<TesiraCapabilityEnvelope>({
+    queryKey: TESIRA_KEYS.capabilities(deviceId),
+    queryFn: () => tesiraApi.getCapabilities(deviceId),
+    enabled: !!deviceId,
+  })
+}
+
+// ── DSP model ────────────────────────────────────────────────────────────────
+
+export function useTesiraDspBlocks(deviceId: string) {
+  return useQuery<TesiraDspBlock[]>({
+    queryKey: TESIRA_KEYS.dspBlocks(deviceId),
+    queryFn: async () => (await tesiraApi.listDspBlocks(deviceId)).blocks,
+    enabled: !!deviceId,
+  })
+}
+
+export function useTesiraDspBlock(deviceId: string, instanceTag: string) {
+  return useQuery<{ device_id: string } & TesiraDspBlock>({
+    queryKey: TESIRA_KEYS.dspBlock(deviceId, instanceTag),
+    queryFn: () => tesiraApi.getDspBlock(deviceId, instanceTag),
+    enabled: !!deviceId && !!instanceTag,
+  })
+}
+
+export function useTesiraDspParams(deviceId: string, instanceTag: string) {
+  return useQuery<TesiraDspParamsResponse>({
+    queryKey: TESIRA_KEYS.dspParams(deviceId, instanceTag),
+    queryFn: () => tesiraApi.getDspParams(deviceId, instanceTag),
+    enabled: !!deviceId && !!instanceTag,
+  })
+}
+
+export function useProbeTesiraDsp(deviceId: string) {
+  const qc = useQueryClient()
+  return useMutation<TesiraDspProbeResult, Error, number>({
+    mutationFn: (maxInstances: number) => tesiraApi.probeDspBlocks(deviceId, maxInstances),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.dspBlocks(deviceId) })
+    },
+  })
+}
+
+export function useSetTesiraDspParam() {
+  const qc = useQueryClient()
+  return useMutation<TesiraMutationResponse, Error, {
+    deviceId: string;
+    instanceTag: string;
+    attribute: string;
+    value: unknown;
+    args?: unknown[];
+  }>({
+    mutationFn: ({ deviceId, instanceTag, attribute, value, args }) =>
+      tesiraApi.setDspParam(deviceId, instanceTag, attribute, value, args ?? []),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.dspParams(vars.deviceId, vars.instanceTag) })
+    },
+  })
+}
+
+export function useTesiraDspBulkSet() {
+  return useMutation<{ device_id: string; count: number; results: TesiraDspBulkResult[] }, Error, {
+    deviceId: string;
+    operations: TesiraDspBulkOperation[];
+  }>({
+    mutationFn: ({ deviceId, operations }) => tesiraApi.dspBulkSet(deviceId, operations),
+  })
+}
+
+// ── Crosspoint matrix ────────────────────────────────────────────────────────
+
+export function useTesiraCrosspointMatrix(deviceId: string, tag: string, rows: number, cols: number) {
+  const visible = usePageVisible()
+  return useQuery<TesiraCrosspointMatrix>({
+    queryKey: TESIRA_KEYS.crosspoint(deviceId, tag, rows, cols),
+    queryFn: () => tesiraApi.getCrosspointMatrix(deviceId, tag, rows, cols),
+    enabled: !!deviceId && !!tag,
+    refetchInterval: visible ? 2000 : false,
+  })
+}
+
+export function useSetCrosspointMute() {
+  const qc = useQueryClient()
+  return useMutation<TesiraMutationResponse, Error, {
+    deviceId: string;
+    tag: string;
+    row: number;
+    col: number;
+    muted: boolean;
+    rows: number;
+    cols: number;
+  }>({
+    mutationFn: ({ deviceId, tag, row, col, muted }) =>
+      tesiraApi.setCrosspointMute(deviceId, tag, row, col, muted),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.crosspoint(vars.deviceId, vars.tag, vars.rows, vars.cols) })
+    },
+  })
+}
+
+// ── GPIO + scenes ────────────────────────────────────────────────────────────
+
+export function useTesiraGpio(deviceId: string) {
+  return useQuery<TesiraGpioListResponse>({
+    queryKey: TESIRA_KEYS.gpio(deviceId),
+    queryFn: () => tesiraApi.listGpio(deviceId),
+    enabled: !!deviceId,
+  })
+}
+
+export function useSetTesiraGpioPin() {
+  const qc = useQueryClient()
+  return useMutation<
+    { ok: boolean; device_id: string; pin: number; state: boolean },
+    Error,
+    { deviceId: string; pin: number; state: boolean }
+  >({
+    mutationFn: ({ deviceId, pin, state }) => tesiraApi.setGpioPin(deviceId, pin, state),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.gpio(vars.deviceId) })
+    },
+  })
+}
+
+export function useTesiraScenes(deviceId: string) {
+  return useQuery<TesiraSceneListResponse>({
+    queryKey: TESIRA_KEYS.scenes(deviceId),
+    queryFn: () => tesiraApi.listScenes(deviceId),
+    enabled: !!deviceId,
+  })
+}
+
+export function useCaptureTesiraScene() {
+  const qc = useQueryClient()
+  return useMutation<
+    { ok: boolean; device_id: string; scene_id: string; name: string; block_count: number },
+    Error,
+    { deviceId: string; name: string }
+  >({
+    mutationFn: ({ deviceId, name }) => tesiraApi.captureScene(deviceId, name),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.scenes(vars.deviceId) })
+    },
+  })
+}
+
+export function useRecallTesiraScene() {
+  return useMutation<
+    { ok: boolean; device_id: string; scene_id: string; applied: number; failed: string[] },
+    Error,
+    { deviceId: string; sceneId: string }
+  >({
+    mutationFn: ({ deviceId, sceneId }) => tesiraApi.recallScene(deviceId, sceneId),
+  })
+}
+
+export function useDeleteTesiraScene() {
+  const qc = useQueryClient()
+  return useMutation<
+    { ok: boolean; device_id: string; scene_id: string },
+    Error,
+    { deviceId: string; sceneId: string }
+  >({
+    mutationFn: ({ deviceId, sceneId }) => tesiraApi.deleteScene(deviceId, sceneId),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: TESIRA_KEYS.scenes(vars.deviceId) })
+    },
+  })
+}
+
+// ── Meter history ────────────────────────────────────────────────────────────
+
+export function useTesiraMeterHistory(deviceId: string, instanceTag: string, limit: number = 300) {
+  const visible = usePageVisible()
+  return useQuery<TesiraMeterHistoryResponse>({
+    queryKey: TESIRA_KEYS.meterHistory(deviceId, instanceTag, limit),
+    queryFn: () => tesiraApi.getMeterHistory(deviceId, instanceTag, limit),
+    enabled: !!deviceId && !!instanceTag,
+    refetchInterval: visible ? 2000 : false,
+  })
+}
+
+export function useTesiraMeterPeak(deviceId: string, instanceTag: string) {
+  const visible = usePageVisible()
+  return useQuery<TesiraMeterPeakResponse>({
+    queryKey: TESIRA_KEYS.meterPeak(deviceId, instanceTag),
+    queryFn: () => tesiraApi.getMeterPeak(deviceId, instanceTag),
+    enabled: !!deviceId && !!instanceTag,
+    refetchInterval: visible ? 2000 : false,
   })
 }

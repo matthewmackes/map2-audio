@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Box, Typography, CircularProgress, Alert, Button, Tooltip, IconButton } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import AddIcon from '@mui/icons-material/Add'
+import { useNavigate } from 'react-router-dom'
 import { useTesiraDevices } from '../hooks/useTesiraApi'
 import { useTesiraContext } from '../context/TesiraContext'
 import { TesiraDeviceCard } from './TesiraDeviceCard'
@@ -11,6 +12,7 @@ export function TesiraFleetPanel() {
   const { data: devices, isLoading, isError, refetch } = useTesiraDevices()
   const { selectedDeviceId, selectDevice } = useTesiraContext()
   const [manualAddOpen, setManualAddOpen] = useState(false)
+  const navigate = useNavigate()
 
   if (isLoading) {
     return (
@@ -72,9 +74,12 @@ export function TesiraFleetPanel() {
               key={device.device_id}
               device={device}
               selected={selectedDeviceId === device.device_id}
-              onSelect={() => selectDevice(
-                selectedDeviceId === device.device_id ? null : device.device_id
-              )}
+              onSelect={() => {
+                const next = selectedDeviceId === device.device_id ? null : device.device_id
+                selectDevice(next)
+                if (next) navigate(`/tesira/${next}/dashboard`)
+                else navigate('/tesira')
+              }}
             />
           ))
         )}

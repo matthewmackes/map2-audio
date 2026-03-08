@@ -83,7 +83,7 @@ def test_recall_preset_disconnected_returns_503(client):
     fleet.get_device = MagicMock(return_value=device)
 
     with patch('app.routes.tesira.get_tesira_fleet', return_value=fleet):
-        response = client.post('/api/tesira/devices/tesira_SN001/presets/0/recall')
+        response = client.post('/api/tesira/devices/tesira_SN001/presets/1/recall')
     assert response.status_code == 503
 
 

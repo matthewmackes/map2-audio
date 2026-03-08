@@ -1,4 +1,4 @@
-# Biamp Tesira Platform Specification
+# Biamp Tesira Forte CI Full-Stack Replacement Platform Specification
 
 > **Full-stack replacement platform for the Biamp Tesira Forte CI and related family devices within MAP2 Audio.**
 >
@@ -61,9 +61,15 @@ Replace the Biamp Tesira Software desktop application as the primary management 
 - **Automation-ready API** — every operation available via REST + WebSocket for external integration
 - **Family-wide support** — model-aware capability system for Forte CI, VI, DAN, TI, SERVER, SERVER-IO
 
+### Parity Commitment
+
+- All operational and integrator-facing capabilities available in Biamp Tesira Software must be mirrored in MAP2.
+- Where proprietary file formats or undocumented compiler workflows prevent direct file-level parity, MAP2 provides equivalent native workflows (runtime discovery, editable canvas, parameter orchestration, scene snapshots, validation gates).
+- Biamp Tesira Software remains migration fallback only, not a required day-to-day dependency once rollout phases complete.
+
 ### Non-Goals
 
-- Replicating the Tesira Software visual DSP block editor (MAP2 cannot write `.tsc` files)
+- Direct read/write of proprietary `.tsc` design files as an implementation mechanism
 - Firmware update execution (requires Biamp Tesira Software; MAP2 monitors version only)
 - Direct ALSA/JACK audio processing of Tesira I/O (all audio transport is AVB)
 
@@ -79,7 +85,7 @@ The platform must feel like a **manufacturer-grade operational environment** —
 
 | Feature | Tesira Software | MAP2 Current | MAP2 Target |
 |---------|----------------|-------------|-------------|
-| Visual DSP block editor | Full drag-and-drop design | Not possible (no `.tsc` write) | Read-only block explorer via TTP probing |
+| Visual DSP block editor | Full drag-and-drop design | Limited tab controls only | MAP-native editable canvas + runtime declaration/probing (no `.tsc` dependency) |
 | Block-level DSP control | All parameters | Level, mute, crosspoint, EQ freq | All discoverable parameters |
 | Multi-partition programming | Up to 4 DSP partitions | Device-level only | Device-level (adequate) |
 | Device discovery | Automatic via proprietary protocol | mDNS + port-61451 scan | Same (proven effective) |
@@ -286,7 +292,7 @@ app/services/tesira/
 ### Key Architecture Decisions
 
 **D1: DSP Block Model via Runtime Discovery**
-MAP2 cannot read `.tsc` design files. The `TesiraDspModel` service probes standard Tesira block naming conventions (`LevelControl{1..N}`, `Mixer{1..N}`, `PEQ{1..N}`, etc.) using TTP `get` commands. Users can also manually declare blocks. Results persist in the `TesiraBlockDeclaration` database table.
+MAP2 does not depend on `.tsc` file parsing. The `TesiraDspModel` service probes standard Tesira block naming conventions (`LevelControl{1..N}`, `Mixer{1..N}`, `PEQ{1..N}`, etc.) using TTP `get` commands. Users can also manually declare blocks. Results persist in the `TesiraBlockDeclaration` database table and drive a MAP-native editable DSP canvas.
 
 **D2: SSH TTP Transport**
 `TTPSSHClient` (asyncssh) provides TTP over SSH for devices where Telnet is disabled. `TesiraDevice` auto-selects transport: Telnet (port 23) first, SSH (port 22) fallback. Same API surface as `TTPClient`.

@@ -18,9 +18,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.services.tesira.tesira_fleet import TesiraFleet
     from app.services.tesira.discovery import TesiraDiscoveryService
+    from app.services.tesira.tesira_metrics import TesiraMetricsStore
+    from app.services.tesira.tesira_dsp_model import TesiraDspModel
 
 _tesira_fleet: "TesiraFleet | None" = None
 _tesira_discovery: "TesiraDiscoveryService | None" = None
+_tesira_metrics_store: "TesiraMetricsStore | None" = None
+_tesira_dsp_model: "TesiraDspModel | None" = None
 
 
 def get_tesira_fleet() -> "TesiraFleet":
@@ -39,3 +43,21 @@ def get_tesira_discovery() -> "TesiraDiscoveryService":
         from app.services.tesira.discovery import TesiraDiscoveryService
         _tesira_discovery = TesiraDiscoveryService()
     return _tesira_discovery
+
+
+def get_tesira_metrics_store() -> "TesiraMetricsStore":
+    """Return singleton Tesira metering history store."""
+    global _tesira_metrics_store
+    if _tesira_metrics_store is None:
+        from app.services.tesira.tesira_metrics import TesiraMetricsStore
+        _tesira_metrics_store = TesiraMetricsStore()
+    return _tesira_metrics_store
+
+
+def get_tesira_dsp_model() -> "TesiraDspModel":
+    """Return singleton Tesira DSP discovery/model service."""
+    global _tesira_dsp_model
+    if _tesira_dsp_model is None:
+        from app.services.tesira.tesira_dsp_model import TesiraDspModel
+        _tesira_dsp_model = TesiraDspModel()
+    return _tesira_dsp_model

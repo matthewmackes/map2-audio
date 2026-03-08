@@ -11,6 +11,8 @@ import {
   useTesiraPresets, useRecallPreset,
   usePresetInterlockRules, useAddInterlockRule, useDeleteInterlockRule,
 } from '../hooks/useTesiraApi'
+import { useTesiraReversePresetSync } from '../hooks/useTesiraWebSocket'
+import type { TesiraReversePresetSyncEvent } from '../types'
 
 interface TesiraPresetsTabProps {
   deviceId: string
@@ -25,6 +27,13 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
 
   const [newMap2Id, setNewMap2Id] = useState('')
   const [newPresetIdx, setNewPresetIdx] = useState('')
+  const [latestReverse, setLatestReverse] = useState<TesiraReversePresetSyncEvent | null>(null)
+
+  useTesiraReversePresetSync((event) => {
+    if (event.device_id === deviceId) {
+      setLatestReverse(event)
+    }
+  })
 
   function handleAddRule() {
     if (!newMap2Id || !newPresetIdx) return
@@ -83,6 +92,15 @@ export function TesiraPresetsTab({ deviceId }: TesiraPresetsTabProps) {
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
         When a MAP2 preset is recalled, automatically recall the mapped Tesira preset.
       </Typography>
+
+      {latestReverse && (
+        <Alert severity={latestReverse.matched ? 'info' : 'warning'} sx={{ mb: 1.5 }}>
+          Tesira preset {latestReverse.preset_index} changed on-device.
+          {latestReverse.matched
+            ? ` Mapped MAP2 preset IDs: ${latestReverse.map2_preset_ids.join(', ')}.`
+            : ' No MAP2 interlock mapping found for this preset.'}
+        </Alert>
+      )}
 
       {rules && rules.length > 0 ? (
         <Table size="small" sx={{ mb: 2 }}>

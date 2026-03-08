@@ -4,6 +4,7 @@ import {
   Chip, Button, Tooltip,
 } from '@mui/material'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import { Link as RouterLink } from 'react-router-dom'
 import { useTesiraAvbStreams, useTesiraPTP } from '../hooks/useTesiraApi'
 
 interface TesiraAvbTabProps {
@@ -65,6 +66,7 @@ export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
               <TableCell sx={{ fontSize: 11 }}>Direction</TableCell>
               <TableCell sx={{ fontSize: 11 }}>Channels</TableCell>
               <TableCell sx={{ fontSize: 11 }}>Entity ID</TableCell>
+              <TableCell sx={{ fontSize: 11 }}>Health</TableCell>
               <TableCell sx={{ fontSize: 11 }}></TableCell>
             </TableRow>
           </TableHead>
@@ -86,11 +88,19 @@ export function TesiraAvbTab({ deviceId }: TesiraAvbTabProps) {
                   {s.entity_id?.substring(0, 12)}…
                 </TableCell>
                 <TableCell>
+                  <Chip
+                    label={s.entity_id ? 'Ready' : 'Unknown'}
+                    size="small"
+                    color={s.entity_id ? 'success' : 'default'}
+                    sx={{ fontSize: 10, height: 18 }}
+                  />
+                </TableCell>
+                <TableCell>
                   <Tooltip title="View in AVB Routing">
                     <Button
                       size="small"
-                      component="a"
-                      href="/avb-routing"
+                      component={RouterLink}
+                      to={`/avb-routing?focusTesiraDevice=${encodeURIComponent(deviceId)}&focusEntity=${encodeURIComponent(String(s.entity_id || ''))}`}
                       endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
                       sx={{ fontSize: 10, minWidth: 0, p: 0.5 }}
                     >

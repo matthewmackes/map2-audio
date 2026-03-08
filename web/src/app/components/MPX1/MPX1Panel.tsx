@@ -75,8 +75,9 @@ export function MPX1Panel() {
   const ledBypass = panelState === 'bypassed'
 
   const programNumber = formatMpx1ProgramNumber(mpx1.state?.current_program ?? 0)
+  const rawProgramName = (mpx1.state as { program_name?: unknown } | null | undefined)?.program_name
   const programName   = mpx1.state?.connected
-    ? (mpx1.state as Record<string, unknown>)?.program_name as string | undefined ?? ''
+    ? (typeof rawProgramName === 'string' ? rawProgramName : '')
     : ''
 
   const displayLine1 = programName.slice(0, 16)

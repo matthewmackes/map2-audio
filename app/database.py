@@ -896,6 +896,44 @@ class NAMModel(Base):
 # TESIRA FORTE AVB — PRESET INTERLOCK RULES
 # =============================================================================
 
+class TesiraBlockDeclaration(Base):
+    """Persisted DSP block declarations discovered/provisioned for a Tesira device."""
+    __tablename__ = "tesira_block_declarations"
+
+    id = Column(Integer, primary_key=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    instance_tag = Column(String(255), nullable=False, index=True)
+    block_type = Column(String(64), nullable=False, default="UNKNOWN")
+    channel_count = Column(Integer, nullable=False, default=1)
+    parameter_map = Column(JSON, default=dict)
+    is_probed = Column(Boolean, default=True)
+    last_probed_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_block_decl_device_tag_unique", "device_id", "instance_tag", unique=True),
+        Index("idx_tesira_block_decl_type", "block_type"),
+    )
+
+
+class TesiraSceneSnapshot(Base):
+    """Stored DSP scene snapshots for capture/recall workflows."""
+    __tablename__ = "tesira_scene_snapshots"
+
+    id = Column(Integer, primary_key=True)
+    scene_id = Column(String(128), nullable=False, unique=True, index=True)
+    device_id = Column(String(128), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    block_states = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_tesira_scene_device_created", "device_id", "created_at"),
+    )
+
+
 class TesiraInterlockRule(Base):
     """
     Maps a MAP2 preset ID to a Tesira device preset index.

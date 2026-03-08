@@ -302,6 +302,7 @@ async def lifespan(app):
                 tesira_ptp = TesiraPTPCoordinator(tesira_fleet)
                 await safe_start_service(logger, "Tesira PTP Coordinator", tesira_ptp.start)
                 tesira_interlock = TesiraPresetInterlock(tesira_fleet)
+                tesira_fleet.set_preset_interlock(tesira_interlock)
                 preset_lifecycle.register_listener(
                     "preset_loaded", tesira_interlock.on_preset_loaded_event
                 )

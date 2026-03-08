@@ -96,6 +96,37 @@ class TesiraPresetInterlock:
                     rule.tesira_device_id, rule.tesira_preset_index, exc,
                 )
 
+    async def on_tesira_preset_changed(self, device_id: str, preset_index: int) -> None:
+        """
+        Reverse-sync detection path.
+
+        Called when a Tesira device reports a preset change originating on the
+        device side (front panel, third-party controller, or direct TTP).
+        """
+        try:
+            from app.database import get_session
+            async with get_session(read_only=True) as session:
+                rules = await self._get_rules_for_tesira_preset(device_id, preset_index, session)
+        except Exception as exc:
+            logger.warning(
+                "TesiraPresetInterlock: reverse-sync lookup failed for %s preset %d: %s",
+                device_id,
+                preset_index,
+                exc,
+            )
+            return
+
+        map2_ids = sorted({r.map2_preset_id for r in rules})
+        payload = {
+            "device_id": device_id,
+            "preset_index": preset_index,
+            "matched": bool(rules),
+            "map2_preset_ids": map2_ids,
+            "rule_ids": [r.id for r in rules],
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        await self._broadcast_reverse_sync_detected(payload)
+
     # ──────────────────────────────────────────────────────────────────────────
     # Rule management
     # ──────────────────────────────────────────────────────────────────────────
@@ -181,6 +212,30 @@ class TesiraPresetInterlock:
             for r in rows
         ]
 
+    async def _get_rules_for_tesira_preset(
+        self, device_id: str, preset_index: int, session: "AsyncSession"
+    ) -> List[InterlockRule]:
+        from app.database import TesiraInterlockRule
+        from sqlalchemy import select
+
+        result = await session.execute(
+            select(TesiraInterlockRule).where(
+                TesiraInterlockRule.tesira_device_id == device_id,
+                TesiraInterlockRule.tesira_preset_index == preset_index,
+            )
+        )
+        rows = result.scalars().all()
+        return [
+            InterlockRule(
+                id=r.id,
+                map2_preset_id=r.map2_preset_id,
+                tesira_device_id=r.tesira_device_id,
+                tesira_preset_index=r.tesira_preset_index,
+                created_at=r.created_at.isoformat() if r.created_at else '',
+            )
+            for r in rows
+        ]
+
     async def _broadcast_preset_synced(self, rule: InterlockRule) -> None:
         payload = {
             'device_id': rule.tesira_device_id,
@@ -197,3 +252,15 @@ class TesiraPresetInterlock:
             )
         except Exception as exc:
             logger.debug("TesiraPresetInterlock WS broadcast error: %s", exc)
+
+    async def _broadcast_reverse_sync_detected(self, payload: Dict[str, Any]) -> None:
+        try:
+            from app.services.websocket_manager import get_websocket_manager
+
+            ws = get_websocket_manager()
+            await ws.broadcast_json(
+                {"type": "tesira:preset_reverse_sync", "data": payload},
+                topic="tesira:preset_reverse_sync",
+            )
+        except Exception as exc:
+            logger.debug("TesiraPresetInterlock reverse WS broadcast error: %s", exc)

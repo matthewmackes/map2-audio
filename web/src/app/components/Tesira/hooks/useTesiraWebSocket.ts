@@ -4,7 +4,13 @@
  */
 import { useRef } from 'react'
 import { useWebSocketTopic } from '../../../../map2/hooks/useWebSocket'
-import type { TesiraMeterPush, TesiraDeviceStateEvent, TesiraPTPEvent, TesiraDiscoveryEvent } from '../types'
+import type {
+  TesiraMeterPush,
+  TesiraDeviceStateEvent,
+  TesiraPTPEvent,
+  TesiraDiscoveryEvent,
+  TesiraReversePresetSyncEvent,
+} from '../types'
 
 /**
  * Subscribe to live metering pushes for a specific device + instance tag.
@@ -66,6 +72,20 @@ export function useTesiraDiscoveryEvents(
   cbRef.current = onEvent
 
   useWebSocketTopic<TesiraDiscoveryEvent>('tesira:discovery', (data) => {
+    if (data) cbRef.current(data)
+  })
+}
+
+/**
+ * Subscribe to reverse-sync detections (Tesira-side preset changes).
+ */
+export function useTesiraReversePresetSync(
+  onEvent: (event: TesiraReversePresetSyncEvent) => void,
+): void {
+  const cbRef = useRef(onEvent)
+  cbRef.current = onEvent
+
+  useWebSocketTopic<TesiraReversePresetSyncEvent>('tesira:preset_reverse_sync', (data) => {
     if (data) cbRef.current(data)
   })
 }

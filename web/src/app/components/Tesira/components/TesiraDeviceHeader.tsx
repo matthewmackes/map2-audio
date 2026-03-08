@@ -26,6 +26,7 @@ export function TesiraDeviceHeader({ device }: TesiraDeviceHeaderProps) {
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {device.host}:{device.port}
+          {device.transport ? ` · ${device.transport.toUpperCase()}${device.transport_port ? `:${device.transport_port}` : ''}` : ''}
           {device.serial_number && ` · S/N ${device.serial_number}`}
           {device.firmware_version && ` · fw ${device.firmware_version}`}
         </Typography>

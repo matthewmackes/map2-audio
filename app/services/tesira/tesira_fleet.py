@@ -33,6 +33,11 @@ class TesiraDeviceConfig:
     enabled: bool = True
     metering_tags: List[str] = field(default_factory=list)
     metering_interval_ms: int = 100
+    transport: str = "auto"
+    ssh_enabled: bool = True
+    ssh_port: int = 22
+    ssh_username: str = "default"
+    ssh_password: str = "default"
 
 
 class TesiraFleet:
@@ -48,10 +53,15 @@ class TesiraFleet:
         self._configs: List[TesiraDeviceConfig] = []
         self._ptp_poll_task: Optional[asyncio.Task] = None
         self._offline_retry_task: Optional[asyncio.Task] = None
+        self._preset_poll_task: Optional[asyncio.Task] = None
         self._stopping = False
+        self._preset_interlock: Optional[Any] = None
+        self._last_seen_presets: Dict[str, int] = {}
+        self._reverse_preset_sync = True
 
     # Seconds between reconnect attempts for offline devices
     OFFLINE_RETRY_INTERVAL = 30
+    PRESET_POLL_INTERVAL = 2
 
     # ──────────────────────────────────────────────────────────────────────────
     # Lifecycle
@@ -78,6 +88,9 @@ class TesiraFleet:
         self._offline_retry_task = asyncio.create_task(
             self._offline_retry_loop(), name="tesira_offline_retry"
         )
+        self._preset_poll_task = asyncio.create_task(
+            self._preset_poll_loop(), name="tesira_preset_poll"
+        )
         logger.info(
             "TesiraFleet started: %d/%d devices connected",
             sum(1 for d in self._devices.values() if d.connected),
@@ -87,7 +100,7 @@ class TesiraFleet:
     async def stop(self) -> None:
         """Disconnect all devices and cancel background tasks."""
         self._stopping = True
-        for task in (self._ptp_poll_task, self._offline_retry_task):
+        for task in (self._ptp_poll_task, self._offline_retry_task, self._preset_poll_task):
             if task and not task.done():
                 task.cancel()
                 try:
@@ -122,6 +135,8 @@ class TesiraFleet:
                 'port': device.port,
                 'name': device.name,
                 'connected': device.connected,
+                'transport': device.transport,
+                'transport_port': device.transport_port,
                 'serial_number': device.info.serial_number if device.info else None,
                 'firmware_version': device.info.firmware_version if device.info else None,
                 'fault_count': 0,           # Populated lazily on request
@@ -138,6 +153,8 @@ class TesiraFleet:
                     'port': cfg.port,
                     'name': cfg.name or cfg.host,
                     'connected': False,
+                    'transport': cfg.transport if cfg.transport != "auto" else "unknown",
+                    'transport_port': cfg.port if cfg.transport in ("telnet", "auto") else cfg.ssh_port,
                     'serial_number': None,
                     'firmware_version': None,
                     'fault_count': 0,
@@ -150,6 +167,10 @@ class TesiraFleet:
         """Return True if at least one device is connected."""
         return any(d.connected for d in self._devices.values())
 
+    def set_preset_interlock(self, interlock: Any) -> None:
+        """Attach preset interlock service for reverse-sync detection callbacks."""
+        self._preset_interlock = interlock
+
     # ──────────────────────────────────────────────────────────────────────────
     # Internal: connect a single device
     # ──────────────────────────────────────────────────────────────────────────
@@ -160,6 +181,11 @@ class TesiraFleet:
             host=cfg.host,
             port=cfg.port,
             name=cfg.name,
+            transport=cfg.transport,
+            ssh_enabled=cfg.ssh_enabled,
+            ssh_port=cfg.ssh_port,
+            ssh_username=cfg.ssh_username,
+            ssh_password=cfg.ssh_password,
         )
         device.on_push(self._on_meter_push)
         try:
@@ -175,6 +201,12 @@ class TesiraFleet:
 
         self._devices[device.device_id] = device
         await self._broadcast_device_state(device.device_id, 'connected')
+        try:
+            active = await device.get_active_preset()
+            if active is not None:
+                self._last_seen_presets[device.device_id] = active
+        except Exception:
+            pass
 
         # Register AVB streams as AvbRouter endpoints
         await self._register_endpoints(device)
@@ -243,6 +275,12 @@ class TesiraFleet:
             'levels_dbu': levels,
             'timestamp': datetime.now(timezone.utc).isoformat(),
         }
+        try:
+            from app.services.tesira import get_tesira_metrics_store
+            get_tesira_metrics_store().push(device_id, instance_tag, levels)
+        except Exception:
+            # Meter history should never block live websocket updates.
+            pass
         # Schedule WS broadcast (non-blocking; called from asyncio task)
         asyncio.create_task(
             self._broadcast('tesira:meters', payload),
@@ -309,6 +347,12 @@ class TesiraFleet:
                         logger.info("TesiraFleet[%s]: reconnected after offline retry", host)
                         await self._broadcast_device_state(device_id, 'connected')
                         await self._register_endpoints(device)
+                        try:
+                            active = await device.get_active_preset()
+                            if active is not None:
+                                self._last_seen_presets[device.device_id] = active
+                        except Exception:
+                            pass
                         continue
                 except Exception as exc:
                     logger.debug("TesiraFleet[%s]: retry connect failed: %s", host, exc)
@@ -345,6 +389,36 @@ class TesiraFleet:
                     await self._broadcast('tesira:ptp', payload)
                 except Exception as exc:
                     logger.debug("PTP poll error for %s: %s", device.device_id, exc)
+
+    async def _preset_poll_loop(self) -> None:
+        """Poll active presets and broadcast reverse-sync events on device-side changes."""
+        while not self._stopping:
+            await asyncio.sleep(float(self.PRESET_POLL_INTERVAL))
+            if not self._reverse_preset_sync:
+                continue
+            for device in list(self._devices.values()):
+                if not device.connected:
+                    continue
+                try:
+                    active = await device.get_active_preset()
+                    if active is None:
+                        continue
+                    previous = self._last_seen_presets.get(device.device_id)
+                    self._last_seen_presets[device.device_id] = active
+                    if previous is None or previous == active:
+                        continue
+                    payload = {
+                        "device_id": device.device_id,
+                        "preset_index": active,
+                        "previous_preset_index": previous,
+                        "source": "device",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                    await self._broadcast("tesira:preset_change", payload)
+                    if self._preset_interlock is not None:
+                        await self._preset_interlock.on_tesira_preset_changed(device.device_id, active)
+                except Exception as exc:
+                    logger.debug("Preset poll error for %s: %s", device.device_id, exc)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Internal: WebSocket helpers
@@ -384,9 +458,22 @@ class TesiraFleet:
             from app.config import config_get
             devices_raw: List[Dict[str, Any]] = config_get('tesira.devices', []) or []
             interval_ms: int = config_get('tesira.metering_interval_ms', 100)
+            default_transport = str(config_get("tesira.transport", "auto") or "auto")
+            default_ssh_enabled = bool(config_get("tesira.ssh_enabled", True))
+            default_ssh_port = int(config_get("tesira.ssh_port", 22))
+            creds = config_get("tesira.ssh_credentials", {}) or {}
+            default_ssh_username = str(creds.get("username", config_get("tesira.ssh_username", "default")))
+            default_ssh_password = str(creds.get("password", config_get("tesira.ssh_password", "default")))
+            self._reverse_preset_sync = bool(config_get("tesira.reverse_preset_sync", True))
         except Exception:
             devices_raw = []
             interval_ms = 100
+            default_transport = "auto"
+            default_ssh_enabled = True
+            default_ssh_port = 22
+            default_ssh_username = "default"
+            default_ssh_password = "default"
+            self._reverse_preset_sync = True
 
         self._configs = []
         for raw in devices_raw[:MAX_DEVICES]:
@@ -401,5 +488,10 @@ class TesiraFleet:
                 enabled=bool(raw.get('enabled', True)),
                 metering_tags=list(raw.get('metering_tags', [])),
                 metering_interval_ms=interval_ms,
+                transport=str(raw.get("transport", default_transport) or "auto").lower(),
+                ssh_enabled=bool(raw.get("ssh_enabled", default_ssh_enabled)),
+                ssh_port=int(raw.get("ssh_port", default_ssh_port)),
+                ssh_username=str(raw.get("ssh_username", default_ssh_username)),
+                ssh_password=str(raw.get("ssh_password", default_ssh_password)),
             ))
         logger.info("TesiraFleet: loaded %d device config(s)", len(self._configs))

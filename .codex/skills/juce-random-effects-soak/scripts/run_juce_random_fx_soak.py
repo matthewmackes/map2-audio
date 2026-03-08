@@ -135,6 +135,23 @@ def summarize_float(values: Iterable[float]) -> dict[str, float]:
     return {"min": min(data), "max": max(data), "mean": statistics.fmean(data)}
 
 
+def percentile(values: Iterable[float], fraction: float) -> float:
+    data = sorted(float(v) for v in values)
+    if not data:
+        return 0.0
+    if fraction <= 0.0:
+        return data[0]
+    if fraction >= 1.0:
+        return data[-1]
+    position = (len(data) - 1) * fraction
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return data[lower]
+    blend = position - lower
+    return data[lower] * (1.0 - blend) + data[upper] * blend
+
+
 def unique_preserve_order(values: Iterable[str]) -> list[str]:
     seen: set[str] = set()
     ordered: list[str] = []
@@ -451,13 +468,36 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
         f"- Effect count always {result['config']['active_effect_count']}: `{check_mark(checks['effect_count_ok'])}`",
         "",
         "## Key Metrics",
+        f"- Xruns per second: `{summary['xrun_rate_per_second']}`",
         f"- CPU total percent (min/max/mean): `{summary['cpu_total_percent']}`",
         f"- Callback jitter ms (min/max/mean): `{summary['callback_jitter_ms']}`",
+        f"- Callback jitter p95 ms: `{summary['callback_jitter_p95_ms']}`",
         f"- Peak callback jitter ms: `{summary['peak_callback_jitter_ms']}`",
         f"- Budget utilization percent (min/max/mean): `{summary['budget_utilization_percent']}`",
         "",
         "## Blend Type Usage",
     ]
+
+    max_xruns_per_second = thresholds.get("max_xruns_per_second")
+    if max_xruns_per_second is not None:
+        lines.insert(
+            lines.index("## Key Metrics"),
+            f"- Xruns/sec <= {max_xruns_per_second}: `{check_mark(checks['xrun_rate_ok'])}`",
+        )
+
+    max_callback_jitter_ms = thresholds.get("max_callback_jitter_ms")
+    if max_callback_jitter_ms is not None:
+        lines.insert(
+            lines.index("## Key Metrics"),
+            f"- Callback jitter max <= {max_callback_jitter_ms} ms: `{check_mark(checks['callback_jitter_sample_ok'])}`",
+        )
+
+    max_callback_jitter_p95_ms = thresholds.get("max_callback_jitter_p95_ms")
+    if max_callback_jitter_p95_ms is not None:
+        lines.insert(
+            lines.index("## Key Metrics"),
+            f"- Callback jitter p95 <= {max_callback_jitter_p95_ms} ms: `{check_mark(checks['callback_jitter_p95_ok'])}`",
+        )
 
     for blend_type, count in summary["blend_type_usage"].items():
         lines.append(f"- `{blend_type}`: `{count}` flow(s)")
@@ -537,10 +577,28 @@ def parse_args(repo_root: Path) -> argparse.Namespace:
     parser.add_argument("--log-every-seconds", type=float, default=30.0, help="Progress log cadence.")
     parser.add_argument("--threshold-max-xruns", type=int, default=0, help="Pass threshold: max xruns.")
     parser.add_argument(
+        "--threshold-max-xruns-per-second",
+        type=float,
+        default=None,
+        help="Optional pass threshold: max xruns per second over the run.",
+    )
+    parser.add_argument(
         "--threshold-max-peak-jitter-ms",
         type=float,
         default=0.35,
         help="Pass threshold: max peak callback jitter in ms.",
+    )
+    parser.add_argument(
+        "--threshold-max-callback-jitter-ms",
+        type=float,
+        default=None,
+        help="Optional pass threshold: max sampled callback jitter in ms.",
+    )
+    parser.add_argument(
+        "--threshold-max-callback-jitter-p95-ms",
+        type=float,
+        default=None,
+        help="Optional pass threshold: p95 sampled callback jitter in ms.",
     )
     parser.add_argument(
         "--threshold-max-budget-utilization-percent",
@@ -879,6 +937,8 @@ def run() -> int:
     budget_values = [s["budget_utilization_percent"] for s in samples]
 
     final_xrun_count = samples[-1]["xrun_count"]
+    xrun_rate_per_second = final_xrun_count / actual_duration if actual_duration > 0 else float(final_xrun_count)
+    callback_jitter_p95_ms = percentile(jitter_values, 0.95)
     blend_usage: dict[str, int] = {}
     effect_count_ok = True
     for event in flow_events:
@@ -894,6 +954,12 @@ def run() -> int:
         "flow_errors_ok": len(flow_apply_failures) <= args.threshold_max_flow_errors,
         "effect_count_ok": effect_count_ok,
     }
+    if args.threshold_max_xruns_per_second is not None:
+        checks["xrun_rate_ok"] = xrun_rate_per_second <= args.threshold_max_xruns_per_second
+    if args.threshold_max_callback_jitter_ms is not None:
+        checks["callback_jitter_sample_ok"] = max(jitter_values) <= args.threshold_max_callback_jitter_ms
+    if args.threshold_max_callback_jitter_p95_ms is not None:
+        checks["callback_jitter_p95_ok"] = callback_jitter_p95_ms <= args.threshold_max_callback_jitter_p95_ms
 
     result = {
         "metadata": {
@@ -930,7 +996,10 @@ def run() -> int:
         },
         "thresholds": {
             "max_xruns": args.threshold_max_xruns,
+            "max_xruns_per_second": args.threshold_max_xruns_per_second,
             "max_peak_jitter_ms": args.threshold_max_peak_jitter_ms,
+            "max_callback_jitter_ms": args.threshold_max_callback_jitter_ms,
+            "max_callback_jitter_p95_ms": args.threshold_max_callback_jitter_p95_ms,
             "max_budget_utilization_percent": args.threshold_max_budget_utilization_percent,
             "max_flow_errors": args.threshold_max_flow_errors,
         },
@@ -945,8 +1014,10 @@ def run() -> int:
             "sample_count": len(samples),
             "flow_count": len(flow_events),
             "final_xrun_count": final_xrun_count,
+            "xrun_rate_per_second": xrun_rate_per_second,
             "cpu_total_percent": summarize_float(cpu_total_values),
             "callback_jitter_ms": summarize_float(jitter_values),
+            "callback_jitter_p95_ms": callback_jitter_p95_ms,
             "peak_callback_jitter_ms": max(peak_jitter_values),
             "budget_utilization_percent": summarize_float(budget_values),
             "flow_apply_error_count": len(flow_apply_failures),
