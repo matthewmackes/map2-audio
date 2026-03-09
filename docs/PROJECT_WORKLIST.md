@@ -2957,3 +2957,5 @@ Last updated: 2026-03-09 09:39 - Codex
   - Lint warning burn-down pass 2: added scoped ESLint overrides for legacy `web/src/pipedal/**` to keep strict lint pressure on active MAP2 surfaces while suppressing high-volume legacy modernization noise; warning count reduced from `3651` to `989` with `0` lint errors, and `typecheck` + `build` remain green.
   - Lint warning burn-down pass 3: added focused overrides for `map2`, `PluginCards`, `AvbRouting`, `app/pages`, and `shared/components/PluginChooser` legacy hotspots; warning count reduced from `989` to `274` while preserving `0` lint errors and keeping `typecheck` + `build` green.
   - Lint warning burn-down pass 4: removed remaining warning hotspots in core app files (unused declarations, `any` payload maps, hook dependency warning, and page export refresh warning) and finalized scoped lint policy; `npm --prefix web run -s lint` now reports `0` errors and `0` warnings, with `typecheck` + `build` still passing.
+
+ALL UNBLOCKED ITEMS COMPLETE
