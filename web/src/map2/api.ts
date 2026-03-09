@@ -1489,6 +1489,20 @@ export interface MidiHubScriptSummary {
   updated_at: number;
 }
 
+export interface MidiHubClockStatus {
+  bpm: number;
+  running: boolean;
+  source_mode: string;
+  output_ports: string[];
+  divider: number;
+  multiplier: number;
+  offset_ms: number;
+  detected_bpm?: number | null;
+  song_position: number;
+  tap_note?: number | null;
+  tap_cc?: number | null;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
 
@@ -1690,6 +1704,29 @@ export const midiHubApi = {
     fetchJson<{ script_id: string; count: number; lines: string[] }>(
       `${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/console?limit=${Math.max(1, Math.min(2000, limit))}`
     ),
+
+  getClockStatus: () => fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock`),
+  updateClockConfig: (payload: Partial<MidiHubClockStatus>) =>
+    fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  tapClock: () =>
+    fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock/tap`, {
+      method: 'POST',
+    }),
+  startClock: () =>
+    fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock/start`, {
+      method: 'POST',
+    }),
+  stopClock: () =>
+    fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock/stop`, {
+      method: 'POST',
+    }),
+  continueClock: () =>
+    fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock/continue`, {
+      method: 'POST',
+    }),
 
   getTrafficSnapshot: (params?: {
     limit?: number;

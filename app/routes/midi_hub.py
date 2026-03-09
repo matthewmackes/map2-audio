@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.services.midi_hub.hub import get_midi_hub
+from app.services.midi_hub.clock_engine import get_midi_clock_engine
 from app.services.midi_hub.preset_service import get_midi_hub_preset_service
 from app.services.midi_hub.router import get_midi_router
 from app.services.midi_hub.script_engine import get_midi_script_engine
@@ -95,6 +96,17 @@ class ScriptUpsertRequest(BaseModel):
 
 class ScriptRunRequest(BaseModel):
     event: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ClockConfigRequest(BaseModel):
+    bpm: Optional[float] = Field(default=None, ge=20.0, le=300.0)
+    source_mode: Optional[str] = Field(default=None, pattern="^(internal|external)$")
+    output_ports: Optional[List[str]] = None
+    divider: Optional[float] = Field(default=None, ge=0.25, le=16.0)
+    multiplier: Optional[float] = Field(default=None, ge=0.25, le=16.0)
+    offset_ms: Optional[float] = Field(default=None, ge=-500.0, le=500.0)
+    tap_note: Optional[int] = Field(default=None, ge=0, le=127)
+    tap_cc: Optional[int] = Field(default=None, ge=0, le=127)
 
 
 @router.get("/status")
@@ -465,6 +477,43 @@ async def get_script_console(
 ) -> Dict[str, Any]:
     service = get_midi_script_engine()
     return service.get_console(script_id, limit=limit)
+
+
+@router.get("/clock")
+async def get_clock_status() -> Dict[str, Any]:
+    engine = get_midi_clock_engine()
+    return engine.status()
+
+
+@router.put("/clock")
+async def configure_clock(req: ClockConfigRequest) -> Dict[str, Any]:
+    engine = get_midi_clock_engine()
+    updates = {key: value for key, value in req.model_dump().items() if value is not None}
+    return engine.configure(**updates)
+
+
+@router.post("/clock/tap")
+async def tap_clock() -> Dict[str, Any]:
+    engine = get_midi_clock_engine()
+    return await engine.tap()
+
+
+@router.post("/clock/start")
+async def start_clock() -> Dict[str, Any]:
+    engine = get_midi_clock_engine()
+    return await engine.start()
+
+
+@router.post("/clock/stop")
+async def stop_clock() -> Dict[str, Any]:
+    engine = get_midi_clock_engine()
+    return await engine.stop()
+
+
+@router.post("/clock/continue")
+async def continue_clock() -> Dict[str, Any]:
+    engine = get_midi_clock_engine()
+    return await engine.cont()
 
 
 @router.get("/traffic/snapshot")

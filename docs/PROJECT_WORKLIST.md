@@ -2505,7 +2505,7 @@ Last updated: 2026-03-09 17:32 - Codex
   - Suggested next tasks: T066-subM, T066-subN, T066-subO.
 
 ID: T066-subM
-Status: [>] In Progress
+Status: [✓] Done
 Title: MIDI Clock engine with tempo detection, generation, and distribution
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/clock_engine.py`. Full MIDI clock implementation: (1) clock generation — generate MIDI Clock (24 ppqn), Start, Stop, Continue, Song Position Pointer at configurable BPM (20-300, 0.1 BPM resolution), (2) clock detection — analyze incoming clock stream, calculate BPM with smoothing, detect tempo changes, (3) clock distribution — route generated or detected clock to selected output ports/gateways, (4) tap tempo — accept tap tempo input via MIDI (configurable CC/Note) or API, (5) clock divider/multiplier — output clock at 1/2x, 1x, 2x, 3x, 4x, etc. of source tempo, (6) clock offset/delay — compensate for device-specific clock latency, (7) MTC (MIDI Time Code) generation and parsing — full/quarter frame, (8) song position pointer tracking for locate/cue. Integrate with MidiHub router — clock messages routed like any other message but with jitter-minimized scheduling (high-priority thread, pre-computed tick intervals). API: `GET/PUT /api/midi/hub/clock` (config + status), `POST /api/midi/hub/clock/tap`, `POST /api/midi/hub/clock/start|stop|continue`. UI: tempo display + tap button in hub toolbar.
@@ -2515,7 +2515,17 @@ Description:
 - Required outputs: Clock engine, tap tempo, MTC support, jitter-minimized scheduling, API endpoints, UI tempo controls, tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 17:44 - Codex
+- Completion notes:
+  - What was done: Added/activated `app/services/midi_hub/clock_engine.py` for internal clock generation (`Start/Stop/Continue`, `24ppqn` ticks), external clock observation, tap-tempo BPM convergence, divider/multiplier scaling, offset handling, and per-port clock distribution via MidiHub.
+  - What was done: Wired full clock API routes in `app/routes/midi_hub.py` (`GET/PUT /clock`, `POST /clock/tap|start|stop|continue`) with typed request validation.
+  - What was done: Extended frontend MIDI Hub API and added `MidiClockPanel.tsx` to `/midi-hub` for live status, BPM/source/output configuration, tap tempo, and transport controls.
+  - Validation:
+    - `timeout 120s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+    - `python3 -m compileall app/routes/midi_hub.py app/services/midi_hub/clock_engine.py` -> PASS
+  - Files/links produced: `app/services/midi_hub/clock_engine.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_traffic_routes.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/MidiClockPanel.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T066-subN, T066-subO, T066-subP.
 
 ID: T066-subN
 Status: [>] In Progress

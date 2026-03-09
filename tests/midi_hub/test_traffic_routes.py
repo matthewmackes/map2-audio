@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import midi_hub as midi_hub_routes
+from app.services.midi_hub.clock_engine import MidiClockEngine
 from app.services.midi_hub.hub import MidiHub
 from app.services.midi_hub.router import MidiRouter
 from app.services.midi_hub.ports import VirtualMidiPort
@@ -23,20 +24,22 @@ def _build_client(tmp_path, monkeypatch):
         scripts_path=tmp_path / "scripts.json",
         state_path=tmp_path / "script-state.json",
     )
+    clock_engine = MidiClockEngine(hub=hub)
 
     monkeypatch.setattr(midi_hub_routes, "get_midi_hub", lambda: hub)
     monkeypatch.setattr(midi_hub_routes, "get_midi_router", lambda: router)
     monkeypatch.setattr(midi_hub_routes, "get_midi_traffic_monitor", lambda: monitor)
     monkeypatch.setattr(midi_hub_routes, "get_midi_hub_preset_service", lambda: preset_service)
     monkeypatch.setattr(midi_hub_routes, "get_midi_script_engine", lambda: script_engine)
+    monkeypatch.setattr(midi_hub_routes, "get_midi_clock_engine", lambda: clock_engine)
 
     app = FastAPI()
     app.include_router(midi_hub_routes.router)
-    return TestClient(app), hub, router, monitor, preset_service, script_engine
+    return TestClient(app), hub, router, monitor, preset_service, script_engine, clock_engine
 
 
 def test_traffic_snapshot_stats_export_clear(tmp_path, monkeypatch):
-    client, hub, router, monitor, _, _ = _build_client(tmp_path, monkeypatch)
+    client, hub, router, monitor, _, _, _ = _build_client(tmp_path, monkeypatch)
     monitor.record(
         MidiTrafficRecord(
             timestamp_ns=1000,
@@ -138,7 +141,7 @@ def test_traffic_snapshot_stats_export_clear(tmp_path, monkeypatch):
 
 
 def test_preset_routes_save_compare_slots_and_recall(tmp_path, monkeypatch):
-    client, hub, router, _, preset_service, _ = _build_client(tmp_path, monkeypatch)
+    client, hub, router, _, preset_service, _, _ = _build_client(tmp_path, monkeypatch)
     created_route = router.add_route(
         {
             "route_id": "route_a",
@@ -259,7 +262,7 @@ def test_preset_routes_save_compare_slots_and_recall(tmp_path, monkeypatch):
 
 
 def test_script_routes_crud_run_console_and_toggle(tmp_path, monkeypatch):
-    client, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+    client, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
 
     examples = client.get("/api/midi/hub/scripts/examples")
     assert examples.status_code == 200
@@ -312,3 +315,43 @@ def test_script_routes_crud_run_console_and_toggle(tmp_path, monkeypatch):
     delete = client.delete("/api/midi/hub/scripts/script_a")
     assert delete.status_code == 200
     assert delete.json()["ok"] is True
+
+
+def test_clock_routes_config_tap_start_stop_and_continue(tmp_path, monkeypatch):
+    client, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+
+    status = client.get("/api/midi/hub/clock")
+    assert status.status_code == 200
+    assert "bpm" in status.json()
+
+    configure = client.put(
+        "/api/midi/hub/clock",
+        json={
+            "bpm": 128.5,
+            "source_mode": "internal",
+            "output_ports": ["dst"],
+            "divider": 1.0,
+            "multiplier": 1.0,
+            "offset_ms": 0.0,
+        },
+    )
+    assert configure.status_code == 200
+    assert abs(configure.json()["bpm"] - 128.5) < 0.001
+
+    tap_one = client.post("/api/midi/hub/clock/tap")
+    assert tap_one.status_code == 200
+    tap_two = client.post("/api/midi/hub/clock/tap")
+    assert tap_two.status_code == 200
+    assert 20.0 <= tap_two.json()["bpm"] <= 300.0
+
+    start = client.post("/api/midi/hub/clock/start")
+    assert start.status_code == 200
+    assert start.json()["running"] is True
+
+    cont = client.post("/api/midi/hub/clock/continue")
+    assert cont.status_code == 200
+    assert cont.json()["running"] is True
+
+    stop = client.post("/api/midi/hub/clock/stop")
+    assert stop.status_code == 200
+    assert stop.json()["running"] is False
