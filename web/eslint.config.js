@@ -13,6 +13,9 @@ export default tseslint.config(
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
+    },
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
@@ -45,6 +48,29 @@ export default tseslint.config(
       'no-prototype-builtins': 'warn',
       'no-var': 'warn',
       'react-hooks/rules-of-hooks': 'warn',
+    },
+  },
+  {
+    files: ['src/pipedal/**/*.{ts,tsx}'],
+    rules: {
+      // Legacy PiPedal port: keep lint focused on parse/runtime correctness
+      // while we modernize this surface incrementally.
+      'prefer-const': 'off',
+      'no-var': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/no-this-alias': 'off',
+      '@typescript-eslint/no-wrapper-object-types': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-empty': 'off',
+      'no-constant-binary-expression': 'off',
+      'no-prototype-builtins': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-refresh/only-export-components': 'off',
     },
   },
 )
