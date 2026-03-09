@@ -3,13 +3,11 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   List,
   ListItem,
@@ -17,16 +15,10 @@ import {
   MenuItem,
   Select,
   Stack,
-  Switch,
   Typography,
 } from '@mui/material'
-import {
-  useRollbackTesiraDeployment,
-  useStartTesiraDeployment,
-  useTesiraDeployment,
-  useTesiraLayouts,
-  useTesiraSageVueStatus,
-} from '../hooks/useTesiraApi'
+import { useTesiraLayouts } from '../hooks/useTesiraApi'
+import { tesiraApi } from '../../../../map2/api'
 
 interface TesiraDeployDialogProps {
   deviceId: string
@@ -36,57 +28,28 @@ interface TesiraDeployDialogProps {
 
 export function TesiraDeployDialog({ deviceId, open, onClose }: TesiraDeployDialogProps) {
   const { data: layouts, isLoading: layoutsLoading } = useTesiraLayouts({ includeInactive: false })
-  const { data: sagevue } = useTesiraSageVueStatus()
-  const startDeploy = useStartTesiraDeployment()
-  const rollbackDeploy = useRollbackTesiraDeployment()
 
   const options = useMemo(() => layouts?.layouts ?? [], [layouts])
   const [selected, setSelected] = useState<string>('')
-  const [dryRun, setDryRun] = useState<boolean>(true)
-  const [jobId, setJobId] = useState<string>('')
-  const deployment = useTesiraDeployment(jobId)
 
   const selectedLayout = useMemo(() => {
     if (!selected) return null
     const [layoutId, version] = selected.split('@')
-    return { layoutId, version }
-  }, [selected])
+    return options.find((layout) => layout.layout_id === layoutId && layout.version === version) ?? null
+  }, [options, selected])
 
-  const status = deployment.data?.status
-  const canRollback = status === 'succeeded'
-
-  const handleStart = async () => {
-    if (!selectedLayout) return
-    const job = await startDeploy.mutateAsync({
-      deviceId,
-      layoutId: selectedLayout.layoutId,
-      layoutVersion: selectedLayout.version,
-      dryRun,
-      requestedBy: 'map2-ui',
-    })
-    setJobId(job.job_id)
-  }
-
-  const handleRollback = async () => {
-    if (!jobId) return
-    await rollbackDeploy.mutateAsync({
-      jobId,
-      requestedBy: 'map2-ui',
-    })
-  }
+  const manualPackageUrl = selectedLayout
+    ? tesiraApi.getLayoutManualPackageDownloadUrl(selectedLayout.layout_id, selectedLayout.version, deviceId)
+    : ''
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Deploy Tesira Chain</DialogTitle>
+      <DialogTitle>Manual SageVue Deployment Package</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          {!sagevue?.enabled && (
-            <Alert severity="warning">SageVue integration is disabled in backend config.</Alert>
-          )}
-
-          {sagevue?.enabled && !sagevue.healthy && (
-            <Alert severity="warning">SageVue is enabled but not healthy: {sagevue.detail || 'unknown error'}</Alert>
-          )}
+          <Alert severity="info">
+            MAP2 direct SageVue deployment is disabled. Download the package and upload the TMF in SageVue manually.
+          </Alert>
 
           <FormControl fullWidth size="small" disabled={layoutsLoading || options.length === 0}>
             <InputLabel id="tesira-layout-select-label">Layout</InputLabel>
@@ -107,52 +70,67 @@ export function TesiraDeployDialog({ deviceId, open, onClose }: TesiraDeployDial
             </Select>
           </FormControl>
 
-          <FormControlLabel
-            control={<Switch checked={dryRun} onChange={(event) => setDryRun(event.target.checked)} />}
-            label="Dry Run"
-          />
+          {selectedLayout && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>Package Contents</Typography>
+              <List dense sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <ListItem divider>
+                  <ListItemText
+                    primary={`${selectedLayout.layout_id}_${selectedLayout.version}.tmf`}
+                    secondary="Required by SageVue. Included when artifact_uri points to a local TMF file."
+                  />
+                </ListItem>
+                <ListItem divider>
+                  <ListItemText
+                    primary={`${selectedLayout.layout_id}_${selectedLayout.version}.manifest.json`}
+                    secondary="MAP2 compatibility metadata and checksum reference."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText
+                    primary="README_UPLOAD_TO_SAGEVUE.md"
+                    secondary="Step-by-step manual upload instructions."
+                  />
+                </ListItem>
+              </List>
+            </Box>
+          )}
+
+          <Typography variant="subtitle2">Manual Upload Steps</Typography>
+          <List dense sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <ListItem divider>
+              <ListItemText primary="1. Download the manual package ZIP." />
+            </ListItem>
+            <ListItem divider>
+              <ListItemText primary="2. In SageVue, open Tesira Layouts and upload the included TMF." />
+            </ListItem>
+            <ListItem divider>
+              <ListItemText primary="3. Deploy the uploaded layout to the target Tesira device(s)." />
+            </ListItem>
+            <ListItem>
+              <ListItemText primary="4. Return to MAP2 and verify connectivity, AVB streams, and PTP." />
+            </ListItem>
+          </List>
 
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button
               variant="contained"
-              onClick={handleStart}
-              disabled={!selectedLayout || startDeploy.isPending}
+              component="a"
+              href={manualPackageUrl || undefined}
+              disabled={!selectedLayout}
             >
-              {startDeploy.isPending ? 'Starting…' : 'Start Deployment'}
+              Download Manual Package
             </Button>
-            {jobId && <Chip size="small" label={`Job ${jobId}`} />}
-            {status && <Chip size="small" color={status === 'failed' ? 'error' : status === 'succeeded' ? 'success' : 'default'} label={status} />}
-            {canRollback && (
-              <Button variant="outlined" color="warning" onClick={handleRollback} disabled={rollbackDeploy.isPending}>
-                {rollbackDeploy.isPending ? 'Rolling back…' : 'Rollback'}
-              </Button>
-            )}
+            <Button
+              variant="text"
+              component="a"
+              href="https://sagevue-help.biamp.com/Tesira_Layouts.htm"
+              target="_blank"
+              rel="noreferrer"
+            >
+              SageVue Upload Guide
+            </Button>
           </Box>
-
-          {startDeploy.error && <Alert severity="error">{startDeploy.error.message}</Alert>}
-          {rollbackDeploy.error && <Alert severity="error">{rollbackDeploy.error.message}</Alert>}
-          {deployment.error && <Alert severity="error">{deployment.error.message}</Alert>}
-
-          {deployment.data && (
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>Deployment Timeline</Typography>
-              <List dense sx={{ maxHeight: 260, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                {deployment.data.events.map((event) => (
-                  <ListItem key={`${event.sequence}-${event.stage}`} divider>
-                    <ListItemText
-                      primary={`${event.sequence}. ${event.stage} · ${event.status}`}
-                      secondary={`${event.message}${event.created_at ? ` · ${event.created_at}` : ''}`}
-                    />
-                  </ListItem>
-                ))}
-                {deployment.data.events.length === 0 && (
-                  <ListItem>
-                    <ListItemText primary="No events yet" />
-                  </ListItem>
-                )}
-              </List>
-            </Box>
-          )}
         </Stack>
       </DialogContent>
       <DialogActions>

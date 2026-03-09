@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   Tab,
   TabList,
@@ -25,7 +26,6 @@ import {
 } from '@mui/material'
 import { NumberInput } from '../../map2/components/NumberInput'
 import {
-  PianoKeys,
   MusicNote,
   GearSix,
   Pulse,
@@ -34,14 +34,13 @@ import {
   Plus,
   Trash,
   PencilSimple,
-  Power,
   Lightning,
   ArrowsClockwise,
   Broadcast,
   SpeakerHigh,
   GameController,
 } from '@phosphor-icons/react'
-import { midiApiV2, chainsApi, pluginsApi } from '../../map2/api'
+import { midiApiV2, chainsApi } from '../../map2/api'
 import type {
   MIDIMappingV2,
   MIDICommand,
@@ -57,6 +56,7 @@ import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
 import { MIDICommanderSetup } from '../components/MIDICommanderSetup'
+import './MIDIPage.css'
 
 // Curve type labels
 const CURVE_LABELS: Record<MIDICurveType, string> = {
@@ -84,10 +84,106 @@ const TRIGGER_LABELS: Record<MIDITriggerType, string> = {
   control_change: 'Control Change',
 }
 
+const MIDI_SIGNAL_PATH_STEPS = [
+  {
+    title: 'Input Capture',
+    detail: 'USB/DIN/network events enter MAP2 with channel-aware parsing.',
+  },
+  {
+    title: 'Mapping Layer',
+    detail: 'CC data scales through curve/invert/range logic into parameter targets.',
+  },
+  {
+    title: 'Command Layer',
+    detail: 'Program/note/CC triggers run deterministic chain and action automation.',
+  },
+  {
+    title: 'Preset Recall',
+    detail: 'Stored control states can be recalled and redistributed across rigs.',
+  },
+  {
+    title: 'Advanced Hub',
+    detail: 'Patchbay, scripts, macros, clock, recorder, network, and diagnostics.',
+  },
+]
+
+const MIDI_CAPABILITY_CLUSTERS = [
+  {
+    title: 'Controller Integration',
+    subtitle: 'For direct performer workflows',
+    items: [
+      'Controller onboarding and profile setup',
+      'MIDI Learn / Omni channel support',
+      'Dedicated live monitoring and last-event tracking',
+    ],
+  },
+  {
+    title: 'Parameter & Command Automation',
+    subtitle: 'For chain and plugin control logic',
+    items: [
+      'CC-to-parameter mappings with curve and inversion shaping',
+      'Program/Note/CC trigger commands for chain actions',
+      'Per-rule enable/disable and quick iteration',
+    ],
+  },
+  {
+    title: 'Device + Preset Operations',
+    subtitle: 'For repeatable deployment',
+    items: [
+      'MIDI input/output connect-disconnect management',
+      'Snapshot save/load of complete MIDI control posture',
+      'Fast recovery after controller swaps or show changes',
+    ],
+  },
+  {
+    title: 'MIDI Hub Expansion',
+    subtitle: 'For enterprise-grade routing and orchestration',
+    items: [
+      'Routing matrix + patchbay + traffic analytics',
+      'Script engine, macros, recorder, scheduler, and tempo clock',
+      'RTP/OSC networking, MIDI 2.0 readiness, and innovation controls',
+    ],
+  },
+]
+
+const MIDI_OPERATOR_PLAYBOOKS = [
+  {
+    title: 'FOH Scene Switching',
+    detail:
+      'Use Program Change commands to drive chain transitions and load a known preset before show start.',
+    steps: [
+      'Build or verify command triggers in Commands tab.',
+      'Validate controller device lock in Devices tab.',
+      'Save the final routing as a named MIDI preset.',
+    ],
+  },
+  {
+    title: 'Expression Automation',
+    detail:
+      'Map one pedal across multiple parameters with range and curve shaping to avoid abrupt jumps.',
+    steps: [
+      'Create CC mappings with min/max and curve profiles.',
+      'Monitor live value behavior in Activity tab.',
+      'Tune invert/curve until throw response is musical.',
+    ],
+  },
+  {
+    title: 'Large-Rig Orchestration',
+    detail:
+      'Escalate into MIDI Hub when you need scriptable routing, network sessions, and timeline scheduling.',
+    steps: [
+      'Open MIDI Hub for matrix or patchbay topology edits.',
+      'Add macros/recorder/scheduler workflows.',
+      'Use diagnostics traffic views for runtime verification.',
+    ],
+  },
+]
+
+type MidiTabId = 'controller' | 'mappings' | 'commands' | 'devices' | 'activity' | 'presets'
+
 export function MIDIPage() {
   const queryClient = useQueryClient()
-  const { pushToast } = useToasts()
-  const [selectedTab, setSelectedTab] = useState('controller')
+  const [selectedTab, setSelectedTab] = useState<MidiTabId>('controller')
 
   // Query keys
   const statusKey = ['midi', 'status'] as const
@@ -135,72 +231,225 @@ export function MIDIPage() {
   const commands = commandsQuery.data?.commands ?? []
   const presets = presetsQuery.data?.presets ?? []
   const chains = chainsQuery.data?.chains ?? []
+  const devices = devicesQuery.data
+  const inputDevicesCount = devices?.input_devices?.length ?? 0
+  const outputDevicesCount = devices?.output_devices?.length ?? 0
+  const mappingsCount = status?.mappings_count ?? mappings.length
+  const commandsCount = status?.commands_count ?? commands.length
+  const activeConnections = Number(Boolean(status?.input_open)) + Number(Boolean(status?.output_open))
+  const midiReadinessLabel = status?.enabled
+    ? status?.input_open
+      ? 'Live Input Armed'
+      : 'Engine Online'
+    : 'Standby'
+  const midiReadinessTone = status?.enabled ? (status?.input_open ? 'success' : 'warn') : 'default'
+  const workflowCoverage = Math.min(
+    100,
+    Math.round(
+      ((Number(mappingsCount > 0) + Number(commandsCount > 0) + Number(presets.length > 0) + Number(activeConnections > 0)) / 4) * 100
+    ),
+  )
+
+  const refreshMidiViews = () => {
+    void queryClient.invalidateQueries({ queryKey: ['midi'] })
+    void queryClient.invalidateQueries({ queryKey: ['midi-hub'] })
+  }
 
   return (
     <div className="stack midi-page">
       <PageHeader
-        title="MIDI Control"
-        subtitle="CC mappings, chain switching, and real-time MIDI monitoring."
+        title="MIDI Control Center"
+        subtitle="Professional MIDI operations for controller onboarding, automation logic, device orchestration, and show-safe recall."
         icon={<MusicNote size={32} weight="duotone" style={{ color: '#3b82f6' }} />}
         actions={
-          <div className="flex" style={{ gap: 8 }}>
+          <div className="midi-header-actions">
+            <Link className="btn btn-ghost" to="/midi-hub">
+              <Broadcast size={16} weight="duotone" /> MIDI Hub
+            </Link>
             <button
               className="btn btn-ghost"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['midi'] })}
+              onClick={refreshMidiViews}
             >
-              <ArrowsClockwise size={16} weight="duotone" /> Refresh
+              <ArrowsClockwise size={16} weight="duotone" /> Refresh All
             </button>
           </div>
         }
       />
 
+      <section className="midi-overview card">
+        <div className="midi-overview__header">
+          <div>
+            <p className="midi-overview__eyebrow">MIDI Architecture</p>
+            <h3>Signal-to-Action Pipeline</h3>
+            <p className="subtitle">
+              MAP2 now spans two layers: this page for core MIDI control and <strong>MIDI Hub</strong> for advanced routing,
+              scripting, scheduling, and networked orchestration.
+            </p>
+          </div>
+          <div className="midi-overview__status">
+            <span className={`pill ${midiReadinessTone}`}>Readiness: {midiReadinessLabel}</span>
+            <span className="pill muted">Coverage: {workflowCoverage}%</span>
+            <span className="pill muted">Connections: {activeConnections}/2</span>
+          </div>
+        </div>
+
+        <div className="midi-overview__path">
+          {MIDI_SIGNAL_PATH_STEPS.map((step, index) => (
+            <article key={step.title} className="midi-overview__path-step">
+              <span className="midi-overview__step-index">{index + 1}</span>
+              <div>
+                <h4>{step.title}</h4>
+                <p>{step.detail}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="midi-overview__actions">
+          <button className="btn btn-primary" onClick={() => setSelectedTab('controller')}>
+            <GameController size={16} weight="duotone" /> Configure Controllers
+          </button>
+          <button className="btn btn-ghost" onClick={() => setSelectedTab('mappings')}>
+            <MusicNote size={16} weight="duotone" /> Edit Mapping Layer
+          </button>
+          <button className="btn btn-ghost" onClick={() => setSelectedTab('commands')}>
+            <Lightning size={16} weight="duotone" /> Program Command Logic
+          </button>
+          <button className="btn btn-ghost" onClick={() => setSelectedTab('presets')}>
+            <FloppyDisk size={16} weight="duotone" /> Manage Presets
+          </button>
+          <Link className="btn btn-ghost" to="/midi-hub">
+            <Broadcast size={16} weight="duotone" /> Open Advanced MIDI Hub
+          </Link>
+        </div>
+      </section>
+
       {/* Status Cards */}
       <div className="grid four">
         <StatCard
-          label="MIDI Status"
+          label="Core Engine"
           value={status?.enabled ? 'Enabled' : 'Disabled'}
-          helper={status?.input_open ? 'Input Open' : 'No Input'}
+          helper={status?.input_open ? 'Input armed and receiving' : 'Input not armed'}
           tone={status?.enabled ? 'success' : 'default'}
         />
         <StatCard
           label="CC Mappings"
-          value={mappings.length}
-          helper="Active mappings"
+          value={mappingsCount}
+          helper={mappingsCount > 0 ? 'Control rules installed' : 'No control rules yet'}
         />
         <StatCard
-          label="Commands"
-          value={commands.length}
-          helper="Triggers defined"
+          label="Command Rules"
+          value={commandsCount}
+          helper={commandsCount > 0 ? 'Trigger automations defined' : 'No trigger logic yet'}
+        />
+        <StatCard
+          label="I/O Endpoints"
+          value={`${inputDevicesCount}/${outputDevicesCount}`}
+          helper={`${devices?.current_input ?? status?.input_device ?? 'No input'} -> ${devices?.current_output ?? status?.output_device ?? 'No output'}`}
+          tone={activeConnections > 0 ? 'success' : 'default'}
         />
         <StatCard
           label="Learn Mode"
           value={status?.learning ? 'Active' : 'Idle'}
-          helper={status?.learning ? 'Waiting for CC...' : 'Ready'}
+          helper={status?.learning ? 'Listening for next MIDI event' : 'Ready for capture'}
           tone={status?.learning ? 'warn' : 'default'}
+        />
+        <StatCard
+          label="Preset Library"
+          value={presets.length}
+          helper={presets.length > 0 ? 'Recall-ready control snapshots' : 'No snapshots saved'}
+        />
+        <StatCard
+          label="Connected Devices"
+          value={activeConnections}
+          helper={`${inputDevicesCount} inputs / ${outputDevicesCount} outputs discovered`}
+          tone={activeConnections > 0 ? 'success' : 'default'}
+        />
+        <StatCard
+          label="Advanced Surface"
+          value="MIDI Hub"
+          helper="Matrix, scripts, macros, clock, network, diagnostics"
+          tone="default"
         />
       </div>
 
+      <section className="midi-capabilities card">
+        <div className="section-heading">
+          <div>
+            <h3>Capability Matrix</h3>
+            <p className="subtitle">Every MIDI feature family in MAP2, organized by operational objective.</p>
+          </div>
+        </div>
+        <div className="midi-capabilities__grid">
+          {MIDI_CAPABILITY_CLUSTERS.map((cluster) => (
+            <article key={cluster.title} className="midi-capability-card">
+              <header>
+                <h4>{cluster.title}</h4>
+                <p>{cluster.subtitle}</p>
+              </header>
+              <ul>
+                {cluster.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="midi-playbooks card">
+        <div className="section-heading">
+          <div>
+            <h3>Operator Playbooks</h3>
+            <p className="subtitle">Recommended execution patterns for live and studio MIDI operations.</p>
+          </div>
+        </div>
+        <div className="midi-playbooks__grid">
+          {MIDI_OPERATOR_PLAYBOOKS.map((playbook) => (
+            <article key={playbook.title} className="midi-playbook-card">
+              <h4>{playbook.title}</h4>
+              <p>{playbook.detail}</p>
+              <ol>
+                {playbook.steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </article>
+          ))}
+        </div>
+      </section>
+
       {/* Tabs */}
-      <div className="card">
-        <TabProvider defaultSelectedId="controller" selectedId={selectedTab} setSelectedId={(id) => setSelectedTab(id ?? 'controller')}>
+      <div className="card midi-workbench">
+        <div className="section-heading midi-workbench__heading">
+          <div>
+            <h3>Core MIDI Workbench</h3>
+            <p className="subtitle">Live editing surface for controller setup, mappings, commands, devices, monitoring, and presets.</p>
+          </div>
+        </div>
+        <TabProvider defaultSelectedId="controller" selectedId={selectedTab} setSelectedId={(id) => setSelectedTab((id as MidiTabId) ?? 'controller')}>
           <TabList className="tab-list midi-tab-list" aria-label="MIDI sections">
             <Tab id="controller" className="tab">
               <GameController size={16} weight="duotone" /> Controller Setup
             </Tab>
             <Tab id="mappings" className="tab">
               <MusicNote size={16} weight="duotone" /> CC Mappings
+              <span className="midi-tab-count">{mappingsCount}</span>
             </Tab>
             <Tab id="commands" className="tab">
               <Lightning size={16} weight="duotone" /> Commands
+              <span className="midi-tab-count">{commandsCount}</span>
             </Tab>
             <Tab id="devices" className="tab">
               <GearSix size={16} weight="duotone" /> Devices
+              <span className="midi-tab-count">{inputDevicesCount + outputDevicesCount}</span>
             </Tab>
             <Tab id="activity" className="tab">
               <Pulse size={16} weight="duotone" /> Activity
             </Tab>
             <Tab id="presets" className="tab">
               <FloppyDisk size={16} weight="duotone" /> Presets
+              <span className="midi-tab-count">{presets.length}</span>
             </Tab>
           </TabList>
 

@@ -1,269 +1,277 @@
-
-> mackes-audio-platform-2-web@3.0.0-FEB2026 build
-> tsc -b && vite build
-
 vite v6.4.1 building for production...
 transforming...
-✓ 18475 modules transformed.
+✓ 18511 modules transformed.
 rendering chunks...
+[plugin vite:reporter] 
+(!) /home/mm/map2-audio/web/src/map2/api.ts is dynamically imported by /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts, /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts, /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts, /home/mm/map2-audio/web/src/map2/hooks/useWebSocket.ts but also statically imported by /home/mm/map2-audio/web/src/app/components/AvbRouting/components/Inspector/InspectorPanel.tsx, /home/mm/map2-audio/web/src/app/components/ChainManagementCard.tsx, /home/mm/map2-audio/web/src/app/components/GridFlow/AudioPortSelector.tsx, /home/mm/map2-audio/web/src/app/components/GridFlow/FlowSnapshotsPanel.tsx, /home/mm/map2-audio/web/src/app/components/MIDICommanderSetup.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/Midi2Panel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiClockPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiHubPresetManager.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiInnovationPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiMacroPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiNetworkPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiPatchbay.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiRecorderPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiRoutingMatrix.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiSchedulerPanel.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiScriptEditor.tsx, /home/mm/map2-audio/web/src/app/components/MidiHub/MidiTrafficMonitor.tsx, /home/mm/map2-audio/web/src/app/components/PlatformCapabilities.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/Custom/JUCE/DrumMachineCard.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/Custom/JUCE/SynthForgeCard.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/Custom/LV2/KeyboardSamplerCard.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/Dialogs/MidiMappingDialog.tsx, /home/mm/map2-audio/web/src/app/components/PluginCards/PluginCardRouter.tsx, /home/mm/map2-audio/web/src/app/components/ShoppingSearchDialog.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/components/TesiraEQTab.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/components/TesiraLoopBuilderTab.tsx, /home/mm/map2-audio/web/src/app/components/Tesira/hooks/useTesiraApi.ts, /home/mm/map2-audio/web/src/app/components/library/InstalledAssetsTable.tsx, /home/mm/map2-audio/web/src/app/components/library/LibrarySources.tsx, /home/mm/map2-audio/web/src/app/components/library/Tone3000Config.tsx, /home/mm/map2-audio/web/src/app/components/upload/UnifiedUploadDialog.tsx, /home/mm/map2-audio/web/src/app/hooks/useAvbStatus.ts, /home/mm/map2-audio/web/src/app/hooks/useCPUMetrics.ts, /home/mm/map2-audio/web/src/app/hooks/useDelay.ts, /home/mm/map2-audio/web/src/app/hooks/useDownloadProgress.ts, /home/mm/map2-audio/web/src/app/hooks/useDynamics.ts, /home/mm/map2-audio/web/src/app/hooks/useFlowSnapshots.ts, /home/mm/map2-audio/web/src/app/hooks/useHostMachine.ts, /home/mm/map2-audio/web/src/app/hooks/useLCDEvents.ts, /home/mm/map2-audio/web/src/app/hooks/useLatency.ts, /home/mm/map2-audio/web/src/app/hooks/useLoudness.ts, /home/mm/map2-audio/web/src/app/hooks/usePipeWire.ts, /home/mm/map2-audio/web/src/app/hooks/usePluginOutputs.ts, /home/mm/map2-audio/web/src/app/hooks/useSoundFontDownloadProgress.ts, /home/mm/map2-audio/web/src/app/hooks/useSpectrum.ts, /home/mm/map2-audio/web/src/app/hooks/useVuMeters.ts, /home/mm/map2-audio/web/src/app/pages/AudioEnginePage.tsx, /home/mm/map2-audio/web/src/app/pages/ChainsPage.tsx, /home/mm/map2-audio/web/src/app/pages/DrumsPage.tsx, /home/mm/map2-audio/web/src/app/pages/EdirolUA1000Page.tsx, /home/mm/map2-audio/web/src/app/pages/GridFlowAdvancedPage.tsx, /home/mm/map2-audio/web/src/app/pages/GridFlowPage.tsx, /home/mm/map2-audio/web/src/app/pages/LV2PluginsPage.tsx, /home/mm/map2-audio/web/src/app/pages/LibraryPage.tsx, /home/mm/map2-audio/web/src/app/pages/MIDIPage.tsx, /home/mm/map2-audio/web/src/app/pages/MOTURMEPage.tsx, /home/mm/map2-audio/web/src/app/pages/MidiHubPage.tsx, /home/mm/map2-audio/web/src/app/pages/PresetsPage.tsx, /home/mm/map2-audio/web/src/map2/mpx1Api.ts, dynamic import will not move module into another chunk.
+
 computing gzip size...
 dist/index.html                                       1.05 kB │ gzip:   0.52 kB
+dist/assets/HomePage-DGocdMD6.css                     0.75 kB │ gzip:   0.39 kB
 dist/assets/PhaserCard-D_ulfPO7.css                   1.00 kB │ gzip:   0.43 kB
 dist/assets/ChorusCard-BxQ4DQVQ.css                   1.01 kB │ gzip:   0.44 kB
 dist/assets/REEVRCard-DlmVxDac.css                    1.54 kB │ gzip:   0.60 kB
-dist/assets/MPX1PanelView-BoxvMOVr.css                1.58 kB │ gzip:   0.69 kB
 dist/assets/MPX1DiagView-C8D-mXjV.css                 2.03 kB │ gzip:   0.74 kB
 dist/assets/LCDDisplay-7soJoUMo.css                   2.56 kB │ gzip:   0.84 kB
 dist/assets/OutotuneCard-PwDtGYk2.css                 2.60 kB │ gzip:   0.82 kB
 dist/assets/MPX1LibraryView-CBth-_lp.css              2.73 kB │ gzip:   0.84 kB
-dist/assets/MPX1PerformView-DHAlXJ4H.css              2.91 kB │ gzip:   0.89 kB
 dist/assets/WhammyCard-DITkfQJS.css                   3.12 kB │ gzip:   0.95 kB
 dist/assets/MPX1MatrixView-eqRjGCdM.css               3.48 kB │ gzip:   1.04 kB
 dist/assets/IntelliFXCard-BB-i_X7C.css                3.85 kB │ gzip:   1.08 kB
 dist/assets/MPX1MidiMapView--Izxi_BG.css              4.05 kB │ gzip:   1.10 kB
 dist/assets/ShoeGazeCard-DylKR8mU.css                 4.17 kB │ gzip:   1.42 kB
+dist/assets/MPX1PerformView-BII9Enr6.css              4.22 kB │ gzip:   1.18 kB
 dist/assets/GlitchShifterCard-CWlBnE3j.css            4.22 kB │ gzip:   1.30 kB
 dist/assets/LexiLoveCard-BRp1Vv5E.css                 4.53 kB │ gzip:   1.34 kB
-dist/assets/MPX1Page-C5nqJKDB.css                     4.64 kB │ gzip:   1.41 kB
 dist/assets/EVHPitchShifterCard-CSTSL-XI.css          4.66 kB │ gzip:   1.21 kB
 dist/assets/Peavey5150Card-oJJwFpIC.css               4.67 kB │ gzip:   1.42 kB
 dist/assets/MPX1EditorView-D6giwnQw.css               4.74 kB │ gzip:   1.30 kB
+dist/assets/MPX1Page-BM_4Y6mB.css                     4.80 kB │ gzip:   1.47 kB
 dist/assets/BossXS1Card-Dj40v6Ah.css                  5.19 kB │ gzip:   1.32 kB
 dist/assets/TweedBassmanCard-Dt0R7eOU.css             5.32 kB │ gzip:   1.53 kB
 dist/assets/NativeDelayCard-Bd1u1Hh8.css              5.44 kB │ gzip:   1.34 kB
-dist/assets/App-BQP6H5pr.css                          5.52 kB │ gzip:   1.65 kB
 dist/assets/KeyboardSamplerCard-CwD4-XJ-.css          5.56 kB │ gzip:   1.38 kB
 dist/assets/IntervalShifterCard-R3-Z0Msf.css          5.69 kB │ gzip:   1.36 kB
 dist/assets/H3000Card-DhHoNzdl.css                    5.88 kB │ gzip:   1.67 kB
 dist/assets/EventideH9Card-CFu60V9L.css               6.27 kB │ gzip:   1.72 kB
 dist/assets/PassionFXCard-Xstd90Oi.css                6.31 kB │ gzip:   1.82 kB
 dist/assets/CelestialCompressorCard-CuBV7N59.css      6.37 kB │ gzip:   1.82 kB
-dist/assets/useAvbApi-B5DZHykP.css                    7.32 kB │ gzip:   1.60 kB
+dist/assets/style-B5DZHykP.css                        7.32 kB │ gzip:   1.60 kB
 dist/assets/SynthForgeCard-CD1hBDel.css               7.73 kB │ gzip:   1.86 kB
 dist/assets/HoToneJoGGPage-CPyfqMrs.css               8.10 kB │ gzip:   2.12 kB
-dist/assets/index-uu5akYix.css                      118.35 kB │ gzip:  19.20 kB
+dist/assets/App-BFF6SQJN.css                          8.22 kB │ gzip:   2.15 kB
+dist/assets/MPX1PanelView-BoojjtE3.css               10.57 kB │ gzip:   2.45 kB
+dist/assets/MPX1FlowView-ByiOIb9b.css                14.56 kB │ gzip:   3.11 kB
+dist/assets/index-BkSQirWB.css                      129.66 kB │ gzip:  21.37 kB
 dist/assets/index-zioTSqyj.js                         0.16 kB │ gzip:   0.14 kB │ map:     0.90 kB
-dist/assets/Remove-8D1rjp-Y.js                        0.20 kB │ gzip:   0.19 kB │ map:     0.52 kB
-dist/assets/Warning-KBebbOuz.js                       0.23 kB │ gzip:   0.21 kB │ map:     0.55 kB
-dist/assets/listItemTextClasses-DbTzhXG0.js           0.26 kB │ gzip:   0.22 kB │ map:     0.87 kB
+dist/assets/Remove-hCm7Ydp-.js                        0.20 kB │ gzip:   0.19 kB │ map:     0.52 kB
+dist/assets/Add-DIQ05Cv1.js                           0.21 kB │ gzip:   0.20 kB │ map:     0.52 kB
+dist/assets/Warning-CRodeLZj.js                       0.23 kB │ gzip:   0.21 kB │ map:     0.55 kB
+dist/assets/listItemTextClasses-D0m5eu0l.js           0.26 kB │ gzip:   0.21 kB │ map:     0.87 kB
 dist/assets/extends-CF3RwP-h.js                       0.28 kB │ gzip:   0.23 kB │ map:     0.85 kB
-dist/assets/useControlled-DT5QnKnM.js                 0.28 kB │ gzip:   0.24 kB │ map:     2.97 kB
-dist/assets/ownerWindow-D-p0q6s0.js                   0.31 kB │ gzip:   0.25 kB │ map:     1.30 kB
+dist/assets/useControlled-gDf42HfY.js                 0.28 kB │ gzip:   0.24 kB │ map:     2.97 kB
+dist/assets/ownerWindow-D5wJTbAy.js                   0.31 kB │ gzip:   0.25 kB │ map:     1.30 kB
 dist/assets/metering-hZn6K4Xc.js                      0.32 kB │ gzip:   0.24 kB │ map:     4.80 kB
-dist/assets/dividerClasses-8LgNhuF8.js                0.37 kB │ gzip:   0.27 kB │ map:     1.00 kB
-dist/assets/Refresh-CrO6HKCu.js                       0.38 kB │ gzip:   0.30 kB │ map:     0.70 kB
-dist/assets/ParameterRow-i9be7xi7.js                  0.38 kB │ gzip:   0.30 kB │ map:     1.50 kB
-dist/assets/useThemeProps-gfKmWySd.js                 0.42 kB │ gzip:   0.29 kB │ map:     1.77 kB
-dist/assets/HMKTUWOU-CFXjLJsR.js                      0.47 kB │ gzip:   0.35 kB │ map:     2.13 kB
-dist/assets/StatCard-YzKr832z.js                      0.53 kB │ gzip:   0.33 kB │ map:     1.42 kB
-dist/assets/LegacyPage-rk3xoW6g.js                    0.54 kB │ gzip:   0.32 kB │ map:     0.99 kB
-dist/assets/TableContainer-CGHBFt5n.js                0.66 kB │ gzip:   0.43 kB │ map:     4.44 kB
+dist/assets/dividerClasses-BKu6uLo4.js                0.37 kB │ gzip:   0.27 kB │ map:     1.00 kB
+dist/assets/Refresh-sokU2MXM.js                       0.38 kB │ gzip:   0.30 kB │ map:     0.70 kB
+dist/assets/ParameterRow-BBHHSr9D.js                  0.38 kB │ gzip:   0.30 kB │ map:     1.50 kB
+dist/assets/useThemeProps-Dh9-bIyA.js                 0.42 kB │ gzip:   0.29 kB │ map:     1.77 kB
+dist/assets/HMKTUWOU-MffFoBNa.js                      0.47 kB │ gzip:   0.35 kB │ map:     2.13 kB
+dist/assets/StatCard-xGilFCwh.js                      0.53 kB │ gzip:   0.33 kB │ map:     1.42 kB
+dist/assets/LegacyPage-F8iMNW_A.js                    0.54 kB │ gzip:   0.32 kB │ map:     0.99 kB
+dist/assets/TableContainer-DQJCEm5N.js                0.66 kB │ gzip:   0.42 kB │ map:     4.44 kB
+dist/assets/Box-DWWI2BIG.js                           0.67 kB │ gzip:   0.43 kB │ map:     4.30 kB
 dist/assets/vanilla-CAvSZlFl.js                       0.67 kB │ gzip:   0.45 kB │ map:     2.76 kB
-dist/assets/PageHeader-yDxU0puw.js                    0.69 kB │ gzip:   0.41 kB │ map:     2.11 kB
+dist/assets/PageHeader-WBjsZ19O.js                    0.69 kB │ gzip:   0.42 kB │ map:     2.11 kB
 dist/assets/formatters-DuCYu7AR.js                    0.82 kB │ gzip:   0.46 kB │ map:     7.70 kB
-dist/assets/SVGGradients-Ca25p8fT.js                  0.95 kB │ gzip:   0.32 kB │ map:     5.96 kB
-dist/assets/CardContent-D4oyFhjz.js                   1.10 kB │ gzip:   0.53 kB │ map:     8.51 kB
-dist/assets/index-cjLiSydU.js                         1.20 kB │ gzip:   0.67 kB │ map:     4.07 kB
-dist/assets/useResponsiveVizSize-B_td1sjY.js          1.24 kB │ gzip:   0.69 kB │ map:     7.55 kB
-dist/assets/with-selector-MEnyAy5P.js                 1.34 kB │ gzip:   0.77 kB │ map:     5.12 kB
-dist/assets/List-Cq4RpfhR.js                          1.43 kB │ gzip:   0.77 kB │ map:     8.04 kB
-dist/assets/CaretDown.es-BfCnSXQ2.js                  1.44 kB │ gzip:   0.60 kB │ map:     3.14 kB
-dist/assets/CaretUp.es-jmdsyryC.js                    1.52 kB │ gzip:   0.59 kB │ map:     3.19 kB
-dist/assets/Plus.es-BfZiOh97.js                       1.60 kB │ gzip:   0.61 kB │ map:     3.33 kB
-dist/assets/Check.es-bRykk58X.js                      1.60 kB │ gzip:   0.62 kB │ map:     3.32 kB
-dist/assets/Square.es-CXzKQJlp.js                     1.61 kB │ gzip:   0.58 kB │ map:     3.33 kB
-dist/assets/ArrowUp.es-DuZeEo3x.js                    1.67 kB │ gzip:   0.65 kB │ map:     3.36 kB
-dist/assets/LCDDisplay-4jeaJk1v.js                    1.67 kB │ gzip:   0.65 kB │ map:     6.00 kB
-dist/assets/MagnifyingGlass.es-DjudkmEz.js            1.71 kB │ gzip:   0.71 kB │ map:     3.45 kB
-dist/assets/Terminal.es-hI6wLao5.js                   1.75 kB │ gzip:   0.70 kB │ map:     3.43 kB
-dist/assets/Copy.es-CLaZf6FO.js                       1.86 kB │ gzip:   0.65 kB │ map:     3.53 kB
-dist/assets/Clock.es-Bz0l9wLL.js                      1.87 kB │ gzip:   0.68 kB │ map:     3.55 kB
-dist/assets/HardDrive.es-B1_mW20P.js                  1.88 kB │ gzip:   0.65 kB │ map:     3.63 kB
-dist/assets/ChartBar.es-BLxjvFD1.js                   1.88 kB │ gzip:   0.72 kB │ map:     3.58 kB
-dist/assets/MusicNote.es-mtjbhK5_.js                  1.96 kB │ gzip:   0.74 kB │ map:     3.67 kB
-dist/assets/TrendUp.es-BAgxALcw.js                    1.97 kB │ gzip:   0.76 kB │ map:     3.64 kB
-dist/assets/Stack-ChJDZ2Nw.js                         2.04 kB │ gzip:   1.06 kB │ map:    12.89 kB
-dist/assets/DownloadSimple.es-BYCpQusR.js             2.09 kB │ gzip:   0.72 kB │ map:     3.87 kB
-dist/assets/NumberInput-CowHT2Fd.js                   2.09 kB │ gzip:   1.04 kB │ map:     8.43 kB
-dist/assets/UploadSimple.es-hWXNBCRV.js               2.11 kB │ gzip:   0.72 kB │ map:     3.88 kB
-dist/assets/CheckCircle.es-ClWlEG9r.js                2.16 kB │ gzip:   0.76 kB │ map:     3.86 kB
-dist/assets/ArrowCounterClockwise.es-tk0Lz8SP.js      2.18 kB │ gzip:   0.82 kB │ map:     3.94 kB
-dist/assets/useVuMeters-DyhfoHa9.js                   2.20 kB │ gzip:   0.95 kB │ map:     7.80 kB
-dist/assets/Folder.es-D48F7Odq.js                     2.24 kB │ gzip:   0.84 kB │ map:     4.00 kB
-dist/assets/Play.es-DydCXw3h.js                       2.26 kB │ gzip:   0.87 kB │ map:     3.98 kB
-dist/assets/Microphone.es-BObwu440.js                 2.36 kB │ gzip:   0.80 kB │ map:     4.11 kB
-dist/assets/ArrowSquareOut.es-DRCXBNSS.js             2.41 kB │ gzip:   0.88 kB │ map:     4.20 kB
-dist/assets/Pause.es-C2vj91aU.js                      2.42 kB │ gzip:   0.73 kB │ map:     4.16 kB
-dist/assets/PianoKeys.es-CZyy-RjZ.js                  2.42 kB │ gzip:   0.84 kB │ map:     4.13 kB
-dist/assets/useCPUMetrics-17JbkYGo.js                 2.48 kB │ gzip:   1.09 kB │ map:     8.63 kB
-dist/assets/XCircle.es-BkGuY1Ji.js                    2.52 kB │ gzip:   0.83 kB │ map:     4.19 kB
-dist/assets/PencilSimple.es-DAc1MZZW.js               2.52 kB │ gzip:   0.93 kB │ map:     4.30 kB
-dist/assets/LFOWaveform-CaMTCPw_.js                   2.58 kB │ gzip:   1.34 kB │ map:    10.50 kB
-dist/assets/Trash.es-Cl14FTVg.js                      2.61 kB │ gzip:   0.83 kB │ map:     4.29 kB
-dist/assets/Funnel.es-B9eEHVNv.js                     2.63 kB │ gzip:   1.01 kB │ map:     4.35 kB
-dist/assets/GitBranch.es-x3Ke_53q.js                  2.66 kB │ gzip:   0.85 kB │ map:     4.36 kB
-dist/assets/FileText.es-CxOA3ew_.js                   2.68 kB │ gzip:   0.84 kB │ map:     4.38 kB
-dist/assets/DelayTapGrid-wQjFTkGE.js                  2.69 kB │ gzip:   1.34 kB │ map:    11.53 kB
-dist/assets/useFilters-CE42p5XM.js                    2.71 kB │ gzip:   1.06 kB │ map:    10.96 kB
-dist/assets/WaveSine.es-C385SPPy.js                   2.73 kB │ gzip:   1.15 kB │ map:     4.45 kB
-dist/assets/MPX1Knob-3gmJBpLw.js                      2.74 kB │ gzip:   1.35 kB │ map:    10.19 kB
-dist/assets/Shield.es-eLAAdaTM.js                     2.76 kB │ gzip:   1.08 kB │ map:     4.48 kB
-dist/assets/TransferCurve-BEwIblcy.js                 2.93 kB │ gzip:   1.47 kB │ map:    13.53 kB
-dist/assets/GainReductionMeter-VW6xMdGu.js            2.97 kB │ gzip:   1.10 kB │ map:     6.87 kB
-dist/assets/FloppyDisk.es-CAjN6_bG.js                 2.97 kB │ gzip:   0.94 kB │ map:     4.74 kB
-dist/assets/FolderOpen.es-s0ccUTmP.js                 2.99 kB │ gzip:   1.05 kB │ map:     4.78 kB
-dist/assets/ReverbDecayCurve-LPnejCui.js              3.03 kB │ gzip:   1.43 kB │ map:    13.28 kB
-dist/assets/Stack.es-CJIij37j.js                      3.06 kB │ gzip:   0.93 kB │ map:     4.87 kB
-dist/assets/CircularProgress-BrgXwrTC.js              3.10 kB │ gzip:   1.31 kB │ map:    14.15 kB
-dist/assets/Camera.es-B__QYm1u.js                     3.12 kB │ gzip:   1.05 kB │ map:     4.84 kB
-dist/assets/CloudArrowDown.es-WtBXQed5.js             3.13 kB │ gzip:   1.16 kB │ map:     4.91 kB
-dist/assets/Link-E-JIKw_O.js                          3.16 kB │ gzip:   1.33 kB │ map:    14.15 kB
-dist/assets/Headphones.es-rV-3iNOw.js                 3.18 kB │ gzip:   1.04 kB │ map:     4.95 kB
-dist/assets/SpeakerX.es-CHV0BDPW.js                   3.22 kB │ gzip:   1.13 kB │ map:     4.92 kB
-dist/assets/usePipeWire-D-Vohwvf.js                   3.26 kB │ gzip:   1.37 kB │ map:    13.40 kB
-dist/assets/Plug.es-Lhi4P1r4.js                       3.27 kB │ gzip:   1.11 kB │ map:     5.00 kB
-dist/assets/Flask.es-YEUEqx78.js                      3.33 kB │ gzip:   1.29 kB │ map:     5.07 kB
-dist/assets/Keyboard.es-sFP8eRA2.js                   3.34 kB │ gzip:   0.90 kB │ map:     5.09 kB
-dist/assets/SpinnerGap.es-CeahaeLq.js                 3.38 kB │ gzip:   1.10 kB │ map:     5.10 kB
-dist/assets/ParameterKnob-CFyFJSb9.js                 3.39 kB │ gzip:   1.60 kB │ map:    15.75 kB
-dist/assets/Warning.es-_b-MAZBN.js                    3.40 kB │ gzip:   1.12 kB │ map:     5.15 kB
-dist/assets/SpeakerHigh.es-BBCSMqgK.js                3.45 kB │ gzip:   1.28 kB │ map:     5.18 kB
-dist/assets/Gauge.es-D18sBcAq.js                      3.46 kB │ gzip:   1.35 kB │ map:     5.21 kB
-dist/assets/Cpu.es-BvK0CxfP.js                        3.48 kB │ gzip:   1.08 kB │ map:     5.22 kB
-dist/assets/CE2ChorusCard-DWm8yphX.js                 3.55 kB │ gzip:   1.72 kB │ map:     4.50 kB
-dist/assets/DesktopTower.es-C8H0mm9x.js               3.60 kB │ gzip:   1.16 kB │ map:     5.37 kB
-dist/assets/EQCurveDisplay-guVPVNgq.js                3.76 kB │ gzip:   1.80 kB │ map:    15.19 kB
-dist/assets/Collapse-Dybpr9qS.js                      3.76 kB │ gzip:   1.52 kB │ map:    19.22 kB
-dist/assets/Divider-BYO1HByQ.js                       3.82 kB │ gzip:   1.37 kB │ map:    13.80 kB
-dist/assets/BF2FlangerCard-BXHrpKJB.js                3.85 kB │ gzip:   1.78 kB │ map:     5.52 kB
-dist/assets/TremoloCard-CudX4uJq.js                   3.88 kB │ gzip:   1.89 kB │ map:     5.80 kB
-dist/assets/DelayCard-CSOh0w36.js                     3.90 kB │ gzip:   1.76 kB │ map:     5.74 kB
-dist/assets/Add-YiRdEckV.js                           3.90 kB │ gzip:   1.56 kB │ map:    16.21 kB
-dist/assets/PhaserCard-PeXJv83X.js                    4.00 kB │ gzip:   1.76 kB │ map:     6.12 kB
-dist/assets/FileAudio.es-C4Ar8YgE.js                  4.04 kB │ gzip:   1.34 kB │ map:     5.76 kB
-dist/assets/Sun.es-BERya227.js                        4.19 kB │ gzip:   1.14 kB │ map:     5.88 kB
-dist/assets/Broadcast.es-Bj5cTFDs.js                  4.33 kB │ gzip:   1.37 kB │ map:     6.06 kB
-dist/assets/LimiterCard-xkptJSLq.js                   4.52 kB │ gzip:   2.04 kB │ map:     6.77 kB
-dist/assets/Link.es-CzLvaA65.js                       4.54 kB │ gzip:   1.62 kB │ map:     6.28 kB
-dist/assets/TunerCard-BETCF2ki.js                     4.63 kB │ gzip:   2.12 kB │ map:     8.33 kB
-dist/assets/DragonflyPlateCard-B1M1SzBF.js            4.66 kB │ gzip:   1.91 kB │ map:     8.23 kB
-dist/assets/Database.es-Bw2PVSrO.js                   4.69 kB │ gzip:   1.40 kB │ map:     6.45 kB
-dist/assets/Switch-C2BQ0ouw.js                        4.76 kB │ gzip:   1.82 kB │ map:    20.53 kB
-dist/assets/ParameterSection-3GUVAiF9.js              4.91 kB │ gzip:   1.58 kB │ map:    12.93 kB
-dist/assets/Grid-Bf4BnIRH.js                          4.91 kB │ gzip:   1.96 kB │ map:    29.82 kB
-dist/assets/FormControlLabel-CUE_QSK8.js              5.17 kB │ gzip:   2.19 kB │ map:    26.49 kB
-dist/assets/Globe.es-0DitnS6U.js                      5.21 kB │ gzip:   1.53 kB │ map:     6.91 kB
-dist/assets/useWebSocket-BWJShAPd.js                  5.24 kB │ gzip:   1.90 kB │ map:    30.13 kB
-dist/assets/GateCard-yPKOXoWd.js                      5.30 kB │ gzip:   2.33 kB │ map:     9.38 kB
-dist/assets/DragonflyHallCard-CJJ-axWN.js             5.32 kB │ gzip:   2.04 kB │ map:    10.48 kB
-dist/assets/LooperCard-DmKYK0J5.js                    5.33 kB │ gzip:   2.23 kB │ map:    11.10 kB
-dist/assets/GithubLogo.es-BiJ1aVZs.js                 5.41 kB │ gzip:   1.66 kB │ map:     7.19 kB
-dist/assets/MPX1DiagView-Bxcepg-g.js                  5.43 kB │ gzip:   1.80 kB │ map:    14.92 kB
-dist/assets/DragonflyRoomCard-4CzLXOim.js             5.43 kB │ gzip:   2.05 kB │ map:    11.21 kB
-dist/assets/MPX1MatrixView-Cf81B0P6.js                5.45 kB │ gzip:   2.02 kB │ map:    18.03 kB
-dist/assets/UtilityTemplate-BWF-KedM.js               5.46 kB │ gzip:   2.37 kB │ map:    11.94 kB
-dist/assets/DrumsPage-BTfmJzUD.js                     5.48 kB │ gzip:   1.76 kB │ map:    14.71 kB
-dist/assets/InputAdornment-BeijLwab.js                5.53 kB │ gzip:   2.21 kB │ map:    30.85 kB
-dist/assets/useDynamics-BVIkkzNW.js                   5.65 kB │ gzip:   1.62 kB │ map:    21.27 kB
-dist/assets/MPX1PanelView-CeHIJ43W.js                 5.92 kB │ gzip:   2.54 kB │ map:    16.34 kB
-dist/assets/MPX1Page-DxxTzrK5.js                      5.94 kB │ gzip:   2.44 kB │ map:    19.31 kB
-dist/assets/MPX1PerformView-vsxi7B9l.js               5.94 kB │ gzip:   2.04 kB │ map:    19.85 kB
-dist/assets/ChorusCard-BFFTB6Lq.js                    5.96 kB │ gzip:   2.50 kB │ map:    11.83 kB
-dist/assets/PhaserCard-B7F3qZD2.js                    6.07 kB │ gzip:   2.55 kB │ map:    12.12 kB
-dist/assets/useAvbStatus-BnKki1Uz.js                  6.07 kB │ gzip:   1.68 kB │ map:    17.90 kB
-dist/assets/tab-provider-BjK9I9GW.js                  6.08 kB │ gzip:   2.57 kB │ map:    31.95 kB
-dist/assets/CompressorCard-Bif0K2cw.js                6.09 kB │ gzip:   2.54 kB │ map:    12.23 kB
-dist/assets/PresetImportDialog-D4NVlO12.js            6.30 kB │ gzip:   2.26 kB │ map:    17.97 kB
-dist/assets/ListItemText-_bfuW6LT.js                  6.34 kB │ gzip:   2.25 kB │ map:    34.85 kB
-dist/assets/ModulationTemplate-B8kJCcgj.js            6.34 kB │ gzip:   2.60 kB │ map:    17.27 kB
-dist/assets/TableRow-D0pJu7Pu.js                      6.42 kB │ gzip:   2.15 kB │ map:    35.94 kB
-dist/assets/LinearProgress-Bpezh8hX.js                6.45 kB │ gzip:   1.93 kB │ map:    22.59 kB
-dist/assets/DelayTemplate-XaonMeJQ.js                 6.47 kB │ gzip:   2.62 kB │ map:    17.60 kB
-dist/assets/ReverbIRCard-CtD7zuKK.js                  6.52 kB │ gzip:   2.82 kB │ map:    13.44 kB
-dist/assets/DynamicsTemplate-CRy8GJFu.js              6.66 kB │ gzip:   2.60 kB │ map:    16.20 kB
-dist/assets/CabinetIRCard-BW5F2amw.js                 6.70 kB │ gzip:   2.69 kB │ map:    13.71 kB
-dist/assets/Grow-DT0JeIF2.js                          6.77 kB │ gzip:   2.63 kB │ map:    44.34 kB
-dist/assets/ParametricEQCard-BegkC6rP.js              6.81 kB │ gzip:   2.74 kB │ map:    14.48 kB
-dist/assets/ReverbTemplate-1oupc6Dv.js                6.87 kB │ gzip:   2.68 kB │ map:    18.68 kB
-dist/assets/WhammyCard-BwJJTUnS.js                    6.95 kB │ gzip:   2.67 kB │ map:    15.31 kB
-dist/assets/Star.es-CQ1NtWxz.js                       7.39 kB │ gzip:   2.30 kB │ map:    10.78 kB
-dist/assets/DistortionTemplate-CEhJfnd5.js            8.09 kB │ gzip:   3.36 kB │ map:    24.02 kB
-dist/assets/REEVRCard-DpVDIG5i.js                     8.27 kB │ gzip:   3.13 kB │ map:    21.32 kB
-dist/assets/GlitchShifterCard-yO2lyOlk.js             8.38 kB │ gzip:   3.19 kB │ map:    20.98 kB
-dist/assets/string-BbYD24iH.js                        8.42 kB │ gzip:   3.62 kB │ map:    28.71 kB
-dist/assets/Alert-C1oavFoh.js                         8.65 kB │ gzip:   3.09 kB │ map:    39.07 kB
-dist/assets/MeteringPage-4EQGKMqV.js                  8.73 kB │ gzip:   2.47 kB │ map:    21.16 kB
-dist/assets/EventideH9Card-Bzr2p26E.js                8.75 kB │ gzip:   3.20 kB │ map:    19.87 kB
-dist/assets/PitchTemplate-D96ztQrf.js                 8.89 kB │ gzip:   3.66 kB │ map:    27.24 kB
-dist/assets/KeyboardSamplerCard-CNJ7I8wH.js           8.97 kB │ gzip:   3.42 kB │ map:    23.28 kB
-dist/assets/IntelliFXCard-eqxAevQN.js                 9.07 kB │ gzip:   3.30 kB │ map:    23.38 kB
-dist/assets/EQTemplate-BFdOIyNp.js                    9.08 kB │ gzip:   3.31 kB │ map:    22.82 kB
-dist/assets/MPX1EditorView-CnwT4j4H.js                9.28 kB │ gzip:   3.12 kB │ map:    28.84 kB
-dist/assets/IntervalShifterCard-CAev5zJB.js           9.42 kB │ gzip:   2.95 kB │ map:    21.68 kB
-dist/assets/NAMCard-C8qk0SX5.js                       9.47 kB │ gzip:   3.34 kB │ map:    21.75 kB
-dist/assets/useMultiSystemMonitoring-GAlEftcU.js      9.75 kB │ gzip:   3.32 kB │ map:    36.35 kB
-dist/assets/Box-DlKVGmAX.js                           9.98 kB │ gzip:   3.05 kB │ map:    37.76 kB
-dist/assets/Button-DtmMHLnN.js                       10.08 kB │ gzip:   2.78 kB │ map:    36.07 kB
-dist/assets/OutotuneCard-DZQ2vfcC.js                 10.31 kB │ gzip:   4.18 kB │ map:    29.81 kB
-dist/assets/MPX1LibraryView-CBPEg9sc.js              10.75 kB │ gzip:   3.91 kB │ map:    31.16 kB
-dist/assets/MPX1MidiMapView-UU1V-pbQ.js              11.17 kB │ gzip:   3.50 kB │ map:    36.70 kB
-dist/assets/BossXS1Card-BP1V06us.js                  11.33 kB │ gzip:   3.90 kB │ map:    25.02 kB
-dist/assets/CPUPerformancePage-BfLa78U-.js           11.36 kB │ gzip:   2.97 kB │ map:    30.58 kB
-dist/assets/HoToneJoGGPage-DrZfooH5.js               12.60 kB │ gzip:   3.56 kB │ map:    31.77 kB
-dist/assets/H3000Card-lvb7js9V.js                    13.20 kB │ gzip:   4.23 kB │ map:    30.90 kB
-dist/assets/withMidiDialog-CYGgd0bn.js               13.45 kB │ gzip:   3.63 kB │ map:    34.34 kB
-dist/assets/LexiLoveCard-DC8PHEuI.js                 13.67 kB │ gzip:   4.43 kB │ map:    31.32 kB
-dist/assets/MOTURMEPage-DkPeaKsV.js                  14.75 kB │ gzip:   4.24 kB │ map:    39.54 kB
-dist/assets/PipeWirePage-B1HRxVXs.js                 15.19 kB │ gzip:   3.67 kB │ map:    36.11 kB
-dist/assets/Search-8XfC9YU3.js                       15.28 kB │ gzip:   5.99 kB │ map:    75.22 kB
-dist/assets/EVHPitchShifterCard-iD3rlcF-.js          15.47 kB │ gzip:   5.04 kB │ map:    31.36 kB
-dist/assets/CVCFNOHX-DZYq_aTt.js                     15.83 kB │ gzip:   5.91 kB │ map:    78.00 kB
-dist/assets/Tabs-CF6BQTm6.js                         16.02 kB │ gzip:   5.56 kB │ map:    77.46 kB
-dist/assets/ShoeGazeCard-vViUuLtX.js                 16.40 kB │ gzip:   5.38 kB │ map:    41.53 kB
-dist/assets/Z32PU2LQ-CenlEips.js                     16.53 kB │ gzip:   6.44 kB │ map:    86.74 kB
-dist/assets/useModulation-DtQLL1ZO.js                17.84 kB │ gzip:   4.08 kB │ map:    45.21 kB
-dist/assets/MultiSystemDashboardPage-DFNib_c3.js     18.17 kB │ gzip:   4.11 kB │ map:    53.27 kB
-dist/assets/Peavey5150Card-BFWT_0MM.js               19.01 kB │ gzip:   6.70 kB │ map:    70.74 kB
-dist/assets/DrumMachineCard-ubMJH5do.js              20.25 kB │ gzip:   6.63 kB │ map:    45.25 kB
-dist/assets/Slider-CJuJO1Gc.js                       20.59 kB │ gzip:   6.92 kB │ map:    90.19 kB
-dist/assets/WelcomePage-BRlS5kJY.js                  21.23 kB │ gzip:   5.58 kB │ map:    48.81 kB
-dist/assets/NativeDelayCard-gl5FWEga.js              21.34 kB │ gzip:   6.16 kB │ map:    63.40 kB
-dist/assets/AudioEnginePage-DcA_co_m.js              23.18 kB │ gzip:   5.00 kB │ map:    58.65 kB
-dist/assets/PresetsPage-AgmSghFO.js                  23.19 kB │ gzip:   6.48 kB │ map:    68.08 kB
-dist/assets/TweedBassmanCard-CWya2AzH.js             23.32 kB │ gzip:   6.29 kB │ map:    57.67 kB
-dist/assets/WLZ6H5FH-CH-oFKfx.js                     24.48 kB │ gzip:   9.10 kB │ map:   119.57 kB
-dist/assets/PassionFXCard-Jsb07i4q.js                26.52 kB │ gzip:   7.24 kB │ map:    72.39 kB
-dist/assets/LV2PluginsPage-Dj2FYwmv.js               29.58 kB │ gzip:   7.07 kB │ map:    76.39 kB
-dist/assets/PluginCardShell-DFpsBdBf.js              30.78 kB │ gzip:   8.71 kB │ map:    50.03 kB
-dist/assets/Tooltip-BfKGoRsA.js                      32.62 kB │ gzip:  11.58 kB │ map:   184.18 kB
-dist/assets/HostMachinePage-DmNZZT1H.js              34.36 kB │ gzip:   9.88 kB │ map:   101.23 kB
-dist/assets/SynthForgeCard-Aupzh8Wa.js               34.85 kB │ gzip:   9.78 kB │ map:   103.65 kB
-dist/assets/DSPPage-BEK_ehHm.js                      35.95 kB │ gzip:   6.97 kB │ map:    79.01 kB
-dist/assets/ChainsPage-tD1gGNZc.js                   36.39 kB │ gzip:  12.83 kB │ map:   129.51 kB
-dist/assets/combobox-provider-DwelEQ3u.js            38.02 kB │ gzip:  14.32 kB │ map:   206.40 kB
-dist/assets/DynamicsMeteringPanel-W5F3S9Af.js        38.27 kB │ gzip:   9.53 kB │ map:   117.87 kB
-dist/assets/ShoppingSearchDialog-Be050PNs.js         41.63 kB │ gzip:  12.29 kB │ map:   125.56 kB
-dist/assets/CelestialCompressorCard-BuciCmoL.js      48.33 kB │ gzip:  12.91 kB │ map:   109.90 kB
-dist/assets/MIDIPage-BAxzzlFI.js                     51.70 kB │ gzip:  13.83 kB │ map:   174.76 kB
-dist/assets/EdirolUA1000Page-XOsUNPJw.js             59.59 kB │ gzip:  13.90 kB │ map:   137.10 kB
-dist/assets/TesiraPage-D3dDSMvw.js                   62.45 kB │ gzip:  17.15 kB │ map:   221.72 kB
-dist/assets/TextField-DG17oy4-.js                    71.56 kB │ gzip:  20.93 kB │ map:   408.33 kB
-dist/assets/HomePage-84_pfavB.js                     77.44 kB │ gzip:  18.25 kB │ map:   201.74 kB
-dist/assets/AboutPage-DLF-PQzA.js                    80.04 kB │ gzip:  20.43 kB │ map:   176.25 kB
-dist/assets/LibraryPage-C174SxO2.js                  83.84 kB │ gzip:  20.58 kB │ map:   231.81 kB
-dist/assets/Typography-DWrPF46M.js                   99.39 kB │ gzip:  35.14 kB │ map:   491.25 kB
-dist/assets/LCDPage-BYDookAj.js                     102.49 kB │ gzip:  24.31 kB │ map:   228.29 kB
-dist/assets/useAvbApi-BxodBSb_.js                   146.77 kB │ gzip:  47.07 kB │ map:   590.70 kB
-dist/assets/ClusterDashboardPage-YClUjPeD.js        170.75 kB │ gzip:  41.49 kB │ map:   498.81 kB
-dist/assets/index-DER4UxOR.js                       198.44 kB │ gzip:  62.59 kB │ map:   893.28 kB
-dist/assets/GridFlowPage-BC_IpiRf.js                232.71 kB │ gzip:  59.14 kB │ map:   643.36 kB
-dist/assets/App-DvXoPaFy.js                         255.24 kB │ gzip:  69.53 kB │ map: 1,015.05 kB
-dist/assets/AvbRoutingPage-CkAM_aFH.js              298.00 kB │ gzip:  89.08 kB │ map: 1,345.33 kB
-dist/assets/LineChart-BfvxPT58.js                   334.92 kB │ gzip:  99.26 kB │ map: 1,722.34 kB
-dist/assets/GridFlowAdvancedPage-CwYkid2J.js      1,145.73 kB │ gzip: 321.57 kB │ map: 5,509.09 kB
+dist/assets/SVGGradients-stwDCJCH.js                  0.95 kB │ gzip:   0.32 kB │ map:     5.96 kB
+dist/assets/CardContent-DEFWzKyy.js                   1.10 kB │ gzip:   0.54 kB │ map:     8.51 kB
+dist/assets/index-D-FNGuVN.js                         1.20 kB │ gzip:   0.67 kB │ map:     4.07 kB
+dist/assets/useResponsiveVizSize-BMD3Xxqt.js          1.24 kB │ gzip:   0.69 kB │ map:     7.55 kB
+dist/assets/with-selector-R8FNVgC7.js                 1.34 kB │ gzip:   0.77 kB │ map:     5.12 kB
+dist/assets/List-D3mSa7Nt.js                          1.43 kB │ gzip:   0.77 kB │ map:     8.04 kB
+dist/assets/CaretDown.es-DYc2nY5Q.js                  1.44 kB │ gzip:   0.60 kB │ map:     3.14 kB
+dist/assets/CaretUp.es-BJt1fv3z.js                    1.52 kB │ gzip:   0.59 kB │ map:     3.19 kB
+dist/assets/Plus.es-CXBfrhUK.js                       1.60 kB │ gzip:   0.61 kB │ map:     3.33 kB
+dist/assets/Check.es-CbpxqYYC.js                      1.60 kB │ gzip:   0.62 kB │ map:     3.32 kB
+dist/assets/Square.es-Bis29sLg.js                     1.61 kB │ gzip:   0.58 kB │ map:     3.33 kB
+dist/assets/ArrowUp.es-Btdocf2O.js                    1.67 kB │ gzip:   0.65 kB │ map:     3.36 kB
+dist/assets/LCDDisplay-DqXvDwpM.js                    1.67 kB │ gzip:   0.65 kB │ map:     6.00 kB
+dist/assets/MagnifyingGlass.es-CknenbB1.js            1.71 kB │ gzip:   0.71 kB │ map:     3.45 kB
+dist/assets/Terminal.es-CqnIxJMa.js                   1.75 kB │ gzip:   0.70 kB │ map:     3.43 kB
+dist/assets/Copy.es-CNGAsX3T.js                       1.86 kB │ gzip:   0.65 kB │ map:     3.53 kB
+dist/assets/Clock.es-DwCNnXKS.js                      1.87 kB │ gzip:   0.68 kB │ map:     3.55 kB
+dist/assets/HardDrive.es-Dgwxm1IW.js                  1.88 kB │ gzip:   0.65 kB │ map:     3.63 kB
+dist/assets/ChartBar.es-D8GQc2Ri.js                   1.88 kB │ gzip:   0.72 kB │ map:     3.58 kB
+dist/assets/MusicNote.es-CBOZOaWk.js                  1.96 kB │ gzip:   0.74 kB │ map:     3.67 kB
+dist/assets/TrendUp.es-DVA9KHNo.js                    1.97 kB │ gzip:   0.77 kB │ map:     3.64 kB
+dist/assets/Stack-qO6xlglW.js                         2.04 kB │ gzip:   1.06 kB │ map:    12.89 kB
+dist/assets/ArrowClockwise.es-Dk0qn1qE.js             2.08 kB │ gzip:   0.82 kB │ map:     3.81 kB
+dist/assets/DownloadSimple.es-D6tmeWGJ.js             2.09 kB │ gzip:   0.73 kB │ map:     3.87 kB
+dist/assets/NumberInput-B1Oq6Knd.js                   2.09 kB │ gzip:   1.04 kB │ map:     8.43 kB
+dist/assets/UploadSimple.es-Kdhtcpak.js               2.11 kB │ gzip:   0.72 kB │ map:     3.88 kB
+dist/assets/CheckCircle.es-hX9SUUg2.js                2.16 kB │ gzip:   0.76 kB │ map:     3.86 kB
+dist/assets/ArrowCounterClockwise.es-id5gQlad.js      2.18 kB │ gzip:   0.82 kB │ map:     3.94 kB
+dist/assets/useVuMeters-CYtH11_D.js                   2.21 kB │ gzip:   0.95 kB │ map:     7.92 kB
+dist/assets/Folder.es-CvcYy9vk.js                     2.24 kB │ gzip:   0.84 kB │ map:     4.00 kB
+dist/assets/Play.es-CZaoYWVN.js                       2.26 kB │ gzip:   0.88 kB │ map:     3.98 kB
+dist/assets/Microphone.es-B1EbruEt.js                 2.36 kB │ gzip:   0.81 kB │ map:     4.11 kB
+dist/assets/ArrowSquareOut.es-nnuRm0Q6.js             2.41 kB │ gzip:   0.87 kB │ map:     4.20 kB
+dist/assets/Pause.es-DmFY8yw5.js                      2.42 kB │ gzip:   0.73 kB │ map:     4.16 kB
+dist/assets/PianoKeys.es-BNfbqDY6.js                  2.42 kB │ gzip:   0.84 kB │ map:     4.13 kB
+dist/assets/useCPUMetrics-qeEwm5dr.js                 2.48 kB │ gzip:   1.09 kB │ map:     8.63 kB
+dist/assets/XCircle.es-Debyiok7.js                    2.52 kB │ gzip:   0.82 kB │ map:     4.19 kB
+dist/assets/PencilSimple.es-C418IQPK.js               2.52 kB │ gzip:   0.93 kB │ map:     4.30 kB
+dist/assets/LFOWaveform-CJkq04Mc.js                   2.58 kB │ gzip:   1.34 kB │ map:    10.50 kB
+dist/assets/Trash.es-CYEiAweB.js                      2.61 kB │ gzip:   0.83 kB │ map:     4.29 kB
+dist/assets/Funnel.es-7R3Izoiv.js                     2.63 kB │ gzip:   1.01 kB │ map:     4.35 kB
+dist/assets/FileText.es-BqoO_Jnh.js                   2.68 kB │ gzip:   0.84 kB │ map:     4.38 kB
+dist/assets/DelayTapGrid-DBlCszWY.js                  2.69 kB │ gzip:   1.34 kB │ map:    11.53 kB
+dist/assets/useFilters-Dm6cjsee.js                    2.71 kB │ gzip:   1.06 kB │ map:    10.96 kB
+dist/assets/WaveSine.es-CqNzt8H3.js                   2.73 kB │ gzip:   1.15 kB │ map:     4.45 kB
+dist/assets/LandscapePrompt-CXgoR9QH.js               2.73 kB │ gzip:   1.32 kB │ map:     7.45 kB
+dist/assets/Shield.es-DhLaloAq.js                     2.76 kB │ gzip:   1.08 kB │ map:     4.48 kB
+dist/assets/MPX1Knob-DlmHh6Xu.js                      2.92 kB │ gzip:   1.43 kB │ map:    10.88 kB
+dist/assets/TransferCurve-BktBhIaC.js                 2.93 kB │ gzip:   1.47 kB │ map:    13.53 kB
+dist/assets/FloppyDisk.es-CbQqszgV.js                 2.97 kB │ gzip:   0.94 kB │ map:     4.74 kB
+dist/assets/GainReductionMeter-DBYnS4il.js            2.99 kB │ gzip:   1.11 kB │ map:     7.01 kB
+dist/assets/FolderOpen.es-Db2lvo1p.js                 2.99 kB │ gzip:   1.05 kB │ map:     4.78 kB
+dist/assets/ReverbDecayCurve-DHUDfbn3.js              3.03 kB │ gzip:   1.43 kB │ map:    13.28 kB
+dist/assets/Stack.es-BQ8UasS9.js                      3.06 kB │ gzip:   0.93 kB │ map:     4.87 kB
+dist/assets/CircularProgress-DHg98bBd.js              3.10 kB │ gzip:   1.31 kB │ map:    14.15 kB
+dist/assets/Camera.es-lG1DGoAh.js                     3.12 kB │ gzip:   1.05 kB │ map:     4.84 kB
+dist/assets/CloudArrowDown.es-K8l6Cx_Q.js             3.13 kB │ gzip:   1.16 kB │ map:     4.91 kB
+dist/assets/Link-DouRjpPb.js                          3.16 kB │ gzip:   1.33 kB │ map:    14.15 kB
+dist/assets/Headphones.es-DG4DMGcp.js                 3.18 kB │ gzip:   1.04 kB │ map:     4.95 kB
+dist/assets/SpeakerX.es-CjRjHh-m.js                   3.22 kB │ gzip:   1.13 kB │ map:     4.92 kB
+dist/assets/usePipeWire-CudcuKgt.js                   3.26 kB │ gzip:   1.37 kB │ map:    13.40 kB
+dist/assets/Plug.es-cfVu-ifK.js                       3.27 kB │ gzip:   1.12 kB │ map:     5.00 kB
+dist/assets/Flask.es-DRcsgHfV.js                      3.33 kB │ gzip:   1.29 kB │ map:     5.07 kB
+dist/assets/Keyboard.es-C6HpPFT_.js                   3.34 kB │ gzip:   0.90 kB │ map:     5.09 kB
+dist/assets/SpinnerGap.es-sCdcWgUS.js                 3.38 kB │ gzip:   1.11 kB │ map:     5.10 kB
+dist/assets/Warning.es-CP9APwwj.js                    3.40 kB │ gzip:   1.12 kB │ map:     5.15 kB
+dist/assets/SpeakerHigh.es-CZzPDHIt.js                3.45 kB │ gzip:   1.28 kB │ map:     5.18 kB
+dist/assets/Gauge.es-Dmkei9Nf.js                      3.46 kB │ gzip:   1.35 kB │ map:     5.21 kB
+dist/assets/Cpu.es-CVMlr9Qr.js                        3.48 kB │ gzip:   1.08 kB │ map:     5.22 kB
+dist/assets/DesktopTower.es-BXN6LDfs.js               3.60 kB │ gzip:   1.17 kB │ map:     5.37 kB
+dist/assets/CE2ChorusCard-BUgeRV3q.js                 3.65 kB │ gzip:   1.76 kB │ map:     4.50 kB
+dist/assets/EQCurveDisplay-BI9upDYr.js                3.76 kB │ gzip:   1.80 kB │ map:    15.19 kB
+dist/assets/Collapse-B4QMJ33E.js                      3.76 kB │ gzip:   1.52 kB │ map:    19.22 kB
+dist/assets/Divider-C9FyKsVt.js                       3.82 kB │ gzip:   1.36 kB │ map:    13.80 kB
+dist/assets/MenuItem-C8Fhs9gh.js                      3.83 kB │ gzip:   1.50 kB │ map:    15.82 kB
+dist/assets/BF2FlangerCard-B16-HeuV.js                3.95 kB │ gzip:   1.81 kB │ map:     5.52 kB
+dist/assets/TremoloCard-CBNOq9AY.js                   3.98 kB │ gzip:   1.92 kB │ map:     5.80 kB
+dist/assets/DelayCard-B9IBodsB.js                     4.00 kB │ gzip:   1.79 kB │ map:     5.74 kB
+dist/assets/FileAudio.es-BoCbDi0K.js                  4.04 kB │ gzip:   1.35 kB │ map:     5.76 kB
+dist/assets/PhaserCard-BSA4-TBI.js                    4.10 kB │ gzip:   1.79 kB │ map:     6.12 kB
+dist/assets/Sun.es-k5W1KW3o.js                        4.19 kB │ gzip:   1.15 kB │ map:     5.88 kB
+dist/assets/ParameterKnob-DP61vQXA.js                 4.26 kB │ gzip:   1.94 kB │ map:    19.45 kB
+dist/assets/Broadcast.es-JMWftpEc.js                  4.33 kB │ gzip:   1.37 kB │ map:     6.06 kB
+dist/assets/Link.es-0LAfd4gl.js                       4.54 kB │ gzip:   1.62 kB │ map:     6.28 kB
+dist/assets/LimiterCard-1kaEyX11.js                   4.62 kB │ gzip:   2.07 kB │ map:     6.77 kB
+dist/assets/Database.es-BSiXuf1o.js                   4.69 kB │ gzip:   1.40 kB │ map:     6.45 kB
+dist/assets/TunerCard-C0U2U1gR.js                     4.73 kB │ gzip:   2.15 kB │ map:     8.33 kB
+dist/assets/DragonflyPlateCard-dAtvE_Qn.js            4.76 kB │ gzip:   1.94 kB │ map:     8.23 kB
+dist/assets/Switch-C8LZRZBH.js                        4.76 kB │ gzip:   1.82 kB │ map:    20.53 kB
+dist/assets/ParameterSection-D-LABVjA.js              4.91 kB │ gzip:   1.58 kB │ map:    12.93 kB
+dist/assets/Grid-Q1hTZAwF.js                          4.91 kB │ gzip:   1.96 kB │ map:    29.82 kB
+dist/assets/FormControlLabel-ClLzALob.js              5.17 kB │ gzip:   2.19 kB │ map:    26.49 kB
+dist/assets/Globe.es-D_sOBPah.js                      5.21 kB │ gzip:   1.53 kB │ map:     6.91 kB
+dist/assets/GateCard-q1dH9zjV.js                      5.40 kB │ gzip:   2.36 kB │ map:     9.38 kB
+dist/assets/GithubLogo.es-BGkpO7vS.js                 5.41 kB │ gzip:   1.67 kB │ map:     7.19 kB
+dist/assets/DragonflyHallCard-oH5UYOT3.js             5.42 kB │ gzip:   2.08 kB │ map:    10.48 kB
+dist/assets/MPX1DiagView-D5spHbBO.js                  5.43 kB │ gzip:   1.80 kB │ map:    14.92 kB
+dist/assets/LooperCard-CUVwxaJl.js                    5.43 kB │ gzip:   2.26 kB │ map:    11.10 kB
+dist/assets/DrumsPage-BgC6BrUT.js                     5.53 kB │ gzip:   1.78 kB │ map:    14.80 kB
+dist/assets/InputAdornment-A3bnZtuz.js                5.53 kB │ gzip:   2.21 kB │ map:    30.85 kB
+dist/assets/DragonflyRoomCard-Cgh_p6fb.js             5.54 kB │ gzip:   2.08 kB │ map:    11.21 kB
+dist/assets/UtilityTemplate-EKcm2F17.js               5.56 kB │ gzip:   2.40 kB │ map:    11.94 kB
+dist/assets/MPX1MatrixView-BIUS9zIM.js                5.56 kB │ gzip:   2.07 kB │ map:    18.31 kB
+dist/assets/useDynamics-Dx0kjOFB.js                   5.65 kB │ gzip:   1.62 kB │ map:    21.27 kB
+dist/assets/MPX1Page-53l8IAks.js                      5.94 kB │ gzip:   2.44 kB │ map:    19.57 kB
+dist/assets/ChorusCard-X0upPCKm.js                    6.06 kB │ gzip:   2.54 kB │ map:    11.83 kB
+dist/assets/useAvbStatus-DzMKe_Y4.js                  6.07 kB │ gzip:   1.68 kB │ map:    17.90 kB
+dist/assets/tab-provider-BU9Scu30.js                  6.08 kB │ gzip:   2.57 kB │ map:    31.95 kB
+dist/assets/PhaserCard-CabWtBAT.js                    6.17 kB │ gzip:   2.58 kB │ map:    12.12 kB
+dist/assets/CompressorCard-Fe6pjev7.js                6.19 kB │ gzip:   2.57 kB │ map:    12.23 kB
+dist/assets/MPX1PerformView-Csmfk382.js               6.20 kB │ gzip:   2.13 kB │ map:    20.58 kB
+dist/assets/TableRow-c0b7cz-o.js                      6.42 kB │ gzip:   2.15 kB │ map:    35.94 kB
+dist/assets/ModulationTemplate-Cy_aR6o6.js            6.44 kB │ gzip:   2.64 kB │ map:    17.27 kB
+dist/assets/LinearProgress-EaY_fS4l.js                6.45 kB │ gzip:   1.93 kB │ map:    22.59 kB
+dist/assets/CartesianGrid-DjQd6Bib.js                 6.49 kB │ gzip:   2.29 kB │ map:    26.86 kB
+dist/assets/PresetImportDialog-DWI2ShDo.js            6.55 kB │ gzip:   2.36 kB │ map:    18.83 kB
+dist/assets/DelayTemplate-DjcNTyIg.js                 6.57 kB │ gzip:   2.65 kB │ map:    17.60 kB
+dist/assets/ReverbIRCard-LLqVoBrk.js                  6.62 kB │ gzip:   2.86 kB │ map:    13.44 kB
+dist/assets/DynamicsTemplate-C2zsjZFy.js              6.76 kB │ gzip:   2.63 kB │ map:    16.20 kB
+dist/assets/Grow-B6CZWztv.js                          6.77 kB │ gzip:   2.64 kB │ map:    44.34 kB
+dist/assets/CabinetIRCard-CTvPQyH2.js                 6.80 kB │ gzip:   2.72 kB │ map:    13.71 kB
+dist/assets/ParametricEQCard-D1Weo9-l.js              6.91 kB │ gzip:   2.78 kB │ map:    14.48 kB
+dist/assets/ReverbTemplate-DlD0TItm.js                6.97 kB │ gzip:   2.72 kB │ map:    18.68 kB
+dist/assets/WhammyCard-D1pSg5UY.js                    7.05 kB │ gzip:   2.71 kB │ map:    15.31 kB
+dist/assets/Star.es-D0mHl0Ia.js                       7.39 kB │ gzip:   2.29 kB │ map:    10.78 kB
+dist/assets/DistortionTemplate-ZWBklqrj.js            8.19 kB │ gzip:   3.39 kB │ map:    24.02 kB
+dist/assets/REEVRCard-DGl7MPlK.js                     8.37 kB │ gzip:   3.17 kB │ map:    21.32 kB
+dist/assets/GlitchShifterCard-DZwbyH29.js             8.48 kB │ gzip:   3.23 kB │ map:    20.98 kB
+dist/assets/Alert-Ct7G3M_4.js                         8.65 kB │ gzip:   3.09 kB │ map:    39.07 kB
+dist/assets/EventideH9Card-C89lnCPT.js                8.85 kB │ gzip:   3.23 kB │ map:    19.87 kB
+dist/assets/PitchTemplate-UWR6wlvX.js                 8.99 kB │ gzip:   3.70 kB │ map:    27.24 kB
+dist/assets/KeyboardSamplerCard-BzQWkm-Z.js           9.07 kB │ gzip:   3.45 kB │ map:    23.28 kB
+dist/assets/IntelliFXCard-DLAjiGZ5.js                 9.17 kB │ gzip:   3.33 kB │ map:    23.38 kB
+dist/assets/EQTemplate-Cj226WNU.js                    9.18 kB │ gzip:   3.34 kB │ map:    22.82 kB
+dist/assets/MPX1EditorView-Bj5czDRG.js                9.28 kB │ gzip:   3.13 kB │ map:    28.84 kB
+dist/assets/MPX1PanelView-DY5ByeoK.js                 9.43 kB │ gzip:   2.81 kB │ map:    28.45 kB
+dist/assets/useAvbApi-Da3ux-6Y.js                     9.44 kB │ gzip:   3.13 kB │ map:    41.88 kB
+dist/assets/Chip-CUPP-dUx.js                          9.45 kB │ gzip:   2.82 kB │ map:    33.68 kB
+dist/assets/IntervalShifterCard-DZoRv7mx.js           9.52 kB │ gzip:   2.98 kB │ map:    21.68 kB
+dist/assets/NAMCard-Cd-zSHBz.js                       9.57 kB │ gzip:   3.37 kB │ map:    21.75 kB
+dist/assets/useMultiSystemMonitoring-YSQmfqqk.js      9.75 kB │ gzip:   3.33 kB │ map:    36.35 kB
+dist/assets/Button-BimYAVW6.js                       10.08 kB │ gzip:   2.78 kB │ map:    36.07 kB
+dist/assets/MeteringPage-C4Cns038.js                 10.09 kB │ gzip:   2.97 kB │ map:    25.66 kB
+dist/assets/OutotuneCard-CBJJQ8ly.js                 10.41 kB │ gzip:   4.21 kB │ map:    29.81 kB
+dist/assets/MPX1LibraryView-D50euKWu.js              10.71 kB │ gzip:   3.91 kB │ map:    31.43 kB
+dist/assets/MPX1MidiMapView-Bzafb5nh.js              11.17 kB │ gzip:   3.50 kB │ map:    36.70 kB
+dist/assets/BossXS1Card-BTGnyaDm.js                  11.43 kB │ gzip:   3.93 kB │ map:    25.02 kB
+dist/assets/CPUPerformancePage-whq3DdIH.js           11.47 kB │ gzip:   3.02 kB │ map:    30.67 kB
+dist/assets/HoToneJoGGPage-DYVT0ePa.js               12.60 kB │ gzip:   3.56 kB │ map:    31.77 kB
+dist/assets/H3000Card-fk0YEtLS.js                    13.30 kB │ gzip:   4.28 kB │ map:    30.90 kB
+dist/assets/withMidiDialog-z5fls-4H.js               13.45 kB │ gzip:   3.63 kB │ map:    34.34 kB
+dist/assets/LexiLoveCard-DYhYz6kT.js                 13.77 kB │ gzip:   4.46 kB │ map:    31.32 kB
+dist/assets/GridFlowAdvancedPage-CGvl1h3v.js         14.82 kB │ gzip:   5.45 kB │ map:    45.41 kB
+dist/assets/string-fmuKewuR.js                       14.82 kB │ gzip:   5.84 kB │ map:    63.45 kB
+dist/assets/MOTURMEPage-D0AQtJM5.js                  14.86 kB │ gzip:   4.30 kB │ map:    39.68 kB
+dist/assets/PipeWirePage-B-GKWUEl.js                 15.57 kB │ gzip:   3.72 kB │ map:    36.97 kB
+dist/assets/EVHPitchShifterCard-C1pivtyM.js          15.57 kB │ gzip:   5.08 kB │ map:    31.36 kB
+dist/assets/CVCFNOHX-JoW9koIR.js                     15.83 kB │ gzip:   5.91 kB │ map:    78.00 kB
+dist/assets/Tabs-q0U6x1jA.js                         16.02 kB │ gzip:   5.56 kB │ map:    77.46 kB
+dist/assets/ShoeGazeCard-DRSe-MBr.js                 16.51 kB │ gzip:   5.41 kB │ map:    41.53 kB
+dist/assets/Z32PU2LQ-CSK700ka.js                     16.53 kB │ gzip:   6.45 kB │ map:    86.74 kB
+dist/assets/useModulation-5GjBne53.js                17.84 kB │ gzip:   4.08 kB │ map:    45.21 kB
+dist/assets/MultiSystemDashboardPage-CaIMkqdA.js     18.40 kB │ gzip:   4.19 kB │ map:    53.67 kB
+dist/assets/Search-CqMPCJoQ.js                       18.55 kB │ gzip:   6.87 kB │ map:    88.83 kB
+dist/assets/index.esm-BfJS5Fh5.js                    18.62 kB │ gzip:   5.21 kB │ map:   113.07 kB
+dist/assets/Peavey5150Card-HPX2dEI1.js               19.18 kB │ gzip:   6.75 kB │ map:    70.89 kB
+dist/assets/DrumMachineCard-BWR21b9M.js              20.35 kB │ gzip:   6.66 kB │ map:    45.25 kB
+dist/assets/Slider-C7LD28Bl.js                       20.59 kB │ gzip:   6.93 kB │ map:    90.19 kB
+dist/assets/WelcomePage-CPEgrfg3.js                  21.31 kB │ gzip:   5.62 kB │ map:    49.01 kB
+dist/assets/NativeDelayCard-CcGr2lTy.js              21.44 kB │ gzip:   6.19 kB │ map:    63.40 kB
+dist/assets/PresetsPage-BL0G6v2l.js                  23.23 kB │ gzip:   6.49 kB │ map:    68.14 kB
+dist/assets/TweedBassmanCard-D1nHpj67.js             23.42 kB │ gzip:   6.33 kB │ map:    57.67 kB
+dist/assets/WLZ6H5FH-DkzTIVQ-.js                     24.48 kB │ gzip:   9.10 kB │ map:   119.57 kB
+dist/assets/PassionFXCard-Bm8TG2un.js                26.63 kB │ gzip:   7.28 kB │ map:    72.39 kB
+dist/assets/AudioEnginePage-C41l6pXe.js              27.05 kB │ gzip:   5.87 kB │ map:    68.71 kB
+dist/assets/LV2PluginsPage-gXHg3orf.js               30.17 kB │ gzip:   7.20 kB │ map:    77.21 kB
+dist/assets/PluginCardShell-DSt_MBPk.js              30.78 kB │ gzip:   8.71 kB │ map:    50.03 kB
+dist/assets/MPX1FlowView-xZujsrT6.js                 32.11 kB │ gzip:   9.72 kB │ map:   106.58 kB
+dist/assets/Tooltip-CHP0PWZe.js                      32.62 kB │ gzip:  11.58 kB │ map:   184.18 kB
+dist/assets/HostMachinePage-KiupAT-v.js              34.48 kB │ gzip:   9.93 kB │ map:   101.38 kB
+dist/assets/SynthForgeCard-DiYUFVM4.js               34.92 kB │ gzip:   9.80 kB │ map:   103.65 kB
+dist/assets/DSPPage-0mlNYU-f.js                      35.95 kB │ gzip:   6.97 kB │ map:    79.01 kB
+dist/assets/ChainsPage-Bs-c-WG5.js                   36.47 kB │ gzip:  12.86 kB │ map:   129.84 kB
+dist/assets/combobox-provider-BVgZDkQQ.js            38.02 kB │ gzip:  14.32 kB │ map:   206.40 kB
+dist/assets/DynamicsMeteringPanel-C0KP4Qp2.js        38.28 kB │ gzip:   9.52 kB │ map:   117.99 kB
+dist/assets/ShoppingSearchDialog-Bj-pC1Lq.js         41.86 kB │ gzip:  12.36 kB │ map:   126.34 kB
+dist/assets/CelestialCompressorCard-7A_wLId9.js      48.43 kB │ gzip:  12.95 kB │ map:   109.90 kB
+dist/assets/MIDIPage-BXXHvc9i.js                     51.78 kB │ gzip:  13.87 kB │ map:   174.78 kB
+dist/assets/EdirolUA1000Page-BqfmKjKt.js             59.75 kB │ gzip:  14.00 kB │ map:   137.48 kB
+dist/assets/MidiHubPage-CIOKFi9p.js                  63.61 kB │ gzip:  14.78 kB │ map:   187.54 kB
+dist/assets/TextField-CPi7rGdx.js                    71.56 kB │ gzip:  20.93 kB │ map:   408.33 kB
+dist/assets/HomePage-DDQWsJJ3.js                     77.59 kB │ gzip:  18.30 kB │ map:   202.04 kB
+dist/assets/AboutPage-DCIsHpEa.js                    80.32 kB │ gzip:  20.55 kB │ map:   176.99 kB
+dist/assets/LibraryPage-BDW4P8tg.js                  86.40 kB │ gzip:  21.14 kB │ map:   238.08 kB
+dist/assets/LCDPage-BJlathcn.js                      98.71 kB │ gzip:  23.03 kB │ map:   222.86 kB
+dist/assets/Typography-CF-n9V5I.js                   99.39 kB │ gzip:  35.14 kB │ map:   491.25 kB
+dist/assets/TesiraPage-8Q8NJeDy.js                  102.58 kB │ gzip:  26.61 kB │ map:   361.26 kB
+dist/assets/style-X70heHQ8.js                       137.27 kB │ gzip:  44.10 kB │ map:   548.85 kB
+dist/assets/ClusterDashboardPage-Bvgpxsjc.js        170.97 kB │ gzip:  41.56 kB │ map:   499.21 kB
+dist/assets/index-DYixNFXY.js                       198.44 kB │ gzip:  62.59 kB │ map:   893.31 kB
+dist/assets/GridFlowPage-0ApNmFIo.js                239.21 kB │ gzip:  60.51 kB │ map:   656.88 kB
+dist/assets/AvbRoutingPage-DbONhFlG.js              283.74 kB │ gzip:  84.97 kB │ map: 1,228.61 kB
+dist/assets/App-Byl0zqBA.js                         292.14 kB │ gzip:  77.18 kB │ map: 1,139.29 kB
+dist/assets/LineChart-D1CNhJkA.js                   328.72 kB │ gzip:  97.91 kB │ map: 1,696.05 kB
+dist/assets/Scene3D-w53sx5mT.js                   1,132.51 kB │ gzip: 317.23 kB │ map: 5,464.38 kB
 
 (!) Some chunks are larger than 600 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
-✓ built in 28.78s
+✓ built in 28.10s

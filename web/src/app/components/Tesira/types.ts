@@ -214,6 +214,7 @@ export interface TesiraSageVueStatus {
   has_token?: boolean;
   detail?: string;
   health?: Record<string, unknown>;
+  manual_upload_required?: boolean;
 }
 
 export interface TesiraDeploymentJobEvent {

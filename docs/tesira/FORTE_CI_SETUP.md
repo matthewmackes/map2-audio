@@ -278,6 +278,36 @@ curl "http://localhost:8080/api/avb/router/endpoints?direction=listener"
 
 ### Assign to signal chain
 
+---
+
+## MAP2 Manual SageVue Package (No MAP2↔SageVue API Link)
+
+If you prefer manual SageVue operation, MAP2 can export a package for upload.
+
+### Download package from MAP2 UI
+
+1. Open **Tesira AVB > select device > Export for SageVue**.
+2. Choose the layout.
+3. Click **Download Manual Package**.
+
+The ZIP includes:
+- `README_UPLOAD_TO_SAGEVUE.md` (upload steps)
+- `<layout>_<version>.manifest.json` (MAP2 metadata/checksum context)
+- `<layout>_<version>.tmf` if MAP2 can resolve a local TMF artifact path
+
+If TMF is not included, the ZIP includes `MISSING_TMF.txt` with remediation steps.
+
+### Upload in SageVue
+
+1. Sign in to SageVue.
+2. Open Tesira layout management.
+3. Upload the `.tmf` file.
+4. Deploy to target unit(s).
+5. Return to MAP2 and verify device connection, AVB streams, and PTP lock.
+
+For required instance tags and the full TMF registration workflow, use:
+- `docs/tesira/MAP2_TMF_AUTHORING_GUIDE.md`
+
 In the MAP2 GridFlow UI:
 1. Click the **INPUT** endpoint card on your signal chain
 2. In the AudioPortSelector modal, select the Forte CI AVB endpoint under the AVB tab

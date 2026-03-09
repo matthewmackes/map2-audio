@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import io
 from unittest.mock import AsyncMock, MagicMock, patch
+import zipfile
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -133,58 +135,97 @@ def test_layout_catalog_routes(client):
 
 
 def test_sagevue_status_route(client):
-    sagevue = MagicMock()
-    sagevue.enabled = True
-    sagevue.base_url = "https://sagevue.local"
-    sagevue.has_token = True
-    sagevue.health_check = AsyncMock(return_value={"status": "ok"})
-
-    with patch("app.routes.tesira._get_sagevue_client", return_value=sagevue):
-        response = client.get("/api/tesira/sagevue/status")
+    response = client.get("/api/tesira/sagevue/status")
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["enabled"] is True
-    assert payload["healthy"] is True
+    assert payload["enabled"] is False
+    assert payload["healthy"] is False
+    assert payload["manual_upload_required"] is True
 
 
 def test_deployment_routes(client):
-    orchestrator = MagicMock()
-    orchestrator.start_deployment = AsyncMock(return_value={"job_id": "job-1", "status": "queued"})
-    orchestrator.get_job = AsyncMock(return_value={"job_id": "job-1", "status": "running"})
-    orchestrator.rollback_job = AsyncMock(return_value={"job_id": "job-1", "status": "rolled_back"})
+    start_resp = client.post(
+        "/api/tesira/devices/tesira_dev_1/deploy",
+        json={
+            "layout_id": "forte_ci_default",
+            "layout_version": "1.0.0",
+            "dry_run": True,
+        },
+    )
+    get_resp = client.get("/api/tesira/deployments/job-1")
+    rollback_resp = client.post(
+        "/api/tesira/deployments/job-1/rollback",
+        json={"requested_by": "tester"},
+    )
 
-    with patch("app.routes.tesira._get_deploy_orchestrator", return_value=orchestrator):
-        start_resp = client.post(
-            "/api/tesira/devices/tesira_dev_1/deploy",
-            json={
-                "layout_id": "forte_ci_default",
-                "layout_version": "1.0.0",
-                "dry_run": True,
-            },
-        )
-        get_resp = client.get("/api/tesira/deployments/job-1")
-        rollback_resp = client.post(
-            "/api/tesira/deployments/job-1/rollback",
-            json={"requested_by": "tester"},
-        )
-
-    assert start_resp.status_code == 200
-    assert start_resp.json()["job_id"] == "job-1"
-    assert get_resp.status_code == 200
-    assert get_resp.json()["status"] == "running"
-    assert rollback_resp.status_code == 200
-    assert rollback_resp.json()["status"] == "rolled_back"
+    assert start_resp.status_code == 410
+    assert get_resp.status_code == 410
+    assert rollback_resp.status_code == 410
 
 
 def test_get_deployment_not_found_returns_404(client):
-    orchestrator = MagicMock()
-    orchestrator.get_job = AsyncMock(return_value=None)
+    response = client.get("/api/tesira/deployments/missing-job")
 
-    with patch("app.routes.tesira._get_deploy_orchestrator", return_value=orchestrator):
-        response = client.get("/api/tesira/deployments/missing-job")
+    assert response.status_code == 410
 
-    assert response.status_code == 404
+
+def test_manual_package_download_route(client):
+    catalog = MagicMock()
+    catalog.get_layout = AsyncMock(
+        return_value={
+            "layout_id": "forte_ci_default",
+            "version": "1.0.0",
+            "name": "Forte CI Default",
+            "device_family": "FORTE_CI",
+            "checksum": "sha256:abc",
+            "artifact_uri": "",
+            "instance_tag_map": {"LevelControl1": "level"},
+            "feature_flags": ["levels"],
+            "notes": "demo",
+        }
+    )
+
+    with patch("app.routes.tesira._get_layout_catalog", return_value=catalog):
+        response = client.get("/api/tesira/layouts/forte_ci_default/manual-package?version=1.0.0")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/zip")
+
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    names = set(archive.namelist())
+    assert "README_UPLOAD_TO_SAGEVUE.md" in names
+    assert "forte_ci_default_1.0.0.manifest.json" in names
+    assert "MISSING_TMF.txt" in names
+
+
+def test_manual_package_download_bundles_local_tmf_file(client, tmp_path):
+    tmf_path = tmp_path / "forte_ci_default.tmf"
+    tmf_path.write_bytes(b"fake-tmf-content")
+
+    catalog = MagicMock()
+    catalog.get_layout = AsyncMock(
+        return_value={
+            "layout_id": "forte_ci_default",
+            "version": "1.0.0",
+            "name": "Forte CI Default",
+            "device_family": "FORTE_CI",
+            "checksum": "sha256:abc",
+            "artifact_uri": str(tmf_path),
+            "instance_tag_map": {},
+            "feature_flags": [],
+            "notes": None,
+        }
+    )
+
+    with patch("app.routes.tesira._get_layout_catalog", return_value=catalog):
+        response = client.get("/api/tesira/layouts/forte_ci_default/manual-package?version=1.0.0")
+
+    assert response.status_code == 200
+    archive = zipfile.ZipFile(io.BytesIO(response.content))
+    names = set(archive.namelist())
+    assert "forte_ci_default_1.0.0.tmf" in names
+    assert "MISSING_TMF.txt" not in names
 
 
 def test_design_workspace_routes(client):

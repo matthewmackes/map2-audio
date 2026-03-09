@@ -1,0 +1,47 @@
+# Files and directories excluded from release tarballs
+# Used by: git archive --worktree-attributes (via .gitattributes export-ignore)
+# and by the nightly-release GitHub Action
+
+# Build artifacts (should not be in git, but currently are)
+juce-engine/build-*/
+juce-engine/IntelliFX8VoiceChorusPlugin/
+juce-engine/TweedBassmanPlugin/
+
+# Node modules (should not be in git, but currently are)
+node_modules/
+
+# Documentation & evidence screenshots
+docs/fit-for-purpose-evidence/
+docs/evaluation/
+
+# Test infrastructure
+tests/
+test-results/
+tui/tests/
+
+# Data that's not essential for distribution
+data/repair-backups/
+
+# CI/CD and packaging meta
+.github/
+packaging/
+.release-exclude
+
+# Logs
+logs/
+
+# Dev config
+.copilot-notes/
+.gemini/
+.vscode/
+.idea/
+
+# Web source (we ship pre-built dist/ only)
+web/src/
+web/node_modules/
+web/package-lock.json
+web/tsconfig*.json
+web/vite.config.ts
+web/eslint.config.js
+web/index.html
+web/public/

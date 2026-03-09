@@ -11,11 +11,17 @@ gracefully even if no devices are connected.
 
 from __future__ import annotations
 
+import io
+import json
 import logging
+import re
 import uuid
+import zipfile
+from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import unquote, urlparse
 
-from fastapi import APIRouter, HTTPException, Path as FPath, Body
+from fastapi import APIRouter, HTTPException, Path as FPath, Body, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select, delete as sa_delete
 from app.services.tesira import (
@@ -24,8 +30,6 @@ from app.services.tesira import (
     get_tesira_dsp_model,
     get_tesira_metrics_store,
     get_tesira_layout_catalog,
-    get_tesira_sagevue_client,
-    get_tesira_deploy_orchestrator,
     get_tesira_design_workspace,
     get_tesira_design_compiler,
 )
@@ -245,20 +249,124 @@ def _get_layout_catalog():
     return get_tesira_layout_catalog()
 
 
-def _get_sagevue_client():
-    return get_tesira_sagevue_client()
-
-
-def _get_deploy_orchestrator():
-    return get_tesira_deploy_orchestrator()
-
-
 def _get_design_workspace():
     return get_tesira_design_workspace()
 
 
 def _get_design_compiler():
     return get_tesira_design_compiler()
+
+
+_SAGEVUE_DIRECT_DEPLOY_REMOVED = (
+    "Direct SageVue integration has been removed from MAP2. "
+    "Download a manual deployment package and upload it in SageVue."
+)
+
+
+def _safe_name(value: str, fallback: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip())
+    cleaned = cleaned.strip("._")
+    return cleaned or fallback
+
+
+def _resolve_artifact_path(artifact_uri: Optional[str]) -> Optional[Path]:
+    if not artifact_uri:
+        return None
+
+    uri = artifact_uri.strip()
+    if not uri:
+        return None
+
+    parsed = urlparse(uri)
+    if parsed.scheme in ("http", "https", "sagevue"):
+        return None
+
+    if parsed.scheme == "file":
+        candidate = Path(unquote(parsed.path))
+    elif parsed.scheme == "":
+        candidate = Path(uri)
+    else:
+        return None
+
+    if candidate.is_file() and candidate.suffix.lower() == ".tmf":
+        return candidate
+    return None
+
+
+def _build_manual_package_zip(
+    layout: Dict[str, Any],
+    *,
+    device_id: Optional[str] = None,
+) -> bytes:
+    layout_id = str(layout.get("layout_id", "")).strip() or "layout"
+    version = str(layout.get("version", "1.0.0")).strip() or "1.0.0"
+    safe_layout_id = _safe_name(layout_id, "layout")
+    safe_version = _safe_name(version, "1.0.0")
+    base_name = f"{safe_layout_id}_{safe_version}"
+    artifact_uri = str(layout.get("artifact_uri") or "").strip()
+
+    manifest = {
+        "layout_id": layout_id,
+        "version": version,
+        "name": layout.get("name"),
+        "device_family": layout.get("device_family"),
+        "channel_profile": layout.get("channel_profile"),
+        "required_firmware": layout.get("required_firmware"),
+        "checksum": layout.get("checksum"),
+        "artifact_uri": artifact_uri or None,
+        "instance_tag_map": layout.get("instance_tag_map") or {},
+        "feature_flags": layout.get("feature_flags") or [],
+        "notes": layout.get("notes"),
+        "target_device_id": device_id,
+    }
+
+    readme = f"""# MAP2 Manual SageVue Upload Package
+
+Layout: {layout_id} v{version}
+Target device (optional): {device_id or "not specified"}
+
+## Required file for SageVue
+1. `{base_name}.tmf` (Tesira layout file)
+
+## Included files in this package
+- `README_UPLOAD_TO_SAGEVUE.md` (this guide)
+- `{base_name}.manifest.json` (MAP2 metadata + compatibility context)
+- `{base_name}.tmf` (included only when MAP2 has access to a local TMF file)
+
+## How to upload manually in SageVue
+1. Open SageVue and sign in.
+2. Go to Tesira layout management for your target site/system.
+3. Upload `{base_name}.tmf`.
+4. Validate compatibility with your target Forte CI units.
+5. Deploy/apply layout to the target device(s).
+6. After deployment, return to MAP2 and verify connection, AVB streams, and PTP.
+
+## If TMF is missing from this package
+MAP2 only includes TMF when `artifact_uri` points to a readable local file.
+If missing, export or locate the TMF from your Tesira toolchain and upload it manually in SageVue.
+
+Reference: https://sagevue-help.biamp.com/Tesira_Layouts.htm
+"""
+
+    artifact_path = _resolve_artifact_path(artifact_uri)
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("README_UPLOAD_TO_SAGEVUE.md", readme)
+        zf.writestr(f"{base_name}.manifest.json", json.dumps(manifest, indent=2, sort_keys=True))
+
+        if artifact_path is not None:
+            zf.write(artifact_path, arcname=f"{base_name}.tmf")
+        else:
+            missing_note = (
+                "TMF file is not bundled in this package.\n\n"
+                f"layout_id: {layout_id}\n"
+                f"version: {version}\n"
+                f"artifact_uri: {artifact_uri or 'not set'}\n\n"
+                "Set artifact_uri to a local TMF path (or file:// URI), then re-download this package."
+            )
+            zf.writestr("MISSING_TMF.txt", missing_note)
+
+    return zip_buffer.getvalue()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1408,38 +1516,45 @@ async def import_layout(req: TesiraLayoutImportRequest = Body(...)):
     return {"status": "imported", "layout": layout}
 
 
+@router.get(
+    "/layouts/{layout_id}/manual-package",
+    summary="Download manual SageVue upload package for a Tesira layout",
+)
+async def download_manual_layout_package(
+    layout_id: str,
+    version: Optional[str] = None,
+    device_id: Optional[str] = None,
+):
+    catalog = _get_layout_catalog()
+    layout = await catalog.get_layout(layout_id=layout_id, version=version)
+    if layout is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Layout '{layout_id}'{f' version {version}' if version else ''} not found",
+        )
+
+    payload = _build_manual_package_zip(layout, device_id=device_id)
+    resolved_version = str(layout.get("version", version or "1.0.0"))
+    safe_layout = _safe_name(layout_id, "layout")
+    safe_version = _safe_name(resolved_version, "1.0.0")
+    filename = f"{safe_layout}_{safe_version}_sagevue_manual_package.zip"
+    return Response(
+        content=payload,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/sagevue/status", summary="Get SageVue integration status")
 async def get_sagevue_status():
-    client = _get_sagevue_client()
-    base_url = client.base_url
-    if not client.enabled:
-        return {
-            "enabled": False,
-            "configured": bool(base_url),
-            "base_url": base_url,
-            "healthy": False,
-            "detail": "SageVue integration disabled",
-        }
-
-    try:
-        health = await client.health_check()
-        return {
-            "enabled": True,
-            "configured": bool(base_url),
-            "base_url": base_url,
-            "has_token": client.has_token,
-            "healthy": True,
-            "health": health,
-        }
-    except Exception as exc:
-        return {
-            "enabled": True,
-            "configured": bool(base_url),
-            "base_url": base_url,
-            "has_token": client.has_token,
-            "healthy": False,
-            "detail": str(exc),
-        }
+    return {
+        "enabled": False,
+        "configured": False,
+        "base_url": "",
+        "healthy": False,
+        "detail": _SAGEVUE_DIRECT_DEPLOY_REMOVED,
+        "manual_upload_required": True,
+    }
 
 
 @router.post("/devices/{device_id}/deploy", summary="Start Tesira deployment job")
@@ -1447,32 +1562,14 @@ async def start_deployment(
     device_id: str,
     req: TesiraDeploymentStartRequest = Body(...),
 ):
-    orchestrator = _get_deploy_orchestrator()
-    try:
-        job = await orchestrator.start_deployment(
-            device_id=device_id,
-            layout_id=req.layout_id,
-            layout_version=req.layout_version,
-            dry_run=req.dry_run,
-            requested_by=req.requested_by,
-            rollback_layout_id=req.rollback_layout_id,
-            rollback_layout_version=req.rollback_layout_version,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-    except Exception as exc:
-        logger.exception("Tesira deployment start failed")
-        raise HTTPException(status_code=500, detail=f"Deployment start failed: {exc}")
-    return job
+    _ = (device_id, req)
+    raise HTTPException(status_code=410, detail=_SAGEVUE_DIRECT_DEPLOY_REMOVED)
 
 
 @router.get("/deployments/{job_id}", summary="Get Tesira deployment job")
 async def get_deployment(job_id: str):
-    orchestrator = _get_deploy_orchestrator()
-    job = await orchestrator.get_job(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"Deployment job '{job_id}' not found")
-    return job
+    _ = job_id
+    raise HTTPException(status_code=410, detail=_SAGEVUE_DIRECT_DEPLOY_REMOVED)
 
 
 @router.post("/deployments/{job_id}/rollback", summary="Rollback Tesira deployment job")
@@ -1480,23 +1577,8 @@ async def rollback_deployment(
     job_id: str,
     req: TesiraDeploymentRollbackRequest = Body(default=TesiraDeploymentRollbackRequest()),
 ):
-    orchestrator = _get_deploy_orchestrator()
-    try:
-        job = await orchestrator.rollback_job(
-            job_id=job_id,
-            requested_by=req.requested_by,
-            layout_id=req.layout_id,
-            layout_version=req.layout_version,
-        )
-    except ValueError as exc:
-        message = str(exc)
-        if "not found" in message.lower():
-            raise HTTPException(status_code=404, detail=message)
-        raise HTTPException(status_code=400, detail=message)
-    except Exception as exc:
-        logger.exception("Tesira deployment rollback failed")
-        raise HTTPException(status_code=500, detail=f"Deployment rollback failed: {exc}")
-    return job
+    _ = (job_id, req)
+    raise HTTPException(status_code=410, detail=_SAGEVUE_DIRECT_DEPLOY_REMOVED)
 
 
 # ──────────────────────────────────────────────────────────────────────────────

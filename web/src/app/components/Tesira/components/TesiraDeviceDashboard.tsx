@@ -60,7 +60,7 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/design`} variant="outlined">Design</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/dsp`} variant="outlined">DSP</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/settings`} variant="outlined">Settings</Button>
-        <Button size="small" onClick={() => setDeployOpen(true)} variant="outlined">Deploy Chain</Button>
+        <Button size="small" onClick={() => setDeployOpen(true)} variant="outlined">Export for SageVue</Button>
         <Button size="small" component={RouterLink} to="/avb-routing" variant="outlined">AVB Routing</Button>
       </Box>
 

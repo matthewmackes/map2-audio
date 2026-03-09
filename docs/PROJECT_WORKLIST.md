@@ -2958,4 +2958,357 @@ Last updated: 2026-03-09 09:39 - Codex
   - Lint warning burn-down pass 3: added focused overrides for `map2`, `PluginCards`, `AvbRouting`, `app/pages`, and `shared/components/PluginChooser` legacy hotspots; warning count reduced from `989` to `274` while preserving `0` lint errors and keeping `typecheck` + `build` green.
   - Lint warning burn-down pass 4: removed remaining warning hotspots in core app files (unused declarations, `any` payload maps, hook dependency warning, and page export refresh warning) and finalized scoped lint policy; `npm --prefix web run -s lint` now reports `0` errors and `0` warnings, with `typecheck` + `build` still passing.
 
-ALL UNBLOCKED ITEMS COMPLETE
+ID: T078
+Status: [✓] Done
+Title: Expose MIDI Hub GUI in top navigation and legacy MIDI page entry points
+Description:
+- Goal / acceptance criteria: Ensure users can discover and open the new MIDI Hub GUI without manual URL entry by adding a first-class navigation item and in-page handoff from legacy MIDI controls.
+- Why it matters: Recent MIDI feature work landed primarily in `/midi-hub`, but operators reported they could not find the GUI from existing navigation.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: Advanced-menu route entry for `/midi-hub`, enforced top-nav promotion fallback for existing settings, legacy MIDI page link to MIDI Hub, and frontend validation evidence.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 18:10 - Codex
+- Completion notes:
+  - What was done: Added `MIDI Hub` to advanced navigation data, included `/midi-hub` in default promoted routes, enforced `/midi-hub` as a required promoted route in `AppShell` normalization (so existing installs with older saved settings still show it), and added a direct `MIDI Hub` button in `MIDIPage` header actions.
+  - Key findings: The GUI implementation was already present and routed; discoverability was blocked by navigation wiring/state defaults rather than missing frontend components.
+  - Validation evidence: `npm --prefix web run -s typecheck` PASS; `npm --prefix web run -s lint` PASS.
+  - Files/links produced: `web/src/app/data/advancedMenuItems.ts`, `web/src/app/layout/AppShell.tsx`, `web/src/app/pages/MIDIPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T076 (pending HIL unblock), T004 (hardware qualification unblock).
+
+ID: T079
+Status: [✓] Done
+Title: Reinvision MIDI page into a professional, detailed control center
+Description:
+- Goal / acceptance criteria: Redesign `/midi` so it clearly presents MAP2 MIDI capabilities and workflows at a professional level, including high-detail feature framing and improved operator guidance while preserving existing control functionality.
+- Why it matters: Users report the MIDI feature expansion is not obvious in the current screen, limiting discoverability and practical adoption.
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: Updated `MIDIPage` UX composition, supporting styling, validation evidence (`typecheck`/`lint`), and completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 18:20 - Codex
+- Completion notes:
+  - What was done: Rebuilt `/midi` into a full control-center layout with architecture pipeline narrative, readiness/coverage badges, expanded operational KPI cards, capability matrix, operator playbooks, and a refocused “Core MIDI Workbench” section while preserving all existing tab functionality (controller setup, mappings, commands, devices, activity, presets).
+  - What was done: Added a dedicated stylesheet for professional visual hierarchy and responsive behavior (`MIDIPage.css`), including polished cards, feature matrix layouts, tab counters, and mobile-safe action wrapping.
+  - Key findings: The prior page had solid functionality but lacked high-level framing; surfacing the control architecture and explicit feature families materially improves discoverability without requiring backend changes.
+  - Validation evidence: `npm --prefix web run -s typecheck` PASS; `npm --prefix web run -s lint` PASS.
+  - Files/links produced: `web/src/app/pages/MIDIPage.tsx`, `web/src/app/pages/MIDIPage.css`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T076 (pending HIL unblock), T004 (hardware qualification unblock).
+
+ID: T080
+Status: [✓] Done
+Title: Restore MIDI Hub pin toggle behavior in Advanced menu
+Description:
+- Goal / acceptance criteria: Allow users to unpin `MIDI Hub` from top navigation using the Advanced menu pin toggle, while preserving discoverability defaults for new settings payloads.
+- Why it matters: Current forced-promotion guardrail blocks user intent and makes the pin control behave incorrectly.
+- Dependencies: T078
+- Estimated effort: Low
+- Required outputs: `AppShell` promoted-route normalization fix, validation evidence, and worklist completion notes.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 18:37 - Codex
+- Completion notes:
+  - What was done: Removed forced `/midi-hub` injection from `normalizePromotedRoutes` in `AppShell`, restoring true user-controlled pin/unpin behavior from the Advanced menu.
+  - Key findings: Forced promotion solved discoverability but unintentionally overrode user settings persistence, so the pin toggle could never remove MIDI Hub.
+  - Validation evidence: `npm --prefix web run -s typecheck && npm --prefix web run -s lint` PASS.
+  - Files/links produced: `web/src/app/layout/AppShell.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T076 (pending HIL unblock), T004 (hardware qualification unblock).
+
+ID: T081
+Status: [ ] Todo
+Title: Comprehensive platform fitness-for-purpose evaluation and improvement plan
+Description:
+- Goal / acceptance criteria: Perform a deep, critical, technically informed evaluation of the entire MAP2 Audio Platform across completeness, stability, architecture, bloat, performance, UX, theming, API quality, and market readiness. Produce a structured report with prioritized findings and a concrete improvement roadmap. The evaluation must be unafraid to call out bad ideas, weak abstractions, UI clutter, pseudo-features, overengineering, inconsistent theming, poor control models, avoidable latency, and architectural mistakes.
+- Why it matters: The platform has accumulated significant feature breadth (MPX-1, AVB/AVDECC, Tesira, DSP, MIDI Hub, cluster management, etc.) but has not undergone a rigorous, holistic quality audit. Without a demanding expert review, conceptual debt, bloat, UX inconsistency, API gaps, and latency issues will compound and prevent the platform from reaching production-grade credibility.
+- Dependencies: None
+- Estimated effort: Very High
+- Required outputs: Structured evaluation report (`docs/PLATFORM_EVALUATION_REPORT.md`) with all 10 sections below, plus worklist items spawned for critical/major findings.
+Subtasks:
+ID: T081-subA
+Status: [ ] Todo
+Title: Phase 1 — Platform understanding and inventory
+Description:
+- Goal / acceptance criteria: Build a complete inventory of the platform's subsystems, services, UI pages, API endpoints, configuration surfaces, dependencies, and build/deploy structure. Map the intended purpose of each module. Identify the platform's claimed value proposition and judge whether each subsystem contributes to it.
+- Method:
+  1. Enumerate all backend services (`app/services/`), route modules (`app/routes/`), and their endpoint counts.
+  2. Enumerate all frontend pages (`web/src/app/pages/`), components (`web/src/app/components/`), and navigation entries.
+  3. Map the C++ engine surface (`juce-engine/Source/`) — audio graph, AVDECC, plugin host, metering, MIDI.
+  4. Catalog configuration files, systemd units, PipeWire fragments, and environment variables.
+  5. List all npm and pip dependencies and flag any that are heavy, unmaintained, or redundant.
+  6. Document the full navigation tree and page count.
+- Why it matters: You cannot evaluate what you do not understand. This creates the baseline for all subsequent analysis.
+- Dependencies: None
+- Estimated effort: High
+- Required outputs: `docs/evaluation/01-platform-inventory.md`
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subB
+Status: [ ] Todo
+Title: Phase 2 — Completeness evaluation
+Description:
+- Goal / acceptance criteria: Determine whether each subsystem is feature-complete for its intended purpose. Identify missing core features, incomplete workflows, half-implemented systems, missing error handling, unfinished interface areas, and broken or inconsistent behavior between modules.
+- Method:
+  1. For each major subsystem (Audio Engine, DSP/Plugin Host, MPX-1, AVB/AVDECC, Tesira, MIDI, MIDI Hub, Cluster, Metering, Library, Presets, Grid/3D, PipeWire, Host Machine), walk through the intended workflow end-to-end.
+  2. Check whether the UI exposes all backend capabilities and vice versa.
+  3. Identify places where the product implies a capability but does not fully deliver it.
+  4. Flag features that exist but are not mature enough for professional use.
+  5. Check error handling: are failures surfaced clearly, or silently swallowed?
+- Why it matters: A platform that looks broad but is shallow in each area is worse than a focused platform that does fewer things well.
+- Dependencies: T081-subA
+- Estimated effort: High
+- Required outputs: `docs/evaluation/02-completeness.md` with per-subsystem completeness scores (complete / partial / stub / missing).
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subC
+Status: [ ] Todo
+Title: Phase 3 — Stability and reliability evaluation
+Description:
+- Goal / acceptance criteria: Evaluate the platform for technical stability and operational reliability. Identify crash risks, deadlocks, race conditions, fragile services, startup/shutdown reliability, recovery after failure, configuration durability, network resilience, hardware hotplug behavior, long-session stability, memory leaks, CPU spikes, unbounded logging/queue growth, and timing/synchronization weaknesses.
+- Method:
+  1. Audit the C++ audio callback for RT-safety violations (heap alloc, locks, syscalls, unbounded loops).
+  2. Review Python async service lifecycle — are WebSocket connections cleaned up? Are background tasks cancelled on shutdown?
+  3. Check systemd service restart behavior, watchdog integration, and failure recovery.
+  4. Review state persistence — what survives a crash? What requires manual recovery?
+  5. Examine error propagation paths — do exceptions in services cause cascade failures?
+  6. Check for unbounded growth: log files, ring buffers, WebSocket message queues, in-memory caches.
+  7. Review hardware hotplug paths — USB audio disconnect/reconnect, network interface changes.
+- Why it matters: A platform that works in demo conditions but fails under stress or after errors is not production-grade.
+- Dependencies: T081-subA
+- Estimated effort: High
+- Required outputs: `docs/evaluation/03-stability.md` with severity-ranked findings.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subD
+Status: [ ] Todo
+Title: Phase 4 — Architecture and design concepts evaluation
+Description:
+- Goal / acceptance criteria: Judge whether the platform's architecture matches its purpose, whether abstractions are clean or confused, whether modules are overly coupled, and whether the design creates unnecessary complexity. Identify bad concepts, leaky abstractions, awkward workflows, brittle dependencies, and design decisions that should be reversed.
+- Method:
+  1. Map module dependencies (Python imports, TS imports, C++ includes) and identify circular or excessive coupling.
+  2. Evaluate the layering: does the API layer depend on UI concerns? Does the engine layer leak into service logic?
+  3. Assess the state model: where is truth held? Is it consistent? Are there competing sources of truth?
+  4. Review the WebSocket/REST split — is the boundary clear and correct?
+  5. Evaluate extensibility: how hard is it to add a new device type, a new DSP block, a new page?
+  6. Identify features that should be merged, split, or removed based on cohesion analysis.
+  7. Judge whether the Python↔C++ boundary is clean or leaky.
+- Why it matters: Architecture determines the long-term cost of every change. Bad architecture makes good features expensive.
+- Dependencies: T081-subA
+- Estimated effort: High
+- Required outputs: `docs/evaluation/04-architecture.md` with dependency diagrams and specific reversal/improvement recommendations.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subE
+Status: [ ] Todo
+Title: Phase 5 — Bloat and unnecessary complexity audit
+Description:
+- Goal / acceptance criteria: Actively search for bloat. Identify redundant services, duplicated functionality, over-engineered components, needless UI layers, unnecessary dependencies, features that add little value but increase maintenance cost, overcomplicated setup/routing logic, and "clever" systems that reduce usability or reliability.
+- Method:
+  1. Measure lines of code per subsystem and compare to functional output.
+  2. Identify dead code: unused exports, unreachable routes, commented-out blocks, unused components.
+  3. Check npm bundle size — are there heavy dependencies that could be replaced or removed?
+  4. Check pip dependencies — are there packages used for a single function that could be inlined?
+  5. Identify UI pages or tabs that duplicate information available elsewhere.
+  6. Flag over-abstracted patterns: factories, registries, or plugin systems that serve only one concrete case.
+  7. Identify configuration surfaces that are needlessly complex for the number of actual options.
+- Why it matters: Bloat increases maintenance cost, slows builds, confuses developers, and makes the platform harder to trust.
+- Dependencies: T081-subA
+- Estimated effort: Medium
+- Required outputs: `docs/evaluation/05-bloat-audit.md` with specific removal/simplification candidates and estimated maintenance savings.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subF
+Status: [ ] Todo
+Title: Phase 6 — Performance and latency analysis
+Description:
+- Goal / acceptance criteria: Perform a serious evaluation of performance, especially where real-time or near-real-time audio behavior matters. Estimate latency contributors by subsystem, identify likely bottlenecks, distinguish between acceptable and platform-breaking latency, and recommend specific changes that reduce overhead.
+- Method:
+  1. Map the end-to-end signal path latency: USB input → PipeWire → JACK → JUCE callback → DSP graph → output. Estimate each stage.
+  2. Measure or estimate API round-trip overhead for common operations (parameter change, preset load, meter read).
+  3. Evaluate graph rebuild delays — how long does adding/removing a plugin take?
+  4. Measure UI responsiveness: page load times, WebSocket update latency, meter refresh rate.
+  5. Profile CPU efficiency: what percentage goes to audio vs. overhead (metering, logging, WS broadcast)?
+  6. Review scheduling: are RT threads properly prioritized? Is there priority inversion risk?
+  7. Check for avoidable latency: unnecessary serialization, polling where push would work, redundant data copies.
+  8. Evaluate startup time from service start to audio-ready.
+- Why it matters: Latency is both a technical and product-quality issue. Avoidable latency in a pro audio platform is a credibility problem.
+- Dependencies: T081-subA, T081-subC
+- Estimated effort: High
+- Required outputs: `docs/evaluation/06-performance-latency.md` with per-subsystem latency budget table and specific reduction recommendations.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subG
+Status: [ ] Todo
+Title: Phase 7 — Interface and user experience critique
+Description:
+- Goal / acceptance criteria: Evaluate whether the platform looks and feels professional. Review information architecture, workflow clarity, visual hierarchy, density vs. readability, discoverability, consistency, affordances, status visibility, user confidence, responsiveness, accessibility, and professionalism of presentation.
+- Method:
+  1. Walk every page and tab in the navigation tree. Screenshot or describe the layout.
+  2. Identify confusing screens, amateur-looking layouts, poor interaction patterns, interface dead ends.
+  3. Check whether controls reflect actual system state — or lag, lie, or go stale.
+  4. Evaluate the information density: is it too sparse (wasted space) or too dense (cognitive overload)?
+  5. Check discoverability: can a new user find core features without documentation?
+  6. Evaluate feedback: are loading states, errors, successes, and transitions clearly communicated?
+  7. Test responsive behavior at 360px, 768px, 1280px, 1440px, 1920px.
+  8. Check accessibility: keyboard navigation, focus management, screen reader compatibility, contrast ratios.
+- Why it matters: A platform that functions well but looks amateur or confuses users will not be trusted by professionals.
+- Dependencies: T081-subA
+- Estimated effort: High
+- Required outputs: `docs/evaluation/07-ux-critique.md` with per-page findings and annotated screenshots where useful.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subH
+Status: [ ] Todo
+Title: Phase 8 — Color, theming, and visual system critique
+Description:
+- Goal / acceptance criteria: Critique the visual language seriously. Review color palette quality, contrast, readability, consistency of theming, overuse of accent colors, semantic coloring, dark/light theme behavior, and state communication. Determine whether the platform looks consumer-grade, dated, unfinished, or untrustworthy.
+- Method:
+  1. Extract the current color palette from CSS variables / theme configuration.
+  2. Check WCAG contrast ratios for text, controls, and status indicators.
+  3. Evaluate semantic color usage: do success/warning/error/offline/active states have consistent, distinct colors?
+  4. Check for overuse of brand/accent colors that reduce emphasis hierarchy.
+  5. Review typography: font choices, size scale, weight usage, line-height consistency.
+  6. Review spacing: is there a consistent spacing scale, or ad-hoc pixel values?
+  7. Compare the visual quality against professional audio software (e.g., Dante Controller, QSC Q-SYS, Universal Audio Console).
+- Why it matters: Visual credibility is a proxy for engineering credibility in professional tools. Poor theming erodes trust.
+- Dependencies: T081-subG
+- Estimated effort: Medium
+- Required outputs: `docs/evaluation/08-theming-critique.md` with current palette analysis, recommended palette, and specific improvement directives.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subI
+Status: [ ] Todo
+Title: Phase 9 — API quality and integration surface evaluation
+Description:
+- Goal / acceptance criteria: Evaluate the APIs as if they matter to serious integrators. Review coverage, consistency, naming, discoverability, missing capabilities, unclear contracts, schema design, error reporting, versioning, authentication, event model, realtime control, documentation, extensibility, and integration friendliness.
+- Method:
+  1. Enumerate all REST endpoints (method, path, request/response schema) from route files.
+  2. Enumerate all WebSocket message types and their payloads.
+  3. Check naming consistency: are routes RESTful? Are parameter names consistent across endpoints?
+  4. Identify API gaps: things the UI can do that the API cannot, missing bulk operations, missing event subscriptions.
+  5. Check error responses: are they structured, informative, and consistent? Or ad-hoc strings?
+  6. Check whether the API supports push-state / streaming for real-time monitoring.
+  7. Evaluate documentation: is there an OpenAPI spec? Are examples provided?
+  8. Check authentication and authorization model (if any).
+  9. Identify chatty endpoints that should be consolidated, and missing endpoints that force workarounds.
+- Why it matters: The API is the platform's control plane. A weak API limits automation, integration, and third-party adoption.
+- Dependencies: T081-subA
+- Estimated effort: High
+- Required outputs: `docs/evaluation/09-api-critique.md` with endpoint inventory, gap analysis, and redesign recommendations.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+ID: T081-subJ
+Status: [ ] Todo
+Title: Phase 10 — Final report synthesis and improvement roadmap
+Description:
+- Goal / acceptance criteria: Synthesize all phase findings into the final structured report. Produce the 10-section deliverable: executive assessment, strengths, weaknesses, bloat candidates, latency analysis, UX critique, theming critique, API critique, prioritized improvement plan (immediate / medium-term / strategic), and final verdict. Spawn new worklist items for all critical and major findings.
+- Method:
+  1. Aggregate findings from phases 2–9 into severity tiers: critical / major / moderate / nice-to-have.
+  2. Write the executive assessment — is the platform complete, stable, well-designed, lean, performant, and professional? Answer directly.
+  3. Identify the top 5 strengths and explain why they are genuinely good.
+  4. Identify the top 10 weaknesses and explain exactly how they harm the platform.
+  5. List bloat and removal candidates with justification.
+  6. Summarize the latency budget and name the top 3 bottlenecks.
+  7. Summarize the UX critique with the 5 most impactful improvements.
+  8. Summarize the theming critique with specific palette and typography directives.
+  9. Summarize the API critique with the 5 most important gaps.
+  10. Build the prioritized improvement plan:
+      - Immediate fixes (can be done in days, high impact, low risk)
+      - Medium-term improvements (weeks, require design work)
+      - Strategic redesigns (months, architectural changes)
+  11. Write the final verdict: is this platform fit for purpose now? What prevents excellence? What changes would most improve it?
+  12. Create new worklist items (T082+) for each critical and major finding that requires action.
+- Why it matters: The evaluation is only valuable if it produces actionable outcomes. The report is the deliverable; the spawned worklist items are the path to improvement.
+- Dependencies: T081-subA through T081-subI
+- Estimated effort: High
+- Required outputs: `docs/PLATFORM_EVALUATION_REPORT.md` (complete 10-section report), new worklist items for critical/major findings.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+Assigned to: Codex
+Last updated: 2026-03-09 00:00 - Codex
+
+ID: T082
+Status: [>] In Progress
+Title: Automated nightly release pipeline with clean distribution tarball
+Description:
+- Goal / acceptance criteria: A GitHub Action runs nightly at 4 AM Eastern, builds a lean release tarball (~50-100 MB) containing only distributable components, and publishes it to the MAP2-RELEASES repo (https://github.com/matthewmackes/MAP2-RELEASES) as both a git-committed file and a GitHub Release with checksums.
+- Why it matters: Eliminates manual release prep, ensures every night's build is reproducible and bloat-free, and provides a clean distribution channel separate from the source repo (which currently carries ~6.9 GB of tracked build artifacts).
+- Dependencies: None
+- Estimated effort: Medium
+- Required outputs: `.github/workflows/nightly-release.yml`, `.release-exclude`, `MAP2_RELEASES_TOKEN` secret configured, working nightly builds in MAP2-RELEASES repo.
+Subtasks:
+ID: T082-subA
+Status: [✓] Done
+Title: Create .release-exclude manifest defining what ships vs what stays behind
+Description:
+- Goal / acceptance criteria: A file listing all directories/files excluded from the release tarball, used by the nightly workflow to build a clean package.
+- Why it matters: The source repo is 6.9 GB (tracked build artifacts, node_modules, screenshots). The release must be <100 MB.
+- Dependencies: None
+- Estimated effort: Low
+- Required outputs: `.release-exclude`
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-09 00:00 - Claude
+ID: T082-subB
+Status: [✓] Done
+Title: Create nightly-release GitHub Action workflow
+Description:
+- Goal / acceptance criteria: `.github/workflows/nightly-release.yml` that: (1) checks for new commits since last nightly tag, (2) builds the web frontend via `npm ci && npm run build`, (3) assembles a clean tarball with only distributable components (app/, web/dist/, juce-engine/Source+CMakeLists, tui/, installer/, systemd/, scripts/, config/, essential data), (4) publishes to MAP2-RELEASES repo, (5) creates a GitHub Release with SHA256 checksum, (6) tags the source repo for next diff. Supports manual dispatch with version override.
+- Why it matters: Fully automated, zero-touch nightly distribution.
+- Dependencies: T082-subA
+- Estimated effort: Medium
+- Required outputs: `.github/workflows/nightly-release.yml`
+Subtasks: None
+Assigned to: Claude
+Last updated: 2026-03-09 00:00 - Claude
+ID: T082-subC
+Status: [ ] Todo
+Title: Create MAP2-RELEASES repo and configure MAP2_RELEASES_TOKEN secret
+Description:
+- Goal / acceptance criteria: (1) Create https://github.com/matthewmackes/MAP2-RELEASES repo with a README explaining the release channel, (2) generate a fine-grained PAT with `contents:write` scope on MAP2-RELEASES, (3) add it as `MAP2_RELEASES_TOKEN` secret in the map2-audio repo Settings → Secrets.
+- Why it matters: The workflow needs push access to the separate releases repo.
+- Dependencies: None (manual step)
+- Estimated effort: Low
+- Required outputs: Repo created, secret configured, test manual dispatch succeeds.
+Subtasks: None
+Assigned to: Matthew
+Last updated: 2026-03-09 00:00 - Claude
+ID: T082-subD
+Status: [ ] Todo
+Title: Clean tracked bloat from source repo (node_modules, build-*, plugin builds)
+Description:
+- Goal / acceptance criteria: Remove ~6.5 GB of accidentally tracked build artifacts from git history: `node_modules/` (8401 files), `juce-engine/build-*` (1783 files), `juce-engine/IntelliFX8VoiceChorusPlugin/`, `juce-engine/TweedBassmanPlugin/`, `data/repair-backups/`. Update `.gitignore` to prevent re-addition. Optionally use `git filter-repo` or BFG to rewrite history and shrink the repo.
+- Why it matters: A 6.9 GB repo is unusable for cloning and CI. Most of this is build artifacts that should never have been committed.
+- Dependencies: T082-subC (do after releases work, since history rewrite requires force-push)
+- Estimated effort: Medium (destructive — requires coordination)
+- Required outputs: Updated `.gitignore`, `git rm --cached` or `git filter-repo` run, force-push to both remotes.
+Subtasks: None
+Assigned to: Matthew + Claude
+Last updated: 2026-03-09 00:00 - Claude
+ID: T082-subE
+Status: [ ] Todo
+Title: Validate first nightly release end-to-end
+Description:
+- Goal / acceptance criteria: Trigger manual dispatch of nightly-release workflow, verify: tarball appears in MAP2-RELEASES repo, GitHub Release is created, SHA256 matches, tarball extracts cleanly, `install_on_new_host.sh` runs without missing files, web/dist serves correctly.
+- Why it matters: Catch packaging gaps before relying on the nightly cadence.
+- Dependencies: T082-subC
+- Estimated effort: Low
+- Required outputs: Passing manual dispatch run, successful test install from tarball.
+Subtasks: None
+Assigned to: Matthew + Claude
+Last updated: 2026-03-09 00:00 - Claude
+Assigned to: Claude + Matthew
+Last updated: 2026-03-09 00:00 - Claude
+
+ALL UNBLOCKED ITEMS COMPLETE (except T082 in progress)

@@ -1,0 +1,292 @@
+name: Nightly Release
+
+on:
+  schedule:
+    # 4:00 AM Eastern = 09:00 UTC (EST) / 08:00 UTC (EDT)
+    # Using 08:00 UTC to cover EDT (summer); in EST it fires at 3 AM — close enough
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: 'Version override (default: auto-generated nightly tag)'
+        required: false
+
+env:
+  NODE_VERSION: '22'
+  PYTHON_VERSION: '3.12'
+
+permissions:
+  contents: read
+
+jobs:
+  check-changes:
+    name: Check for new commits
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+      short_sha: ${{ steps.check.outputs.short_sha }}
+      version_tag: ${{ steps.check.outputs.version_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if commits exist since last nightly tag
+        id: check
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE_TAG="nightly-$(date -u +%Y%m%d)"
+          VERSION_TAG="${{ github.event.inputs.version_override || '' }}"
+          if [ -z "$VERSION_TAG" ]; then
+            VERSION_TAG="$DATE_TAG"
+          fi
+
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "version_tag=$VERSION_TAG" >> "$GITHUB_OUTPUT"
+
+          # For manual dispatch, always build
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch — building regardless of changes"
+            exit 0
+          fi
+
+          # For scheduled runs, check if anything changed since last nightly tag
+          LAST_NIGHTLY=$(git tag -l 'nightly-*' --sort=-creatordate | head -1)
+          if [ -z "$LAST_NIGHTLY" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "No previous nightly tag found — building"
+          else
+            COMMIT_COUNT=$(git rev-list "$LAST_NIGHTLY"..HEAD --count)
+            if [ "$COMMIT_COUNT" -gt 0 ]; then
+              echo "has_changes=true" >> "$GITHUB_OUTPUT"
+              echo "$COMMIT_COUNT new commits since $LAST_NIGHTLY"
+            else
+              echo "has_changes=false" >> "$GITHUB_OUTPUT"
+              echo "No changes since $LAST_NIGHTLY — skipping build"
+            fi
+          fi
+
+  build-web:
+    name: Build web frontend
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install web dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Build production frontend
+        working-directory: ./web
+        run: npm run build
+
+      - name: Upload web dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist/
+          retention-days: 1
+
+  package:
+    name: Create release tarball
+    needs: [check-changes, build-web]
+    if: needs.check-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      tarball_name: ${{ steps.package.outputs.tarball_name }}
+      tarball_sha256: ${{ steps.package.outputs.tarball_sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download web dist
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist/
+
+      - name: Create clean release tarball
+        id: package
+        run: |
+          VERSION="${{ needs.check-changes.outputs.version_tag }}"
+          SHORT_SHA="${{ needs.check-changes.outputs.short_sha }}"
+          TARBALL_NAME="map2-audio-${VERSION}-${SHORT_SHA}.tar.gz"
+          STAGING="map2-audio-${VERSION}"
+
+          mkdir -p "$STAGING"
+
+          # Copy only what belongs in a release
+          # Python backend
+          cp -r app "$STAGING/"
+
+          # Pre-built web frontend
+          mkdir -p "$STAGING/web"
+          cp -r web/dist "$STAGING/web/"
+          cp web/package.json "$STAGING/web/"
+
+          # C++ engine source (must be built on target for -march=native)
+          mkdir -p "$STAGING/juce-engine"
+          cp -r juce-engine/Source "$STAGING/juce-engine/"
+          cp juce-engine/CMakeLists.txt "$STAGING/juce-engine/"
+          # Copy only essential subdirectories if they exist
+          for d in juce-engine/nam juce-engine/sfizz-src; do
+            [ -d "$d" ] && cp -r "$d" "$STAGING/juce-engine/"
+          done
+
+          # TUI
+          cp -r tui "$STAGING/"
+          # Remove tui tests from release
+          rm -rf "$STAGING/tui/tests"
+
+          # Installer
+          cp -r installer "$STAGING/"
+
+          # Systemd services
+          cp -r systemd "$STAGING/"
+
+          # Scripts
+          cp -r scripts "$STAGING/"
+
+          # Config templates
+          [ -d config ] && cp -r config "$STAGING/"
+
+          # Essential data only
+          mkdir -p "$STAGING/data/drums"
+          for d in factory_packs schemas templates; do
+            [ -d "data/drums/$d" ] && cp -r "data/drums/$d" "$STAGING/data/drums/"
+          done
+
+          # Top-level files
+          for f in install install_on_new_host.sh requirements*.txt LICENSE README.md; do
+            [ -f "$f" ] && cp "$f" "$STAGING/"
+          done
+
+          # Write version file
+          cat > "$STAGING/VERSION" << EOF
+          version: ${VERSION}
+          commit: ${SHORT_SHA}
+          built: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          branch: ${{ github.ref_name }}
+          EOF
+
+          # Create tarball
+          tar czf "$TARBALL_NAME" "$STAGING"
+
+          # Checksums
+          SHA256=$(sha256sum "$TARBALL_NAME" | cut -d' ' -f1)
+
+          echo "tarball_name=$TARBALL_NAME" >> "$GITHUB_OUTPUT"
+          echo "tarball_sha256=$SHA256" >> "$GITHUB_OUTPUT"
+
+          echo "## Release Package" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **File**: $TARBALL_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Size**: $(du -h "$TARBALL_NAME" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **SHA256**: $SHA256" >> "$GITHUB_STEP_SUMMARY"
+
+          # Cleanup staging
+          rm -rf "$STAGING"
+
+      - name: Upload tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tarball
+          path: ${{ steps.package.outputs.tarball_name }}
+          retention-days: 3
+
+  publish:
+    name: Publish to MAP2-RELEASES
+    needs: [check-changes, package]
+    if: needs.check-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: release-tarball
+
+      - name: Push release to MAP2-RELEASES repo
+        env:
+          RELEASES_TOKEN: ${{ secrets.MAP2_RELEASES_TOKEN }}
+        run: |
+          VERSION="${{ needs.check-changes.outputs.version_tag }}"
+          SHORT_SHA="${{ needs.check-changes.outputs.short_sha }}"
+          TARBALL="${{ needs.package.outputs.tarball_name }}"
+          SHA256="${{ needs.package.outputs.tarball_sha256 }}"
+
+          # Clone the releases repo
+          git clone "https://x-access-token:${RELEASES_TOKEN}@github.com/matthewmackes/MAP2-RELEASES.git" releases-repo
+          cd releases-repo
+
+          git config user.name "MAP2 Nightly Bot"
+          git config user.email "nightly@map2-audio.dev"
+
+          # Create release directory structure
+          mkdir -p nightly
+          cp "../$TARBALL" nightly/
+
+          # Write/update latest pointer
+          cat > nightly/LATEST.json << EOF
+          {
+            "version": "${VERSION}",
+            "commit": "${SHORT_SHA}",
+            "file": "${TARBALL}",
+            "sha256": "${SHA256}",
+            "published": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          # Update index (keep last 30 nightlies)
+          ls -t nightly/map2-audio-nightly-*.tar.gz 2>/dev/null | tail -n +31 | xargs rm -f || true
+
+          # Commit and push
+          git add .
+          git commit -m "Nightly release: ${VERSION} (${SHORT_SHA})" || echo "No changes"
+          git push
+
+          # Create a GitHub release on the RELEASES repo
+          # This requires gh CLI with the token
+          echo "$RELEASES_TOKEN" | gh auth login --with-token
+
+          RELEASE_BODY="## MAP2 Audio Platform — Nightly Build
+
+          **Version**: ${VERSION}
+          **Commit**: ${SHORT_SHA}
+          **Built**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          ### SHA256
+          \`\`\`
+          ${SHA256}  ${TARBALL}
+          \`\`\`
+
+          ### Install
+          \`\`\`bash
+          tar xzf ${TARBALL}
+          cd map2-audio-${VERSION}
+          sudo bash install_on_new_host.sh
+          \`\`\`
+
+          > Auto-generated nightly from [map2-audio@${SHORT_SHA}](https://github.com/matthewmackes/map2-audio/commit/${SHORT_SHA})"
+
+          gh release create "${VERSION}" \
+            --repo matthewmackes/MAP2-RELEASES \
+            --title "MAP2 Nightly ${VERSION}" \
+            --notes "$RELEASE_BODY" \
+            --prerelease \
+            "../$TARBALL" || echo "Release may already exist"
+
+      - name: Tag source repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.check-changes.outputs.version_tag }}"
+
+          # Tag the source commit so next nightly can diff against it
+          gh api repos/${{ github.repository }}/git/refs \
+            -f ref="refs/tags/${VERSION}" \
+            -f sha="${{ github.sha }}" || echo "Tag may already exist"

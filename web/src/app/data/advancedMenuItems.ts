@@ -26,7 +26,7 @@ export interface HardwareInterfaceMenuItem {
 // Shared advanced-navigation items used by the shell and About page menu.
 // Route entries should stay in sync with App route registrations.
 // Popup entries use `popupMenu` and are handled by the renderers.
-export const defaultPromotedAdvancedRoutes = ['/welcome', '/grid']
+export const defaultPromotedAdvancedRoutes = ['/welcome', '/grid', '/midi-hub']
 
 export const advancedMenuItems: AdvancedMenuItem[] = [
   // ── System ──
@@ -119,6 +119,15 @@ export const advancedMenuItems: AdvancedMenuItem[] = [
     dividerBefore: true,
     group: 'Control',
     promotionKey: '/midi',
+  },
+  {
+    to: '/midi-hub',
+    label: 'MIDI Hub',
+    icon: MusicNotes,
+    description: 'Advanced routing, scripts, clock, and diagnostics',
+    color: '#22c55e',
+    group: 'Control',
+    promotionKey: '/midi-hub',
   },
   {
     to: '/mpx1',

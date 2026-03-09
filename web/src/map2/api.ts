@@ -4451,6 +4451,14 @@ export const tesiraApi = {
   getSageVueStatus: (): Promise<TesiraSageVueStatus> =>
     fetch(`${BASE}/sagevue/status`).then((r) => _json<TesiraSageVueStatus>(r)),
 
+  getLayoutManualPackageDownloadUrl: (layoutId: string, version?: string, deviceId?: string): string => {
+    const query = new URLSearchParams()
+    if (version) query.set('version', version)
+    if (deviceId) query.set('device_id', deviceId)
+    const suffix = query.toString()
+    return `${BASE}/layouts/${encodeURIComponent(layoutId)}/manual-package${suffix ? `?${suffix}` : ''}`
+  },
+
   startDeployment: (deviceId: string, body: {
     layout_id: string
     layout_version?: string
