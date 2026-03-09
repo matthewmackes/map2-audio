@@ -2783,11 +2783,12 @@ Description:
 - Required outputs: HIL evidence bundle, waiver/defect log, updated go/no-go packet, and unblock decision for `T065`.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 22:15 - Codex
+Last updated: 2026-03-09 03:55 - Codex
 - Blocked notes:
+  - 2026-03-09 live precheck reconfirms Tesira control plane readiness (`2` connected Tesira devices), but AVB/PTP certification prerequisites remain unmet: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` reports `0` streams, and `/api/avb/ptp/status` remains `INITIALIZING` with no grandmaster lock data.
   - 2026-03-08 live precheck confirms Tesira control plane is online (`2` connected Tesira devices), but AVB/PTP certification prerequisites remain unmet: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` reports `0` streams, and `/api/avb/ptp/status` remains `INITIALIZING` with no grandmaster lock data.
   - HIL gate impact: AVB/PTP topology and under-load routing certification cannot proceed until active AVB entities/streams and stable PTP telemetry are present.
-  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.md`.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260309/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260309/t072/t072-hil-precheck.md`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.json`, `docs/fit-for-purpose-evidence/20260308/t072/t072-hil-precheck.md`.
 
 ID: T073
 Status: [✓] Done
