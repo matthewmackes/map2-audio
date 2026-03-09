@@ -37,13 +37,54 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
 
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [localError, setLocalError] = useState<string | null>(null)
+  const [matrixInput, setMatrixInput] = useState<number>(1)
+  const [matrixOutput, setMatrixOutput] = useState<number>(1)
+  const [matrixGain, setMatrixGain] = useState<string>('0')
+  const [matrixMute, setMatrixMute] = useState<boolean>(false)
 
-  const values = (params.data?.values || {}) as ParamValues
-  const sortedKeys = useMemo(() => Object.keys(values).sort(), [values])
+  const values = useMemo(
+    () => ((params.data?.values || {}) as ParamValues),
+    [params.data?.values]
+  )
   const editorFamily = useMemo(() => {
     const family = (block.data?.editor as Record<string, unknown> | undefined)?.family
     return typeof family === 'string' && family.trim() ? family : 'generic'
   }, [block.data?.editor])
+  const sortedKeys = useMemo(() => {
+    const keys = Object.keys(values)
+    const familyOrder: Record<string, string[]> = {
+      matrix: ['crosspointLevelOut', 'crosspointMute', 'crosspointDelay'],
+      router: ['crosspointLevelOut', 'crosspointMute'],
+      dynamics: ['threshold', 'ratio', 'attack', 'release', 'depth', 'targetLevel', 'bypass'],
+      filter: ['frequency', 'q', 'slope', 'bypass'],
+      stream: ['streamEnabled', 'latency', 'packetTime'],
+      logic: ['state', 'mode', 'running', 'period', 'pulseWidth'],
+      meter: ['level', 'rms', 'peak', 'holdTime'],
+      selector: ['sourceSelection', 'mute'],
+    }
+    const ordered = familyOrder[editorFamily] ?? []
+    return keys.sort((a, b) => {
+      const ai = ordered.indexOf(a)
+      const bi = ordered.indexOf(b)
+      if (ai >= 0 || bi >= 0) {
+        if (ai < 0) return 1
+        if (bi < 0) return -1
+        return ai - bi
+      }
+      return a.localeCompare(b)
+    })
+  }, [editorFamily, values])
+  const matrixArgs = useMemo(
+    () => [Math.max(1, Math.floor(matrixInput)), Math.max(1, Math.floor(matrixOutput))],
+    [matrixInput, matrixOutput]
+  )
+  const supportsCrosspoint = useMemo(
+    () =>
+      sortedKeys.includes('crosspointLevelOut') ||
+      sortedKeys.includes('crosspointMute') ||
+      Boolean((block.data?.parameter_map as Record<string, unknown> | undefined)?.crosspointLevelOut),
+    [block.data?.parameter_map, sortedKeys]
+  )
 
   useEffect(() => {
     setDrafts(
@@ -53,10 +94,10 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
     )
   }, [values])
 
-  const applyOne = async (attribute: string, value: unknown) => {
+  const applyOne = async (attribute: string, value: unknown, args: unknown[] = []) => {
     setLocalError(null)
     try {
-      await setParam.mutateAsync({ deviceId, instanceTag, attribute, value, args: [] })
+      await setParam.mutateAsync({ deviceId, instanceTag, attribute, value, args })
       await params.refetch()
     } catch (err: unknown) {
       setLocalError(err instanceof Error ? err.message : String(err))
@@ -94,6 +135,59 @@ export function TesiraDspBlockPanel({ deviceId, instanceTag }: TesiraDspBlockPan
           {(params.error as Error).message || 'Failed to read block parameters'}
         </Alert>
       )}
+
+      {(editorFamily === 'matrix' || editorFamily === 'router') && supportsCrosspoint ? (
+        <Paper variant="outlined" sx={{ p: 1, mb: 1, background: '#fafafa' }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
+            <Typography variant="caption" fontWeight={700}>
+              Crosspoint Helper
+            </Typography>
+            <TextField
+              label="Input"
+              size="small"
+              type="number"
+              value={matrixInput}
+              onChange={(event) => setMatrixInput(Math.max(1, Number(event.target.value) || 1))}
+              sx={{ width: 90 }}
+            />
+            <TextField
+              label="Output"
+              size="small"
+              type="number"
+              value={matrixOutput}
+              onChange={(event) => setMatrixOutput(Math.max(1, Number(event.target.value) || 1))}
+              sx={{ width: 90 }}
+            />
+            <TextField
+              label="Gain dB"
+              size="small"
+              value={matrixGain}
+              onChange={(event) => setMatrixGain(event.target.value)}
+              sx={{ width: 110 }}
+            />
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={setParam.isPending}
+              onClick={() => {
+                const parsed = Number(matrixGain)
+                if (!Number.isFinite(parsed)) return
+                applyOne('crosspointLevelOut', parsed, matrixArgs).catch(() => undefined)
+              }}
+            >
+              Apply Gain
+            </Button>
+            <Switch
+              size="small"
+              checked={matrixMute}
+              onChange={(_event, checked) => {
+                setMatrixMute(checked)
+                applyOne('crosspointMute', checked, matrixArgs).catch(() => undefined)
+              }}
+            />
+          </Stack>
+        </Paper>
+      ) : null}
 
       <Stack spacing={1}>
         {sortedKeys.map((key) => {

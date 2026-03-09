@@ -14,11 +14,15 @@ def test_registry_expands_block_families():
     blocks = list_blocks()
     block_types = {entry["block_type"] for entry in blocks}
 
-    assert len(blocks) >= 25
+    assert len(blocks) >= 45
     assert "LevelControl" in block_types
     assert "Compressor" in block_types
     assert "AGC" in block_types
     assert "ExplicitAVBInStream" in block_types
+    assert "FIRFilter" in block_types
+    assert "AudioDelayMatrix" in block_types
+    assert "Aes67Input" in block_types
+    assert "FeedbackSuppressor" in block_types
 
 
 def test_probe_profiles_include_runtime_metadata():
