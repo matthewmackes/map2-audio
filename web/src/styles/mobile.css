@@ -698,4 +698,74 @@
     background: var(--danger);
     border-color: var(--danger);
   }
+
+  html,
+  body,
+  #root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .app-shell,
+  .app-content,
+  .card,
+  .stack,
+  .section-heading,
+  .section-heading > div {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .about-page,
+  .drums-page,
+  .dsp-page,
+  .audio-engine-page,
+  .lcd-page,
+  .pipewire-page,
+  .presets-page,
+  .library-page,
+  .mpx1-panel-view {
+    max-width: 100% !important;
+    overflow-x: hidden;
+    width: 100% !important;
+  }
+
+  .about-page table,
+  .library-page table,
+  .audio-engine-page table,
+  .lcd-page table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .dsp-page .dsp-section,
+  .presets-page .card,
+  .library-page .card,
+  .lcd-section-card {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .dsp-page [style*='minmax(260px'],
+  .drums-page [style*='minmax(280px'],
+  .pipewire-page [style*='minmax(180px'],
+  .pipewire-page [style*='gridTemplateColumns: 1fr 1fr'],
+  .audio-engine-page [style*='gridTemplateColumns: 1fr 1fr'],
+  .audio-engine-page [style*='gridTemplateColumns: 2fr 1fr'] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .presets-page [style*='min-width: 260'],
+  .presets-page [style*='minWidth: 260'] {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .mpx1-rack-shell,
+  .mpx1-face {
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }
