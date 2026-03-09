@@ -1423,8 +1423,80 @@ export interface MidiHubTrafficSnapshot {
   records: MidiHubTrafficRow[];
 }
 
+export interface MidiHubRouteFilter {
+  message_types: string[];
+  channels: number[];
+  cc_range?: [number, number] | null;
+  note_range?: [number, number] | null;
+  velocity_range?: [number, number] | null;
+}
+
+export interface MidiHubRoute {
+  route_id: string;
+  source_port: string;
+  destination_ports: string[];
+  enabled: boolean;
+  priority: number;
+  route_type: string;
+  filter: MidiHubRouteFilter;
+  transform_chain: Array<Record<string, unknown>>;
+  latency_compensation_enabled?: boolean;
+  destination_latency_ms?: Record<string, number>;
+}
+
+export interface MidiHubRouteRequest {
+  route_id?: string;
+  source_port: string;
+  destination_ports: string[];
+  enabled?: boolean;
+  priority?: number;
+  route_type?: string;
+  filter?: Partial<MidiHubRouteFilter>;
+  transform_chain?: Array<Record<string, unknown>>;
+  latency_compensation_enabled?: boolean;
+  destination_latency_ms?: Record<string, number>;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
+
+  getRoutes: () =>
+    fetchJson<{ routes: MidiHubRoute[]; match_mode: string }>(`${API_BASE}/midi/hub/routes`),
+
+  createRoute: (payload: MidiHubRouteRequest) =>
+    fetchJson<{ ok: boolean; route: MidiHubRoute }>(`${API_BASE}/midi/hub/routes`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  updateRoute: (routeId: string, payload: MidiHubRouteRequest) =>
+    fetchJson<{ ok: boolean; route?: MidiHubRoute; error?: string }>(
+      `${API_BASE}/midi/hub/routes/${encodeURIComponent(routeId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }
+    ),
+
+  deleteRoute: (routeId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/routes/${encodeURIComponent(routeId)}`, {
+      method: 'DELETE',
+    }),
+
+  enableRoute: (routeId: string) =>
+    fetchJson<{ ok: boolean; route?: MidiHubRoute }>(
+      `${API_BASE}/midi/hub/routes/${encodeURIComponent(routeId)}/enable`,
+      { method: 'POST' }
+    ),
+
+  disableRoute: (routeId: string) =>
+    fetchJson<{ ok: boolean; route?: MidiHubRoute }>(
+      `${API_BASE}/midi/hub/routes/${encodeURIComponent(routeId)}/disable`,
+      { method: 'POST' }
+    ),
+
+  getTopology: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/topology`),
+  getTransformTypes: () => fetchJson<{ types: Array<Record<string, unknown>> }>(`${API_BASE}/midi/hub/transforms/types`),
 
   getTrafficSnapshot: (params?: {
     limit?: number;

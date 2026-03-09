@@ -2413,7 +2413,7 @@ Last updated: 2026-03-09 14:25 - Codex
   - Suggested next tasks: T066-subI, T066-subK, T066-subL.
 
 ID: T066-subI
-Status: [>] In Progress
+Status: [✓] Done
 Title: MIDI routing matrix UI (grid view)
 Description:
 - Goal / acceptance criteria: Create `web/src/app/components/MidiHub/MidiRoutingMatrix.tsx` — grid-based routing view. Sources as rows (all input ports/gateways), destinations as columns (all output ports/gateways + virtual endpoints like MPX1Service, JUCE engine). Cells show route status: active (green), filtered (yellow), disabled (gray), error (red). Click cell to create/edit route — opens route detail panel with: channel filter, message type filter, transform chain editor (drag-drop transform blocks in order), enable/disable toggle. Gateway health indicators per row/column header (green/yellow/red dot with latency tooltip). Real-time message flow animation (pulse on cell when messages pass through). Accessible from main nav `/midi-hub` and from MPX1/Tesira settings panels.
@@ -2423,7 +2423,17 @@ Description:
 - Required outputs: React grid component, route detail panel, transform chain editor, real-time animation, integration with nav.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 15:05 - Codex
+- Completion notes:
+  - What was done: Implemented route CRUD/topology/transform-type API endpoints in `app/routes/midi_hub.py` (`GET/POST/PUT/DELETE /routes`, enable/disable, topology, transform registry) on top of existing router service.
+  - What was done: Expanded frontend MIDI Hub API contract for route-table operations and created `MidiRoutingMatrix.tsx` with source/destination grid rendering, active/disabled route cell state, pulse animation for active paths, and route editor dialog (filters, channels, route type, transforms, enable/disable, delete).
+  - What was done: Added `/midi-hub` page route (`MidiHubPage`) and app-level navigation route wiring to surface matrix + traffic monitor in a dedicated view.
+  - What was done: Added backend route tests covering traffic APIs plus new route CRUD lifecycle interactions.
+  - Validation:
+    - `timeout 90s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+  - Files/links produced: `app/routes/midi_hub.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/MidiRoutingMatrix.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `web/src/app/App.tsx`, `tests/midi_hub/test_traffic_routes.py`.
+  - Suggested next tasks: T066-subJ, T066-subK, T066-subL.
 
 ID: T066-subJ
 Status: [>] In Progress
