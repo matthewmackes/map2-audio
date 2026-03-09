@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.services.midi_hub.hub import get_midi_hub
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
+from app.services.midi_hub.midi2 import get_midi2_manager
 from app.services.midi_hub.network import get_midi_network_bridge
 from app.services.midi_hub.preset_service import get_midi_hub_preset_service
 from app.services.midi_hub.router import get_midi_router
@@ -134,6 +135,33 @@ class OscSendRequest(BaseModel):
     port: int = Field(..., ge=1, le=65535)
     address: str = Field(..., min_length=1, max_length=255)
     value: float = 0.0
+
+
+class Midi2ConfigRequest(BaseModel):
+    enabled: Optional[bool] = None
+    default_protocol: Optional[str] = Field(default=None, pattern="^(midi1|midi2)$")
+
+
+class Midi2DiscoverRequest(BaseModel):
+    device_id: str = Field(..., min_length=1, max_length=128)
+
+
+class Midi2ProfileRequest(BaseModel):
+    profile_id: str = Field(..., min_length=1, max_length=128)
+    enabled: bool = True
+
+
+class Midi2PropertyRequest(BaseModel):
+    key: str = Field(..., min_length=1, max_length=255)
+    value: Any = None
+
+
+class Midi2TranslateMidi1Request(BaseModel):
+    message: List[int] = Field(..., min_length=1, max_length=3)
+
+
+class Midi2TranslateUmpRequest(BaseModel):
+    words: List[int] = Field(..., min_length=1, max_length=8)
 
 
 @router.get("/status")
@@ -610,6 +638,62 @@ async def send_osc(req: OscSendRequest) -> Dict[str, Any]:
         address=req.address,
         value=req.value,
     )
+
+
+@router.get("/midi2")
+async def get_midi2_status() -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    return manager.status()
+
+
+@router.put("/midi2")
+async def configure_midi2(req: Midi2ConfigRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    if req.enabled is not None:
+        manager.set_enabled(req.enabled)
+    if req.default_protocol is not None:
+        manager.set_default_protocol(req.default_protocol)
+    return manager.status()
+
+
+@router.post("/midi2/discover")
+async def discover_midi2_device(req: Midi2DiscoverRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    return manager.discover(req.device_id)
+
+
+@router.post("/midi2/translate/midi1-to-ump")
+async def translate_midi1_to_ump(req: Midi2TranslateMidi1Request) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    payload = bytes(int(byte) & 0xFF for byte in req.message)
+    return {"words": manager.midi1_to_ump(payload)}
+
+
+@router.post("/midi2/translate/ump-to-midi1")
+async def translate_ump_to_midi1(req: Midi2TranslateUmpRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    midi1 = manager.ump_to_midi1([int(word) for word in req.words])
+    return {"message": [int(byte) & 0xFF for byte in midi1]}
+
+
+@router.put("/midi2/{device_id}/profiles")
+async def set_midi2_profile(device_id: str, req: Midi2ProfileRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    device = manager.enable_profile(device_id, req.profile_id, req.enabled)
+    return {"ok": True, "device": device}
+
+
+@router.put("/midi2/{device_id}/properties")
+async def set_midi2_property(device_id: str, req: Midi2PropertyRequest) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    device = manager.set_property(device_id, req.key, req.value)
+    return {"ok": True, "device": device}
+
+
+@router.get("/midi2/{device_id}/properties/{key}")
+async def get_midi2_property(device_id: str, key: str) -> Dict[str, Any]:
+    manager = get_midi2_manager()
+    return {"ok": True, "device_id": device_id, "key": key, "value": manager.get_property(device_id, key)}
 
 
 @router.get("/traffic/snapshot")

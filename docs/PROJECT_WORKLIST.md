@@ -2552,7 +2552,7 @@ Last updated: 2026-03-09 17:58 - Codex
   - Suggested next tasks: T066-subO, T066-subP, T066-subQ.
 
 ID: T066-subO
-Status: [>] In Progress
+Status: [✓] Done
 Title: MIDI 2.0 readiness layer (MIDI-CI, Property Exchange, UMP)
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/midi2.py`. Forward-looking MIDI 2.0 support: (1) MIDI-CI (Capability Inquiry) — send/receive Discovery, Profile Inquiry, Property Exchange, and Protocol Negotiation messages, (2) Profile support — query connected devices for supported profiles (e.g., General MIDI, MPE, drawbar organ), enable/disable profiles, (3) Property Exchange — get/set device properties (patch names, parameter lists, device state) via JSON-over-SysEx, (4) UMP (Universal MIDI Packet) internal representation — MidiHub internally represents messages as UMP where possible for future-proofing (MIDI 1.0 messages wrapped in UMP Type 2, MIDI 2.0 channel voice in UMP Type 4), (5) MIDI 1.0 ↔ MIDI 2.0 protocol translation for mixed environments, (6) 32-bit velocity and per-note controllers when talking to MIDI 2.0 devices. Note: Most current hardware is MIDI 1.0 — this layer provides readiness, not immediate necessity. Gate behind config flag `midi.midi2_enabled` (default false).
@@ -2562,7 +2562,17 @@ Description:
 - Required outputs: MIDI-CI message codec, Profile manager, Property Exchange client, UMP internal representation, translation layer, feature flag, tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 18:10 - Codex
+- Completion notes:
+  - What was done: Added/activated `app/services/midi_hub/midi2.py` manager for feature-flagged MIDI 2.0 posture (`enabled/default_protocol`), MIDI-CI-style discovery payload generation, profile enable/disable state, property set/get, and MIDI1↔UMP translation helpers.
+  - What was done: Exposed complete MIDI2 API surface in `app/routes/midi_hub.py` (`GET/PUT /midi2`, discovery, profile/property endpoints, and translation routes for MIDI1→UMP / UMP→MIDI1).
+  - What was done: Extended frontend API client and added `Midi2Panel.tsx` to `/midi-hub` for config toggles, discovery/profile/property operations, and translation tooling.
+  - Validation:
+    - `timeout 120s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+    - `python3 -m compileall app/routes/midi_hub.py app/services/midi_hub/midi2.py` -> PASS
+  - Files/links produced: `app/services/midi_hub/midi2.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_traffic_routes.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/Midi2Panel.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T066-subP, T066-subQ, T066-subR.
 
 ID: T066-subP
 Status: [>] In Progress

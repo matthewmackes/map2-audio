@@ -1514,6 +1514,14 @@ export interface MidiHubNetworkSession {
   jitter_ms?: number | null;
 }
 
+export interface Midi2DeviceState {
+  device_id: string;
+  protocol: string;
+  profiles: Record<string, boolean>;
+  properties: Record<string, unknown>;
+  last_discovery_at?: number | null;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
 
@@ -1775,6 +1783,54 @@ export const midiHubApi = {
     fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/network/osc/send`, {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  getMidi2Status: () =>
+    fetchJson<{ enabled: boolean; default_protocol: string; device_count: number; devices: Midi2DeviceState[] }>(
+      `${API_BASE}/midi/hub/midi2`
+    ),
+  updateMidi2Config: (payload: { enabled?: boolean; default_protocol?: 'midi1' | 'midi2' }) =>
+    fetchJson<{ enabled: boolean; default_protocol: string; device_count: number; devices: Midi2DeviceState[] }>(
+      `${API_BASE}/midi/hub/midi2`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }
+    ),
+  discoverMidi2Device: (deviceId: string) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState; discovery_sysex: number[] }>(`${API_BASE}/midi/hub/midi2/discover`, {
+      method: 'POST',
+      body: JSON.stringify({ device_id: deviceId }),
+    }),
+  setMidi2Profile: (deviceId: string, profileId: string, enabled = true) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState }>(
+      `${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/profiles`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ profile_id: profileId, enabled }),
+      }
+    ),
+  setMidi2Property: (deviceId: string, key: string, value: unknown) =>
+    fetchJson<{ ok: boolean; device: Midi2DeviceState }>(
+      `${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/properties`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ key, value }),
+      }
+    ),
+  getMidi2Property: (deviceId: string, key: string) =>
+    fetchJson<{ ok: boolean; device_id: string; key: string; value: unknown }>(
+      `${API_BASE}/midi/hub/midi2/${encodeURIComponent(deviceId)}/properties/${encodeURIComponent(key)}`
+    ),
+  translateMidi1ToUmp: (message: number[]) =>
+    fetchJson<{ words: number[] }>(`${API_BASE}/midi/hub/midi2/translate/midi1-to-ump`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+  translateUmpToMidi1: (words: number[]) =>
+    fetchJson<{ message: number[] }>(`${API_BASE}/midi/hub/midi2/translate/ump-to-midi1`, {
+      method: 'POST',
+      body: JSON.stringify({ words }),
     }),
 
   getTrafficSnapshot: (params?: {

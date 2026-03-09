@@ -10,6 +10,7 @@ import { MidiHubPresetManager } from '../components/MidiHub/MidiHubPresetManager
 import { MidiScriptEditor } from '../components/MidiHub/MidiScriptEditor'
 import { MidiClockPanel } from '../components/MidiHub/MidiClockPanel'
 import { MidiNetworkPanel } from '../components/MidiHub/MidiNetworkPanel'
+import { Midi2Panel } from '../components/MidiHub/Midi2Panel'
 import { useToasts } from '../components/Toasts'
 import { midiHubApi } from '../../map2/api'
 
@@ -116,6 +117,14 @@ export function MidiHubPage() {
           RTP/UDP MIDI session management and bidirectional OSC bridge controls.
         </p>
         <MidiNetworkPanel />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>MIDI 2.0 Readiness</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          MIDI-CI discovery, profile/property management, and MIDI1/UMP translation utilities.
+        </p>
+        <Midi2Panel />
       </div>
 
       <div className="card">

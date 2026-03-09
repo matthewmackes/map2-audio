@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from app.routes import midi_hub as midi_hub_routes
 from app.services.midi_hub.clock_engine import MidiClockEngine
 from app.services.midi_hub.hub import MidiHub
+from app.services.midi_hub.midi2 import Midi2Manager
 from app.services.midi_hub.network import MidiNetworkBridge
 from app.services.midi_hub.router import MidiRouter
 from app.services.midi_hub.ports import VirtualMidiPort
@@ -27,6 +28,7 @@ def _build_client(tmp_path, monkeypatch):
     )
     clock_engine = MidiClockEngine(hub=hub)
     network_bridge = MidiNetworkBridge(hub=hub)
+    midi2_manager = Midi2Manager(enabled=False)
 
     monkeypatch.setattr(midi_hub_routes, "get_midi_hub", lambda: hub)
     monkeypatch.setattr(midi_hub_routes, "get_midi_router", lambda: router)
@@ -35,14 +37,15 @@ def _build_client(tmp_path, monkeypatch):
     monkeypatch.setattr(midi_hub_routes, "get_midi_script_engine", lambda: script_engine)
     monkeypatch.setattr(midi_hub_routes, "get_midi_clock_engine", lambda: clock_engine)
     monkeypatch.setattr(midi_hub_routes, "get_midi_network_bridge", lambda: network_bridge)
+    monkeypatch.setattr(midi_hub_routes, "get_midi2_manager", lambda: midi2_manager)
 
     app = FastAPI()
     app.include_router(midi_hub_routes.router)
-    return TestClient(app), hub, router, monitor, preset_service, script_engine, clock_engine, network_bridge
+    return TestClient(app), hub, router, monitor, preset_service, script_engine, clock_engine, network_bridge, midi2_manager
 
 
 def test_traffic_snapshot_stats_export_clear(tmp_path, monkeypatch):
-    client, hub, router, monitor, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+    client, hub, router, monitor, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
     monitor.record(
         MidiTrafficRecord(
             timestamp_ns=1000,
@@ -144,7 +147,7 @@ def test_traffic_snapshot_stats_export_clear(tmp_path, monkeypatch):
 
 
 def test_preset_routes_save_compare_slots_and_recall(tmp_path, monkeypatch):
-    client, hub, router, _, preset_service, _, _, _ = _build_client(tmp_path, monkeypatch)
+    client, hub, router, _, preset_service, _, _, _, _ = _build_client(tmp_path, monkeypatch)
     created_route = router.add_route(
         {
             "route_id": "route_a",
@@ -265,7 +268,7 @@ def test_preset_routes_save_compare_slots_and_recall(tmp_path, monkeypatch):
 
 
 def test_script_routes_crud_run_console_and_toggle(tmp_path, monkeypatch):
-    client, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+    client, _, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
 
     examples = client.get("/api/midi/hub/scripts/examples")
     assert examples.status_code == 200
@@ -321,7 +324,7 @@ def test_script_routes_crud_run_console_and_toggle(tmp_path, monkeypatch):
 
 
 def test_clock_routes_config_tap_start_stop_and_continue(tmp_path, monkeypatch):
-    client, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+    client, _, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
 
     status = client.get("/api/midi/hub/clock")
     assert status.status_code == 200
@@ -361,7 +364,7 @@ def test_clock_routes_config_tap_start_stop_and_continue(tmp_path, monkeypatch):
 
 
 def test_network_and_osc_routes(tmp_path, monkeypatch):
-    client, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+    client, _, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
 
     create_session = client.post(
         "/api/midi/hub/network/sessions",
@@ -430,3 +433,45 @@ def test_network_and_osc_routes(tmp_path, monkeypatch):
     delete_session = client.delete("/api/midi/hub/network/sessions/net1")
     assert delete_session.status_code == 200
     assert delete_session.json()["ok"] is True
+
+
+def test_midi2_routes_config_discovery_profiles_properties_and_translate(tmp_path, monkeypatch):
+    client, _, _, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+
+    status = client.get("/api/midi/hub/midi2")
+    assert status.status_code == 200
+    assert status.json()["enabled"] is False
+
+    configure = client.put("/api/midi/hub/midi2", json={"enabled": True, "default_protocol": "midi2"})
+    assert configure.status_code == 200
+    assert configure.json()["enabled"] is True
+    assert configure.json()["default_protocol"] == "midi2"
+
+    discover = client.post("/api/midi/hub/midi2/discover", json={"device_id": "dev-1"})
+    assert discover.status_code == 200
+    assert discover.json()["ok"] is True
+    assert discover.json()["device"]["device_id"] == "dev-1"
+
+    profile = client.put("/api/midi/hub/midi2/dev-1/profiles", json={"profile_id": "gm2", "enabled": True})
+    assert profile.status_code == 200
+    assert profile.json()["ok"] is True
+    assert profile.json()["device"]["profiles"]["gm2"] is True
+
+    set_prop = client.put(
+        "/api/midi/hub/midi2/dev-1/properties",
+        json={"key": "patch_name", "value": "Init"},
+    )
+    assert set_prop.status_code == 200
+    assert set_prop.json()["ok"] is True
+
+    get_prop = client.get("/api/midi/hub/midi2/dev-1/properties/patch_name")
+    assert get_prop.status_code == 200
+    assert get_prop.json()["value"] == "Init"
+
+    to_ump = client.post("/api/midi/hub/midi2/translate/midi1-to-ump", json={"message": [0x90, 60, 100]})
+    assert to_ump.status_code == 200
+    assert len(to_ump.json()["words"]) == 1
+
+    to_midi1 = client.post("/api/midi/hub/midi2/translate/ump-to-midi1", json={"words": to_ump.json()["words"]})
+    assert to_midi1.status_code == 200
+    assert to_midi1.json()["message"][:3] == [0x90, 60, 100]
