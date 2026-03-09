@@ -2859,3 +2859,5 @@ Last updated: 2026-03-08 18:01 - Codex
   - Software scope delivered: added Tesira deploy UI controls (`Deploy Chain` dialog), layout/status hooks, deployment polling hooks, rollback action wiring, and API client support for new deployment/catalog endpoints.
   - Remaining blocker: 2-unit HIL deployment certification requires live hardware/lab availability from `T004`.
   - Software files completed: `web/src/app/components/Tesira/types.ts`, `web/src/map2/api.ts`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/components/TesiraDeployDialog.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`.
+
+ALL UNBLOCKED ITEMS COMPLETE
