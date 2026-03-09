@@ -216,6 +216,14 @@ async def lifespan(app):
         await safe_start_service(logger, "Metering broadcast service", start_metering_broadcast)
         # Start MIDI broadcast service (real-time MIDI events via WebSocket)
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
+        # Attach MIDI v2 service to MidiHub consumer stream (program-change handling).
+        try:
+            from app.services.midi_service import midi_service
+
+            midi_service.attach_midi_hub(asyncio.get_running_loop())
+            logger.info("MIDI v2 service attached to MidiHub")
+        except Exception as exc:
+            logger.warning(f"Failed to attach MIDI v2 service to MidiHub: {exc}")
 
         # Start PipeWire crash recovery watchdog (opt-in only).
         # In current production builds this path can trigger unsafe low-level
@@ -356,6 +364,12 @@ async def lifespan(app):
         
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
+        try:
+            from app.services.midi_service import midi_service
+
+            midi_service.detach_midi_hub()
+        except Exception:
+            pass
         
         # Stop LCD system
         await safe_stop_service(logger, "Database Event Producer", database_producer.stop)
@@ -422,7 +436,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation']
+        route_modules = ['services', 'audio', 'plugins', 'midi', 'midi_v2', 'midi_hub', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'midi_learn', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'presets', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'flow_snapshots', 'cluster_flows', 'cluster_health', 'cluster_admin', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'flow_failover', 'drums', 'pipewire', 'audio_path', 'auth', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation']
         route_load_failures = []
 
         for route_name in route_modules:

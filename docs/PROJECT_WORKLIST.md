@@ -2390,7 +2390,7 @@ Last updated: 2026-03-09 00:24 - Codex
   - Suggested next tasks: T066-subF, T066-subH, T066-subK.
 
 ID: T066-subH
-Status: [>] In Progress
+Status: [✓] Done
 Title: Real-time MIDI traffic monitor and diagnostic logger
 Description:
 - Goal / acceptance criteria: Build integrated MIDI traffic monitoring into MidiHub and the UI. Backend: MidiHub taps all messages passing through the router, captures to a configurable ring buffer (default 50,000 messages), streams via WebSocket topic `midi:traffic` with per-subscriber filtering (by port, channel, message type). Each captured message includes: timestamp (µs resolution), source port, destination port, direction (in/out), raw hex bytes, decoded fields (channel, type, data1, data2 / SysEx payload), route ID that matched. Add `GET /api/midi/hub/traffic/snapshot` for polling access, `POST /api/midi/hub/traffic/export` for CSV/JSON file export, `GET /api/midi/hub/traffic/stats` for per-port message rates and bandwidth. Frontend: `web/src/app/components/MidiHub/MidiTrafficMonitor.tsx` — virtualized scrolling log (react-window), color-coded message types (CC=blue, Note=green, SysEx=orange, PC=purple, Clock=gray, System=red), pause/resume, regex search/filter, column sorting, message detail drawer with full hex dump, message rate sparkline per port, round-trip latency display for paired request/response SysEx.
@@ -2400,10 +2400,17 @@ Description:
 - Required outputs: Traffic capture engine, WebSocket streaming, React monitor component, export functionality, unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:24 - Codex
-- Progress notes:
-  - Added websocket traffic event emission (`midi:traffic`) in router hot path with decoded payload metadata (`raw_hex`, route ID, source/destination, timestamp).
-  - Remaining scope includes traffic ring-buffer persistence, snapshot/export/stats APIs, and frontend monitor UI (`MidiTrafficMonitor.tsx`).
+Last updated: 2026-03-09 14:25 - Codex
+- Completion notes:
+  - What was done: Added dedicated MIDI Hub traffic API routes (`/api/midi/hub/traffic/snapshot|stats|export|clear`) plus `/api/midi/hub/status` and lifecycle controls (`/start`, `/stop`) via `app/routes/midi_hub.py`, and wired route registration through app bootstrap.
+  - What was done: Kept traffic capture engine in `MidiTrafficMonitor` and completed router-side routed-message reinjection (`router_dispatch`) so internal subscribers receive live traffic while avoiding route-loop recursion.
+  - What was done: Added frontend API contract/client methods (`midiHubApi`) and implemented `MidiTrafficMonitor.tsx` with virtualization, filters/search/sort, pause/resume, clear/export actions, and per-message detail dialog.
+  - What was done: Added route-level backend tests for traffic snapshot/stats/export/clear and lifecycle endpoints.
+  - Validation:
+    - `timeout 90s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py tests/test_mpx1.py tests/test_juce_engine_service_midi_injection.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+  - Files/links produced: `app/routes/midi_hub.py`, `app/services/midi_hub/router.py`, `app/main.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/MidiTrafficMonitor.tsx`, `tests/midi_hub/test_traffic_routes.py`.
+  - Suggested next tasks: T066-subI, T066-subK, T066-subL.
 
 ID: T066-subI
 Status: [>] In Progress

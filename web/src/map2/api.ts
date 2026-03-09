@@ -1401,6 +1401,59 @@ export const midiApiV2 = {
     ),
 };
 
+export interface MidiHubTrafficRow {
+  timestamp_ns: number;
+  source_port: string;
+  destination_port: string;
+  direction: string;
+  raw_hex: string;
+  route_id?: string | null;
+  decoded?: {
+    message_type?: string;
+    channel?: number | null;
+    data1?: number | null;
+    data2?: number | null;
+  };
+}
+
+export interface MidiHubTrafficSnapshot {
+  count: number;
+  captured_total: number;
+  capacity: number;
+  records: MidiHubTrafficRow[];
+}
+
+export const midiHubApi = {
+  getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
+
+  getTrafficSnapshot: (params?: {
+    limit?: number;
+    source_port?: string;
+    destination_port?: string;
+    message_type?: string;
+    direction?: string;
+  }) => {
+    const search = new URLSearchParams()
+    if (params?.limit !== undefined) search.set('limit', String(params.limit))
+    if (params?.source_port) search.set('source_port', params.source_port)
+    if (params?.destination_port) search.set('destination_port', params.destination_port)
+    if (params?.message_type) search.set('message_type', params.message_type)
+    if (params?.direction) search.set('direction', params.direction)
+    const query = search.toString()
+    return fetchJson<MidiHubTrafficSnapshot>(`${API_BASE}/midi/hub/traffic/snapshot${query ? `?${query}` : ''}`)
+  },
+
+  getTrafficStats: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/traffic/stats`),
+
+  exportTraffic: (format: 'json' | 'csv' = 'json', limit = 5000) =>
+    fetchJson<{ ok: boolean; format: string; path: string; count: number }>(
+      `${API_BASE}/midi/hub/traffic/export`,
+      { method: 'POST', body: JSON.stringify({ format, limit }) }
+    ),
+
+  clearTraffic: () => fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/traffic/clear`, { method: 'POST' }),
+};
+
 // ==================== IR API ====================
 
 export const irApi = {
@@ -3558,6 +3611,7 @@ export const map2Api = {
   pluginPresets: pluginPresetsApi,
   midi: midiApi,
   midiV2: midiApiV2,
+  midiHub: midiHubApi,
   ir: irApi,
   irLibrary: irLibraryApi,
   nam: namApi,
