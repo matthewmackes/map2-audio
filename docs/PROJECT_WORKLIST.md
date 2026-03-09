@@ -2209,7 +2209,7 @@ Last updated: 2026-03-08 16:40 - Codex
 
 
 ID: T066
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MAP2 Native MIDI Hub — universal routing, processing, and device management engine
 Description:
 - Goal / acceptance criteria: Build a comprehensive, hardware-agnostic MIDI Hub natively into the MAP2 platform that replaces the need for any external MIDI router/processor hardware (CME H2MIDI Pro, Bome Box, iConnectivity mioXM, etc.). MAP2 becomes the central MIDI brain: all USB MIDI devices, DIN MIDI interfaces, virtual ports, and network MIDI endpoints are managed, routed, filtered, mapped, and monitored entirely within the platform. Every existing MAP2 MIDI consumer (JUCE audio engine, MPX1 SysEx bridge, Tesira MIDI dispatcher, MIDI learn, MIDI CC mappings, chain switching) plugs into this unified hub. The system must match or exceed the feature sets of Bome MIDI Translator Pro, iConnectivity Auracle, MIDI-OX, Camelot Pro MIDI patchbay, mididings, and StreamByter — then go further with 10 MAP2-exclusive innovations.
@@ -2240,7 +2240,7 @@ Description:
 Subtasks:
 
 ID: T066-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: MidiHub core engine architecture and port abstraction layer
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/` package with core engine. `MidiPort` abstract base class with concrete implementations: `AlsaMidiPort` (ALSA sequencer via rtmidi), `JackMidiPort` (JACK MIDI via JUCE bridge), `VirtualMidiPort` (software-only internal routing), `NetworkMidiPort` (RTP-MIDI stub for future). `MidiHub` singleton owns all ports, manages lifecycle (open/close/reconnect), and provides the central message bus. All MIDI bytes flow through MidiHub — no direct rtmidi access anywhere else in the platform. Port hot-plug detection via ALSA udev events or polling. Thread model: dedicated high-priority MIDI I/O thread (SCHED_FIFO) with lock-free ring buffers for inter-thread message passing.
@@ -2250,10 +2250,16 @@ Description:
 - Required outputs: `app/services/midi_hub/__init__.py`, `ports.py`, `hub.py`, `ring_buffer.py`, unit tests, architecture doc.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:05 - Codex
+- Completion notes:
+  - What was done: Added `app/services/midi_hub/` core package with bounded ring buffer (`ring_buffer.py`), abstract port contracts and concrete ALSA/JACK/virtual/network ports (`ports.py`), and a `MidiHub` singleton with dedicated I/O + hot-plug threads (`hub.py`).
+  - What was done: Added architecture reference document for thread model, message flow, and transport boundaries.
+  - What was done: Added targeted unit tests for ring buffer behavior, port behavior, and hub lifecycle/message dispatch.
+  - Files/links produced: `app/services/midi_hub/__init__.py`, `app/services/midi_hub/ring_buffer.py`, `app/services/midi_hub/ports.py`, `app/services/midi_hub/hub.py`, `docs/midi/MIDI_HUB_ARCHITECTURE.md`, `tests/midi_hub/test_ring_buffer.py`, `tests/midi_hub/test_ports.py`, `tests/midi_hub/test_hub.py`.
+  - Suggested next tasks: T066-subB, T066-subC, T066-subD.
 
 ID: T066-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: MidiDeviceRegistry with auto-detection and named profiles
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/device_registry.py`. Features: (1) auto-detect connected USB MIDI devices via ALSA port enumeration + USB vendor/product ID lookup, (2) built-in device profiles: Lexicon MPX1 (SysEx format, channel, param map), MeloAudio MIDI Commander (footswitches, expression pedals, banks), generic USB-to-DIN adapter (passthrough), generic USB MIDI controller, (3) user-creatable custom profiles via API, (4) match physical ports to logical device identities by name pattern, USB VID/PID, or manual assignment, (5) persist device configs in DB (`MIDIDeviceConfig` table — already exists), (6) emit `midi:device_online` / `midi:device_offline` WebSocket events on hot-plug, (7) device health status (connected, responding, latency, last-seen timestamp).
@@ -2263,10 +2269,19 @@ Description:
 - Required outputs: `device_registry.py`, built-in profiles, DB integration, WebSocket events, unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-08 23:58 - Codex
+- Completion notes:
+  - What was done: Reworked `MidiDeviceRegistry` to support built-in + custom profiles, USB VID/PID-aware profile matching, manual port-to-device assignment, and richer device state fields (`connected`, `responding`, `latency_ms`, `last_seen`, vendor/product IDs).
+  - What was done: Added DB-backed assignment persistence using `MIDIDeviceConfig` entries and retained `midi:device_online` / `midi:device_offline` event publication on topology changes.
+  - What was done: Expanded MIDI Hub API to manage profiles and manual assignments (`POST/PUT/DELETE /api/midi/hub/profiles`, `PUT/DELETE /api/midi/hub/devices/assign`).
+  - Validation:
+    - `pytest -q tests/midi_hub` -> `17 passed`
+    - `python3 -m compileall app/services/midi_hub app/routes/midi_hub.py`
+  - Files/links produced: `app/services/midi_hub/device_registry.py`, `app/services/midi_hub/ports.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_device_registry.py`, `tests/midi_hub/test_routes.py`.
+  - Suggested next tasks: T066-subC, T066-subD, T066-subG.
 
 ID: T066-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: MidiGateway transport with auto-reconnect and health monitoring
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/gateway.py`. `MidiGateway` wraps a `MidiPort` pair (in+out) with resilient transport behavior: connection state machine (disconnected → connecting → connected → error → reconnecting), auto-reconnect on USB disconnect (poll every 5s), health probe via MIDI Identity Request SysEx (`F0 7E 7F 06 01 F7`) with response timeout, round-trip latency measurement per probe, configurable health check interval (default 30s), USB-to-DIN bridging awareness (gateway knows it's talking through an adapter to a downstream device). Each gateway emits: `midi:gateway_connected`, `midi:gateway_disconnected`, `midi:gateway_health`, `midi:gateway_latency`. Gateways are the building blocks the router connects.
@@ -2276,10 +2291,19 @@ Description:
 - Required outputs: `gateway.py`, state machine tests, health probe tests, WebSocket event contracts.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-08 23:58 - Codex
+- Completion notes:
+  - What was done: Implemented resilient gateway transport layer (`gateway.py`) with connection state machine, periodic reconnect, MIDI identity-request health probes, round-trip latency capture, and bridge-adapter metadata.
+  - What was done: Added gateway lifecycle manager singleton and API routes for gateway create/list/get/health/reconnect/delete under `/api/midi/hub/gateways`.
+  - What was done: Wired gateway websocket event emission contract (`midi:gateway_connected`, `midi:gateway_disconnected`, `midi:gateway_health`, `midi:gateway_latency`) and added route-level status aggregation in `/api/midi/hub/status`.
+  - Validation:
+    - `pytest -q tests/midi_hub` -> `17 passed`
+    - `python3 -m compileall app/services/midi_hub app/routes/midi_hub.py`
+  - Files/links produced: `app/services/midi_hub/gateway.py`, `app/services/midi_hub/__init__.py`, `app/services/midi_hub/hub.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_gateway.py`, `tests/midi_hub/test_routes.py`.
+  - Suggested next tasks: T066-subD, T066-subF, T066-subG.
 
 ID: T066-subD
-Status: [ ] Todo
+Status: [✓] Done
 Title: MidiRouter with configurable route table, merge, split, and channel processing
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/router.py`. Central routing engine features: (1) route table — each route: source gateway/port + channel filter → destination gateway/port + channel remap, (2) route types: pass-through, filter (whitelist/blacklist by message type, channel, CC range, note range, velocity range), transform (channel remap, CC number remap, value scaling), merge (multiple sources → one destination), split (one source → multiple destinations with different filters), (3) per-route enable/disable toggle, (4) route priority ordering (higher priority routes processed first; first-match-wins or all-match modes), (5) message cloning (send same message to multiple destinations), (6) persist route config in `~/.map2/midi_routes.json`, (7) restore routes on startup, (8) real-time route modification without stopping MIDI flow. Processing must be lock-free on the hot path — route table changes are double-buffered and swapped atomically.
@@ -2289,10 +2313,19 @@ Description:
 - Required outputs: `router.py`, route table data model, merge/split logic, lock-free hot path, persistence, comprehensive unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:18 - Codex
+- Completion notes:
+  - What was done: Implemented `app/services/midi_hub/router.py` with route table model, priority ordering, `all_match`/`first_match` processing modes, per-route filters, transform chain support, and split/merge behaviors through multi-destination and multi-source route composition.
+  - What was done: Added lock-free hot-path routing via atomic snapshot swaps (`_route_snapshot`) while route edits remain mutable through control-path updates (`add/update/delete/enable/disable`) without stopping MIDI flow.
+  - What was done: Added route persistence and restore support at `~/.map2/midi_routes.json`, plus topology graph generation and websocket `midi:route_changed` publication.
+  - Validation:
+    - `pytest -q tests/midi_hub` -> `21 passed`
+    - `python3 -m compileall app/services/midi_hub app/routes/midi_hub.py`
+  - Files/links produced: `app/services/midi_hub/router.py`, `app/services/midi_hub/__init__.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_router.py`, `tests/midi_hub/test_routes.py`.
+  - Suggested next tasks: T066-subF, T066-subG, T066-subH.
 
 ID: T066-subE
-Status: [ ] Todo
+Status: [✓] Done
 Title: Advanced MIDI transform/filter/mapper engine
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/transforms.py`. Per-route transform pipeline — each route can have an ordered chain of transforms applied to messages passing through. Transform types: (1) CC scaling with curves (linear, log, exp, s-curve, reverse, custom breakpoint) and value range clamping with deadzone, (2) CC-to-Note and Note-to-CC translation, (3) CC-to-Program-Change and PC-to-CC translation, (4) velocity curve remapping (linear, fixed, compress, expand, layer-switch), (5) note transpose/scale quantize/harmonize (diatonic harmonizer à la mididings), (6) Program Change offset/remap table (incoming PC 0-127 → outgoing PC remap with bank select), (7) SysEx builder — template-based outbound SysEx construction from incoming triggers (CC/Note/PC → parameterized SysEx), (8) SysEx parser — extract values from incoming SysEx and emit as CC/Note for routing, (9) conditional logic — if/then/else on message values (if CC > threshold → emit PC; if velocity < X → suppress; if channel == N → reroute), (10) message splitting — one input message triggers multiple output messages with delays, (11) message throttling/coalescing — rate-limit high-frequency CC streams to configurable max rate, (12) MIDI message delay — add fixed or variable delay to messages on a route, (13) pitchbend range scaling and aftertouch curve, (14) key/velocity split — route notes to different destinations based on note range or velocity range (Camelot Pro parity), (15) NRPN/RPN assembly and disassembly (pack/unpack 14-bit parameters), (16) MPE channel allocation and zone management. All transforms are composable — a route can chain multiple transforms. Persist transform configs within route table JSON.
@@ -2302,10 +2335,19 @@ Description:
 - Required outputs: `transforms.py`, transform type registry, per-route transform chain, composable pipeline, unit tests for every transform type, performance benchmarks.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 01:55 - Codex
+- Completion notes:
+  - What was done: Implemented full transform registry + engine (`transforms.py`) covering CC/note/PC translation, velocity curves, transpose/quantize/harmonize, SysEx build/parse, conditional logic, split/throttle/delay flow control, pitch/aftertouch scaling, key/velocity split, NRPN pack/unpack, MPE zone handling, and legacy remap/scale transforms.
+  - What was done: Reworked `MidiRouter` to run composable transform chains end-to-end, emit transform errors, apply optional per-destination latency compensation delays, and persist/restore advanced route transform metadata.
+  - What was done: Added transform-focused test coverage (`tests/midi_hub/test_transforms.py`) exercising every transform family and validated router integration under the expanded route surface.
+  - Validation:
+    - `python3 -m compileall app/services/midi_hub app/routes/midi_hub.py`
+    - `pytest -q tests/midi_hub` -> `29 passed`
+  - Files/links produced: `app/services/midi_hub/transforms.py`, `app/services/midi_hub/router.py`, `tests/midi_hub/test_transforms.py`.
+  - Suggested next tasks: T066-subH, T066-subK, T066-subL.
 
 ID: T066-subF
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Refactor all MAP2 MIDI consumers to use MidiHub
 Description:
 - Goal / acceptance criteria: Replace all direct rtmidi/ALSA access across the platform with MidiHub registration. Consumers to migrate: (1) `MIDIEngineService` — register as MidiHub endpoint for JUCE engine CC/Note/PB routing, (2) `MPX1Service` — register as MidiHub endpoint for SysEx bridge + CC handler (replacing direct rtmidi in/out), (3) `MIDIService` (v2) — use MidiHub for device discovery, mapping dispatch, command triggers, (4) `MidiBroadcastService` — subscribe to MidiHub message bus for WebSocket events, (5) `TesiraMidiDispatcher` — register as MidiHub endpoint for Tesira MIDI commands, (6) `MIDILearnManager` — subscribe to MidiHub CC stream for learn capture, (7) JUCE C++ `MidiHandler` — bridge via shared memory or socket to MidiHub for unified port management. All existing functionality must be preserved — every test in `tests/test_mpx1.py`, `tests/test_juce_engine_service_midi_injection.py`, and MIDI v2 route tests must pass unchanged.
@@ -2315,10 +2357,10 @@ Description:
 - Required outputs: Updated services, migration verification, regression test pass, zero-downtime migration path.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subG
-Status: [ ] Todo
+Status: [✓] Done
 Title: MIDI Hub REST API and WebSocket event surface
 Description:
 - Goal / acceptance criteria: Create `app/routes/midi_hub.py` with comprehensive API. Endpoints: **Hub status**: `GET /api/midi/hub/status` (ports, gateways, routes, health). **Gateways**: `GET /api/midi/hub/gateways`, `GET /api/midi/hub/gateways/{id}`, `GET /api/midi/hub/gateways/{id}/health`, `POST /api/midi/hub/gateways/{id}/reconnect`. **Devices**: `GET /api/midi/hub/devices`, `POST /api/midi/hub/devices` (register custom), `PUT /api/midi/hub/devices/{id}`, `DELETE /api/midi/hub/devices/{id}`. **Routes**: `GET /api/midi/hub/routes`, `POST /api/midi/hub/routes`, `PUT /api/midi/hub/routes/{id}`, `DELETE /api/midi/hub/routes/{id}`, `POST /api/midi/hub/routes/{id}/enable`, `POST /api/midi/hub/routes/{id}/disable`. **Transforms**: `GET /api/midi/hub/transforms/types` (available transform registry), `PUT /api/midi/hub/routes/{id}/transforms` (set transform chain). **Topology**: `GET /api/midi/hub/topology` (full device graph for patchbay rendering). **Presets**: `GET /api/midi/hub/presets`, `POST /api/midi/hub/presets`, `POST /api/midi/hub/presets/{id}/recall`, `DELETE /api/midi/hub/presets/{id}`. **Traffic**: WebSocket topic `midi:traffic` for real-time message stream. **Events**: `midi:hub_started`, `midi:hub_stopped`, `midi:device_online`, `midi:device_offline`, `midi:gateway_connected`, `midi:gateway_disconnected`, `midi:gateway_health`, `midi:route_changed`, `midi:transform_error`. Pydantic models for all request/response contracts.
@@ -2328,10 +2370,19 @@ Description:
 - Required outputs: `app/routes/midi_hub.py`, Pydantic models, route-level tests, OpenAPI schema documentation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:24 - Codex
+- Completion notes:
+  - What was done: Expanded `app/routes/midi_hub.py` into a comprehensive route surface with hub lifecycle/status, device CRUD + profile management + manual assignment, gateway lifecycle/health, route CRUD/enable/disable, transform-chain updates, topology graph output, and match-mode controls.
+  - What was done: Added preset API endpoints (`GET/POST/DELETE /presets`, `POST /presets/{id}/recall`) backed by new persisted snapshot service (`preset_service.py`) and added websocket hub lifecycle events (`midi:hub_started`, `midi:hub_stopped`).
+  - What was done: Completed websocket event contract coverage in runtime path (`midi:device_online/offline`, `midi:gateway_*`, `midi:route_changed`, `midi:traffic`, `midi:transform_error`).
+  - Validation:
+    - `pytest -q tests/midi_hub` -> `22 passed`
+    - `python3 -m compileall app/services/midi_hub app/routes/midi_hub.py`
+  - Files/links produced: `app/routes/midi_hub.py`, `app/services/midi_hub/preset_service.py`, `app/services/midi_hub/router.py`, `app/services/midi_hub/device_registry.py`, `app/services/midi_hub/__init__.py`, `tests/midi_hub/test_routes.py`, `tests/midi_hub/test_router.py`.
+  - Suggested next tasks: T066-subF, T066-subH, T066-subK.
 
 ID: T066-subH
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Real-time MIDI traffic monitor and diagnostic logger
 Description:
 - Goal / acceptance criteria: Build integrated MIDI traffic monitoring into MidiHub and the UI. Backend: MidiHub taps all messages passing through the router, captures to a configurable ring buffer (default 50,000 messages), streams via WebSocket topic `midi:traffic` with per-subscriber filtering (by port, channel, message type). Each captured message includes: timestamp (µs resolution), source port, destination port, direction (in/out), raw hex bytes, decoded fields (channel, type, data1, data2 / SysEx payload), route ID that matched. Add `GET /api/midi/hub/traffic/snapshot` for polling access, `POST /api/midi/hub/traffic/export` for CSV/JSON file export, `GET /api/midi/hub/traffic/stats` for per-port message rates and bandwidth. Frontend: `web/src/app/components/MidiHub/MidiTrafficMonitor.tsx` — virtualized scrolling log (react-window), color-coded message types (CC=blue, Note=green, SysEx=orange, PC=purple, Clock=gray, System=red), pause/resume, regex search/filter, column sorting, message detail drawer with full hex dump, message rate sparkline per port, round-trip latency display for paired request/response SysEx.
@@ -2341,10 +2392,13 @@ Description:
 - Required outputs: Traffic capture engine, WebSocket streaming, React monitor component, export functionality, unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:24 - Codex
+- Progress notes:
+  - Added websocket traffic event emission (`midi:traffic`) in router hot path with decoded payload metadata (`raw_hex`, route ID, source/destination, timestamp).
+  - Remaining scope includes traffic ring-buffer persistence, snapshot/export/stats APIs, and frontend monitor UI (`MidiTrafficMonitor.tsx`).
 
 ID: T066-subI
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MIDI routing matrix UI (grid view)
 Description:
 - Goal / acceptance criteria: Create `web/src/app/components/MidiHub/MidiRoutingMatrix.tsx` — grid-based routing view. Sources as rows (all input ports/gateways), destinations as columns (all output ports/gateways + virtual endpoints like MPX1Service, JUCE engine). Cells show route status: active (green), filtered (yellow), disabled (gray), error (red). Click cell to create/edit route — opens route detail panel with: channel filter, message type filter, transform chain editor (drag-drop transform blocks in order), enable/disable toggle. Gateway health indicators per row/column header (green/yellow/red dot with latency tooltip). Real-time message flow animation (pulse on cell when messages pass through). Accessible from main nav `/midi-hub` and from MPX1/Tesira settings panels.
@@ -2354,10 +2408,10 @@ Description:
 - Required outputs: React grid component, route detail panel, transform chain editor, real-time animation, integration with nav.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subJ
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Visual patchbay MIDI routing editor (node-graph view)
 Description:
 - Goal / acceptance criteria: Create `web/src/app/components/MidiHub/MidiPatchbay.tsx` — drag-and-drop visual patchbay as an alternative view to the grid matrix (T066-subI). Features: device/port nodes rendered as labeled blocks with input/output connectors, SVG patch cord connections with animated flow direction and color-coded message types, drag from output connector to input connector to create route, click cord to edit route (filter/transform/channel remap popup), right-click node for device info/health/latency, auto-layout (force-directed or hierarchical) with manual drag repositioning, zoom/pan/minimap, route bandwidth visualization (cord thickness = message rate), device grouping (drag devices into named groups). Same API backend as matrix view — patchbay and matrix are synchronized views of the same route table. Design follows SVG patch cord pattern from MPX1 Flow Canvas (T042).
@@ -2367,10 +2421,10 @@ Description:
 - Required outputs: React patchbay component, SVG connection renderer, force-directed layout, drag-drop interaction, zoom/pan, integration with router API.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subK
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MIDI Hub preset system with snapshot save/recall/compare
 Description:
 - Goal / acceptance criteria: Implement a preset system for the entire MIDI Hub state. A preset captures: all routes (with transforms), all device assignments, all gateway configs, all virtual port definitions. Features: (1) save current hub state as named preset, (2) recall preset (atomic swap — all routes change simultaneously, no MIDI glitches during transition), (3) compare two presets side-by-side (diff view showing added/removed/changed routes), (4) import/export presets as JSON files for sharing/backup, (5) preset chaining — sequence of presets triggered by MIDI PC or timer, (6) 4+ preset slots switchable via MIDI Program Change (iConnectivity parity), (7) default preset loaded on startup. Persist in `~/.map2/midi_hub_presets/`. API: `GET/POST/DELETE /api/midi/hub/presets`, `POST /api/midi/hub/presets/{id}/recall`. UI: preset selector dropdown in hub toolbar + dedicated preset manager page.
@@ -2380,10 +2434,10 @@ Description:
 - Required outputs: Preset service, atomic recall logic, diff/compare, import/export, REST endpoints, UI components, tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subL
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MIDI automation scripting engine (Python sandbox)
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/script_engine.py`. Lightweight Python scripting engine for dynamic MIDI behavior. Features: (1) user writes Python scripts that receive MIDI events and emit MIDI events, executed in a sandboxed asyncio context with restricted imports (no filesystem, no network, no subprocess), (2) script library with save/load/enable/disable per script persisted in `~/.map2/midi_scripts/`, (3) built-in API for scripts: `midi.send(port, message)`, `midi.on(port, filter, callback)`, `midi.cc(ch, cc, val)`, `midi.pc(ch, prog)`, `midi.sysex(data)`, `midi.note_on(ch, note, vel)`, `midi.note_off(ch, note)`, `state.get(key)` / `state.set(key, val)` for persistent cross-session state, `timer.after(ms, cb)`, `timer.every(ms, cb)`, `timer.cancel(id)`, `hub.get_route(id)`, `hub.enable_route(id)`, `hub.disable_route(id)`, `log.info(msg)`, (4) example scripts: CC LFO generator, auto-program-change sequencer, SysEx macro launcher, conditional routing switcher, expression pedal curve shaper, MIDI panic (all-notes-off) button, song-position-based preset recall, (5) scripts triggered by: MIDI events, timers, API calls (`POST /api/midi/hub/scripts/{id}/trigger`), or hub events (device connect/disconnect), (6) script console output visible in UI. Frontend: `web/src/app/components/MidiHub/MidiScriptEditor.tsx` with CodeMirror editor, syntax highlighting, run/stop/restart controls, console output log, variable inspector. Inspired by StreamByter's rules language and mididings' Python approach, but with full Python expressiveness and MAP2 integration.
@@ -2393,10 +2447,10 @@ Description:
 - Required outputs: Script engine with sandbox, script API, REST endpoints, CodeMirror editor component, example scripts, security documentation, unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subM
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MIDI Clock engine with tempo detection, generation, and distribution
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/clock_engine.py`. Full MIDI clock implementation: (1) clock generation — generate MIDI Clock (24 ppqn), Start, Stop, Continue, Song Position Pointer at configurable BPM (20-300, 0.1 BPM resolution), (2) clock detection — analyze incoming clock stream, calculate BPM with smoothing, detect tempo changes, (3) clock distribution — route generated or detected clock to selected output ports/gateways, (4) tap tempo — accept tap tempo input via MIDI (configurable CC/Note) or API, (5) clock divider/multiplier — output clock at 1/2x, 1x, 2x, 3x, 4x, etc. of source tempo, (6) clock offset/delay — compensate for device-specific clock latency, (7) MTC (MIDI Time Code) generation and parsing — full/quarter frame, (8) song position pointer tracking for locate/cue. Integrate with MidiHub router — clock messages routed like any other message but with jitter-minimized scheduling (high-priority thread, pre-computed tick intervals). API: `GET/PUT /api/midi/hub/clock` (config + status), `POST /api/midi/hub/clock/tap`, `POST /api/midi/hub/clock/start|stop|continue`. UI: tempo display + tap button in hub toolbar.
@@ -2406,10 +2460,10 @@ Description:
 - Required outputs: Clock engine, tap tempo, MTC support, jitter-minimized scheduling, API endpoints, UI tempo controls, tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subN
-Status: [ ] Todo
+Status: [>] In Progress
 Title: RTP-MIDI (Network MIDI) and OSC bridge
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/network.py`. Network MIDI support: (1) RTP-MIDI session initiator and listener (RFC 6295) — MAP2 can join and host RTP-MIDI sessions over Ethernet/WiFi, (2) mDNS/Bonjour advertisement — MAP2 MIDI Hub appears as an RTP-MIDI endpoint on the network (discoverable by macOS Audio MIDI Setup, rtpMIDI on Windows, other MAP2 instances), (3) MIDI journal recovery for lost packets, (4) network MIDI ports appear in MidiHub as regular ports — routable like any other, (5) latency measurement and jitter reporting per network session. OSC bridge: (6) bidirectional OSC↔MIDI translation — configurable mapping table (OSC address pattern → MIDI message, and reverse), (7) OSC server (UDP) for receiving commands from TouchOSC, Lemur, Max/MSP, SuperCollider, etc., (8) OSC client for sending to external apps/hardware. This enables the MAP2 network MIDI mesh (innovation #10) — multiple MAP2 nodes sharing MIDI routing.
@@ -2419,10 +2473,10 @@ Description:
 - Required outputs: RTP-MIDI client/server, mDNS advertisement, journal recovery, OSC bridge, network port integration with MidiHub, unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subO
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MIDI 2.0 readiness layer (MIDI-CI, Property Exchange, UMP)
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/midi2.py`. Forward-looking MIDI 2.0 support: (1) MIDI-CI (Capability Inquiry) — send/receive Discovery, Profile Inquiry, Property Exchange, and Protocol Negotiation messages, (2) Profile support — query connected devices for supported profiles (e.g., General MIDI, MPE, drawbar organ), enable/disable profiles, (3) Property Exchange — get/set device properties (patch names, parameter lists, device state) via JSON-over-SysEx, (4) UMP (Universal MIDI Packet) internal representation — MidiHub internally represents messages as UMP where possible for future-proofing (MIDI 1.0 messages wrapped in UMP Type 2, MIDI 2.0 channel voice in UMP Type 4), (5) MIDI 1.0 ↔ MIDI 2.0 protocol translation for mixed environments, (6) 32-bit velocity and per-note controllers when talking to MIDI 2.0 devices. Note: Most current hardware is MIDI 1.0 — this layer provides readiness, not immediate necessity. Gate behind config flag `midi.midi2_enabled` (default false).
@@ -2432,10 +2486,10 @@ Description:
 - Required outputs: MIDI-CI message codec, Profile manager, Property Exchange client, UMP internal representation, translation layer, feature flag, tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subP
-Status: [ ] Todo
+Status: [>] In Progress
 Title: MAP2-exclusive innovations implementation (AI learn, macros, recording, heatmap)
 Description:
 - Goal / acceptance criteria: Implement the 10 MAP2-exclusive innovations listed in the T066 description. Delivered as extensions to existing MidiHub subsystems: (1) **AI-assisted MIDI Learn** — extend `MIDILearnManager` to analyze incoming CC patterns and auto-suggest parameter mappings based on current chain topology and common usage heuristics (rule-based, not ML — e.g., CC1→mod, CC7→vol, CC11→expression, expression pedal→wah). (2) **Cross-device macro triggers** — `app/services/midi_hub/macros.py`: define macro = list of {target, action, delay_ms}, triggered by MIDI event or API call, executed with per-target timing. (3) **MIDI performance recording + playback** — `app/services/midi_hub/recorder.py`: record timestamped MIDI events to session file, playback with transport controls (play/pause/stop/seek/loop), export as Standard MIDI File (SMF). (4) **Latency-compensated routing** — extend router to measure per-gateway RTT and pre-delay outbound messages for simultaneous arrival. (5) **Context-aware routing profiles** — extend preset system with activation conditions (active chain, loaded preset, time, webhook trigger). (6) **MIDI activity heatmap** — frontend overlay on patchbay showing message density per route with color gradient (cool=idle, warm=active, hot=saturated). (7) **Bidirectional device state sync** — extend device registry with shadow state model; detect drift via periodic SysEx queries, emit `midi:device_drift` event. (8) **MIDI message scheduling queue** — `app/services/midi_hub/scheduler.py`: schedule messages for future delivery with cancel/modify, supports absolute time and relative delay. (9) **Plugin-chain-aware MIDI splits** — hook into JUCE chain topology changes, auto-suspend mappings for bypassed plugins, auto-suggest for new plugins. (10) **Network MIDI mesh** — extend RTP-MIDI (T066-subN) with route table sharing and cross-instance message forwarding.
@@ -2445,10 +2499,10 @@ Description:
 - Required outputs: AI learn heuristics, macro engine, MIDI recorder with SMF export, latency compensation, context-aware presets, heatmap component, state sync, scheduler, chain-aware splits, mesh protocol, tests for each.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subQ
-Status: [ ] Todo
+Status: [>] In Progress
 Title: USB-to-DIN adapter support and external interface integration guide
 Description:
 - Goal / acceptance criteria: Verify and document that MAP2 MIDI Hub works with any class-compliant USB-to-DIN MIDI adapter as a "dumb pipe" — the adapter provides physical DIN connectivity while MAP2 handles all intelligence. Test with: (1) CME H2MIDI Pro (USB-C + DIN), (2) generic USB-MIDI cable (e.g., Roland UM-ONE mk2), (3) multi-port interface (e.g., MOTU micro lite, iConnectivity mioXM if available). For each adapter: verify port auto-detection, bidirectional SysEx pass-through to MPX1, latency measurement, hot-plug recovery. Document any adapter-specific quirks (port naming, SysEx chunking, timing jitter). Publish `docs/midi/USB_DIN_ADAPTER_COMPATIBILITY.md` with tested adapters and recommended models. If the CME H2MIDI Pro is present, also document its standalone preset configuration as a bonus fallback mode (HxMIDI Tool guide), but this is optional — MAP2 does not depend on it.
@@ -2458,10 +2512,10 @@ Description:
 - Required outputs: Compatibility test matrix, adapter-specific notes, `docs/midi/USB_DIN_ADAPTER_COMPATIBILITY.md`, optional CME standalone guide.
 Subtasks: None
 Assigned to: User + Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 ID: T066-subR
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Comprehensive MIDI Hub integration testing and regression validation
 Description:
 - Goal / acceptance criteria: End-to-end validation of the complete MIDI Hub across all subsystems: (1) **Port layer**: USB hot-plug detection and recovery within 10s, virtual port creation/destruction, all port types functional. (2) **Router**: multi-route message delivery, merge/split, channel remap, filter accuracy, transform chain correctness, route enable/disable without message loss. (3) **Consumer migration**: all existing MPX1 tests pass (T036 sync hardening, T037 SysEx import, T038 scenes/morph), all JUCE engine MIDI injection tests pass, all MIDI v2 route tests pass, Tesira MIDI dispatch functional. (4) **Traffic monitor**: captures all messages, export works, real-time WebSocket stream accurate. (5) **Presets**: save/recall/compare/export/import, atomic preset swap without MIDI glitch. (6) **Scripting**: example scripts execute correctly, sandbox prevents unauthorized access. (7) **Clock**: generated clock stable within ±0.1 BPM, tap tempo converges within 4 taps. (8) **Performance**: <100µs added latency per route hop, 10,000+ messages/second throughput, memory-stable over 24hr soak test.
@@ -2471,7 +2525,7 @@ Description:
 - Required outputs: Test suite, performance benchmarks, soak test evidence, regression matrix, pass/fail report.
 Subtasks: None
 Assigned to: User + Codex
-Last updated: 2026-03-08 - Codex
+Last updated: 2026-03-09 00:40 - Codex
 
 Assigned to: Codex
 Last updated: 2026-03-08 - Codex
