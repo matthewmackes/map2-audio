@@ -102,7 +102,7 @@ export function HostMachinePage() {
           : '#ef4444'
 
   return (
-    <Box sx={{ pb: 4 }}>
+    <Box className="host-machine-page" sx={{ pb: 4 }}>
       <Container maxWidth="lg">
         {/* Page Header with Refresh Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
@@ -175,6 +175,8 @@ export function HostMachinePage() {
           <Tabs
             value={tabIndex}
             onChange={(_, newValue) => setTabIndex(newValue)}
+            variant="scrollable"
+            allowScrollButtonsMobile
             sx={{
               borderBottom: 1,
               borderColor: 'divider',

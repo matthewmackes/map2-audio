@@ -58,8 +58,8 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
   }
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+    <Box className="tesira-dsp-explorer" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} flexWrap="wrap">
         <Typography variant="subtitle2" fontWeight={700}>DSP Blocks</Typography>
         <TextField
           size="small"
@@ -69,13 +69,14 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
           sx={{ minWidth: 220 }}
           inputProps={{ style: { fontSize: 12 } }}
         />
-        <Button size="small" variant="outlined" onClick={() => setProbeOpen(true)}>Probe</Button>
+        <Button size="small" variant="outlined" onClick={() => setProbeOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>Probe</Button>
         <Button
           size="small"
           variant="text"
           onClick={() => {
             dspBlocks.refetch().catch(() => undefined)
           }}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           Refresh
         </Button>
@@ -102,8 +103,9 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
       {dspBlocks.isLoading ? (
         <CircularProgress size={20} />
       ) : (
-        <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-          <Table size="small">
+        <Box className="tesira-table-scroll-wrap">
+          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+            <Table size="small" className="tesira-table">
             <TableHead>
               <TableRow>
                 <TableCell>Instance Tag</TableCell>
@@ -141,8 +143,10 @@ export function TesiraDspExplorer({ deviceId }: TesiraDspExplorerProps) {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
-        </Paper>
+            </Table>
+          </Paper>
+          <Box className="tesira-table-scroll-hint" aria-hidden="true" />
+        </Box>
       )}
 
       {selectedTag && (

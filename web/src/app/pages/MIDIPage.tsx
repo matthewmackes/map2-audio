@@ -137,7 +137,7 @@ export function MIDIPage() {
   const chains = chainsQuery.data?.chains ?? []
 
   return (
-    <div className="stack">
+    <div className="stack midi-page">
       <PageHeader
         title="MIDI Control"
         subtitle="CC mappings, chain switching, and real-time MIDI monitoring."
@@ -183,7 +183,7 @@ export function MIDIPage() {
       {/* Tabs */}
       <div className="card">
         <TabProvider defaultSelectedId="controller" selectedId={selectedTab} setSelectedId={(id) => setSelectedTab(id ?? 'controller')}>
-          <TabList className="tab-list" aria-label="MIDI sections">
+          <TabList className="tab-list midi-tab-list" aria-label="MIDI sections">
             <Tab id="controller" className="tab">
               <GameController size={16} weight="duotone" /> Controller Setup
             </Tab>

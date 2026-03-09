@@ -127,7 +127,10 @@ export default function MultiSystemDashboard() {
   }
 
   return (
-    <Box sx={{ maxWidth: '1600px', mx: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box
+      className="cluster-monitoring-page"
+      sx={{ maxWidth: '1600px', mx: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}
+    >
       {/* Educational Header */}
       <Paper sx={{ p: 4, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff' }}>
         <Typography sx={{ fontWeight: 700, fontSize: 28, mb: 2 }}>
@@ -583,8 +586,9 @@ export default function MultiSystemDashboard() {
           <Grid container spacing={2}>
             {comparisons.map((comparison) => (
               <Grid item xs={12} md={6} key={comparison.metric}>
-                <TableContainer component={Paper}>
-                  <Table size="small">
+                <Box className="cluster-grid-scroll-wrap">
+                  <TableContainer component={Paper}>
+                    <Table size="small" className="cluster-grid-table">
                     <TableHead sx={{ backgroundColor: '#f3f4f6' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>System</TableCell>
@@ -630,8 +634,10 @@ export default function MultiSystemDashboard() {
                         </TableCell>
                       </TableRow>
                     </TableBody>
-                  </Table>
-                </TableContainer>
+                    </Table>
+                  </TableContainer>
+                  <Box className="cluster-grid-scroll-hint" aria-hidden="true" />
+                </Box>
               </Grid>
             ))}
           </Grid>

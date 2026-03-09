@@ -104,7 +104,10 @@ export function MultiNodeMonitoringTab() {
   }
 
   return (
-    <Box sx={{ maxWidth: '1600px', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box
+      className="cluster-monitoring-page"
+      sx={{ maxWidth: '1600px', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}
+    >
       {/* Cluster-Wide Statistics */}
       <Paper sx={{ p: 3, backgroundColor: '#f9fafb' }}>
         <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 3, color: '#374151' }}>
@@ -527,8 +530,9 @@ export function MultiNodeMonitoringTab() {
           <Grid container spacing={2}>
             {comparisons.map((comparison) => (
               <Grid item xs={12} md={6} key={comparison.metric}>
-                <TableContainer component={Paper}>
-                  <Table size="small">
+                <Box className="cluster-grid-scroll-wrap">
+                  <TableContainer component={Paper}>
+                    <Table size="small" className="cluster-grid-table">
                     <TableHead sx={{ backgroundColor: '#f3f4f6' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>System</TableCell>
@@ -574,8 +578,10 @@ export function MultiNodeMonitoringTab() {
                         </TableCell>
                       </TableRow>
                     </TableBody>
-                  </Table>
-                </TableContainer>
+                    </Table>
+                  </TableContainer>
+                  <Box className="cluster-grid-scroll-hint" aria-hidden="true" />
+                </Box>
               </Grid>
             ))}
           </Grid>

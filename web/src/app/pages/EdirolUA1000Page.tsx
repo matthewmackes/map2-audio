@@ -63,6 +63,7 @@ import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
 import { audioApi, diagnosticsApi, pipewireApi } from '../../map2/api'
 import { usePipeWire } from '../hooks/usePipeWire'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { ShoppingSearchDialog } from '../components/ShoppingSearchDialog'
 import type { AudioStatus } from '../../map2/types'
 import type { AudioHealth, XrunStats, BufferPreset, JuceMetrics, DiagnosticResult, FullDiagnosticResult } from '../../map2/api'
@@ -90,6 +91,7 @@ interface CpuData {
 export function EdirolUA1000Page() {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
   const [selectedTab, setSelectedTab] = useState('engine')
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
   const [shoppingDialogOpen, setShoppingDialogOpen] = useState(false)
@@ -243,7 +245,7 @@ export function EdirolUA1000Page() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack edirol-ua1000-page">
       <PageHeader
         title="Edirol UA-1000"
         subtitle="Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine"
@@ -511,7 +513,11 @@ export function EdirolUA1000Page() {
           selectedId={selectedTab}
           setSelectedId={(id) => setSelectedTab(id ?? 'engine')}
         >
-          <TabList className="tab-list" aria-label="UA-1000 sections" style={{ gap: 4, display: 'flex', flexWrap: 'wrap' }}>
+          <TabList
+            className="tab-list edirol-tab-list"
+            aria-label="UA-1000 sections"
+            style={{ gap: 4, display: 'flex', flexWrap: isMobile ? 'nowrap' : 'wrap' }}
+          >
             <Tab id="engine" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
               <Cpu size={18} weight="duotone" /> JUCE Engine
             </Tab>
@@ -605,6 +611,7 @@ export function EdirolUA1000Page() {
         onClose={() => setConfigDialogOpen(false)}
         status={status}
         bufferPresets={bufferPresetsQuery.data}
+        isMobile={isMobile}
         onConfigured={() => queryClient.invalidateQueries({ queryKey: ['audio'] })}
       />
 
@@ -1790,12 +1797,14 @@ function ConfigDialog({
   onClose,
   status,
   bufferPresets,
+  isMobile,
   onConfigured,
 }: {
   open: boolean
   onClose: () => void
   status?: AudioStatus
   bufferPresets?: BufferPreset[]
+  isMobile: boolean
   onConfigured: () => void
 }) {
   const { pushToast } = useToasts()
@@ -1822,7 +1831,7 @@ function ConfigDialog({
   const calculateLatency = (buffer: number, rate: number) => ((buffer / rate) * 1000).toFixed(2)
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={isMobile}>
       <DialogTitle>UA-1000 / JUCE Engine Configuration</DialogTitle>
       <DialogContent>
         <div className="stack" style={{ paddingTop: 8 }}>

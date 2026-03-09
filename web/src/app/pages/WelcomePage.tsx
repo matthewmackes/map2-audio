@@ -303,7 +303,7 @@ function ConceptCard({
 
 export function WelcomePage() {
   return (
-    <div className="stack" style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div className="stack welcome-page" style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Hero Section */}
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -408,7 +408,7 @@ export function WelcomePage() {
       </div>
 
       {/* Quick Links */}
-      <div style={{
+      <div className="welcome-quick-links" style={{
         display: 'flex',
         gap: 12,
         justifyContent: 'center',
@@ -520,7 +520,7 @@ function DocumentLibrary() {
   })
 
   return (
-    <div style={{
+    <div className="welcome-doc-library" style={{
       background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.5) 0%, rgba(20, 25, 40, 0.3) 100%)',
       borderRadius: 'var(--border-radius-lg)',
       border: '1px solid rgba(59, 130, 246, 0.2)',
@@ -555,7 +555,7 @@ function DocumentLibrary() {
         </div>
       </div>
 
-      <div style={{
+      <div className="welcome-doc-library-layout" style={{
         display: 'grid',
         gridTemplateColumns: selectedDoc ? '320px 1fr' : '1fr',
         minHeight: 'calc(100vh - 400px)',

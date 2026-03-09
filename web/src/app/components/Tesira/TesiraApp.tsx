@@ -35,6 +35,7 @@ export function TesiraApp() {
   return (
     <TesiraProvider>
       <Box
+        className="tesira-app-shell"
         sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -45,13 +46,24 @@ export function TesiraApp() {
       >
         <TesiraTopBar />
 
-        <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        <Box
+          className="tesira-main-layout"
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            flex: 1,
+            minHeight: 0,
+          }}
+        >
           {/* Left: fleet panel (fixed width) */}
           <Box
+            className="tesira-fleet-column"
             sx={{
-              width: 220,
+              width: { xs: '100%', md: 220 },
+              maxHeight: { xs: 260, md: 'none' },
               flexShrink: 0,
               borderRight: 1,
+              borderBottom: { xs: 1, md: 0 },
               borderColor: 'divider',
               overflow: 'auto',
             }}
@@ -60,7 +72,7 @@ export function TesiraApp() {
           </Box>
 
           {/* Right: device control panel */}
-          <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <Box className="tesira-content-column" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
             <TesiraRoutePanel />
           </Box>
         </Box>

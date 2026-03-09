@@ -2926,7 +2926,7 @@ Subtasks:
   - T077-P14a: Run 8-point checklist at 360px for every page. Fix all failures. Test at 768px tablet width.
   - T077-P14b: Verify no desktop regressions at 1280px, 1440px, 1920px. Verify all @media rules scoped to max-width: 768px or 360px. Run npm run build for TypeScript validation.
 Assigned to: Codex
-Last updated: 2026-03-09 06:27 - Codex
+Last updated: 2026-03-09 08:23 - Codex
 - Progress notes:
   - Completed Phase 0 foundation: created `web/src/styles/mobile.css`, `web/src/styles/responsive.module.css`, `web/src/app/components/shared/LandscapePrompt.tsx`, `web/src/app/hooks/useIsMobile.ts`, and imported `./styles/mobile.css` in `web/src/main.tsx`.
   - Completed Phase 1 navigation: added mobile bottom tab bar (`Status`, `Scenes`, `Meters`, `Menu`) in `AppShell.tsx`, wired menu-toggle reuse, and added mobile nav typography/visibility overrides in `mobile.css` (hide top nav rails on mobile, centered active title, `14px` font floor for nav classes, `0.06em` uppercase spacing, and `app-content` bottom padding).
@@ -2938,9 +2938,14 @@ Last updated: 2026-03-09 06:27 - Codex
   - Completed Phase 5a + partial Phase 5b: `ParameterKnob` now supports mobile tap-to-edit numeric entry (commit on blur/Enter, Escape cancel, touch drag disabled on mobile), and `ToolbarTooltip` now supports mobile click-to-toggle with click-outside dismissal.
   - Completed core Phase 6 MUI dialog coverage in this surface: added `fullScreen={isMobile}` and sticky action bar treatment to `ShoppingSearchDialog` and nested `ProductDetailDialog`; non-MUI overlays in the expected list remain custom and require per-component mobile action-bar polish.
   - Expanded Phase 6 custom-overlay coverage: added mobile full-screen behavior (100vw/100vh with sticky mobile footers where applicable) to `PasswordDialog`, `SpecialSettingsDialog`, `PresetImportDialog`, `UnifiedUploadDialog`, `FlowAssignmentDialog`, `ThemeCreatorDialog`, `IRManagerDialog`, and `NAMManagerDialog`, plus shared mobile modal/dialog CSS overrides for Ariakit/MAP2 overlay classes.
+  - Expanded Phase 6 global dialog coverage: added mobile `MuiDialog` fullscreen/sticky-actions overrides in `mobile.css` to cover remaining MUI dialog surfaces beyond the explicitly patched components.
   - Completed Phase 7a + 7b: converted `LV2PluginsPage` management table for mobile card mode (data-label rows + full-width 44px action buttons) and upgraded `InstalledAssetsTable` with mobile secondary-column hiding, expandable details rows, and touch-friendly actions.
+  - Completed Phase 7c cluster table responsiveness: added horizontal-scroll wrappers, `min-width: 600px` table treatment, and right-edge gradient scroll hints for cluster comparison tables in `MultiNodeMonitoringTab` and `MultiSystemDashboardPage`.
+  - Advanced Phase 8a audio-interface slice: improved `/edirol-ua1000` and `/motu-rme` mobile behavior with scrollable tab rails, full-width mobile actions, responsive image scaling, and mobile fullscreen configuration dialog treatment.
+  - Advanced Phase 8b + 9a secondary/content pages: added page-level responsive hooks and mobile CSS for `/pipewire`, `/engine`, `/cpu-performance`, `/host-machine`, `/about`, `/welcome`, `/chains`, `/presets`, `/midi`, and `/drums` (single-column tightening, scrollable tab rails, mobile table-card treatment, and full-width controls).
+  - Advanced Phase 9c Tesira + cluster slice: updated Tesira shell to stack fleet/content on mobile, switched dashboard status cards to single-column mobile layout, enforced full-width action buttons, added mobile table scroll wrappers in DSP/settings views, and gated Tesira design canvas with `LandscapePrompt`.
   - Completed Phase 10 desktop-only prompts: added `<LandscapePrompt />` to `GridFlowPage` (`grid-flow`), `GridFlowAdvancedPage` (`grid-3d`), `MPX1FlowView` (`mpx1-flow`), `AvbRoutingPage` (`avb-routing`), and `MPX1MatrixView` (`mpx1-matrix`); also added prompt on `MPX1PanelView` for narrow viewports.
   - Completed Phase 11 + 12 mobile polish layer in `mobile.css`: status-dot utility classes, mobile `.pill` dot treatment, global card/stack/button/flex spacing, heading clamps, safe-area padding, responsive chart container floor, and mobile table/card utility rules.
   - Completed Phase 9b navigation slice: `MPX1Page` sidebar tab rail now scrolls horizontally on mobile with scroll-snap and 44px targets.
   - Verification run complete for current slice: `npm --prefix web run -s typecheck` and `npm --prefix web run -s build` passed.
-  - Remaining work: finish Phase 6 coverage audit for all dialog surfaces, complete Phase 7c cluster table/grid mobile wrapper treatment, and execute full Phase 8/9/14 viewport checklist (`360px`, `768px`, `1280+`) with defect sweep.
+  - Remaining work: execute full Phase 14 viewport checklist (`360px`, `768px`, `1280+`) with manual defect sweep and desktop-regression signoff; resolve any newly discovered edge-case overflow/layout defects.

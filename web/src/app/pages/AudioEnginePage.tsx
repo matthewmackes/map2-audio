@@ -709,7 +709,7 @@ export function AudioEnginePage() {
     : pw.overallStatus === 'error' ? T.red : T.dim
 
   return (
-    <div style={{
+    <div className="audio-engine-page" style={{
       padding: '24px 32px', maxWidth: 1400, margin: '0 auto', color: T.text,
       background: `linear-gradient(180deg, ${T.bg} 0%, #0c1220 100%)`,
       minHeight: '100vh',
@@ -750,7 +750,7 @@ export function AudioEnginePage() {
       </header>
 
       {/* ── Tab Bar ── */}
-      <nav style={{
+      <nav className="audio-engine-tabbar" style={{
         display: 'flex', gap: 2, marginBottom: 24,
         borderBottom: `1px solid ${T.border}`,
       }}>

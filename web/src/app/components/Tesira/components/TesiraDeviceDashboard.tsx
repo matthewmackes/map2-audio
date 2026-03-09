@@ -33,7 +33,7 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
   const streamHealth = device.connected ? 'Healthy' : 'Offline'
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box className="tesira-device-dashboard" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="subtitle1" fontWeight={700}>
         {device.name || device.host}
       </Typography>
@@ -43,7 +43,7 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
 
       <Grid container spacing={1.5}>
         {cards.map((card) => (
-          <Grid key={card.label} item xs={6} md={3}>
+          <Grid key={card.label} item xs={12} sm={6} md={3}>
             <Paper variant="outlined" sx={{ p: 1.25 }}>
               <Typography variant="caption" color="text.secondary">{card.label}</Typography>
               <Typography variant="body2" fontWeight={700}>{card.value}</Typography>
@@ -52,7 +52,7 @@ export function TesiraDeviceDashboard({ deviceId }: TesiraDeviceDashboardProps) 
         ))}
       </Grid>
 
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+      <Box className="tesira-dashboard-actions" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/levels`} variant="outlined">Levels</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/mixer`} variant="outlined">Mixer</Button>
         <Button size="small" component={RouterLink} to={`/tesira/${deviceId}/eq`} variant="outlined">EQ</Button>

@@ -578,7 +578,7 @@ export function AboutPage() {
   }
 
   return (
-    <div style={{
+    <div className="about-page" style={{
       padding: '32px',
       background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.5) 0%, rgba(20, 25, 40, 0.3) 100%)',
       minHeight: '100vh'
@@ -612,7 +612,7 @@ export function AboutPage() {
       </header>
 
       {/* Main Content Grid */}
-      <div style={{
+      <div className="about-main-grid" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
         gap: 20,

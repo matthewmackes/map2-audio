@@ -148,7 +148,7 @@ export default function MOTURMEPage() {
   }
 
   return (
-    <div style={{ 
+    <div className="motu-rme-page" style={{ 
       minHeight: '100vh', 
       background: 'linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%)',
       padding: '24px',
@@ -401,9 +401,11 @@ export default function MOTURMEPage() {
           </Typography>
 
           {/* Mode Selector */}
-          <Tabs 
+          <Tabs
             value={latencyMode} 
             onChange={(_, v) => setLatencyMode(v)} 
+            variant="scrollable"
+            allowScrollButtonsMobile
             sx={{ mb: 3, borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}
           >
             <Tab label="MOTU Only" value="motu-only" />

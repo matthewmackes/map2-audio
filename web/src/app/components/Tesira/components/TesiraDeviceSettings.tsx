@@ -69,7 +69,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
   }
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box className="tesira-device-settings" sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="subtitle2" fontWeight={700}>Firmware</Typography>
       <Paper variant="outlined">
         <TesiraFirmwareTab deviceId={deviceId} />
@@ -91,7 +91,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
         )}
       </Paper>
 
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
         <Typography variant="subtitle2" fontWeight={700}>GPIO</Typography>
         <Button
           size="small"
@@ -99,6 +99,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
           onClick={() => {
             gpio.refetch().catch(() => undefined)
           }}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           Refresh
         </Button>
@@ -111,8 +112,9 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
       {gpio.isLoading ? (
         <CircularProgress size={20} />
       ) : (
-        <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-          <Table size="small">
+        <Box className="tesira-table-scroll-wrap">
+          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+            <Table size="small" className="tesira-table">
             <TableHead>
               <TableRow>
                 <TableCell>Pin</TableCell>
@@ -145,19 +147,21 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
-        </Paper>
+            </Table>
+          </Paper>
+          <Box className="tesira-table-scroll-hint" aria-hidden="true" />
+        </Box>
       )}
 
       <Typography variant="subtitle2" fontWeight={700}>Scene Snapshots</Typography>
       <Paper variant="outlined" sx={{ p: 1.5 }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mb: 1.5 }}>
           <TextField
             size="small"
             label="Scene name"
             value={sceneName}
             onChange={(event) => setSceneName(event.target.value)}
-            sx={{ minWidth: 240 }}
+            sx={{ minWidth: { xs: '100%', sm: 240 } }}
             inputProps={{ style: { fontSize: 12 } }}
           />
           <Button
@@ -167,6 +171,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
               onCaptureScene().catch(() => undefined)
             }}
             disabled={captureScene.isPending || sceneName.trim() === ''}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Capture
           </Button>
@@ -176,6 +181,7 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
             onClick={() => {
               scenes.refetch().catch(() => undefined)
             }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Refresh
           </Button>
@@ -190,7 +196,8 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
         {scenes.isLoading ? (
           <CircularProgress size={18} />
         ) : (
-          <Table size="small">
+          <Box className="tesira-table-scroll-wrap">
+            <Table size="small" className="tesira-table">
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
@@ -240,7 +247,9 @@ export function TesiraDeviceSettings({ deviceId }: TesiraDeviceSettingsProps) {
                 </TableRow>
               )}
             </TableBody>
-          </Table>
+            </Table>
+            <Box className="tesira-table-scroll-hint" aria-hidden="true" />
+          </Box>
         )}
       </Paper>
     </Box>

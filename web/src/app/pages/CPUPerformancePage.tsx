@@ -130,7 +130,7 @@ export default function CPUPerformancePage() {
   }
 
   return (
-    <div style={{ 
+    <div className="cpu-performance-page" style={{ 
       minHeight: '100vh', 
       background: 'linear-gradient(180deg, #0a0a0a 0%, #111111 100%)',
       padding: '24px',
@@ -179,7 +179,7 @@ export default function CPUPerformancePage() {
       {selectedTab === 0 && (
         <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
           <CardContent>
-            <TableContainer>
+            <TableContainer className="cpu-performance-table-wrap">
               <Table>
                 <TableHead>
                   <TableRow>

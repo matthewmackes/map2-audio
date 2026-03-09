@@ -58,132 +58,140 @@ function DaemonSection({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
 function DevicesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   if (!pw.devices.length) return <p style={{ color: '#64748b' }}>No audio devices detected</p>
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-      <thead>
-        <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-          <th style={{ padding: '8px 12px' }}>ID</th>
-          <th style={{ padding: '8px 12px' }}>Device</th>
-          <th style={{ padding: '8px 12px' }}>Driver</th>
-          <th style={{ padding: '8px 12px' }}>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pw.devices.map(d => (
-          <tr key={d.id} style={{ borderBottom: '1px solid #1e293b' }}>
-            <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{d.id}</td>
-            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{d.name}</td>
-            <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{d.driver}</td>
-            <td style={{ padding: '8px 12px' }}>{d.is_default ? '★' : ''}</td>
+    <div className="pipewire-table-wrap">
+      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
+            <th style={{ padding: '8px 12px' }}>ID</th>
+            <th style={{ padding: '8px 12px' }}>Device</th>
+            <th style={{ padding: '8px 12px' }}>Driver</th>
+            <th style={{ padding: '8px 12px' }}>Default</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {pw.devices.map(d => (
+            <tr key={d.id} style={{ borderBottom: '1px solid #1e293b' }}>
+              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{d.id}</td>
+              <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{d.name}</td>
+              <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{d.driver}</td>
+              <td style={{ padding: '8px 12px' }}>{d.is_default ? '★' : ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
 function NodesTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   if (!pw.nodes.length) return <p style={{ color: '#64748b' }}>No sink/source nodes</p>
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-      <thead>
-        <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-          <th style={{ padding: '8px 12px' }}>ID</th>
-          <th style={{ padding: '8px 12px' }}>Name</th>
-          <th style={{ padding: '8px 12px' }}>Type</th>
-          <th style={{ padding: '8px 12px' }}>Volume</th>
-          <th style={{ padding: '8px 12px' }}>Mute</th>
-          <th style={{ padding: '8px 12px' }}>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pw.nodes.map(n => (
-          <tr key={n.id} style={{ borderBottom: '1px solid #1e293b' }}>
-            <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{n.id}</td>
-            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{n.name}</td>
-            <td style={{ padding: '8px 12px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: n.media_class.includes('Sink') ? '#60a5fa' : '#a78bfa' }}>
-                {n.media_class.includes('Sink') ? <SpeakerHigh size={14} weight="duotone"/> : <Microphone size={14} weight="duotone"/>}
-                {n.media_class.includes('Sink') ? 'Sink' : 'Source'}
-              </span>
-            </td>
-            <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>
-              <span style={{ color: n.volume > 1.0 ? '#f59e0b' : '#e2e8f0' }}>
-                {(n.volume * 100).toFixed(0)}%
-              </span>
-            </td>
-            <td style={{ padding: '8px 12px' }}>
-              {n.muted
-                ? <SpeakerX size={16} weight="duotone" color="#ef4444" />
-                : <SpeakerHigh size={16} weight="duotone" color="#22c55e" />}
-            </td>
-            <td style={{ padding: '8px 12px' }}>{n.is_default ? '★' : ''}</td>
+    <div className="pipewire-table-wrap">
+      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
+            <th style={{ padding: '8px 12px' }}>ID</th>
+            <th style={{ padding: '8px 12px' }}>Name</th>
+            <th style={{ padding: '8px 12px' }}>Type</th>
+            <th style={{ padding: '8px 12px' }}>Volume</th>
+            <th style={{ padding: '8px 12px' }}>Mute</th>
+            <th style={{ padding: '8px 12px' }}>Default</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {pw.nodes.map(n => (
+            <tr key={n.id} style={{ borderBottom: '1px solid #1e293b' }}>
+              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{n.id}</td>
+              <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{n.name}</td>
+              <td style={{ padding: '8px 12px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: n.media_class.includes('Sink') ? '#60a5fa' : '#a78bfa' }}>
+                  {n.media_class.includes('Sink') ? <SpeakerHigh size={14} weight="duotone"/> : <Microphone size={14} weight="duotone"/>}
+                  {n.media_class.includes('Sink') ? 'Sink' : 'Source'}
+                </span>
+              </td>
+              <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>
+                <span style={{ color: n.volume > 1.0 ? '#f59e0b' : '#e2e8f0' }}>
+                  {(n.volume * 100).toFixed(0)}%
+                </span>
+              </td>
+              <td style={{ padding: '8px 12px' }}>
+                {n.muted
+                  ? <SpeakerX size={16} weight="duotone" color="#ef4444" />
+                  : <SpeakerHigh size={16} weight="duotone" color="#22c55e" />}
+              </td>
+              <td style={{ padding: '8px 12px' }}>{n.is_default ? '★' : ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
 function StreamsTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   if (!pw.streams.length) return <p style={{ color: '#64748b' }}>No active audio streams</p>
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-      <thead>
-        <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-          <th style={{ padding: '8px 12px' }}>ID</th>
-          <th style={{ padding: '8px 12px' }}>Client</th>
-          <th style={{ padding: '8px 12px' }}>Media</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pw.streams.map(s => (
-          <tr key={s.id} style={{ borderBottom: '1px solid #1e293b' }}>
-            <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{s.id}</td>
-            <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{s.client_name}</td>
-            <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{s.media_name}</td>
+    <div className="pipewire-table-wrap">
+      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
+            <th style={{ padding: '8px 12px' }}>ID</th>
+            <th style={{ padding: '8px 12px' }}>Client</th>
+            <th style={{ padding: '8px 12px' }}>Media</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {pw.streams.map(s => (
+            <tr key={s.id} style={{ borderBottom: '1px solid #1e293b' }}>
+              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{s.id}</td>
+              <td style={{ padding: '8px 12px', color: '#e2e8f0' }}>{s.client_name}</td>
+              <td style={{ padding: '8px 12px', color: '#94a3b8' }}>{s.media_name}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
 function LinksTable({ pw }: { pw: ReturnType<typeof usePipeWire> }) {
   if (!pw.links.length) return <p style={{ color: '#64748b' }}>No port connections</p>
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-      <thead>
-        <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
-          <th style={{ padding: '8px 12px' }}>ID</th>
-          <th style={{ padding: '8px 12px' }}>Output</th>
-          <th style={{ padding: '8px 12px' }}></th>
-          <th style={{ padding: '8px 12px' }}>Input</th>
-          <th style={{ padding: '8px 12px' }}>State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pw.links.map(l => (
-          <tr key={l.id} style={{ borderBottom: '1px solid #1e293b' }}>
-            <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{l.id}</td>
-            <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.output_node}:{l.output_port}</td>
-            <td style={{ padding: '8px 12px', color: '#60a5fa' }}>→</td>
-            <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.input_node}:{l.input_port}</td>
-            <td style={{ padding: '8px 12px' }}>
-              <span style={{ 
-                color: l.state === 'active' || l.state === 'running' ? '#22c55e' 
-                     : l.state === 'error' ? '#ef4444'
-                     : l.state === 'paused' ? '#f59e0b'
-                     : '#94a3b8',
-                fontWeight: 600,
-                fontSize: 12
-              }}>
-                {l.state || 'unknown'}
-              </span>
-            </td>
+    <div className="pipewire-table-wrap">
+      <table className="pipewire-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <thead>
+          <tr style={{ borderBottom: '1px solid #334155', color: '#64748b', textAlign: 'left' }}>
+            <th style={{ padding: '8px 12px' }}>ID</th>
+            <th style={{ padding: '8px 12px' }}>Output</th>
+            <th style={{ padding: '8px 12px' }}></th>
+            <th style={{ padding: '8px 12px' }}>Input</th>
+            <th style={{ padding: '8px 12px' }}>State</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {pw.links.map(l => (
+            <tr key={l.id} style={{ borderBottom: '1px solid #1e293b' }}>
+              <td style={{ padding: '8px 12px', color: '#94a3b8', fontFamily: 'monospace' }}>{l.id}</td>
+              <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.output_node}:{l.output_port}</td>
+              <td style={{ padding: '8px 12px', color: '#60a5fa' }}>→</td>
+              <td style={{ padding: '8px 12px', color: '#e2e8f0', fontFamily: 'monospace' }}>{l.input_node}:{l.input_port}</td>
+              <td style={{ padding: '8px 12px' }}>
+                <span style={{
+                  color: l.state === 'active' || l.state === 'running' ? '#22c55e'
+                    : l.state === 'error' ? '#ef4444'
+                      : l.state === 'paused' ? '#f59e0b'
+                        : '#94a3b8',
+                  fontWeight: 600,
+                  fontSize: 12
+                }}>
+                  {l.state || 'unknown'}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -279,7 +287,7 @@ export function PipeWirePage() {
   ]
 
   return (
-    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto', color: '#e2e8f0' }}>
+    <div className="pipewire-page" style={{ padding: 32, maxWidth: 1200, margin: '0 auto', color: '#e2e8f0' }}>
       {/* Header */}
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
         <Broadcast size={36} weight="duotone" color="#60a5fa" />
@@ -297,7 +305,7 @@ export function PipeWirePage() {
       </header>
 
       {/* Tabs */}
-      <nav style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #334155', paddingBottom: 0 }}>
+      <nav className="pipewire-tabbar" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid #334155', paddingBottom: 0 }}>
         {tabs.map(t => {
           const Icon = t.icon
           const active = tab === t.id

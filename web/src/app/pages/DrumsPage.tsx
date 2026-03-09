@@ -77,7 +77,7 @@ export function DrumsPage() {
   )
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+    <div className="drums-page" style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
       <PageHeader
         title="Drum Machine"
         subtitle="Practice patterns, factory packs & user drum kits"
@@ -85,7 +85,7 @@ export function DrumsPage() {
       />
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #222222', paddingBottom: 16 }}>
+      <div className="drums-tab-strip" style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #222222', paddingBottom: 16 }}>
         {(['player', 'factory', 'user'] as const).map(tab => (
           <button
             key={tab}

@@ -104,7 +104,7 @@ export function TesiraPage() {
   return (
     <ThemeProvider theme={tesiraTheme}>
       <CssBaseline enableColorScheme />
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box className="tesira-page" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <TesiraApp />
       </Box>
     </ThemeProvider>

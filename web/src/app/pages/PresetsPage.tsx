@@ -184,7 +184,7 @@ export function PresetsPage() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack presets-page">
       <PageHeader
         title="Presets"
         subtitle="Manage local presets, browse community, and import/export cross-platform formats."
@@ -215,6 +215,7 @@ export function PresetsPage() {
       {/* Tabs */}
       <div className="card" style={{ padding: 0 }}>
         <div
+          className="presets-tab-strip"
           style={{
             display: 'flex',
             borderBottom: '1px solid var(--border, #333)',

@@ -28,6 +28,7 @@ import ReactFlow, {
   type Node,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { LandscapePrompt } from '@/app/components/shared/LandscapePrompt'
 import {
   useCompileActiveTesiraDesign,
   useCompileAllTesiraDesigns,
@@ -265,7 +266,8 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
   }
 
   return (
-    <Box sx={{ p: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '280px 1fr' }, gap: 2 }}>
+    <Box className="tesira-design-canvas" sx={{ p: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '280px 1fr' }, gap: 2 }}>
+      <LandscapePrompt componentId={`tesira-design-${deviceId}`} />
       <Paper variant="outlined" sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Typography variant="subtitle2" fontWeight={700}>Design Workspaces</Typography>
         <List dense sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -327,29 +329,30 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
           </Select>
         </FormControl>
 
-        <Button variant="outlined" onClick={addBlock} disabled={!selectedBlock}>
+        <Button variant="outlined" onClick={addBlock} disabled={!selectedBlock} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           Add Block
         </Button>
 
         <Divider />
 
-        <Stack direction="row" spacing={1}>
-          <Button variant="contained" onClick={handleSaveDesign} disabled={!selectedDesignId || updateDesign.isPending}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <Button variant="contained" onClick={handleSaveDesign} disabled={!selectedDesignId || updateDesign.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Save
           </Button>
-          <Button variant="outlined" onClick={handleValidate} disabled={!selectedDesignId || validateDesign.isPending}>
+          <Button variant="outlined" onClick={handleValidate} disabled={!selectedDesignId || validateDesign.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Validate
           </Button>
-          <Button color="error" variant="text" onClick={handleDeleteDesign} disabled={!selectedDesignId || deleteDesign.isPending}>
+          <Button color="error" variant="text" onClick={handleDeleteDesign} disabled={!selectedDesignId || deleteDesign.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Delete
           </Button>
         </Stack>
 
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
           <Button
             variant="outlined"
             onClick={handleCompileDesign}
             disabled={!selectedDesignId || compileDesign.isPending}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Compile
           </Button>
@@ -357,25 +360,27 @@ export function TesiraDesignCanvas({ deviceId }: TesiraDesignCanvasProps) {
             variant="outlined"
             onClick={handleRecompileDesign}
             disabled={!selectedDesignId || recompileDesign.isPending}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Recompile
           </Button>
           <Button
             variant="text"
             onClick={() => setOptimizeCompile((prev) => !prev)}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Optimize: {optimizeCompile ? 'On' : 'Off'}
           </Button>
         </Stack>
 
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          <Button variant="text" onClick={handleCompileActive} disabled={compileActive.isPending}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
+          <Button variant="text" onClick={handleCompileActive} disabled={compileActive.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Compile Active
           </Button>
-          <Button variant="text" onClick={handleCompileAll} disabled={compileAll.isPending}>
+          <Button variant="text" onClick={handleCompileAll} disabled={compileAll.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Compile All
           </Button>
-          <Button variant="text" onClick={handleCompileUncompiled} disabled={compileUncompiled.isPending}>
+          <Button variant="text" onClick={handleCompileUncompiled} disabled={compileUncompiled.isPending} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Compile Uncompiled
           </Button>
         </Stack>

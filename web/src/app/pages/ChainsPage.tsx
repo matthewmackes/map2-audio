@@ -26,9 +26,11 @@ import { chainsApi } from '../../map2/api'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { useToasts } from '../components/Toasts'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export function ChainsPage() {
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [chainName, setChainName] = useState('')
   const { pushToast } = useToasts()
@@ -114,7 +116,7 @@ export function ChainsPage() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack chains-page">
       <PageHeader
         title="Chains"
         subtitle="Curate and activate processing chains with Ariakit dialogs and menus."
@@ -199,6 +201,7 @@ export function ChainsPage() {
                   <ChainRow
                     key={chain.id}
                     chain={chain}
+                    isMobile={isMobile}
                     onActivate={() => activateChain.mutate(chain.id)}
                     onDeactivate={() => deactivateChain.mutate(chain.id)}
                     onDelete={() => deleteChain.mutate(chain.id)}
@@ -213,7 +216,7 @@ export function ChainsPage() {
       </div>
 
       {/* Create Chain Dialog - Material-UI Version (Jan 20, 2026 Fix) */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
+      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} fullScreen={isMobile}>
         <DialogTitle>Create a new chain</DialogTitle>
         <DialogContent sx={{ minWidth: '400px' }}>
           <p style={{ marginBottom: '16px', color: '#6b7280' }}>
@@ -257,6 +260,7 @@ export function ChainsPage() {
 
 function ChainRow({
   chain,
+  isMobile,
   onActivate,
   onDeactivate,
   onDelete,
@@ -264,6 +268,7 @@ function ChainRow({
   disableActions,
 }: {
   chain: Chain
+  isMobile: boolean
   onActivate: () => void
   onDeactivate: () => void
   onDelete: () => void
@@ -334,7 +339,7 @@ function ChainRow({
         </MenuProvider>
 
         {/* Rename Dialog - Material-UI */}
-        <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)}>
+        <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)} fullScreen={isMobile}>
           <DialogTitle>Rename chain</DialogTitle>
           <DialogContent sx={{ minWidth: '400px' }}>
             <p style={{ marginBottom: '16px', color: '#6b7280' }}>
