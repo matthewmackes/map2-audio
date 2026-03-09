@@ -2601,7 +2601,7 @@ Last updated: 2026-03-09 20:05 - Codex
   - Suggested next tasks: T066-subQ, T066-subR.
 
 ID: T066-subQ
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: USB-to-DIN adapter support and external interface integration guide
 Description:
 - Goal / acceptance criteria: Verify and document that MAP2 MIDI Hub works with any class-compliant USB-to-DIN MIDI adapter as a "dumb pipe" — the adapter provides physical DIN connectivity while MAP2 handles all intelligence. Test with: (1) CME H2MIDI Pro (USB-C + DIN), (2) generic USB-MIDI cable (e.g., Roland UM-ONE mk2), (3) multi-port interface (e.g., MOTU micro lite, iConnectivity mioXM if available). For each adapter: verify port auto-detection, bidirectional SysEx pass-through to MPX1, latency measurement, hot-plug recovery. Document any adapter-specific quirks (port naming, SysEx chunking, timing jitter). Publish `docs/midi/USB_DIN_ADAPTER_COMPATIBILITY.md` with tested adapters and recommended models. If the CME H2MIDI Pro is present, also document its standalone preset configuration as a bonus fallback mode (HxMIDI Tool guide), but this is optional — MAP2 does not depend on it.
@@ -2611,7 +2611,14 @@ Description:
 - Required outputs: Compatibility test matrix, adapter-specific notes, `docs/midi/USB_DIN_ADAPTER_COMPATIBILITY.md`, optional CME standalone guide.
 Subtasks: None
 Assigned to: User + Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 20:24 - Codex
+- Blocker notes:
+  - Blocked by hardware/runtime constraints in this execution environment: ALSA sequencer access unavailable (`/dev/snd/seq` open failure) and no attached USB-MIDI adapters discoverable (`amidi -l` empty).
+  - Physical verification for CME H2MIDI Pro / Roland UM-ONE class cables / MOTU or iConnectivity multi-port adapters requires host access with connected hardware.
+- Progress captured:
+  - Authored compatibility matrix + execution runbook at `docs/midi/USB_DIN_ADAPTER_COMPATIBILITY.md`, including command-level evidence, pending matrix, and close-out procedure for hardware validation.
+  - Confirmed software-path readiness via existing automated tests around registry/gateway/routing surfaces; physical adapter matrix remains pending.
+  - Suggested next tasks: Provide hardware-connected validation run results, then reopen T066-subQ and mark done.
 
 ID: T066-subR
 Status: [>] In Progress
