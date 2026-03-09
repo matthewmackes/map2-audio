@@ -30,6 +30,7 @@ export function MidiPatchbay() {
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null)
+  const [showHeatmap, setShowHeatmap] = useState(true)
 
   const statusQuery = useQuery({
     queryKey: ['midi-hub', 'status'],
@@ -47,6 +48,12 @@ export function MidiPatchbay() {
     queryKey: ['midi-hub', 'topology'],
     queryFn: midiHubApi.getTopology,
     refetchInterval: 2500,
+  })
+
+  const trafficQuery = useQuery({
+    queryKey: ['midi-hub', 'traffic', 'patchbay-heatmap'],
+    queryFn: () => midiHubApi.getTrafficSnapshot({ limit: 1000 }),
+    refetchInterval: 1000,
   })
 
   const ports = useMemo(() => {
@@ -143,6 +150,24 @@ export function MidiPatchbay() {
     return rows
   }, [routesQuery.data?.routes, nodeById])
 
+  const routeHeat = useMemo(() => {
+    const rows = trafficQuery.data?.records ?? []
+    const counts = new Map<string, number>()
+    for (const row of rows) {
+      if (!row.route_id) continue
+      counts.set(row.route_id, (counts.get(row.route_id) ?? 0) + 1)
+    }
+    return counts
+  }, [trafficQuery.data?.records])
+
+  const maxHeat = useMemo(() => {
+    let max = 0
+    for (const value of routeHeat.values()) {
+      if (value > max) max = value
+    }
+    return max
+  }, [routeHeat])
+
   const handleNodeClick = (node: NodeInfo) => {
     if (!pendingSource) {
       setPendingSource(node.id)
@@ -161,9 +186,13 @@ export function MidiPatchbay() {
         <div className="flex" style={{ gap: 8 }}>
           <Chip size="small" label={`Nodes: ${nodes.length}`} />
           <Chip size="small" label={`Links: ${links.length}`} />
+          <Chip size="small" color={showHeatmap ? 'warning' : 'default'} label={`Heatmap ${showHeatmap ? 'On' : 'Off'}`} />
           {pendingSource ? <Chip size="small" color="warning" label={`Source selected: ${pendingSource}`} /> : null}
         </div>
         <div className="flex" style={{ gap: 8 }}>
+          <Button size="small" variant="outlined" onClick={() => setShowHeatmap((value) => !value)}>
+            Heatmap
+          </Button>
           <Button size="small" variant="outlined" onClick={() => setScale((value) => Math.max(0.6, value - 0.1))}>
             -
           </Button>
@@ -201,8 +230,19 @@ export function MidiPatchbay() {
 
           <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
             {links.map(({ route, source, destination }) => {
-              const color = routeColor(route)
-              const strokeWidth = route.enabled ? 3 : 1.5
+              const baselineColor = routeColor(route)
+              const hits = routeHeat.get(route.route_id) ?? 0
+              const normalized = maxHeat > 0 ? hits / maxHeat : 0
+              const color = showHeatmap
+                ? normalized > 0.66
+                  ? '#ef4444'
+                  : normalized > 0.33
+                    ? '#f59e0b'
+                    : normalized > 0
+                      ? '#22c55e'
+                      : '#334155'
+                : baselineColor
+              const strokeWidth = route.enabled ? 2 + normalized * 4 : 1.5
               return (
                 <path
                   key={`${route.route_id}-${destination.id}`}

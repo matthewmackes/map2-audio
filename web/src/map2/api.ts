@@ -1522,6 +1522,46 @@ export interface Midi2DeviceState {
   last_discovery_at?: number | null;
 }
 
+export interface MidiHubLearnSuggestion {
+  cc_number: number;
+  channel: number;
+  confidence: number;
+  reason: string;
+  chain_context?: Record<string, unknown>;
+}
+
+export interface MidiHubMacro {
+  macro_id: string;
+  name: string;
+  trigger: Record<string, unknown>;
+  actions: Array<Record<string, unknown>>;
+  enabled: boolean;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface MidiHubRecordingSession {
+  session_id: string;
+  name: string;
+  created_at: number;
+  started_at?: number | null;
+  stopped_at?: number | null;
+  loop_enabled: boolean;
+  event_count: number;
+}
+
+export interface MidiHubScheduledEntry {
+  schedule_id: string;
+  destination_port: string;
+  message_hex: string;
+  run_at_ns: number;
+  created_at: number;
+  metadata: Record<string, unknown>;
+  status: string;
+  sent_at?: number | null;
+  error?: string | null;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
 
@@ -1831,6 +1871,175 @@ export const midiHubApi = {
     fetchJson<{ message: number[] }>(`${API_BASE}/midi/hub/midi2/translate/ump-to-midi1`, {
       method: 'POST',
       body: JSON.stringify({ words }),
+    }),
+
+  getLearnSuggestions: (payload: { parameter_id: string; chain_context?: Record<string, unknown> }) =>
+    fetchJson<{
+      ok: boolean;
+      parameter_id: string;
+      suggestions: MidiHubLearnSuggestion[];
+      plugin_context: Record<string, unknown>;
+      split_suggestions: Array<Record<string, unknown>>;
+    }>(`${API_BASE}/midi/hub/learn/suggestions`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  listMacros: () =>
+    fetchJson<{ count: number; macros: MidiHubMacro[] }>(`${API_BASE}/midi/hub/macros`),
+  getMacro: (macroId: string) =>
+    fetchJson<{ ok: boolean; macro?: MidiHubMacro | null }>(`${API_BASE}/midi/hub/macros/${encodeURIComponent(macroId)}`),
+  upsertMacro: (payload: {
+    macro_id: string;
+    name: string;
+    trigger?: Record<string, unknown>;
+    actions?: Array<Record<string, unknown>>;
+    enabled?: boolean;
+  }) =>
+    fetchJson<{ ok: boolean; macro: MidiHubMacro }>(`${API_BASE}/midi/hub/macros`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteMacro: (macroId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/macros/${encodeURIComponent(macroId)}`, {
+      method: 'DELETE',
+    }),
+  triggerMacro: (macroId: string, payload?: Record<string, unknown>) =>
+    fetchJson<{ ok: boolean; macro_id: string }>(`${API_BASE}/midi/hub/macros/${encodeURIComponent(macroId)}/trigger`, {
+      method: 'POST',
+      body: JSON.stringify({ payload: payload ?? {} }),
+    }),
+  matchMacros: (payload: Record<string, unknown>) =>
+    fetchJson<{ ok: boolean; count: number; triggered_macro_ids: string[] }>(`${API_BASE}/midi/hub/macros/match`, {
+      method: 'POST',
+      body: JSON.stringify({ payload }),
+    }),
+
+  listRecordingSessions: () =>
+    fetchJson<{ count: number; sessions: MidiHubRecordingSession[] }>(`${API_BASE}/midi/hub/recorder/sessions`),
+  getRecordingSession: (sessionId: string, includeEvents = false) =>
+    fetchJson<{ ok: boolean; session?: MidiHubRecordingSession | Record<string, unknown> | null }>(
+      `${API_BASE}/midi/hub/recorder/sessions/${encodeURIComponent(sessionId)}?include_events=${includeEvents ? 'true' : 'false'}`
+    ),
+  startRecording: (payload: { session_id: string; name?: string }) =>
+    fetchJson<{ ok: boolean; session: MidiHubRecordingSession }>(`${API_BASE}/midi/hub/recorder/start`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  stopRecording: () =>
+    fetchJson<{ ok: boolean; session?: MidiHubRecordingSession | null }>(`${API_BASE}/midi/hub/recorder/stop`, {
+      method: 'POST',
+    }),
+  playbackRecording: (sessionId: string, payload?: { destination_override?: string; loop?: boolean; speed?: number }) =>
+    fetchJson<{ ok: boolean; session_id: string; loop: boolean; speed: number }>(
+      `${API_BASE}/midi/hub/recorder/sessions/${encodeURIComponent(sessionId)}/playback`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload ?? {}),
+      }
+    ),
+  stopRecordingPlayback: (sessionId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/recorder/sessions/${encodeURIComponent(sessionId)}/stop`, {
+      method: 'POST',
+    }),
+  exportRecording: (
+    sessionId: string,
+    payload?: { export_path?: string; bpm?: number; ticks_per_quarter?: number }
+  ) =>
+    fetchJson<{ ok: boolean; path: string; session_id: string; event_count: number }>(
+      `${API_BASE}/midi/hub/recorder/sessions/${encodeURIComponent(sessionId)}/export`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload ?? {}),
+      }
+    ),
+  deleteRecording: (sessionId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/recorder/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    }),
+
+  listSchedulerEntries: (includeFinished = true) =>
+    fetchJson<{ count: number; entries: MidiHubScheduledEntry[] }>(
+      `${API_BASE}/midi/hub/scheduler?include_finished=${includeFinished ? 'true' : 'false'}`
+    ),
+  getSchedulerEntry: (scheduleId: string) =>
+    fetchJson<{ ok: boolean; entry?: MidiHubScheduledEntry | null }>(
+      `${API_BASE}/midi/hub/scheduler/${encodeURIComponent(scheduleId)}`
+    ),
+  createSchedulerEntry: (payload: {
+    schedule_id: string;
+    destination_port: string;
+    message: number[];
+    delay_ms?: number;
+    run_at_ns?: number;
+    metadata?: Record<string, unknown>;
+  }) =>
+    fetchJson<{ ok: boolean; entry: MidiHubScheduledEntry }>(`${API_BASE}/midi/hub/scheduler`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateSchedulerEntry: (
+    scheduleId: string,
+    payload: {
+      destination_port?: string;
+      message?: number[];
+      delay_ms?: number;
+      run_at_ns?: number;
+      metadata?: Record<string, unknown>;
+    }
+  ) =>
+    fetchJson<{ ok: boolean; entry: MidiHubScheduledEntry }>(
+      `${API_BASE}/midi/hub/scheduler/${encodeURIComponent(scheduleId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }
+    ),
+  cancelSchedulerEntry: (scheduleId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/scheduler/${encodeURIComponent(scheduleId)}`, {
+      method: 'DELETE',
+    }),
+  clearFinishedSchedulerEntries: () =>
+    fetchJson<{ ok: boolean; removed: number }>(`${API_BASE}/midi/hub/scheduler/clear-finished`, {
+      method: 'POST',
+    }),
+
+  getMeshStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/network/mesh`),
+  upsertMeshPeer: (payload: { peer_id: string; base_url: string; active?: boolean }) =>
+    fetchJson<{ ok: boolean; peer: Record<string, unknown> }>(`${API_BASE}/midi/hub/network/mesh/peers`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteMeshPeer: (peerId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/network/mesh/peers/${encodeURIComponent(peerId)}`, {
+      method: 'DELETE',
+    }),
+  setMeshForwarding: (forwardingEnabled: boolean) =>
+    fetchJson<{ ok: boolean; forwarding_enabled: boolean }>(`${API_BASE}/midi/hub/network/mesh/forwarding`, {
+      method: 'PUT',
+      body: JSON.stringify({ forwarding_enabled: forwardingEnabled }),
+    }),
+  publishMeshRoutes: (payload: { source_instance?: string; routes: Array<Record<string, unknown>>; fanout?: boolean }) =>
+    fetchJson<{ ok: boolean; route_count: number }>(`${API_BASE}/midi/hub/network/mesh/routes`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getDeviceShadow: (limit = 200) =>
+    fetchJson<{ count: number; events: Array<Record<string, unknown>>; shadow_state: Record<string, unknown> }>(
+      `${API_BASE}/midi/hub/devices/shadow?limit=${Math.max(1, Math.min(5000, limit))}`
+    ),
+  upsertDeviceShadow: (deviceId: string, payload: { expected_state: Record<string, unknown>; source?: string }) =>
+    fetchJson<{ device_id: string; drift_detected: boolean; drift: Record<string, unknown> | null }>(
+      `${API_BASE}/midi/hub/devices/${encodeURIComponent(deviceId)}/shadow`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }
+    ),
+  clearDeviceShadowEvents: () =>
+    fetchJson<{ ok: boolean; cleared: number }>(`${API_BASE}/midi/hub/devices/shadow/clear`, {
+      method: 'POST',
     }),
 
   getTrafficSnapshot: (params?: {
@@ -4103,7 +4312,7 @@ export const tesiraApi = {
     if (profile) search.set('profile', profile)
     const query = search.toString()
     return fetch(`${BASE}/devices/${encodeURIComponent(deviceId)}/designs/library${query ? `?${query}` : ''}`)
-      .then((r) => _json<TesiraDesignLibraryResponse>(r)),
+      .then((r) => _json<TesiraDesignLibraryResponse>(r))
   },
 
   createDesign: (deviceId: string, body: {

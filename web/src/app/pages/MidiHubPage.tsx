@@ -11,6 +11,10 @@ import { MidiScriptEditor } from '../components/MidiHub/MidiScriptEditor'
 import { MidiClockPanel } from '../components/MidiHub/MidiClockPanel'
 import { MidiNetworkPanel } from '../components/MidiHub/MidiNetworkPanel'
 import { Midi2Panel } from '../components/MidiHub/Midi2Panel'
+import { MidiMacroPanel } from '../components/MidiHub/MidiMacroPanel'
+import { MidiRecorderPanel } from '../components/MidiHub/MidiRecorderPanel'
+import { MidiSchedulerPanel } from '../components/MidiHub/MidiSchedulerPanel'
+import { MidiInnovationPanel } from '../components/MidiHub/MidiInnovationPanel'
 import { useToasts } from '../components/Toasts'
 import { midiHubApi } from '../../map2/api'
 
@@ -104,6 +108,30 @@ export function MidiHubPage() {
       </div>
 
       <div className="card">
+        <h3 style={{ marginTop: 0 }}>Cross-Device Macros</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          Event-triggered macro actions with timed cross-target execution.
+        </p>
+        <MidiMacroPanel />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Performance Recorder</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          Capture timestamped MIDI sessions, playback, and export Standard MIDI files.
+        </p>
+        <MidiRecorderPanel />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Message Scheduler</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          Queue future MIDI messages with precise timing, cancellation, and clear-finished tools.
+        </p>
+        <MidiSchedulerPanel />
+      </div>
+
+      <div className="card">
         <h3 style={{ marginTop: 0 }}>Clock Engine</h3>
         <p className="subtitle" style={{ marginTop: 0 }}>
           Tempo detection/generation with tap tempo and distribution to selected MIDI outputs.
@@ -125,6 +153,14 @@ export function MidiHubPage() {
           MIDI-CI discovery, profile/property management, and MIDI1/UMP translation utilities.
         </p>
         <Midi2Panel />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Innovation Controls</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          AI learn suggestions, plugin-aware split helpers, network mesh, and device drift shadow state.
+        </p>
+        <MidiInnovationPanel />
       </div>
 
       <div className="card">

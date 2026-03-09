@@ -2575,7 +2575,7 @@ Last updated: 2026-03-09 18:10 - Codex
   - Suggested next tasks: T066-subP, T066-subQ, T066-subR.
 
 ID: T066-subP
-Status: [>] In Progress
+Status: [✓] Done
 Title: MAP2-exclusive innovations implementation (AI learn, macros, recording, heatmap)
 Description:
 - Goal / acceptance criteria: Implement the 10 MAP2-exclusive innovations listed in the T066 description. Delivered as extensions to existing MidiHub subsystems: (1) **AI-assisted MIDI Learn** — extend `MIDILearnManager` to analyze incoming CC patterns and auto-suggest parameter mappings based on current chain topology and common usage heuristics (rule-based, not ML — e.g., CC1→mod, CC7→vol, CC11→expression, expression pedal→wah). (2) **Cross-device macro triggers** — `app/services/midi_hub/macros.py`: define macro = list of {target, action, delay_ms}, triggered by MIDI event or API call, executed with per-target timing. (3) **MIDI performance recording + playback** — `app/services/midi_hub/recorder.py`: record timestamped MIDI events to session file, playback with transport controls (play/pause/stop/seek/loop), export as Standard MIDI File (SMF). (4) **Latency-compensated routing** — extend router to measure per-gateway RTT and pre-delay outbound messages for simultaneous arrival. (5) **Context-aware routing profiles** — extend preset system with activation conditions (active chain, loaded preset, time, webhook trigger). (6) **MIDI activity heatmap** — frontend overlay on patchbay showing message density per route with color gradient (cool=idle, warm=active, hot=saturated). (7) **Bidirectional device state sync** — extend device registry with shadow state model; detect drift via periodic SysEx queries, emit `midi:device_drift` event. (8) **MIDI message scheduling queue** — `app/services/midi_hub/scheduler.py`: schedule messages for future delivery with cancel/modify, supports absolute time and relative delay. (9) **Plugin-chain-aware MIDI splits** — hook into JUCE chain topology changes, auto-suspend mappings for bypassed plugins, auto-suggest for new plugins. (10) **Network MIDI mesh** — extend RTP-MIDI (T066-subN) with route table sharing and cross-instance message forwarding.
@@ -2585,7 +2585,20 @@ Description:
 - Required outputs: AI learn heuristics, macro engine, MIDI recorder with SMF export, latency compensation, context-aware presets, heatmap component, state sync, scheduler, chain-aware splits, mesh protocol, tests for each.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 20:05 - Codex
+- Completion notes:
+  - What was done: Added/activated innovation API surface in `app/routes/midi_hub.py` for AI learn suggestions (`/learn/suggestions`), macro CRUD/trigger/match, recorder session lifecycle/playback/export, scheduler queue CRUD, mesh peer/forwarding/routes, and device shadow drift routes.
+  - What was done: Landed runtime services for cross-device macros (`app/services/midi_hub/macros.py`), MIDI recorder+SMF export (`app/services/midi_hub/recorder.py`), scheduling queue (`app/services/midi_hub/scheduler.py`), mesh forwarding + route sharing (`app/services/midi_hub/network.py`), and device shadow/drift detection (`app/services/midi_hub/device_registry.py` with `midi:device_drift` emission).
+  - What was done: Extended frontend API client and MIDI Hub UX with new innovation panels (`MidiMacroPanel.tsx`, `MidiRecorderPanel.tsx`, `MidiSchedulerPanel.tsx`, `MidiInnovationPanel.tsx`) and upgraded `MidiPatchbay.tsx` with activity heatmap overlay (route density coloring + dynamic stroke width).
+  - What was done: Added innovation coverage tests in `tests/midi_hub/test_traffic_routes.py` for learn heuristics, macros, recorder/export/playback, scheduler update/cancel, mesh routes/forwarding, and shadow drift endpoints.
+  - Validation:
+    - `timeout 240s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py` -> PASS
+    - `npm --prefix web run typecheck` -> PASS
+    - `python3 -m compileall app/routes/midi_hub.py app/services/midi_hub/network.py app/services/midi_hub/device_registry.py app/services/midi_hub/macros.py app/services/midi_hub/recorder.py app/services/midi_hub/scheduler.py` -> PASS
+    - `npm exec eslint src/app/components/MidiHub/MidiPatchbay.tsx src/app/components/MidiHub/MidiMacroPanel.tsx src/app/components/MidiHub/MidiRecorderPanel.tsx src/app/components/MidiHub/MidiSchedulerPanel.tsx src/app/components/MidiHub/MidiInnovationPanel.tsx src/app/pages/MidiHubPage.tsx` (run in `web/`) -> PASS
+    - `npm --prefix web run lint` -> FAIL (pre-existing repo-wide lint baseline, unrelated to this item; ~3.4k existing errors)
+  - Files/links produced: `app/routes/midi_hub.py`, `app/services/midi_hub/network.py`, `app/services/midi_hub/device_registry.py`, `app/services/midi_hub/macros.py`, `app/services/midi_hub/recorder.py`, `app/services/midi_hub/scheduler.py`, `tests/midi_hub/test_traffic_routes.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/MidiPatchbay.tsx`, `web/src/app/components/MidiHub/MidiMacroPanel.tsx`, `web/src/app/components/MidiHub/MidiRecorderPanel.tsx`, `web/src/app/components/MidiHub/MidiSchedulerPanel.tsx`, `web/src/app/components/MidiHub/MidiInnovationPanel.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T066-subQ, T066-subR.
 
 ID: T066-subQ
 Status: [>] In Progress

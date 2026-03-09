@@ -1,14 +1,21 @@
+import time
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes import midi_hub as midi_hub_routes
 from app.services.midi_hub.clock_engine import MidiClockEngine
+from app.services.midi_hub.device_registry import MidiDeviceRegistry
 from app.services.midi_hub.hub import MidiHub
+from app.services.midi_hub.macros import MidiMacroService
 from app.services.midi_hub.midi2 import Midi2Manager
 from app.services.midi_hub.network import MidiNetworkBridge
+from app.services.midi_hub.recorder import MidiRecorder
 from app.services.midi_hub.router import MidiRouter
-from app.services.midi_hub.ports import VirtualMidiPort
+from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
 from app.services.midi_hub.preset_service import MidiHubPresetService
+from app.services.midi_hub.scheduler import MidiMessageScheduler
 from app.services.midi_hub.script_engine import MidiScriptEngine
 from app.services.midi_hub.traffic_monitor import MidiTrafficMonitor, MidiTrafficRecord
 
@@ -29,6 +36,15 @@ def _build_client(tmp_path, monkeypatch):
     clock_engine = MidiClockEngine(hub=hub)
     network_bridge = MidiNetworkBridge(hub=hub)
     midi2_manager = Midi2Manager(enabled=False)
+    registry = MidiDeviceRegistry(hub)
+    macro_service = MidiMacroService(
+        hub=hub,
+        router=router,
+        preset_service=preset_service,
+        storage_path=tmp_path / "macros.json",
+    )
+    recorder = MidiRecorder(hub=hub, storage_dir=tmp_path / "recordings")
+    scheduler = MidiMessageScheduler(hub=hub, storage_path=tmp_path / "scheduler.json")
 
     monkeypatch.setattr(midi_hub_routes, "get_midi_hub", lambda: hub)
     monkeypatch.setattr(midi_hub_routes, "get_midi_router", lambda: router)
@@ -38,6 +54,10 @@ def _build_client(tmp_path, monkeypatch):
     monkeypatch.setattr(midi_hub_routes, "get_midi_clock_engine", lambda: clock_engine)
     monkeypatch.setattr(midi_hub_routes, "get_midi_network_bridge", lambda: network_bridge)
     monkeypatch.setattr(midi_hub_routes, "get_midi2_manager", lambda: midi2_manager)
+    monkeypatch.setattr(midi_hub_routes, "get_midi_device_registry", lambda: registry)
+    monkeypatch.setattr(midi_hub_routes, "get_midi_macro_service", lambda: macro_service)
+    monkeypatch.setattr(midi_hub_routes, "get_midi_recorder", lambda: recorder)
+    monkeypatch.setattr(midi_hub_routes, "get_midi_scheduler", lambda: scheduler)
 
     app = FastAPI()
     app.include_router(midi_hub_routes.router)
@@ -475,3 +495,203 @@ def test_midi2_routes_config_discovery_profiles_properties_and_translate(tmp_pat
     to_midi1 = client.post("/api/midi/hub/midi2/translate/ump-to-midi1", json={"words": to_ump.json()["words"]})
     assert to_midi1.status_code == 200
     assert to_midi1.json()["message"][:3] == [0x90, 60, 100]
+
+
+def test_subp_innovation_routes_learn_macro_recorder_scheduler_mesh_and_shadow(tmp_path, monkeypatch):
+    client, hub, router, _, _, _, _, _, _ = _build_client(tmp_path, monkeypatch)
+
+    start = client.post("/api/midi/hub/start")
+    assert start.status_code == 200
+
+    learn = client.post(
+        "/api/midi/hub/learn/suggestions",
+        json={
+            "parameter_id": "wah_filter_mix",
+            "chain_context": {
+                "active_plugins": ["wah", "delay"],
+                "bypassed_plugins": ["chorus"],
+                "split_targets": ["chain_A", "chain_B"],
+            },
+        },
+    )
+    assert learn.status_code == 200
+    learn_payload = learn.json()
+    assert learn_payload["ok"] is True
+    assert learn_payload["suggestions"]
+    assert learn_payload["plugin_context"]["auto_suspended"] is True
+    assert len(learn_payload["split_suggestions"]) == 2
+
+    macro_create = client.post(
+        "/api/midi/hub/macros",
+        json={
+            "macro_id": "macro_a",
+            "name": "Macro A",
+            "trigger": {"message_type": "control_change", "cc": 11},
+            "actions": [
+                {
+                    "target": "dst",
+                    "action": "send_midi",
+                    "delay_ms": 0,
+                    "params": {"message": [0xB0, 11, 100]},
+                }
+            ],
+            "enabled": True,
+        },
+    )
+    assert macro_create.status_code == 200
+    assert macro_create.json()["ok"] is True
+
+    macros = client.get("/api/midi/hub/macros")
+    assert macros.status_code == 200
+    assert macros.json()["count"] == 1
+
+    macro_trigger = client.post("/api/midi/hub/macros/macro_a/trigger", json={"payload": {"source": "test"}})
+    assert macro_trigger.status_code == 200
+    assert macro_trigger.json()["ok"] is True
+
+    macro_match = client.post(
+        "/api/midi/hub/macros/match",
+        json={"payload": {"message_type": "control_change", "cc": 11}},
+    )
+    assert macro_match.status_code == 200
+    assert "macro_a" in macro_match.json()["triggered_macro_ids"]
+
+    recorder_start = client.post("/api/midi/hub/recorder/start", json={"session_id": "take1", "name": "Take 1"})
+    assert recorder_start.status_code == 200
+    hub.inject(
+        MidiMessage(
+            data=bytes([0x90, 60, 100]),
+            timestamp_ns=time.time_ns(),
+            source_port="src",
+            destination_port="dst",
+            metadata={"test": True},
+        )
+    )
+    time.sleep(0.06)
+    recorder_stop = client.post("/api/midi/hub/recorder/stop")
+    assert recorder_stop.status_code == 200
+    assert recorder_stop.json()["ok"] is True
+
+    recorder_get = client.get("/api/midi/hub/recorder/sessions/take1?include_events=true")
+    assert recorder_get.status_code == 200
+    assert recorder_get.json()["session"]["event_count"] >= 1
+
+    export_path = tmp_path / "take1.mid"
+    recorder_export = client.post(
+        "/api/midi/hub/recorder/sessions/take1/export",
+        json={"export_path": str(export_path), "bpm": 120.0, "ticks_per_quarter": 480},
+    )
+    assert recorder_export.status_code == 200
+    assert Path(recorder_export.json()["path"]).exists()
+
+    playback = client.post(
+        "/api/midi/hub/recorder/sessions/take1/playback",
+        json={"destination_override": "dst", "loop": False, "speed": 1.0},
+    )
+    assert playback.status_code == 200
+    stop_playback = client.post("/api/midi/hub/recorder/sessions/take1/stop")
+    assert stop_playback.status_code == 200
+    assert "ok" in stop_playback.json()
+
+    scheduled = client.post(
+        "/api/midi/hub/scheduler",
+        json={
+            "schedule_id": "sch1",
+            "destination_port": "dst",
+            "message": [0xC0, 10],
+            "delay_ms": 0,
+            "metadata": {"source": "test"},
+        },
+    )
+    assert scheduled.status_code == 200
+    assert scheduled.json()["ok"] is True
+
+    scheduler_list = client.get("/api/midi/hub/scheduler")
+    assert scheduler_list.status_code == 200
+    assert scheduler_list.json()["count"] >= 1
+
+    scheduler_update = client.put(
+        "/api/midi/hub/scheduler/sch1",
+        json={"delay_ms": 100, "message": [0xC0, 11], "metadata": {"updated": True}},
+    )
+    assert scheduler_update.status_code == 200
+    assert scheduler_update.json()["entry"]["schedule_id"] == "sch1"
+
+    scheduler_cancel = client.delete("/api/midi/hub/scheduler/sch1")
+    assert scheduler_cancel.status_code == 200
+    assert scheduler_cancel.json()["ok"] is True
+
+    mesh_status = client.get("/api/midi/hub/network/mesh")
+    assert mesh_status.status_code == 200
+    assert mesh_status.json()["peer_count"] == 0
+
+    mesh_peer = client.post(
+        "/api/midi/hub/network/mesh/peers",
+        json={"peer_id": "peer_a", "base_url": "http://127.0.0.1:9", "active": True},
+    )
+    assert mesh_peer.status_code == 200
+    assert mesh_peer.json()["peer"]["peer_id"] == "peer_a"
+
+    mesh_forwarding = client.put("/api/midi/hub/network/mesh/forwarding", json={"forwarding_enabled": True})
+    assert mesh_forwarding.status_code == 200
+    assert mesh_forwarding.json()["forwarding_enabled"] is True
+
+    router.add_route(
+        {
+            "route_id": "mesh_route_a",
+            "source_port": "src",
+            "destination_ports": ["dst"],
+            "enabled": True,
+            "priority": 90,
+        }
+    )
+    mesh_routes = client.post(
+        "/api/midi/hub/network/mesh/routes",
+        json={
+            "source_instance": "local",
+            "routes": router.list_routes(),
+            "fanout": False,
+        },
+    )
+    assert mesh_routes.status_code == 200
+    assert mesh_routes.json()["route_count"] >= 1
+
+    mesh_forward = client.post(
+        "/api/midi/hub/network/mesh/forward",
+        json={
+            "source_instance": "peer_a",
+            "source_port": "mesh:peer_a",
+            "destination_port": "dst",
+            "data_hex": "903c64",
+            "metadata": {"mesh": True},
+        },
+    )
+    assert mesh_forward.status_code == 200
+    assert mesh_forward.json()["ok"] is True
+
+    mesh_peer_delete = client.delete("/api/midi/hub/network/mesh/peers/peer_a")
+    assert mesh_peer_delete.status_code == 200
+    assert mesh_peer_delete.json()["ok"] is True
+
+    shadow_seed = client.put(
+        "/api/midi/hub/devices/usb_din_adapter:lab/shadow",
+        json={
+            "expected_state": {
+                "connected": True,
+                "responding": True,
+                "health": "online",
+                "latency_ms": 1.0,
+            },
+            "source": "test",
+        },
+    )
+    assert shadow_seed.status_code == 200
+    assert "drift_detected" in shadow_seed.json()
+
+    shadow_read = client.get("/api/midi/hub/devices/shadow")
+    assert shadow_read.status_code == 200
+    assert "shadow_state" in shadow_read.json()
+
+    shadow_clear = client.post("/api/midi/hub/devices/shadow/clear")
+    assert shadow_clear.status_code == 200
+    assert shadow_clear.json()["ok"] is True
