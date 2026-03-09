@@ -1,9 +1,9 @@
-"""
-NAM Model Selector Component
-
-Displays available Neural Amp Modeler models and allows selection.
-Integrated into plugin parameter display when NAM is selected.
-"""
+/*
+ * NAM Model Selector Component
+ *
+ * Displays available Neural Amp Modeler models and allows selection.
+ * Integrated into plugin parameter display when NAM is selected.
+ */
 
 import React, { useState, useEffect } from 'react';
 import {
