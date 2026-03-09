@@ -2458,7 +2458,7 @@ Last updated: 2026-03-09 15:32 - Codex
   - Suggested next tasks: T066-subK, T066-subL, T066-subM.
 
 ID: T066-subK
-Status: [>] In Progress
+Status: [✓] Done
 Title: MIDI Hub preset system with snapshot save/recall/compare
 Description:
 - Goal / acceptance criteria: Implement a preset system for the entire MIDI Hub state. A preset captures: all routes (with transforms), all device assignments, all gateway configs, all virtual port definitions. Features: (1) save current hub state as named preset, (2) recall preset (atomic swap — all routes change simultaneously, no MIDI glitches during transition), (3) compare two presets side-by-side (diff view showing added/removed/changed routes), (4) import/export presets as JSON files for sharing/backup, (5) preset chaining — sequence of presets triggered by MIDI PC or timer, (6) 4+ preset slots switchable via MIDI Program Change (iConnectivity parity), (7) default preset loaded on startup. Persist in `~/.map2/midi_hub_presets/`. API: `GET/POST/DELETE /api/midi/hub/presets`, `POST /api/midi/hub/presets/{id}/recall`. UI: preset selector dropdown in hub toolbar + dedicated preset manager page.
@@ -2468,7 +2468,18 @@ Description:
 - Required outputs: Preset service, atomic recall logic, diff/compare, import/export, REST endpoints, UI components, tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 17:10 - Codex
+- Completion notes:
+  - What was done: Added `MidiHubPresetService` with full preset snapshot lifecycle (save/get/list/recall/delete/compare/import/export), default-preset persistence + startup recall, route-table atomic recall via new `MidiRouter.replace_routes`, and snapshot coverage for routes, virtual ports, gateways, device assignments, chains, and program slots.
+  - What was done: Implemented preset chaining controls (chain set/step recall, timer-based chain run/stop) and iConnectivity-style Program Change slot routing (`0..127`) to either direct presets or chain targets (`chain:<id>`).
+  - What was done: Extended MIDI Hub API with preset slots + chain timer endpoints and error-contract hardening for compare/export/import/default operations.
+  - What was done: Integrated preset UX into `/midi-hub`: quick preset selector in the routing toolbar plus a dedicated `MidiHubPresetManager` panel for save/recall/default, compare, import/export, slot mapping, and chain timer controls.
+  - Validation:
+    - `timeout 120s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+    - `python3 -m compileall app/routes/midi_hub.py app/services/midi_hub/preset_service.py app/services/midi_hub/router.py` -> PASS
+  - Files/links produced: `app/services/midi_hub/preset_service.py`, `app/services/midi_hub/router.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_traffic_routes.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/MidiHubPresetManager.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T066-subL, T066-subM, T066-subN.
 
 ID: T066-subL
 Status: [>] In Progress

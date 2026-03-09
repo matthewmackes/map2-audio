@@ -1457,6 +1457,29 @@ export interface MidiHubRouteRequest {
   destination_latency_ms?: Record<string, number>;
 }
 
+export interface MidiHubPresetSummary {
+  preset_id: string;
+  name: string;
+  description: string;
+  created_at: number;
+  updated_at: number;
+  conditions: Record<string, unknown>;
+}
+
+export interface MidiHubPresetPayload {
+  preset_id: string;
+  name: string;
+  description: string;
+  created_at: number;
+  updated_at: number;
+  snapshot: Record<string, unknown>;
+  conditions: Record<string, unknown>;
+}
+
+export interface MidiHubProgramSlotMap {
+  slots: Record<string, string>;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
 
@@ -1497,6 +1520,115 @@ export const midiHubApi = {
 
   getTopology: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/topology`),
   getTransformTypes: () => fetchJson<{ types: Array<Record<string, unknown>> }>(`${API_BASE}/midi/hub/transforms/types`),
+
+  listPresets: () =>
+    fetchJson<{ presets: MidiHubPresetSummary[]; default: Record<string, unknown> }>(`${API_BASE}/midi/hub/presets`),
+
+  getPreset: (presetId: string) =>
+    fetchJson<{ ok: boolean; preset?: MidiHubPresetPayload | null }>(
+      `${API_BASE}/midi/hub/presets/${encodeURIComponent(presetId)}`
+    ),
+
+  savePreset: (payload: {
+    preset_id: string;
+    name: string;
+    description?: string;
+    conditions?: Record<string, unknown>;
+  }) =>
+    fetchJson<{ ok: boolean; preset: MidiHubPresetPayload }>(`${API_BASE}/midi/hub/presets`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  recallPreset: (presetId: string) =>
+    fetchJson<{ ok: boolean; preset?: MidiHubPresetPayload | null }>(
+      `${API_BASE}/midi/hub/presets/${encodeURIComponent(presetId)}/recall`,
+      { method: 'POST' }
+    ),
+
+  deletePreset: (presetId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/presets/${encodeURIComponent(presetId)}`, {
+      method: 'DELETE',
+    }),
+
+  comparePresets: (leftPresetId: string, rightPresetId: string) =>
+    fetchJson<{ ok: boolean; diff: Record<string, unknown> }>(`${API_BASE}/midi/hub/presets/compare`, {
+      method: 'POST',
+      body: JSON.stringify({ left_preset_id: leftPresetId, right_preset_id: rightPresetId }),
+    }),
+
+  exportPreset: (presetId: string, exportPath?: string) =>
+    fetchJson<{ ok: boolean; path: string; preset_id: string }>(
+      `${API_BASE}/midi/hub/presets/${encodeURIComponent(presetId)}/export`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ export_path: exportPath ?? null }),
+      }
+    ),
+
+  importPreset: (filePath: string) =>
+    fetchJson<{ ok: boolean; preset: MidiHubPresetPayload }>(`${API_BASE}/midi/hub/presets/import`, {
+      method: 'POST',
+      body: JSON.stringify({ file_path: filePath }),
+    }),
+
+  getDefaultPreset: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/presets/default`),
+  setDefaultPreset: (presetId?: string | null) =>
+    fetchJson<{ ok: boolean; default_preset_id?: string | null }>(`${API_BASE}/midi/hub/presets/default`, {
+      method: 'PUT',
+      body: JSON.stringify({ preset_id: presetId ?? null }),
+    }),
+  recallDefaultPreset: () =>
+    fetchJson<{ ok: boolean; preset?: MidiHubPresetPayload | null }>(`${API_BASE}/midi/hub/presets/default/recall`, {
+      method: 'POST',
+    }),
+
+  getPresetChains: () => fetchJson<{ count: number; chains: Record<string, string[]> }>(`${API_BASE}/midi/hub/presets/chains`),
+  setPresetChain: (chainId: string, presetIds: string[]) =>
+    fetchJson<{ ok: boolean; chain_id: string; preset_ids: string[] }>(
+      `${API_BASE}/midi/hub/presets/chains/${encodeURIComponent(chainId)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ preset_ids: presetIds }),
+      }
+    ),
+  recallPresetChainStep: (chainId: string, stepIndex: number) =>
+    fetchJson<{ ok: boolean; preset?: MidiHubPresetPayload | null }>(
+      `${API_BASE}/midi/hub/presets/chains/${encodeURIComponent(chainId)}/recall/${stepIndex}`,
+      { method: 'POST' }
+    ),
+  runPresetChain: (chainId: string, payload: { interval_ms: number; cycles?: number | null; start_immediately?: boolean }) =>
+    fetchJson<{ chain_id: string; running: boolean; interval_ms: number; cycles?: number | null }>(
+      `${API_BASE}/midi/hub/presets/chains/${encodeURIComponent(chainId)}/run`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
+  stopPresetChain: (chainId: string) =>
+    fetchJson<{ chain_id: string; running: boolean }>(`${API_BASE}/midi/hub/presets/chains/${encodeURIComponent(chainId)}/stop`, {
+      method: 'POST',
+    }),
+
+  getProgramSlots: () => fetchJson<MidiHubProgramSlotMap>(`${API_BASE}/midi/hub/presets/slots`),
+  setProgramSlot: (programNumber: number, targetId: string) =>
+    fetchJson<{ ok: boolean; program_number: number; target_id: string }>(
+      `${API_BASE}/midi/hub/presets/slots/${programNumber}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ target_id: targetId }),
+      }
+    ),
+  deleteProgramSlot: (programNumber: number) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/presets/slots/${programNumber}`, {
+      method: 'DELETE',
+    }),
+
+  evaluatePresetContext: (context: Record<string, unknown>) =>
+    fetchJson<{ count: number; recalled_preset_ids: string[] }>(`${API_BASE}/midi/hub/presets/context/evaluate`, {
+      method: 'POST',
+      body: JSON.stringify({ context }),
+    }),
 
   getTrafficSnapshot: (params?: {
     limit?: number;

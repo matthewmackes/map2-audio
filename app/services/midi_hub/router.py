@@ -209,6 +209,38 @@ class MidiRouter:
     def set_transform_chain(self, route_id: str, transform_chain: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         return self.update_route(route_id, {"transform_chain": transform_chain})
 
+    def replace_routes(
+        self,
+        routes: Sequence[Dict[str, Any]],
+        *,
+        match_mode: Optional[RouteMatchMode] = None,
+    ) -> List[Dict[str, Any]]:
+        parsed_routes: Dict[str, MidiRoute] = {}
+        for item in routes:
+            route = MidiRoute.from_dict(dict(item))
+            if not route.route_id or not route.source_port or not route.destination_ports:
+                continue
+            parsed_routes[route.route_id] = route
+
+        with self._lock:
+            self._routes_by_id = parsed_routes
+            if match_mode is not None:
+                self._match_mode = "first_match" if match_mode == "first_match" else "all_match"
+            self._rebuild_snapshot_locked()
+            self._persist_routes_locked()
+
+        self._emit_websocket_message(
+            "midi:route_changed",
+            {
+                "action": "replaced",
+                "match_mode": self._match_mode,
+                "routes": [route.to_dict() for route in self._route_snapshot],
+                "timestamp": time.time(),
+            },
+            topic="midi:routes",
+        )
+        return [route.to_dict() for route in self._route_snapshot]
+
     def topology(self) -> Dict[str, Any]:
         routes = self.list_routes()
         nodes = set()
