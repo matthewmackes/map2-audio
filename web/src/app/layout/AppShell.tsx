@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties, Dispatch, ReactNode, SetStateAction } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Sparkle, Info, List, X, Fire, CaretRight, PushPin } from '@phosphor-icons/react'
+import { Sparkle, Info, List, X, Fire, CaretRight, PushPin, Pulse, MusicNotes, Waveform } from '@phosphor-icons/react'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { PasswordDialog } from '../components/PasswordDialog'
 import { SpecialSettingsDialog } from '../components/SpecialSettingsDialog'
@@ -239,6 +239,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [promotedRouteSet])
 
   const isFullBleedRoute = location.pathname === '/avb-routing' || location.pathname.startsWith('/avb-routing/')
+
+  const handleMenuToggle = () => {
+    const nextOpen = !navOpen
+    setNavOpen(nextOpen)
+    setMpx1MenuOpen(false)
+    setTopHardwareSubmenuOpen(false)
+    if (!nextOpen) {
+      setMobileHardwareInterfacesOpen(false)
+    }
+  }
+
+  const closeMobileNavigation = () => {
+    setNavOpen(false)
+    setMobileHardwareInterfacesOpen(false)
+    setMpx1MenuOpen(false)
+    setTopHardwareSubmenuOpen(false)
+  }
 
   const handleDragonIconClick = () => {
     if (specialSettingsLoading) return
@@ -673,15 +690,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <button
             className="nav-hamburger-btn"
-            onClick={() => {
-              const nextOpen = !navOpen
-              setNavOpen(nextOpen)
-              setMpx1MenuOpen(false)
-              setTopHardwareSubmenuOpen(false)
-              if (!nextOpen) {
-                setMobileHardwareInterfacesOpen(false)
-              }
-            }}
+            onClick={handleMenuToggle}
             aria-label="Toggle navigation menu"
             title="Toggle menu"
           >
@@ -713,6 +722,49 @@ export function AppShell({ children }: { children: ReactNode }) {
         onSave={handleSpecialSettingsSave}
       />
       <main className={isFullBleedRoute ? 'app-content app-content--full' : 'app-content'}>{children}</main>
+      <nav className="mobile-bottom-tabbar" aria-label="Mobile quick navigation">
+        <NavLink
+          to="/"
+          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
+          onClick={closeMobileNavigation}
+        >
+          <span className="mobile-bottom-tab-icon">
+            <Pulse size={16} weight="duotone" aria-hidden />
+          </span>
+          <span>Status</span>
+        </NavLink>
+        <NavLink
+          to="/mpx1/perform"
+          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
+          onClick={closeMobileNavigation}
+        >
+          <span className="mobile-bottom-tab-icon">
+            <MusicNotes size={16} weight="duotone" aria-hidden />
+          </span>
+          <span>Scenes</span>
+        </NavLink>
+        <NavLink
+          to="/metering"
+          className={({ isActive }) => `mobile-bottom-tab${isActive ? ' is-active' : ''}`}
+          onClick={closeMobileNavigation}
+        >
+          <span className="mobile-bottom-tab-icon">
+            <Waveform size={16} weight="duotone" aria-hidden />
+          </span>
+          <span>Meters</span>
+        </NavLink>
+        <button
+          type="button"
+          className={`mobile-bottom-tab${navOpen ? ' is-active' : ''}`}
+          onClick={handleMenuToggle}
+          aria-label="Toggle mobile menu"
+        >
+          <span className="mobile-bottom-tab-icon">
+            {navOpen ? <X size={16} weight="duotone" aria-hidden /> : <List size={16} weight="duotone" aria-hidden />}
+          </span>
+          <span>Menu</span>
+        </button>
+      </nav>
     </div>
   )
 }

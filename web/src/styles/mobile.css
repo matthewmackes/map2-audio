@@ -1,3 +1,7 @@
+.mobile-bottom-tabbar {
+  display: none;
+}
+
 @media (max-width: 768px) {
   @keyframes blink {
     0%,
@@ -30,5 +34,108 @@
   .touchTarget {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  .topbar-pro {
+    gap: 0;
+    grid-template-columns: 1fr;
+    min-height: 52px;
+    padding-inline: 12px;
+  }
+
+  .nav-tabs-left,
+  .nav-tabs-right,
+  .nav-hamburger-btn {
+    display: none !important;
+  }
+
+  .nav-tabs-right-container {
+    justify-self: stretch;
+  }
+
+  .nav-active-title {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .nav-active-text {
+    font-size: 16px !important;
+    letter-spacing: 0.06em !important;
+    text-align: center;
+  }
+
+  .nav-tab-item,
+  .nav-tab-label,
+  .nav-tab-advanced-label,
+  .nav-mobile-group-label,
+  .nav-mobile-item,
+  .nav-mobile-item-label,
+  .nav-mobile-item-desc,
+  .nav-mobile-item--submenu,
+  .nav-mobile-submenu-note,
+  .nav-mobile-disabled-note,
+  .nav-mobile-menu-content--desktop .nav-mobile-item,
+  .nav-mobile-menu-content--desktop .nav-mobile-item-label,
+  .nav-mobile-menu-content--desktop .nav-mobile-item-desc,
+  .nav-mobile-menu-content--desktop .nav-mobile-group-label,
+  .nav-mobile-menu-content--desktop .nav-mobile-item--submenu {
+    font-size: 14px !important;
+  }
+
+  .nav-tab-item,
+  .nav-tab-label,
+  .nav-active-text,
+  .nav-tab-advanced-label,
+  .nav-mobile-group-label {
+    letter-spacing: 0.06em !important;
+  }
+
+  .mobile-bottom-tabbar {
+    align-items: stretch;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: 56px;
+    left: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    position: fixed;
+    right: 0;
+    z-index: 36;
+  }
+
+  .mobile-bottom-tab {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    font-size: 14px;
+    font-weight: 600;
+    gap: 4px;
+    justify-content: center;
+    letter-spacing: 0.06em;
+    min-height: 56px;
+    padding: 0 4px;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .mobile-bottom-tab.is-active {
+    background: rgba(37, 99, 235, 0.16);
+    color: var(--text-primary);
+  }
+
+  .mobile-bottom-tab-icon {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  .app-content {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
