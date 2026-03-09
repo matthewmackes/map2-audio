@@ -7,6 +7,34 @@
   height: 100%;
 }
 
+.mpx1-scene-current {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mpx1-scene-current__label {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mpx1-scene-current__name {
+  color: #f8fafc;
+  font-family: 'SFMono-Regular', 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Scene grid */
 .mpx1-scene-grid {
   display: grid;
@@ -197,4 +225,76 @@
 .mpx1-scene-empty__icon {
   font-size: 32px;
   opacity: 0.4;
+}
+
+@media (max-width: 768px) {
+  .mpx1-scene-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mpx1-scene-btn {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr auto;
+    justify-content: space-between;
+    min-height: 56px;
+    padding: 10px 12px;
+    text-align: left;
+  }
+
+  .mpx1-scene-btn__program {
+    font-size: 12px;
+    justify-self: end;
+  }
+
+  .mpx1-scene-btn__tags {
+    display: none;
+  }
+
+  .mpx1-scene-current__name {
+    font-size: 24px;
+  }
+
+  .mpx1-scene-capture-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mpx1-scene-capture-row__input {
+    font-size: 16px;
+    min-height: 48px;
+  }
+
+  .mpx1-scene-capture-row__btn {
+    min-height: 48px;
+    width: 100%;
+  }
+
+  .mpx1-morph-strip__controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mpx1-morph-strip__label {
+    font-size: 14px;
+  }
+
+  .mpx1-morph-strip__select {
+    font-size: 14px;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .mpx1-morph-slider {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .mpx1-morph-strip__btn {
+    font-size: 14px;
+    min-height: 48px;
+    width: 100%;
+  }
 }

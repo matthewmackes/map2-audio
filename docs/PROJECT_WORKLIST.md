@@ -2927,12 +2927,13 @@ Subtasks:
   - T077-P14a: Run 8-point checklist at 360px for every page. Fix all failures. Test at 768px tablet width.
   - T077-P14b: Verify no desktop regressions at 1280px, 1440px, 1920px. Verify all @media rules scoped to max-width: 768px or 360px. Run npm run build for TypeScript validation.
 Assigned to: Codex
-Last updated: 2026-03-09 04:31 - Codex
+Last updated: 2026-03-09 04:38 - Codex
 - Progress notes:
   - Completed Phase 0 foundation: created `web/src/styles/mobile.css`, `web/src/styles/responsive.module.css`, `web/src/app/components/shared/LandscapePrompt.tsx`, `web/src/app/hooks/useIsMobile.ts`, and imported `./styles/mobile.css` in `web/src/main.tsx`.
   - Completed Phase 1 navigation: added mobile bottom tab bar (`Status`, `Scenes`, `Meters`, `Menu`) in `AppShell.tsx`, wired menu-toggle reuse, and added mobile nav typography/visibility overrides in `mobile.css` (hide top nav rails on mobile, centered active title, `14px` font floor for nav classes, `0.06em` uppercase spacing, and `app-content` bottom padding).
   - Completed Phase 2 MPX1 mobile menu: converted `MPX1MegaMenu` to render a mobile bottom sheet (`max-height: 60vh`) with backdrop, large monospace program readout, connection status dot, full-width Mix/Level bars, and `56px` full-width previous/next program buttons while preserving desktop dropdown behavior.
   - Completed Phase 3a Home page responsive pass: wrapped `SystemArchitectureFlow` + `PlatformCapabilities` with `desktopOnly` utility class and added mobile overrides for `stat-grid` single-column layout plus compact `page-header` typography/spacing.
-  - Remaining work: Phases `3b`-`14` are still open and will be executed in follow-on slices with mobile verification at `360px` / `768px` and desktop regression checks.
+  - Completed Phase 3b MPX1 perform responsive pass: added current-scene readout (monospace emphasis), converted mobile scene list to full-width row buttons (`56px` min height), set capture/morph action buttons to `48px` minimum height, and stacked morph controls for full-width slider/select usability.
+  - Remaining work: Phases `3c`-`14` are still open and will be executed in follow-on slices with mobile verification at `360px` / `768px` and desktop regression checks.
 
 ALL UNBLOCKED ITEMS COMPLETE

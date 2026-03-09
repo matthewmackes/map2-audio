@@ -307,6 +307,10 @@ export function MPX1ScenePanel() {
     }
   }, [morphJobId])
 
+  const activeSceneName = activeSceneId
+    ? (scenes.find((scene) => scene.id === activeSceneId)?.name ?? 'Unknown Scene')
+    : 'No Scene Selected'
+
   return (
     <div className="mpx1-scene-panel">
       {error && (
@@ -314,6 +318,11 @@ export function MPX1ScenePanel() {
           {error}
         </div>
       )}
+
+      <div className="mpx1-scene-current">
+        <div className="mpx1-scene-current__label">Current Scene</div>
+        <div className="mpx1-scene-current__name" title={activeSceneName}>{activeSceneName}</div>
+      </div>
 
       <div className="mpx1-scene-capture-row">
         <input
