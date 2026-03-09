@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**707** Python | **951** TypeScript | **282** C++/H | **108** Docs | **376** total commits | **0** stars | **0** forks | **0** open issues
+**707** Python | **953** TypeScript | **282** C++/H | **108** Docs | **378** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8e1aa00d`](https://github.com/matthewmackes/map2-audio/commit/8e1aa00dffc7eeafc3255f74fa525dc7e2482a24) | feat: implement MIDI Hub routing matrix UI and route APIs... | Map2 Audio | 2026-03-08 |
+| [`51ce5d45`](https://github.com/matthewmackes/map2-audio/commit/51ce5d453f193c970236d2d8e59d255c74c2694b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`88ec5d86`](https://github.com/matthewmackes/map2-audio/commit/88ec5d86c8215fae77a5b36add0a67357114b030) | feat: add MIDI Hub traffic monitor API and UI (closes WOR... | Map2 Audio | 2026-03-08 |
 | [`19760640`](https://github.com/matthewmackes/map2-audio/commit/19760640009824b58aaa065c001d2df381c2cb84) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`31fc5b43`](https://github.com/matthewmackes/map2-audio/commit/31fc5b43c89213f668ae1e0ad3315047b4a6ce57) | feat: migrate MIDI consumers to MidiHub bus (closes WORKL... | Map2 Audio | 2026-03-08 |
 | [`c4c22d59`](https://github.com/matthewmackes/map2-audio/commit/c4c22d597d3df70b57fbad6b1fe8720a7e5dabe4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`f39af831`](https://github.com/matthewmackes/map2-audio/commit/f39af8313cb1b4c1137083685e55f1250d111a0c) | feat: complete MIDI Hub transform engine (closes WORKLIST... | Map2 Audio | 2026-03-08 |
 | [`e6a2f7b0`](https://github.com/matthewmackes/map2-audio/commit/e6a2f7b02196afce7aa573334b27cc5625f24410) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-08 |
-| [`95b324af`](https://github.com/matthewmackes/map2-audio/commit/95b324af1bb3749d9272208ad4bf6214774a232f) | merge: close feature/t009-callback-hardening into master | Map2 Audio | 2026-03-08 |
-| [`ba15f8f3`](https://github.com/matthewmackes/map2-audio/commit/ba15f8f3ebc6a0ac63e259b6a6d11ef015415022) | feat(tesira): deliver native design compile pipeline and ... | Map2 Audio | 2026-03-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
