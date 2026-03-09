@@ -138,4 +138,23 @@
   .app-content {
     padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
   }
+
+  .page-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .page-header h1 {
+    font-size: clamp(20px, 6vw, 24px);
+    line-height: 1.15;
+  }
+
+  .page-header p {
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr !important;
+  }
 }

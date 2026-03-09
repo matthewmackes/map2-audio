@@ -7,6 +7,7 @@ import { PlatformCapabilities } from '../components/PlatformCapabilities'
 import { SystemArchitectureFlow } from '../components/SystemArchitectureFlow'
 import { usePipeWire } from '../hooks/usePipeWire'
 import { useAVBStatus } from '../hooks/useAvbStatus'
+import responsive from '../../styles/responsive.module.css'
 
 interface NetworkShareStatus {
   smb_enabled: boolean
@@ -87,10 +88,14 @@ export function HomePage() {
       />
 
       {/* System Architecture & Health - Top Priority */}
-      <SystemArchitectureFlow />
+      <div className={responsive.desktopOnly}>
+        <SystemArchitectureFlow />
+      </div>
 
       {/* Platform Capabilities & Standards */}
-      <PlatformCapabilities />
+      <div className={responsive.desktopOnly}>
+        <PlatformCapabilities />
+      </div>
 
       {/* Unified CPU Status & Management - At Top */}
       <div className="card">
