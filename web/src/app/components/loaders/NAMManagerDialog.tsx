@@ -5,6 +5,7 @@ import { Check, SpinnerGap, ArrowsClockwise, Lightning, X, UploadSimple, Star } 
 import { namApi } from '../../../map2/api'
 import type { NAMModelsResponse, NAMStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 interface Props {
   open: boolean
@@ -14,6 +15,7 @@ interface Props {
 
 export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
   const { pushToast } = useToasts()
+  const isMobile = useIsMobile()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
@@ -133,15 +135,20 @@ export function NAMManagerDialog({ open, onClose, onLoadNAM }: Props) {
         position: 'fixed',
         inset: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: isMobile ? 'stretch' : 'center',
         zIndex: 1000,
       }}
     >
       <div
         className="dialog"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 'min(700px, 90vw)' }}
+        style={{
+          width: isMobile ? '100vw' : 'min(700px, 90vw)',
+          maxHeight: isMobile ? '100vh' : undefined,
+          minHeight: isMobile ? '100vh' : undefined,
+          borderRadius: isMobile ? 0 : undefined,
+        }}
       >
         <div className="flex-between" style={{ marginBottom: 8 }}>
           <div className="flex" style={{ gap: 10, alignItems: 'center' }}>

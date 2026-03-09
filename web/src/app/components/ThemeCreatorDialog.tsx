@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { X, Palette, Check, ArrowCounterClockwise, FloppyDisk, Eye, CaretDown, CaretRight, SpinnerGap } from '@phosphor-icons/react'
 import type { Theme, ThemeColors, ThemeWidgets } from '../theme/types'
 import { applyTheme, getSavedThemeId, themes, themeOrder, getCustomThemes, deleteCustomTheme, getAllThemes } from '../theme'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface WelcomeBannerStatus {
   installed: boolean
@@ -191,6 +192,7 @@ export function ThemeCreatorDialog({
   onToggleBootSplash,
   splashLoading = false
 }: ThemeCreatorDialogProps) {
+  const isMobile = useIsMobile()
   const [themeName, setThemeName] = useState('My Custom Theme')
   const [themeDescription, setThemeDescription] = useState('A custom theme created with the theme editor')
   const [colors, setColors] = useState<ThemeColors>({ ...DEFAULT_COLORS })
@@ -321,8 +323,8 @@ export function ThemeCreatorDialog({
         inset: 0,
         background: 'rgba(0,0,0,0.7)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: isMobile ? 'stretch' : 'center',
         zIndex: 10000,
         backdropFilter: 'blur(4px)'
       }}
@@ -331,11 +333,12 @@ export function ThemeCreatorDialog({
       <div
         style={{
           background: 'var(--surface)',
-          borderRadius: 'var(--border-radius-md)',
+          borderRadius: isMobile ? 0 : 'var(--border-radius-md)',
           border: '1px solid var(--border)',
-          width: '90%',
-          maxWidth: 700,
-          maxHeight: '90vh',
+          width: isMobile ? '100vw' : '90%',
+          maxWidth: isMobile ? '100vw' : 700,
+          maxHeight: isMobile ? '100vh' : '90vh',
+          minHeight: isMobile ? '100vh' : undefined,
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column'
@@ -993,11 +996,14 @@ export function ThemeCreatorDialog({
 
         {/* Footer */}
         <div style={{
-          padding: '16px 20px',
+          padding: isMobile ? '12px 16px' : '16px 20px',
           borderTop: '1px solid var(--border)',
           display: 'flex',
           gap: 10,
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          position: isMobile ? 'sticky' : 'static',
+          bottom: 0,
+          background: isMobile ? 'var(--surface)' : 'transparent',
         }}>
           <button
             onClick={handleReset}

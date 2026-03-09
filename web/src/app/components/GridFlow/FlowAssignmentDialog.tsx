@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { DesktopTower } from '@phosphor-icons/react'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -34,6 +35,7 @@ export function FlowAssignmentDialog({
   onAssign,
   onCancel,
 }: FlowAssignmentDialogProps) {
+  const isMobile = useIsMobile()
   const [selectedNodeId, setSelectedNodeId] = useState<string>('')
   const [redundancyEnabled, setRedundancyEnabled] = useState(false)
 
@@ -74,8 +76,16 @@ export function FlowAssignmentDialog({
   if (!isOpen || !flowId) return null
 
   return (
-    <div className="flow-assignment-dialog-overlay" onClick={onCancel}>
-      <div className="flow-assignment-dialog" onClick={e => e.stopPropagation()}>
+    <div
+      className="flow-assignment-dialog-overlay"
+      onClick={onCancel}
+      style={isMobile ? { alignItems: 'stretch', justifyContent: 'stretch' } : undefined}
+    >
+      <div
+        className="flow-assignment-dialog"
+        onClick={e => e.stopPropagation()}
+        style={isMobile ? { width: '100vw', minHeight: '100vh', borderRadius: 0 } : undefined}
+      >
         <div className="flow-assignment-dialog-header">
           <h2>Assign Flow: {flowId}</h2>
           <button className="flow-assignment-dialog-close" onClick={onCancel}>✕</button>

@@ -5,6 +5,7 @@ import { Check, SpinnerGap, ArrowsClockwise, SpeakerHigh, UploadSimple, WaveSine
 import { irApi } from '../../../map2/api'
 import type { IRsResponse, IRStatus } from '../../../map2/types'
 import { useToasts } from '../Toasts'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 export type IRType = 'cabinet' | 'reverb'
 
@@ -67,6 +68,7 @@ interface Props {
 export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
   const config = IR_CONFIGS[type]
   const Icon = config.icon
+  const isMobile = useIsMobile()
 
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
@@ -152,15 +154,20 @@ export function IRManagerDialog({ type, open, onClose, onLoad }: Props) {
         position: 'fixed',
         inset: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: isMobile ? 'stretch' : 'center',
         zIndex: 1000,
       }}
     >
       <div
         className="dialog"
         onClick={(e) => e.stopPropagation()}
-        style={{ width: 'min(600px, 90vw)' }}
+        style={{
+          width: isMobile ? '100vw' : 'min(600px, 90vw)',
+          maxHeight: isMobile ? '100vh' : undefined,
+          minHeight: isMobile ? '100vh' : undefined,
+          borderRadius: isMobile ? 0 : undefined,
+        }}
       >
         <div className="flex-between" style={{ marginBottom: 8 }}>
           <div className="flex" style={{ gap: 10, alignItems: 'center' }}>

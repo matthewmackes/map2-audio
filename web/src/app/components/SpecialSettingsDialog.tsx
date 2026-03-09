@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react'
 import { X, GearSix, Eye, EyeSlash, List, Monitor, DeviceMobile } from '@phosphor-icons/react'
 import { apiUrl } from '../utils/apiTarget'
 import { getDisplayPluginName } from '../../map2/displayNames'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Plugin {
   uri: string
@@ -38,6 +39,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (isOpen) {
@@ -120,15 +122,21 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
   if (!isOpen) return null
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div
+      className="modal-overlay"
+      onClick={handleClose}
+      style={isMobile ? { alignItems: 'stretch', justifyContent: 'stretch' } : undefined}
+    >
       <div 
         className="modal-dialog" 
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '600px',
-          maxHeight: '80vh',
+          maxWidth: isMobile ? '100vw' : '600px',
+          width: isMobile ? '100vw' : undefined,
+          maxHeight: isMobile ? '100vh' : '80vh',
+          minHeight: isMobile ? '100vh' : undefined,
           background: 'linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(25, 30, 45, 0.95) 100%)',
-          borderRadius: '12px',
+          borderRadius: isMobile ? 0 : '12px',
           border: '1px solid rgba(37, 99, 235, 0.3)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
           display: 'flex',
@@ -173,7 +181,7 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
 
         {/* Content */}
         <div style={{
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           overflowY: 'auto',
           flexGrow: 1,
         }}>
@@ -392,12 +400,15 @@ export function SpecialSettingsDialog({ isOpen, onClose, onSave }: SpecialSettin
 
         {/* Footer */}
         <div style={{
-          padding: '16px 24px',
+          padding: isMobile ? '12px 16px' : '16px 24px',
           borderTop: '1px solid rgba(37, 99, 235, 0.2)',
           display: 'flex',
           gap: '12px',
           justifyContent: 'flex-end',
           flexShrink: 0,
+          position: isMobile ? 'sticky' : 'static',
+          bottom: 0,
+          background: isMobile ? 'var(--surface)' : 'transparent',
         }}>
           <button
             onClick={handleClose}

@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { X, Lock, WarningCircle } from '@phosphor-icons/react'
 import { apiUrl } from '../utils/apiTarget'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface PasswordDialogProps {
   isOpen: boolean
@@ -19,6 +20,7 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const isMobile = useIsMobile()
 
   if (!isOpen) return null
 
@@ -88,16 +90,24 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
   }
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div
+      className="modal-overlay"
+      onClick={handleClose}
+      style={isMobile ? { alignItems: 'stretch', justifyContent: 'stretch' } : undefined}
+    >
       <div 
         className="modal-dialog" 
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '400px',
+          maxWidth: isMobile ? '100vw' : '400px',
+          width: isMobile ? '100vw' : undefined,
+          minHeight: isMobile ? '100vh' : undefined,
           background: 'linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(25, 30, 45, 0.95) 100%)',
-          borderRadius: '12px',
+          borderRadius: isMobile ? 0 : '12px',
           border: '1px solid rgba(37, 99, 235, 0.3)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {/* Header */}
@@ -136,7 +146,10 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1 }}
+        >
           <p style={{
             fontSize: '13px',
             color: '#9ca3af',
@@ -204,6 +217,8 @@ export function PasswordDialog({ isOpen, onClose, onSuccess }: PasswordDialogPro
             display: 'flex',
             gap: '12px',
             justifyContent: 'flex-end',
+            marginTop: isMobile ? 'auto' : 0,
+            paddingTop: isMobile ? 12 : 0,
           }}>
             <button
               type="button"

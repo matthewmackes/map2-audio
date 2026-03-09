@@ -17,6 +17,7 @@ import {
 } from '@phosphor-icons/react'
 import { uploadApi } from '../../../map2/api'
 import { useToasts } from '../Toasts'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 export type AssetType = 'nam' | 'cabinet_ir' | 'reverb_ir' | 'vst3'
 
@@ -104,6 +105,7 @@ export function UnifiedUploadDialog({
   onUploadComplete,
 }: Props) {
   const { pushToast } = useToasts()
+  const isMobile = useIsMobile()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
@@ -331,8 +333,8 @@ export function UnifiedUploadDialog({
         position: 'fixed',
         inset: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: isMobile ? 'stretch' : 'center',
         zIndex: 1000,
       }}
     >
@@ -340,10 +342,12 @@ export function UnifiedUploadDialog({
         className="dialog"
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 'min(700px, 95vw)',
-          maxHeight: '85vh',
+          width: isMobile ? '100vw' : 'min(700px, 95vw)',
+          maxHeight: isMobile ? '100vh' : '85vh',
+          minHeight: isMobile ? '100vh' : undefined,
           display: 'flex',
           flexDirection: 'column',
+          borderRadius: isMobile ? 0 : undefined,
         }}
       >
         {/* Header */}
@@ -536,7 +540,15 @@ export function UnifiedUploadDialog({
 
         {/* Footer */}
         <div className="divider" />
-        <div className="flex-between">
+        <div
+          className="flex-between"
+          style={{
+            position: isMobile ? 'sticky' : 'static',
+            bottom: 0,
+            background: isMobile ? 'var(--surface)' : 'transparent',
+            paddingTop: isMobile ? 12 : 0,
+          }}
+        >
           <span className="muted" style={{ fontSize: 12 }}>
             Supported: .nam, .wav, .aif, .aiff, .flac, .vst3, .zip
           </span>

@@ -11,6 +11,7 @@
 
 import { useState, useCallback, DragEvent, ChangeEvent } from 'react'
 import { UploadSimple, FileArrowUp, CheckCircle, WarningCircle, X, SpinnerGap } from '@phosphor-icons/react'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 interface PresetImportDialogProps {
   isOpen: boolean
@@ -48,6 +49,7 @@ export function PresetImportDialog({
   onImportSuccess,
   targetPluginUri,
 }: PresetImportDialogProps) {
+  const isMobile = useIsMobile()
   const [file, setFile] = useState<File | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -144,8 +146,8 @@ export function PresetImportDialog({
         inset: 0,
         background: 'rgba(0, 0, 0, 0.7)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        justifyContent: isMobile ? 'stretch' : 'center',
         zIndex: 1000,
       }}
       onClick={handleClose}
@@ -153,13 +155,16 @@ export function PresetImportDialog({
       <div
         style={{
           background: 'var(--bg-secondary, #1e1e2e)',
-          borderRadius: '12px',
-          padding: '24px',
-          maxWidth: '500px',
-          width: '90%',
-          maxHeight: '80vh',
+          borderRadius: isMobile ? 0 : '12px',
+          padding: isMobile ? '16px' : '24px',
+          maxWidth: isMobile ? '100vw' : '500px',
+          width: isMobile ? '100vw' : '90%',
+          maxHeight: isMobile ? '100vh' : '80vh',
+          minHeight: isMobile ? '100vh' : undefined,
           overflow: 'auto',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -293,7 +298,17 @@ export function PresetImportDialog({
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            marginTop: '20px',
+            position: isMobile ? 'sticky' : 'static',
+            bottom: 0,
+            background: isMobile ? 'var(--surface)' : 'transparent',
+            paddingTop: isMobile ? 12 : 0,
+          }}
+        >
           <button
             onClick={handleClose}
             style={{
