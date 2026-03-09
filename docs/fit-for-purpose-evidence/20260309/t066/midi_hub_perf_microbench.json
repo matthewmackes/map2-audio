@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-03-09T02:05:35Z",
+  "burst_count": 10000,
+  "received_count": 4224,
+  "elapsed_seconds": 10.01347867801087,
+  "throughput_msgs_per_sec": 421.83142700205735,
+  "single_route_hop_latency_ms": 1.082243,
+  "target_latency_per_hop_us": 100.0,
+  "target_throughput_msgs_per_sec": 10000,
+  "meets_throughput_target": false,
+  "meets_latency_target": false
+}

@@ -2209,7 +2209,7 @@ Last updated: 2026-03-08 16:40 - Codex
 
 
 ID: T066
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: MAP2 Native MIDI Hub — universal routing, processing, and device management engine
 Description:
 - Goal / acceptance criteria: Build a comprehensive, hardware-agnostic MIDI Hub natively into the MAP2 platform that replaces the need for any external MIDI router/processor hardware (CME H2MIDI Pro, Bome Box, iConnectivity mioXM, etc.). MAP2 becomes the central MIDI brain: all USB MIDI devices, DIN MIDI interfaces, virtual ports, and network MIDI endpoints are managed, routed, filtered, mapped, and monitored entirely within the platform. Every existing MAP2 MIDI consumer (JUCE audio engine, MPX1 SysEx bridge, Tesira MIDI dispatcher, MIDI learn, MIDI CC mappings, chain switching) plugs into this unified hub. The system must match or exceed the feature sets of Bome MIDI Translator Pro, iConnectivity Auracle, MIDI-OX, Camelot Pro MIDI patchbay, mididings, and StreamByter — then go further with 10 MAP2-exclusive innovations.
@@ -2217,6 +2217,9 @@ Description:
 - Dependencies: T022 (MPX1 core stack), T036 (sync hardening), T038 (scenes/morphing)
 - Estimated effort: Very High
 - Required outputs: MidiHub core engine, MidiGateway transport layer, MidiDeviceRegistry, MidiRouter with advanced transforms, MidiTrafficMonitor, visual patchbay + matrix UI, scripting engine, MIDI clock engine, RTP-MIDI/network support, MIDI 2.0 readiness, comprehensive REST API + WebSocket events, full test suite, documentation.
+- Blocked notes:
+  - All implementation subtasks through `T066-subP` are complete; final closure is blocked by HIL-only gates tracked in `T066-subQ` and `T066-subR`.
+  - Current execution environment cannot provide required physical adapter and long-duration hardware performance validation (`/dev/snd/seq` unavailable).
 - Competitive feature parity targets:
   - **Bome MIDI Translator Pro**: Rule-based MIDI translation, keystroke/mouse emulation, variable storage with persistence, timer actions, dynamic routing changes on device plug/unplug, cross-platform
   - **iConnectivity mioXM/Auracle**: Multi-port USB host routing, DIN↔USB bridging, RTP-MIDI over Ethernet, 4 presets, MIDI merge/split/filter/remap, 12 network ports
@@ -2621,7 +2624,7 @@ Last updated: 2026-03-09 20:24 - Codex
   - Suggested next tasks: Provide hardware-connected validation run results, then reopen T066-subQ and mark done.
 
 ID: T066-subR
-Status: [>] In Progress
+Status: [✗] Blocked
 Title: Comprehensive MIDI Hub integration testing and regression validation
 Description:
 - Goal / acceptance criteria: End-to-end validation of the complete MIDI Hub across all subsystems: (1) **Port layer**: USB hot-plug detection and recovery within 10s, virtual port creation/destruction, all port types functional. (2) **Router**: multi-route message delivery, merge/split, channel remap, filter accuracy, transform chain correctness, route enable/disable without message loss. (3) **Consumer migration**: all existing MPX1 tests pass (T036 sync hardening, T037 SysEx import, T038 scenes/morph), all JUCE engine MIDI injection tests pass, all MIDI v2 route tests pass, Tesira MIDI dispatch functional. (4) **Traffic monitor**: captures all messages, export works, real-time WebSocket stream accurate. (5) **Presets**: save/recall/compare/export/import, atomic preset swap without MIDI glitch. (6) **Scripting**: example scripts execute correctly, sandbox prevents unauthorized access. (7) **Clock**: generated clock stable within ±0.1 BPM, tap tempo converges within 4 taps. (8) **Performance**: <100µs added latency per route hop, 10,000+ messages/second throughput, memory-stable over 24hr soak test.
@@ -2631,7 +2634,17 @@ Description:
 - Required outputs: Test suite, performance benchmarks, soak test evidence, regression matrix, pass/fail report.
 Subtasks: None
 Assigned to: User + Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 21:08 - Codex
+- Blocker notes:
+  - Blocked by unresolved hardware/runtime dependencies required for final HIL/performance gates, including the blocked USB-to-DIN hardware matrix (`T066-subQ`) and lack of `/dev/snd/seq` availability in this execution environment.
+  - Software regression coverage is executed and green, but strict subR acceptance requires HIL timing/throughput/24h-soak evidence that cannot be produced here.
+- Progress notes:
+  - Published integration report: `docs/midi/MIDI_HUB_INTEGRATION_REGRESSION_REPORT.md`.
+  - Captured micro-benchmark evidence: `docs/fit-for-purpose-evidence/20260309/t066/midi_hub_perf_microbench.json`.
+  - Executed regression suites:
+    - `timeout 300s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py tests/midi_hub/test_device_registry.py tests/midi_hub/test_gateway.py` -> PASS (`18 passed`)
+    - `npm --prefix web run typecheck` -> PASS
+  - Suggested next tasks: Re-run subR on hardware-connected lab host to clear HIL gates, then reopen and mark done.
 
 Assigned to: Codex
 Last updated: 2026-03-08 - Codex
