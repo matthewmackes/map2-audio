@@ -1606,8 +1606,9 @@ Description:
 - Required outputs: Loopback procedure commands, repeated RTT result set, average/p95 comparison, and keep/rollback recommendation for `51-ua1000-low-latency.conf`.
 Subtasks: None
 Assigned to: Codex + Lab
-Last updated: 2026-03-08 11:30 - Codex
+Last updated: 2026-03-09 04:03 - Codex
 - Blocked notes:
+  - 2026-03-09 live recheck confirms UA-1000 remains unavailable in JACK graph (`jack_lsp` port matches: `0`), so UA-1000 tuned-vs-rollback acceptance is still non-executable; current Jogg probes show `playback_FL -> capture_MONO` measured (`23.597ms`) while `playback_FR -> capture_MONO` still fails (`No loopback signal detected`).
   - 2026-03-08 live recheck on active `Jogg USB Audio` path found measurable RTT on `playback_FL -> capture_MONO` (`23.823ms`) with 3 repeated confirmations (`23.845`, `23.951`, `24.072` ms; mean `23.956ms`, p95 `24.060ms`), while `playback_FR -> capture_MONO` still fails (`No loopback signal detected`).
   - 2026-03-08 JACK graph check (`jack_lsp`) shows no `UA-1000` ports in current session, so the UA-1000-specific tuned-vs-rollback acceptance matrix cannot be executed on this host state.
   - What was done: Hardened `scripts/measure_latency.sh` JACK path for this host (auto-detects `jack_delay:in/out` and UA-1000 `AUX0` ports, plus optional `--jack-playback-port` / `--jack-capture-port` overrides), then executed six `jack_iodelay` attempts (`3x` tuned `period-num=2`, `3x` rollback `period-num=3`) with verified A/B node geometry and archived evidence.
@@ -1617,6 +1618,10 @@ Last updated: 2026-03-08 11:30 - Codex
   - 2026-03-07 immediate retry: same Jogg wiring produced first successful lock on `playback_FL -> capture_MONO` (`round_trip_ms=23.202`), while `playback_FR -> capture_MONO` still reported `No loopback signal detected`.
   - Why blocked: Task acceptance is explicitly UA-1000 before/after tuning; current measurable path is Jogg-only and does not satisfy UA-1000 validation scope.
   - Evidence files:
+    - `docs/fit-for-purpose-evidence/20260309/t055/t055-recheck-summary.json`
+    - `docs/fit-for-purpose-evidence/20260309/t055/t055-recheck-summary.md`
+    - `docs/fit-for-purpose-evidence/20260309/t055/t055-jogg-fl-to-mono.json`
+    - `docs/fit-for-purpose-evidence/20260309/t055/t055-jogg-fr-to-mono.json`
     - `docs/fit-for-purpose-evidence/20260308/t055/t055-recheck-summary.json`
     - `docs/fit-for-purpose-evidence/20260308/t055/t055-recheck-summary.md`
     - `docs/fit-for-purpose-evidence/20260308/t055/t055-jack-probe-auto.json`
@@ -2862,5 +2867,66 @@ Last updated: 2026-03-08 18:01 - Codex
   - Software scope delivered: added Tesira deploy UI controls (`Deploy Chain` dialog), layout/status hooks, deployment polling hooks, rollback action wiring, and API client support for new deployment/catalog endpoints.
   - Remaining blocker: 2-unit HIL deployment certification requires live hardware/lab availability from `T004`.
   - Software files completed: `web/src/app/components/Tesira/types.ts`, `web/src/map2/api.ts`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/components/TesiraDeployDialog.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`.
+
+ALL UNBLOCKED ITEMS COMPLETE
+
+ID: T077
+Status: [ ] Not Started
+Title: Mobile Responsive Audit & Implementation — Full-stack mobile-first overhaul
+Description:
+- Goal / acceptance criteria: Make all MAP2 web UI pages usable at 360px (phone) and 768px (tablet) breakpoints with a hardware-display aesthetic, persistent bottom tab bar navigation, tap-to-edit parameter controls, full-screen meter mode, and no desktop regressions. All 28 implementation steps must pass the 8-point mobile verification checklist documented in `docs/MOBILE_RESPONSIVE_PROMPT.md`.
+- Why it matters: Sound engineers at FOH need to check system status, recall MPX-1 scenes, verify levels, and adjust parameters from a phone — currently the UI is desktop-only and unusable below 768px.
+- Dependencies: None (standalone frontend work)
+- Estimated effort: High (28 tasks across 14 phases)
+- Required outputs: `web/src/styles/mobile.css`, `web/src/styles/responsive.module.css`, `web/src/app/components/shared/LandscapePrompt.tsx`, `web/src/app/hooks/useIsMobile.ts`, updated AppShell.tsx with bottom tab bar, mobile-responsive overrides for all 30+ pages, full-screen meter mode on MeteringPage, tap-to-edit ParameterKnob, mobile bottom sheet for MPX1MegaMenu, LandscapePrompt on 5 desktop-only pages, connection-lost banner, and verification evidence at 360px/768px/1280px viewports.
+- Master prompt: `docs/MOBILE_RESPONSIVE_PROMPT.md` — contains all rules, anti-patterns, theme strategy, golden path definition, checklist, and output format requirements. The implementing agent MUST read this file first.
+Subtasks:
+  Phase 0 — Foundation (must land first, all other phases depend on these):
+  - T077-P0a: Create `web/src/styles/mobile.css` with @keyframes blink, global touch-target minimums (44px), input font-size 16px (iOS auto-zoom prevention), all inside @media (max-width: 768px). Do NOT add to index.css.
+  - T077-P0b: Import `mobile.css` in `web/src/main.tsx` on line 3, immediately after the existing `import './index.css'`.
+  - T077-P0c: Create `web/src/styles/responsive.module.css` with utility classes: .mobileOnly, .desktopOnly, .mobileStack, .mobileFullWidth, .hardwareReadout (monospace, tabular-nums, var(--accent)), .touchTarget (44px min). Each with @media (max-width: 768px) overrides.
+  - T077-P0d: Create `web/src/app/components/shared/LandscapePrompt.tsx` — full-viewport overlay on var(--bg), inline SVG rotate-phone icon, "Rotate for full editor" text in monospace 18px, "Continue anyway" button that sets sessionStorage flag. Auto-dismiss when viewport exceeds 768px via matchMedia listener.
+  - T077-P0e: Create `web/src/app/hooks/useIsMobile.ts` — single permitted useMediaQuery hook using window.matchMedia('(max-width: 768px)'). Used ONLY for: MUI Dialog fullScreen, ParameterKnob tap-to-edit, MPX1MegaMenu bottom sheet.
+  Phase 1 — Navigation (depends on Phase 0):
+  - T077-P1a: Add bottom tab bar to AppShell.tsx — 4 tabs (Status→/, Scenes→/mpx1/perform, Meters→/metering, Menu→hamburger toggle). Fixed at bottom, 56px height, var(--surface) background, hidden on desktop. Add padding-bottom: 56px to .app-content on mobile.
+  - T077-P1b: Simplify top nav on mobile — hide .nav-tabs-left and .nav-tabs-right at 768px via mobile.css, expand .nav-active-title to centered page title at 16px.
+  - T077-P1c: Fix all navigation font sizes — grep index.css for font-size declarations of 9px, 10px, 11px, 12px, 13px. Add mobile.css overrides setting floor of 14px for every matched class. Reduce letter-spacing from 0.16em to 0.06em on uppercase labels.
+  Phase 2 — MPX1 Mega Menu (depends on useIsMobile):
+  - T077-P2: Convert MPX1MegaMenu to bottom sheet on mobile — when useIsMobile() is true, render fixed bottom sheet (max-height: 60vh, var(--surface) bg, 12px top radius) with: large monospace program name (24px), connection dot, full-width Mix/Level meter bars, full-width 56px Prev/Next buttons, backdrop overlay. Desktop rendering unchanged.
+  Phase 3 — Golden Path Pages (depends on Phase 0):
+  - T077-P3a: HomePage mobile — hide SystemArchitectureFlow and PlatformCapabilities with desktopOnly class. Override .stat-grid to single-column at 768px. Compact PageHeader.
+  - T077-P3b: MPX1PerformView/MPX1ScenePanel mobile — scene list as full-width 56px rows, current scene name in monospace 24px, morph faders full-width, confirmation buttons 48px height.
+  - T077-P3c: MeteringPage mobile — add .metering-grid className, override 14-column grid to flex-column at 768px. Add fullscreen meter mode button using requestFullscreen API. Reuse existing WebSocket subscriptions (meters, cpu, latency topics via useWebSocketTopic).
+  Phase 4 — Typography (depends on mobile.css):
+  - T077-P4: Audit ALL font-size declarations below 14px across index.css and component CSS files. Add mobile.css overrides for every violation. No text below 14px at any mobile breakpoint. Inputs minimum 16px.
+  Phase 5 — Touch Interactions (depends on useIsMobile):
+  - T077-P5a: ParameterKnob tap-to-edit — on mobile, tapping a knob opens an inline <input type="number"> pre-filled with current value, step/min/max matching parameter range. Value commits on blur or Enter. No touch-drag. 44px minimum tap target.
+  - T077-P5b: Hover tooltips — identify all custom CSS :hover tooltips and onMouseEnter/onMouseLeave patterns. Add onClick toggle with click-outside dismiss for mobile. HTML title= attributes need no change.
+  Phase 6 — Dialogs (depends on useIsMobile):
+  - T077-P6: Add fullScreen={isMobile} to every MUI Dialog. Expected files: PasswordDialog, SpecialSettingsDialog, PluginDetailsModal, IRManagerDialog, NAMManagerDialog, UnifiedUploadDialog, PresetImportDialog, FlowAssignmentDialog, ThemeCreatorDialog, ShoppingSearchDialog. Sticky action buttons at bottom with var(--surface) background.
+  Phase 7 — Data Tables (depends on mobile.css):
+  - T077-P7a: LV2PluginsPage — hide thead, convert tr to flex-column card layout with data-label attributes on td elements. Full-width action buttons 44px height.
+  - T077-P7b: InstalledAssetsTable — hide secondary columns (Size, Date, Path) at 768px via nth-child selectors. Add expandable row detail on tap showing hidden fields.
+  - T077-P7c: ClusterDashboardPage DataGrid — wrap in horizontally-scrollable container with min-width: 600px on DataGrid root. Add gradient scroll hint on right edge.
+  Phase 8 — Forms & Secondary Pages (depends on Phase 0):
+  - T077-P8a: Audio interface pages (EdirolUA1000, MOTURME, HoToneJoGG) — stack form fields vertically at 768px, MUI TabList scrollable variant, images width: 100%, input types for numeric keyboard.
+  - T077-P8b: Remaining pages (DSPPage, PipeWirePage, AudioEnginePage, CPUPerformancePage, HostMachinePage, AboutPage, WelcomePage) — charts full-width 250px height, cards single-column, buttons full-width 44px height.
+  Phase 9 — Content Pages & Sub-views (depends on LandscapePrompt, useIsMobile):
+  - T077-P9a: ChainsPage, PresetsPage, MIDIPage, DrumsPage — single-column card layouts, full-width controls, 44px tap targets, drag handles 44px.
+  - T077-P9b: MPX1Page tab bar — horizontally scrollable tabs at 768px with scroll-snap. MPX1PanelView gets LandscapePrompt. MPX1EditorView uses tap-to-edit knobs. MPX1MidiMapView/LibraryView/DiagView get card or scroll table layouts.
+  - T077-P9c: TesiraPage — device cards single-column, compile buttons full-width, block diagrams get LandscapePrompt. ClusterDashboard/MultiSystemDashboard — node cards single-column, charts full-width.
+  Phase 10 — Desktop-Only (depends on LandscapePrompt):
+  - T077-P10: Add <LandscapePrompt componentId="X" /> to: GridFlowPage (grid-flow), GridFlowAdvancedPage (grid-3d, gate Three.js import behind dismissal), MPX1FlowView (mpx1-flow), AvbRoutingPage (avb-routing), MPX1MatrixView (mpx1-matrix).
+  Phase 11 — Status Indicators (depends on mobile.css):
+  - T077-P11: Define .status-dot-on/off/error classes in mobile.css. Override .pill on mobile to strip backgrounds, prepend dot pseudo-element. Connected=filled var(--success), disconnected=hollow var(--muted-2), error=blinking var(--danger).
+  Phase 12 — Global Polish (depends on mobile.css):
+  - T077-P12: Add mobile.css global overrides — .card padding 12px, .app-content padding 12px, .stack gap 12px, fluid heading sizes via clamp(), .btn min-height 44px, .flex-between flex-wrap, safe-area-inset padding for notched phones.
+  Phase 13 — Connection Banner (depends on Phase 0):
+  - T077-P13: Add mobile-only connection-lost banner in AppShell — fixed top bar with var(--danger) background, "Connection lost — reconnecting…" with blinking dot, auto-dismiss on reconnect. Uses existing WebSocket connection state from BackendConnectionMonitor. Mobile-only via mobile.css.
+  Phase 14 — Verification (depends on all above):
+  - T077-P14a: Run 8-point checklist at 360px for every page. Fix all failures. Test at 768px tablet width.
+  - T077-P14b: Verify no desktop regressions at 1280px, 1440px, 1920px. Verify all @media rules scoped to max-width: 768px or 360px. Run npm run build for TypeScript validation.
+Assigned to: Codex
+Last updated: 2026-03-08 - Claude
 
 ALL UNBLOCKED ITEMS COMPLETE

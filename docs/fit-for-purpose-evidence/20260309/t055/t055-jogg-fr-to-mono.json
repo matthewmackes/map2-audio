@@ -1,0 +1,12 @@
+{
+    "method": "jack_iodelay",
+    "timestamp": "2026-03-08T23:59:03-04:00",
+    "jack_ports": {
+      "iodelay_output": "jack_delay:out",
+      "iodelay_input": "jack_delay:in",
+      "playback": "Jogg USB Audio Analog Stereo:playback_FR",
+      "capture": "Jogg USB Audio Mono:capture_MONO"
+    },
+    "status": "failed",
+    "error": "No loopback signal detected. Connect output to input with a cable."
+}
