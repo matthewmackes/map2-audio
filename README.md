@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**720** Python | **966** TypeScript | **282** C++/H | **108** Docs | **423** total commits | **0** stars | **0** forks | **0** open issues
+**720** Python | **966** TypeScript | **282** C++/H | **108** Docs | **425** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`73cae392`](https://github.com/matthewmackes/map2-audio/commit/73cae3924c462a44b78fe10995ae2a09f4fd3885) | chore: stabilize web lint baseline for frontend verificat... | Map2 Audio | 2026-03-09 |
+| [`b8363e61`](https://github.com/matthewmackes/map2-audio/commit/b8363e6114700de743e1a321dd04244350023f63) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`167b5457`](https://github.com/matthewmackes/map2-audio/commit/167b54570a374708f2082d0fa484e854759dbe27) | feat: advance T077 mobile responsive phases 6-9 | Map2 Audio | 2026-03-09 |
 | [`ec3cedb3`](https://github.com/matthewmackes/map2-audio/commit/ec3cedb34dd33861942479000351bcdfcca01220) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`75882d6c`](https://github.com/matthewmackes/map2-audio/commit/75882d6c95c4e9eed10eaf61153002fac6f177c1) | feat: extend T077 mobile dialog fullscreen coverage | Map2 Audio | 2026-03-09 |
 | [`ced12162`](https://github.com/matthewmackes/map2-audio/commit/ced12162c874f7625663b1026b71541b5002ef95) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`fc085e65`](https://github.com/matthewmackes/map2-audio/commit/fc085e65bc8a17674b8a55c3b859956c384a0295) | feat: advance T077 mobile-responsive implementation slices | Map2 Audio | 2026-03-09 |
 | [`85563b69`](https://github.com/matthewmackes/map2-audio/commit/85563b69edacc74d85022db1ed3f8a2aa4dfafd8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
-| [`0cb86153`](https://github.com/matthewmackes/map2-audio/commit/0cb86153cbc2fd179b7bb5ae28984e9d9f76baf1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
-| [`ffd1190d`](https://github.com/matthewmackes/map2-audio/commit/ffd1190dcb263394a71a8a9c1bd0339046bc752d) | feat: implement T077 phase 3b MPX1 perform mobile UX | Map2 Audio | 2026-03-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
