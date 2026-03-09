@@ -1,0 +1,16 @@
+{
+  "task_id": "T030",
+  "checked_at_utc": "2026-03-09T03:57:05Z",
+  "effects_loops": {
+    "loop_count": 0,
+    "active_loop_count": 0,
+    "latency_samples_present": 0
+  },
+  "gates": {
+    "minimum_loop_topology_ready": false,
+    "latency_gate_executable": false,
+    "churn_soak_gate_executable": false
+  },
+  "overall_ready": false,
+  "conclusion": "Blocked: effects-loop topology not present for HIL execution."
+}
