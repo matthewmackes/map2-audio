@@ -24,6 +24,7 @@ import { useGraphStore, type GraphLink, type GraphNode } from '../stores/graphSt
 import { chainsApi } from '../../map2/api'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { useToasts } from '../components/Toasts'
+import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import type { Chain, ChainPlugin } from '../../map2/types'
 
 const LazyScene3D = lazy(() =>
@@ -615,6 +616,7 @@ export function GridFlowAdvancedPage() {
         overflow: 'hidden',
       }}
     >
+      <LandscapePrompt componentId="grid-3d" />
       <Toolbar
         onResetCamera={handleResetCamera}
         onRelayout={handleRelayout}

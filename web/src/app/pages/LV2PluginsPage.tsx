@@ -433,7 +433,9 @@ export function LV2PluginsPage() {
         </div>
 
         {/* Toolbar */}
-        <div style={{ 
+        <div
+          className="lv2-management-toolbar"
+          style={{
           background: 'rgba(30, 41, 59, 0.8)', 
           borderRadius: 8, 
           border: '1px solid rgba(71, 85, 105, 0.5)', 
@@ -442,7 +444,7 @@ export function LV2PluginsPage() {
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Search and Sort */}
-            <div style={{ display: 'flex', gap: 16 }}>
+            <div className="lv2-management-toolbar-row lv2-management-toolbar-row--search" style={{ display: 'flex', gap: 16 }}>
               <input
                 type="text"
                 placeholder="Search plugins..."
@@ -463,11 +465,11 @@ export function LV2PluginsPage() {
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div className="lv2-management-toolbar-row lv2-management-toolbar-row--actions" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="lv2-management-toolbar-actions-left" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button
                   onClick={toggleSelectAll}
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-ghost btn-sm lv2-management-action-btn"
                 >
                   {selectedUris.size === managementPlugins.length && managementPlugins.length > 0
                     ? 'Deselect All'
@@ -478,11 +480,11 @@ export function LV2PluginsPage() {
                 </span>
               </div>
 
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="lv2-management-toolbar-actions-right" style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={refreshPlugins}
                   disabled={pluginsQuery.isLoading || refreshingPlugins}
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-ghost btn-sm lv2-management-action-btn"
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   {refreshingPlugins ? (
@@ -500,7 +502,7 @@ export function LV2PluginsPage() {
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={selectedUris.size === 0 || deleteMutation.isPending}
-                  className="btn btn-sm"
+                  className="btn btn-sm lv2-management-action-btn"
                   style={{ 
                     background: selectedUris.size > 0 ? 'rgba(220, 38, 38, 0.8)' : 'rgba(71, 85, 105, 0.5)',
                     color: selectedUris.size > 0 ? '#fff' : '#64748b',
@@ -643,8 +645,8 @@ export function LV2PluginsPage() {
               No plugins found
             </div>
           ) : (
-            <div style={{ overflowX: 'auto', maxHeight: 500 }}>
-              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+            <div className="lv2-management-table-wrap" style={{ overflowX: 'auto', maxHeight: 500 }}>
+              <table className="lv2-management-table" style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
                 <thead style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid rgba(71, 85, 105, 0.5)', position: 'sticky', top: 0 }}>
                   <tr>
                     <th style={{ padding: '12px 16px', textAlign: 'left', width: 32 }}>
@@ -666,6 +668,7 @@ export function LV2PluginsPage() {
                   {managementPlugins.map((plugin: Plugin, idx: number) => (
                     <tr
                       key={plugin.uri}
+                      className="lv2-management-row"
                       style={{
                         borderBottom: '1px solid rgba(71, 85, 105, 0.3)',
                         background: selectedUris.has(plugin.uri) 
@@ -686,7 +689,7 @@ export function LV2PluginsPage() {
                         }
                       }}
                     >
-                      <td style={{ padding: '12px 16px' }}>
+                      <td data-label="Select" style={{ padding: '12px 16px' }}>
                         <input
                           type="checkbox"
                           checked={selectedUris.has(plugin.uri)}
@@ -694,9 +697,9 @@ export function LV2PluginsPage() {
                           style={{ width: 16, height: 16, borderRadius: 4, cursor: 'pointer' }}
                         />
                       </td>
-                      <td style={{ padding: '12px 16px', fontWeight: 500, color: '#fff' }}>{getDisplayPluginName(plugin.name, plugin.uri)}</td>
-                      <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{sanitizeRestrictedDisplayText(plugin.author || '') || '-'}</td>
-                      <td style={{ padding: '12px 16px' }}>
+                      <td data-label="Name" style={{ padding: '12px 16px', fontWeight: 500, color: '#fff' }}>{getDisplayPluginName(plugin.name, plugin.uri)}</td>
+                      <td data-label="Author" style={{ padding: '12px 16px', color: '#94a3b8' }}>{sanitizeRestrictedDisplayText(plugin.author || '') || '-'}</td>
+                      <td data-label="Format" style={{ padding: '12px 16px' }}>
                         <span style={{
                           padding: '2px 8px',
                           background: 'rgba(30, 58, 138, 0.5)',
@@ -707,8 +710,8 @@ export function LV2PluginsPage() {
                           {plugin.format || 'LV2'}
                         </span>
                       </td>
-                      <td style={{ padding: '12px 16px', color: '#94a3b8' }}>{plugin.category || '-'}</td>
-                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={plugin.uri}>
+                      <td data-label="Category" style={{ padding: '12px 16px', color: '#94a3b8' }}>{plugin.category || '-'}</td>
+                      <td data-label="URI" style={{ padding: '12px 16px', color: '#64748b', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={plugin.uri}>
                         {plugin.uri}
                       </td>
                     </tr>

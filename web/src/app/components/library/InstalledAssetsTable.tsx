@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { Fragment, useState, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   MagnifyingGlass,
@@ -121,6 +121,7 @@ export function InstalledAssetsTable() {
   const [showColumnSettings, setShowColumnSettings] = useState(false)
   const [columns, setColumns] = useState<ColumnVisibility>(DEFAULT_COLUMNS)
   const [currentPage, setCurrentPage] = useState(0)
+  const [expandedAssetRows, setExpandedAssetRows] = useState<Set<string>>(new Set())
 
   // Fetch all asset types
   const cabinetsQuery = useQuery({
@@ -377,6 +378,18 @@ export function InstalledAssetsTable() {
     })
   }, [])
 
+  const toggleAssetRowExpanded = useCallback((id: string) => {
+    setExpandedAssetRows((previous) => {
+      const next = new Set(previous)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
+
   const toggleSelectAll = useCallback(() => {
     if (selectedIds.size === paginatedAssets.length) {
       setSelectedIds(new Set())
@@ -619,7 +632,7 @@ export function InstalledAssetsTable() {
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
+      <div className="installed-assets-table-wrap" style={{ overflowX: 'auto' }}>
         {isLoading ? (
           <div className="flex" style={{ justifyContent: 'center', padding: 40 }}>
             <SpinnerGap size={24} weight="duotone" className="spin" style={{ color: 'var(--primary)' }} />
@@ -629,10 +642,10 @@ export function InstalledAssetsTable() {
             No assets found
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <table className="installed-assets-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', width: 40 }}>
+                <th className="assets-col-select" style={{ padding: '12px 16px', textAlign: 'left', width: 40 }}>
                   <input
                     type="checkbox"
                     checked={
@@ -643,7 +656,7 @@ export function InstalledAssetsTable() {
                   />
                 </th>
                 {columns.type && (
-                  <th style={{ ...thStyle(), width: 110 }} onClick={() => handleSort('type')}>
+                  <th className="assets-col-type" style={{ ...thStyle(), width: 110 }} onClick={() => handleSort('type')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
                       Type
                       <SortIcon field="type" />
@@ -651,7 +664,7 @@ export function InstalledAssetsTable() {
                   </th>
                 )}
                 {columns.name && (
-                  <th style={thStyle()} onClick={() => handleSort('name')}>
+                  <th className="assets-col-name" style={thStyle()} onClick={() => handleSort('name')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
                       Name
                       <SortIcon field="name" />
@@ -659,7 +672,7 @@ export function InstalledAssetsTable() {
                   </th>
                 )}
                 {columns.category && (
-                  <th style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('category')}>
+                  <th className="assets-col-category" style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('category')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
                       Category
                       <SortIcon field="category" />
@@ -667,7 +680,7 @@ export function InstalledAssetsTable() {
                   </th>
                 )}
                 {columns.source && (
-                  <th style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('source')}>
+                  <th className="assets-col-source" style={{ ...thStyle(), width: 120 }} onClick={() => handleSort('source')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
                       Source
                       <SortIcon field="source" />
@@ -675,7 +688,7 @@ export function InstalledAssetsTable() {
                   </th>
                 )}
                 {columns.format && (
-                  <th style={{ ...thStyle(), width: 80 }} onClick={() => handleSort('format')}>
+                  <th className="assets-col-format" style={{ ...thStyle(), width: 80 }} onClick={() => handleSort('format')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
                       Format
                       <SortIcon field="format" />
@@ -684,6 +697,7 @@ export function InstalledAssetsTable() {
                 )}
                 {columns.sampleRate && (
                   <th
+                    className="assets-col-sample-rate"
                     style={{ ...thStyle(), width: 100, textAlign: 'right' }}
                     onClick={() => handleSort('sampleRate')}
                   >
@@ -695,6 +709,7 @@ export function InstalledAssetsTable() {
                 )}
                 {columns.duration && (
                   <th
+                    className="assets-col-duration"
                     style={{ ...thStyle(), width: 90, textAlign: 'right' }}
                     onClick={() => handleSort('duration')}
                   >
@@ -706,6 +721,7 @@ export function InstalledAssetsTable() {
                 )}
                 {columns.size && (
                   <th
+                    className="assets-col-size"
                     style={{ ...thStyle(), width: 90, textAlign: 'right' }}
                     onClick={() => handleSort('size')}
                   >
@@ -716,7 +732,7 @@ export function InstalledAssetsTable() {
                   </th>
                 )}
                 {columns.folder && (
-                  <th style={{ ...thStyle(), width: 140 }} onClick={() => handleSort('folder')}>
+                  <th className="assets-col-folder" style={{ ...thStyle(), width: 140 }} onClick={() => handleSort('folder')}>
                     <div className="flex" style={{ alignItems: 'center' }}>
                       <FolderOpen size={14} weight="duotone" style={{ marginRight: 4 }} />
                       Folder
@@ -725,9 +741,9 @@ export function InstalledAssetsTable() {
                   </th>
                 )}
                 {columns.status && (
-                  <th style={{ ...thStyle(false), width: 80, textAlign: 'center' }}>Status</th>
+                  <th className="assets-col-status" style={{ ...thStyle(false), width: 80, textAlign: 'center' }}>Status</th>
                 )}
-                <th style={{ padding: '12px 16px', textAlign: 'center', width: 60 }}>Actions</th>
+                <th className="assets-col-actions" style={{ padding: '12px 16px', textAlign: 'center', width: 120 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -735,16 +751,18 @@ export function InstalledAssetsTable() {
                 const config = TYPE_CONFIG[asset.type]
                 const Icon = config.icon
                 const isSelected = selectedIds.has(asset.id)
+                const isExpanded = expandedAssetRows.has(asset.id)
 
                 return (
+                  <Fragment key={asset.id}>
                   <tr
-                    key={asset.id}
+                    className={`installed-assets-row${isExpanded ? ' is-expanded' : ''}`}
                     style={{
                       borderBottom: '1px solid var(--border)',
                       background: isSelected ? 'rgba(var(--primary-rgb), 0.05)' : undefined,
                     }}
                   >
-                    <td style={{ padding: '10px 16px' }}>
+                    <td className="assets-col-select" data-label="Select" style={{ padding: '10px 16px' }}>
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -753,7 +771,7 @@ export function InstalledAssetsTable() {
                       />
                     </td>
                     {columns.type && (
-                      <td style={{ padding: '10px 16px' }}>
+                      <td className="assets-col-type" data-label="Type" style={{ padding: '10px 16px' }}>
                         <div className="flex" style={{ alignItems: 'center', gap: 6 }}>
                           <Icon size={14} style={{ color: config.color }} />
                           <span
@@ -770,22 +788,22 @@ export function InstalledAssetsTable() {
                       </td>
                     )}
                     {columns.name && (
-                      <td style={{ padding: '10px 16px' }}>
+                      <td className="assets-col-name" data-label="Name" style={{ padding: '10px 16px' }}>
                         <div style={{ fontWeight: 500 }}>{asset.name}</div>
                       </td>
                     )}
                     {columns.category && (
-                      <td style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
+                      <td className="assets-col-category" data-label="Category" style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
                         {asset.category || '-'}
                       </td>
                     )}
                     {columns.source && (
-                      <td style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
+                      <td className="assets-col-source" data-label="Source" style={{ padding: '10px 16px', color: 'var(--muted)', fontSize: 13 }}>
                         {asset.source || '-'}
                       </td>
                     )}
                     {columns.format && (
-                      <td style={{ padding: '10px 16px' }}>
+                      <td className="assets-col-format" data-label="Format" style={{ padding: '10px 16px' }}>
                         {asset.format ? (
                           <span
                             className="badge"
@@ -804,6 +822,8 @@ export function InstalledAssetsTable() {
                     )}
                     {columns.sampleRate && (
                       <td
+                        className="assets-col-sample-rate"
+                        data-label="Sample Rate"
                         style={{
                           padding: '10px 16px',
                           textAlign: 'right',
@@ -816,6 +836,8 @@ export function InstalledAssetsTable() {
                     )}
                     {columns.duration && (
                       <td
+                        className="assets-col-duration"
+                        data-label="Duration"
                         style={{
                           padding: '10px 16px',
                           textAlign: 'right',
@@ -828,6 +850,8 @@ export function InstalledAssetsTable() {
                     )}
                     {columns.size && (
                       <td
+                        className="assets-col-size"
+                        data-label="Size"
                         style={{
                           padding: '10px 16px',
                           textAlign: 'right',
@@ -840,6 +864,8 @@ export function InstalledAssetsTable() {
                     )}
                     {columns.folder && (
                       <td
+                        className="assets-col-folder"
+                        data-label="Folder"
                         style={{
                           padding: '10px 16px',
                           color: 'var(--muted)',
@@ -855,7 +881,7 @@ export function InstalledAssetsTable() {
                       </td>
                     )}
                     {columns.status && (
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                      <td className="assets-col-status" data-label="Status" style={{ padding: '10px 16px', textAlign: 'center' }}>
                         {asset.isActive && (
                           <span
                             className="pill"
@@ -871,20 +897,45 @@ export function InstalledAssetsTable() {
                         )}
                       </td>
                     )}
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        style={{ padding: 4, color: 'var(--error)' }}
-                        onClick={() => {
-                          setSelectedIds(new Set([asset.id]))
-                          setShowDeleteConfirm(true)
-                        }}
-                        title="Delete"
-                      >
-                        <Trash size={14} weight="duotone" />
-                      </button>
+                    <td className="assets-col-actions" style={{ padding: '10px 16px', textAlign: 'center' }}>
+                      <div className="installed-assets-actions">
+                        <button
+                          className="btn btn-ghost btn-sm installed-assets-expand-toggle"
+                          style={{ padding: '4px 8px' }}
+                          onClick={() => toggleAssetRowExpanded(asset.id)}
+                          title={isExpanded ? 'Collapse details' : 'Expand details'}
+                        >
+                          {isExpanded ? <CaretUp size={14} weight="bold" /> : <CaretDown size={14} weight="bold" />}
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: 4, color: 'var(--error)' }}
+                          onClick={() => {
+                            setSelectedIds(new Set([asset.id]))
+                            setShowDeleteConfirm(true)
+                          }}
+                          title="Delete"
+                        >
+                          <Trash size={14} weight="duotone" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
+                  {isExpanded && (
+                    <tr className="installed-assets-mobile-details-row">
+                      <td colSpan={12} style={{ padding: '0 16px 12px', borderBottom: '1px solid var(--border)' }}>
+                        <div className="installed-assets-mobile-details-grid">
+                          <div><strong>Source:</strong> {asset.source || '-'}</div>
+                          <div><strong>Format:</strong> {asset.format || '-'}</div>
+                          <div><strong>Sample Rate:</strong> {formatSampleRate(asset.sampleRate)}</div>
+                          <div><strong>Duration:</strong> {formatDuration(asset.duration)}</div>
+                          <div><strong>Size:</strong> {formatSize(asset.size)}</div>
+                          <div><strong>Path:</strong> {asset.path || '-'}</div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 )
               })}
             </tbody>

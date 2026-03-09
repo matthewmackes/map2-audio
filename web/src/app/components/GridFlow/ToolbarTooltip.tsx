@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, ReactElement } from 'react'
 import { createPortal } from 'react-dom'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 interface ToolbarTooltipProps {
   content: string | React.ReactNode
@@ -24,6 +25,7 @@ export function ToolbarTooltip({
   const triggerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<NodeJS.Timeout>(undefined)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!isVisible || !triggerRef.current || !tooltipRef.current) return
@@ -77,7 +79,7 @@ export function ToolbarTooltip({
   }, [isVisible, position])
 
   const handleMouseEnter = () => {
-    if (disabled) return
+    if (disabled || isMobile) return
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true)
     }, delay)
@@ -88,8 +90,49 @@ export function ToolbarTooltip({
     setIsVisible(false)
   }
 
+  const handleTriggerClick = () => {
+    if (disabled || !isMobile) return
+    setIsVisible((previous) => !previous)
+  }
+
+  useEffect(() => {
+    if (!isVisible || !isMobile) {
+      return
+    }
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      if (triggerRef.current?.contains(target) || tooltipRef.current?.contains(target)) {
+        return
+      }
+      setIsVisible(false)
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isVisible, isMobile])
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+
   return (
-    <div ref={triggerRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div
+      ref={triggerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleTriggerClick}
+      onBlur={isMobile ? handleMouseLeave : undefined}
+    >
       {children}
       {isVisible && !disabled &&
         createPortal(

@@ -86,6 +86,7 @@ import { ContextMenu, type ContextMenuItem } from '../components/GridFlow/Contex
 import { ConfirmationDialog } from '../components/GridFlow/ConfirmationDialog'
 import { ButtonGroup } from '../components/GridFlow/ButtonGroup'
 import { PresetImportDialog } from '../components/presets/PresetImportDialog'
+import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import type { Chain, Plugin, HistoryStatus, FlowSnapshotData, ChainSnapshot } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 
@@ -1439,6 +1440,7 @@ export function GridFlowPage() {
 
   return (
     <div className="grid-flow-page">
+      <LandscapePrompt componentId="grid-flow" />
       {/* Unified Header/Toolbar */}
       {!toolbarCollapsed && (
         <header className="grid-flow-header">

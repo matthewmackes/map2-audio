@@ -14,6 +14,7 @@ import {
   hardwareInterfaceMenuItems,
   type AdvancedMenuItem,
 } from '../data/advancedMenuItems'
+import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
 
 const enableLegacy = import.meta.env.VITE_ENABLE_LEGACY === 'true'
 
@@ -115,6 +116,7 @@ function normalizeMidiValue(value: number, max = 127): number {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
+  const { status: websocketStatus } = useWebSocketConnection()
   const [navOpen, setNavOpen] = useState(false)
   const navMenuRef = useRef<HTMLDivElement>(null)
   const [advancedMenuOpen, setAdvancedMenuOpen] = useState(false)
@@ -199,6 +201,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const showAdvancedMenu = specialSettings?.enabled && specialSettings?.menuLocation !== 'hidden'
   const showInTopNav = specialSettings?.menuLocation === 'top-nav'
+  const showMobileConnectionBanner = websocketStatus === 'reconnecting' || websocketStatus === 'error'
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -592,7 +595,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   )
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${showMobileConnectionBanner ? ' has-mobile-connection-banner' : ''}`}>
+      {showMobileConnectionBanner && (
+        <div className="mobile-connection-banner" role="status" aria-live="polite">
+          <span className="mobile-connection-banner-dot" aria-hidden />
+          <span>Connection lost - reconnecting...</span>
+        </div>
+      )}
       <header className="topbar-pro">
         <nav className="nav-tabs-left" aria-label="Main navigation">
           {leftNavItems.map((item) => {

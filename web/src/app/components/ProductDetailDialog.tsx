@@ -16,6 +16,7 @@ import {
   TableCell,
 } from '@mui/material'
 import { X, ArrowSquareOut, CheckCircle, WarningCircle, Info } from '@phosphor-icons/react'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface ProductDetailDialogProps {
   open: boolean
@@ -35,6 +36,7 @@ interface ProductDetailDialogProps {
 }
 
 export function ProductDetailDialog({ open, onClose, product }: ProductDetailDialogProps) {
+  const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState(0)
 
   if (!product) return null
@@ -66,6 +68,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         style: {
           background: '#0a0a0a',
@@ -312,7 +315,16 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
         </div>
       </DialogContent>
 
-      <DialogActions style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: 16 }}>
+      <DialogActions
+        style={{
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: 16,
+          position: 'sticky',
+          bottom: 0,
+          background: 'var(--surface)',
+          zIndex: 2,
+        }}
+      >
         <Button onClick={onClose} variant="outlined">
           Close
         </Button>

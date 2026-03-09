@@ -11,7 +11,7 @@
  * - Dynamics Metering (Compressor/Limiter/Gate GR)
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChartBar, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { SpectrumAnalyzer } from '../components/Visualizations/SpectrumAnalyzer'
 import { LoudnessMeter } from '../components/Visualizations/LoudnessMeter'
@@ -20,9 +20,72 @@ import { LatencyDisplay } from '../components/Visualizations/LatencyDisplay'
 import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrelationMeter'
 import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
+import { useIsMobile } from '../hooks/useIsMobile'
+import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 
 export function MeteringPage() {
   const [showApiReference, setShowApiReference] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [topicActivity, setTopicActivity] = useState({
+    meters: false,
+    cpu: false,
+    latency: false,
+  })
+  const isMobile = useIsMobile()
+  const pageRef = useRef<HTMLDivElement | null>(null)
+
+  const markTopicActive = (topic: 'meters' | 'cpu' | 'latency') => {
+    setTopicActivity((previous) => {
+      if (previous[topic]) {
+        return previous
+      }
+      return {
+        ...previous,
+        [topic]: true,
+      }
+    })
+  }
+
+  useWebSocketTopic('meters', () => {
+    markTopicActive('meters')
+  })
+
+  useWebSocketTopic('cpu', () => {
+    markTopicActive('cpu')
+  })
+
+  useWebSocketTopic('latency', () => {
+    markTopicActive('latency')
+  })
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    handleFullscreenChange()
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+
+  const handleToggleFullscreen = async () => {
+    if (!isMobile) {
+      return
+    }
+
+    try {
+      if (!document.fullscreenElement) {
+        await pageRef.current?.requestFullscreen?.()
+      } else {
+        await document.exitFullscreen()
+      }
+    } catch (error) {
+      console.error('Failed to toggle metering fullscreen mode:', error)
+    }
+  }
 
   const meteringApis = [
     { endpoint: 'GET /api/audio/status', description: 'Audio engine status and configuration' },
@@ -43,35 +106,52 @@ export function MeteringPage() {
   ]
 
   return (
-    <div className="metering-page" style={{
+    <div
+      ref={pageRef}
+      className="metering-page"
+      style={{
       padding: '32px',
       background: 'linear-gradient(135deg, rgba(10, 15, 25, 0.5) 0%, rgba(20, 25, 40, 0.3) 100%)'
-    }}>
+      }}
+    >
       {/* Header Section */}
       <header style={{
         marginBottom: 32,
         paddingBottom: 24,
         borderBottom: '2px solid rgba(59, 130, 246, 0.2)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <ChartBar size={36} weight="duotone" style={{ color: '#2563eb', marginRight: 8, flexShrink: 0 }} />
-          <h1 style={{
-            fontSize: 32,
-            fontWeight: 800,
-            color: '#f3f4f6',
-            margin: 0,
-            letterSpacing: '-0.5px'
-          }}>
-            JUCE Core Engine
-          </h1>
-          <span style={{
-            fontSize: 24,
-            fontWeight: 700,
-            color: '#2563eb',
-            margin: 0
-          }}>
-            : Meters
-          </span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+            <ChartBar size={36} weight="duotone" style={{ color: '#2563eb', marginRight: 8, flexShrink: 0 }} />
+            <h1 style={{
+              fontSize: 32,
+              fontWeight: 800,
+              color: '#f3f4f6',
+              margin: 0,
+              letterSpacing: '-0.5px'
+            }}>
+              JUCE Core Engine
+            </h1>
+            <span style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: '#2563eb',
+              margin: 0
+            }}>
+              : Meters
+            </span>
+          </div>
+          {isMobile && (
+            <button
+              type="button"
+              className="metering-fullscreen-button touch-target"
+              onClick={() => {
+                void handleToggleFullscreen()
+              }}
+            >
+              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Meters'}
+            </button>
+          )}
         </div>
         <p style={{
           fontSize: 13,
@@ -81,15 +161,32 @@ export function MeteringPage() {
         }}>
           Real-time audio analysis and system performance monitoring
         </p>
+        <div style={{
+          marginTop: 8,
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 10,
+          fontSize: 12,
+          color: '#94a3b8',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em'
+        }}>
+          <span>meters: {topicActivity.meters ? 'live' : 'waiting'}</span>
+          <span>cpu: {topicActivity.cpu ? 'live' : 'waiting'}</span>
+          <span>latency: {topicActivity.latency ? 'live' : 'waiting'}</span>
+        </div>
       </header>
 
       {/* Main Dashboard Grid */}
-      <div style={{
+      <div
+        className="metering-grid"
+        style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(14, 1fr)',
         gridTemplateRows: 'auto',
         gap: 20
-      }}>
+        }}
+      >
         {/* Section 1: Signal Analysis (Span 9) */}
         <div style={{ gridColumn: 'span 9' }}>
           <div style={{
@@ -286,13 +383,16 @@ export function MeteringPage() {
         border: '1px solid rgba(59, 130, 246, 0.15)',
         backdropFilter: 'blur(8px)'
       }}>
-        <div style={{
+        <div
+          className="metering-status-grid"
+          style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: 20,
           fontSize: 12,
           color: '#6b7280'
-        }}>
+          }}
+        >
           <div>
             <span style={{ color: '#2563eb', fontWeight: 600 }}>Engine Specifications</span>
             <br />

@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, CssBaseline, Typography } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AvbRoutingApp } from '../components/AvbRouting';
+import { LandscapePrompt } from '../components/shared/LandscapePrompt';
 
 const avbRoutingTheme = createTheme({
   palette: {
@@ -78,6 +79,7 @@ export function AvbRoutingPage() {
           bgcolor: 'background.default',
         }}
       >
+        <LandscapePrompt componentId="avb-routing" />
         <Box
           sx={{
             px: { xs: 1.5, sm: 2 },

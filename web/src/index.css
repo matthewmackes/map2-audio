@@ -4460,6 +4460,20 @@ input[type="range"]:focus::-webkit-slider-thumb {
   min-height: 16px;
 }
 
+.param-knob-input {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 600;
+  height: 32px;
+  line-height: 1;
+  max-width: 96px;
+  padding: 4px 8px;
+  text-align: center;
+}
+
 /* Plugin Browser Modal */
 .grid-flow-plugin-browser-overlay {
   position: fixed;

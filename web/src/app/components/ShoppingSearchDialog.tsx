@@ -32,6 +32,7 @@ import {
 import { ShoppingCart, ArrowSquareOut, MagnifyingGlass, Funnel, Info, GitDiff, CaretDown, CaretUp, Warning } from '@phosphor-icons/react'
 import { API_BASE } from '../../map2/api'
 import { ProductDetailDialog } from './ProductDetailDialog'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface DeviceMatch {
   model: string
@@ -64,6 +65,7 @@ type SortField = 'price' | 'score' | 'latency' | 'source'
 type SortDirection = 'asc' | 'desc'
 
 export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProps) {
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -223,11 +225,12 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
       onClose={onClose}
       maxWidth="lg"
       fullWidth
+      fullScreen={isMobile}
       PaperProps={{
         style: {
           background: '#0a0a0a',
           border: '1px solid rgba(59, 130, 246, 0.3)',
-          maxHeight: '90vh',
+          maxHeight: isMobile ? '100vh' : '90vh',
         }
       }}
     >
@@ -640,7 +643,16 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
         )}
       </DialogContent>
 
-      <DialogActions style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', padding: 16 }}>
+      <DialogActions
+        style={{
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: 16,
+          position: 'sticky',
+          bottom: 0,
+          background: 'var(--surface)',
+          zIndex: 2,
+        }}
+      >
         <div style={{ fontSize: 12, color: '#94a3b8', flex: 1 }}>
           Found {filteredAndSortedResults.length} of {results.length} results • Sorted by {sortField} ({sortDirection})
         </div>

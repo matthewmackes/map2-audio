@@ -8,10 +8,12 @@
 import React from 'react'
 
 import { MPX1FlowCanvas } from '../components/MPX1/MPX1FlowCanvas'
+import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 
 export function MPX1FlowView() {
   return (
     <div style={{ height: '100%', overflow: 'hidden' }}>
+      <LandscapePrompt componentId="mpx1-flow" />
       <MPX1FlowCanvas />
     </div>
   )

@@ -2868,7 +2868,6 @@ Last updated: 2026-03-08 18:01 - Codex
   - Remaining blocker: 2-unit HIL deployment certification requires live hardware/lab availability from `T004`.
   - Software files completed: `web/src/app/components/Tesira/types.ts`, `web/src/map2/api.ts`, `web/src/app/components/Tesira/hooks/useTesiraApi.ts`, `web/src/app/components/Tesira/components/TesiraDeployDialog.tsx`, `web/src/app/components/Tesira/components/TesiraDeviceDashboard.tsx`.
 
-ALL UNBLOCKED ITEMS COMPLETE
 
 ID: T077
 Status: [>] In Progress
@@ -2927,13 +2926,20 @@ Subtasks:
   - T077-P14a: Run 8-point checklist at 360px for every page. Fix all failures. Test at 768px tablet width.
   - T077-P14b: Verify no desktop regressions at 1280px, 1440px, 1920px. Verify all @media rules scoped to max-width: 768px or 360px. Run npm run build for TypeScript validation.
 Assigned to: Codex
-Last updated: 2026-03-09 04:38 - Codex
+Last updated: 2026-03-09 06:27 - Codex
 - Progress notes:
   - Completed Phase 0 foundation: created `web/src/styles/mobile.css`, `web/src/styles/responsive.module.css`, `web/src/app/components/shared/LandscapePrompt.tsx`, `web/src/app/hooks/useIsMobile.ts`, and imported `./styles/mobile.css` in `web/src/main.tsx`.
   - Completed Phase 1 navigation: added mobile bottom tab bar (`Status`, `Scenes`, `Meters`, `Menu`) in `AppShell.tsx`, wired menu-toggle reuse, and added mobile nav typography/visibility overrides in `mobile.css` (hide top nav rails on mobile, centered active title, `14px` font floor for nav classes, `0.06em` uppercase spacing, and `app-content` bottom padding).
   - Completed Phase 2 MPX1 mobile menu: converted `MPX1MegaMenu` to render a mobile bottom sheet (`max-height: 60vh`) with backdrop, large monospace program readout, connection status dot, full-width Mix/Level bars, and `56px` full-width previous/next program buttons while preserving desktop dropdown behavior.
   - Completed Phase 3a Home page responsive pass: wrapped `SystemArchitectureFlow` + `PlatformCapabilities` with `desktopOnly` utility class and added mobile overrides for `stat-grid` single-column layout plus compact `page-header` typography/spacing.
   - Completed Phase 3b MPX1 perform responsive pass: added current-scene readout (monospace emphasis), converted mobile scene list to full-width row buttons (`56px` min height), set capture/morph action buttons to `48px` minimum height, and stacked morph controls for full-width slider/select usability.
-  - Remaining work: Phases `3c`-`14` are still open and will be executed in follow-on slices with mobile verification at `360px` / `768px` and desktop regression checks.
-
-ALL UNBLOCKED ITEMS COMPLETE
+  - Completed Phase 3c metering pass: added `metering-grid` + `metering-status-grid` responsive hooks, mobile `Fullscreen Meters` toggle via `requestFullscreen`, and topic activity indicators driven by `useWebSocketTopic` (`meters`, `cpu`, `latency`) without introducing new polling.
+  - Completed Phase 13 connection banner: wired `AppShell` to WebSocket connection status and added mobile-only fixed reconnect banner (`Connection lost - reconnecting...`) with blinking dot plus topbar offset while banner is active.
+  - Completed Phase 5a + partial Phase 5b: `ParameterKnob` now supports mobile tap-to-edit numeric entry (commit on blur/Enter, Escape cancel, touch drag disabled on mobile), and `ToolbarTooltip` now supports mobile click-to-toggle with click-outside dismissal.
+  - Completed core Phase 6 MUI dialog coverage in this surface: added `fullScreen={isMobile}` and sticky action bar treatment to `ShoppingSearchDialog` and nested `ProductDetailDialog`; non-MUI overlays in the expected list remain custom and require per-component mobile action-bar polish.
+  - Completed Phase 7a + 7b: converted `LV2PluginsPage` management table for mobile card mode (data-label rows + full-width 44px action buttons) and upgraded `InstalledAssetsTable` with mobile secondary-column hiding, expandable details rows, and touch-friendly actions.
+  - Completed Phase 10 desktop-only prompts: added `<LandscapePrompt />` to `GridFlowPage` (`grid-flow`), `GridFlowAdvancedPage` (`grid-3d`), `MPX1FlowView` (`mpx1-flow`), `AvbRoutingPage` (`avb-routing`), and `MPX1MatrixView` (`mpx1-matrix`); also added prompt on `MPX1PanelView` for narrow viewports.
+  - Completed Phase 11 + 12 mobile polish layer in `mobile.css`: status-dot utility classes, mobile `.pill` dot treatment, global card/stack/button/flex spacing, heading clamps, safe-area padding, responsive chart container floor, and mobile table/card utility rules.
+  - Completed Phase 9b navigation slice: `MPX1Page` sidebar tab rail now scrolls horizontally on mobile with scroll-snap and 44px targets.
+  - Verification run complete for current slice: `npm --prefix web run -s typecheck` and `npm --prefix web run -s build` passed.
+  - Remaining work: finish Phase 6 coverage audit for all dialog surfaces, complete Phase 7c cluster table/grid mobile wrapper treatment, and execute full Phase 8/9/14 viewport checklist (`360px`, `768px`, `1280+`) with defect sweep.

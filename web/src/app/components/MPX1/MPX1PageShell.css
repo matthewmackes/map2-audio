@@ -268,8 +268,18 @@
     border-right: 0;
     border-bottom: 1px solid var(--mpx1-shell-border);
     flex-direction: row;
-    justify-content: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     padding: 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .mpx1-shell__sidebar-btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    min-width: 44px;
+    scroll-snap-align: start;
   }
 
   .mpx1-shell__content {

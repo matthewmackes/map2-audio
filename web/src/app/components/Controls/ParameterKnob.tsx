@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 interface ParameterKnobProps {
   label: string
@@ -102,9 +103,13 @@ export function ParameterKnob({
   midi,
 }: ParameterKnobProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [localValue, setLocalValue] = useState(value)
+  const [editValue, setEditValue] = useState('')
   const dragStartRef = useRef<{ y: number; value: number } | null>(null)
   const knobRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const isMobile = useIsMobile()
 
   // Sync local value with prop when not dragging
   useEffect(() => {
@@ -112,6 +117,13 @@ export function ParameterKnob({
       setLocalValue(value)
     }
   }, [value, isDragging])
+
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [isEditing])
 
   // Calculate rotation angle (270 degree arc, from -135 to +135)
   const position = valueToPosition(localValue, min, max, isLogarithmic)
@@ -156,7 +168,7 @@ export function ParameterKnob({
   // Handle mouse down
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (disabled) return
+      if (disabled || isMobile) return
       e.preventDefault()
       setIsDragging(true)
       dragStartRef.current = { y: e.clientY, value: localValue }
@@ -199,13 +211,13 @@ export function ParameterKnob({
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [disabled, localValue, min, max, step, isLogarithmic, onChange, onChangeEnd]
+    [disabled, isMobile, localValue, min, max, step, isLogarithmic, onChange, onChangeEnd]
   )
 
   // Handle wheel scroll
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      if (disabled) return
+      if (disabled || isMobile) return
       e.preventDefault()
 
       const delta = e.deltaY < 0 ? 0.02 : -0.02
@@ -222,22 +234,55 @@ export function ParameterKnob({
       onChange(newValue)
       onChangeEnd?.()
     },
-    [disabled, localValue, min, max, step, isLogarithmic, onChange, onChangeEnd]
+    [disabled, isMobile, localValue, min, max, step, isLogarithmic, onChange, onChangeEnd]
   )
 
   // Handle double-click to reset
   const handleDoubleClick = useCallback(() => {
-    if (disabled) return
+    if (disabled || isMobile) return
     const resetValue = defaultValue ?? (min + max) / 2
     setLocalValue(resetValue)
     onChange(resetValue)
     onChangeEnd?.()
-  }, [disabled, defaultValue, min, max, onChange, onChangeEnd])
+  }, [disabled, isMobile, defaultValue, min, max, onChange, onChangeEnd])
+
+  const clampToRange = useCallback((nextValue: number) => {
+    let clamped = Math.max(min, Math.min(max, nextValue))
+    if (step) {
+      clamped = Math.round(clamped / step) * step
+      clamped = Math.max(min, Math.min(max, clamped))
+    }
+    return clamped
+  }, [min, max, step])
+
+  const commitEditValue = useCallback(() => {
+    const parsedValue = Number(editValue)
+    if (!Number.isFinite(parsedValue)) {
+      setEditValue(localValue.toString())
+      setIsEditing(false)
+      return
+    }
+
+    const nextValue = clampToRange(parsedValue)
+    setLocalValue(nextValue)
+    onChange(nextValue)
+    onChangeEnd?.()
+    setIsEditing(false)
+  }, [editValue, localValue, clampToRange, onChange, onChangeEnd])
+
+  const handleMobileDialClick = useCallback(() => {
+    if (disabled || !isMobile) {
+      return
+    }
+    setEditValue(localValue.toString())
+    setIsEditing(true)
+  }, [disabled, isMobile, localValue])
 
   const knobElement = (
     <div
-      className={`param-knob ${disabled ? 'disabled' : ''} ${isDragging ? 'dragging' : ''}`}
+      className={`param-knob ${disabled ? 'disabled' : ''} ${isDragging ? 'dragging' : ''}${isEditing ? ' mobile-editing' : ''}`}
       style={{ '--knob-accent': accentColor } as React.CSSProperties}
+      data-touch-target="true"
     >
       {/* Label */}
       <div className="param-knob-label" style={{ fontSize }}>
@@ -256,6 +301,7 @@ export function ParameterKnob({
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
         onDoubleClick={handleDoubleClick}
+        onClick={handleMobileDialClick}
         role="slider"
         aria-label={label}
         aria-valuemin={min}
@@ -312,9 +358,31 @@ export function ParameterKnob({
       </div>
 
       {/* Value */}
-      <div className="param-knob-value" style={{ fontSize }}>
-        {valueFormatter(localValue)}{unit && ` ${unit}`}
-      </div>
+      {isMobile && isEditing ? (
+        <input
+          ref={inputRef}
+          type="number"
+          className="param-knob-input touch-target"
+          value={editValue}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(event) => setEditValue(event.target.value)}
+          onBlur={commitEditValue}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              commitEditValue()
+            } else if (event.key === 'Escape') {
+              setIsEditing(false)
+            }
+          }}
+          aria-label={`${label} numeric edit`}
+        />
+      ) : (
+        <div className="param-knob-value" style={{ fontSize }}>
+          {valueFormatter(localValue)}{unit && ` ${unit}`}
+        </div>
+      )}
     </div>
   )
 
