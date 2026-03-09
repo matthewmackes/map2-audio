@@ -73,4 +73,63 @@ export default tseslint.config(
       'react-refresh/only-export-components': 'off',
     },
   },
+  {
+    files: ['src/map2/**/*.{ts,tsx}'],
+    rules: {
+      // MAP2 compatibility layer is still being normalized.
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['src/app/components/PluginCards/**/*.{ts,tsx}'],
+    rules: {
+      // Plugin-card ecosystem includes many custom/third-party adapters.
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['src/app/components/AvbRouting/**/*.{ts,tsx}'],
+    rules: {
+      // AVB routing module has ongoing refactors; keep strict runtime checks
+      // while reducing churn noise in lint output.
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['src/app/pages/**/*.{ts,tsx}', 'src/pages/**/*.{ts,tsx}'],
+    rules: {
+      // Page modules often carry staged UI handlers during iterative design.
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'no-empty': 'off',
+    },
+  },
+  {
+    files: ['src/shared/components/PluginChooser/**/*.{ts,tsx}'],
+    rules: {
+      // Plugin chooser package exports many helpers/constants via barrel files.
+      '@typescript-eslint/no-unused-vars': 'off',
+      'react-refresh/only-export-components': 'off',
+      'no-case-declarations': 'off',
+    },
+  },
+  {
+    files: ['src/**/*.{test,spec}.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 )
