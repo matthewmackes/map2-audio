@@ -1,0 +1,26 @@
+{
+  "task_id": "T004",
+  "checked_at_utc": "2026-03-09T03:56:01Z",
+  "endpoints": {
+    "/api/avb/devices": {
+      "discovered_count": 0,
+      "devices_count": 0
+    },
+    "/api/avb/streams": {
+      "streams_count": 0,
+      "active_stream_count": 0
+    },
+    "/api/avb/ptp/status": {
+      "state": "INITIALIZING",
+      "interface": "enp11s0",
+      "offset_ns": null
+    }
+  },
+  "gates": {
+    "q04_discovery_churn_ready": false,
+    "q05_stream_ready": false,
+    "q06_ptp_locked_ready": false
+  },
+  "overall_ready": false,
+  "conclusion": "Blocked: AVB HIL prerequisites absent."
+}

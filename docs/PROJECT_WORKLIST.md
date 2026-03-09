@@ -97,12 +97,13 @@ Description:
 - Required outputs: Updated qualification matrix and archived artifacts.  
 Subtasks: None  
 Assigned to: Lab + Codex  
-Last updated: 2026-03-08 11:30 - Codex
+Last updated: 2026-03-09 03:58 - Codex
 - Blocked notes:
+  - 2026-03-09 live recheck against backend on `127.0.0.1:8080` confirms HIL prerequisites still absent: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` returns `0` streams (`0` active), and `/api/avb/ptp/status` remains `INITIALIZING`.
   - 2026-03-08 live recheck against backend on `127.0.0.1:8080` confirms HIL prerequisites still absent: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` returns `0` streams (`0` active), and `/api/avb/ptp/status` remains `INITIALIZING`.
   - 2026-03-07 host recheck still fails HIL prerequisites: `/api/avb/devices` reports `discovered_count=0`, `/api/avb/streams` has `0` active streams, and `/api/avb/ptp/status` remains `INITIALIZING`.
   - 2026-02-27 host recheck confirms AVB stack operational on `enp11s0`, but HIL gate prerequisites are absent: `discovered_count=0`, `streams=0`, and PTP state remains `INITIALIZING`.
-  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260308/t004/t004-q04-q06-recheck.json`, `docs/fit-for-purpose-evidence/20260308/t004/t004-q04-q06-recheck.md`, `docs/fit-for-purpose-evidence/20260307/avb-t004-q04-q06-recheck.json`, `docs/fit-for-purpose-evidence/20260307/avb-t004-q04-q06-recheck.md`, `docs/fit-for-purpose-evidence/20260227/avb-t004-q04-q06-check.json`, `docs/fit-for-purpose-evidence/20260227/avb-t004-q04-q06-check.md`.
+  - Evidence artifacts: `docs/fit-for-purpose-evidence/20260309/t004/t004-q04-q06-recheck.json`, `docs/fit-for-purpose-evidence/20260309/t004/t004-q04-q06-recheck.md`, `docs/fit-for-purpose-evidence/20260308/t004/t004-q04-q06-recheck.json`, `docs/fit-for-purpose-evidence/20260308/t004/t004-q04-q06-recheck.md`, `docs/fit-for-purpose-evidence/20260307/avb-t004-q04-q06-recheck.json`, `docs/fit-for-purpose-evidence/20260307/avb-t004-q04-q06-recheck.md`, `docs/fit-for-purpose-evidence/20260227/avb-t004-q04-q06-check.json`, `docs/fit-for-purpose-evidence/20260227/avb-t004-q04-q06-check.md`.
 
 ID: T005  
 Status: [✓] Done  
