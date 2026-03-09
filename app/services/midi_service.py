@@ -21,6 +21,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
+try:
+    from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
+    MIDI_HUB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration
+    MidiMessage = None  # type: ignore[assignment]
+    VirtualMidiPort = None  # type: ignore[assignment]
+    MIDI_HUB_AVAILABLE = False
+
 
 class CurveType(str, Enum):
     """MIDI CC value curve types."""
@@ -107,6 +116,81 @@ class MIDIService:
         self._learn_active = False
         self._learn_target: Optional[Dict[str, Any]] = None
         self._active_chain_id: Optional[int] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._hub = None
+        self._hub_subscriber_id = f"midi_service:{id(self)}"
+        self._hub_port_id = "consumer:midi_service"
+        self._init_hub_bridge()
+
+    def _init_hub_bridge(self) -> None:
+        """Register MIDIService as a MidiHub endpoint for v2 routing."""
+        if not MIDI_HUB_AVAILABLE:
+            return
+        try:
+            hub = get_midi_hub()
+            if hub.resolve_port(self._hub_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_port_id,
+                        name="MIDI Service v2",
+                        direction="input",
+                    ),
+                    open_now=False,
+                )
+            self._hub = hub
+        except Exception as exc:
+            logger.debug("MIDIService hub bridge unavailable: %s", exc)
+
+    def _on_hub_message(self, message: MidiMessage) -> None:
+        """Handle routed MIDI events from MidiHub."""
+        if self._loop is None:
+            return
+        if message.destination_port not in (None, self._hub_port_id):
+            return
+        payload = [int(byte) & 0xFF for byte in (message.data or b"")]
+        if not payload:
+            return
+        try:
+            asyncio.run_coroutine_threadsafe(self._handle_hub_message(payload), self._loop)
+        except Exception as exc:  # pragma: no cover - thread scheduling path
+            logger.debug("MIDIService hub callback scheduling failed: %s", exc)
+
+    async def _handle_hub_message(self, payload: List[int]) -> None:
+        status = payload[0] & 0xFF
+        msg_type = status & 0xF0
+        channel = (status & 0x0F) + 1
+
+        # Program Change routing drives chain/snapshot switching in v2 service.
+        if msg_type == 0xC0 and len(payload) >= 2:
+            program = payload[1] & 0x7F
+            try:
+                from app.database import get_session
+
+                async with get_session() as session:
+                    await self.handle_program_change(channel, program, session)
+            except Exception as exc:
+                logger.debug("MIDIService hub program-change handling failed: %s", exc)
+
+    def attach_midi_hub(self, loop: Optional[asyncio.AbstractEventLoop] = None) -> None:
+        """Subscribe to MidiHub callbacks for runtime message handling."""
+        if self._hub is None:
+            return
+        try:
+            self._loop = loop or self._loop or asyncio.get_running_loop()
+            if not self._hub.running:
+                self._hub.start()
+            self._hub.subscribe(self._hub_subscriber_id, self._on_hub_message)
+        except Exception as exc:
+            logger.debug("Failed to attach MIDIService to MidiHub: %s", exc)
+
+    def detach_midi_hub(self) -> None:
+        """Unsubscribe from MidiHub callbacks."""
+        if self._hub is None:
+            return
+        try:
+            self._hub.unsubscribe(self._hub_subscriber_id)
+        except Exception:
+            pass
 
     def set_engine(self, engine):
         """Set reference to JUCE engine service."""
@@ -987,6 +1071,49 @@ class TesiraMidiDispatcher:
     JUCE engine in the normal path. For Tesira targets we receive the
     already-scaled float value from the mapping's min_val/max_val.
     """
+    _hub_port_id = "consumer:tesira_dispatch"
+
+    @staticmethod
+    def _emit_hub_message(parsed: Dict[str, str], value: float) -> None:
+        """Emit a synthetic MIDI event to MidiHub for unified diagnostics/routing."""
+        try:
+            from app.services.midi_hub.hub import get_midi_hub
+            from app.services.midi_hub.ports import VirtualMidiPort
+        except Exception:
+            return
+
+        try:
+            hub = get_midi_hub()
+            if hub.resolve_port(TesiraMidiDispatcher._hub_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=TesiraMidiDispatcher._hub_port_id,
+                        name="Tesira MIDI Dispatcher",
+                        direction="output",
+                    ),
+                    open_now=False,
+                )
+            action = parsed.get("action", "")
+            channel = max(0, min(15, int(parsed.get("channel", "1")) - 1))
+            if action == "preset":
+                payload = bytes([0xC0 | channel, max(0, min(127, int(float(value))))])
+            elif action == "mute":
+                payload = bytes([0xB0 | channel, 0x78, 127 if value > 0.5 else 0])
+            else:
+                scaled = int(max(0, min(127, round(float(value)))))
+                payload = bytes([0xB0 | channel, 0x07, scaled])
+            hub.send(
+                source_port=TesiraMidiDispatcher._hub_port_id,
+                destination_port=f"tesira:{parsed.get('device_id', 'unknown')}",
+                data=payload,
+                metadata={
+                    "bridge": "tesira_dispatch",
+                    "instance_tag": parsed.get("instance_tag"),
+                    "action": action,
+                },
+            )
+        except Exception:
+            return
 
     @staticmethod
     async def dispatch(uri: str, value: float = 0.0) -> None:
@@ -1015,6 +1142,7 @@ class TesiraMidiDispatcher:
                 await device.set_mute(parsed['instance_tag'], int(parsed['channel']), value > 0.5)
             elif action == 'preset':
                 await device.recall_preset(int(parsed['channel']))
+            TesiraMidiDispatcher._emit_hub_message(parsed, value)
         except Exception as exc:
             import logging
             logging.getLogger(__name__).error(

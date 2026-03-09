@@ -269,6 +269,8 @@ class MidiRouter:
     def _on_message(self, message: MidiMessage) -> None:
         if not self._running:
             return
+        if bool((message.metadata or {}).get("router_dispatch")):
+            return
 
         parsed = self._parse_message(message.data)
         for route in self._route_snapshot:
@@ -366,15 +368,28 @@ class MidiRouter:
         delay_ms: int,
         metadata: Dict[str, Any],
     ) -> None:
+        event_metadata = {
+            "route_id": route_id,
+            "delay_ms": int(delay_ms),
+            "transform_metadata": dict(metadata),
+        }
         self._hub.send(
             source_port=source_port,
             destination_port=destination_port,
             data=data,
-            metadata={
-                "route_id": route_id,
-                "delay_ms": int(delay_ms),
-                "transform_metadata": dict(metadata),
-            },
+            metadata=dict(event_metadata),
+        )
+        # Re-inject routed messages into the hub bus so internal consumers
+        # (engine bridge, learn manager, diagnostics, broadcast) can subscribe
+        # without polling per-port TX queues.
+        self._hub.inject(
+            MidiMessage(
+                data=bytes(data),
+                timestamp_ns=time.time_ns(),
+                source_port=source_port,
+                destination_port=destination_port,
+                metadata={**event_metadata, "router_dispatch": True},
+            )
         )
         self._emit_traffic_event(
             source_port=source_port,

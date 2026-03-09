@@ -30,6 +30,15 @@ from app.services.websocket_manager import ws_manager
 logger = logging.getLogger(__name__)
 
 try:
+    from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
+    MIDI_HUB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration path
+    MidiMessage = None  # type: ignore[assignment]
+    VirtualMidiPort = None  # type: ignore[assignment]
+    MIDI_HUB_AVAILABLE = False
+
+try:
     import rtmidi  # type: ignore
 
     RTMIDI_AVAILABLE = True
@@ -101,6 +110,13 @@ class MPX1Service:
         self._connected_output_index: Optional[int] = None
         self._midi_poll_task: Optional[asyncio.Task] = None
         self._running = False
+        self._event_loop: Optional[asyncio.AbstractEventLoop] = None
+
+        # MidiHub bridge ports for MPX1 consumer migration.
+        self._hub = None
+        self._hub_subscriber_id = f"mpx1_service:{id(self)}"
+        self._hub_input_port_id = "consumer:mpx1_in"
+        self._hub_output_port_id = "consumer:mpx1_out"
 
         self._pending_realtime: Dict[str, float] = {}
         self._coalesce_task: Optional[asyncio.Task] = None
@@ -156,6 +172,35 @@ class MPX1Service:
         self._load_shadow_state()
         self._load_library()
         self._load_midi_maps()
+        self._init_midi_hub_bridge()
+
+    def _init_midi_hub_bridge(self) -> None:
+        """Best-effort registration of MPX1 endpoints with MidiHub."""
+        if not MIDI_HUB_AVAILABLE:
+            return
+        try:
+            hub = get_midi_hub()
+            if hub.resolve_port(self._hub_input_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_input_port_id,
+                        name="MPX1 Input",
+                        direction="input",
+                    ),
+                    open_now=False,
+                )
+            if hub.resolve_port(self._hub_output_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_output_port_id,
+                        name="MPX1 Output",
+                        direction="output",
+                    ),
+                    open_now=False,
+                )
+            self._hub = hub
+        except Exception as exc:
+            logger.debug("MPX1 MidiHub bridge unavailable: %s", exc)
 
     # -------------------------------------------------------------------------
     # Load/save state
@@ -665,6 +710,14 @@ class MPX1Service:
             self._connected_input_index = input_port_index or 0
             self._connected_output_index = output_port_index or 0
             self._running = True
+            self._event_loop = asyncio.get_running_loop()
+            if self._hub is not None:
+                try:
+                    if not self._hub.running:
+                        self._hub.start()
+                    self._hub.subscribe(self._hub_subscriber_id, self._on_hub_message)
+                except Exception as exc:
+                    logger.debug("Failed to subscribe MPX1 hub bridge: %s", exc)
             self._midi_poll_task = asyncio.create_task(self._midi_poll_loop(), name="mpx1_midi_poll")
             self._start_background_tasks()
             await self._publish_event(
@@ -686,6 +739,14 @@ class MPX1Service:
             self._connected_input_index = int(input_port_index)
             self._connected_output_index = int(output_port_index)
             self._running = True
+            self._event_loop = asyncio.get_running_loop()
+            if self._hub is not None:
+                try:
+                    if not self._hub.running:
+                        self._hub.start()
+                    self._hub.subscribe(self._hub_subscriber_id, self._on_hub_message)
+                except Exception as exc:
+                    logger.debug("Failed to subscribe MPX1 hub bridge: %s", exc)
             self._midi_poll_task = asyncio.create_task(self._midi_poll_loop(), name="mpx1_midi_poll")
             self._start_background_tasks()
             await self._publish_event(
@@ -703,6 +764,11 @@ class MPX1Service:
 
     async def disconnect_midi(self) -> None:
         self._running = False
+        if self._hub is not None:
+            try:
+                self._hub.unsubscribe(self._hub_subscriber_id)
+            except Exception:
+                pass
         if self._midi_poll_task is not None:
             self._midi_poll_task.cancel()
             try:
@@ -727,6 +793,47 @@ class MPX1Service:
 
         self._connected_input_index = None
         self._connected_output_index = None
+        self._event_loop = None
+
+    def _on_hub_message(self, message: MidiMessage) -> None:
+        """Receive MIDI routed to MPX1 via MidiHub and process it locally."""
+        if not self._running:
+            return
+        if message.source_port == self._hub_output_port_id:
+            return
+        if message.destination_port not in (None, self._hub_input_port_id):
+            return
+        payload = [int(value) & 0xFF for value in (message.data or b"")]
+        if not payload or self._event_loop is None:
+            return
+
+        async def _dispatch() -> None:
+            status = payload[0] & 0xFF
+            if status == 0xF0:
+                await self.handle_incoming_sysex(payload)
+            elif (status & 0xF0) == 0xB0 and len(payload) >= 3:
+                channel = (status & 0x0F) + 1
+                await self.handle_incoming_cc(channel, payload[1] & 0x7F, payload[2] & 0x7F)
+
+        try:
+            asyncio.run_coroutine_threadsafe(_dispatch(), self._event_loop)
+        except Exception as exc:  # pragma: no cover - thread bridge
+            logger.debug("MPX1 hub dispatch scheduling failed: %s", exc)
+
+    def _emit_hub_message(self, payload: List[int], *, direction: str, kind: str) -> None:
+        """Emit MIDI bytes into MidiHub for unified routing/diagnostics."""
+        if self._hub is None:
+            return
+        try:
+            destination = self._hub_input_port_id if direction == "in" else "mpx1:device"
+            self._hub.send(
+                source_port=self._hub_output_port_id if direction == "out" else self._hub_input_port_id,
+                destination_port=destination,
+                data=bytes(int(v) & 0xFF for v in payload),
+                metadata={"bridge": "mpx1_service", "direction": direction, "kind": kind},
+            )
+        except Exception:
+            return
 
     def _start_background_tasks(self) -> None:
         """Start drift-detection and readback-verification background tasks."""
@@ -954,6 +1061,8 @@ class MPX1Service:
                 if msg:
                     data, _delta_time = msg
                     if data:
+                        frame = [int(v) & 0xFF for v in data]
+                        self._emit_hub_message(frame, direction="in", kind="poll_rx")
                         status = int(data[0]) & 0xFF
                         if status == 0xF0:
                             await self.handle_incoming_sysex([int(v) for v in data])
@@ -1224,6 +1333,7 @@ class MPX1Service:
         if self._midi_out is not None:
             try:
                 self._midi_out.send_message(message)
+                self._emit_hub_message(message, direction="out", kind="param_sysex")
             except Exception as exc:
                 logger.debug("MPX1 send_message failed for %s: %s", param_id, exc)
 
@@ -1251,6 +1361,8 @@ class MPX1Service:
                 program_lsb = normalized % 128
                 self._midi_out.send_message([0xB0, 0x00, bank & 0x7F])  # Bank select MSB
                 self._midi_out.send_message([0xC0, program_lsb & 0x7F])  # Program change
+                self._emit_hub_message([0xB0, 0x00, bank & 0x7F], direction="out", kind="bank_select")
+                self._emit_hub_message([0xC0, program_lsb & 0x7F], direction="out", kind="program_change")
             except Exception as exc:
                 logger.debug("MPX1 program change send failed: %s", exc)
 

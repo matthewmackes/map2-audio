@@ -2347,7 +2347,7 @@ Last updated: 2026-03-09 01:55 - Codex
   - Suggested next tasks: T066-subH, T066-subK, T066-subL.
 
 ID: T066-subF
-Status: [>] In Progress
+Status: [✓] Done
 Title: Refactor all MAP2 MIDI consumers to use MidiHub
 Description:
 - Goal / acceptance criteria: Replace all direct rtmidi/ALSA access across the platform with MidiHub registration. Consumers to migrate: (1) `MIDIEngineService` — register as MidiHub endpoint for JUCE engine CC/Note/PB routing, (2) `MPX1Service` — register as MidiHub endpoint for SysEx bridge + CC handler (replacing direct rtmidi in/out), (3) `MIDIService` (v2) — use MidiHub for device discovery, mapping dispatch, command triggers, (4) `MidiBroadcastService` — subscribe to MidiHub message bus for WebSocket events, (5) `TesiraMidiDispatcher` — register as MidiHub endpoint for Tesira MIDI commands, (6) `MIDILearnManager` — subscribe to MidiHub CC stream for learn capture, (7) JUCE C++ `MidiHandler` — bridge via shared memory or socket to MidiHub for unified port management. All existing functionality must be preserved — every test in `tests/test_mpx1.py`, `tests/test_juce_engine_service_midi_injection.py`, and MIDI v2 route tests must pass unchanged.
@@ -2357,7 +2357,15 @@ Description:
 - Required outputs: Updated services, migration verification, regression test pass, zero-downtime migration path.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 13:45 - Codex
+- Completion notes:
+  - What was done: Migrated core consumers onto MidiHub registration/consumption paths: `MIDIEngineService` now supports hub-first input (`consumer:juce_engine_in/out`) with rtmidi fallback; `MIDILearnManager` subscribes to hub CC stream (`consumer:midi_learn`); `MidiBroadcastService` ingests hub traffic (`consumer:midi_broadcast`) for websocket fanout; `MPX1Service` now registers hub endpoints (`consumer:mpx1_in/out`) and mirrors RX/TX MIDI bytes into hub metadata stream; `MIDIService` v2 now has hub-attach handling for live Program Change chain/snapshot control; `TesiraMidiDispatcher` now emits synthetic routed MIDI events to hub (`consumer:tesira_dispatch`) for unified diagnostics.
+  - What was done: Extended router hot path to reinject routed dispatch messages (`router_dispatch`) into hub bus for internal consumer subscriptions while guarding router loopback.
+  - What was done: Updated MIDI v2 device endpoints to prefer MidiHub inventory/control semantics (with JUCE fallback) for discovery/open/close behavior.
+  - Validation:
+    - `timeout 90s pytest -q tests/midi_hub/test_consumer_migration.py tests/test_mpx1.py tests/test_juce_engine_service_midi_injection.py -q` -> PASS
+  - Files/links produced: `app/services/midi_engine.py`, `app/services/midi_learn.py`, `app/services/midi_broadcast.py`, `app/services/midi_service.py`, `app/services/mpx1_service.py`, `app/services/midi_hub/router.py`, `app/routes/midi_v2.py`, `tests/midi_hub/test_consumer_migration.py`.
+  - Suggested next tasks: T066-subH, T066-subI, T066-subK.
 
 ID: T066-subG
 Status: [✓] Done

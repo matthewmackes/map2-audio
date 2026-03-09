@@ -7,10 +7,19 @@ import logging
 from typing import Dict, Optional, List, Any, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
-from threading import Lock
+from threading import RLock
 import json
 
 logger = logging.getLogger(__name__)
+
+try:
+    from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
+    MIDI_HUB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration
+    MidiMessage = None  # type: ignore[assignment]
+    VirtualMidiPort = None  # type: ignore[assignment]
+    MIDI_HUB_AVAILABLE = False
 
 
 @dataclass
@@ -105,12 +114,59 @@ class MIDILearnManager:
         self.learn_target_param: Optional[str] = None
         
         # Thread safety
-        self._lock = Lock()
+        self._lock = RLock()
         
         # Last received CC values for display
         self.last_cc_values: Dict[Tuple[int, Optional[int]], int] = {}
-        
+        self._hub = None
+        self._hub_subscriber_id = f"midi_learn_manager:{id(self)}"
+        self._hub_port_id = "consumer:midi_learn"
+
         logger.info("MIDI Learn manager initialized")
+        self._init_hub_bridge()
+
+    def _init_hub_bridge(self) -> None:
+        """Subscribe to MidiHub CC traffic for learn capture."""
+        if not MIDI_HUB_AVAILABLE:
+            return
+        try:
+            hub = get_midi_hub()
+            if hub.resolve_port(self._hub_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_port_id,
+                        name="MIDI Learn Manager",
+                        direction="input",
+                    ),
+                    open_now=False,
+                )
+            hub.subscribe(self._hub_subscriber_id, self._on_hub_message)
+            self._hub = hub
+        except Exception as exc:
+            logger.debug("MIDILearnManager hub bridge unavailable: %s", exc)
+
+    def _on_hub_message(self, message: MidiMessage) -> None:
+        """Decode CC messages from MidiHub for learn/mapping updates."""
+        data = list(message.data or [])
+        if len(data) < 3:
+            return
+        status = int(data[0]) & 0xFF
+        if (status & 0xF0) != 0xB0:
+            return
+        channel = status & 0x0F
+        cc_number = int(data[1]) & 0x7F
+        cc_value = int(data[2]) & 0x7F
+        self.process_midi_cc(cc_number, cc_value, channel=channel)
+
+    def shutdown(self) -> None:
+        """Unsubscribe from MidiHub callbacks for clean teardown."""
+        with self._lock:
+            if self._hub is not None:
+                try:
+                    self._hub.unsubscribe(self._hub_subscriber_id)
+                except Exception:
+                    pass
+                self._hub = None
     
     def start_learn_mode(self, parameter_id: str) -> None:
         """

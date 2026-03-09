@@ -21,6 +21,16 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+try:
+    from app.services.midi_hub.hub import MidiHub, get_midi_hub
+    from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
+    MIDI_HUB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration path
+    MidiHub = None  # type: ignore[assignment]
+    MidiMessage = None  # type: ignore[assignment]
+    VirtualMidiPort = None  # type: ignore[assignment]
+    MIDI_HUB_AVAILABLE = False
+
 # Try to import rtmidi, fall back to stub if not available
 try:
     import rtmidi
@@ -116,13 +126,103 @@ class MIDIEngineService:
 
         # Expression pedal calibration
         self._expression_calibration: Dict[int, Tuple[int, int]] = {}  # cc -> (min_raw, max_raw)
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+
+        # MidiHub bridge (hub-first path with direct-rtmidi fallback)
+        self._hub: Optional[MidiHub] = None
+        self._hub_enabled = False
+        self._hub_subscriber_id = f"midi_engine_service:{id(self)}"
+        self._hub_input_port_id = "consumer:juce_engine_in"
+        self._hub_output_port_id = "consumer:juce_engine_out"
 
         self._discover_devices()
+        self._init_midi_hub_bridge()
+
+    def _init_midi_hub_bridge(self) -> None:
+        """Initialize optional MidiHub consumer ports."""
+        if not MIDI_HUB_AVAILABLE:
+            return
+        try:
+            hub = get_midi_hub()
+            if hub.resolve_port(self._hub_input_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_input_port_id,
+                        name="JUCE Engine Input",
+                        direction="input",
+                    ),
+                    open_now=False,
+                )
+            if hub.resolve_port(self._hub_output_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_output_port_id,
+                        name="JUCE Engine Output",
+                        direction="output",
+                    ),
+                    open_now=False,
+                )
+            self._hub = hub
+            self._hub_enabled = True
+        except Exception as exc:
+            self._hub_enabled = False
+            logger.debug("MidiHub bridge unavailable for MIDIEngineService: %s", exc)
+
+    def _on_hub_message(self, message: MidiMessage) -> None:
+        """Receive MIDI messages routed to the JUCE-engine consumer port."""
+        if not self._running:
+            return
+        if message.source_port == self._hub_output_port_id:
+            return
+        destination = message.destination_port
+        if destination not in (None, self._hub_input_port_id):
+            return
+        if not message.data:
+            return
+        if self._loop is None:
+            return
+        payload = [int(byte) & 0xFF for byte in message.data]
+        try:
+            asyncio.run_coroutine_threadsafe(self._handle_midi_message(payload), self._loop)
+        except Exception as exc:  # pragma: no cover - thread scheduling path
+            logger.debug("Failed scheduling hub MIDI message: %s", exc)
 
     def _discover_devices(self) -> None:
         """Discover MIDI devices using rtmidi."""
         self.input_devices = []
         self.output_devices = []
+
+        if self._hub_enabled and self._hub is not None:
+            try:
+                ports = self._hub.list_ports()
+                for index, port in enumerate(ports):
+                    if port.direction in ("input", "duplex"):
+                        self.input_devices.append(
+                            MIDIDevice(
+                                index=index,
+                                name=port.name,
+                                port_type="input",
+                                is_virtual=(port.kind != "alsa"),
+                            )
+                        )
+                    if port.direction in ("output", "duplex"):
+                        self.output_devices.append(
+                            MIDIDevice(
+                                index=index,
+                                name=port.name,
+                                port_type="output",
+                                is_virtual=(port.kind != "alsa"),
+                            )
+                        )
+                if self.input_devices or self.output_devices:
+                    logger.info(
+                        "Discovered %s MidiHub inputs, %s outputs",
+                        len(self.input_devices),
+                        len(self.output_devices),
+                    )
+                    return
+            except Exception as exc:
+                logger.debug("MidiHub device discovery failed, falling back to rtmidi: %s", exc)
 
         if not RTMIDI_AVAILABLE:
             # Fallback to virtual devices
@@ -225,6 +325,19 @@ class MIDIEngineService:
             logger.warning("MIDI engine already running")
             return True
 
+        self._loop = asyncio.get_running_loop()
+
+        if self._hub_enabled and self._hub is not None:
+            try:
+                if not self._hub.running:
+                    self._hub.start()
+                self._hub.subscribe(self._hub_subscriber_id, self._on_hub_message)
+                self._running = True
+                logger.info("MIDI engine started in MidiHub consumer mode")
+                return True
+            except Exception as exc:
+                logger.warning("Failed to start MIDI engine in MidiHub mode: %s", exc)
+
         if not RTMIDI_AVAILABLE:
             logger.warning("MIDI engine started in simulation mode (no rtmidi)")
             self._running = True
@@ -250,6 +363,12 @@ class MIDIEngineService:
         """Stop MIDI monitoring."""
         self._running = False
 
+        if self._hub_enabled and self._hub is not None:
+            try:
+                self._hub.unsubscribe(self._hub_subscriber_id)
+            except Exception:
+                pass
+
         if self._process_task:
             self._process_task.cancel()
             try:
@@ -267,6 +386,30 @@ class MIDIEngineService:
             self._midi_out = None
 
         logger.info("MIDI engine stopped")
+
+    async def add_cc_mapping(self, channel: int, cc: int, target_uri: str, param_index: int) -> bool:
+        """Compatibility wrapper used by legacy MIDI routes."""
+        mapping = await self.add_mapping(
+            channel=channel,
+            message_type="cc",
+            cc_number=cc,
+            target_plugin_uri=target_uri,
+            target_param_index=param_index,
+            target_param_name="",
+        )
+        return mapping is not None
+
+    async def delete_mapping(self, mapping_id: int) -> bool:
+        """Compatibility wrapper used by legacy MIDI routes."""
+        removed = self.mappings.pop(int(mapping_id), None)
+        if removed is None:
+            return False
+        self._rebuild_lookup()
+        return True
+
+    async def midi_learn(self, target_uri: str, param_index: int, timeout: float = 10.0) -> bool:
+        """Compatibility wrapper used by legacy MIDI routes."""
+        return await self.start_learn(target_uri, param_index, timeout=timeout)
 
     async def _process_loop(self) -> None:
         """Main MIDI processing loop."""

@@ -29,6 +29,13 @@ from app.services.midi_service import (
 )
 from app.services.midi_device_profiles import device_profile_service
 
+try:
+    from app.services.midi_hub.hub import get_midi_hub
+    MIDI_HUB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration
+    get_midi_hub = None  # type: ignore[assignment]
+    MIDI_HUB_AVAILABLE = False
+
 # Connect services
 device_profile_service.set_midi_service(midi_service)
 
@@ -443,6 +450,31 @@ async def get_midi_devices():
     inputs = []
     outputs = []
 
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
+            for index, port in enumerate(hub.list_ports()):
+                row = {
+                    "index": index,
+                    "name": port.name,
+                    "type": port.direction,
+                    "port_id": port.port_id,
+                    "kind": port.kind,
+                }
+                if port.direction in ("input", "duplex"):
+                    inputs.append(row)
+                if port.direction in ("output", "duplex"):
+                    outputs.append(row)
+            return {
+                "inputs": inputs,
+                "outputs": outputs,
+                "source": "midi_hub",
+            }
+        except Exception as e:
+            logger.debug(f"Could not get MidiHub devices: {e}")
+
     if midi_service._engine:
         try:
             inputs = await midi_service._engine.get_midi_input_devices()
@@ -453,12 +485,24 @@ async def get_midi_devices():
     return {
         "inputs": inputs,
         "outputs": outputs,
+        "source": "juce_engine",
     }
 
 
 @router.post("/devices/input/{device_index}")
 async def open_input_device(device_index: int):
     """Open a MIDI input device."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
+            ports = [port for port in hub.list_ports() if port.direction in ("input", "duplex")]
+            if 0 <= device_index < len(ports):
+                return {"status": "opened", "device_index": device_index, "port_id": ports[device_index].port_id}
+        except Exception as e:
+            logger.debug(f"MidiHub input open fallback to engine: {e}")
+
     if not midi_service._engine:
         raise HTTPException(status_code=503, detail="MIDI engine not available")
 
@@ -472,6 +516,17 @@ async def open_input_device(device_index: int):
 @router.post("/devices/output/{device_index}")
 async def open_output_device(device_index: int):
     """Open a MIDI output device."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            if not hub.running:
+                hub.start()
+            ports = [port for port in hub.list_ports() if port.direction in ("output", "duplex")]
+            if 0 <= device_index < len(ports):
+                return {"status": "opened", "device_index": device_index, "port_id": ports[device_index].port_id}
+        except Exception as e:
+            logger.debug(f"MidiHub output open fallback to engine: {e}")
+
     if not midi_service._engine:
         raise HTTPException(status_code=503, detail="MIDI engine not available")
 
@@ -485,6 +540,12 @@ async def open_output_device(device_index: int):
 @router.post("/devices/close")
 async def close_all_devices():
     """Close all MIDI devices."""
+    if MIDI_HUB_AVAILABLE:
+        try:
+            hub = get_midi_hub()
+            hub.stop()
+        except Exception as e:
+            logger.debug(f"MidiHub close failed: {e}")
     if midi_service._engine:
         await midi_service._engine.close_midi_devices()
 

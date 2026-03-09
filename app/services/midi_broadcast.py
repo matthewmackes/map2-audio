@@ -24,6 +24,15 @@ from app.services.juce_engine_service import get_audio_engine
 
 logger = logging.getLogger(__name__)
 
+try:
+    from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
+    MIDI_HUB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional integration
+    MidiMessage = None  # type: ignore[assignment]
+    VirtualMidiPort = None  # type: ignore[assignment]
+    MIDI_HUB_AVAILABLE = False
+
 
 class MidiBroadcastService:
     """
@@ -38,6 +47,9 @@ class MidiBroadcastService:
         self._task: Optional[asyncio.Task] = None
         self._event_queue: Queue = Queue()
         self._callbacks_registered = False
+        self._hub = None
+        self._hub_subscriber_id = f"midi_broadcast:{id(self)}"
+        self._hub_port_id = "consumer:midi_broadcast"
 
         # Topic names
         self.TOPIC_MIDI = "midi"
@@ -51,6 +63,7 @@ class MidiBroadcastService:
             return
 
         self._running = True
+        self._register_hub_bridge()
         self._register_callbacks()
 
         # Start the event processing task
@@ -61,6 +74,11 @@ class MidiBroadcastService:
     async def stop(self):
         """Stop the MIDI broadcast service"""
         self._running = False
+        if self._hub is not None:
+            try:
+                self._hub.unsubscribe(self._hub_subscriber_id)
+            except Exception:
+                pass
 
         if self._task:
             self._task.cancel()
@@ -71,6 +89,59 @@ class MidiBroadcastService:
 
         self._task = None
         logger.info("MIDI broadcast service stopped")
+
+    def _register_hub_bridge(self) -> None:
+        """Attach to MidiHub traffic so all routed MIDI is broadcastable."""
+        if not MIDI_HUB_AVAILABLE:
+            return
+        try:
+            hub = get_midi_hub()
+            if hub.resolve_port(self._hub_port_id) is None:
+                hub.register_port(
+                    VirtualMidiPort(
+                        port_id=self._hub_port_id,
+                        name="MIDI Broadcast Sink",
+                        direction="input",
+                    ),
+                    open_now=False,
+                )
+            hub.subscribe(self._hub_subscriber_id, self._on_hub_message)
+            self._hub = hub
+        except Exception as exc:
+            logger.debug("MidiBroadcastService hub bridge unavailable: %s", exc)
+
+    def _on_hub_message(self, message: MidiMessage):
+        """Capture routed MIDI traffic from MidiHub and publish to monitor topic."""
+        if not self._running:
+            return
+        if message.source_port == self._hub_port_id:
+            return
+        payload = list(message.data or [])
+        if not payload:
+            return
+        status = int(payload[0]) & 0xFF
+        message_type = "system"
+        if (status & 0xF0) == 0x80:
+            message_type = "note_off"
+        elif (status & 0xF0) == 0x90:
+            message_type = "note_on"
+        elif (status & 0xF0) == 0xB0:
+            message_type = "control_change"
+        elif (status & 0xF0) == 0xC0:
+            message_type = "program_change"
+        elif status == 0xF0:
+            message_type = "sysex"
+        self._queue_event(
+            "midi_message",
+            {
+                "message_type": message_type,
+                "raw_hex": " ".join(f"{int(byte) & 0xFF:02X}" for byte in payload),
+                "channel": (status & 0x0F) + 1 if status < 0xF0 else None,
+                "source_port": message.source_port,
+                "destination_port": message.destination_port,
+                "metadata": dict(message.metadata or {}),
+            },
+        )
 
     def _register_callbacks(self):
         """Register Python callbacks with the C++ MIDI handler"""
