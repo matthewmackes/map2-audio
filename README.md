@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**710** Python | **957** TypeScript | **282** C++/H | **108** Docs | **386** total commits | **0** stars | **0** forks | **0** open issues
+**711** Python | **958** TypeScript | **282** C++/H | **108** Docs | **388** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`783f8988`](https://github.com/matthewmackes/map2-audio/commit/783f8988a658254e2d5d2bfb9fc41246ed8c43f1) | feat: add MIDI Hub network and OSC bridge controls (close... | Map2 Audio | 2026-03-08 |
+| [`4501cbb8`](https://github.com/matthewmackes/map2-audio/commit/4501cbb8109f6433e28d112822077d5d1f8ba182) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`d7f7e7f6`](https://github.com/matthewmackes/map2-audio/commit/d7f7e7f637537a8cedfddbac3e7a25a633b8afdf) | feat: add MIDI Hub clock engine controls (closes WORKLIST... | Map2 Audio | 2026-03-08 |
 | [`49a3d0fc`](https://github.com/matthewmackes/map2-audio/commit/49a3d0fc2e8211dc002aaa050c2a3016823157e3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`e29fb89b`](https://github.com/matthewmackes/map2-audio/commit/e29fb89b0bbda6557688de5b469bd305bc90679a) | feat: add MIDI Hub scripting engine routes and editor (cl... | Map2 Audio | 2026-03-08 |
 | [`fe099c1b`](https://github.com/matthewmackes/map2-audio/commit/fe099c1b0c6332f26c07eabcd74b733e95e3bfd5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`34e2703f`](https://github.com/matthewmackes/map2-audio/commit/34e2703f9fb28b9d5f0c48c79a111ffe19503e44) | feat: add MIDI Hub preset system and slot routing (closes... | Map2 Audio | 2026-03-08 |
 | [`82a47957`](https://github.com/matthewmackes/map2-audio/commit/82a479573886230478f51d44e9b2b22929daa456) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
-| [`cdc6b675`](https://github.com/matthewmackes/map2-audio/commit/cdc6b6759a22eb1918a26c8529aae39cbf10dd87) | feat: add MIDI Hub patchbay editor view (closes WORKLIST ... | Map2 Audio | 2026-03-08 |
-| [`8e1e5831`](https://github.com/matthewmackes/map2-audio/commit/8e1e583131b5762b64aad37762ee39c0600036af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
