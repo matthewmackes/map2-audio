@@ -1480,6 +1480,15 @@ export interface MidiHubProgramSlotMap {
   slots: Record<string, string>;
 }
 
+export interface MidiHubScriptSummary {
+  script_id: string;
+  name: string;
+  code: string;
+  enabled: boolean;
+  created_at: number;
+  updated_at: number;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
 
@@ -1629,6 +1638,58 @@ export const midiHubApi = {
       method: 'POST',
       body: JSON.stringify({ context }),
     }),
+
+  getScriptExamples: () =>
+    fetchJson<{ count: number; examples: Array<{ script_id: string; name: string; code: string }> }>(
+      `${API_BASE}/midi/hub/scripts/examples`
+    ),
+  listScripts: () =>
+    fetchJson<{ count: number; scripts: MidiHubScriptSummary[] }>(`${API_BASE}/midi/hub/scripts`),
+  getScript: (scriptId: string) =>
+    fetchJson<{ ok: boolean; script?: MidiHubScriptSummary | null }>(`${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}`),
+  upsertScript: (payload: { script_id: string; name: string; code: string; enabled?: boolean }) =>
+    fetchJson<{ ok: boolean; script: MidiHubScriptSummary }>(`${API_BASE}/midi/hub/scripts`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteScript: (scriptId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}`, {
+      method: 'DELETE',
+    }),
+  enableScript: (scriptId: string) =>
+    fetchJson<{ ok: boolean; script?: MidiHubScriptSummary | null }>(
+      `${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/enable`,
+      { method: 'POST' }
+    ),
+  disableScript: (scriptId: string) =>
+    fetchJson<{ ok: boolean; script?: MidiHubScriptSummary | null }>(
+      `${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/disable`,
+      { method: 'POST' }
+    ),
+  runScript: (scriptId: string, event: Record<string, unknown>) =>
+    fetchJson<{ ok: boolean; script_id: string; error?: string }>(
+      `${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/run`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ event }),
+      }
+    ),
+  triggerScript: (scriptId: string, event: Record<string, unknown>) =>
+    fetchJson<{ ok: boolean; script_id: string; error?: string }>(
+      `${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/trigger`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ event }),
+      }
+    ),
+  stopScript: (scriptId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/stop`, {
+      method: 'POST',
+    }),
+  getScriptConsole: (scriptId: string, limit = 200) =>
+    fetchJson<{ script_id: string; count: number; lines: string[] }>(
+      `${API_BASE}/midi/hub/scripts/${encodeURIComponent(scriptId)}/console?limit=${Math.max(1, Math.min(2000, limit))}`
+    ),
 
   getTrafficSnapshot: (params?: {
     limit?: number;

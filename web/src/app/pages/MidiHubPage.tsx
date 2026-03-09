@@ -7,6 +7,7 @@ import { MidiRoutingMatrix } from '../components/MidiHub/MidiRoutingMatrix'
 import { MidiPatchbay } from '../components/MidiHub/MidiPatchbay'
 import { MidiTrafficMonitor } from '../components/MidiHub/MidiTrafficMonitor'
 import { MidiHubPresetManager } from '../components/MidiHub/MidiHubPresetManager'
+import { MidiScriptEditor } from '../components/MidiHub/MidiScriptEditor'
 import { useToasts } from '../components/Toasts'
 import { midiHubApi } from '../../map2/api'
 
@@ -89,6 +90,14 @@ export function MidiHubPage() {
           Snapshot/recall, default startup preset, program-change slot mapping, and chain timers.
         </p>
         <MidiHubPresetManager />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Script Engine</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          Sandbox script editor with run/trigger controls, timer stop, and live console output.
+        </p>
+        <MidiScriptEditor />
       </div>
 
       <div className="card">

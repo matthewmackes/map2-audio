@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from app.services.midi_hub.hub import get_midi_hub
 from app.services.midi_hub.preset_service import get_midi_hub_preset_service
 from app.services.midi_hub.router import get_midi_router
+from app.services.midi_hub.script_engine import get_midi_script_engine
 from app.services.midi_hub.traffic_monitor import get_midi_traffic_monitor
 
 
@@ -83,6 +84,17 @@ class DefaultPresetRequest(BaseModel):
 
 class ProgramSlotRequest(BaseModel):
     target_id: str = Field(..., min_length=1, max_length=256)
+
+
+class ScriptUpsertRequest(BaseModel):
+    script_id: str = Field(..., min_length=1, max_length=128)
+    name: str = Field(..., min_length=1, max_length=255)
+    code: str = Field(..., min_length=1, max_length=100000)
+    enabled: bool = True
+
+
+class ScriptRunRequest(BaseModel):
+    event: Dict[str, Any] = Field(default_factory=dict)
 
 
 @router.get("/status")
@@ -350,6 +362,109 @@ async def get_preset(preset_id: str) -> Dict[str, Any]:
     service = get_midi_hub_preset_service()
     preset = service.get_preset(preset_id)
     return {"ok": preset is not None, "preset": preset}
+
+
+@router.get("/scripts/examples")
+async def list_script_examples() -> Dict[str, Any]:
+    examples = [
+        {
+            "script_id": "cc_lfo",
+            "name": "CC LFO Generator",
+            "code": "def main(event):\n    for value in (0, 32, 64, 96, 127):\n        midi.cc('dst', 1, 1, value)\n",
+        },
+        {
+            "script_id": "midi_panic",
+            "name": "MIDI Panic",
+            "code": "def main(event):\n    for note in range(128):\n        midi.note_off('dst', 1, note, 0)\n",
+        },
+        {
+            "script_id": "program_stepper",
+            "name": "Program Change Stepper",
+            "code": "def main(event):\n    current = int(state.get('program', 0))\n    nxt = (current + 1) % 128\n    midi.pc('dst', 1, nxt)\n    state.set('program', nxt)\n",
+        },
+    ]
+    return {"count": len(examples), "examples": examples}
+
+
+@router.get("/scripts")
+async def list_scripts() -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    scripts = service.list_scripts()
+    return {"count": len(scripts), "scripts": scripts}
+
+
+@router.get("/scripts/{script_id}")
+async def get_script(script_id: str) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    script = service.get_script(script_id)
+    return {"ok": script is not None, "script": script}
+
+
+@router.post("/scripts")
+async def upsert_script(req: ScriptUpsertRequest) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    script = service.upsert_script(
+        script_id=req.script_id,
+        name=req.name,
+        code=req.code,
+        enabled=req.enabled,
+    )
+    return {"ok": True, "script": script}
+
+
+@router.delete("/scripts/{script_id}")
+async def delete_script(script_id: str) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    return {"ok": service.delete_script(script_id)}
+
+
+@router.post("/scripts/{script_id}/enable")
+async def enable_script(script_id: str) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    script = service.set_enabled(script_id, True)
+    return {"ok": script is not None, "script": script}
+
+
+@router.post("/scripts/{script_id}/disable")
+async def disable_script(script_id: str) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    script = service.set_enabled(script_id, False)
+    return {"ok": script is not None, "script": script}
+
+
+@router.post("/scripts/{script_id}/run")
+async def run_script(script_id: str, req: ScriptRunRequest) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    try:
+        payload = await service.run_script(script_id, event=req.event)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return payload
+
+
+@router.post("/scripts/{script_id}/trigger")
+async def trigger_script(script_id: str, req: ScriptRunRequest) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    try:
+        payload = await service.trigger_script(script_id, event=req.event)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return payload
+
+
+@router.post("/scripts/{script_id}/stop")
+async def stop_script(script_id: str) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    return {"ok": service.stop_script(script_id)}
+
+
+@router.get("/scripts/{script_id}/console")
+async def get_script_console(
+    script_id: str,
+    limit: int = Query(default=200, ge=1, le=2000),
+) -> Dict[str, Any]:
+    service = get_midi_script_engine()
+    return service.get_console(script_id, limit=limit)
 
 
 @router.get("/traffic/snapshot")
