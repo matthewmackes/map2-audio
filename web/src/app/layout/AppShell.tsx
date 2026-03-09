@@ -36,7 +36,7 @@ const DragonIcon = ({ size = 16, color = '#dc2626' }: { size?: number; color?: s
 interface TopNavItem {
   to: string
   label: string
-  icon: ComponentType<any>
+  icon: ComponentType<Record<string, unknown>>
   description: string
   color: string
   kind?: 'link' | 'mpx1-mega-menu' | 'hardware-submenu'

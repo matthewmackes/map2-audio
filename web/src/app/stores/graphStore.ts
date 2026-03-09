@@ -72,7 +72,7 @@ interface GraphStore {
   deleteSnapshot: (snapshotId: string) => void
 }
 
-export const useGraphStore = create<GraphStore>((set, get) => ({
+export const useGraphStore = create<GraphStore>((set) => ({
   nodes: [],
   links: [],
   selectedNodeId: null,

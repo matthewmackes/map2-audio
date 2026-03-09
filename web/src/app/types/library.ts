@@ -106,7 +106,7 @@ export interface EnhancedDownloadStats extends DownloadStats {
 export interface DownloadEvent {
   event: string
   timestamp: string
-  data: Record<string, any>
+  data: Record<string, unknown>
 }
 
 // ==================== IR Database Types ====================

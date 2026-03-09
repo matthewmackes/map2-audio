@@ -47,7 +47,6 @@ export interface Preset {
 }
 
 const PRESET_STORAGE_KEY = 'map2_presets'
-const PLUGINS_WITH_PRESETS_KEY = 'map2_plugins_with_presets'
 const PRESET_COLLECTIONS_KEY = 'map2_preset_collections'
 const PRESET_HISTORY_KEY = 'map2_preset_history'
 
@@ -705,8 +704,6 @@ class PresetManager {
   deleteCollection(id: string): boolean {
     const index = this.collections.findIndex(c => c.id === id)
     if (index >= 0) {
-      const collection = this.collections[index]
-      
       // Remove collection reference from presets
       this.presets.forEach(preset => {
         if (preset.collection === id) {

@@ -68,36 +68,6 @@ function PageLoader() {
   )
 }
 
-function MPX1SubviewPlaceholder({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div
-      style={{
-        height: '100%',
-        minHeight: 360,
-        border: '1px dashed rgba(59, 130, 246, 0.35)',
-        borderRadius: 10,
-        display: 'grid',
-        placeItems: 'center',
-        background: 'linear-gradient(135deg, rgba(15,23,42,0.35), rgba(2,6,23,0.55))',
-      }}
-    >
-      <div style={{ textAlign: 'center', padding: 16 }}>
-        <div
-          style={{
-            color: '#dbeafe',
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: '0.03em',
-          }}
-        >
-          {title}
-        </div>
-        <div style={{ color: '#94a3b8', marginTop: 6, fontSize: 12 }}>{detail}</div>
-      </div>
-    </div>
-  )
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

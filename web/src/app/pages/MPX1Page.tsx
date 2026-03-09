@@ -48,6 +48,8 @@ export interface MPX1PageContextValue {
 
 const MPX1PageContext = createContext<MPX1PageContextValue | null>(null)
 
+// This file intentionally exports a hook and page component together for route context.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMPX1PageContext(): MPX1PageContextValue {
   const context = useContext(MPX1PageContext)
   if (!context) {

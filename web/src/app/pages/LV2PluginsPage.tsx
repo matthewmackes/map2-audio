@@ -66,7 +66,7 @@ export function LV2PluginsPage() {
     const list = pluginsQuery.data?.plugins || []
     
     // Filter by search term
-    let filtered = list.filter((p: Plugin) =>
+    const filtered = list.filter((p: Plugin) =>
       getDisplayPluginName(p.name, p.uri).toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
       sanitizeRestrictedDisplayText(p.author || '').toLowerCase().includes(managementSearchTerm.toLowerCase()) ||
       p.uri.toLowerCase().includes(managementSearchTerm.toLowerCase())

@@ -18,7 +18,7 @@ export interface LCDEvent {
   color: string;
   sound: boolean;
   dismiss_auto: boolean;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
 }
 
 export interface LCDStatistics {

@@ -140,7 +140,7 @@ export function useTheme() {
   // Apply theme on mount
   useEffect(() => {
     applyTheme(currentThemeId);
-  }, []);
+  }, [currentThemeId]);
 
   return {
     theme: currentTheme,
