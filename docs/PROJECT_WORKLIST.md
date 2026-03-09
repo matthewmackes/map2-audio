@@ -2436,7 +2436,7 @@ Last updated: 2026-03-09 15:05 - Codex
   - Suggested next tasks: T066-subJ, T066-subK, T066-subL.
 
 ID: T066-subJ
-Status: [>] In Progress
+Status: [✓] Done
 Title: Visual patchbay MIDI routing editor (node-graph view)
 Description:
 - Goal / acceptance criteria: Create `web/src/app/components/MidiHub/MidiPatchbay.tsx` — drag-and-drop visual patchbay as an alternative view to the grid matrix (T066-subI). Features: device/port nodes rendered as labeled blocks with input/output connectors, SVG patch cord connections with animated flow direction and color-coded message types, drag from output connector to input connector to create route, click cord to edit route (filter/transform/channel remap popup), right-click node for device info/health/latency, auto-layout (force-directed or hierarchical) with manual drag repositioning, zoom/pan/minimap, route bandwidth visualization (cord thickness = message rate), device grouping (drag devices into named groups). Same API backend as matrix view — patchbay and matrix are synchronized views of the same route table. Design follows SVG patch cord pattern from MPX1 Flow Canvas (T042).
@@ -2446,7 +2446,16 @@ Description:
 - Required outputs: React patchbay component, SVG connection renderer, force-directed layout, drag-drop interaction, zoom/pan, integration with router API.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 15:32 - Codex
+- Completion notes:
+  - What was done: Implemented `MidiPatchbay.tsx` node-graph editor with SVG patch-cord rendering, color-coded message-type links, per-route line interactions, source→destination click-to-create route flow, route enable/disable/delete controls, node info context dialog, and zoom/pan controls.
+  - What was done: Updated `MidiHubPage` to provide synchronized Matrix/Patchbay mode switching on the same underlying route table and preserved the traffic monitor section.
+  - What was done: Reused existing MIDI Hub route CRUD + topology APIs so matrix and patchbay stay aligned to one shared backend route model.
+  - Validation:
+    - `timeout 90s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+  - Files/links produced: `web/src/app/components/MidiHub/MidiPatchbay.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T066-subK, T066-subL, T066-subM.
 
 ID: T066-subK
 Status: [>] In Progress
