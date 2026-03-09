@@ -9,6 +9,7 @@ import { MidiTrafficMonitor } from '../components/MidiHub/MidiTrafficMonitor'
 import { MidiHubPresetManager } from '../components/MidiHub/MidiHubPresetManager'
 import { MidiScriptEditor } from '../components/MidiHub/MidiScriptEditor'
 import { MidiClockPanel } from '../components/MidiHub/MidiClockPanel'
+import { MidiNetworkPanel } from '../components/MidiHub/MidiNetworkPanel'
 import { useToasts } from '../components/Toasts'
 import { midiHubApi } from '../../map2/api'
 
@@ -107,6 +108,14 @@ export function MidiHubPage() {
           Tempo detection/generation with tap tempo and distribution to selected MIDI outputs.
         </p>
         <MidiClockPanel />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Network MIDI + OSC</h3>
+        <p className="subtitle" style={{ marginTop: 0 }}>
+          RTP/UDP MIDI session management and bidirectional OSC bridge controls.
+        </p>
+        <MidiNetworkPanel />
       </div>
 
       <div className="card">

@@ -2528,7 +2528,7 @@ Last updated: 2026-03-09 17:44 - Codex
   - Suggested next tasks: T066-subN, T066-subO, T066-subP.
 
 ID: T066-subN
-Status: [>] In Progress
+Status: [✓] Done
 Title: RTP-MIDI (Network MIDI) and OSC bridge
 Description:
 - Goal / acceptance criteria: Create `app/services/midi_hub/network.py`. Network MIDI support: (1) RTP-MIDI session initiator and listener (RFC 6295) — MAP2 can join and host RTP-MIDI sessions over Ethernet/WiFi, (2) mDNS/Bonjour advertisement — MAP2 MIDI Hub appears as an RTP-MIDI endpoint on the network (discoverable by macOS Audio MIDI Setup, rtpMIDI on Windows, other MAP2 instances), (3) MIDI journal recovery for lost packets, (4) network MIDI ports appear in MidiHub as regular ports — routable like any other, (5) latency measurement and jitter reporting per network session. OSC bridge: (6) bidirectional OSC↔MIDI translation — configurable mapping table (OSC address pattern → MIDI message, and reverse), (7) OSC server (UDP) for receiving commands from TouchOSC, Lemur, Max/MSP, SuperCollider, etc., (8) OSC client for sending to external apps/hardware. This enables the MAP2 network MIDI mesh (innovation #10) — multiple MAP2 nodes sharing MIDI routing.
@@ -2538,7 +2538,18 @@ Description:
 - Required outputs: RTP-MIDI client/server, mDNS advertisement, journal recovery, OSC bridge, network port integration with MidiHub, unit tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:40 - Codex
+Last updated: 2026-03-09 17:58 - Codex
+- Completion notes:
+  - What was done: Added/activated `app/services/midi_hub/network.py` with network MIDI session management (send/listen modes, per-session latency/jitter tracking), UDP send/listener handling, and bidirectional OSC bridge helpers (OSC encode/decode + mapping table).
+  - What was done: Exposed network + OSC API surface in `app/routes/midi_hub.py` (`/network/sessions`, `/network/sessions/{id}/send`, `/network/osc/mappings`, `/network/osc/server`, `/network/osc/send`) with validated request contracts.
+  - What was done: Extended frontend MIDI Hub API and integrated `MidiNetworkPanel.tsx` into `/midi-hub` for session create/delete/test-send and OSC server/message controls.
+  - What was done: Hardened transport cleanup against closed-event-loop edge cases during teardown (`RuntimeError`-safe close paths).
+  - Validation:
+    - `timeout 120s pytest -q tests/midi_hub/test_traffic_routes.py tests/midi_hub/test_consumer_migration.py -q` -> PASS
+    - `timeout 180s npm --prefix web run typecheck` -> PASS
+    - `python3 -m compileall app/routes/midi_hub.py app/services/midi_hub/network.py` -> PASS
+  - Files/links produced: `app/services/midi_hub/network.py`, `app/routes/midi_hub.py`, `tests/midi_hub/test_traffic_routes.py`, `web/src/map2/api.ts`, `web/src/app/components/MidiHub/MidiNetworkPanel.tsx`, `web/src/app/pages/MidiHubPage.tsx`, `docs/PROJECT_WORKLIST.md`.
+  - Suggested next tasks: T066-subO, T066-subP, T066-subQ.
 
 ID: T066-subO
 Status: [>] In Progress

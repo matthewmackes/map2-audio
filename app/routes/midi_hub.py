@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.services.midi_hub.hub import get_midi_hub
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
+from app.services.midi_hub.network import get_midi_network_bridge
 from app.services.midi_hub.preset_service import get_midi_hub_preset_service
 from app.services.midi_hub.router import get_midi_router
 from app.services.midi_hub.script_engine import get_midi_script_engine
@@ -107,6 +108,32 @@ class ClockConfigRequest(BaseModel):
     offset_ms: Optional[float] = Field(default=None, ge=-500.0, le=500.0)
     tap_note: Optional[int] = Field(default=None, ge=0, le=127)
     tap_cc: Optional[int] = Field(default=None, ge=0, le=127)
+
+
+class NetworkSessionRequest(BaseModel):
+    session_id: str = Field(..., min_length=1, max_length=128)
+    host: str = Field(..., min_length=1, max_length=255)
+    port: int = Field(..., ge=1, le=65535)
+    mode: str = Field(default="send", pattern="^(send|listen)$")
+
+
+class NetworkSendRequest(BaseModel):
+    message: List[int] = Field(..., min_length=1, max_length=1024)
+
+
+class OscMappingsRequest(BaseModel):
+    mappings: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class OscServerRequest(BaseModel):
+    listen_port: int = Field(..., ge=1, le=65535)
+
+
+class OscSendRequest(BaseModel):
+    host: str = Field(..., min_length=1, max_length=255)
+    port: int = Field(..., ge=1, le=65535)
+    address: str = Field(..., min_length=1, max_length=255)
+    value: float = 0.0
 
 
 @router.get("/status")
@@ -514,6 +541,75 @@ async def stop_clock() -> Dict[str, Any]:
 async def continue_clock() -> Dict[str, Any]:
     engine = get_midi_clock_engine()
     return await engine.cont()
+
+
+@router.get("/network/sessions")
+async def list_network_sessions() -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    sessions = bridge.list_sessions()
+    return {"count": len(sessions), "sessions": sessions}
+
+
+@router.post("/network/sessions")
+async def create_network_session(req: NetworkSessionRequest) -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    session = await bridge.create_session(
+        session_id=req.session_id,
+        host=req.host,
+        port=req.port,
+        mode=req.mode,
+    )
+    return {"ok": True, "session": session}
+
+
+@router.delete("/network/sessions/{session_id}")
+async def delete_network_session(session_id: str) -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    return {"ok": await bridge.remove_session(session_id)}
+
+
+@router.post("/network/sessions/{session_id}/send")
+async def send_network_midi(session_id: str, req: NetworkSendRequest) -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    payload = bytes(int(byte) & 0xFF for byte in req.message)
+    ok = await bridge.send_midi(session_id, payload)
+    return {"ok": ok}
+
+
+@router.get("/network/osc/mappings")
+async def get_osc_mappings() -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    mappings = bridge.list_osc_mappings()
+    return {"count": len(mappings), "mappings": mappings}
+
+
+@router.put("/network/osc/mappings")
+async def set_osc_mappings(req: OscMappingsRequest) -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    return bridge.set_osc_mappings(req.mappings)
+
+
+@router.post("/network/osc/server")
+async def start_osc_server(req: OscServerRequest) -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    return await bridge.start_osc_server(req.listen_port)
+
+
+@router.delete("/network/osc/server")
+async def stop_osc_server() -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    return await bridge.stop_osc_server()
+
+
+@router.post("/network/osc/send")
+async def send_osc(req: OscSendRequest) -> Dict[str, Any]:
+    bridge = get_midi_network_bridge()
+    return await bridge.send_osc(
+        host=req.host,
+        port=req.port,
+        address=req.address,
+        value=req.value,
+    )
 
 
 @router.get("/traffic/snapshot")

@@ -1503,6 +1503,17 @@ export interface MidiHubClockStatus {
   tap_cc?: number | null;
 }
 
+export interface MidiHubNetworkSession {
+  session_id: string;
+  host: string;
+  port: number;
+  mode: string;
+  active: boolean;
+  created_at: number;
+  latency_ms?: number | null;
+  jitter_ms?: number | null;
+}
+
 export const midiHubApi = {
   getStatus: () => fetchJson<Record<string, unknown>>(`${API_BASE}/midi/hub/status`),
 
@@ -1726,6 +1737,44 @@ export const midiHubApi = {
   continueClock: () =>
     fetchJson<MidiHubClockStatus>(`${API_BASE}/midi/hub/clock/continue`, {
       method: 'POST',
+    }),
+
+  listNetworkSessions: () =>
+    fetchJson<{ count: number; sessions: MidiHubNetworkSession[] }>(`${API_BASE}/midi/hub/network/sessions`),
+  createNetworkSession: (payload: { session_id: string; host: string; port: number; mode?: 'send' | 'listen' }) =>
+    fetchJson<{ ok: boolean; session: MidiHubNetworkSession }>(`${API_BASE}/midi/hub/network/sessions`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  deleteNetworkSession: (sessionId: string) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/network/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    }),
+  sendNetworkMidi: (sessionId: string, message: number[]) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/network/sessions/${encodeURIComponent(sessionId)}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+  listOscMappings: () =>
+    fetchJson<{ count: number; mappings: Array<Record<string, unknown>> }>(`${API_BASE}/midi/hub/network/osc/mappings`),
+  setOscMappings: (mappings: Array<Record<string, unknown>>) =>
+    fetchJson<{ count: number; mappings: Array<Record<string, unknown>> }>(`${API_BASE}/midi/hub/network/osc/mappings`, {
+      method: 'PUT',
+      body: JSON.stringify({ mappings }),
+    }),
+  startOscServer: (listenPort: number) =>
+    fetchJson<{ ok: boolean; listen_port: number }>(`${API_BASE}/midi/hub/network/osc/server`, {
+      method: 'POST',
+      body: JSON.stringify({ listen_port: listenPort }),
+    }),
+  stopOscServer: () =>
+    fetchJson<{ ok: boolean; listen_port?: number | null }>(`${API_BASE}/midi/hub/network/osc/server`, {
+      method: 'DELETE',
+    }),
+  sendOsc: (payload: { host: string; port: number; address: string; value: number }) =>
+    fetchJson<{ ok: boolean }>(`${API_BASE}/midi/hub/network/osc/send`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 
   getTrafficSnapshot: (params?: {
