@@ -2871,7 +2871,7 @@ Last updated: 2026-03-08 18:01 - Codex
 ALL UNBLOCKED ITEMS COMPLETE
 
 ID: T077
-Status: [ ] Not Started
+Status: [>] In Progress
 Title: Mobile Responsive Audit & Implementation — Full-stack mobile-first overhaul
 Description:
 - Goal / acceptance criteria: Make all MAP2 web UI pages usable at 360px (phone) and 768px (tablet) breakpoints with a hardware-display aesthetic, persistent bottom tab bar navigation, tap-to-edit parameter controls, full-screen meter mode, and no desktop regressions. All 28 implementation steps must pass the 8-point mobile verification checklist documented in `docs/MOBILE_RESPONSIVE_PROMPT.md`.
@@ -2927,6 +2927,9 @@ Subtasks:
   - T077-P14a: Run 8-point checklist at 360px for every page. Fix all failures. Test at 768px tablet width.
   - T077-P14b: Verify no desktop regressions at 1280px, 1440px, 1920px. Verify all @media rules scoped to max-width: 768px or 360px. Run npm run build for TypeScript validation.
 Assigned to: Codex
-Last updated: 2026-03-08 - Claude
+Last updated: 2026-03-09 04:10 - Codex
+- Progress notes:
+  - Completed Phase 0 foundation: created `web/src/styles/mobile.css`, `web/src/styles/responsive.module.css`, `web/src/app/components/shared/LandscapePrompt.tsx`, `web/src/app/hooks/useIsMobile.ts`, and imported `./styles/mobile.css` in `web/src/main.tsx`.
+  - Remaining work: Phases 1-14 are still open and will be executed in follow-on slices with mobile verification at `360px` / `768px` and desktop regression checks.
 
 ALL UNBLOCKED ITEMS COMPLETE

@@ -1,0 +1,58 @@
+.mobileOnly {
+  display: none;
+}
+
+.desktopOnly {
+  display: block;
+}
+
+.mobileStack {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobileFullWidth {
+  width: auto;
+}
+
+.hardwareReadout {
+  color: var(--accent);
+  font-family: 'SFMono-Regular', 'JetBrains Mono', 'Roboto Mono', 'Fira Code', Consolas, 'Liberation Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.touchTarget {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (max-width: 768px) {
+  .mobileOnly {
+    display: block;
+  }
+
+  .desktopOnly {
+    display: none !important;
+  }
+
+  .mobileStack {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobileFullWidth {
+    width: 100% !important;
+  }
+
+  .hardwareReadout {
+    font-size: 0.95rem;
+  }
+
+  .touchTarget {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

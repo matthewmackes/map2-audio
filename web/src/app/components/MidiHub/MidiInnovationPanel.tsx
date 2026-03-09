@@ -70,7 +70,7 @@ export function MidiInnovationPanel() {
 
   const publishRoutes = useMutation({
     mutationFn: async () => {
-      const routes = (await midiHubApi.getRoutes()).routes as Array<Record<string, unknown>>
+      const routes = (await midiHubApi.getRoutes()).routes.map((route) => ({ ...route }))
       return midiHubApi.publishMeshRoutes({ source_instance: 'local', routes, fanout: false })
     },
     onSuccess: () => {
@@ -90,7 +90,7 @@ export function MidiInnovationPanel() {
         source: 'ui',
       }),
     onSuccess: (payload) => {
-      pushToast(payload.drift_detected ? 'Shadow drift detected' : 'Shadow state saved', payload.drift_detected ? 'warning' : 'success')
+      pushToast(payload.drift_detected ? 'Shadow drift detected' : 'Shadow state saved', payload.drift_detected ? 'warn' : 'success')
       void queryClient.invalidateQueries({ queryKey: ['midi-hub', 'shadow'] })
     },
   })

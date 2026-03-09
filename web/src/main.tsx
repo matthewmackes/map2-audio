@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './styles/mobile.css'
 import ErrorBoundary from './ErrorBoundary'
 import { initializeTheme } from './app/theme'
 
