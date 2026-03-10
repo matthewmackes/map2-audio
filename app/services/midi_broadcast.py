@@ -16,7 +16,7 @@ import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, Callable
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 import threading
 
 from app.services.websocket_manager import ws_manager
@@ -42,10 +42,14 @@ class MidiBroadcastService:
     Uses a thread-safe queue for callback-to-asyncio bridging.
     """
 
-    def __init__(self):
+    MAX_EVENT_QUEUE = 1024
+
+    def __init__(self, queue_maxsize: int = MAX_EVENT_QUEUE):
         self._running = False
         self._task: Optional[asyncio.Task] = None
-        self._event_queue: Queue = Queue()
+        self._event_queue: Queue = Queue(maxsize=queue_maxsize)
+        self._queue_maxsize = queue_maxsize
+        self._dropped_events = 0
         self._callbacks_registered = False
         self._hub = None
         self._hub_subscriber_id = f"midi_broadcast:{id(self)}"
@@ -179,11 +183,29 @@ class MidiBroadcastService:
 
     def _queue_event(self, event_type: str, data: Dict[str, Any]):
         """Queue an event for async processing"""
-        self._event_queue.put({
+        event = {
             "type": event_type,
             "data": data,
             "timestamp": datetime.now().isoformat()
-        })
+        }
+        try:
+            self._event_queue.put_nowait(event)
+        except Full:
+            try:
+                self._event_queue.get_nowait()
+            except Empty:
+                pass
+            self._dropped_events += 1
+            try:
+                self._event_queue.put_nowait(event)
+            except Full:
+                self._dropped_events += 1
+        if self._dropped_events and self._dropped_events % 100 == 0:
+            logger.warning(
+                "MIDI broadcast queue dropped %d events (maxsize=%d)",
+                self._dropped_events,
+                self._queue_maxsize,
+            )
 
     def _on_midi_message(self, msg: Dict[str, Any]):
         """Callback for all MIDI messages (monitoring)"""
@@ -341,6 +363,16 @@ class MidiBroadcastService:
             "timestamp": datetime.now().isoformat()
         }
         await ws_manager.broadcast_json(message, self.TOPIC_MIDI)
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get queue/broadcast stats for diagnostics."""
+        return {
+            "callbacks_registered": self._callbacks_registered,
+            "dropped_events": self._dropped_events,
+            "queue_maxsize": self._queue_maxsize,
+            "queued_events": self._event_queue.qsize(),
+            "running": self._running,
+        }
 
 
 # Global instance

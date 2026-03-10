@@ -74,3 +74,21 @@ def test_broadcast_json_history_uses_bounded_queue():
 
     history = manager.get_event_history("meters")
     assert [event["idx"] for event in history["events"]] == [2, 3, 4]
+
+
+def test_broadcast_disconnects_slow_clients_without_blocking_fast_clients():
+    manager = WebSocketManager(send_timeout_seconds=0.01)
+    fast_ws = _FakeWebSocket()
+    slow_ws = _FakeWebSocket(delay_seconds=0.05)
+    manager.active_connections["fast"] = fast_ws
+    manager.active_connections["slow"] = slow_ws
+
+    start = time.perf_counter()
+    asyncio.run(manager.broadcast("payload"))
+    elapsed = time.perf_counter() - start
+
+    assert elapsed < 0.04
+    assert "fast" in manager.active_connections
+    assert "slow" not in manager.active_connections
+    assert fast_ws.sent_messages == ["payload"]
+    assert manager.get_stats()["slow_client_disconnects"] == 1

@@ -87,6 +87,8 @@ class PipeWireRecoveryService:
     BACKOFF_BASE_SEC = 2.0
     BACKOFF_MAX_SEC = 60.0
     STARTUP_GRACE_SEC = 15.0
+    RECOVERY_MIN_INTERVAL_SEC = 30.0
+    POST_RECOVERY_GRACE_SEC = 10.0
     ALLOW_ENGINE_RESTARTS_ENV = "MAP2_PIPEWIRE_RECOVERY_ENABLE_ENGINE_RESTARTS"
 
     def __init__(self):
@@ -101,9 +103,20 @@ class PipeWireRecoveryService:
         self._consecutive_failures = 0
         self._check_interval = 2.0  # seconds
         self._started_at = 0.0
+        self._last_recovery_attempt_at = 0.0
+        self._last_recovery_completed_at = 0.0
         self._allow_engine_restarts = os.getenv(
             self.ALLOW_ENGINE_RESTARTS_ENV, "false"
         ).lower() in {"1", "true", "yes", "on"}
+
+    def _recovery_cooldown_remaining(self) -> float:
+        """Seconds remaining before another automatic recovery is allowed."""
+        if self._last_recovery_attempt_at <= 0:
+            return 0.0
+        return max(
+            0.0,
+            self.RECOVERY_MIN_INTERVAL_SEC - (time.monotonic() - self._last_recovery_attempt_at),
+        )
 
     def set_engine(self, engine) -> None:
         """Set reference to the JUCE audio engine."""
@@ -462,6 +475,14 @@ class PipeWireRecoveryService:
         if self._state == RecoveryState.RECOVERING:
             logger.debug("Recovery already in progress, skipping")
             return False
+        cooldown_remaining = self._recovery_cooldown_remaining()
+        if trigger != "manual_trigger" and cooldown_remaining > 0:
+            logger.warning(
+                "Skipping recovery trigger %s during %.1fs cooldown window",
+                trigger,
+                cooldown_remaining,
+            )
+            return False
 
         # Rate limit: max recoveries per hour
         recent = [e for e in self._recovery_history
@@ -473,6 +494,7 @@ class PipeWireRecoveryService:
             return False
 
         self._state = RecoveryState.RECOVERING
+        self._last_recovery_attempt_at = time.monotonic()
 
         # Escalating recovery levels
         recovery_levels = [
@@ -504,6 +526,7 @@ class PipeWireRecoveryService:
                 if success:
                     self._state = RecoveryState.HEALTHY
                     self._consecutive_failures = 0
+                    self._last_recovery_completed_at = time.monotonic()
                     logger.info(f"Recovery successful at level {level_name} "
                               f"({event.duration_sec:.1f}s)")
                     self._recovery_history.append(event)
@@ -582,9 +605,17 @@ class PipeWireRecoveryService:
         """Single health check iteration."""
         health = self.get_health()
         in_startup_grace = (time.monotonic() - self._started_at) < self.STARTUP_GRACE_SEC
+        in_recovery_grace = (
+            self._last_recovery_completed_at > 0
+            and (time.monotonic() - self._last_recovery_completed_at) < self.POST_RECOVERY_GRACE_SEC
+        )
 
         # === Critical: PipeWire daemon down ===
         if not health.daemon_running:
+            if in_recovery_grace:
+                logger.debug("PipeWire daemon still settling after recovery, skipping automatic retry")
+                self._state = RecoveryState.DISCONNECTED
+                return
             logger.error("PipeWire daemon not running!")
             self._state = RecoveryState.DISCONNECTED
             await self._execute_recovery("pipewire_daemon_down")
@@ -592,8 +623,8 @@ class PipeWireRecoveryService:
 
         # === Critical: JACK server down ===
         if not health.jack_server_running:
-            if in_startup_grace:
-                logger.debug("JACK not ready yet (startup grace window), skipping recovery")
+            if in_startup_grace or in_recovery_grace:
+                logger.debug("JACK not ready yet (startup/recovery grace window), skipping recovery")
                 self._state = RecoveryState.DEGRADED
                 return
             logger.error("JACK server not responding!")
@@ -602,7 +633,7 @@ class PipeWireRecoveryService:
             return
 
         # === Critical: Audio device disconnected ===
-        if self._engine and not in_startup_grace and not health.device_connected:
+        if self._engine and not in_startup_grace and not in_recovery_grace and not health.device_connected:
             logger.warning("Audio device disconnected")
             self._state = RecoveryState.DISCONNECTED
             await self._execute_recovery("device_disconnected")

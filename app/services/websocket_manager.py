@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Fix #8: Message size threshold for compression (1KB)
 COMPRESSION_THRESHOLD = 1024
+DEFAULT_SEND_TIMEOUT_SECONDS = 0.25
 
 
 class WebSocketManager:
@@ -33,7 +34,7 @@ class WebSocketManager:
     - Fix #8: Optional gzip compression for large messages
     """
     
-    def __init__(self, enable_compression: bool = True):
+    def __init__(self, enable_compression: bool = True, send_timeout_seconds: float = DEFAULT_SEND_TIMEOUT_SECONDS):
         # Active connections: client_id -> WebSocket
         self.active_connections: Dict[str, WebSocket] = {}
 
@@ -53,6 +54,9 @@ class WebSocketManager:
         # Fix #8: Compression settings
         self.enable_compression = enable_compression
         self.bytes_saved = 0  # Track compression savings
+        self.send_timeout_seconds = send_timeout_seconds
+        self.slow_client_disconnects = 0
+        self.send_failures = 0
         
     async def connect(self, websocket: WebSocket, client_id: str) -> None:
         """
@@ -171,7 +175,12 @@ class WebSocketManager:
             if websocket is None:
                 continue
             send_client_ids.append(client_id)
-            send_tasks.append(websocket.send_text(message))
+            send_tasks.append(
+                asyncio.wait_for(
+                    websocket.send_text(message),
+                    timeout=self.send_timeout_seconds,
+                )
+            )
 
         if not send_tasks:
             return
@@ -180,7 +189,16 @@ class WebSocketManager:
         disconnected_clients = []
         for client_id, result in zip(send_client_ids, send_results):
             if isinstance(result, Exception):
-                logger.error(f"Error broadcasting to {client_id}: {result}")
+                self.send_failures += 1
+                if isinstance(result, asyncio.TimeoutError):
+                    self.slow_client_disconnects += 1
+                    logger.warning(
+                        "Disconnecting slow WebSocket client %s after %.3fs send timeout",
+                        client_id,
+                        self.send_timeout_seconds,
+                    )
+                else:
+                    logger.error(f"Error broadcasting to {client_id}: {result}")
                 disconnected_clients.append(client_id)
 
         # Clean up disconnected clients
@@ -277,7 +295,10 @@ class WebSocketManager:
             },
             # Fix #8: Include compression stats
             "compression_enabled": self.enable_compression,
-            "bytes_saved_by_compression": self.bytes_saved
+            "bytes_saved_by_compression": self.bytes_saved,
+            "send_timeout_seconds": self.send_timeout_seconds,
+            "slow_client_disconnects": self.slow_client_disconnects,
+            "send_failures": self.send_failures,
         }
 
 

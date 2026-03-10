@@ -3360,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T087, T088, T089
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T087, T089
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
@@ -3427,7 +3427,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 10:33 - Codex
 
 ID: T088
-Status: [ ] Todo
+Status: [✓] Done
 Title: Harden realtime recovery and broadcast backpressure paths
 Description:
 - Goal / acceptance criteria: Remove the most important reliability traps in the core runtime by making PipeWire recovery non-self-destabilizing, bounding MIDI broadcast fan-out, and isolating slow WebSocket clients so one weak consumer cannot poison global state propagation.
@@ -3437,7 +3437,7 @@ Description:
 - Required outputs: Code changes in recovery/broadcast paths, targeted tests, and updated soak/evidence artifacts showing the hardening works.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 10:33 - Codex
+Last updated: 2026-03-10 11:27 - Codex
 
 ID: T089
 Status: [ ] Todo

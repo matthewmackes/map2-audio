@@ -116,6 +116,24 @@ async def test_midi_broadcast_consumes_hub_traffic(monkeypatch):
     assert published[0]["message"]["type"] == "midi_message"
 
 
+def test_midi_broadcast_queue_is_bounded_and_drops_oldest():
+    service = MidiBroadcastService(queue_maxsize=2)
+
+    service._queue_event("first", {"idx": 1})
+    service._queue_event("second", {"idx": 2})
+    service._queue_event("third", {"idx": 3})
+
+    first_remaining = service._event_queue.get_nowait()
+    second_remaining = service._event_queue.get_nowait()
+    stats = service.get_stats()
+
+    assert first_remaining["type"] == "second"
+    assert second_remaining["type"] == "third"
+    assert stats["dropped_events"] == 1
+    assert stats["queue_maxsize"] == 2
+    assert stats["queued_events"] == 0
+
+
 @pytest.mark.asyncio
 async def test_tesira_dispatcher_emits_hub_event(monkeypatch):
     hub = MidiHub(auto_discover_alsa=False)
