@@ -3074,7 +3074,7 @@ Last updated: 2026-03-09 19:59 - Codex
   - Files/links produced: `docs/evaluation/02-completeness.md`.
   - Suggested next tasks: T081-subC, T081-subD, T085
 ID: T081-subC
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 3 — Stability and reliability evaluation
 Description:
 - Goal / acceptance criteria: Evaluate the platform for technical stability and operational reliability. Identify crash risks, deadlocks, race conditions, fragile services, startup/shutdown reliability, recovery after failure, configuration durability, network resilience, hardware hotplug behavior, long-session stability, memory leaks, CPU spikes, unbounded logging/queue growth, and timing/synchronization weaknesses.
@@ -3092,7 +3092,13 @@ Description:
 - Required outputs: `docs/evaluation/03-stability.md` with severity-ranked findings.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-10 08:35 - Codex
+- Completion notes:
+  - What was done: Produced a severity-ranked stability and reliability review covering FastAPI/service lifecycle, websocket broadcasting, metering/MIDI broadcast loops, PipeWire recovery behavior, and the callback-path evidence already archived in the repo.
+  - Key findings: The main stability risks are active PipeWire recovery as a potential self-destabilization path, an unbounded MIDI broadcast queue, and websocket fanout without slow-client isolation; callback-path functionality is materially improved, but appliance-grade reliability is still incomplete.
+  - Files/links produced: `docs/evaluation/03-stability.md`.
+  - Validation: `pytest tests/test_juce_engine_audio_start_stability.py tests/test_avb_service_engine_contract.py -q` (`15 passed`).
+  - Suggested next tasks: T081-subD, T081-subF, T084
 ID: T081-subD
 Status: [ ] Todo
 Title: Phase 4 — Architecture and design concepts evaluation
