@@ -3360,9 +3360,9 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T083, T085, T086, T087, T088, T089, T091
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T085, T086, T087, T088, T089, T091
 ID: T083
-Status: [ ] Todo
+Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
 Description:
 - Goal / acceptance criteria: Add one authoritative backend runtime dependency manifest for the main FastAPI application and document the effective environment contract across `app/config.py`, direct `os.getenv()` reads, and systemd/runtime overrides. The deliverable must make backend setup reproducible without reverse-engineering installer scripts.
@@ -3372,7 +3372,7 @@ Description:
 - Required outputs: Backend dependency manifest, environment-contract documentation, and any README/setup updates needed to use them.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 19:14 - Codex
+Last updated: 2026-03-10 11:01 - Codex
 
 ID: T084
 Status: [✓] Done

@@ -1,0 +1,1561 @@
+{
+  "direct_env_reads": [
+    {
+      "default": "'disabled'",
+      "file": "app/routes/special_settings.py",
+      "kind": "os.getenv",
+      "line": 29,
+      "variable": "CLUSTER_MODE"
+    },
+    {
+      "default": "'false'",
+      "file": "app/routes/www.py",
+      "kind": "os.environ.get",
+      "line": 166,
+      "variable": "DEBUG"
+    },
+    {
+      "default": "'false'",
+      "file": "app/deployment/resilience_config.py",
+      "kind": "os.getenv",
+      "line": 98,
+      "variable": "DEBUG_RESILIENCE"
+    },
+    {
+      "default": "'monitoring@map2-audio.local'",
+      "file": "app/routes/email_notifications.py",
+      "kind": "os.getenv",
+      "line": 19,
+      "variable": "EMAIL_SENDER"
+    },
+    {
+      "default": "'true'",
+      "file": "app/deployment/resilience_config.py",
+      "kind": "os.getenv",
+      "line": 85,
+      "variable": "ENABLE_CIRCUIT_BREAKER"
+    },
+    {
+      "default": "'true'",
+      "file": "app/deployment/resilience_config.py",
+      "kind": "os.getenv",
+      "line": 87,
+      "variable": "ENABLE_CONNECTION_POOLING"
+    },
+    {
+      "default": "'true'",
+      "file": "app/deployment/resilience_config.py",
+      "kind": "os.getenv",
+      "line": 89,
+      "variable": "ENABLE_GRACEFUL_DEGRADATION"
+    },
+    {
+      "default": "'true'",
+      "file": "app/deployment/resilience_config.py",
+      "kind": "os.getenv",
+      "line": 86,
+      "variable": "ENABLE_HEALTH_MONITORING"
+    },
+    {
+      "default": "'true'",
+      "file": "app/deployment/resilience_config.py",
+      "kind": "os.getenv",
+      "line": 88,
+      "variable": "ENABLE_REQUEST_QUEUING"
+    },
+    {
+      "default": "'/home/mm'",
+      "file": "app/services/pipewire_service.py",
+      "kind": "os.environ.get",
+      "line": 32,
+      "variable": "HOME"
+    },
+    {
+      "default": "''",
+      "file": "app/services/plugin_loader_unified.py",
+      "kind": "os.environ.get",
+      "line": 388,
+      "variable": "LV2_PATH"
+    },
+    {
+      "default": "''",
+      "file": "app/services/plugin_loader_unified.py",
+      "kind": "os.environ.get",
+      "line": 413,
+      "variable": "LV2_PATH"
+    },
+    {
+      "default": "'8080'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 148,
+      "variable": "MAP2_API_PORT"
+    },
+    {
+      "default": null,
+      "file": "app/services/backup_service.py",
+      "kind": "os.environ.get",
+      "line": 1648,
+      "variable": "MAP2_APP_DIR"
+    },
+    {
+      "default": "'0.50'",
+      "file": "app/routes/audio.py",
+      "kind": "os.getenv",
+      "line": 109,
+      "variable": "MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS"
+    },
+    {
+      "default": "'0.20'",
+      "file": "app/routes/audio.py",
+      "kind": "os.getenv",
+      "line": 93,
+      "variable": "MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS"
+    },
+    {
+      "default": "'0.04'",
+      "file": "app/routes/audio.py",
+      "kind": "os.getenv",
+      "line": 97,
+      "variable": "MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS"
+    },
+    {
+      "default": "'0.25'",
+      "file": "app/routes/audio.py",
+      "kind": "os.getenv",
+      "line": 101,
+      "variable": "MAP2_AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS"
+    },
+    {
+      "default": "'0.06'",
+      "file": "app/routes/audio.py",
+      "kind": "os.getenv",
+      "line": 105,
+      "variable": "MAP2_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS"
+    },
+    {
+      "default": "'0.20'",
+      "file": "app/routes/audio.py",
+      "kind": "os.getenv",
+      "line": 113,
+      "variable": "MAP2_AUDIO_STATUS_CACHE_TTL_SECONDS"
+    },
+    {
+      "default": "'0'",
+      "file": "app/services/cluster/management_orchestrator.py",
+      "kind": "os.getenv",
+      "line": 32,
+      "variable": "MAP2_AUTO_UPDATE"
+    },
+    {
+      "default": null,
+      "file": "app/services/avb/readiness.py",
+      "kind": "os.getenv",
+      "line": 197,
+      "variable": "MAP2_AVB_ENABLED"
+    },
+    {
+      "default": null,
+      "file": "app/services/avb/readiness.py",
+      "kind": "os.getenv",
+      "line": 198,
+      "variable": "MAP2_AVB_INTERFACE"
+    },
+    {
+      "default": "'false'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 263,
+      "variable": "MAP2_CLUSTER_ENABLED"
+    },
+    {
+      "default": "'false'",
+      "file": "app/services/cluster/__init__.py",
+      "kind": "os.getenv",
+      "line": 249,
+      "variable": "MAP2_CLUSTER_ENABLED"
+    },
+    {
+      "default": null,
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 277,
+      "variable": "MAP2_CONFIG_GIT_REPO"
+    },
+    {
+      "default": "'/tmp/map2_core_config_state.json'",
+      "file": "app/routes/system.py",
+      "kind": "os.getenv",
+      "line": 28,
+      "variable": "MAP2_CORE_CONFIG_FILE"
+    },
+    {
+      "default": "'ALL-IN-ONE'",
+      "file": "app/deployment/deployment.py",
+      "kind": "os.getenv",
+      "line": 149,
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "default": "'AUDIO-NODE'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 131,
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "default": "'AUDIO-NODE'",
+      "file": "app/routes/lcd_events.py",
+      "kind": "os.getenv",
+      "line": 312,
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "default": "'AUDIO-NODE'",
+      "file": "app/routes/lcd_events.py",
+      "kind": "os.getenv",
+      "line": 357,
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "default": "'AUDIO-NODE' if role == 'AUDIO-NODE' else 'CONTROL-NODE'",
+      "file": "app/services/cluster/enhanced_node_identity.py",
+      "kind": "os.getenv",
+      "line": 352,
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "default": "DeploymentMode.ALL_IN_ONE.value",
+      "file": "app/services/runtime_profiles.py",
+      "kind": "os.getenv",
+      "line": 50,
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "default": "'true'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 416,
+      "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
+    },
+    {
+      "default": "'false'",
+      "file": "app/services/chain_service.py",
+      "kind": "os.getenv",
+      "line": 28,
+      "variable": "MAP2_ENABLE_ENGINE_CHAIN_DEPLOY"
+    },
+    {
+      "default": "'false'",
+      "file": "app/routes/plugins.py",
+      "kind": "os.getenv",
+      "line": 125,
+      "variable": "MAP2_ENABLE_ENGINE_PLUGIN_OPS"
+    },
+    {
+      "default": "'false'",
+      "file": "app/services/service_orchestrator.py",
+      "kind": "os.getenv",
+      "line": 1397,
+      "variable": "MAP2_ENABLE_LCD"
+    },
+    {
+      "default": "'true'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 231,
+      "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
+    },
+    {
+      "default": "'false'",
+      "file": "app/routes/plugins.py",
+      "kind": "os.getenv",
+      "line": 131,
+      "variable": "MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS"
+    },
+    {
+      "default": "'6'",
+      "file": "app/routes/plugins.py",
+      "kind": "os.getenv",
+      "line": 138,
+      "variable": "MAP2_ENGINE_OP_MAX_RETRIES"
+    },
+    {
+      "default": "'2048'",
+      "file": "app/routes/plugins.py",
+      "kind": "os.getenv",
+      "line": 137,
+      "variable": "MAP2_ENGINE_OP_QUEUE_MAX"
+    },
+    {
+      "default": "'0.05'",
+      "file": "app/routes/plugins.py",
+      "kind": "os.getenv",
+      "line": 139,
+      "variable": "MAP2_ENGINE_OP_RETRY_BASE_DELAY"
+    },
+    {
+      "default": "''",
+      "file": "app/services/runtime_profiles.py",
+      "kind": "os.getenv",
+      "line": 76,
+      "variable": "MAP2_HEADLESS_LIVE"
+    },
+    {
+      "default": "'false'",
+      "file": "app/services/service_orchestrator.py",
+      "kind": "os.getenv",
+      "line": 1377,
+      "variable": "MAP2_LCD_SIMULATION"
+    },
+    {
+      "default": "'local'",
+      "file": "app/services/cluster/audio_path_discovery.py",
+      "kind": "os.getenv",
+      "line": 507,
+      "variable": "MAP2_NODE_ID"
+    },
+    {
+      "default": null,
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 141,
+      "variable": "MAP2_REMOTE_BACKEND_URL"
+    },
+    {
+      "default": "''",
+      "file": "app/middleware/request_logging.py",
+      "kind": "os.getenv",
+      "line": 39,
+      "variable": "MAP2_REQUEST_LOGGING"
+    },
+    {
+      "default": "''",
+      "file": "app/services/runtime_profiles.py",
+      "kind": "os.getenv",
+      "line": 73,
+      "variable": "MAP2_RUNTIME_BOOT_PROFILE"
+    },
+    {
+      "default": null,
+      "file": "app/services/secrets_manager.py",
+      "kind": "os.environ.get",
+      "line": 105,
+      "variable": "MAP2_SECRETS_MASTER_PASSWORD"
+    },
+    {
+      "default": "'true'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 457,
+      "variable": "MAP2_STRICT_ROUTE_LOADING"
+    },
+    {
+      "default": "'false'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 85,
+      "variable": "MAP2_TEST_MODE"
+    },
+    {
+      "default": "''",
+      "file": "app/services/avb/avb_service.py",
+      "kind": "os.getenv",
+      "line": 188,
+      "variable": "MAP2_TEST_MODE"
+    },
+    {
+      "default": "'true'",
+      "file": "app/main.py",
+      "kind": "os.getenv",
+      "line": 147,
+      "variable": "MAP2_USE_MOCK_LCD"
+    },
+    {
+      "default": "''",
+      "file": "app/services/mpx1_service.py",
+      "kind": "os.environ.get",
+      "line": 53,
+      "variable": "MPX1_SIMULATOR"
+    },
+    {
+      "default": "'standalone'",
+      "file": "app/routes/special_settings.py",
+      "kind": "os.getenv",
+      "line": 139,
+      "variable": "NODE_ID"
+    },
+    {
+      "default": "'http://localhost:9090'",
+      "file": "app/services/cluster/post_update_health.py",
+      "kind": "os.environ.get",
+      "line": 360,
+      "variable": "PROMETHEUS_URL"
+    },
+    {
+      "default": null,
+      "file": "app/routes/email_notifications.py",
+      "kind": "os.getenv",
+      "line": 23,
+      "variable": "SMTP_PASSWORD"
+    },
+    {
+      "default": "'25'",
+      "file": "app/routes/email_notifications.py",
+      "kind": "os.getenv",
+      "line": 21,
+      "variable": "SMTP_PORT"
+    },
+    {
+      "default": "'localhost'",
+      "file": "app/routes/email_notifications.py",
+      "kind": "os.getenv",
+      "line": 20,
+      "variable": "SMTP_SERVER"
+    },
+    {
+      "default": null,
+      "file": "app/routes/email_notifications.py",
+      "kind": "os.getenv",
+      "line": 22,
+      "variable": "SMTP_USERNAME"
+    },
+    {
+      "default": null,
+      "file": "app/routes/auth.py",
+      "kind": "os.getenv",
+      "line": 19,
+      "variable": "SPECIAL_MODE_PASSWORD"
+    },
+    {
+      "default": "'/run/user/1000'",
+      "file": "app/services/pipewire_service.py",
+      "kind": "os.environ.get",
+      "line": 30,
+      "variable": "XDG_RUNTIME_DIR"
+    }
+  ],
+  "direct_only_env": [
+    {
+      "occurrences": [
+        {
+          "default": "'disabled'",
+          "file": "app/routes/special_settings.py",
+          "kind": "os.getenv",
+          "line": 29,
+          "variable": "CLUSTER_MODE"
+        }
+      ],
+      "variable": "CLUSTER_MODE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/routes/www.py",
+          "kind": "os.environ.get",
+          "line": 166,
+          "variable": "DEBUG"
+        }
+      ],
+      "variable": "DEBUG"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/deployment/resilience_config.py",
+          "kind": "os.getenv",
+          "line": 98,
+          "variable": "DEBUG_RESILIENCE"
+        }
+      ],
+      "variable": "DEBUG_RESILIENCE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'monitoring@map2-audio.local'",
+          "file": "app/routes/email_notifications.py",
+          "kind": "os.getenv",
+          "line": 19,
+          "variable": "EMAIL_SENDER"
+        }
+      ],
+      "variable": "EMAIL_SENDER"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/deployment/resilience_config.py",
+          "kind": "os.getenv",
+          "line": 85,
+          "variable": "ENABLE_CIRCUIT_BREAKER"
+        }
+      ],
+      "variable": "ENABLE_CIRCUIT_BREAKER"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/deployment/resilience_config.py",
+          "kind": "os.getenv",
+          "line": 87,
+          "variable": "ENABLE_CONNECTION_POOLING"
+        }
+      ],
+      "variable": "ENABLE_CONNECTION_POOLING"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/deployment/resilience_config.py",
+          "kind": "os.getenv",
+          "line": 89,
+          "variable": "ENABLE_GRACEFUL_DEGRADATION"
+        }
+      ],
+      "variable": "ENABLE_GRACEFUL_DEGRADATION"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/deployment/resilience_config.py",
+          "kind": "os.getenv",
+          "line": 86,
+          "variable": "ENABLE_HEALTH_MONITORING"
+        }
+      ],
+      "variable": "ENABLE_HEALTH_MONITORING"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/deployment/resilience_config.py",
+          "kind": "os.getenv",
+          "line": 88,
+          "variable": "ENABLE_REQUEST_QUEUING"
+        }
+      ],
+      "variable": "ENABLE_REQUEST_QUEUING"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'/home/mm'",
+          "file": "app/services/pipewire_service.py",
+          "kind": "os.environ.get",
+          "line": 32,
+          "variable": "HOME"
+        }
+      ],
+      "variable": "HOME"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "''",
+          "file": "app/services/plugin_loader_unified.py",
+          "kind": "os.environ.get",
+          "line": 388,
+          "variable": "LV2_PATH"
+        },
+        {
+          "default": "''",
+          "file": "app/services/plugin_loader_unified.py",
+          "kind": "os.environ.get",
+          "line": 413,
+          "variable": "LV2_PATH"
+        }
+      ],
+      "variable": "LV2_PATH"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'8080'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 148,
+          "variable": "MAP2_API_PORT"
+        }
+      ],
+      "variable": "MAP2_API_PORT"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/services/backup_service.py",
+          "kind": "os.environ.get",
+          "line": 1648,
+          "variable": "MAP2_APP_DIR"
+        }
+      ],
+      "variable": "MAP2_APP_DIR"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.50'",
+          "file": "app/routes/audio.py",
+          "kind": "os.getenv",
+          "line": 109,
+          "variable": "MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS"
+        }
+      ],
+      "variable": "MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.20'",
+          "file": "app/routes/audio.py",
+          "kind": "os.getenv",
+          "line": 93,
+          "variable": "MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS"
+        }
+      ],
+      "variable": "MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.04'",
+          "file": "app/routes/audio.py",
+          "kind": "os.getenv",
+          "line": 97,
+          "variable": "MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS"
+        }
+      ],
+      "variable": "MAP2_AUDIO_LEVELS_TIMEOUT_SECONDS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.25'",
+          "file": "app/routes/audio.py",
+          "kind": "os.getenv",
+          "line": 101,
+          "variable": "MAP2_AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS"
+        }
+      ],
+      "variable": "MAP2_AUDIO_PLUGIN_LEVELS_CACHE_TTL_SECONDS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.06'",
+          "file": "app/routes/audio.py",
+          "kind": "os.getenv",
+          "line": 105,
+          "variable": "MAP2_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS"
+        }
+      ],
+      "variable": "MAP2_AUDIO_PLUGIN_LEVELS_TIMEOUT_SECONDS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.20'",
+          "file": "app/routes/audio.py",
+          "kind": "os.getenv",
+          "line": 113,
+          "variable": "MAP2_AUDIO_STATUS_CACHE_TTL_SECONDS"
+        }
+      ],
+      "variable": "MAP2_AUDIO_STATUS_CACHE_TTL_SECONDS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0'",
+          "file": "app/services/cluster/management_orchestrator.py",
+          "kind": "os.getenv",
+          "line": 32,
+          "variable": "MAP2_AUTO_UPDATE"
+        }
+      ],
+      "variable": "MAP2_AUTO_UPDATE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 263,
+          "variable": "MAP2_CLUSTER_ENABLED"
+        },
+        {
+          "default": "'false'",
+          "file": "app/services/cluster/__init__.py",
+          "kind": "os.getenv",
+          "line": 249,
+          "variable": "MAP2_CLUSTER_ENABLED"
+        }
+      ],
+      "variable": "MAP2_CLUSTER_ENABLED"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 277,
+          "variable": "MAP2_CONFIG_GIT_REPO"
+        }
+      ],
+      "variable": "MAP2_CONFIG_GIT_REPO"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'/tmp/map2_core_config_state.json'",
+          "file": "app/routes/system.py",
+          "kind": "os.getenv",
+          "line": 28,
+          "variable": "MAP2_CORE_CONFIG_FILE"
+        }
+      ],
+      "variable": "MAP2_CORE_CONFIG_FILE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'ALL-IN-ONE'",
+          "file": "app/deployment/deployment.py",
+          "kind": "os.getenv",
+          "line": 149,
+          "variable": "MAP2_DEPLOYMENT_MODE"
+        },
+        {
+          "default": "'AUDIO-NODE'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 131,
+          "variable": "MAP2_DEPLOYMENT_MODE"
+        },
+        {
+          "default": "'AUDIO-NODE'",
+          "file": "app/routes/lcd_events.py",
+          "kind": "os.getenv",
+          "line": 312,
+          "variable": "MAP2_DEPLOYMENT_MODE"
+        },
+        {
+          "default": "'AUDIO-NODE'",
+          "file": "app/routes/lcd_events.py",
+          "kind": "os.getenv",
+          "line": 357,
+          "variable": "MAP2_DEPLOYMENT_MODE"
+        },
+        {
+          "default": "'AUDIO-NODE' if role == 'AUDIO-NODE' else 'CONTROL-NODE'",
+          "file": "app/services/cluster/enhanced_node_identity.py",
+          "kind": "os.getenv",
+          "line": 352,
+          "variable": "MAP2_DEPLOYMENT_MODE"
+        },
+        {
+          "default": "DeploymentMode.ALL_IN_ONE.value",
+          "file": "app/services/runtime_profiles.py",
+          "kind": "os.getenv",
+          "line": 50,
+          "variable": "MAP2_DEPLOYMENT_MODE"
+        }
+      ],
+      "variable": "MAP2_DEPLOYMENT_MODE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 416,
+          "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
+        }
+      ],
+      "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/services/chain_service.py",
+          "kind": "os.getenv",
+          "line": 28,
+          "variable": "MAP2_ENABLE_ENGINE_CHAIN_DEPLOY"
+        }
+      ],
+      "variable": "MAP2_ENABLE_ENGINE_CHAIN_DEPLOY"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/routes/plugins.py",
+          "kind": "os.getenv",
+          "line": 125,
+          "variable": "MAP2_ENABLE_ENGINE_PLUGIN_OPS"
+        }
+      ],
+      "variable": "MAP2_ENABLE_ENGINE_PLUGIN_OPS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 231,
+          "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
+        }
+      ],
+      "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/routes/plugins.py",
+          "kind": "os.getenv",
+          "line": 131,
+          "variable": "MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS"
+        }
+      ],
+      "variable": "MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'6'",
+          "file": "app/routes/plugins.py",
+          "kind": "os.getenv",
+          "line": 138,
+          "variable": "MAP2_ENGINE_OP_MAX_RETRIES"
+        }
+      ],
+      "variable": "MAP2_ENGINE_OP_MAX_RETRIES"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'2048'",
+          "file": "app/routes/plugins.py",
+          "kind": "os.getenv",
+          "line": 137,
+          "variable": "MAP2_ENGINE_OP_QUEUE_MAX"
+        }
+      ],
+      "variable": "MAP2_ENGINE_OP_QUEUE_MAX"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'0.05'",
+          "file": "app/routes/plugins.py",
+          "kind": "os.getenv",
+          "line": 139,
+          "variable": "MAP2_ENGINE_OP_RETRY_BASE_DELAY"
+        }
+      ],
+      "variable": "MAP2_ENGINE_OP_RETRY_BASE_DELAY"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "''",
+          "file": "app/services/runtime_profiles.py",
+          "kind": "os.getenv",
+          "line": 76,
+          "variable": "MAP2_HEADLESS_LIVE"
+        }
+      ],
+      "variable": "MAP2_HEADLESS_LIVE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'local'",
+          "file": "app/services/cluster/audio_path_discovery.py",
+          "kind": "os.getenv",
+          "line": 507,
+          "variable": "MAP2_NODE_ID"
+        }
+      ],
+      "variable": "MAP2_NODE_ID"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 141,
+          "variable": "MAP2_REMOTE_BACKEND_URL"
+        }
+      ],
+      "variable": "MAP2_REMOTE_BACKEND_URL"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "''",
+          "file": "app/middleware/request_logging.py",
+          "kind": "os.getenv",
+          "line": 39,
+          "variable": "MAP2_REQUEST_LOGGING"
+        }
+      ],
+      "variable": "MAP2_REQUEST_LOGGING"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "''",
+          "file": "app/services/runtime_profiles.py",
+          "kind": "os.getenv",
+          "line": 73,
+          "variable": "MAP2_RUNTIME_BOOT_PROFILE"
+        }
+      ],
+      "variable": "MAP2_RUNTIME_BOOT_PROFILE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/services/secrets_manager.py",
+          "kind": "os.environ.get",
+          "line": 105,
+          "variable": "MAP2_SECRETS_MASTER_PASSWORD"
+        }
+      ],
+      "variable": "MAP2_SECRETS_MASTER_PASSWORD"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 457,
+          "variable": "MAP2_STRICT_ROUTE_LOADING"
+        }
+      ],
+      "variable": "MAP2_STRICT_ROUTE_LOADING"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'false'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 85,
+          "variable": "MAP2_TEST_MODE"
+        },
+        {
+          "default": "''",
+          "file": "app/services/avb/avb_service.py",
+          "kind": "os.getenv",
+          "line": 188,
+          "variable": "MAP2_TEST_MODE"
+        }
+      ],
+      "variable": "MAP2_TEST_MODE"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'true'",
+          "file": "app/main.py",
+          "kind": "os.getenv",
+          "line": 147,
+          "variable": "MAP2_USE_MOCK_LCD"
+        }
+      ],
+      "variable": "MAP2_USE_MOCK_LCD"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "''",
+          "file": "app/services/mpx1_service.py",
+          "kind": "os.environ.get",
+          "line": 53,
+          "variable": "MPX1_SIMULATOR"
+        }
+      ],
+      "variable": "MPX1_SIMULATOR"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'standalone'",
+          "file": "app/routes/special_settings.py",
+          "kind": "os.getenv",
+          "line": 139,
+          "variable": "NODE_ID"
+        }
+      ],
+      "variable": "NODE_ID"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'http://localhost:9090'",
+          "file": "app/services/cluster/post_update_health.py",
+          "kind": "os.environ.get",
+          "line": 360,
+          "variable": "PROMETHEUS_URL"
+        }
+      ],
+      "variable": "PROMETHEUS_URL"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/routes/email_notifications.py",
+          "kind": "os.getenv",
+          "line": 23,
+          "variable": "SMTP_PASSWORD"
+        }
+      ],
+      "variable": "SMTP_PASSWORD"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'25'",
+          "file": "app/routes/email_notifications.py",
+          "kind": "os.getenv",
+          "line": 21,
+          "variable": "SMTP_PORT"
+        }
+      ],
+      "variable": "SMTP_PORT"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'localhost'",
+          "file": "app/routes/email_notifications.py",
+          "kind": "os.getenv",
+          "line": 20,
+          "variable": "SMTP_SERVER"
+        }
+      ],
+      "variable": "SMTP_SERVER"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/routes/email_notifications.py",
+          "kind": "os.getenv",
+          "line": 22,
+          "variable": "SMTP_USERNAME"
+        }
+      ],
+      "variable": "SMTP_USERNAME"
+    },
+    {
+      "occurrences": [
+        {
+          "default": null,
+          "file": "app/routes/auth.py",
+          "kind": "os.getenv",
+          "line": 19,
+          "variable": "SPECIAL_MODE_PASSWORD"
+        }
+      ],
+      "variable": "SPECIAL_MODE_PASSWORD"
+    },
+    {
+      "occurrences": [
+        {
+          "default": "'/run/user/1000'",
+          "file": "app/services/pipewire_service.py",
+          "kind": "os.environ.get",
+          "line": 30,
+          "variable": "XDG_RUNTIME_DIR"
+        }
+      ],
+      "variable": "XDG_RUNTIME_DIR"
+    }
+  ],
+  "excluded_non_backend_imports": [
+    {
+      "module": "Flask",
+      "why": "Legacy Flask surface under app/api, not part of app.main FastAPI runtime"
+    },
+    {
+      "module": "textual",
+      "why": "TUI-only dependency under app/tui, not required for backend API service"
+    }
+  ],
+  "generated_from": {
+    "config_schema": "app/config.py",
+    "direct_env_scan_root": "app/",
+    "systemd_service": "systemd/map2-backend.service"
+  },
+  "native_prerequisites": [
+    {
+      "name": "lilv/python-lilv bindings",
+      "why": "LV2 plugin discovery/metadata access"
+    },
+    {
+      "name": "JACK Python bindings",
+      "why": "JACK/PipeWire integration helpers"
+    },
+    {
+      "name": "PortAudio and libsndfile system libraries",
+      "why": "Required by sounddevice/soundfile-backed workflows"
+    }
+  ],
+  "optional_python_features": [
+    {
+      "module": "aiofiles",
+      "why": "Optional async file queue helpers"
+    },
+    {
+      "module": "asyncssh",
+      "why": "Optional SSH transport for Tesira/cluster flows"
+    },
+    {
+      "module": "cryptography",
+      "why": "Optional secrets management and certificate authority helpers"
+    },
+    {
+      "module": "jsonschema",
+      "why": "Optional config validation helpers"
+    },
+    {
+      "module": "py7zr",
+      "why": "Optional archive handling for soundfont content"
+    },
+    {
+      "module": "watchdog",
+      "why": "Optional config hot-reload support"
+    }
+  ],
+  "runtime_requirements": [
+    {
+      "group": "api_and_orchestration",
+      "package": "fastapi",
+      "specifier": ">=0.128.0,<0.129.0",
+      "why": "FastAPI application and OpenAPI generation"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "uvicorn",
+      "specifier": ">=0.40.0,<0.41.0",
+      "why": "ASGI server for app.main:app"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "pydantic",
+      "specifier": ">=2.12.5,<3.0.0",
+      "why": "Validation and settings models"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "SQLAlchemy",
+      "specifier": ">=2.0.45,<3.0.0",
+      "why": "ORM and async database access"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "httpx",
+      "specifier": ">=0.28.1,<0.29.0",
+      "why": "Outbound API calls for cluster and device integrations"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "aiohttp",
+      "specifier": ">=3.13.3,<4.0.0",
+      "why": "Async HTTP clients used across discovery/scraper/integration services"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "PyYAML",
+      "specifier": ">=6.0.2,<7.0.0",
+      "why": "YAML parsing and emitted configuration artifacts"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "psutil",
+      "specifier": ">=7.2.1,<8.0.0",
+      "why": "System/process telemetry"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "zeroconf",
+      "specifier": ">=0.148.0,<1.0.0",
+      "why": "Network discovery and advertisement"
+    },
+    {
+      "group": "audio_and_control",
+      "package": "numpy",
+      "specifier": ">=2.3.5,<3.0.0",
+      "why": "Signal/data processing helpers"
+    },
+    {
+      "group": "audio_and_control",
+      "package": "scipy",
+      "specifier": ">=1.17.0,<2.0.0",
+      "why": "DSP/scientific utilities used by audio features"
+    },
+    {
+      "group": "audio_and_control",
+      "package": "sounddevice",
+      "specifier": ">=0.5.3,<0.6.0",
+      "why": "Python-side audio I/O helpers and diagnostics"
+    },
+    {
+      "group": "audio_and_control",
+      "package": "soundfile",
+      "specifier": ">=0.13.1,<0.14.0",
+      "why": "Audio file read/write support"
+    },
+    {
+      "group": "audio_and_control",
+      "package": "python-rtmidi",
+      "specifier": ">=1.5.8,<2.0.0",
+      "why": "MIDI device access"
+    },
+    {
+      "group": "audio_and_control",
+      "package": "pyserial",
+      "specifier": ">=3.5,<4.0.0",
+      "why": "Serial-connected hardware workflows"
+    },
+    {
+      "group": "content_and_library_features",
+      "package": "beautifulsoup4",
+      "specifier": ">=4.14.3,<5.0.0",
+      "why": "HTML parsing for library/discovery features"
+    }
+  ],
+  "schema_env": [
+    {
+      "config_key": "app.debug",
+      "default": false,
+      "description": "Enable debug mode",
+      "env_var": "MAP2_DEBUG",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "app.log_level",
+      "default": "INFO",
+      "description": "Logging level",
+      "env_var": "MAP2_LOG_LEVEL",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "audio.allow_python_io",
+      "default": false,
+      "description": "Allow deprecated Python audio I/O (NOT recommended for production)",
+      "env_var": "MAP2_ALLOW_PYTHON_IO",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "audio.backend",
+      "default": "pipewire",
+      "description": "Audio backend (LOCKED at 'pipewire' for Tier A stability - set in systemd service only)",
+      "env_var": "MAP2_AUDIO_BACKEND",
+      "locked": true,
+      "restart_required": true,
+      "value_type": "str"
+    },
+    {
+      "config_key": "audio.buffer_size",
+      "default": 64,
+      "description": "Audio buffer size in samples (LOCKED at 64 for <3ms latency - set in systemd service only)",
+      "env_var": "MAP2_BUFFER_SIZE",
+      "locked": true,
+      "restart_required": true,
+      "value_type": "int"
+    },
+    {
+      "config_key": "audio.device",
+      "default": null,
+      "description": "Audio device name (None for PipeWire/system default via JACK)",
+      "env_var": "MAP2_AUDIO_DEVICE",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "str"
+    },
+    {
+      "config_key": "audio.engine",
+      "default": "juce",
+      "description": "Audio engine to use: 'juce' (recommended) or 'python' (deprecated)",
+      "env_var": "MAP2_AUDIO_ENGINE",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "str"
+    },
+    {
+      "config_key": "audio.pipewire_use_jack",
+      "default": true,
+      "description": "Use PipeWire's JACK compatibility layer (recommended)",
+      "env_var": "MAP2_PIPEWIRE_USE_JACK",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "audio.sample_rate",
+      "default": 48000,
+      "description": "Audio sample rate in Hz (LOCKED for Tier A performance - set in systemd service only)",
+      "env_var": "MAP2_SAMPLE_RATE",
+      "locked": true,
+      "restart_required": true,
+      "value_type": "int"
+    },
+    {
+      "config_key": "avb.avdecc_enabled",
+      "default": false,
+      "description": "Enable AVDECC (IEEE 1722.1) discovery/control for third-party AVB devices",
+      "env_var": "MAP2_AVDECC_ENABLED",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "avb.enabled",
+      "default": false,
+      "description": "Enable AVB/TSN network audio transport (requires compatible NIC)",
+      "env_var": "MAP2_AVB_ENABLED",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "avb.failover_interfaces",
+      "default": [],
+      "description": "Ordered interface candidates for AVB stream failover",
+      "env_var": "MAP2_AVB_FAILOVER_INTERFACES",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "list"
+    },
+    {
+      "config_key": "avb.failover_policy",
+      "default": "none",
+      "description": "Stream interface failover policy (none, prefer_primary, round_robin, manual)",
+      "env_var": "MAP2_AVB_FAILOVER_POLICY",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "avb.interface",
+      "default": "",
+      "description": "Network interface for AVB/TSN (e.g., enp3s0, eth0)",
+      "env_var": "MAP2_AVB_INTERFACE",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "str"
+    },
+    {
+      "config_key": "avb.srp.control_socket",
+      "default": "",
+      "description": "SRP daemon control socket override (daemon defaults when empty)",
+      "env_var": "MAP2_AVB_SRP_CONTROL_SOCKET",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "avb.srp.daemon",
+      "default": "auto",
+      "description": "SRP daemon selection (auto-detect mrpd/msrpd)",
+      "env_var": "MAP2_AVB_SRP_DAEMON",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "str"
+    },
+    {
+      "config_key": "avb.srp.enabled",
+      "default": true,
+      "description": "Enable SRP/MSRP admission control for AVB connection paths",
+      "env_var": "MAP2_AVB_SRP_ENABLED",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "avb.srp.required",
+      "default": true,
+      "description": "Fail closed when SRP admission cannot be acquired",
+      "env_var": "MAP2_AVB_SRP_REQUIRED",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "backend.host",
+      "default": "0.0.0.0",
+      "description": "Backend API host address",
+      "env_var": "MAP2_HOST",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "backend.port",
+      "default": 8080,
+      "description": "Backend API port",
+      "env_var": "MAP2_PORT",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "int"
+    },
+    {
+      "config_key": "database.path",
+      "default": "data/map2.db",
+      "description": "Database file path",
+      "env_var": "MAP2_DATABASE_PATH",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "lcd.enabled",
+      "default": false,
+      "description": "Enable LCD display support",
+      "env_var": "MAP2_ENABLE_LCD",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "lcd.simulation",
+      "default": false,
+      "description": "Use LCD simulation mode",
+      "env_var": "MAP2_LCD_SIMULATION",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "midi.enabled",
+      "default": true,
+      "description": "Enable MIDI functionality",
+      "env_var": "MAP2_MIDI_ENABLED",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "bool"
+    },
+    {
+      "config_key": "storage.ir_user_dir",
+      "default": "~/.local/share/map2/ir",
+      "description": "User IR files directory",
+      "env_var": "MAP2_IR_DIR",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "storage.nam_user_dir",
+      "default": "~/.local/share/map2/nam",
+      "description": "User NAM models directory",
+      "env_var": "MAP2_NAM_DIR",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "str"
+    },
+    {
+      "config_key": "tesira.devices",
+      "default": [],
+      "description": "List of Tesira device connection configs. Each entry: {host, port=23, name='', enabled=true, metering_tags=[]}",
+      "env_var": "MAP2_TESIRA_DEVICES",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "list"
+    },
+    {
+      "config_key": "tesira.enabled",
+      "default": false,
+      "description": "Enable Biamp Tesira Forte AVB integration (up to 5 units)",
+      "env_var": "MAP2_TESIRA_ENABLED",
+      "locked": false,
+      "restart_required": true,
+      "value_type": "bool"
+    }
+  ],
+  "summary": {
+    "direct_env_read_count": 62,
+    "direct_only_env_count": 50,
+    "runtime_requirement_count": 16,
+    "schema_env_count": 28,
+    "systemd_inline_env_count": 11
+  },
+  "systemd_backend_service": {
+    "environment_files": [
+      "-/etc/map2/environment"
+    ],
+    "inline_environment": [
+      {
+        "name": "PYTHONPATH",
+        "value": "/home/mm/map2-audio"
+      },
+      {
+        "name": "PATH",
+        "value": "/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+      },
+      {
+        "name": "MAP2_ENABLE_LCD",
+        "value": "false"
+      },
+      {
+        "name": "MAP2_LCD_SIMULATION",
+        "value": "false"
+      },
+      {
+        "name": "XDG_RUNTIME_DIR",
+        "value": "/run/user/1000"
+      },
+      {
+        "name": "DBUS_SESSION_BUS_ADDRESS",
+        "value": "unix:path=/run/user/1000/bus"
+      },
+      {
+        "name": "PIPEWIRE_REMOTE",
+        "value": "pipewire-0"
+      },
+      {
+        "name": "JACK_DEFAULT_SERVER",
+        "value": "pipewire"
+      },
+      {
+        "name": "PIPEWIRE_LATENCY",
+        "value": "64/48000"
+      },
+      {
+        "name": "PIPEWIRE_FALLBACK_PLAYBACK_DEVICE",
+        "value": "alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output"
+      },
+      {
+        "name": "PIPEWIRE_FALLBACK_CAPTURE_DEVICE",
+        "value": "alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input"
+      }
+    ]
+  }
+}
