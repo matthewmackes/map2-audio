@@ -3017,7 +3017,7 @@ Last updated: 2026-03-09 18:37 - Codex
   - Suggested next tasks: T076 (pending HIL unblock), T004 (hardware qualification unblock).
 
 ID: T081
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Comprehensive platform fitness-for-purpose evaluation and improvement plan
 Description:
 - Goal / acceptance criteria: Perform a deep, critical, technically informed evaluation of the entire MAP2 Audio Platform across completeness, stability, architecture, bloat, performance, UX, theming, API quality, and market readiness. Produce a structured report with prioritized findings and a concrete improvement roadmap. The evaluation must be unafraid to call out bad ideas, weak abstractions, UI clutter, pseudo-features, overengineering, inconsistent theming, poor control models, avoidable latency, and architectural mistakes.
@@ -3027,7 +3027,7 @@ Description:
 - Required outputs: Structured evaluation report (`docs/PLATFORM_EVALUATION_REPORT.md`) with all 10 sections below, plus worklist items spawned for critical/major findings.
 Subtasks:
 ID: T081-subA
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 1 — Platform understanding and inventory
 Description:
 - Goal / acceptance criteria: Build a complete inventory of the platform's subsystems, services, UI pages, API endpoints, configuration surfaces, dependencies, and build/deploy structure. Map the intended purpose of each module. Identify the platform's claimed value proposition and judge whether each subsystem contributes to it.
@@ -3044,9 +3044,14 @@ Description:
 - Required outputs: `docs/evaluation/01-platform-inventory.md`
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-09 19:14 - Codex
+- Completion notes:
+  - What was done: Produced the Phase 1 inventory baseline covering backend route/service surfaces, frontend navigation/pages/components, JUCE engine areas, deployment/configuration surfaces, dependency manifests, and value-proposition alignment.
+  - Key findings: The current tree exposes `103` route modules / `1307` route decorators, `227` Python service files, `38` frontend page modules, `19` advanced navigation entries, and `108` JUCE `.cpp`/`.h` files; the main backend app still lacks one canonical runtime dependency manifest.
+  - Files/links produced: `docs/evaluation/01-platform-inventory.md`.
+  - Suggested next tasks: T081-subB, T081-subC, T084
 ID: T081-subB
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 2 — Completeness evaluation
 Description:
 - Goal / acceptance criteria: Determine whether each subsystem is feature-complete for its intended purpose. Identify missing core features, incomplete workflows, half-implemented systems, missing error handling, unfinished interface areas, and broken or inconsistent behavior between modules.
@@ -3062,7 +3067,12 @@ Description:
 - Required outputs: `docs/evaluation/02-completeness.md` with per-subsystem completeness scores (complete / partial / stub / missing).
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-09 19:59 - Codex
+- Completion notes:
+  - What was done: Produced a subsystem-by-subsystem completeness scorecard covering audio engine, DSP/plugin host, MPX-1, AVB/AVDECC, Tesira, MIDI, MIDI Hub, cluster, metering, library/presets, grid/3D, PipeWire/RT hardening, and host-machine surfaces.
+  - Key findings: No major subsystem scored `Complete`; the platform's dominant issue is not missing code but incomplete end-to-end closure, especially around hardware qualification, parity claims, operator clarity, and supported-scope discipline.
+  - Files/links produced: `docs/evaluation/02-completeness.md`.
+  - Suggested next tasks: T081-subC, T081-subD, T085
 ID: T081-subC
 Status: [ ] Todo
 Title: Phase 3 — Stability and reliability evaluation
@@ -3236,7 +3246,7 @@ Subtasks: None
 Assigned to: Codex
 Last updated: 2026-03-09 00:00 - Codex
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-09 19:14 - Codex
 
 ID: T082
 Status: [>] In Progress
@@ -3312,3 +3322,41 @@ Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
 ALL UNBLOCKED ITEMS COMPLETE (except T082 in progress)
+ID: T083
+Status: [ ] Todo
+Title: Create canonical backend dependency manifest and environment contract
+Description:
+- Goal / acceptance criteria: Add one authoritative backend runtime dependency manifest for the main FastAPI application and document the effective environment contract across `app/config.py`, direct `os.getenv()` reads, and systemd/runtime overrides. The deliverable must make backend setup reproducible without reverse-engineering installer scripts.
+- Why it matters: `T081-subA` found explicit requirements for installer/search helpers but no single canonical runtime manifest for the main backend app, which weakens reproducibility, release confidence, and onboarding.
+- Dependencies: T081-subA
+- Estimated effort: Medium
+- Required outputs: Backend dependency manifest, environment-contract documentation, and any README/setup updates needed to use them.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 19:14 - Codex
+
+ID: T084
+Status: [ ] Todo
+Title: Generate machine-readable MAP2 API surface inventory and contract docs
+Description:
+- Goal / acceptance criteria: Produce a regenerable REST/WebSocket surface inventory grouped by subsystem, with method/path coverage, websocket message types, and enough contract detail to support `T081-subI` without manual rediscovery. The inventory should come from code or OpenAPI generation, not hand-maintained prose alone.
+- Why it matters: `T081-subA` found `103` route modules and `1307` route decorators; that API/control surface is too large to reason about informally and will keep drifting unless it is generated and reviewed systematically.
+- Dependencies: T081-subA
+- Estimated effort: Medium
+- Required outputs: Inventory generation script or documented command, generated API inventory artifact, and worklist/report linkage for later API-quality evaluation.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 19:14 - Codex
+
+ID: T085
+Status: [ ] Todo
+Title: Add subsystem maturity matrix and experimental labeling across UI/docs
+Description:
+- Goal / acceptance criteria: Define a canonical maturity state for major MAP2 subsystems (`production`, `qualified-with-waiver`, `beta`, `experimental`, `hardware-blocked`) and surface it in operator-facing docs and the web UI/navigation so users can tell which workflows are actually finished. Default navigation should stop presenting unfinished areas as if they are equally ready.
+- Why it matters: `T081-subB` found that most flagship surfaces are implemented but not fully closed. Without visible maturity labeling, MAP2 overstates readiness and forces operators to rely on scattered docs to understand what is safe to trust.
+- Dependencies: T081-subB
+- Estimated effort: Medium
+- Required outputs: Canonical maturity matrix, doc updates, UI labeling/gating plan or implementation, and acceptance criteria for keeping labels current.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-03-09 19:59 - Codex
