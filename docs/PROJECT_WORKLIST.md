@@ -3360,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T089
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T089
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
@@ -3401,7 +3401,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 11:07 - Codex
 
 ID: T086
-Status: [ ] Todo
+Status: [✓] Done
 Title: Establish platform-wide API authentication and authorization model
 Description:
 - Goal / acceptance criteria: Replace the current ad-hoc control-plane security posture with a real API-wide authentication and authorization model. Remove default backdoor fallback behavior, define trust boundaries for local/operator/admin/cluster actions, and make the resulting contract testable and documented.
@@ -3411,7 +3411,7 @@ Description:
 - Required outputs: Auth design + implementation, environment/secret documentation updates, migration plan for existing local workflows, and targeted automated tests.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 10:33 - Codex
+Last updated: 2026-03-10 11:56 - Codex
 
 ID: T087
 Status: [✓] Done

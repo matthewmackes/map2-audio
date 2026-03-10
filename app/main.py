@@ -403,6 +403,7 @@ def create_app():
         from fastapi import FastAPI
         from fastapi.middleware.cors import CORSMiddleware
         import os
+        from app.middleware.api_auth import APIAuthMiddleware
         from app.utils.api_contract import generate_operation_id, install_contract_openapi
 
         app = FastAPI(
@@ -431,6 +432,7 @@ def create_app():
             allow_methods=["*"],
             allow_headers=["*"],
         )
+        app.add_middleware(APIAuthMiddleware)
 
         # Capture request durations for route-group percentile observability.
         from app.middleware.request_logging import RequestLoggingMiddleware

@@ -18,20 +18,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _configured_password = os.getenv("SPECIAL_MODE_PASSWORD")
 NORMALIZED_PASSWORD = _configured_password.strip() if _configured_password else ""
-FALLBACK_PASSWORD = "backdoor"
 
-if NORMALIZED_PASSWORD and NORMALIZED_PASSWORD != FALLBACK_PASSWORD:
-    logger.info("SPECIAL_MODE_PASSWORD is configured")
-elif NORMALIZED_PASSWORD == FALLBACK_PASSWORD:
-    logger.info("SPECIAL_MODE_PASSWORD is configured with fallback value 'backdoor'")
-else:
-    logger.warning(
-        "SPECIAL_MODE_PASSWORD not set. Falling back to local/dev default: backdoor"
-    )
-
-_SPECIAL_MODE_PASSWORDS = {FALLBACK_PASSWORD}
 if NORMALIZED_PASSWORD:
-    _SPECIAL_MODE_PASSWORDS.add(NORMALIZED_PASSWORD)
+    logger.info("SPECIAL_MODE_PASSWORD is configured")
+else:
+    logger.warning("SPECIAL_MODE_PASSWORD not set. Special mode authentication disabled.")
+
+_SPECIAL_MODE_PASSWORDS = {NORMALIZED_PASSWORD} if NORMALIZED_PASSWORD else set()
 
 _SPECIAL_MODE_PASSWORD_HASHES = {
     hashlib.sha256(password.encode()).hexdigest()
@@ -41,6 +34,8 @@ _SPECIAL_MODE_PASSWORD_HASHES = {
 
 def verify_password(password: str) -> bool:
     """Verify provided password against configured password."""
+    if not _SPECIAL_MODE_PASSWORD_HASHES:
+        return False
     normalized_input = password.strip()
     hashed_input = hashlib.sha256(normalized_input.encode()).hexdigest()
     return any(
@@ -55,12 +50,13 @@ async def authenticate_special_mode(request: PasswordAuthRequest):
     Authenticate for special mode access.
     
     Requires password configured in SPECIAL_MODE_PASSWORD environment variable.
-    Default password: "backdoor"
     
     Returns:
         PasswordAuthResponse with success=True if password correct
     """
     try:
+        if not _SPECIAL_MODE_PASSWORD_HASHES:
+            raise HTTPException(503, "Special mode password is not configured")
         if verify_password(request.password):
             logger.info("Special mode authentication successful")
             return PasswordAuthResponse(
@@ -74,6 +70,8 @@ async def authenticate_special_mode(request: PasswordAuthRequest):
                 message="Incorrect password"
             )
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Special mode authentication error: {e}")
         raise HTTPException(500, f"Authentication error: {e}")
