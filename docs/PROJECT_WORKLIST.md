@@ -3357,7 +3357,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-ALL UNBLOCKED ITEMS COMPLETE (except T082 in progress)
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T081-subI, T081-subJ, T083, T085
 ID: T083
 Status: [ ] Todo
 Title: Create canonical backend dependency manifest and environment contract
@@ -3372,7 +3372,7 @@ Assigned to: Codex
 Last updated: 2026-03-09 19:14 - Codex
 
 ID: T084
-Status: [ ] Todo
+Status: [✓] Done
 Title: Generate machine-readable MAP2 API surface inventory and contract docs
 Description:
 - Goal / acceptance criteria: Produce a regenerable REST/WebSocket surface inventory grouped by subsystem, with method/path coverage, websocket message types, and enough contract detail to support `T081-subI` without manual rediscovery. The inventory should come from code or OpenAPI generation, not hand-maintained prose alone.
@@ -3382,7 +3382,7 @@ Description:
 - Required outputs: Inventory generation script or documented command, generated API inventory artifact, and worklist/report linkage for later API-quality evaluation.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 19:14 - Codex
+Last updated: 2026-03-10 10:07 - Codex
 
 ID: T085
 Status: [ ] Todo
