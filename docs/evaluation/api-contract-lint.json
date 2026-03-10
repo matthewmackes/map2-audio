@@ -1,0 +1,39 @@
+{
+  "docs": {
+    "contract_standards": {
+      "exists": true,
+      "markers": [
+        "## Example: engine",
+        "## Example: midi",
+        "## Example: tesira",
+        "## Example: cluster",
+        "## Example: avb"
+      ],
+      "missing_markers": [],
+      "path": "docs/api-contract-standards.md"
+    },
+    "event_catalog": {
+      "exists": true,
+      "markers": [
+        "## Topic: midi_activity",
+        "## Topic: meters",
+        "## Topic: pipewire_metrics",
+        "## Topic: mpx1",
+        "## Topic: tesira:device_state"
+      ],
+      "missing_markers": [],
+      "path": "docs/api-event-catalog.md"
+    }
+  },
+  "duplicate_operation_id_warnings": [],
+  "missing_500": [],
+  "missing_503": [],
+  "summary": {
+    "api_error_schema_present": true,
+    "duplicate_operation_id_warning_count": 0,
+    "http_operation_count": 1227,
+    "missing_500_count": 0,
+    "missing_503_count": 0,
+    "passed": true
+  }
+}

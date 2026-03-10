@@ -403,12 +403,14 @@ def create_app():
         from fastapi import FastAPI
         from fastapi.middleware.cors import CORSMiddleware
         import os
+        from app.utils.api_contract import generate_operation_id, install_contract_openapi
 
         app = FastAPI(
             title="MAP2 Audio Platform",
             description="Professional audio processing with LV2 plugins and MIDI routing",
             version="1.24.25.1",
-            lifespan=lifespan  # Use async lifespan instead of startup/shutdown events
+            lifespan=lifespan,  # Use async lifespan instead of startup/shutdown events
+            generate_unique_id_function=generate_operation_id,
         )
 
         # Disable uvicorn access logs by default to avoid request-path logging
@@ -611,6 +613,7 @@ def create_app():
 <body><h1>MAP2 Audio Platform</h1><p>Professional Real-Time Audio Processing System</p></body>
 </html>""")
 
+        install_contract_openapi(app)
         return app
 
     except ImportError:

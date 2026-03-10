@@ -3360,7 +3360,7 @@ Last updated: 2026-03-09 00:00 - Claude
 Assigned to: Claude + Matthew
 Last updated: 2026-03-09 00:00 - Claude
 
-REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T087, T089
+REMAINING UNBLOCKED ITEMS (besides T082 in progress): T086, T089
 ID: T083
 Status: [✓] Done
 Title: Create canonical backend dependency manifest and environment contract
@@ -3414,7 +3414,7 @@ Assigned to: Codex
 Last updated: 2026-03-10 10:33 - Codex
 
 ID: T087
-Status: [ ] Todo
+Status: [✓] Done
 Title: Standardize external API contract, errors, versioning, and event schema
 Description:
 - Goal / acceptance criteria: Define and enforce a stable external API contract with unique operation IDs, explicit versioning policy, structured error envelope, documented non-2xx responses, WebSocket/event schema docs, and request/response examples for the highest-value domains.
@@ -3424,7 +3424,7 @@ Description:
 - Required outputs: Contract guidelines, generated/linted artifacts, route/schema updates, example coverage, and automated checks preventing regression.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-10 10:33 - Codex
+Last updated: 2026-03-10 11:41 - Codex
 
 ID: T088
 Status: [✓] Done
