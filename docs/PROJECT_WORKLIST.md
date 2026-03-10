@@ -3346,11 +3346,41 @@ Description:
 - Dependencies: T082-subC (do after releases work, since history rewrite requires force-push)
 - Estimated effort: Medium (destructive — requires coordination)
 - Required outputs: Updated `.gitignore`, `git rm --cached` or `git filter-repo` run, force-push to both remotes.
+Subtasks:
+ID: T082-subD-subA
+Status: [✓] Done
+Title: Add ignore guardrails and cleanup runbook for tracked repo bloat
+Description:
+- Goal / acceptance criteria: Update `.gitignore` so the identified build/dependency/bakup trees cannot be recommitted accidentally, and write an exact runbook with counted target paths and rewrite commands for the later destructive cleanup.
+- Why it matters: This turns a vague manual cleanup into a deterministic operation and prevents fresh bloat while waiting for the coordinated rewrite window.
+- Dependencies: T082-subC
+- Estimated effort: Low
+- Required outputs: `.gitignore` updates and a cleanup runbook under `docs/`.
 Subtasks: None
-Assigned to: Matthew + Claude
-Last updated: 2026-03-10 10:08 - Codex
+Assigned to: Codex
+Last updated: 2026-03-10 10:39 - Codex
+- Completion notes:
+  - What was done: Added ignore rules for `node_modules/`, `juce-engine/build*/`, nested JUCE plugin build trees, the two stray standalone plugin projects, and `data/repair-backups/`; also wrote a runbook with exact tracked-file counts and a mirror-clone `git filter-repo` procedure.
+  - Key findings: `git-filter-repo` is not installed on this host, so rewrite execution still needs a prepared environment even though the target path inventory is now concrete.
+  - Files/links produced: `.gitignore`, `docs/REPO_BLOAT_CLEANUP_RUNBOOK.md`.
+ID: T082-subD-subB
+Status: [✗] Blocked
+Title: Execute coordinated history rewrite and force-push for repo bloat removal
+Description:
+- Goal / acceptance criteria: Run the history rewrite from a prepared mirror clone, remove the listed tracked bloat paths from history, and force-push both `origin` and `gitlab` with collaborator coordination.
+- Why it matters: The repository size and checkout/tooling penalties will persist until history is actually rewritten.
+- Dependencies: T082-subD-subA
+- Estimated effort: Medium (destructive — requires coordination)
+- Required outputs: Rewritten history on both remotes and collaborator migration notice.
+Subtasks: None
+Assigned to: Matthew + Codex
+Last updated: 2026-03-10 10:39 - Codex
 - Blocked notes:
-  - 2026-03-10 the nightly pipeline validated successfully without this step, but the cleanup remains intentionally blocked because it requires destructive history rewriting and coordinated force-pushes on both remotes.
+  - 2026-03-10 rewrite execution remains blocked because `git-filter-repo` is unavailable on this host and the force-push requires an explicit coordinated rewrite window across both remotes.
+Assigned to: Matthew + Claude
+Last updated: 2026-03-10 10:39 - Codex
+- Blocked notes:
+  - 2026-03-10 the safe preparation slice is complete (`T082-subD-subA`), but final completion still depends on the destructive rewrite and coordinated force-push captured in `T082-subD-subB`.
 ID: T082-subE
 Status: [✓] Done
 Title: Validate first nightly release end-to-end

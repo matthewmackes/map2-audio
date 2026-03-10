@@ -52,3 +52,11 @@ logs/
 .copilot-notes/
 .gemini/
 /VSTs-MAP2/
+
+# Repository bloat guardrails
+node_modules/
+juce-engine/build*/
+juce-engine/**/build*/
+juce-engine/IntelliFX8VoiceChorusPlugin/
+juce-engine/TweedBassmanPlugin/
+data/repair-backups/
