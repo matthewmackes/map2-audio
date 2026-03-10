@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**741** Python | **966** TypeScript | **282** C++/H | **117** Docs | **472** total commits | **0** stars | **0** forks | **0** open issues
+**741** Python | **966** TypeScript | **282** C++/H | **117** Docs | **474** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`09432c87`](https://github.com/matthewmackes/map2-audio/commit/09432c87bb0c391df6d9b4e04ce1378228e316df) | docs: close nightly release secret setup | Map2 Audio | 2026-03-10 |
+| [`807fdaee`](https://github.com/matthewmackes/map2-audio/commit/807fdaee3f3d1f351fc469134df86304180f6f2f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`fb240a32`](https://github.com/matthewmackes/map2-audio/commit/fb240a326a9621b443a0a2fd898d32547c614b64) | refactor: complete T089 engine facade extraction | Map2 Audio | 2026-03-10 |
 | [`3dab24bf`](https://github.com/matthewmackes/map2-audio/commit/3dab24bf1ad18d05bb46fce6f253d23f28dceddc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`74ea8ed4`](https://github.com/matthewmackes/map2-audio/commit/74ea8ed41617e56b6dbf34ce77285b9fea6ea32b) | feat: complete T086 API auth model | Map2 Audio | 2026-03-10 |
 | [`9370a737`](https://github.com/matthewmackes/map2-audio/commit/9370a737033587d695b8683f8fe4b3603dc2db9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`00680d75`](https://github.com/matthewmackes/map2-audio/commit/00680d75e0a6ec2b7b8af39841ee7cf1d870d961) | feat: complete T087 API contract standards | Map2 Audio | 2026-03-10 |
 | [`5e994e2d`](https://github.com/matthewmackes/map2-audio/commit/5e994e2d1acec3a13d95a8e81ef511e1e1ca34dd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`85666e51`](https://github.com/matthewmackes/map2-audio/commit/85666e51c5e82a8cf51e305a7095d43e440c7199) | feat: complete T088 recovery backpressure hardening | Map2 Audio | 2026-03-10 |
-| [`f4d12613`](https://github.com/matthewmackes/map2-audio/commit/f4d12613cc006a1a908df867c8faba7dfa8a0147) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
