@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**729** Python | **966** TypeScript | **282** C++/H | **111** Docs | **460** total commits | **0** stars | **0** forks | **0** open issues
+**729** Python | **966** TypeScript | **282** C++/H | **112** Docs | **462** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -172,9 +172,9 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [MAP2 Platform Evaluation Report](https://github.com/matthewmackes/map2-audio/blob/master/docs/PLATFORM_EVALUATION_REPORT.md) | 2026-03-10 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-03-10 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-03-10 |
+| [MAP2 Subsystem Maturity Matrix](https://github.com/matthewmackes/map2-audio/blob/master/docs/subsystem-maturity-matrix.md) | 2026-03-10 |
 | [MAP2 Mobile Responsive Audit & Implementation](https://github.com/matthewmackes/map2-audio/blob/master/docs/MOBILE_RESPONSIVE_PROMPT.md) | 2026-03-09 |
 | [MAP2 Audio Platform — Operations Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/OPERATIONS_GUIDE.md) | 2026-03-08 |
-| [Runtime Profile Release Controls (Features 1/3/5/7)](https://github.com/matthewmackes/map2-audio/blob/master/docs/RUNTIME_PROFILE_RELEASE_CONTROLS.md) | 2026-03-08 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -200,14 +200,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7d5d4f42`](https://github.com/matthewmackes/map2-audio/commit/7d5d4f42f008fe68561c5aeabf331902f1a190fb) | docs: complete T085 maturity matrix | Map2 Audio | 2026-03-10 |
+| [`d4e0afe0`](https://github.com/matthewmackes/map2-audio/commit/d4e0afe0c04cf17ee04896f418ebdf361a16b1fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`f78c2e62`](https://github.com/matthewmackes/map2-audio/commit/f78c2e622575bce13a463902329f107878567d56) | feat: complete T083 backend runtime contract | Map2 Audio | 2026-03-10 |
 | [`03057924`](https://github.com/matthewmackes/map2-audio/commit/03057924081af51db5853be8255e46469ec7f31b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`65d0b595`](https://github.com/matthewmackes/map2-audio/commit/65d0b595a7f0ab70f36401a4e9b999486afc98a6) | docs: complete T081 platform evaluation | Map2 Audio | 2026-03-10 |
 | [`d7862847`](https://github.com/matthewmackes/map2-audio/commit/d786284747e95994a14de29c1fd74dd06fe4eb04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 | [`03613d6f`](https://github.com/matthewmackes/map2-audio/commit/03613d6fd6b40c08a10484cd3dfe118699405580) | docs: complete T081-subI API critique | Map2 Audio | 2026-03-10 |
 | [`058d4879`](https://github.com/matthewmackes/map2-audio/commit/058d4879608e6aeb64f02e51b813125aad8c5313) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
-| [`bd5b951c`](https://github.com/matthewmackes/map2-audio/commit/bd5b951c68cd03ce9fab44b3b6c9f4b30fed6954) | feat: complete T084 API inventory | Map2 Audio | 2026-03-10 |
-| [`763349fd`](https://github.com/matthewmackes/map2-audio/commit/763349fda857f5392a62a624e4ab22bf0473b0fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
