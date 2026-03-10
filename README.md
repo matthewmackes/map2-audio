@@ -159,7 +159,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**725** Python | **966** TypeScript | **282** C++/H | **109** Docs | **437** total commits | **0** stars | **0** forks | **0** open issues
+**725** Python | **966** TypeScript | **282** C++/H | **109** Docs | **438** total commits | **0** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -200,6 +200,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`00b6f937`](https://github.com/matthewmackes/map2-audio/commit/00b6f9376700daf773748bedd821639f117ecb25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`9209e9f1`](https://github.com/matthewmackes/map2-audio/commit/9209e9f1fa2014b9d3f91f8b1064e7fa58f5b8ba) | feat: add nightly release pipeline (T082) + Tesira Forte ... | Map2 Audio | 2026-03-09 |
 | [`c099da10`](https://github.com/matthewmackes/map2-audio/commit/c099da10dabe32a0cc172a7e6e8bb861d5e5e8f5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`975b9713`](https://github.com/matthewmackes/map2-audio/commit/975b9713e59906ddd35516c5c3ca108c3942c167) | Worklist: all unblocked items completed | Map2 Audio | 2026-03-09 |
@@ -207,7 +208,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`7cc75772`](https://github.com/matthewmackes/map2-audio/commit/7cc757728fb0a71c442342ec0831d212920fd58e) | fix: finalize T077 phase 14 responsive signoff (closes WO... | Map2 Audio | 2026-03-09 |
 | [`c702ee71`](https://github.com/matthewmackes/map2-audio/commit/c702ee7139b9d5ed22aab496b95b781dc8d5f063) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 | [`aaff8c03`](https://github.com/matthewmackes/map2-audio/commit/aaff8c0302d417447004b1f4b9162ff656be2099) | chore: finalize web lint cleanup to zero warnings | Map2 Audio | 2026-03-09 |
-| [`b17ed3f1`](https://github.com/matthewmackes/map2-audio/commit/b17ed3f18e1ec0e708ced83cd75410a77980f2e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-03-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
