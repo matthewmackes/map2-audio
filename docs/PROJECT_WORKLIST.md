@@ -3206,7 +3206,7 @@ Last updated: 2026-03-10 08:46 - Codex
   - Validation: Reviewed representative desktop/mobile screenshots plus current shell/navigation/theme source.
   - Suggested next tasks: T081-subH, T085, T081-subJ
 ID: T081-subH
-Status: [ ] Todo
+Status: [✓] Done
 Title: Phase 8 — Color, theming, and visual system critique
 Description:
 - Goal / acceptance criteria: Critique the visual language seriously. Review color palette quality, contrast, readability, consistency of theming, overuse of accent colors, semantic coloring, dark/light theme behavior, and state communication. Determine whether the platform looks consumer-grade, dated, unfinished, or untrustworthy.
@@ -3224,7 +3224,13 @@ Description:
 - Required outputs: `docs/evaluation/08-theming-critique.md` with current palette analysis, recommended palette, and specific improvement directives.
 Subtasks: None
 Assigned to: Codex
-Last updated: 2026-03-09 00:00 - Codex
+Last updated: 2026-03-10 08:49 - Codex
+- Completion notes:
+  - What was done: Produced a theming critique covering global palette tokens, typography, semantic-color usage, surface contrast, and the current CSS/theme layering direction.
+  - Key findings: MAP2 has a coherent dark blue identity, but too much of the interface sits in the same cool-blue register, so the visual system communicates mood better than semantic state or workflow priority.
+  - Files/links produced: `docs/evaluation/08-theming-critique.md`.
+  - Validation: Palette/token review from `web/src/index.css` plus representative desktop/mobile screenshots.
+  - Suggested next tasks: T081-subI, T084, T085
 ID: T081-subI
 Status: [ ] Todo
 Title: Phase 9 — API quality and integration surface evaluation
